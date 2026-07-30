@@ -155,7 +155,7 @@ const DefineGoal = ({ goalType, formConfig, onGoalsChange }: DefineGoalProps) =>
     const handleDeleteKeyResult = (goalId: string, krId: string) => {
         setGoals((prevGoals) =>
             prevGoals.map((g) => {
-                if (g.id !== goalId || g.keyResults.length <= minimumKeyResults) return g;
+                if (g.id !== goalId) return g;
                 return {
                     ...g,
                     keyResults: g.keyResults.filter((kr) => kr.id !== krId),

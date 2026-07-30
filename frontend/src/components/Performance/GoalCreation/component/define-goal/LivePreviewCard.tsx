@@ -30,22 +30,21 @@ export const LivePreviewCard = ({
   const isTitleFilled = !!goalTitle.trim();
   const isDepartmentFilled = !!department && department.trim() !== "";
   const isDesignationFilled = !!designation && designation.trim() !== "";
-  const areKrTitlesFilled = keyResults.length >= minimumKeyResults && keyResults.every((kr) => !!kr.title.trim());
-  const krWeightageSum = keyResults.reduce((sum, kr) => sum + (parseFloat(kr.weight) || 0), 0);
-  const hasEmptyKrWeightage = keyResults.some(kr => !kr.weight || parseFloat(kr.weight) <= 0);
-  const isKrWeightage100 = krWeightageSum === 100 && !hasEmptyKrWeightage;
+
   const isObjectiveWeightageFilled = weightage > 0;
 
-  const filledKrTitlesCount = keyResults.filter((kr) => !!kr.title.trim()).length;
-  const totalKrsCount = keyResults.length;
-  
+  const krsWithTitle = keyResults.filter((kr) => !!kr.title.trim());
+  const hasAnyKrTitle = krsWithTitle.length > 0;
+  const krWeightageSum = keyResults.reduce((sum, kr) => sum + (parseFloat(kr.weight) || 0), 0);
+  const hasEmptyKrWeightage = krsWithTitle.some(kr => !kr.weight || parseFloat(kr.weight) <= 0);
+  const isKrWeightage100 = krWeightageSum === 100 && !hasEmptyKrWeightage;
+
   const checklist = [
     { label: "Objective title", isCompleted: isTitleFilled },
     { label: "Objective weightage is filled", isCompleted: isObjectiveWeightageFilled },
     { label: "Department selected", isCompleted: isDepartmentFilled },
     { label: "Designation selected", isCompleted: isDesignationFilled },
-    { label: `Key result titles (${filledKrTitlesCount}/${totalKrsCount})`, isCompleted: areKrTitlesFilled },
-    { label: "KR weightage totals 100%", isCompleted: isKrWeightage100 },
+    ...(hasAnyKrTitle ? [{ label: "KR weightage totals 100%", isCompleted: isKrWeightage100 }] : []),
   ];
 
   return (
@@ -127,7 +126,7 @@ export const LivePreviewCard = ({
           variant="bodyMedium"
           className="font-semibold text-amber-800"
         >
-          {minimumKeyResults} KR{minimumKeyResults === 1 ? "" : "s"} minimum · {maximumKeyResults === null ? "No maximum" : `${maximumKeyResults} KRs maximum`}
+          No minimum · {maximumKeyResults === null ? "No maximum" : `${maximumKeyResults} KRs maximum`}
         </Typography>
         <Typography variant="caption" className="mt-1 block text-amber-700">
           Most high-performing PW OKRs have 3-4 KRs. More than 5 dilutes focus.

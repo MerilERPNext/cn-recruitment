@@ -20,6 +20,9 @@ import toast from 'react-hot-toast';
 import PageLayoutWrapper from "../../shared/PageLayoutWrapper";
 import Button from "../../shared/atoms/Button";
 import { Typography } from "../../shared/atoms/Typography";
+import { AsyncSelect } from "../../shared/atoms/AsyncSelect";
+import { performanceService } from "../../../services/performanceService";
+import { useCurrentEmployeeDetails } from "../../../hooks/useEmployee";
 import { useSaveGoals } from "../../../hooks/usePerformance";
 import type { GoalSaveItem } from "../../../types/goal";
 
@@ -44,20 +47,20 @@ const MAX_FILE_SIZE_MB = 10;
 const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
 
 const EXPECTED_COLUMNS = [
-  "Objective Title",
-  "Key Result Title",
-  "Key Result Weightage",
+  "Goal Title",
+  "Sub Goal Title",
+  "Sub Goal Weightage",
   "Goal Type",
   "Department",
   "Designation",
-  "Weightage",
+  "Goal Weightage",
 ];
 
 /** Columns that must have a non-empty value in every row */
 const REQUIRED_COLUMNS = [
-  "Objective Title",
-  "Key Result Title",
-  "Key Result Weightage",
+  "Goal Title",
+  "Sub Goal Title",
+  "Sub Goal Weightage",
 ];
 
 /* ──────────────────────────────────────────────
@@ -207,7 +210,7 @@ function validateRow(
 
 /**
  * Compute per-row weightage validation.
- * Groups rows by 'Objective Title' and checks if 'Key Result Weightage' sums to 100.
+ * Groups rows by 'Goal Title' and checks if 'Sub Goal Weightage' sums to 100.
  */
 function computeWeightageErrors(
   rows: ParsedRow[],
@@ -216,10 +219,10 @@ function computeWeightageErrors(
   const errorMap = new Map<number, string>();
 
   const hasObjectiveTitle = visibleHeaders.some(
-    (h) => h.toLowerCase().trim() === "objective title",
+    (h) => h.toLowerCase().trim() === "goal title",
   );
   const hasKRWeightage = visibleHeaders.some(
-    (h) => h.toLowerCase().trim() === "key result weightage",
+    (h) => h.toLowerCase().trim() === "sub goal weightage",
   );
 
   if (!hasObjectiveTitle || !hasKRWeightage) return errorMap;
@@ -227,7 +230,7 @@ function computeWeightageErrors(
   // Group row indices by objective title
   const groups = new Map<string, number[]>();
   rows.forEach((row, idx) => {
-    const objective = String(row["Objective Title"] ?? "")
+    const objective = String(row["Goal Title"] ?? "")
       .trim()
       .toLowerCase();
     if (!objective) return;
@@ -238,11 +241,11 @@ function computeWeightageErrors(
   for (const [, indices] of groups) {
     let sum = 0;
     for (const idx of indices) {
-      const w = Number(rows[idx]["Key Result Weightage"]);
+      const w = Number(rows[idx]["Sub Goal Weightage"]);
       if (!isNaN(w)) sum += w;
     }
     if (sum !== 100) {
-      const msg = `Key Result Weightage for this goal sums to ${sum}% (expected 100%)`;
+      const msg = `Sub Goal Weightage for this goal sums to ${sum}% (expected 100%)`;
       for (const idx of indices) {
         errorMap.set(idx, msg);
       }
@@ -259,6 +262,8 @@ function computeWeightageErrors(
 const BulkImportGoals: React.FC = () => {
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { data: currentEmployee } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
+  const currentCompany = currentEmployee?.company;
 
   const [file, setFile] = useState<File | null>(null);
   const [status, setStatus] = useState<UploadStatus>("idle");
@@ -315,17 +320,17 @@ const BulkImportGoals: React.FC = () => {
   const { mutate: saveGoals, isPending: isImporting } = useSaveGoals();
 
   /**
-   * Transform parsed rows into GoalSaveItem[] grouped by Objective Title,
+   * Transform parsed rows into GoalSaveItem[] grouped by Goal Title,
    * then call the save_goals API.
    */
   const handleImport = useCallback(() => {
     if (hasInvalidRows || parsedRows.length === 0) return;
 
-    // Group rows by Objective Title
+    // Group rows by Goal Title
     const goalMap = new Map<string, GoalSaveItem>();
 
     for (const row of parsedRows) {
-      const objectiveTitle = String(row['Objective Title'] ?? '').trim();
+      const objectiveTitle = String(row['Goal Title'] ?? '').trim();
       if (!objectiveTitle) continue;
 
       if (!goalMap.has(objectiveTitle)) {
@@ -334,15 +339,15 @@ const BulkImportGoals: React.FC = () => {
           goal_type: String(row['Goal Type'] ?? 'Individual').trim(),
           title: objectiveTitle,
           description: '',
-          weightage: Number(row['Weightage']) || 0,
+          weightage: Number(row['Goal Weightage']) || 0,
           department: String(row['Department'] ?? '').trim(),
           designation: String(row['Designation'] ?? '').trim(),
           key_results: [],
         });
       }
 
-      const krTitle = String(row['Key Result Title'] ?? '').trim();
-      const krWeightage = Number(row['Key Result Weightage']) || 0;
+      const krTitle = String(row['Sub Goal Title'] ?? '').trim();
+      const krWeightage = Number(row['Sub Goal Weightage']) || 0;
 
       if (krTitle) {
         goalMap.get(objectiveTitle)!.key_results.push({
@@ -548,6 +553,56 @@ const BulkImportGoals: React.FC = () => {
       }
     },
     [commitEdit, cancelEdit],
+  );
+
+  /* ─── Department / Designation dropdown helpers ── */
+
+  const fetchDepartmentOptions = useCallback(
+    async (search: string, skip: number) => {
+      try {
+        return await performanceService.getDepartmentOptions({
+          search_text: search,
+          skip,
+          company: currentCompany,
+        });
+      } catch (e) {
+        console.error(e);
+        return [];
+      }
+    },
+    [currentCompany],
+  );
+
+  const fetchDesignationOptions = useCallback(
+    (department: string) => async (search: string, skip: number) => {
+      if (!department) return [];
+      try {
+        return await performanceService.getDesignationOptions({
+          search_text: search,
+          skip,
+          department,
+        });
+      } catch (e) {
+        console.error(e);
+        return [];
+      }
+    },
+    [],
+  );
+
+  const handleDropdownSelect = useCallback(
+    (rowIndex: number, header: string, value: string) => {
+      setParsedRows((prev) => {
+        const updated = [...prev];
+        updated[rowIndex] = { ...updated[rowIndex], [header]: value };
+        // Clear designation when department changes
+        if (header === "Department") {
+          updated[rowIndex] = { ...updated[rowIndex], Designation: "" };
+        }
+        return updated;
+      });
+    },
+    [],
   );
 
   /* ─── Column removal ─────────────────────── */
@@ -913,10 +968,10 @@ const BulkImportGoals: React.FC = () => {
               <AlertCircle className="w-4 h-4 mt-0.5 shrink-0 text-orange-500" />
               <div>
                 <span className="font-semibold">
-                  Key Result Weightage mismatch:{" "}
+                  Sub Goal Weightage mismatch:{" "}
                 </span>
                 <span>
-                  Some objectives have Key Result Weightages that don't sum to
+                  Some goals have Sub Goal Weightages that don't sum to
                   100%. Edit the values below to fix.
                 </span>
               </div>
@@ -934,8 +989,8 @@ const BulkImportGoals: React.FC = () => {
             </Typography>
           </div>
 
-          <div className="rounded-xl border border-gray-200 overflow-hidden bg-white shadow-sm">
-            <div className="overflow-auto max-h-[480px]">
+          <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
+            <div className="overflow-auto max-h-[480px]" style={{ overflow: "auto visible" }}>
               <table className="w-full text-sm">
                 <thead className="sticky top-0 z-10">
                   <tr className="bg-gray-50 border-b border-gray-200">
@@ -1039,12 +1094,18 @@ const BulkImportGoals: React.FC = () => {
                             rv?.missingFields.includes(header) ?? false;
                           const hasWeightageError =
                             header.toLowerCase().trim() ===
-                              "key result weightage" && !!rv?.weightageError;
+                              "sub goal weightage" && !!rv?.weightageError;
+
+                          const isDepartmentCol = header === "Department";
+                          const isDesignationCol = header === "Designation";
+                          const isDropdownCol = isDepartmentCol || isDesignationCol;
 
                           return (
                             <td
                               key={`${rowIndex}-${header}`}
-                              className={`px-4 py-2.5 whitespace-nowrap max-w-[200px] ${
+                              className={`px-4 py-2.5 whitespace-nowrap ${
+                                isDropdownCol ? "min-w-[200px] overflow-visible" : "max-w-[200px]"
+                              } ${
                                 isEditing ? "p-1" : ""
                               } ${
                                 isMissingRequired
@@ -1053,8 +1114,25 @@ const BulkImportGoals: React.FC = () => {
                                     ? "bg-orange-50"
                                     : ""
                               }`}
+                              style={isDropdownCol ? { overflow: "visible" } : undefined}
                             >
-                              {isEditing ? (
+                              {isDropdownCol ? (
+                                /* ── Dropdown mode for Department / Designation ── */
+                                <div className="relative">
+                                  <AsyncSelect
+                                    value={cellValue ? { label: cellValue, value: cellValue } : { label: "Select", value: "" }}
+                                    onChange={(opt: any) => handleDropdownSelect(rowIndex, header, opt.value)}
+                                    fetchOptions={
+                                      isDepartmentCol
+                                        ? fetchDepartmentOptions
+                                        : fetchDesignationOptions(String(row["Department"] ?? ""))
+                                    }
+                                    placeholder={isDepartmentCol ? "Search department..." : "Search designation..."}
+                                    disabled={isDesignationCol && !String(row["Department"] ?? "").trim()}
+                                    className="relative w-full !w-full"
+                                  />
+                                </div>
+                              ) : isEditing ? (
                                 /* ── Editing mode ── */
                                 <div className="flex items-center gap-1">
                                   <input
@@ -1164,11 +1242,12 @@ const BulkImportGoals: React.FC = () => {
             {
               title: "Required Columns",
               description:
-                "Objective Title, Key Result Title, Key Result Weightage.",
+                "Goal Title, Sub Goal Title, Sub Goal Weightage.",
             },
             {
               title: "Optional Columns",
-              description: "Goal Type, Department, Designation, Weightage.",
+              description:
+                "Goal Type, Department, Designation, Goal Weightage.",
             },
             {
               title: "Template",

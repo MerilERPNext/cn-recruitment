@@ -106,7 +106,6 @@ export const KeyResultsCard = ({
             <button
               type="button"
               onClick={() => onDeleteKeyResult(result.id)}
-              disabled={keyResults.length <= minimumKeyResults}
               className="shrink-0 rounded-lg p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-500 transition-colors"
               aria-label={`Delete ${result.id}`}
             >
