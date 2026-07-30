@@ -135,14 +135,14 @@ const GoalLibraryPopup = ({ onClose, onUseTemplate }: GoalLibraryPopupProps) => 
 
     const tabs: { key: TabKey; label: string; count: number }[] = useMemo(() => [
         { key: 'recommended', label: 'Recommended for you', count: counts.recommended },
-        { key: 'all-org', label: 'All Org templates', count: counts.allOrg },
+        { key: 'all-org', label: 'Org templates', count: counts.allOrg },
         {
             key: 'department',
             label: selectedDepartment.value === 'All' ? 'Department' : `Department · ${selectedDepartment.label}`,
             count: counts.department,
         },
         { key: 'role-based', label: 'Role-based', count: counts.roleBased },
-        { key: 'used-by-team', label: 'Used by your team', count: counts.usedByTeam },
+        { key: 'used-by-team', label: 'Used by team', count: counts.usedByTeam },
     ], [counts, selectedDepartment.label, selectedDepartment.value]);
 
     const renderTemplates = () => {
