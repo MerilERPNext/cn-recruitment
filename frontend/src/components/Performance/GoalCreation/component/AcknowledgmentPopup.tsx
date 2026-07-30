@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import { X, CheckCircle, Loader } from 'lucide-react';
 import { Typography } from '../../../shared/atoms/Typography';
 import Button from '../../../shared/atoms/Button';
@@ -38,16 +38,9 @@ export const getWeightageColor = (weightage?: number, index: number = 0) => {
 };
 
 const AcknowledgmentPopup: React.FC<AcknowledgmentProps> = ({ onClose, goalData = [], text }) => {
-    const [goalStatuses, setGoalStatuses] = useState<Record<string, 'accept' | 'reject'>>({});
     const queryClient = useQueryClient();
     const { mutate: mutateGoals, isPending } = useSubmitMandatoryGoals();
-    const navigate = useNavigate()
-    const handleStatusChange = (templateId: string, status: 'accept' | 'reject') => {
-        setGoalStatuses((prev) => ({
-            ...prev,
-            [templateId]: status,
-        }));
-    };
+    const navigate = useNavigate();
 
     const totalWeightage = useMemo(
         () => goalData.reduce((acc, curr) => acc + (curr.weightage || 0), 0),
@@ -55,9 +48,7 @@ const AcknowledgmentPopup: React.FC<AcknowledgmentProps> = ({ onClose, goalData 
     );
 
     const submiteAcknowledgeGoals = () => {
-        const acceptedTemplates = goalData
-            .filter((goal) => (goalStatuses[goal.template] || 'accept') === 'accept')
-            .map((goal) => goal.template);
+        const acceptedTemplates = goalData.map((goal) => goal.template);
 
         const payload: GoalsRequest = {
             templates: acceptedTemplates,
@@ -122,7 +113,6 @@ const AcknowledgmentPopup: React.FC<AcknowledgmentProps> = ({ onClose, goalData 
                     <div className="flex flex-col gap-3 sm:gap-4">
                         {goalData.map((okr: Templates, index: number) => {
                             const colorConfig = getWeightageColor(okr?.weightage, index);
-                            const currentStatus = goalStatuses[okr.template] || 'accept';
                             return (
                                 <div
                                     key={`${okr.template}-${index}`}
@@ -149,34 +139,6 @@ const AcknowledgmentPopup: React.FC<AcknowledgmentProps> = ({ onClose, goalData 
                                                 </span>
                                             </div>
                                         </div>
-                                    </div>
-
-                                    {/* Accept / Reject Buttons */}
-                                    <div className="flex items-center gap-2 shrink-0">
-                                        <button
-                                            type="button"
-                                            aria-pressed={currentStatus === 'accept'}
-                                            onClick={() => handleStatusChange(okr.template, 'accept')}
-                                            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                                                currentStatus === 'accept'
-                                                    ? 'bg-emerald-600 text-white shadow-sm'
-                                                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                                            }`}
-                                        >
-                                            Accept
-                                        </button>
-                                        <button
-                                            area-pressed={currentStatus === 'reject'}
-                                            type="button"
-                                            onClick={() => handleStatusChange(okr.template, 'reject')}
-                                            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                                                currentStatus === 'reject'
-                                                    ? 'bg-red-600 text-white shadow-sm'
-                                                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                                            }`}
-                                        >
-                                            Reject
-                                        </button>
                                     </div>
                                 </div>
                             );
@@ -213,7 +175,8 @@ const AcknowledgmentPopup: React.FC<AcknowledgmentProps> = ({ onClose, goalData 
                             </span>
                         ) : (
                             "Submit & Continue"
-                        )}                    </Button>
+                        )}
+                    </Button>
                 </div>
             </div>
         </div>
