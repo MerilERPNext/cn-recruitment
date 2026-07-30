@@ -239,7 +239,7 @@ const [openTeamGoals, setOpenTeamGoals] = useState(false)
                                     : teamGoalerr
                                         ? 'Error fetching goals'
                                         : (teamGoals?.data?.goals?.length ?? 0) > 0
-                                            ? `Direct manager alignment · ${teamGoals?.data?.goals?.length} active parent goal${(teamGoals?.data?.goals?.length ?? 0) > 1 ? 's' : ''}`
+                                            ? `${teamGoals?.data?.goals?.length} active parent goal${(teamGoals?.data?.goals?.length ?? 0) > 1 ? 's' : ''}`
                                             : '0 active parent goals available'
                             }
                             onUse={
