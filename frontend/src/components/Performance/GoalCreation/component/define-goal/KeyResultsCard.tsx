@@ -21,7 +21,6 @@ export const KeyResultsCard = ({
   onDeleteKeyResult,
   onAddKeyResult,
   onUpdateKeyResult,
-  minimumKeyResults,
   maximumKeyResults,
 }: KeyResultsCardProps) => {
   const totalWeight = keyResults.reduce(

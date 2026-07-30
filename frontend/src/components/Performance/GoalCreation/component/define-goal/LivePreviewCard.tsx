@@ -25,7 +25,6 @@ export const LivePreviewCard = ({
   weightage,
   keyResults,
   goalNumber,
-  minimumKeyResults,
   maximumKeyResults,
 }: LivePreviewCardProps) => {
   const { data: currentEmployee } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
