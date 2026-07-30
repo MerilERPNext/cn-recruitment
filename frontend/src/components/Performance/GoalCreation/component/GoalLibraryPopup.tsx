@@ -8,7 +8,6 @@ import RecommendedTemplates from './goal-model/RecommendedTemplates';
 import AllOrgTemplates from './goal-model/AllOrgTemplates';
 import DepartmentTemplates from './goal-model/DepartmentTemplates';
 import RoleBasedTemplates, { roleBasedTemplatesData } from './goal-model/RoleBasedTemplates';
-import UsedByTeamTemplates, { usedByTeamTemplatesData } from './goal-model/UsedByTeamTemplates';
 import { fetchDepartmentOptions, fetchDesignationOptions, useGoalRepository, useReferanceGoals } from '../../../../hooks/usePerformance';
 import { useCurrentEmployeeDetails } from '../../../../hooks/useEmployee';
 import useDebounce from '../../../../hooks/useDebounce';
@@ -19,7 +18,7 @@ interface GoalLibraryPopupProps {
     onUseTemplate?: (template: GoalTemplate | GoalTemplate[], source?: string) => void;
 }
 
-type TabKey = 'recommended' | 'all-org' | 'department' | 'designation' | 'role-based' | 'used-by-team';
+type TabKey = 'recommended' | 'all-org' | 'department' | 'designation' | 'role-based';
 
 const GoalLibraryPopup = ({ onClose, onUseTemplate }: GoalLibraryPopupProps) => {
     const { data: currentEmployee } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
@@ -130,7 +129,6 @@ const GoalLibraryPopup = ({ onClose, onUseTemplate }: GoalLibraryPopupProps) => 
         allOrg: refGoalsData?.data?.total ?? goals.length,
         department: goals.filter((g: any) => Boolean(g.department || g.department_title)).length,
         roleBased: filterTemplates(roleBasedTemplatesData, debouncedSearchQuery, selectedDepartment.value, selectedLevel.value).length,
-        usedByTeam: filterTemplates(usedByTeamTemplatesData, debouncedSearchQuery, selectedDepartment.value, selectedLevel.value).length,
     }), [debouncedSearchQuery, selectedDepartment.value, selectedLevel.value, goals, recommendedGoals, refGoalsData?.data?.total, goalRepo?.data?.total]);
 
     const tabs: { key: TabKey; label: string; count: number }[] = useMemo(() => [
@@ -147,7 +145,6 @@ const GoalLibraryPopup = ({ onClose, onUseTemplate }: GoalLibraryPopupProps) => 
             count: counts.department,
         },
         { key: 'role-based', label: 'Role-based', count: counts.roleBased },
-        { key: 'used-by-team', label: 'Used by team', count: counts.usedByTeam },
     ], [counts, selectedDepartment.label, selectedDepartment.value, selectedLevel.label, selectedLevel.value]);
 
     const renderTemplates = () => {
@@ -218,8 +215,8 @@ const GoalLibraryPopup = ({ onClose, onUseTemplate }: GoalLibraryPopupProps) => 
             case 'recommended': return <RecommendedTemplates {...commonProps} recommendedTemplatesData={recommendedGoals} />;
             case 'all-org': return <AllOrgTemplates {...commonProps} />;
             case 'department': return <DepartmentTemplates {...commonProps} recommendedTemplatesData={recommendedGoals} />;
+            case 'designation': return <DepartmentTemplates {...commonProps} recommendedTemplatesData={recommendedGoals} />;
             case 'role-based': return <RoleBasedTemplates {...commonProps} />;
-            case 'used-by-team': return <UsedByTeamTemplates {...commonProps} />;
         }
     };
 

@@ -6,66 +6,7 @@ import Button from '../../../../shared/atoms/Button';
 import { Typography } from '../../../../shared/atoms/Typography';
 
 export const usedByTeamTemplatesData: GoalTemplate[] = [
-    {
-        goal: 'GOAL-26-03465',
-        title: 'Improve team design review velocity by 30%',
-        description: 'Accelerate design critique turns and sign-off SLA',
-        goal_type: 'OKR',
-        category: 'Individual',
-        department: 'Design',
-        department_title: 'Design',
-        weightage: 20,
-        scorecard_pillar: null,
-        performance_cycle: 'FY2026-ANNUAL',
-        owner_employee: 'PW-00005',
-        owner_employee_name: 'Ajay Jogdand',
-        key_results: []
-    },
-    {
-        goal: 'GOAL-26-03466',
-        title: 'Adopt shared Figma component library across team',
-        description: 'Unify design assets across team projects',
-        goal_type: 'OKR',
-        category: 'Individual',
-        department: 'Design',
-        department_title: 'Design',
-        weightage: 15,
-        scorecard_pillar: null,
-        performance_cycle: 'FY2026-ANNUAL',
-        owner_employee: 'PW-00005',
-        owner_employee_name: 'Ajay Jogdand',
-        key_results: []
-    },
-    {
-        goal: 'GOAL-26-03467',
-        title: 'Reduce rework cycles on design handoffs to zero',
-        description: 'Clear documentation and dev specs for smooth engineering handoff',
-        goal_type: 'MBO',
-        category: 'Individual',
-        department: 'Engineering',
-        department_title: 'Engineering',
-        weightage: 15,
-        scorecard_pillar: null,
-        performance_cycle: 'FY2026-ANNUAL',
-        owner_employee: 'PW-00005',
-        owner_employee_name: 'Ajay Jogdand',
-        key_results: []
-    },
-    {
-        goal: 'GOAL-26-03468',
-        title: 'Ship mobile-first redesign of the onboarding flow',
-        description: 'Redesign initial sign-up and onboarding user journey',
-        goal_type: 'OKR',
-        category: 'Individual',
-        department: 'Product',
-        department_title: 'Product',
-        weightage: 25,
-        scorecard_pillar: null,
-        performance_cycle: 'FY2026-ANNUAL',
-        owner_employee: 'PW-00005',
-        owner_employee_name: 'Ajay Jogdand',
-        key_results: []
-    }
+   
 ];
 
 const UsedByTeamTemplates = ({
