@@ -47,9 +47,10 @@ export const AsyncSelect = <T extends string | number>({
                     return Array.from(existingMap.values());
                 });
             } else {
-                setOptions([{ label: 'Select', value: '' as T }, ...results]);
+                const hasDefault = results.some((opt) => opt.value === '' || opt.value === 'All');
+                setOptions(hasDefault ? results : [{ label: 'Select', value: '' as T }, ...results]);
             }
-            setHasMore(results.length === 20);
+            setHasMore(results.length >= 20);
             setSkip(currentSkip + 20);
         } catch (error) {
             console.error("Failed to load options", error);

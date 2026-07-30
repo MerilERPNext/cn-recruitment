@@ -85,17 +85,34 @@ const TemplateCard = memo(({
             </div>
 
             {/* Footer */}
-            <div className="mt-4 flex flex-col gap-2.5 border-t border-slate-300 pt-3 min-[420px]:flex-row min-[420px]:items-center min-[420px]:justify-between">
-                <div className="flex items-center gap-2">
-                    <Typography variant="caption" className="break-words text-xs font-medium text-slate-500">
-                        {template?.usedCount !== undefined
-                            ? `Used ${template?.usedCount} times`
-                            : krCount > 0
-                            ? `${krCount} Key Result${krCount > 1 ? 's' : ''}`
-                            : `Weight: ${template?.weightage ?? 10}%`}
-                    </Typography>
-                </div>
+            <div className="mt-4 flex flex-col gap-2 border-t border-slate-400 pt-3 min-[420px]:flex-row min-[420px]:items-center min-[420px]:justify-between">
+                <div className="flex flex-wrap items-center gap-2">
+                    {template?.usedCount !== undefined && (
+                        <Typography variant="caption" className="break-words text-xs font-medium text-slate-500">
+                            Used {template?.usedCount} times this cycle
+                        </Typography>
+                    )}
 
+                    {template?.goal_count !== undefined && (
+                        <span className="inline-flex items-center rounded-md bg-slate-100 border border-slate-200/60 px-2 py-0.5 text-[11px] font-medium text-slate-700">
+                            {template.goal_count} Goal{template.goal_count > 1 ? 's' : ''}
+                        </span>
+                    )}
+
+                    {template?.total_weightage !== undefined && (
+                        <span className="inline-flex items-center rounded-md bg-blue-50 border border-blue-100 px-2 py-0.5 text-[11px] font-semibold text-blue-700">
+                            {template.total_weightage}% Weight
+                        </span>
+                    )}
+
+                    {template?.usedCount === undefined && template?.goal_count === undefined && (
+                        <Typography variant="caption" className="break-words text-xs font-medium text-slate-500">
+                            {krCount > 0
+                                ? `${krCount} Key Result${krCount > 1 ? 's' : ''}`
+                                : `Weight: ${template?.weightage ?? 10}%`}
+                        </Typography>
+                    )}
+                </div>
                 <div className="flex items-center gap-2 shrink-0">
                     {onWeightageChange && (
                         <input

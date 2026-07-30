@@ -71,7 +71,7 @@ const AcknowledgmentPopup: React.FC<AcknowledgmentProps> = ({ onClose, goalData 
                         queryKey: PERFORMANCE_QUERY_KEYS.mandatoryGoals
                     });
                     onClose(false);
-                    navigate("/webapp/performance-app/my-goals/goal-draft")
+                    navigate("/webapp/performance-app/my-goals")
                 },
                 onError: (error) => {
                     errorResponseFormater(error, "Failed to acknowledge mandatory OKRs", { showToast: true });

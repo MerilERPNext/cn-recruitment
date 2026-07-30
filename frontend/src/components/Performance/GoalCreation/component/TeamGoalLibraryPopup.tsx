@@ -1,85 +1,72 @@
-import React, { useState, useMemo } from 'react';
-import { Search, X } from 'lucide-react';
+import React, { useState, useMemo, useCallback } from 'react';
+import { AlertCircle, Search, X } from 'lucide-react';
 import Button from '../../../shared/atoms/Button';
-import { Select } from '../../../shared/atoms/Select';
+import { AsyncSelect } from '../../../shared/atoms/AsyncSelect';
 import { Typography } from '../../../shared/atoms/Typography';
 import GoalItemCard from './GoalItemCard';
 import { GoalTemplate } from './goal-model/types';
-import { useGoalFormConfig } from '../../../../hooks/usePerformance';
-import { managerAndTeamGoals, defaultDepartmentOptions, defaultLevelOptions } from '../../mockdata';
+import { useCascadeMangerGoals, fetchDepartmentOptions, fetchDesignationOptions } from '../../../../hooks/usePerformance';
+import { useCurrentEmployeeDetails } from '../../../../hooks/useEmployee';
+import { CascadeGoal } from '../../../../types/goal';
+import { useGoalModel } from '../../GoalModelContext';
+import useDebounce from '../../../../hooks/useDebounce';
 
 interface TeamGoalLibraryPopupProps {
     onClose?: () => void;
     onUseTemplate?: (template: GoalTemplate | GoalTemplate[], source?: string) => void;
 }
 
+
 const TeamGoalLibraryPopup: React.FC<TeamGoalLibraryPopupProps> = ({ onClose, onUseTemplate }) => {
-    const { data: formConfig } = useGoalFormConfig();
+    const { data: currentEmployee } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
+    const currentCompany = currentEmployee?.company;
+    const { setDraftGoals } = useGoalModel();
     const [searchQuery, setSearchQuery] = useState('');
+    const debouncedSearchQuery = useDebounce(searchQuery, 300);
+    const [selectedDepartment, setSelectedDepartment] = useState({ label: 'All Departments', value: 'All' });
+    const [selectedLevel, setSelectedLevel] = useState({ label: 'All Designations', value: 'All' });
     const [selectedTemplates, setSelectedTemplates] = useState<GoalTemplate[]>([]);
 
-    const departmentOptions = useMemo(() => {
-        if (!formConfig?.departments || formConfig.departments.length === 0) {
-            return defaultDepartmentOptions;
-        }
-        const dynamicDeps = formConfig.departments.map((dep) => ({
-            label: dep.department_name || dep.name || 'Unknown',
-            value: dep.name || dep.department_name || '',
-        }));
-        return [{ label: 'All Departments', value: 'All' }, ...dynamicDeps];
-    }, [formConfig?.departments]);
+    const { data: teamGoals, isLoading: teamGoalsLoading, error, refetch } = useCascadeMangerGoals({
+        search: debouncedSearchQuery || undefined,
+        department: selectedDepartment.value !== 'All' ? selectedDepartment.value : undefined,
+        designation: selectedLevel.value !== 'All' ? selectedLevel.value : undefined,
+    });
+    console.log(teamGoals, '=========================team goals');
 
-    const levelOptions = useMemo(() => {
-        if (!formConfig?.designations || formConfig.designations.length === 0) {
-            return defaultLevelOptions;
-        }
-        const dynamicDesigs = formConfig.designations.map((desig) => ({
-            label: desig.designation_name || desig.name || 'Unknown',
-            value: desig.name || desig.designation_name || '',
-        }));
-        return [{ label: 'All Designations', value: 'All' }, ...dynamicDesigs];
-    }, [formConfig?.designations]);
+    const goals = teamGoals?.data?.goals || [];
 
-    const [selectedDepartment, setSelectedDepartment] = useState(departmentOptions[0]);
-    const [selectedLevel, setSelectedLevel] = useState(levelOptions[0]);
-
-    const filteredGoals = useMemo(() => {
-        const query = searchQuery.trim().toLowerCase();
-        const dept = selectedDepartment.value.toLowerCase();
-        const desig = selectedLevel.value.toLowerCase();
-
-        return managerAndTeamGoals.filter((g) => {
-            const matchesQuery =
-                !query ||
-                g.title.toLowerCase().includes(query) ||
-                g.ownerName.toLowerCase().includes(query) ||
-                g.ownerRole.toLowerCase().includes(query) ||
-                g.scope.toLowerCase().includes(query) ||
-                (g.department ?? '').toLowerCase().includes(query);
-
-            const matchesDept =
-                dept === 'all' ||
-                (g.department ?? '').toLowerCase() === dept ||
-                g.scope.toLowerCase().includes(dept);
-
-            const matchesDesig =
-                desig === 'all' ||
-                (g.designation ?? '').toLowerCase().includes(desig);
-
-            return matchesQuery && matchesDept && matchesDesig;
-        });
-    }, [searchQuery, selectedDepartment, selectedLevel]);
-
-    const handleToggleSelect = (template: GoalTemplate) => {
+    const selectedKeysSet = useMemo(
+        () => new Set(selectedTemplates.map((t) => (t as any).goal || t.id)),
+        [selectedTemplates]
+    );
+    const handleToggleSelect = useCallback((goal: CascadeGoal | GoalTemplate) => {
+        const item: GoalTemplate = {
+            id: (goal as any).goal || (goal as any).id,
+            goal: (goal as any).goal || (goal as any).id,
+            title: goal.title,
+            description: (goal as any).description || '',
+            category: (goal as any).category || '',
+            department: goal.department || null,
+            weightage: (goal as any).weightage || 30,
+            scorecard_pillar: (goal as any).scorecard_pillar || null,
+            performance_cycle: (goal as any).performance_cycle,
+            owner_employee: (goal as any).owner_employee,
+            designation: (goal as any).owner_designation || (goal as any).designation,
+            usedCount: (goal as any).used_by_count || (goal as any).usedCount || 0,
+            key_results: (goal as any).key_results || [],
+        };
+        const key = item.goal || item.id || item.title;
         setSelectedTemplates((prev) =>
-            prev.some((t) => t.id === template.id)
-                ? prev.filter((t) => t.id !== template.id)
-                : [...prev, template]
+            prev.some((t) => (t.goal || t.id || t.title) === key)
+                ? prev.filter((t) => (t.goal || t.id || t.title) !== key)
+                : [...prev, item]
         );
-    };
+    }, []);
 
     const handleSubmitFooter = () => {
         if (selectedTemplates.length > 0) {
+            setDraftGoals(selectedTemplates as any);
             onUseTemplate?.(selectedTemplates, 'cascade');
         }
     };
@@ -132,26 +119,39 @@ const TeamGoalLibraryPopup: React.FC<TeamGoalLibraryPopupProps> = ({ onClose, on
                                 </button>
                             )}
                         </div>
-                        <Select
-                            options={departmentOptions}
+                        <AsyncSelect
+                            fetchOptions={async (search, skip) => {
+                                const res = await fetchDepartmentOptions(currentCompany)(search, skip);
+                                return skip === 0 ? [{ label: 'All Departments', value: 'All' }, ...res] : res;
+                            }}
                             value={selectedDepartment}
-                            onChange={setSelectedDepartment}
-                            searchable
+                            onChange={(opt: any) => {
+                                setSelectedDepartment(opt);
+                                setSelectedLevel({ label: 'All Designations', value: 'All' });
+                            }}
                             className="relative w-full min-w-0 [&>button]:h-9 [&>button]:min-w-0 [&>button]:px-3 [&>button]:text-sm [&>div]:!w-full sm:[&>button]:h-11"
+                            placeholder="Search department..."
                         />
-                        <Select
-                            options={levelOptions}
+                        <AsyncSelect
+                            fetchOptions={async (search, skip) => {
+                                const res = await fetchDesignationOptions(selectedDepartment.value)(search, skip);
+                                return skip === 0 ? [{ label: 'All Designations', value: 'All' }, ...res] : res;
+                            }}
                             value={selectedLevel}
-                            onChange={setSelectedLevel}
-                            searchable
+                            onChange={(opt: any) => setSelectedLevel(opt)}
                             className="relative w-full min-w-0 sm:col-span-2 lg:col-span-1 [&>button]:h-9 [&>button]:min-w-0 [&>button]:px-3 [&>button]:text-sm [&>div]:!w-full sm:[&>button]:h-11"
+                            placeholder="Search designation..."
                         />
                     </div>
                 </div>
 
-                {/* Content Area: GoalItemCard List */}
+                {/* Content Area: GoalItemCard List / Skeleton / Error */}
                 <div className="px-4 py-4 sm:min-h-0 sm:flex-1 sm:overflow-y-auto sm:px-5 space-y-3.5">
-                    {filteredGoals.length === 0 ? (
+                    {teamGoalsLoading ? (
+                        <TeamGoalSkeleton />
+                    ) : error ? (
+                        <TeamGoalError error={error} onRetry={refetch} />
+                    ) : goals.length === 0 ? (
                         <div className="flex flex-col items-center justify-center py-12 text-center rounded-xl border border-dashed border-gray-200 bg-gray-50/50 p-6">
                             <Search className="h-8 w-8 text-gray-400 mb-2" />
                             <Typography variant="bodyMedium" className="font-semibold text-gray-700">
@@ -162,11 +162,11 @@ const TeamGoalLibraryPopup: React.FC<TeamGoalLibraryPopupProps> = ({ onClose, on
                             </Typography>
                         </div>
                     ) : (
-                        filteredGoals.map((goal, index) => {
-                            const isSelected = selectedTemplates.some((t) => t.id === goal.id);
+                        goals.map((goal: CascadeGoal, index) => {
+                            const isSelected = selectedKeysSet.has(goal.goal);
                             return (
                                 <GoalItemCard
-                                    key={goal.id}
+                                    key={goal.goal}
                                     goal={goal}
                                     index={index}
                                     isSelected={isSelected}
@@ -199,6 +199,53 @@ const TeamGoalLibraryPopup: React.FC<TeamGoalLibraryPopupProps> = ({ onClose, on
             </div>
         </div>
     );
+};
+function TeamGoalSkeleton() {
+    return  <div className="space-y-3.5">
+        {Array.from({ length: 2 }).map((_, index) => (
+            <div
+            key={index}
+            className="flex flex-col justify-between gap-5 rounded-2xl border border-gray-200/80 bg-white p-5 animate-pulse sm:flex-row sm:items-center sm:p-6"
+            >
+                <div className="flex items-start gap-4 min-w-0 flex-1">
+                    <div className="h-9 w-9 shrink-0 rounded-xl bg-gray-200" />
+                    <div className="min-w-0 flex-1 space-y-2">
+                        <div className="flex flex-wrap items-center gap-2 mb-2">
+                            <div className="h-5 w-32 rounded-md bg-amber-100/60" />
+                            <div className="h-5 w-24 rounded-md bg-indigo-50/80" />
+                            <div className="h-4 w-16 rounded bg-gray-200" />
+                        </div>
+                        <div className="h-5 w-3/4 rounded bg-gray-200" />
+                        <div className="h-4 w-1/2 rounded bg-gray-100 mt-1.5" />
+                    </div>
+                </div>
+                <div className="h-9 w-24 shrink-0 rounded-xl bg-gray-200 self-end sm:self-center" />
+            </div>
+        ))}
+    </div>
+}
+
+
+function TeamGoalError ({ error, onRetry }: { error: any; onRetry: () => void }) {
+    return <div className="flex flex-col items-center justify-center py-12 text-center rounded-2xl border border-red-100 bg-red-50/40 p-6">
+        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-red-100/80 text-red-600 mb-3 shadow-2xs">
+            <AlertCircle className="h-6 w-6" />
+        </div>
+        <Typography variant="bodyMedium" className="font-semibold text-gray-800 text-base">
+            Failed to load manager & department goals
+        </Typography>
+        <Typography variant="caption" className="text-gray-500 mt-1 max-w-sm leading-relaxed">
+            {error?.message || "An unexpected error occurred while fetching cascade goals. Please check your connection and try again."}
+        </Typography>
+        <Button
+            type="button"
+            variant="outline"
+            className="mt-4 h-9 rounded-xl border-red-200 bg-white px-5 text-xs font-semibold text-red-600 shadow-2xs hover:bg-red-50 hover:border-red-300 transition-all"
+            onClick={onRetry}
+        >
+            Try Again
+        </Button>
+    </div>
 };
 
 export default React.memo(TeamGoalLibraryPopup);

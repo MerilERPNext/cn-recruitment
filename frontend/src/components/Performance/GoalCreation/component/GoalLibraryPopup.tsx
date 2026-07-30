@@ -4,12 +4,12 @@ import Button from '../../../shared/atoms/Button';
 import { AsyncSelect } from '../../../shared/atoms/AsyncSelect';
 import { Typography } from '../../../shared/atoms/Typography';
 import { GoalTemplate, filterTemplates, getGoalKey } from './goal-model/types';
-import RecommendedTemplates, { recommendedTemplatesData } from './goal-model/RecommendedTemplates';
+import RecommendedTemplates from './goal-model/RecommendedTemplates';
 import AllOrgTemplates  from './goal-model/AllOrgTemplates';
 import DepartmentTemplates, { departmentTemplatesData } from './goal-model/DepartmentTemplates';
 import RoleBasedTemplates, { roleBasedTemplatesData } from './goal-model/RoleBasedTemplates';
 import UsedByTeamTemplates, { usedByTeamTemplatesData } from './goal-model/UsedByTeamTemplates';
-import { fetchDepartmentOptions, fetchDesignationOptions, useReferanceGoals } from '../../../../hooks/usePerformance';
+import { fetchDepartmentOptions, fetchDesignationOptions, useGoalRepository, useReferanceGoals } from '../../../../hooks/usePerformance';
 import { useCurrentEmployeeDetails } from '../../../../hooks/useEmployee';
 import useDebounce from '../../../../hooks/useDebounce';
 import LoadingAllOrgSkeleton from './LoadingAllOrgSkeleton';
@@ -26,21 +26,64 @@ const GoalLibraryPopup = ({ onClose, onUseTemplate }: GoalLibraryPopupProps) => 
     const currentCompany = currentEmployee?.company;
     const [activeTab, setActiveTab] = useState<TabKey>('recommended');
     const [searchQuery, setSearchQuery] = useState('');
-    const debouncedSearchQuery = useDebounce(searchQuery, 300);
     const [selectedDepartment, setSelectedDepartment] = useState({ label: 'All Departments', value: 'All' });
     const [selectedLevel, setSelectedLevel] = useState({ label: 'All Designations', value: 'All' });
     const [selectedTemplates, setSelectedTemplates] = useState<GoalTemplate[]>([]);
     const [weightages, setWeightages] = useState<Record<string, number>>({});
+    const debouncedSearchQuery = useDebounce(searchQuery, 300);
     
-    const { data: refGoalsData, isLoading, error } = useReferanceGoals({
+    const { data: refGoalsData, isLoading, error, refetch: refetchRefGoals } = useReferanceGoals({
         search: debouncedSearchQuery || undefined,
         department: selectedDepartment.value !== 'All' ? selectedDepartment.value : undefined,
         designation: selectedLevel.value !== 'All' ? selectedLevel.value : undefined,
         cycle_only: 0,
-        exclude_own: 0,
-        limit: 50
+        exclude_own: 0
     });
+
+    const { data: goalRepo, isLoading: goalRepoLoading, error: goalRepoErr, refetch: refetchGoalRepo } = useGoalRepository({
+        search: debouncedSearchQuery || undefined,
+        department: selectedDepartment.value !== 'All' ? selectedDepartment.value : undefined,
+        designation: selectedLevel.value !== 'All' ? selectedLevel.value : undefined,
+        cycle_only: 0,
+        exclude_own: 0
+    });
+
     const goals = refGoalsData?.data?.goals || [];
+    const recommendedGoals: GoalTemplate[] | any = useMemo(() => {
+        if (goalRepo?.data?.repositories && Array.isArray(goalRepo.data.repositories) && goalRepo.data.repositories.length > 0) {
+            return goalRepo.data.repositories.map((repo) => {
+                const mappedGoals = (repo.goals || []).map((g) => ({
+                    id: g.goal_template,
+                    goal: g.goal_template,
+                    title: g.title,
+                    description: g.description,
+                    category: g.category,
+                    scorecard_pillar: g.scorecard_pillar,
+                    weightage: g.weightage,
+                    key_results: Array.isArray(g.key_results) ? g.key_results.map((kr: any) => ({
+                        title: kr.title,
+                        weightage: kr.weightage,
+                        metric: kr.metric,
+                        target: kr.target,
+                        target_type: kr.target_type,
+                    })) : []
+                }));
+
+                return {
+                    id: repo.repository,
+                    goal: repo.repository,
+                    title: repo.title,
+                    description: repo.description,
+                    usedCount: repo.usage_count,
+                    recommended: Boolean(repo.recommended),
+                    goal_count: repo.goal_count,
+                    total_weightage: repo.total_weightage,
+                    repository_goals: mappedGoals,
+                };
+            });
+        }
+        return (goalRepoLoading || goalRepo?.data?.repositories?.length === 0) ? [] : [];
+    }, [goalRepo, goalRepoLoading]);
 
     const handleToggleSelect = (template: GoalTemplate) => {
         const key = getGoalKey(template);
@@ -75,17 +118,20 @@ const GoalLibraryPopup = ({ onClose, onUseTemplate }: GoalLibraryPopupProps) => 
 
     const handleSubmitFooter = () => {
         if (selectedTemplates.length > 0) {
-            onUseTemplate?.(selectedTemplates, activeTab);
+            const allGoals = selectedTemplates.flatMap((t: any) =>
+                t.repository_goals ? t.repository_goals : t
+            );
+            onUseTemplate?.(allGoals, activeTab);
         }
     };
 
     const counts = useMemo(() => ({
-        recommended: filterTemplates(recommendedTemplatesData, debouncedSearchQuery, selectedDepartment.value, selectedLevel.value).length,
-        allOrg: filterTemplates(goals, debouncedSearchQuery, selectedDepartment.value, selectedLevel.value).length,
+        recommended: goalRepo?.data?.total ?? filterTemplates(recommendedGoals, debouncedSearchQuery, selectedDepartment.value, selectedLevel.value).length,
+        allOrg: refGoalsData?.data?.total ?? filterTemplates(goals, debouncedSearchQuery, selectedDepartment.value, selectedLevel.value).length,
         department: filterTemplates(departmentTemplatesData, debouncedSearchQuery, selectedDepartment.value, selectedLevel.value).length,
         roleBased: filterTemplates(roleBasedTemplatesData, debouncedSearchQuery, selectedDepartment.value, selectedLevel.value).length,
         usedByTeam: filterTemplates(usedByTeamTemplatesData, debouncedSearchQuery, selectedDepartment.value, selectedLevel.value).length,
-    }), [debouncedSearchQuery, selectedDepartment.value, selectedLevel.value, goals]);
+    }), [debouncedSearchQuery, selectedDepartment.value, selectedLevel.value, goals, recommendedGoals, refGoalsData?.data?.total, goalRepo?.data?.total]);
 
     const tabs: { key: TabKey; label: string; count: number }[] = useMemo(() => [
         { key: 'recommended', label: 'Recommended for you', count: counts.recommended },
@@ -100,8 +146,32 @@ const GoalLibraryPopup = ({ onClose, onUseTemplate }: GoalLibraryPopupProps) => 
     ], [counts, selectedDepartment.label, selectedDepartment.value]);
 
     const renderTemplates = () => {
+        if (goalRepoLoading && activeTab === 'recommended') {
+            return <LoadingAllOrgSkeleton />;
+        }
         if (isLoading && activeTab === 'all-org') {
             return <LoadingAllOrgSkeleton />;
+        }
+        if (goalRepoErr && activeTab === 'recommended') {
+            return (
+                <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-red-200 bg-red-50/40 p-8 text-center sm:py-12">
+                    <AlertCircle className="mb-2 h-8 w-8 text-red-500" />
+                    <Typography variant="bodyMedium" className="font-semibold text-gray-800">
+                        Failed to load recommended goals
+                    </Typography>
+                    <Typography variant="caption" className="mt-1 text-gray-500 max-w-sm">
+                        {goalRepoErr?.message || 'Something went wrong while fetching recommended goals.'}
+                    </Typography>
+                    <Button
+                        type="button"
+                        variant="outline"
+                        className="mt-4 text-xs font-medium"
+                        onClick={() => refetchGoalRepo()}
+                    >
+                        Try Again
+                    </Button>
+                </div>
+            );
         }
         if (error && activeTab === 'all-org') {
             return (
@@ -113,6 +183,14 @@ const GoalLibraryPopup = ({ onClose, onUseTemplate }: GoalLibraryPopupProps) => 
                     <Typography variant="caption" className="mt-1 text-gray-500 max-w-sm">
                         {error?.message || 'Something went wrong while fetching reference goals from server.'}
                     </Typography>
+                    <Button
+                        type="button"
+                        variant="outline"
+                        className="mt-4 text-xs font-medium"
+                        onClick={() => refetchRefGoals()}
+                    >
+                        Try Again
+                    </Button>
                 </div>
             );
         }
@@ -128,10 +206,11 @@ const GoalLibraryPopup = ({ onClose, onUseTemplate }: GoalLibraryPopupProps) => 
             weightages,
             onWeightageChange: handleWeightageChange,
             allOrgTemplatesData: goals,
+            
         };
 
         switch (activeTab) {
-            case 'recommended': return <RecommendedTemplates {...commonProps} />;
+            case 'recommended': return <RecommendedTemplates {...commonProps} recommendedTemplatesData={recommendedGoals} />;
             case 'all-org': return <AllOrgTemplates {...commonProps} />;
             case 'department': return <DepartmentTemplates {...commonProps} />;
             case 'role-based': return <RoleBasedTemplates {...commonProps} />;

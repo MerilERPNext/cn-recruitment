@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { Dispatch, SetStateAction, useMemo, useState } from 'react';
 import { ArrowRight, FileText, Plus, Inbox, Sparkles, GitMerge, CheckCircle, FolderX } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Typography } from '../../../shared/atoms/Typography';
@@ -19,13 +19,13 @@ const APP_NAME = "Performance";
 const PAGE_NAME = "Goal Creation";
 interface StartGoalSelectionProps {
     onContinue?: () => void;
-}
+    setActiveState?: Dispatch<SetStateAction<number>> }
 
 const StartGoalSelection = ({ onContinue }: StartGoalSelectionProps) => {
     const navigate = useNavigate();
     const { data: userUiPermission, isLoading: isPermissionLoading } = useGetUiPermission(APP_NAME)
     const { data: mandatoryGoals, isLoading, error, refetch } = useGetMandotaryGoals();
-    const { addDraftGoals } = useGoalModel();
+    const { addDraftGoals, setDraftGoals } = useGoalModel();
     const [isGoalLibraryOpen, setIsGoalLibraryOpen] = useState(false);
     const [acknowledgementGoalsData, setAcknowledgementGoalsData] = useState<Templates[] | undefined>(undefined);
     const [blankGoalDescription, setBlankGoalDescription] = useState(
@@ -280,14 +280,13 @@ const StartGoalSelection = ({ onContinue }: StartGoalSelectionProps) => {
                 onUseTemplate={(selected, source) => {
                     setIsGoalLibraryOpen(false);
                     const selectedGoals = Array.isArray(selected) ? selected : [selected];
-                    addDraftGoals(selectedGoals);
                     if (source === 'recommended') {
-                        onContinue?.();
+                        setDraftGoals(selectedGoals);
                     } else {
-                        navigate('/webapp/performance-app/my-goals/goal-draft', {
-                            state: { selectedGoals }
-                        });
+                        setDraftGoals([])
+                        addDraftGoals(selectedGoals);
                     }
+                    onContinue?.();
                 }}
             />
         </Modal>
@@ -299,13 +298,12 @@ const StartGoalSelection = ({ onContinue }: StartGoalSelectionProps) => {
         >
             <TeamGoalLibraryPopup
                 onClose={() => setOpenTeamGoals(false)}
-                onUseTemplate={(selected) => {
+                onUseTemplate={(selected ) => {
                     setOpenTeamGoals(false);
-                    const selectedGoals = Array.isArray(selected) ? selected : [selected];
-                    addDraftGoals(selectedGoals);
-                    navigate('/webapp/performance-app/my-goals/goal-draft', {
-                        state: { selectedGoals }
-                    });
+                    setDraftGoals(selected as any)
+                    onContinue?.()
+
+                    
                 }}
             />
         </Modal>
