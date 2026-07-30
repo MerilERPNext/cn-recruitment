@@ -505,3 +505,29 @@ def populate_employee_connector(employee_doc, onboarding_name):
     if not frappe.get_meta(EMPLOYEE_DOCTYPE).get_field(CONNECTOR_FIELD):
         return
     employee_doc.set(CONNECTOR_FIELD, onboarding_name)
+
+
+def apply_connector_fetch(employee_doc, onboarding_doc):
+    """Resolve the Field Flow ``fetch_from`` fields Onboarding -> Employee now.
+
+    The engine wires every flowed field as a ``fetch_from`` on Employee pointed
+    at :data:`CONNECTOR_FIELD`, but Frappe only resolves ``fetch_from``
+    server-side while saving (``_validate_links``) and client-side when the link
+    field *changes*. A mapped Employee reaches the form with the connector
+    already populated, so neither trigger fires and every flowed field opens
+    blank. Filling them here shows exactly the values the save would produce.
+
+    Mirrors Frappe's own ``fetch_if_empty`` handling so a value the mapper
+    already brought across is never overwritten.
+    """
+    meta = frappe.get_meta(EMPLOYEE_DOCTYPE)
+    if not meta.get_field(CONNECTOR_FIELD) or not employee_doc.get(CONNECTOR_FIELD):
+        return
+
+    for df in meta.get_fields_to_fetch(CONNECTOR_FIELD):
+        if df.get("fetch_if_empty") and employee_doc.get(df.fieldname):
+            continue
+
+        value = onboarding_doc.get(df.fetch_from.split(".")[-1])
+        if value not in (None, ""):
+            employee_doc.set(df.fieldname, value)

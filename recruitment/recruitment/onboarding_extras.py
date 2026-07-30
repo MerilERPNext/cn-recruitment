@@ -207,12 +207,13 @@ def _doj_joined(doc):
         frappe.db.set_value("Employee", doc.employee, "status", "Active")
         return
 
-    # Use the recruitment-overridden mapper so Recruitment Settings.mapping_fields apply.
-    from recruitment.customizations.employee_onboarding.employee_onboarding import (
-        make_employee as recruitment_make_employee,
-    )
+    # Use the recruitment mapper so the Recruitment Settings field mapping and the
+    # Field Flow chain apply here too. build_employee skips the Employee-create
+    # permission gate: this runs as whoever saved the Onboarding, and the insert
+    # below is already ignore_permissions.
+    from recruitment.auto_fetch_fields import build_employee
 
-    emp = recruitment_make_employee(doc.name)
+    emp = build_employee(doc.name)
     if not emp:
         return
 

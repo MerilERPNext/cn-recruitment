@@ -319,7 +319,13 @@ doc_events = {
     },
     "Job Applicant": {
         "before_insert": "recruitment.customizations.ta_duplicity_check.check_duplicity",
-        "before_save": "recruitment.customizations.job_applicant.validate_blacklist",
+        "before_save": [
+            "recruitment.customizations.job_applicant.validate_blacklist",
+            # Campus candidates arrive carrying their Campus Invite; resolve the
+            # Campus Drive that selected that invite so the drive link is filled
+            # for applications created after the drive was set up.
+            "recruitment.recruitment.campus_helpers.set_applicant_drive_from_invite",
+        ],
         # Hiring Lead Permission Settings (update candidate source).
         "validate": "recruitment.customizations.hiring_lead_permissions.validate_job_applicant_hiring_lead_edits",
         # Place a new applicant on the linked opening's first hiring stage

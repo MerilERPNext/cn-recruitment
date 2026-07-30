@@ -21,3 +21,4 @@ recruitment.patches.migrate_campus_invite_institutes
 recruitment.patches.create_tpo_campus_drives_block
 recruitment.patches.setup_education_stage_master
 recruitment.patches.backfill_stage_status_substatus
+recruitment.patches.backfill_campus_drive_on_applicants
