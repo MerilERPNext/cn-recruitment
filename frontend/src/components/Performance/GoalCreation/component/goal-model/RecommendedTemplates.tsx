@@ -38,7 +38,6 @@ const RecommendedTemplates = ({
                     onUseTemplate={(t) => {
                         const repoGoals = (t as any);
                         if (repoGoals) {
-                            console.log(repoGoals,']]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]')
                             onUseTemplate?.(repoGoals.repository_goals);
                         }
                     }}
