@@ -1,5 +1,5 @@
 import { Dispatch, SetStateAction, useMemo, useState } from 'react';
-import { ArrowRight, FileText, Plus, Inbox, Sparkles, GitMerge, CheckCircle, FolderX } from 'lucide-react';
+import { ArrowRight, FileText, Plus, Inbox, Sparkles, GitMerge, CheckCircle, FolderX, AlertCircle, RefreshCw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Typography } from '../../../shared/atoms/Typography';
 import Button from '../../../shared/atoms/Button';
@@ -7,19 +7,22 @@ import Modal from '../../../shared/Modal';
 import GoalLibraryPopup from './GoalLibraryPopup';
 import AcknowledgmentPopup, { getWeightageColor } from './AcknowledgmentPopup';
 import { useGoalModel } from '../../GoalModelContext';
-import { useGetMandotaryGoals } from '../../../../hooks/usePerformance';
-import {  Templates } from '../../../../types/goal';
+import { useCascadeMangerGoals, useGetMandotaryGoals } from '../../../../hooks/usePerformance';
+import { Templates } from '../../../../types/goal';
 import { useGetUiPermission } from '../../../../hooks/userUiPermission';
 import { getActionsEnabled } from '../../../../utils/uiPermission';
 import TeamGoalLibraryPopup from './TeamGoalLibraryPopup';
 import TemplateCard, { TemplateCardsSkeleton } from './GoalSelectionCard';
 import { MandatoryGoalsSkeleton, MandatoryGoalsError } from './MandatoryGoalsStatus';
+import toast from 'react-hot-toast';
+import { useCurrentEmployeeDetails } from '../../../../hooks/useEmployee';
 
 const APP_NAME = "Performance";
 const PAGE_NAME = "Goal Creation";
 interface StartGoalSelectionProps {
     onContinue?: () => void;
-    setActiveState?: Dispatch<SetStateAction<number>> }
+    setActiveState?: Dispatch<SetStateAction<number>>
+}
 
 const StartGoalSelection = ({ onContinue }: StartGoalSelectionProps) => {
     const navigate = useNavigate();
@@ -28,11 +31,15 @@ const StartGoalSelection = ({ onContinue }: StartGoalSelectionProps) => {
     const { addDraftGoals, setDraftGoals } = useGoalModel();
     const [isGoalLibraryOpen, setIsGoalLibraryOpen] = useState(false);
     const [acknowledgementGoalsData, setAcknowledgementGoalsData] = useState<Templates[] | undefined>(undefined);
-    const [blankGoalDescription, setBlankGoalDescription] = useState(
-        "Write your Objective + Key Results yourself. Best when your goal doesn't match anything in the library."
-    );
 
-    const [openTeamGoals, setOpenTeamGoals] = useState(false)
+    const { data: teamGoals, isLoading: teamGoalsLoading, error: teamGoalerr, refetch: refetchteamgoals } = useCascadeMangerGoals({
+        search: undefined,
+        department: undefined,
+        designation: undefined
+    });
+    const { data: currentEmployee } = useCurrentEmployeeDetails({ logged_in_employee_details: true })
+    console.log(currentEmployee,'================current employeee')
+const [openTeamGoals, setOpenTeamGoals] = useState(false)
     const permissions = getActionsEnabled(userUiPermission, [
         'start_from_blank',
         'use_goal_library',
@@ -78,7 +85,7 @@ const StartGoalSelection = ({ onContinue }: StartGoalSelectionProps) => {
                         <Typography variant="subheading" className="font-semibold text-gray-900 mb-4">
                             {goalsCount > 0
                                 ? `You have ${goalsCount} mandatory OKRs to acknowledge before adding your own.`
-                                : 'No mandatory OKRs assigned at this time.'}
+                                    : 'No Mandatory OKRs Assigned.'}
                         </Typography>
                         <div className="flex flex-wrap gap-3">
                             {goalsCount > 0 ? (
@@ -95,7 +102,7 @@ const StartGoalSelection = ({ onContinue }: StartGoalSelectionProps) => {
                             ) : (
                                 <div className="flex items-center gap-2 text-gray-400 text-sm">
                                     <CheckCircle className="w-4 h-4 text-gray-400" />
-                                    <span>No mandatory OKRs assigned at this time.</span>
+                                            <span>You're all set! You can proceed to create your custom OKRs.</span>
                                 </div>
                             )}
                         </div>
@@ -106,7 +113,7 @@ const StartGoalSelection = ({ onContinue }: StartGoalSelectionProps) => {
                             variant="contain"
                             bgColor="error"
                             disabled={goalsCount === 0}
-                                className="w-full md:w-auto justify-center bg-[#E35D6A] hover:bg-[#cb4f5b] text-white disabled:bg-gray-300 disabled:text-gray-500 disabled:opacity-60"
+                            className="w-full md:w-auto justify-center bg-[#E35D6A] hover:bg-[#cb4f5b] text-white disabled:bg-gray-300 disabled:text-gray-500 disabled:opacity-60"
                         >
                             Acknowledge {goalsCount} <ArrowRight className="w-4 h-4 ml-1" />
                         </Button>
@@ -128,8 +135,8 @@ const StartGoalSelection = ({ onContinue }: StartGoalSelectionProps) => {
                             iconClass="w-12 h-12 rounded-xl bg-blue-50 text-blue-500 flex items-center justify-center shrink-0"
                             title="Start from blank"
                             description="Write your own OKR from scratch — full creative control."
-                            statPrimary="Used by 18% of PW employees"
-                            statSecondary="Median time: ~ 4 minutes"
+
+
                             onUse={() => {
                                 setDraftGoals([]);
                                 onContinue?.();
@@ -137,12 +144,11 @@ const StartGoalSelection = ({ onContinue }: StartGoalSelectionProps) => {
                             ariaLabel="Use start from blank"
                             buttonClass="bg-blue-500 hover:bg-blue-600 text-white"
                         >
-                            <textarea
-                                aria-label="Start from blank description"
-                                className="mt-4 min-h-[92px] w-full resize-none rounded-lg border border-gray-100 bg-blue-50 p-4 text-sm leading-6 text-gray-900 outline-none transition focus:border-blue-300 focus:bg-white focus:ring-2 focus:ring-blue-100"
-                                value={blankGoalDescription}
-                                onChange={(event) => setBlankGoalDescription(event.target.value)}
-                            />
+                            <div className="mt-4 rounded-xl border border-blue-100 bg-blue-50/60 p-4">
+                                <Typography className="text-xs sm:text-sm leading-relaxed text-slate-700 font-normal">
+                                    Build a completely customized OKR from scratch tailored to your role. Set your own Objectives, Key Results, metrics, and weightages with total flexibility.
+                                </Typography>
+                            </div>
                         </TemplateCard>
                     )}
 
@@ -153,18 +159,16 @@ const StartGoalSelection = ({ onContinue }: StartGoalSelectionProps) => {
                             iconClass="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-500 flex items-center justify-center shrink-0"
                             title="From Goal Library"
                             description="Browse 500+ pre-built OKR templates by role, department, and grade."
-                            statPrimary="Most popular · 142 templates for Design"
-                            statSecondary="Median time: ~ 90 seconds"
                             onUse={() => setIsGoalLibraryOpen(true)}
                             ariaLabel="Use goal library"
                             buttonClass="bg-indigo-500 hover:bg-indigo-600 text-white"
                         >
                             <div className="mt-4 flex flex-wrap gap-2">
-                                <span className="bg-indigo-50 text-indigo-600 text-xs px-2.5 py-1 rounded-md">Design craft +12</span>
-                                <span className="bg-indigo-50 text-indigo-600 text-xs px-2.5 py-1 rounded-md">Mentorship</span>
-                                <span className="bg-indigo-50 text-indigo-600 text-xs px-2.5 py-1 rounded-md">Systems thinking</span>
-                                <span className="bg-indigo-50 text-indigo-600 text-xs px-2.5 py-1 rounded-md">Cross-functional</span>
-                                <span className="bg-indigo-50 text-indigo-600 text-xs px-2.5 py-1 rounded-md">+138 more</span>
+                                <span className="bg-indigo-50 text-indigo-600 text-xs px-2.5 py-1 rounded-md">Recommended for you</span>
+                                <span className="bg-indigo-50 text-indigo-600 text-xs px-2.5 py-1 rounded-md">Org templates</span>
+                                <span className="bg-indigo-50 text-indigo-600 text-xs px-2.5 py-1 rounded-md">Department</span>
+                                <span className="bg-indigo-50 text-indigo-600 text-xs px-2.5 py-1 rounded-md">Designation</span>
+                                <span className="bg-indigo-50 text-indigo-600 text-xs px-2.5 py-1 rounded-md">Role-based</span>
                             </div>
                         </TemplateCard>
                     )}
@@ -202,42 +206,103 @@ const StartGoalSelection = ({ onContinue }: StartGoalSelectionProps) => {
                     {/* Cascade Card */}
                     {canCascade && (
                         <TemplateCard
-                            containerClass={`overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm flex flex-col ${!canUseAI ? 'lg:col-span-2' : ''}`}
+                            containerClass={`overflow-hidden rounded-2xl border ${teamGoalsLoading
+                                ? 'border-slate-200 bg-white'
+                                : teamGoalerr
+                                    ? 'border-red-200 bg-red-50/20'
+                                    : (teamGoals?.data?.goals?.length ?? 0) > 0
+                                        ? 'border-slate-200 bg-white'
+                                        : 'border-gray-200 bg-gray-50/60 opacity-80'
+                                } shadow-sm flex flex-col ${!canUseAI ? 'lg:col-span-2' : ''}`}
                             icon={<GitMerge className="h-4 w-4" />}
-                            iconClass="rounded-xl bg-indigo-50 p-2 text-indigo-500 flex items-center justify-center shrink-0"
+                            iconClass={`rounded-xl ${teamGoalsLoading
+                                ? 'bg-indigo-50 text-indigo-500 animate-pulse'
+                                : teamGoalerr
+                                    ? 'bg-red-100 text-red-500'
+                                    : (teamGoals?.data?.goals?.length ?? 0) > 0
+                                        ? 'bg-indigo-50 text-indigo-500'
+                                        : 'bg-gray-200 text-gray-400'
+                                } p-2 flex items-center justify-center shrink-0`}
                             title="Cascade from Manager"
-                            description="Inherit a sub-OKR from one of Rohit Khanna’s 4 active goals."
-                            statPrimary="Arithmetic cascading · 4 parents available"
-                            statSecondary="Median time: ~ 2 minutes"
-                            onUse={() => setOpenTeamGoals(true)}
-                            buttonClass="bg-indigo-500 hover:bg-indigo-600 text-white"
+                            description={
+                                teamGoalsLoading
+                                    ? 'Loading manager goals...'
+                                    : teamGoalerr
+                                        ? 'Failed to load manager goals.'
+                                        : (teamGoals?.data?.goals?.length ?? 0) > 0
+                                            ? `Inherit a sub-OKR from one of ${currentEmployee?.reports_to_name ?? "-"}'s ${teamGoals?.data?.goals?.length} active goals.`
+                                            : 'No active manager goals available to cascade.'
+                            }
+                            statPrimary={
+                                teamGoalsLoading
+                                    ? 'Fetching active goals...'
+                                    : teamGoalerr
+                                        ? 'Error fetching goals'
+                                        : (teamGoals?.data?.goals?.length ?? 0) > 0
+                                            ? `${teamGoals?.data?.goals?.length} active parent goal${(teamGoals?.data?.goals?.length ?? 0) > 1 ? 's' : ''}`
+                                            : '0 active parent goals available'
+                            }
+                            onUse={
+                                teamGoalsLoading
+                                    ? undefined
+                                    : teamGoalerr
+                                        ? () => refetchteamgoals()
+                                        : (teamGoals?.data?.goals?.length ?? 0) > 0
+                                            ? () => setOpenTeamGoals(true)
+                                            : () => toast('No manager goals available to cascade.')
+                            }
+                            buttonClass={
+                              teamGoalsLoading ? 'bg-gray-200 text-gray-400 cursor-not-allowed pointer-events-none'
+                                    : (teamGoals?.data?.goals?.length ?? 0) > 0
+                                        ? 'bg-indigo-500 hover:bg-indigo-600 text-white'
+                                        : 'bg-gray-200 text-gray-400 cursor-not-allowed pointer-events-none'
+                            }
+                            buttonText={'Use this'}
                         >
-                            <div className="mt-4 space-y-2">
-                                <div className="flex items-start justify-between gap-3 rounded-lg bg-slate-50 px-3 py-2">
-                                    <span className="min-w-0 text-[12px] text-slate-700">
-                                        Ship Design System v2 across 6 product surfaces
-                                    </span>
-                                    <span className="shrink-0 text-[12px] font-medium text-indigo-500">
-                                        25%
-                                    </span>
+                            {teamGoalsLoading ? (
+                                <div className="mt-4 space-y-2 animate-pulse">
+                                    <div className="h-8 w-full rounded-lg bg-slate-100"></div>
+                                    <div className="h-8 w-full rounded-lg bg-slate-100"></div>
                                 </div>
-                                <div className="flex items-start justify-between gap-3 rounded-lg bg-slate-50 px-3 py-2">
-                                    <span className="min-w-0 text-[12px] text-slate-700">
-                                        Reduce design-eng handoff time by 50%
-                                    </span>
-                                    <span className="shrink-0 text-[12px] font-medium text-indigo-500">
-                                        20%
-                                    </span>
+                            ) : teamGoalerr ? (
+                                <div className="mt-4 flex flex-col items-center justify-center p-3.5 rounded-xl border border-dashed border-red-200 bg-red-50/60 text-center">
+                                    <div className="flex items-center gap-1.5 text-red-600 mb-1">
+                                        <AlertCircle className="w-4 h-4" />
+                                        <Typography className="text-xs font-semibold">Failed to load manager goals</Typography>
+                                    </div>
+                                    <Typography className="text-[11px] text-slate-500 mb-2">
+                                        {teamGoalerr?.message || 'Something went wrong while fetching manager goals.'}
+                                    </Typography>
+                                    <button
+                                        type="button"
+                                        onClick={() => refetchteamgoals()}
+                                        className="text-xs font-semibold text-blue-600 hover:text-blue-700 underline inline-flex items-center gap-1"
+                                    >
+                                        <RefreshCw className="w-3 h-3" /> Try Again
+                                    </button>
                                 </div>
-                                <div className="flex items-start justify-between gap-3 rounded-lg bg-slate-50 px-3 py-2">
-                                    <span className="min-w-0 text-[12px] text-slate-700">
-                                        Hit team NPS 75+ from design partners
-                                    </span>
-                                    <span className="shrink-0 text-[12px] font-medium text-indigo-500">
-                                        15%
-                                    </span>
+                            ) : (teamGoals?.data?.goals?.length ?? 0) > 0 ? (
+                                <div className="mt-3 rounded-xl border border-slate-200/80 bg-slate-50/50 p-2 space-y-1.5">
+                                    {teamGoals?.data?.goals?.slice(0, 3).map((goal: any, index: number) => (
+                                        <div key={goal.goal || goal.id || index} className="flex items-start justify-between gap-3 rounded-lg bg-white border border-slate-100 px-3 py-2 shadow-2xs">
+                                            <span className="min-w-0 text-[12px] text-slate-700 font-medium truncate">
+                                                {goal.title || goal.goal_title}
+                                            </span>
+                                            {goal.weightage !== undefined && (
+                                                <span className="shrink-0 text-[12px] font-semibold text-indigo-600">
+                                                    {goal.weightage}%
+                                                </span>
+                                            )}
+                                        </div>
+                                    ))}
                                 </div>
-                            </div>
+                            ) : (
+                                <div className="mt-4 rounded-xl border border-dashed border-gray-300 bg-white/70 p-3.5 text-center">
+                                    <Typography className="text-xs text-gray-500 font-medium">
+                                        🚫 No active manager goals available to cascade.
+                                    </Typography>
+                                </div>
+                            )}
                         </TemplateCard>
                     )}
                 </>
@@ -301,12 +366,12 @@ const StartGoalSelection = ({ onContinue }: StartGoalSelectionProps) => {
         >
             <TeamGoalLibraryPopup
                 onClose={() => setOpenTeamGoals(false)}
-                onUseTemplate={(selected ) => {
+                onUseTemplate={(selected) => {
                     setOpenTeamGoals(false);
                     setDraftGoals(selected as any)
                     onContinue?.()
 
-                    
+
                 }}
             />
         </Modal>

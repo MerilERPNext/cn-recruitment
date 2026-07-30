@@ -5,10 +5,10 @@ import { AsyncSelect } from '../../../shared/atoms/AsyncSelect';
 import { Typography } from '../../../shared/atoms/Typography';
 import { GoalTemplate, filterTemplates, getGoalKey } from './goal-model/types';
 import RecommendedTemplates from './goal-model/RecommendedTemplates';
-import AllOrgTemplates  from './goal-model/AllOrgTemplates';
-import DepartmentTemplates, { departmentTemplatesData } from './goal-model/DepartmentTemplates';
+import AllOrgTemplates from './goal-model/AllOrgTemplates';
+import DepartmentTemplates from './goal-model/DepartmentTemplates';
+import DesignationTemplates from './goal-model/DesignationTemplates';
 import RoleBasedTemplates, { roleBasedTemplatesData } from './goal-model/RoleBasedTemplates';
-import UsedByTeamTemplates, { usedByTeamTemplatesData } from './goal-model/UsedByTeamTemplates';
 import { fetchDepartmentOptions, fetchDesignationOptions, useGoalRepository, useReferanceGoals } from '../../../../hooks/usePerformance';
 import { useCurrentEmployeeDetails } from '../../../../hooks/useEmployee';
 import useDebounce from '../../../../hooks/useDebounce';
@@ -19,7 +19,7 @@ interface GoalLibraryPopupProps {
     onUseTemplate?: (template: GoalTemplate | GoalTemplate[], source?: string) => void;
 }
 
-type TabKey = 'recommended' | 'all-org' | 'department' | 'role-based' | 'used-by-team';
+type TabKey = 'recommended' | 'all-org' | 'department' | 'designation' | 'role-based';
 
 const GoalLibraryPopup = ({ onClose, onUseTemplate }: GoalLibraryPopupProps) => {
     const { data: currentEmployee } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
@@ -31,21 +31,17 @@ const GoalLibraryPopup = ({ onClose, onUseTemplate }: GoalLibraryPopupProps) => 
     const [selectedTemplates, setSelectedTemplates] = useState<GoalTemplate[]>([]);
     const [weightages, setWeightages] = useState<Record<string, number>>({});
     const debouncedSearchQuery = useDebounce(searchQuery, 300);
-    
+
     const { data: refGoalsData, isLoading, error, refetch: refetchRefGoals } = useReferanceGoals({
         search: debouncedSearchQuery || undefined,
         department: selectedDepartment.value !== 'All' ? selectedDepartment.value : undefined,
         designation: selectedLevel.value !== 'All' ? selectedLevel.value : undefined,
-        cycle_only: 0,
-        exclude_own: 0
     });
 
     const { data: goalRepo, isLoading: goalRepoLoading, error: goalRepoErr, refetch: refetchGoalRepo } = useGoalRepository({
         search: debouncedSearchQuery || undefined,
         department: selectedDepartment.value !== 'All' ? selectedDepartment.value : undefined,
         designation: selectedLevel.value !== 'All' ? selectedLevel.value : undefined,
-        cycle_only: 0,
-        exclude_own: 0
     });
 
     const goals = refGoalsData?.data?.goals || [];
@@ -126,30 +122,34 @@ const GoalLibraryPopup = ({ onClose, onUseTemplate }: GoalLibraryPopupProps) => 
     };
 
     const counts = useMemo(() => ({
-        recommended: goalRepo?.data?.total ?? filterTemplates(recommendedGoals, debouncedSearchQuery, selectedDepartment.value, selectedLevel.value).length,
-        allOrg: refGoalsData?.data?.total ?? filterTemplates(goals, debouncedSearchQuery, selectedDepartment.value, selectedLevel.value).length,
-        department: filterTemplates(departmentTemplatesData, debouncedSearchQuery, selectedDepartment.value, selectedLevel.value).length,
+        recommended: recommendedGoals.length,
+        allOrg: goals.length,
+        department: goals.filter((g: any) => Boolean(g.department || g.department_title)).length,
+        designation: goals.filter((g: any) => Boolean(g.designation)).length,
         roleBased: filterTemplates(roleBasedTemplatesData, debouncedSearchQuery, selectedDepartment.value, selectedLevel.value).length,
-        usedByTeam: filterTemplates(usedByTeamTemplatesData, debouncedSearchQuery, selectedDepartment.value, selectedLevel.value).length,
     }), [debouncedSearchQuery, selectedDepartment.value, selectedLevel.value, goals, recommendedGoals, refGoalsData?.data?.total, goalRepo?.data?.total]);
 
     const tabs: { key: TabKey; label: string; count: number }[] = useMemo(() => [
         { key: 'recommended', label: 'Recommended for you', count: counts.recommended },
-        { key: 'all-org', label: 'All Org templates', count: counts.allOrg },
+        { key: 'all-org', label: 'Org templates', count: counts.allOrg },
         {
             key: 'department',
             label: selectedDepartment.value === 'All' ? 'Department' : `Department · ${selectedDepartment.label}`,
             count: counts.department,
         },
+        {
+            key: 'designation',
+            label: selectedLevel.value === 'All' ? 'Designation' : `Designation · ${selectedLevel.label}`,
+            count: counts.designation,
+        },
         { key: 'role-based', label: 'Role-based', count: counts.roleBased },
-        { key: 'used-by-team', label: 'Used by your team', count: counts.usedByTeam },
-    ], [counts, selectedDepartment.label, selectedDepartment.value]);
+    ], [counts, selectedDepartment.label, selectedDepartment.value, selectedLevel.label, selectedLevel.value]);
 
     const renderTemplates = () => {
         if (goalRepoLoading && activeTab === 'recommended') {
             return <LoadingAllOrgSkeleton />;
         }
-        if (isLoading && activeTab === 'all-org') {
+        if (isLoading && activeTab !== 'recommended') {
             return <LoadingAllOrgSkeleton />;
         }
         if (goalRepoErr && activeTab === 'recommended') {
@@ -173,7 +173,7 @@ const GoalLibraryPopup = ({ onClose, onUseTemplate }: GoalLibraryPopupProps) => 
                 </div>
             );
         }
-        if (error && activeTab === 'all-org') {
+        if (error && activeTab !== 'recommended') {
             return (
                 <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-red-200 bg-red-50/40 p-8 text-center sm:py-12">
                     <AlertCircle className="mb-2 h-8 w-8 text-red-500" />
@@ -206,15 +206,15 @@ const GoalLibraryPopup = ({ onClose, onUseTemplate }: GoalLibraryPopupProps) => 
             weightages,
             onWeightageChange: handleWeightageChange,
             allOrgTemplatesData: goals,
-            
+
         };
 
         switch (activeTab) {
             case 'recommended': return <RecommendedTemplates {...commonProps} recommendedTemplatesData={recommendedGoals} />;
             case 'all-org': return <AllOrgTemplates {...commonProps} />;
-            case 'department': return <DepartmentTemplates {...commonProps} />;
+            case 'department': return <DepartmentTemplates {...commonProps} recommendedTemplatesData={recommendedGoals} />;
+            case 'designation': return <DesignationTemplates {...commonProps} recommendedTemplatesData={recommendedGoals} />;
             case 'role-based': return <RoleBasedTemplates {...commonProps} />;
-            case 'used-by-team': return <UsedByTeamTemplates {...commonProps} />;
         }
     };
 

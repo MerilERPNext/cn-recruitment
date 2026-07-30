@@ -59,7 +59,7 @@ export const TemplateCard: React.FC<TemplateCardProps> = ({
                         </Button>
                     )}
                 </div>
-                <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-6 text-[11px] text-slate-400 mt-auto">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-6 text-[11px] text-slate-400 mt-3 sm:mt-4">
                     {statPrimary && <span>{statPrimary}</span>}
                     {statSecondary && <span>{statSecondary}</span>}
                 </div>
