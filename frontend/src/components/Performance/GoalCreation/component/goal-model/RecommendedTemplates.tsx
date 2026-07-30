@@ -1,7 +1,7 @@
 import React from 'react';
 import { Search } from 'lucide-react';
 import TemplateCard from './TemplateCard';
-import { GoalTemplate, TemplateListProps, filterTemplates, getGoalKey } from './types';
+import { GoalTemplate, TemplateListProps, getGoalKey } from './types';
 import { Typography } from '../../../../shared/atoms/Typography';
 
 
@@ -11,20 +11,11 @@ interface RecommendedTemplatesProps extends TemplateListProps {
 
 const RecommendedTemplates = ({
     onUseTemplate,
-    searchQuery = '',
-    selectedDepartment = 'All',
-    selectedDesignation = 'All',
-    recommendedTemplatesData,
+    recommendedTemplatesData = [],
 }: RecommendedTemplatesProps) => {
-    const templatesToUse = recommendedTemplatesData || [];
-    const filteredTemplates = filterTemplates(
-        templatesToUse,
-        searchQuery,
-        selectedDepartment,
-        selectedDesignation
-    );
+   
 
-    if (filteredTemplates.length === 0) {
+    if (recommendedTemplatesData.length === 0) {
         return (
             <div className="flex flex-col items-center justify-center py-12 text-center rounded-xl border border-dashed border-gray-200 bg-gray-50/50 p-6">
                 <Search className="h-8 w-8 text-gray-400 mb-2" />
@@ -40,14 +31,15 @@ const RecommendedTemplates = ({
 
     return (
         <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 xl:grid-cols-3">
-            {filteredTemplates.map((template) => (
+            {recommendedTemplatesData.map((template) => (
                 <TemplateCard
                     key={getGoalKey(template)}
                     template={template}
                     onUseTemplate={(t) => {
-                        const repoGoals = (t as any).repository_goals;
+                        const repoGoals = (t as any);
                         if (repoGoals) {
-                            onUseTemplate?.(repoGoals);
+                            console.log(repoGoals,']]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]')
+                            onUseTemplate?.(repoGoals.repository_goals);
                         }
                     }}
                 />

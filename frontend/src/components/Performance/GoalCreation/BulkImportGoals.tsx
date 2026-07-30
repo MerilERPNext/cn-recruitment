@@ -1125,7 +1125,7 @@ const BulkImportGoals: React.FC = () => {
                                     }
                                     placeholder={isDepartmentCol ? "Search department..." : "Search designation..."}
                                     disabled={isDesignationCol && !String(row["Department"] ?? "").trim()}
-                                    className="relative w-full !w-full"
+                                    className="relative  !w-full"
                                     useFixedPositioning
                                   />
                                 </div>
