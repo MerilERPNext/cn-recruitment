@@ -9,6 +9,7 @@ import DataListView from "../../DataListView";
 import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 import { useNavigate } from "react-router-dom";
+import WrapperHoverCard from "../../shared/WrapperHoverCard";
 
 
 // ─── Raw API shape ────────────────────────────────────────────────────────────
@@ -81,31 +82,31 @@ const mapOnboardingData = (rawData: ApiOnboardingItem[]): UiOnboarding[] => {
     const pending = counts?.pending ?? 0;
 
     return {
-    id: item.name,
-    employeeName: item.employee_name ?? "—",
-    jobApplicant: item.job_applicant ?? "—",
-    employee: item.employee ?? "—",
-    department: item.department ?? "—",
-    designation: item.designation_title ?? "—",
-    dateOfJoining: item.date_of_joining ?? "—",
-    boardingBeginsOn: item.boarding_begins_on ?? "—",
-    boardingStatus: item.boarding_status ?? "—",
-    approved,
-    rejected,
-    pending,
-    filled,
-    totalFields,
-    details: {
-      referenceNo: item.name,
+      id: item.name,
       employeeName: item.employee_name ?? "—",
       jobApplicant: item.job_applicant ?? "—",
       employee: item.employee ?? "—",
       department: item.department_title ?? "—",
-      designation: item.designation ?? "—",
+      designation: item.designation_title ?? "—",
       dateOfJoining: item.date_of_joining ?? "—",
       boardingBeginsOn: item.boarding_begins_on ?? "—",
       boardingStatus: item.boarding_status ?? "—",
-    },
+      approved,
+      rejected,
+      pending,
+      filled,
+      totalFields,
+      details: {
+        referenceNo: item.name,
+        employeeName: item.employee_name ?? "—",
+        jobApplicant: item.job_applicant ?? "—",
+        employee: item.employee ?? "—",
+        department: item.department_title ?? "—",
+        designation: item.designation ?? "—",
+        dateOfJoining: item.date_of_joining ?? "—",
+        boardingBeginsOn: item.boarding_begins_on ?? "—",
+        boardingStatus: item.boarding_status ?? "—",
+      },
     };
   });
 };
@@ -305,9 +306,10 @@ export default function EmployeeOnboardingList() {
                   style={{ gridTemplateColumns: columnWidths.join(" ") }}
                 >
                   <Typography variant="bodySmall" className="font-medium text-center">
-                    {item.employeeName}
+                    <WrapperHoverCard employeeId={item.employee}>
+                      {item.employeeName}
+                    </WrapperHoverCard>
                   </Typography>
-
                   <Typography variant="bodySmall" className="font-medium text-center">
                     {item.department}
                   </Typography>
@@ -379,7 +381,8 @@ export default function EmployeeOnboardingList() {
                     <div className="flex items-start justify-between">
                       <div className="flex flex-col gap-1">
                         <Typography variant="mobileCardLabel">Employee Name</Typography>
-                        <Typography variant="mobileCardValue">{item.employeeName}</Typography>
+                        <Typography variant="mobileCardValue">
+                          <WrapperHoverCard employeeId={item.employee}>{item.employeeName}</WrapperHoverCard></Typography>
                       </div>
                       <StatusBadge status={item.boardingStatus} />
                     </div>
