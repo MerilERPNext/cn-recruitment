@@ -109,7 +109,7 @@ def calculate_salary_structure(self, method=None):
         if ssa:
             doc = frappe.get_doc("Salary Structure Assignment", ssa)
             doc.salary_structure = self.custom_employee_salary_structure
-            doc.base = self.custom_base_salary
+            doc.custom_fixed_ctc_annual = self.custom_base_salary
             doc.income_tax_slab = self.custom_income_tax_slab
             doc.custom_is_epf=self.custom_epf
             doc.custom_epf_type=self.custom_epf_type
