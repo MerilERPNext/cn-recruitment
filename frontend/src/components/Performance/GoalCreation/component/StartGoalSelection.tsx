@@ -15,6 +15,7 @@ import TeamGoalLibraryPopup from './TeamGoalLibraryPopup';
 import TemplateCard, { TemplateCardsSkeleton } from './GoalSelectionCard';
 import { MandatoryGoalsSkeleton, MandatoryGoalsError } from './MandatoryGoalsStatus';
 import toast from 'react-hot-toast';
+import { useCurrentEmployeeDetails } from '../../../../hooks/useEmployee';
 
 const APP_NAME = "Performance";
 const PAGE_NAME = "Goal Creation";
@@ -36,8 +37,9 @@ const StartGoalSelection = ({ onContinue }: StartGoalSelectionProps) => {
         department: undefined,
         designation: undefined
     });
-
-    const [openTeamGoals, setOpenTeamGoals] = useState(false)
+    const { data: currentEmployee } = useCurrentEmployeeDetails({ logged_in_employee_details: true })
+    console.log(currentEmployee,'================current employeee')
+const [openTeamGoals, setOpenTeamGoals] = useState(false)
     const permissions = getActionsEnabled(userUiPermission, [
         'start_from_blank',
         'use_goal_library',
@@ -228,7 +230,7 @@ const StartGoalSelection = ({ onContinue }: StartGoalSelectionProps) => {
                                     : teamGoalerr
                                         ? 'Failed to load manager goals.'
                                         : (teamGoals?.data?.goals?.length ?? 0) > 0
-                                            ? `Inherit a sub-OKR from one of -'s ${teamGoals?.data?.goals?.length} active goals.`
+                                            ? `Inherit a sub-OKR from one of ${currentEmployee?.reports_to_name ?? "-"}'s ${teamGoals?.data?.goals?.length} active goals.`
                                             : 'No active manager goals available to cascade.'
                             }
                             statPrimary={
