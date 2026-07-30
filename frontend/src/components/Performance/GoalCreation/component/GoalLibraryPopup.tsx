@@ -128,6 +128,7 @@ const GoalLibraryPopup = ({ onClose, onUseTemplate }: GoalLibraryPopupProps) => 
         recommended: goalRepo?.data?.total ?? recommendedGoals.length,
         allOrg: refGoalsData?.data?.total ?? goals.length,
         department: goals.filter((g: any) => Boolean(g.department || g.department_title)).length,
+        designation: goals.filter((g: any) => Boolean(g.department || g.department_title)).length,
         roleBased: filterTemplates(roleBasedTemplatesData, debouncedSearchQuery, selectedDepartment.value, selectedLevel.value).length,
     }), [debouncedSearchQuery, selectedDepartment.value, selectedLevel.value, goals, recommendedGoals, refGoalsData?.data?.total, goalRepo?.data?.total]);
 

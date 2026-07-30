@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { CheckSquare, Square, Search } from 'lucide-react';
 import TemplateCard from './TemplateCard';
 import { GoalTemplate, TemplateListProps, getGoalKey } from './types';
@@ -17,30 +17,39 @@ const DepartmentTemplates = ({
     onWeightageChange,
     allOrgTemplatesData = []
 }: TemplateListProps) => {
-    const filteredTemplates = (allOrgTemplatesData || []).filter((t) => {
-        const hasDept = Boolean(t.department || t.department_title);
-        if (!hasDept) return false;
+    const filteredTemplates = useMemo(() => {
+        const query = searchQuery.trim().toLowerCase();
+        return (allOrgTemplatesData || []).filter((t) => {
+            const hasDept = Boolean(t.department || t.department_title);
+            if (!hasDept) return false;
 
-        if (searchQuery && searchQuery.trim() !== '') {
-            const query = searchQuery.trim().toLowerCase();
-            const titleMatch = (t.title || '').toLowerCase().includes(query);
-            const descMatch = (t.description || '').toLowerCase().includes(query);
-            return titleMatch || descMatch;
-        }
+            if (query) {
+                const titleMatch = (t.title || '').toLowerCase().includes(query);
+                const descMatch = (t.description || '').toLowerCase().includes(query);
+                return titleMatch || descMatch;
+            }
 
-        return true;
-    });
+            return true;
+        });
+    }, [allOrgTemplatesData, searchQuery]);
 
-    const selectedIds = selectedTemplates.map((t) => getGoalKey(t));
+    const selectedSet = useMemo(() => {
+        return new Set(selectedTemplates.map((t) => getGoalKey(t)));
+    }, [selectedTemplates]);
 
-    const isAllSelected =
-        filteredTemplates.length > 0 &&
-        filteredTemplates.every((t) => selectedIds.includes(getGoalKey(t)));
+    const isAllSelected = useMemo(() => {
+        return (
+            filteredTemplates.length > 0 &&
+            filteredTemplates.every((t) => selectedSet.has(getGoalKey(t)))
+        );
+    }, [filteredTemplates, selectedSet]);
 
-    const totalSelectedWeightage = selectedTemplates.reduce(
-        (acc, item) => acc + (weightages[getGoalKey(item)] ?? 10),
-        0
-    );
+    const totalSelectedWeightage = useMemo(() => {
+        return selectedTemplates.reduce(
+            (acc, item) => acc + (weightages[getGoalKey(item)] ?? 10),
+            0
+        );
+    }, [selectedTemplates, weightages]);
 
     if (filteredTemplates.length === 0) {
         return (
@@ -99,7 +108,7 @@ const DepartmentTemplates = ({
                         key={getGoalKey(template)}
                         template={template}
                         hideUseTemplate={true}
-                        isSelected={selectedIds.includes(getGoalKey(template))}
+                        isSelected={selectedSet.has(getGoalKey(template))}
                         onToggleSelect={onToggleSelect}
                         weightage={weightages[getGoalKey(template)] ?? 10}
                         onWeightageChange={onWeightageChange}
