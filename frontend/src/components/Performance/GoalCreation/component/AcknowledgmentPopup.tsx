@@ -68,10 +68,10 @@ const AcknowledgmentPopup: React.FC<AcknowledgmentProps> = ({ onClose, goalData 
                 onSuccess: () => {
                     toast.success("Mandatory OKRs acknowledged successfully");
                     queryClient.invalidateQueries({
-                        queryKey:[PERFORMANCE_QUERY_KEYS.mandatoryGoals]
+                        queryKey:PERFORMANCE_QUERY_KEYS.mandatoryGoals
                     });
                     queryClient.invalidateQueries({
-                        queryKey: [PERFORMANCE_QUERY_KEYS.myGoals]
+                        queryKey: PERFORMANCE_QUERY_KEYS.myGoals
                     });
                     onClose(false);
                     navigate("/webapp/performance-app/my-goals")
