@@ -771,7 +771,7 @@ const TicketTable: React.FC<TicketTableProps> = ({
                   className={`py-4 ${col.width} ${col.sortable ? "cursor-pointer hover:bg-gray-100" : ""} ${col.key === "name" ? "pl-6 pr-4" : "px-4"}`}
                   onClick={() => col.sortable && onSort(col.key)}
                 >
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1 justify-center">
                     <Typography
                       variant="bodySmall"
                       color="body2"
