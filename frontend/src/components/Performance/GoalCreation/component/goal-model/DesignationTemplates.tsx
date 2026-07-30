@@ -9,7 +9,6 @@ export const designationTemplatesData: GoalTemplate[] = [];
 
 const DesignationTemplates = ({
     onUseTemplate,
-    searchQuery = '',
     selectedTemplates = [],
     onToggleSelect,
     onSelectAll,
@@ -19,11 +18,11 @@ const DesignationTemplates = ({
 }: TemplateListProps) => {
     const filteredTemplates = useMemo(() => {
         return (allOrgTemplatesData || []).filter((t) => {
-            const hasDesignation = Boolean(t.designation );
+            const hasDesignation = Boolean(t?.designation);
             if (!hasDesignation) return false;
             return true;
         });
-    }, [allOrgTemplatesData, searchQuery]);
+    }, [allOrgTemplatesData]);
 
     const selectedSet = useMemo(() => {
         return new Set(selectedTemplates.map((t) => getGoalKey(t)));

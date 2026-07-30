@@ -122,8 +122,8 @@ const GoalLibraryPopup = ({ onClose, onUseTemplate }: GoalLibraryPopupProps) => 
     };
 
     const counts = useMemo(() => ({
-        recommended:  recommendedGoals.length,
-        allOrg:  goals.length,
+        recommended: recommendedGoals.length,
+        allOrg: goals.length,
         department: goals.filter((g: any) => Boolean(g.department || g.department_title)).length,
         designation: goals.filter((g: any) => Boolean(g.designation)).length,
         roleBased: filterTemplates(roleBasedTemplatesData, debouncedSearchQuery, selectedDepartment.value, selectedLevel.value).length,
@@ -149,7 +149,7 @@ const GoalLibraryPopup = ({ onClose, onUseTemplate }: GoalLibraryPopupProps) => 
         if (goalRepoLoading && activeTab === 'recommended') {
             return <LoadingAllOrgSkeleton />;
         }
-        if (isLoading && activeTab === 'all-org') {
+        if (isLoading && activeTab !== 'recommended') {
             return <LoadingAllOrgSkeleton />;
         }
         if (goalRepoErr && activeTab === 'recommended') {
@@ -173,7 +173,7 @@ const GoalLibraryPopup = ({ onClose, onUseTemplate }: GoalLibraryPopupProps) => 
                 </div>
             );
         }
-        if (error && activeTab === 'all-org') {
+        if (error && activeTab !== 'recommended') {
             return (
                 <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-red-200 bg-red-50/40 p-8 text-center sm:py-12">
                     <AlertCircle className="mb-2 h-8 w-8 text-red-500" />
