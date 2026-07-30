@@ -50,7 +50,6 @@ const EXPECTED_COLUMNS = [
   "Goal Title",
   "Sub Goal Title",
   "Sub Goal Weightage",
-  "Goal Type",
   "Department",
   "Designation",
   "Goal Weightage",
@@ -140,7 +139,6 @@ function generateTemplate(): void {
       "Improve product quality",
       "Reduce bug count by 30%",
       40,
-      "Individual",
       "Engineering",
       "Senior Engineer",
       25,
@@ -149,7 +147,6 @@ function generateTemplate(): void {
       "Improve product quality",
       "Achieve 95% test coverage",
       30,
-      "Individual",
       "Engineering",
       "Senior Engineer",
       25,
@@ -158,7 +155,6 @@ function generateTemplate(): void {
       "Improve product quality",
       "Ship zero P0 bugs in Q3",
       30,
-      "Individual",
       "Engineering",
       "Senior Engineer",
       25,
@@ -989,8 +985,8 @@ const BulkImportGoals: React.FC = () => {
             </Typography>
           </div>
 
-          <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
-            <div className="overflow-auto max-h-[480px]" style={{ overflow: "auto visible" }}>
+          <div className="rounded-xl border border-gray-200 bg-white shadow-sm" style={{ position: "relative" }}>
+            <div className="overflow-x-auto" style={{ maxHeight: "460px", overflowY: "auto" }}>
               <table className="w-full text-sm">
                 <thead className="sticky top-0 z-10">
                   <tr className="bg-gray-50 border-b border-gray-200">
@@ -1130,6 +1126,7 @@ const BulkImportGoals: React.FC = () => {
                                     placeholder={isDepartmentCol ? "Search department..." : "Search designation..."}
                                     disabled={isDesignationCol && !String(row["Department"] ?? "").trim()}
                                     className="relative w-full !w-full"
+                                    useFixedPositioning
                                   />
                                 </div>
                               ) : isEditing ? (
@@ -1247,7 +1244,7 @@ const BulkImportGoals: React.FC = () => {
             {
               title: "Optional Columns",
               description:
-                "Goal Type, Department, Designation, Goal Weightage.",
+                "Department, Designation, Goal Weightage.",
             },
             {
               title: "Template",

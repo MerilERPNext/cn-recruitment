@@ -16,6 +16,7 @@ interface AsyncSelectProps<T> {
     className?: string;
     placeholder?: string;
     fetchOptions: (search: string, skip: number) => Promise<SelectOption<T>[]>;
+    useFixedPositioning?: boolean;
 }
 
 export const AsyncSelect = <T extends string | number>({
@@ -26,6 +27,7 @@ export const AsyncSelect = <T extends string | number>({
     className = "",
     placeholder = "Search...",
     fetchOptions,
+    useFixedPositioning = false,
 }: AsyncSelectProps<T>) => {
     const [open, setOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");
@@ -35,6 +37,8 @@ export const AsyncSelect = <T extends string | number>({
     const [hasMore, setHasMore] = useState(true);
     const [skip, setSkip] = useState(0);
     const ref = useRef<HTMLDivElement>(null);
+    const buttonRef = useRef<HTMLButtonElement>(null);
+    const [dropdownPos, setDropdownPos] = useState<{ top: number; left: number; width: number }>({ top: 0, left: 0, width: 0 });
 
     const loadOptions = async (search: string, currentSkip: number, append: boolean) => {
         try {
@@ -82,6 +86,18 @@ export const AsyncSelect = <T extends string | number>({
         }
     }, [open]);
 
+    // Close dropdown on scroll when using fixed positioning to prevent detachment
+    useEffect(() => {
+        if (!open || !useFixedPositioning) return;
+        const handleParentScroll = (e: Event) => {
+            // Ignore scroll events from within this component
+            if (ref.current && ref.current.contains(e.target as Node)) return;
+            setOpen(false);
+        };
+        window.addEventListener("scroll", handleParentScroll, true);
+        return () => window.removeEventListener("scroll", handleParentScroll, true);
+    }, [open, useFixedPositioning]);
+
     const handleScroll = (event: React.UIEvent<HTMLUListElement>) => {
         const list = event.currentTarget;
         if (list.scrollTop + list.clientHeight >= list.scrollHeight - 8) {
@@ -89,6 +105,22 @@ export const AsyncSelect = <T extends string | number>({
                 loadOptions(debouncedSearch, skip, true);
             }
         }
+    };
+
+    const handleToggle = () => {
+        if (disabled) return;
+        setOpen((v) => {
+            const next = !v;
+            if (next && useFixedPositioning && buttonRef.current) {
+                const rect = buttonRef.current.getBoundingClientRect();
+                setDropdownPos({
+                    top: rect.bottom + 4,
+                    left: rect.left,
+                    width: rect.width,
+                });
+            }
+            return next;
+        });
     };
 
     return (
@@ -100,10 +132,11 @@ export const AsyncSelect = <T extends string | number>({
             )}
 
             <Button
+                ref={buttonRef}
                 variant="subtle"
                 size="md"
                 disabled={disabled}
-                onClick={() => setOpen((v) => !v)}
+                onClick={handleToggle}
                 className={`
           flex w-full items-center justify-between
           rounded-lg border border-gray-300
@@ -126,12 +159,17 @@ export const AsyncSelect = <T extends string | number>({
 
             {open && !disabled && (
                 <div
-                    className="
-            absolute z-50 mt-2 w-64
-            rounded-xl border border-gray-200
-            bg-white shadow-lg
-            animate-in fade-in zoom-in-95
-          "
+                    className={`
+              ${useFixedPositioning ? 'fixed' : 'absolute mt-2'} z-50
+              rounded-xl border border-gray-200
+              bg-white shadow-lg
+              animate-in fade-in zoom-in-95
+            `}
+                    style={useFixedPositioning ? {
+                        top: dropdownPos.top,
+                        left: dropdownPos.left,
+                        width: dropdownPos.width > 0 ? dropdownPos.width : 256,
+                    } : { width: '16rem' }}
                 >
                     <div className="p-2 pb-1">
                         <input
