@@ -5,7 +5,7 @@ import { AsyncSelect } from '../../../shared/atoms/AsyncSelect';
 import { Typography } from '../../../shared/atoms/Typography';
 import { GoalTemplate, filterTemplates, getGoalKey } from './goal-model/types';
 import RecommendedTemplates from './goal-model/RecommendedTemplates';
-import AllOrgTemplates  from './goal-model/AllOrgTemplates';
+import AllOrgTemplates from './goal-model/AllOrgTemplates';
 import DepartmentTemplates, { departmentTemplatesData } from './goal-model/DepartmentTemplates';
 import RoleBasedTemplates, { roleBasedTemplatesData } from './goal-model/RoleBasedTemplates';
 import UsedByTeamTemplates, { usedByTeamTemplatesData } from './goal-model/UsedByTeamTemplates';
@@ -19,7 +19,7 @@ interface GoalLibraryPopupProps {
     onUseTemplate?: (template: GoalTemplate | GoalTemplate[], source?: string) => void;
 }
 
-type TabKey = 'recommended' | 'all-org' | 'department' | 'role-based' | 'used-by-team';
+type TabKey = 'recommended' | 'all-org' | 'department' | 'designation' | 'role-based' | 'used-by-team';
 
 const GoalLibraryPopup = ({ onClose, onUseTemplate }: GoalLibraryPopupProps) => {
     const { data: currentEmployee } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
@@ -31,7 +31,7 @@ const GoalLibraryPopup = ({ onClose, onUseTemplate }: GoalLibraryPopupProps) => 
     const [selectedTemplates, setSelectedTemplates] = useState<GoalTemplate[]>([]);
     const [weightages, setWeightages] = useState<Record<string, number>>({});
     const debouncedSearchQuery = useDebounce(searchQuery, 300);
-    
+
     const { data: refGoalsData, isLoading, error, refetch: refetchRefGoals } = useReferanceGoals({
         search: debouncedSearchQuery || undefined,
         department: selectedDepartment.value !== 'All' ? selectedDepartment.value : undefined,
@@ -141,6 +141,11 @@ const GoalLibraryPopup = ({ onClose, onUseTemplate }: GoalLibraryPopupProps) => 
             label: selectedDepartment.value === 'All' ? 'Department' : `Department · ${selectedDepartment.label}`,
             count: counts.department,
         },
+        {
+            key: 'designation',
+            label: selectedLevel.value !== 'All' ? 'Designation' : `Designation· ${selectedLevel.label}`,
+            count: counts.department,
+        },
         { key: 'role-based', label: 'Role-based', count: counts.roleBased },
         { key: 'used-by-team', label: 'Used by team', count: counts.usedByTeam },
     ], [counts, selectedDepartment.label, selectedDepartment.value]);
@@ -206,7 +211,7 @@ const GoalLibraryPopup = ({ onClose, onUseTemplate }: GoalLibraryPopupProps) => 
             weightages,
             onWeightageChange: handleWeightageChange,
             allOrgTemplatesData: goals,
-            
+
         };
 
         switch (activeTab) {
