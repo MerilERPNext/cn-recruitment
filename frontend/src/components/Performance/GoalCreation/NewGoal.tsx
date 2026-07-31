@@ -108,32 +108,40 @@ const NewGoal: React.FC<NewGoalProps> = ({ onClose }) => {
             ? currentStep.title(selectedGoalType.value)
             : currentStep.title;
 
-    const steps = stepDefinitions.map((step, index) => ({
-        label: step.label,
-        active: index === safeStepIndex,
-    }));
+    const steps = useMemo(
+        () =>
+            stepDefinitions.map((step, index) => ({
+                label: step.label,
+                active: index === safeStepIndex,
+            })),
+        [safeStepIndex],
+    );
 
-    const isSaveDisabled = isLastStep && (
-        isSavingGoals ||
-        goalsToSave.length === 0 ||
-        goalsToSave.some(goal => {
+    const isSaveDisabled = useMemo(() => {
+        if (!isLastStep) return false;
+        if (isSavingGoals || goalsToSave.length === 0) return true;
+        return goalsToSave.some((goal) => {
             const hasEmptyTitle = !goal.title || goal.title.trim() === '';
             const keyResults = goal.key_results || [];
             const missingDepartment = !goal.department || goal.department.trim() === '';
             const missingDesignation = !goal.designation || goal.designation.trim() === '';
             const missingObjectiveWeightage = !goal.weightage || Number(goal.weightage) <= 0;
-
-            // KR validations only apply when at least one KR has a title filled
-            const krsWithTitle = keyResults.filter(kr => kr.title && kr.title.trim() !== '');
-            const hasKrWithMissingWeight = krsWithTitle.some(kr => !kr.weightage || Number(kr.weightage) <= 0);
+            const krsWithTitle = keyResults.filter((kr) => kr.title && kr.title.trim() !== '');
+            const hasKrWithMissingWeight = krsWithTitle.some((kr) => !kr.weightage || Number(kr.weightage) <= 0);
             const krWeightageSum = krsWithTitle.length > 0
                 ? keyResults.reduce((sum, kr) => sum + (Number(kr.weightage) || 0), 0)
                 : 0;
             const isKrSumInvalid = krsWithTitle.length > 0 && Math.abs(krWeightageSum - 100) > 0.01;
-
-            return hasEmptyTitle || missingDepartment || missingDesignation || missingObjectiveWeightage || hasKrWithMissingWeight || isKrSumInvalid;
-        })
-    );
+            return (
+                hasEmptyTitle ||
+                missingDepartment ||
+                missingDesignation ||
+                missingObjectiveWeightage ||
+                hasKrWithMissingWeight ||
+                isKrSumInvalid
+            );
+        });
+    }, [isLastStep, isSavingGoals, goalsToSave]);
 
     const handleSaveGoals = (action: GoalSaveAction) => {
         if (goalsToSave.length === 0) return;
