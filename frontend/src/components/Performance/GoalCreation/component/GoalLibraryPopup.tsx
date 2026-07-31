@@ -13,6 +13,7 @@ import { fetchDepartmentOptions, fetchDesignationOptions, useGoalRepository, use
 import { useCurrentEmployeeDetails } from '../../../../hooks/useEmployee';
 import useDebounce from '../../../../hooks/useDebounce';
 import LoadingAllOrgSkeleton from './LoadingAllOrgSkeleton';
+import { KeyResult } from '../../../../types/goal';
 
 interface GoalLibraryPopupProps {
     onClose?: () => void;
@@ -58,7 +59,7 @@ const GoalLibraryPopup = ({ onClose, onUseTemplate }: GoalLibraryPopupProps) => 
                     department: g.department,
                     scorecard_pillar: g.scorecard_pillar,
                     weightage: g.weightage,
-                    key_results: Array.isArray(g.key_results) ? g.key_results.map((kr: any) => ({
+                    key_results: Array.isArray(g.key_results) ? g.key_results.map((kr: KeyResult) => ({
                         title: kr.title,
                         weightage: kr.weightage,
                         metric: kr.metric,

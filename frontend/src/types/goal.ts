@@ -342,6 +342,8 @@ export interface KeyResult {
   achieved?: number | string;
   weightage?: number;
   status?: string;
+  metric: number | null;
+  target_type: string;
 }
 
 export interface ReferenceGoalsParams {

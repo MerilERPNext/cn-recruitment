@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { ChangeEvent, useMemo, useState } from "react";
 import { Form } from "@tsed/react-formio";
 import { format, isValid, parse } from "date-fns";
 import { ChevronDown, ChevronUp, X } from "lucide-react";
@@ -323,7 +323,7 @@ export const ObjectiveCard = ({
                   aria-label="Goal weightage"
                   className="h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm font-medium text-gray-900 outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100 placeholder:text-gray-400"
                   value={weightage === 0 ? "" : weightage}
-                  onChange={(e:any) => {
+                  onChange={(e: ChangeEvent<HTMLInputElement, HTMLInputElement>) => {
                     const rawVal = e.target.value;
                     if (rawVal === "") {
                       setWeightage(0);
