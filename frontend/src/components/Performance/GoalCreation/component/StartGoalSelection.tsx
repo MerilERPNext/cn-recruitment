@@ -38,7 +38,6 @@ const StartGoalSelection = ({ onContinue }: StartGoalSelectionProps) => {
         designation: undefined
     });
     const { data: currentEmployee } = useCurrentEmployeeDetails({ logged_in_employee_details: true })
-    console.log(currentEmployee,'================current employeee')
 const [openTeamGoals, setOpenTeamGoals] = useState(false)
     const permissions = getActionsEnabled(userUiPermission, [
         'start_from_blank',
@@ -188,7 +187,10 @@ const [openTeamGoals, setOpenTeamGoals] = useState(false)
                             description="Marissa proposes an OKR based on your role, last cycle, and recent check-ins."
                             statPrimary="Beta · 84% acceptance rate"
                             statSecondary="Median time: ~ 60 seconds"
-                            onUse={onContinue}
+                            onUse={()=>{
+                                setDraftGoals([]); 
+                                onContinue?.()
+                            }}
                             ariaLabel="Use AI suggested goal"
                             buttonClass="bg-amber-400 hover:bg-amber-500 text-slate-900"
                         >

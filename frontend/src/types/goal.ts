@@ -358,6 +358,8 @@ export interface GoalRepositoryGoal {
   goal_template: string;
   title: string;
   description: string;
+  department:string;
+  designation:string;
   category: string;
   scorecard_pillar: string | null;
   weightage: number;
