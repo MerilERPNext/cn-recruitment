@@ -38,7 +38,6 @@ const StartGoalSelection = ({ onContinue }: StartGoalSelectionProps) => {
         designation: undefined
     });
     const { data: currentEmployee } = useCurrentEmployeeDetails({ logged_in_employee_details: true })
-    console.log(currentEmployee,'================current employeee')
 const [openTeamGoals, setOpenTeamGoals] = useState(false)
     const permissions = getActionsEnabled(userUiPermission, [
         'start_from_blank',
