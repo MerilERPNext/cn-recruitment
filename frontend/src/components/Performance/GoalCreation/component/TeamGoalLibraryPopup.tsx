@@ -32,29 +32,28 @@ const TeamGoalLibraryPopup: React.FC<TeamGoalLibraryPopupProps> = ({ onClose, on
         department: selectedDepartment.value !== 'All' ? selectedDepartment.value : undefined,
         designation: selectedLevel.value !== 'All' ? selectedLevel.value : undefined,
     });
-    console.log(teamGoals, '=========================team goals');
 
     const goals = teamGoals?.data?.goals || [];
 
     const selectedKeysSet = useMemo(
-        () => new Set(selectedTemplates.map((t) => (t as any).goal || t.id)),
+        () => new Set(selectedTemplates.map((t) => (t).goal || t.id)),
         [selectedTemplates]
     );
     const handleToggleSelect = useCallback((goal: CascadeGoal | GoalTemplate) => {
         const item: GoalTemplate = {
-            id: (goal as any).goal || (goal as any).id,
-            goal: (goal as any).goal || (goal as any).id,
+            id: (goal).goal,
+            goal: (goal).goal,
             title: goal.title,
-            description: (goal as any).description || '',
-            category: (goal as any).category || '',
+            description: (goal).description || '',
+            category: (goal).category || '',
             department: goal.department || null,
-            weightage: (goal as any).weightage || 30,
-            scorecard_pillar: (goal as any).scorecard_pillar || null,
-            performance_cycle: (goal as any).performance_cycle,
-            owner_employee: (goal as any).owner_employee,
-            designation: (goal as any).owner_designation || (goal as any).designation,
-            usedCount: (goal as any).used_by_count || (goal as any).usedCount || 0,
-            key_results: (goal as any).key_results || [],
+            weightage: (goal).weightage || 30,
+            scorecard_pillar: (goal).scorecard_pillar || null,
+            performance_cycle: (goal).performance_cycle,
+            owner_employee: (goal).owner_employee,
+            designation: (goal).owner_designation || (goal).designation,
+            usedCount: (goal).used_by_count ,
+            key_results: (goal).key_results || [],
         };
         const key = item.goal || item.id || item.title;
         setSelectedTemplates((prev) =>
@@ -201,11 +200,11 @@ const TeamGoalLibraryPopup: React.FC<TeamGoalLibraryPopupProps> = ({ onClose, on
     );
 };
 function TeamGoalSkeleton() {
-    return  <div className="space-y-3.5">
+    return <div className="space-y-3.5">
         {Array.from({ length: 2 }).map((_, index) => (
             <div
-            key={index}
-            className="flex flex-col justify-between gap-5 rounded-2xl border border-gray-200/80 bg-white p-5 animate-pulse sm:flex-row sm:items-center sm:p-6"
+                key={index}
+                className="flex flex-col justify-between gap-5 rounded-2xl border border-gray-200/80 bg-white p-5 animate-pulse sm:flex-row sm:items-center sm:p-6"
             >
                 <div className="flex items-start gap-4 min-w-0 flex-1">
                     <div className="h-9 w-9 shrink-0 rounded-xl bg-gray-200" />
@@ -226,7 +225,7 @@ function TeamGoalSkeleton() {
 }
 
 
-function TeamGoalError ({ error, onRetry }: { error: any; onRetry: () => void }) {
+function TeamGoalError({ error, onRetry }: { error: any; onRetry: () => void }) {
     return <div className="flex flex-col items-center justify-center py-12 text-center rounded-2xl border border-red-100 bg-red-50/40 p-6">
         <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-red-100/80 text-red-600 mb-3 shadow-2xs">
             <AlertCircle className="h-6 w-6" />

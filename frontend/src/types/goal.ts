@@ -408,6 +408,7 @@ export interface CascadeGoal {
   owner_designation?: string | null;
   used_by_count?: number;
   key_results?: KeyResult[];
+  designation?:string
 }
 
 export interface CascadeGoalsData {
