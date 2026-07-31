@@ -250,7 +250,7 @@ const NewGoal: React.FC<NewGoalProps> = ({ onClose }) => {
                 footerRight={
                     <div className="flex w-full flex-col gap-2 md:flex-row md:items-center md:justify-end md:gap-3">
                         <div className="hidden items-center text-xs text-gray-500 md:flex">
-                            <span className="mr-1 text-gray-400">◷</span> Autosaved 4s ago
+                            <span className="mr-1 text-gray-400">◷</span> 
                         </div>
                         <Button
                             type="button"
