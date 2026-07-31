@@ -6,6 +6,7 @@ import Button from '../../shared/atoms/Button';
 import PageLayoutWrapper from '../../shared/PageLayoutWrapper';
 import { useGoalFormConfig, useSaveGoals } from '../../../hooks/usePerformance';
 import type { GoalSaveAction, GoalSaveItem, MyGoalsGoal } from '../../../types/goal';
+import { getPerformanceErrorMessage } from '../../../services/performanceService';
 
 const DefineGoal = lazy(() => import('./component/DefineGoal'));
 const StartGoalSelection = lazy(() => import('./component/StartGoalSelection'));
@@ -149,7 +150,7 @@ const NewGoal: React.FC<NewGoalProps> = ({ onClose }) => {
                     toast.success(response.message);
                     navigate('/webapp/performance-app/my-goals');
                 },
-                onError: () => toast.error('Unable to save goals. Please try again.'),
+                onError: (error) => toast.error(getPerformanceErrorMessage(error, 'Unable to save goals. Please try again.')),
             },
         );
     };

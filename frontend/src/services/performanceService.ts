@@ -20,6 +20,11 @@ import type {
   GoalRepositoryResponse,
   CascadeGoalsParams,
   CascadeGoalsResponse,
+  GoalDetailResponse,
+  GoalCheckInsResponse,
+  SubmitGoalCheckInPayload,
+  SubmitGoalCheckInResponse,
+  PerformanceOverviewResponse,
 } from "../types/goal";
 import FrappeAPI from "../utils/frappeAPI";
 
@@ -27,6 +32,38 @@ export type GroupedGoalItem = GroupGoalItem & { subgroup: SubGoalItem[] };
 
 const isGroupGoalItem = (item: GoalPlanItem): item is GroupGoalItem => item.is_group === 1;
 const isSubGoalItem = (item: GoalPlanItem): item is SubGoalItem => item.is_group === 0;
+
+const throwIfUnsuccessful = <T>(response: T): T => {
+  const apiResponse = response as { success?: boolean; message?: string } | null;
+  if (apiResponse?.success === false) {
+    throw new Error(apiResponse.message || "The request could not be completed.");
+  }
+  return response;
+};
+
+export const getPerformanceErrorMessage = (
+  error: unknown,
+  fallback: string,
+): string => {
+  const responseData = (error as {
+    response?: { data?: { message?: unknown; exception?: unknown; _server_messages?: unknown } };
+    message?: unknown;
+  })?.response?.data;
+  const message = responseData?.message;
+
+  if (typeof message === "string" && message.trim()) return message;
+  if (message && typeof message === "object") {
+    const payload = message as { message?: unknown; error?: unknown; error_message?: unknown };
+    for (const value of [payload.message, payload.error_message, payload.error]) {
+      if (typeof value === "string" && value.trim()) return value;
+    }
+  }
+  if (typeof responseData?.exception === "string" && responseData.exception.trim()) {
+    return responseData.exception.split(":").slice(1).join(":").trim() || responseData.exception;
+  }
+  if (error instanceof Error && error.message) return error.message;
+  return fallback;
+};
 
 export const performanceService = {
   getAllGoalPlans: async (employeeId: string): Promise<GoalPlanId[]> => {
@@ -46,17 +83,17 @@ export const performanceService = {
     return (response as GoalFormConfigResponse).data;
   },
 
-  addGoals: (body: Record<string, unknown>): Promise<unknown> =>
-    FrappeAPI.callMethod(
+  addGoals: async (body: Record<string, unknown>): Promise<unknown> =>
+    throwIfUnsuccessful(await FrappeAPI.callMethod(
       "cn_pms.cn_performance_management.doctype.goal_plan.goal_plan.add_goals_in_goal_plan",
       body,
-    ),
+    )),
 
-  updateGoals: (body: Record<string, unknown>): Promise<unknown> =>
-    FrappeAPI.callMethod(
+  updateGoals: async (body: Record<string, unknown>): Promise<unknown> =>
+    throwIfUnsuccessful(await FrappeAPI.callMethod(
       "cn_pms.cn_performance_management.doctype.goal_plan.goal_plan.update_goal_plan_items",
       body,
-    ),
+    )),
 
   getGoalPlanDetails: async (goalId: string): Promise<GoalPlanResponse> => {
     const response = await FrappeAPI.getMethod(
@@ -73,7 +110,7 @@ export const performanceService = {
       { payload },
     );
 
-    return response as SaveGoalsResponse;
+    return throwIfUnsuccessful(response as SaveGoalsResponse);
   },
 
   getMyGoals: async (): Promise<MyGoalsResponse> => {
@@ -92,7 +129,7 @@ export const performanceService = {
       { payload },
     );
 
-    return response as GoalActionResponse;
+    return throwIfUnsuccessful(response as GoalActionResponse);
   },
 
   deleteGoals: async (payload: DeleteGoalsPayload): Promise<GoalActionResponse> => {
@@ -101,7 +138,7 @@ export const performanceService = {
       { payload },
     );
 
-    return response as GoalActionResponse;
+    return throwIfUnsuccessful(response as GoalActionResponse);
   },
 
   getMandotaryGoals: async (): Promise<Message> => {
@@ -115,7 +152,7 @@ export const performanceService = {
       { payload },
     );
 
-    return response as GoalSubmitResponse;
+    return throwIfUnsuccessful(response as GoalSubmitResponse);
   },
   getDepartmentOptions: async (params: { search_text?: string; skip?: number; limit?: number; company?: string }): Promise<any> => {
     const response: any = await FrappeAPI.callMethod(
@@ -181,7 +218,38 @@ export const performanceService = {
       params as Record<string, unknown>
     );
     return response as CascadeGoalsResponse;
-  }
+  },
+
+  getGoalDetail: async (goalId: string): Promise<GoalDetailResponse> => {
+    const response = await FrappeAPI.getMethod(
+      "cn_pms.cn_performance_management.api.goal_api.get_goal_detail",
+      { goal: goalId },
+    );
+    return response as GoalDetailResponse;
+  },
+
+  submitGoalCheckIn: async (payload: SubmitGoalCheckInPayload): Promise<SubmitGoalCheckInResponse> => {
+    const response = await FrappeAPI.callMethod(
+      "cn_pms.cn_performance_management.api.goal_api.submit_check_in",
+      { payload },
+    );
+    return throwIfUnsuccessful(response as SubmitGoalCheckInResponse);
+  },
+
+  getGoalCheckIns: async (goalId: string): Promise<GoalCheckInsResponse> => {
+    const response = await FrappeAPI.getMethod(
+      "cn_pms.cn_performance_management.api.goal_api.get_goal_checkins",
+      { goal: goalId },
+    );
+    return response as GoalCheckInsResponse;
+  },
+
+  getOverview: async (): Promise<PerformanceOverviewResponse> => {
+    const response = await FrappeAPI.getMethod(
+      "cn_pms.cn_performance_management.api.goal_api.get_overview",
+    );
+    return response as PerformanceOverviewResponse;
+  },
 };
 
 

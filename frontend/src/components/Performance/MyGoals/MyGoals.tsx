@@ -25,6 +25,7 @@ import {
   useSubmitSelectedGoals,
 } from "../../../hooks/usePerformance";
 import type { MyGoalsGoal, MyGoalsKeyResult } from "../../../types/goal";
+import { getPerformanceErrorMessage } from "../../../services/performanceService";
 
 const getStatusVariant = (status?: string): BadgeVariant => {
   const s = (status ?? "").toLowerCase();
@@ -170,11 +171,7 @@ const MyGoals: React.FC<MyGoalsProps> = ({ onCreateGoal, onSelectGoal }) => {
       toast.success(response.message || "Selected goals submitted successfully.");
       setSelectedGoals([]);
     } catch (submitError) {
-      toast.error(
-        submitError instanceof Error
-          ? submitError.message
-          : "Failed to submit selected goals. Please try again.",
-      );
+      toast.error(getPerformanceErrorMessage(submitError, "Failed to submit selected goals. Please try again."));
     }
   };
 
@@ -194,11 +191,7 @@ const MyGoals: React.FC<MyGoalsProps> = ({ onCreateGoal, onSelectGoal }) => {
       );
       setGoalsToDelete([]);
     } catch (deleteError) {
-      toast.error(
-        deleteError instanceof Error
-          ? deleteError.message
-          : "Failed to delete goal(s). Please try again.",
-      );
+      toast.error(getPerformanceErrorMessage(deleteError, "Failed to delete goal(s). Please try again."));
     }
   };
 

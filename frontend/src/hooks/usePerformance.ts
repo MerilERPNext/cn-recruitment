@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient, type UseQueryResult } from "@tanstack/react-query";
-import type { DeleteGoalsPayload, GoalActionResponse, GoalFormConfig, GoalPlanId, GoalPlanResponse, GoalsRequest, GoalSubmitResponse, Message, MyGoalsResponse, ReferenceGoalsParams, ReferenceGoalsResponse, GoalRepositoryResponse, SaveGoalsPayload, SubmitSelectedGoalsPayload, CascadeGoalsParams, CascadeGoalsResponse } from "../types/goal";
+import type { DeleteGoalsPayload, GoalActionResponse, GoalFormConfig, GoalPlanId, GoalPlanResponse, GoalsRequest, GoalSubmitResponse, Message, MyGoalsResponse, ReferenceGoalsParams, ReferenceGoalsResponse, GoalRepositoryResponse, SaveGoalsPayload, SubmitSelectedGoalsPayload, CascadeGoalsParams, CascadeGoalsResponse, GoalDetailResponse, GoalCheckInsResponse, SubmitGoalCheckInPayload, SubmitGoalCheckInResponse, PerformanceOverviewResponse } from "../types/goal";
 import { performanceService } from "../services/performanceService";
 interface PerformanceQueryKey {
 
@@ -11,7 +11,9 @@ interface PerformanceQueryKey {
   referenceGoals: (params?: ReferenceGoalsParams) => ["performance", "reference-goals", ReferenceGoalsParams | undefined];
   goalRepository: (params?: ReferenceGoalsParams) => ["performance", "goal-repository", ReferenceGoalsParams | undefined];
   cascadeGoalManager: (params?: CascadeGoalsParams) => ["performance", "cascade-manager-goals", CascadeGoalsParams | undefined];
-
+  goalDetail: (goalId: string) => ["performance", "goal-detail", string];
+  goalCheckIns: (goalId: string) => ["performance", "goal-check-ins", string];
+  overview: ["performance", "overview"];
 
 }
 export const PERFORMANCE_QUERY_KEYS: PerformanceQueryKey = {
@@ -23,6 +25,9 @@ export const PERFORMANCE_QUERY_KEYS: PerformanceQueryKey = {
   referenceGoals: (params?: ReferenceGoalsParams) => ["performance", "reference-goals", params],
   goalRepository: (params?: ReferenceGoalsParams) => ["performance", "goal-repository", params],
   cascadeGoalManager: (params?: CascadeGoalsParams) => ["performance", "cascade-manager-goals", params],
+  goalDetail: (goalId: string) => ["performance", "goal-detail", goalId] as const,
+  goalCheckIns: (goalId: string) => ["performance", "goal-check-ins", goalId] as const,
+  overview: ["performance", "overview"] as const,
 };
 
 export const useGoalPlans = (employeeId: string): UseQueryResult<GoalPlanId[], Error> =>
@@ -170,3 +175,40 @@ export const useCascadeMangerGoals = (params?: CascadeGoalsParams, options?: { e
     staleTime: 2 * 60 * 1000,
   })
 }
+
+export const useGoalDetail = (goalId: string, options?: { enabled?: boolean }): UseQueryResult<GoalDetailResponse, Error> =>
+  useQuery<GoalDetailResponse, Error>({
+    queryKey: PERFORMANCE_QUERY_KEYS.goalDetail(goalId),
+    queryFn: () => performanceService.getGoalDetail(goalId),
+    enabled: (options?.enabled ?? true) && !!goalId,
+    refetchOnWindowFocus: true,
+    staleTime: 1 * 60 * 1000,
+  });
+
+export const useGoalCheckIns = (goalId: string): UseQueryResult<GoalCheckInsResponse, Error> =>
+  useQuery<GoalCheckInsResponse, Error>({
+    queryKey: PERFORMANCE_QUERY_KEYS.goalCheckIns(goalId),
+    queryFn: () => performanceService.getGoalCheckIns(goalId),
+    enabled: !!goalId,
+    staleTime: 30 * 1000,
+  });
+
+export const useSubmitGoalCheckIn = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation<SubmitGoalCheckInResponse, Error, SubmitGoalCheckInPayload>({
+    mutationFn: (payload) => performanceService.submitGoalCheckIn(payload),
+    onSuccess: (_response, payload) => {
+      queryClient.invalidateQueries({ queryKey: PERFORMANCE_QUERY_KEYS.goalCheckIns(payload.goal) });
+      queryClient.invalidateQueries({ queryKey: PERFORMANCE_QUERY_KEYS.goalDetail(payload.goal) });
+      queryClient.invalidateQueries({ queryKey: PERFORMANCE_QUERY_KEYS.myGoals });
+    },
+  });
+};
+
+export const usePerformanceOverview = (): UseQueryResult<PerformanceOverviewResponse, Error> =>
+  useQuery<PerformanceOverviewResponse, Error>({
+    queryKey: PERFORMANCE_QUERY_KEYS.overview,
+    queryFn: performanceService.getOverview,
+    staleTime: 5 * 60 * 1000,
+  });

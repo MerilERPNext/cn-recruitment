@@ -199,6 +199,7 @@ export interface MyGoalsData {
   employee: string;
   employee_name: string;
   designation: string;
+  designation_title: string;
   active_cycle: string;
   goals: MyGoalsGoal[];
   total: number;
@@ -427,4 +428,116 @@ export interface CascadeGoalsParams {
   designation?: string;
   limit?: number;
   start?: number;
+}
+
+// -------------------------
+// Goal Detail API Response
+// (from goal_api.get_goal_detail)
+// -------------------------
+export interface GoalDetailKeyResult {
+  goal_key: string;
+  goal: string | null;
+  title: string;
+  weightage: number;
+  metric?: string;
+  target?: number | string;
+  target_type?: string;
+  goal_status?: string;
+  achievement: number;
+  achieved?: number | string | null;
+  status?: string;
+}
+
+export interface GoalDetailData {
+  goal_key: string;
+  goal: string | null;
+  title: string;
+  description: string;
+  goal_type: string;
+  department: string;
+  department_title: string | null;
+  designation: string;
+  designation_title: string | null;
+  weightage: number;
+  status: string;
+  goal_status: string;
+  is_mandatory: number;
+  source_template: string | null;
+  achievement: number;
+  score: number;
+  goal_plan: string;
+  plan_status: string;
+  active_cycle: string | null;
+  active_cycle_title: string | null;
+  start_date: string | null;
+  end_date: string | null;
+  key_results: GoalDetailKeyResult[];
+}
+
+export interface GoalDetailResponse {
+  success: boolean;
+  message: string;
+  data: GoalDetailData;
+}
+
+export type GoalCheckInSentiment = "On Track" | "At Risk" | "Blocked";
+
+export interface SubmitGoalCheckInPayload {
+  goal: string;
+  new_value: number;
+  sentiment: GoalCheckInSentiment;
+  note: string;
+  attachment?: string;
+}
+
+export interface GoalCheckIn {
+  name: string;
+  checkin_date: string;
+  new_value: number;
+  progress: number;
+  sentiment: GoalCheckInSentiment;
+  note: string;
+  attachment: string | null;
+  creation: string;
+}
+
+export interface SubmitGoalCheckInResponse {
+  success: boolean;
+  message: string;
+  data: GoalCheckIn & {
+    check_in: string;
+    goal: string;
+    goal_key: string;
+    achievement: number;
+    status: string;
+  };
+}
+
+export interface GoalCheckInsResponse {
+  success: boolean;
+  message: string;
+  data: {
+    goal: string;
+    count: number;
+    check_ins: GoalCheckIn[];
+  };
+}
+
+export interface PerformanceOverviewData {
+  framework: string;
+  cycle_name: string;
+  status: string;
+  start_date: string;
+  end_date: string;
+  methodology: string;
+  description: string;
+  company: string;
+  configured_by: string;
+  participants: number;
+}
+
+export interface PerformanceOverviewResponse {
+  success: boolean;
+  message: string;
+  data: PerformanceOverviewData;
 }

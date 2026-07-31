@@ -22,6 +22,7 @@ import Button from "../../shared/atoms/Button";
 import { Typography } from "../../shared/atoms/Typography";
 import { AsyncSelect } from "../../shared/atoms/AsyncSelect";
 import { performanceService } from "../../../services/performanceService";
+import { getPerformanceErrorMessage } from "../../../services/performanceService";
 import { useCurrentEmployeeDetails } from "../../../hooks/useEmployee";
 import { useSaveGoals } from "../../../hooks/usePerformance";
 import type { GoalSaveItem } from "../../../types/goal";
@@ -371,7 +372,7 @@ const BulkImportGoals: React.FC = () => {
           toast.success(response.message || `${goals.length} goal(s) imported successfully!`);
           navigate('/webapp/performance-app/my-goals');
         },
-        onError: () => toast.error('Unable to import goals. Please try again.'),
+        onError: (error) => toast.error(getPerformanceErrorMessage(error, 'Unable to import goals. Please try again.')),
       },
     );
   }, [hasInvalidRows, parsedRows, saveGoals, navigate]);

@@ -1,134 +1,187 @@
-import React from 'react';
-import { Calendar, Check, Sparkles } from 'lucide-react';
+import React, { useState } from 'react';
+import { Calendar, Check, Sparkles, ChevronRight, X, Loader2, Target } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { Typography } from '../../../shared/atoms/Typography';
-import Badge from '../../../shared/Badge';
-import type { FeedbackItem, TaskItem } from '../types';
+import Badge, { type BadgeVariant } from '../../../shared/Badge';
+import Modal from '../../../shared/Modal';
+import { useMyGoals } from '../../../../hooks/usePerformance';
+import type { MyGoalsGoal } from '../../../../types/goal';
 
-const tasksData: TaskItem[] = [
-  {
-    id: 't1',
-    title: 'Complete Q1 Self-Review',
-    dueDate: 'Due in 9 days',
-    icon: Sparkles,
-    iconBgColor: 'bg-blue-50',
-    iconTextColor: 'text-blue-500',
-    buttonText: 'Continue'
-  },
-  {
-    id: 't2',
-    title: 'Nominate 4 peer reviewers',
-    dueDate: 'Due in 4 days',
-    icon: Check,
-    iconBgColor: 'bg-purple-50',
-    iconTextColor: 'text-purple-500',
-    buttonText: 'Nominate'
-  },
-  {
-    id: 't3',
-    title: 'Update progress on Goal: Oxygen 2.0',
-    dueDate: 'Not updated in 12 days',
-    icon: Calendar,
-    iconBgColor: 'bg-orange-50',
-    iconTextColor: 'text-orange-500',
-    buttonText: 'Check in'
-  }
-];
-
-const feedbackData: FeedbackItem[] = [
-  {
-    id: 'f1',
-    authorInitials: 'KI',
-    authorName: 'Karthik Iyer',
-    authorRole: 'Eng Lead',
-    type: 'Praise',
-    typeBgColor: 'bg-green-100 ',
-    typeTextColor: 'text-green-700',
-    quote: '"Pallavi\'s design system v2 audit unblocked a major release."'
-  },
-  {
-    id: 'f2',
-    authorInitials: 'NP',
-    authorName: 'Neha Patel',
-    authorRole: 'Product Manager',
-    type: 'Praise',
-    typeBgColor: 'bg-green-100 ',
-    typeTextColor: 'text-green-700',
-    quote: '"Excellent stakeholder management during the dashboard rebuild."'
-  },
-  {
-    id: 'f3',
-    authorInitials: 'RK',
-    authorName: 'Rohit Khanna',
-    authorRole: 'Manager \u00b7 1:1',
-    type: 'Coaching',
-    typeBgColor: 'bg-purple-100 ring-1 ring-inset ring-purple-300',
-    typeTextColor: 'text-purple-700',
-  }
-];
+const getStatusVariant = (status?: string): BadgeVariant => {
+  const s = (status ?? '').toLowerCase();
+  if (s === 'on-track' || s === 'completed') return 'success';
+  if (s === 'at-risk' || s === 'in progress') return 'warning';
+  if (s === 'off-track' || s === 'cancelled') return 'danger';
+  if (s === 'not started') return 'default';
+  return 'default';
+};
 
 const OverviewSidebar: React.FC = () => {
+  const navigate = useNavigate();
+  const [isCheckInModalOpen, setIsCheckInModalOpen] = useState(false);
+  const { data: myGoalsResponse, isLoading } = useMyGoals();
+
+  const goalsData = myGoalsResponse?.data;
+  const allGoals: MyGoalsGoal[] = goalsData?.goals ?? [];
+
   return (
     <div aria-label="Sidebar Content" className="min-w-0 space-y-4 sm:space-y-6">
+      {/* Tasks Awaiting Section */}
       <section aria-label="Tasks Section" className="min-w-0 rounded-xl border border-gray-100 bg-white p-4 shadow-sm sm:p-6">
         <header className="mb-4 flex min-w-0 items-center gap-3 sm:mb-6">
           <Typography variant="h4" className="font-bold text-gray-900">Tasks Awaiting You</Typography>
-          <div className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full text-sm font-medium">{tasksData.length}</div>
         </header>
 
         <div aria-label="Task List" className="space-y-3 sm:space-y-4">
-          {tasksData.map((task) => {
-            const Icon = task.icon;
-            return (
-              <article key={task.id} aria-label={`Task: ${task.title}`} className="flex min-w-0 flex-col gap-3 rounded-xl border border-gray-100 p-3 text-left min-[420px]:flex-row min-[420px]:items-center lg:border-0 lg:p-0">
-                <div className={`w-10 h-10 rounded-lg ${task.iconBgColor} ${task.iconTextColor} flex items-center justify-center shrink-0`}>
-                  <Icon className="w-5 h-5" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <Typography variant="bodySmall" className="mb-1 block break-words font-medium text-gray-900">{task.title}</Typography>
-                  <Typography variant="caption" className="block break-words text-gray-500">{task.dueDate}</Typography>
-                </div>
-                <button className="min-h-9 w-full shrink-0 rounded-lg border border-blue-200 px-3 py-1.5 text-sm font-medium text-blue-600 transition-colors hover:bg-blue-50 min-[420px]:w-auto sm:px-4" aria-label={task.buttonText}>
-                  {task.buttonText}
-                </button>
-              </article>
-            );
-          })}
+          {/* Task 1: Complete Self-Review → navigates to Review tab */}
+          <article aria-label="Task: Complete Q1 Self-Review" className="flex min-w-0 flex-col gap-3 rounded-xl border border-gray-100 p-3 text-left min-[420px]:flex-row min-[420px]:items-center lg:border-0 lg:p-0">
+            <div className="w-10 h-10 rounded-lg bg-blue-50 text-blue-500 flex items-center justify-center shrink-0">
+              <Sparkles className="w-5 h-5" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <Typography variant="bodySmall" className="mb-1 block break-words font-medium text-gray-900">Complete Q1 Self-Review</Typography>
+              <Typography variant="caption" className="block break-words text-gray-500">Due in 9 days</Typography>
+            </div>
+            <button
+              onClick={() => navigate('/webapp/performance-app/review')}
+              className="min-h-9 w-full shrink-0 rounded-lg border border-blue-200 px-3 py-1.5 text-sm font-medium text-blue-600 transition-colors hover:bg-blue-50 min-[420px]:w-auto sm:px-4"
+              aria-label="Continue to review"
+            >
+              Continue
+            </button>
+          </article>
+
+          {/* Task 2: Nominate peer reviewers */}
+          <article aria-label="Task: Nominate 4 peer reviewers" className="flex min-w-0 flex-col gap-3 rounded-xl border border-gray-100 p-3 text-left min-[420px]:flex-row min-[420px]:items-center lg:border-0 lg:p-0">
+            <div className="w-10 h-10 rounded-lg bg-purple-50 text-purple-500 flex items-center justify-center shrink-0">
+              <Check className="w-5 h-5" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <Typography variant="bodySmall" className="mb-1 block break-words font-medium text-gray-900">Nominate 4 peer reviewers</Typography>
+              <Typography variant="caption" className="block break-words text-gray-500">Due in 4 days</Typography>
+            </div>
+            <button
+              className="min-h-9 w-full shrink-0 rounded-lg border border-blue-200 px-3 py-1.5 text-sm font-medium text-blue-600 transition-colors hover:bg-blue-50 min-[420px]:w-auto sm:px-4"
+              aria-label="Nominate"
+            >
+              Nominate
+            </button>
+          </article>
+
+          {/* Task 3: Update progress → opens Check-in modal */}
+          <article aria-label="Task: Update progress on goals" className="flex min-w-0 flex-col gap-3 rounded-xl border border-gray-100 p-3 text-left min-[420px]:flex-row min-[420px]:items-center lg:border-0 lg:p-0">
+            <div className="w-10 h-10 rounded-lg bg-orange-50 text-orange-500 flex items-center justify-center shrink-0">
+              <Calendar className="w-5 h-5" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <Typography variant="bodySmall" className="mb-1 block break-words font-medium text-gray-900">Update progress on your goals</Typography>
+              <Typography variant="caption" className="block break-words text-gray-500">Track and update your goal progress regularly</Typography>
+            </div>
+            <button
+              onClick={() => setIsCheckInModalOpen(true)}
+              className="min-h-9 w-full shrink-0 rounded-lg border border-blue-200 px-3 py-1.5 text-sm font-medium text-blue-600 transition-colors hover:bg-blue-50 min-[420px]:w-auto sm:px-4"
+              aria-label="Check in"
+            >
+              Check in
+            </button>
+          </article>
         </div>
       </section>
 
+      {/* Recent Feedback Section */}
       <section aria-label="Feedback Section" className="min-w-0 rounded-xl border border-gray-100 bg-white p-4 shadow-sm sm:p-6">
         <header className="mb-2 flex min-w-0 items-center gap-3">
           <Typography variant="h4" className="font-bold text-gray-900">Recent Feedback</Typography>
-          <div className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full text-sm font-medium">{feedbackData.length + 2 /* keeping original count */}</div>
         </header>
         <Typography variant="bodySmall" className="text-gray-500 mb-6">Last 30 days</Typography>
 
-        <div aria-label="Feedback List" className="space-y-5 sm:space-y-6">
-          {feedbackData.map((feedback, index) => (
-            <React.Fragment key={feedback.id}>
-              <article aria-label={`Feedback from ${feedback.authorName}`} className="min-w-0">
-                <div className="mb-2 flex min-w-0 flex-col gap-2 min-[420px]:flex-row min-[420px]:items-start min-[420px]:justify-between min-[420px]:gap-3">
-                  <div className="flex min-w-0 items-center gap-3">
-                    <div className="w-8 h-8 shrink-0 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center font-medium text-sm">{feedback.authorInitials}</div>
-                    <div className="min-w-0">
-                      <Typography variant="bodyMedium" className="block break-words font-medium leading-snug text-gray-900">{feedback.authorName} <Typography component="span" variant="caption" className="font-normal sm:ml-1">&middot; {feedback.authorRole}</Typography></Typography>
-                    </div>
-                  </div>
-                  <div className="shrink-0">
-                    <Badge label={feedback.type} backgroundColor={feedback.typeBgColor} textColor={feedback.typeTextColor} size="sm" />
-                  </div>
-                </div>
-                {feedback.quote && (
-                  <Typography variant="bodySmall" className="block break-words text-gray-600 min-[420px]:pl-11">
-                    {feedback.quote}
-                  </Typography>
-                )}
-              </article>
-              {index < feedbackData.length - 1 && <div className="h-px bg-gray-100 min-[420px]:ml-11"></div>}
-            </React.Fragment>
-          ))}
+        <div aria-label="Feedback List" className="flex flex-col items-center justify-center py-8 text-center">
+          <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-gray-50">
+            <svg className="h-6 w-6 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M8.625 12a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H8.25m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H12m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 0 1-2.555-.337A5.972 5.972 0 0 1 5.41 20.97a5.969 5.969 0 0 1-.474-.065 4.48 4.48 0 0 0 .978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25Z" />
+            </svg>
+          </div>
+          <Typography variant="bodySmall" className="font-medium text-gray-500">No feedback received yet</Typography>
+          <Typography variant="caption" className="mt-1 text-gray-400">Feedback from your peers and managers will appear here</Typography>
         </div>
       </section>
+
+      {/* Check-in Modal: Goals List */}
+      <Modal isOpen={isCheckInModalOpen} onClose={() => setIsCheckInModalOpen(false)} size="md" className="sm:rounded-2xl">
+        <div className="flex flex-col">
+          {/* Modal Header */}
+          <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
+            <div className="flex items-center gap-2.5">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
+                <Target className="h-4 w-4" />
+              </div>
+              <Typography variant="h4" className="font-bold text-gray-900">Select a Goal to Check In</Typography>
+            </div>
+            <button
+              onClick={() => setIsCheckInModalOpen(false)}
+              className="flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
+              aria-label="Close modal"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+
+          {/* Modal Body */}
+          <div className="max-h-[60vh] overflow-y-auto p-4 sm:p-5">
+            {isLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="flex flex-col items-center gap-3">
+                  <Loader2 className="h-6 w-6 animate-spin text-blue-500" />
+                  <Typography variant="bodySmall" className="text-slate-500">Loading goals…</Typography>
+                </div>
+              </div>
+            ) : allGoals.length === 0 ? (
+              <div className="flex items-center justify-center py-12 text-center">
+                <div className="flex flex-col items-center gap-2">
+                  <Target className="h-8 w-8 text-gray-300" />
+                  <Typography variant="bodySmall" className="font-medium text-gray-500">No goals found</Typography>
+                  <Typography variant="caption" className="text-gray-400">Create goals first to check in on them</Typography>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {allGoals.map((goal) => (
+                  <button
+                    key={goal.goal_key || goal.name}
+                    onClick={() => {
+                      setIsCheckInModalOpen(false);
+                      navigate(`/webapp/performance-app/my-goals/${goal.goal_key || goal.name}`);
+                    }}
+                    className="flex w-full items-center gap-3 rounded-xl border border-gray-100 p-3 text-left transition-all hover:border-blue-200 hover:bg-blue-50/50 hover:shadow-sm sm:p-4"
+                  >
+                    <div className="flex min-w-0 flex-1 items-start gap-3">
+                      <div className="mt-0.5 shrink-0">
+                        <Badge label={goal.goal_type} variant="purple" size="sm" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <Typography variant="bodySmall" className="mb-1 block break-words font-semibold text-gray-900">{goal.title}</Typography>
+                        <Typography variant="caption" className="block break-words text-gray-500">
+                          Weightage <span className="font-semibold text-gray-700">{goal.weightage}%</span>
+                          {goal.department_title && <> &middot; {goal.department_title}</>}
+                        </Typography>
+                      </div>
+                    </div>
+                    <div className="flex shrink-0 items-center gap-3">
+                      <Badge
+                        label={goal.status}
+                        variant={getStatusVariant(goal.status)}
+                        size="sm"
+                        pulse={{ show: true }}
+                      />
+                      <ChevronRight className="h-4 w-4 text-gray-400" />
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 };
