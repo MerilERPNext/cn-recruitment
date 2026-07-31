@@ -3,7 +3,8 @@ import type React from "react";
 import { useState, useCallback } from "react";
 import { useGetLeaveBalance } from "../../hooks/useLeaves";
 import { useLoggedInUser } from "../../hooks/useLoggedInUser";
-import { useEmployeeByUserId } from "../../hooks/useEmployee";
+import { useEmployeeByUserId, useGetEmployeeDetailsByEmpId } from "../../hooks/useEmployee";
+import { useTargetUser } from "../../context/ViewedUserContext";
 import { LeaveBalanceSkeleton } from "./LeaveSkeletons";
 import HeaderBar from "../HeaderBar";
 import { useRequestLeaveModal } from "./RequestLeaveModalContext";
@@ -21,6 +22,7 @@ import { useGetUiPermission } from "../../hooks/userUiPermission";
 import { isActionEnabled } from "../../utils/uiPermission";
 import { Typography } from "../shared/atoms/Typography";
 import { NoDataFound } from "../shared/atoms/NoDataFound";
+import formatToIndianDate from "../../utils/formatToIndianDate";
 
 type LeaveTransactionEntry = {
   type: string;
@@ -70,9 +72,8 @@ const LeaveTransactionCard: React.FC<{
             type="button"
             aria-expanded={openIndex === idx}
             onClick={() => toggle(idx)}
-            className={`w-full flex items-center justify-between px-4 py-3 bg-white border border-gray-200 transition-all text-left hover:bg-gray-50 ${
-              openIndex === idx ? "rounded-t-lg border-b-0" : "rounded-lg"
-            }`}
+            className={`w-full flex items-center justify-between px-4 py-3 bg-white border border-gray-200 transition-all text-left hover:bg-gray-50 ${openIndex === idx ? "rounded-t-lg border-b-0" : "rounded-lg"
+              }`}
           >
             <Typography
               variant="bodyMedium"
@@ -92,9 +93,8 @@ const LeaveTransactionCard: React.FC<{
               </Typography>
 
               <ChevronDown
-                className={`h-4 w-4 transition-transform ${
-                  openIndex === idx ? "rotate-180" : ""
-                }`}
+                className={`h-4 w-4 transition-transform ${openIndex === idx ? "rotate-180" : ""
+                  }`}
               />
             </div>
           </button>
@@ -132,9 +132,17 @@ const LeaveBalance: React.FC = () => {
   const [selectedLeave, setSelectedLeave] = useState<any>(null);
 
   const { openModal } = useRequestLeaveModal();
-  const { data: userId, isLoading: isUserLoading } = useLoggedInUser();
+  const { targetEmployeeId } = useTargetUser();
+  const { data: userId, isLoading: isUserLoading } = useLoggedInUser({
+    enabled: !targetEmployeeId,
+  });
   const { data: currentEmployee, isLoading: isEmployeeLoading } =
-    useEmployeeByUserId(userId);
+    useEmployeeByUserId(targetEmployeeId ? undefined : userId);
+
+  const { data: targetEmployee, isLoading: isTargetEmployeeLoading } =
+    useGetEmployeeDetailsByEmpId(targetEmployeeId || "");
+
+  const employee = targetEmployeeId ? targetEmployee : currentEmployee;
 
   const { data: userUiPermission } = useGetUiPermission("Leaves and Holidays");
   const canRequestLeave = isActionEnabled(
@@ -144,12 +152,27 @@ const LeaveBalance: React.FC = () => {
   );
 
   const today = new Date().toISOString().split("T")[0];
-  const employeeId = currentEmployee?.name ?? "";
+
+  const isUserOrEmployeeLoading = targetEmployeeId
+    ? isTargetEmployeeLoading
+    : isUserLoading || isEmployeeLoading;
+
+  const employeeId = isUserOrEmployeeLoading
+    ? ""
+    : (targetEmployeeId || currentEmployee?.name || "");
+
+  const isEmployeeInactive =
+    employee?.status === "Inactive" && !!employee?.relieving_date;
+
+  const leaveBalanceDate = isEmployeeInactive
+    ? employee.relieving_date!
+    : today;
+
   const {
     data,
     isLoading: isLeaveLoading,
     isError,
-  } = useGetLeaveBalance(employeeId, today);
+  } = useGetLeaveBalance(employeeId, leaveBalanceDate);
 
   const toggleTransactions = useCallback((type: string | null) => {
     setSelectedType(type);
@@ -167,7 +190,7 @@ const LeaveBalance: React.FC = () => {
     setSelectedLeave(null);
   }, []);
 
-  if (isUserLoading || isEmployeeLoading || isLeaveLoading) {
+  if (isUserOrEmployeeLoading || isLeaveLoading) {
     return <LeaveBalanceSkeleton />;
   }
 
@@ -330,7 +353,11 @@ const LeaveBalance: React.FC = () => {
                 <h3 className="text-lg font-semibold text-gray-900">
                   Leave Balance
                 </h3>
-                <p className="text-sm text-gray-500">Balances as of today</p>
+                <p className="text-sm text-gray-500">
+                  {isEmployeeInactive
+                    ? `Balances as of Last Working Day ${formatToIndianDate(leaveBalanceDate)}`
+                    : "Balances as of today"}
+                </p>
               </div>
               {leaveBalance.length < 1 ? (
                 <NoDataFound
