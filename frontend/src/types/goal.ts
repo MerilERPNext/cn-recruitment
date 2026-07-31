@@ -292,11 +292,12 @@ export type GoalModelContextType = {
   defaults: RequestLeaveDefaults | null;
 
   // Global Draft Goals State & Actions
-  draftGoals: DraftGoalItem[];
-  setDraftGoals: React.Dispatch<React.SetStateAction<DraftGoalItem[]>>;
-  addDraftGoals: (goals: GoalTemplate | GoalTemplate[]) => void;
+  draftGoals: (DraftGoalItem | CascadeGoal)[];
+  setDraftGoals: React.Dispatch<React.SetStateAction<(DraftGoalItem | CascadeGoal)[]>>;
+
+  addDraftGoals: (goals: GoalTemplate | CascadeGoal | (GoalTemplate | CascadeGoal)[]) => void;
   removeDraftGoal: (id: string) => void;
-  updateDraftGoalWeightage: (id: string, weightage: number) => void;
+    updateDraftGoalWeightage: (id: string, weightage: number) => void;
   clearDraftGoals: () => void;
 };
 

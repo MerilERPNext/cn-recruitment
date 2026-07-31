@@ -4,7 +4,7 @@ import { format, isValid, parse } from "date-fns";
 import { ChevronDown, ChevronUp, X } from "lucide-react";
 import Badge from "../../../../shared/Badge";
 import { Card } from "../../../../shared/atoms/Card";
-import { AsyncSelect } from "../../../../shared/atoms/AsyncSelect";
+import { AsyncSelect, SelectOption } from "../../../../shared/atoms/AsyncSelect";
 import { performanceService } from "../../../../../services/performanceService";
 import { Typography } from "../../../../shared/atoms/Typography";
 import type { DepartmentSelectOption, DesignationSelectOption, KeyResult } from "../DefineGoal";
@@ -347,7 +347,7 @@ export const ObjectiveCard = ({
               <AsyncSelect
                 fetchOptions={fetchDepartmentOptions}
                 value={selectedDepartment}
-                onChange={(opt: any) => setSelectedDepartment(opt)}
+                onChange={(opt: SelectOption ) => setSelectedDepartment(opt)}
                 className="relative w-full"
                 placeholder="Search department..."
               />
@@ -358,7 +358,7 @@ export const ObjectiveCard = ({
               <AsyncSelect
                 fetchOptions={fetchDesignationOptions}
                 value={selectedDesignation || { label: 'Select', value: '' }}
-                onChange={(opt: any) => setSelectedDesignation?.(opt)}
+                onChange={(opt: SelectOption) => setSelectedDesignation?.(opt)}
                 className="relative w-full"
                 placeholder="Search designation..."
                 disabled={!selectedDepartment?.value}

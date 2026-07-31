@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import { AlertCircle, Search, X } from 'lucide-react';
 import Button from '../../../shared/atoms/Button';
-import { AsyncSelect } from '../../../shared/atoms/AsyncSelect';
+import { AsyncSelect, SelectOption } from '../../../shared/atoms/AsyncSelect';
 import { Typography } from '../../../shared/atoms/Typography';
 import GoalItemCard from './GoalItemCard';
 import { GoalTemplate } from './goal-model/types';
@@ -65,7 +65,7 @@ const TeamGoalLibraryPopup: React.FC<TeamGoalLibraryPopupProps> = ({ onClose, on
 
     const handleSubmitFooter = () => {
         if (selectedTemplates.length > 0) {
-            setDraftGoals(selectedTemplates as any);
+            setDraftGoals(selectedTemplates);
             onUseTemplate?.(selectedTemplates, 'cascade');
         }
     };
@@ -124,7 +124,7 @@ const TeamGoalLibraryPopup: React.FC<TeamGoalLibraryPopupProps> = ({ onClose, on
                                 return skip === 0 ? [{ label: 'All Departments', value: 'All' }, ...res] : res;
                             }}
                             value={selectedDepartment}
-                            onChange={(opt: any) => {
+                            onChange={(opt: SelectOption) => {
                                 setSelectedDepartment(opt);
                                 setSelectedLevel({ label: 'All Designations', value: 'All' });
                             }}
@@ -137,7 +137,7 @@ const TeamGoalLibraryPopup: React.FC<TeamGoalLibraryPopupProps> = ({ onClose, on
                                 return skip === 0 ? [{ label: 'All Designations', value: 'All' }, ...res] : res;
                             }}
                             value={selectedLevel}
-                            onChange={(opt: any) => setSelectedLevel(opt)}
+                            onChange={(opt: SelectOption) => setSelectedLevel(opt)}
                             className="relative w-full min-w-0 sm:col-span-2 lg:col-span-1 [&>button]:h-9 [&>button]:min-w-0 [&>button]:px-3 [&>button]:text-sm [&>div]:!w-full sm:[&>button]:h-11"
                             placeholder="Search designation..."
                         />
@@ -225,7 +225,7 @@ function TeamGoalSkeleton() {
 }
 
 
-function TeamGoalError({ error, onRetry }: { error: any; onRetry: () => void }) {
+function TeamGoalError({ error, onRetry }: { error: Error | null; onRetry: () => void }) {
     return <div className="flex flex-col items-center justify-center py-12 text-center rounded-2xl border border-red-100 bg-red-50/40 p-6">
         <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-red-100/80 text-red-600 mb-3 shadow-2xs">
             <AlertCircle className="h-6 w-6" />

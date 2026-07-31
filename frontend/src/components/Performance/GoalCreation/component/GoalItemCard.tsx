@@ -2,7 +2,7 @@ import React from 'react';
 import { Check, Plus } from 'lucide-react';
 import Button from '../../../shared/atoms/Button';
 import { Typography } from '../../../shared/atoms/Typography';
-import { CascadeGoal } from '../../../../types/goal';
+import { CascadeGoal, Goal } from '../../../../types/goal';
 
 export interface GoalItemCardData {
     id: string;
@@ -20,7 +20,7 @@ export interface GoalItemCardProps {
     goal: CascadeGoal;
     index: number;
     isSelected?: boolean;
-    onToggleSelect?: (goal: any) => void;
+    onToggleSelect?: (goal: Goal | CascadeGoal) => void;
     addBtnLabel?: string;
     addedBtnLabel?: string;
     className?: string;

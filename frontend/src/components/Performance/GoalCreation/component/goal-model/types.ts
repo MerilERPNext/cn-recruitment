@@ -1,4 +1,4 @@
-import { Goal } from "../../../../../types/goal";
+import { CascadeGoal, DraftGoalItem, Goal } from "../../../../../types/goal";
 
 export type GoalTemplate = Partial<Goal> & {
     id?: string;
@@ -13,12 +13,11 @@ export type GoalTemplate = Partial<Goal> & {
     goal_count?:number;
     used_by_count?: number; 
     owner_designation?: string | null;
-
-
+    repository_goals?: GoalTemplate[]
 };
 
-export const getGoalKey = (template: GoalTemplate): string => {
-    return template.goal || template.id || template.title;
+export const getGoalKey = (template: GoalTemplate | CascadeGoal | DraftGoalItem): string => {
+    return template.goal  || template.title;
 };
 
 export interface TemplateListProps {

@@ -8,7 +8,7 @@ import GoalLibraryPopup from './GoalLibraryPopup';
 import AcknowledgmentPopup, { getWeightageColor } from './AcknowledgmentPopup';
 import { useGoalModel } from '../../GoalModelContext';
 import { useCascadeMangerGoals, useGetMandotaryGoals } from '../../../../hooks/usePerformance';
-import { Templates } from '../../../../types/goal';
+import { CascadeGoal, Templates } from '../../../../types/goal';
 import { useGetUiPermission } from '../../../../hooks/userUiPermission';
 import { getActionsEnabled } from '../../../../utils/uiPermission';
 import TeamGoalLibraryPopup from './TeamGoalLibraryPopup';
@@ -285,10 +285,10 @@ const [openTeamGoals, setOpenTeamGoals] = useState(false)
                                 </div>
                             ) : (teamGoals?.data?.goals?.length ?? 0) > 0 ? (
                                 <div className="mt-3 rounded-xl border border-slate-200/80 bg-slate-50/50 p-2 space-y-1.5">
-                                    {teamGoals?.data?.goals?.slice(0, 3).map((goal: any, index: number) => (
-                                        <div key={goal.goal || goal.id || index} className="flex items-start justify-between gap-3 rounded-lg bg-white border border-slate-100 px-3 py-2 shadow-2xs">
+                                                {teamGoals?.data?.goals?.slice(0, 3).map((goal: CascadeGoal, index: number) => (
+                                        <div key={goal.goal || index} className="flex items-start justify-between gap-3 rounded-lg bg-white border border-slate-100 px-3 py-2 shadow-2xs">
                                             <span className="min-w-0 text-[12px] text-slate-700 font-medium truncate">
-                                                {goal.title || goal.goal_title}
+                                                {goal.title}
                                             </span>
                                             {goal.weightage !== undefined && (
                                                 <span className="shrink-0 text-[12px] font-semibold text-indigo-600">
@@ -370,7 +370,7 @@ const [openTeamGoals, setOpenTeamGoals] = useState(false)
                 onClose={() => setOpenTeamGoals(false)}
                 onUseTemplate={(selected) => {
                     setOpenTeamGoals(false);
-                    setDraftGoals(selected as any)
+                    setDraftGoals(selected as CascadeGoal[])
                     onContinue?.()
 
 

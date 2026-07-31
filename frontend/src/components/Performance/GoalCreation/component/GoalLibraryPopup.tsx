@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { AlertCircle, ArrowRight, Search, X } from 'lucide-react';
 import Button from '../../../shared/atoms/Button';
-import { AsyncSelect } from '../../../shared/atoms/AsyncSelect';
+import { AsyncSelect, SelectOption } from '../../../shared/atoms/AsyncSelect';
 import { Typography } from '../../../shared/atoms/Typography';
 import { GoalTemplate, filterTemplates, getGoalKey } from './goal-model/types';
 import RecommendedTemplates from './goal-model/RecommendedTemplates';
@@ -116,7 +116,7 @@ const GoalLibraryPopup = ({ onClose, onUseTemplate }: GoalLibraryPopupProps) => 
 
     const handleSubmitFooter = () => {
         if (selectedTemplates.length > 0) {
-            const allGoals = selectedTemplates.flatMap((t: any) =>
+            const allGoals = selectedTemplates.flatMap((t:GoalTemplate) =>
                 t.repository_goals ? t.repository_goals : t
             );
             onUseTemplate?.(allGoals, activeTab);
@@ -126,8 +126,8 @@ const GoalLibraryPopup = ({ onClose, onUseTemplate }: GoalLibraryPopupProps) => 
     const counts = useMemo(() => ({
         recommended: recommendedGoals.length,
         allOrg: goals.length,
-        department: goals.filter((g: any) => Boolean(g.department || g.department_title)).length,
-        designation: goals.filter((g: any) => Boolean(g.designation)).length,
+        department: goals.filter((g: GoalTemplate ) => Boolean(g.department || g.department_title)).length,
+        designation: goals.filter((g: GoalTemplate) => Boolean(g.designation)).length,
         roleBased: filterTemplates(roleBasedTemplatesData, debouncedSearchQuery, selectedDepartment.value, selectedLevel.value).length,
     }), [debouncedSearchQuery, selectedDepartment.value, selectedLevel.value, goals, recommendedGoals, refGoalsData?.data?.total, goalRepo?.data?.total]);
 
@@ -271,7 +271,7 @@ const GoalLibraryPopup = ({ onClose, onUseTemplate }: GoalLibraryPopupProps) => 
                                 return skip === 0 ? [{ label: 'All Departments', value: 'All' }, ...res] : res;
                             }}
                             value={selectedDepartment}
-                            onChange={(opt: any) => {
+                            onChange={(opt: SelectOption ) => {
                                 setSelectedDepartment(opt);
                                 setSelectedLevel({ label: 'All Designations', value: 'All' });
                             }}
@@ -284,7 +284,7 @@ const GoalLibraryPopup = ({ onClose, onUseTemplate }: GoalLibraryPopupProps) => 
                                 return skip === 0 ? [{ label: 'All Designations', value: 'All' }, ...res] : res;
                             }}
                             value={selectedLevel}
-                            onChange={(opt: any) => setSelectedLevel(opt)}
+                            onChange={(opt: SelectOption ) => setSelectedLevel(opt)}
                             className="relative w-full min-w-0 sm:col-span-2 lg:col-span-1 [&>button]:h-9 [&>button]:min-w-0 [&>button]:px-3 [&>button]:text-sm [&>div]:!w-full sm:[&>button]:h-11"
                             placeholder="Search designation..."
                         />
