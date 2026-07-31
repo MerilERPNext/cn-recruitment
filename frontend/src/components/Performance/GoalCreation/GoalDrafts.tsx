@@ -10,6 +10,7 @@ import PageLayoutWrapper from '../../shared/PageLayoutWrapper';
 import GoalLibraryPopup from './component/GoalLibraryPopup';
 import { GoalTemplate, getGoalKey } from './component/goal-model/types';
 import { useGoalModel } from '../GoalModelContext';
+import { CascadeGoal, DraftGoalItem } from '../../../types/goal';
 
 const GoalDrafts: React.FC = () => {
     const navigate = useNavigate();
@@ -23,7 +24,7 @@ const GoalDrafts: React.FC = () => {
     } = useGoalModel();
 
     const [isLibraryModalOpen, setIsLibraryModalOpen] = useState(false);
-    const [goalToDelete, setGoalToDelete] = useState<GoalTemplate | null>(null);
+    const [goalToDelete, setGoalToDelete] = useState<DraftGoalItem | CascadeGoal | GoalTemplate | null>(null);
 
     // Sync selected goals passed via navigation state into global GoalModelContext and clear history state
     useEffect(() => {

@@ -398,8 +398,11 @@ export interface CascadeGoal {
   title: string;
   description?: string | null;
   goal_type?: string;
+  scope?: string;
   category?: string;
   department?: string | null;
+  department_title?: string | null;
+  recommended?: boolean;
   weightage?: number;
   scorecard_pillar?: string | null;
   performance_cycle?: string;
