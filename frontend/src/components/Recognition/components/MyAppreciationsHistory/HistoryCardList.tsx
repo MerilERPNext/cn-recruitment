@@ -2,6 +2,7 @@ import { Typography } from "../../../shared/atoms/Typography";
 import AppreciationImage from "./AppreciationImage";
 import HistoryActions from "./HistoryActions";
 import PersonAvatar from "./PersonAvatar";
+import WrapperHoverCard from "../../../shared/WrapperHoverCard";
 import type { AppreciationHistoryItem } from "./types";
 
 type HistoryCardListProps = {
@@ -27,9 +28,16 @@ const HistoryCardList = ({ items, relationLabel }: HistoryCardListProps) => (
             </Typography>
             <div className="mt-0.5 flex items-center gap-2">
               <PersonAvatar name={item.person} imageUrl={item.personImage} size={22} />
-              <Typography variant="mobileCardSubtitle" className="truncate">
-                {item.person} · {item.date}
-              </Typography>
+              <div className="flex items-center gap-1 min-w-0">
+                <WrapperHoverCard employeeId={item.employeeId}>
+                  <Typography variant="mobileCardSubtitle" className="truncate cursor-pointer hover:text-gray-800">
+                    {item.person}
+                  </Typography>
+                </WrapperHoverCard>
+                <Typography variant="mobileCardSubtitle" className="truncate whitespace-pre">
+                  · {item.date}
+                </Typography>
+              </div>
             </div>
           </div>
         </div>

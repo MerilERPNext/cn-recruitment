@@ -45,7 +45,11 @@ def validation_blacklist_on_doctypes(self,method):
         if doc.custom_blacklist:
             frappe.throw("The Applicant Is Blacklisted.So You Cannot Create {0} ".format(self.doctype))
 
-        if self.custom_extra_payment:
+        # custom_extra_payment is a Job Offer-only child table. This validator is
+        # shared (via the `validate` hook) with Interview / Appointment Letter /
+        # Employee Onboarding, none of which have the field — use .get() so those
+        # doctypes skip the block instead of raising AttributeError.
+        if self.get("custom_extra_payment"):
             for row in self.custom_extra_payment:
 
                 if not row.salary_component:

@@ -212,6 +212,13 @@ class JobApplicantProfileSettings(Document):
 		durable: after the first reconcile each subsequent load is a no-op (no
 		fragile save-on-every-open) and the Settings form and Job Opening form
 		always render the exact same set.
+
+		Reconciliation runs BOTH ways: a field that no longer exists on Job
+		Applicant (a custom field the admin deleted) is dropped from the table and
+		from synced_field_refs, so it disappears from this form and the Job
+		Opening's Application Fields — and re-creating a field of the same name
+		surfaces it again as a fresh row rather than being suppressed as an old
+		"already seen" ref.
 		"""
 		existing_refs = {row.reference_name for row in self.default_application_fields if row.reference_name}
 		synced_refs = {
@@ -256,12 +263,38 @@ class JobApplicantProfileSettings(Document):
 			))
 			added_refs.append(f.fieldname)
 
+		meta_lookup = {f.fieldname: f for f in meta.fields if f.fieldname}
+
+		# Drop rows for fields that no longer exist on Job Applicant. A deleted
+		# custom field leaves its config row behind, and every consumer keys off
+		# `reference_name` — so without this the field keeps rendering here and on
+		# the Job Opening's Application Fields long after the field itself is gone.
+		dead_refs = {
+			row.reference_name
+			for row in self.default_application_fields
+			if row.reference_name and row.reference_name not in meta_lookup
+		}
+		if dead_refs:
+			self.default_application_fields = [
+				row for row in self.default_application_fields
+				if row.reference_name not in dead_refs
+			]
+			for idx, row in enumerate(self.default_application_fields, start=1):
+				row.idx = idx
+
+		# Forget every snapshotted ref whose field is gone — including ones that
+		# never made it into the table. synced_field_refs is what suppresses a
+		# re-import, so a ref left behind here would keep a re-created field of the
+		# same name permanently invisible. Refs that still exist in meta stay put:
+		# that's what makes a manual delete (or a Feedback-tab skip) stick.
+		stale_synced_refs = {ref for ref in synced_refs if ref not in meta_lookup}
+		synced_refs -= dead_refs | stale_synced_refs
+
 		# Backfill fieldtype / child_field_config on existing rows that predate this feature.
 		# Use frappe.db.set_value with update_modified=False so this NEVER touches the
 		# document's `modified` timestamp. Calling self.save() here (even once) bumps
 		# `modified` in the DB while the client holds the old value, causing a version
 		# conflict the next time the user tries to save their own changes.
-		meta_lookup = {f.fieldname: f for f in meta.fields if f.fieldname}
 		for row in self.default_application_fields:
 			ref = row.reference_name
 			if not ref or ref not in meta_lookup:
@@ -283,9 +316,9 @@ class JobApplicantProfileSettings(Document):
 				except Exception:
 					pass  # Column may not exist yet if bench migrate hasn't run
 
-		if added_refs or recorded_refs:
-			# Persist imports AND deliberate skips so the next load is a no-op and
-			# every exclusion (deletes, Feedback) sticks.
+		if added_refs or recorded_refs or dead_refs or stale_synced_refs:
+			# Persist imports, deliberate skips AND removals so the next load is a
+			# no-op and every decision (deletes, Feedback) sticks.
 			all_refs = sorted(synced_refs | set(added_refs) | set(recorded_refs))
 			self.synced_field_refs = "\n".join(all_refs)
 			self.save(ignore_permissions=True)
@@ -298,18 +331,44 @@ def get_job_applicant_profile_template(opening=None):
 	For each Job Applicant field, we use:
 	  - the opening's own row in custom_application_fields if present
 	  - otherwise the matching row from Job Applicant Profile Settings
+
+	Rows whose field no longer exists on Job Applicant are dropped. _auto_sync
+	prunes them for good, but only when an admin opens the Settings form — until
+	then a just-deleted custom field would still render on every Job Opening.
 	"""
 	settings = frappe.get_single("Job Applicant Profile Settings")
 	# _auto_sync() is intentionally NOT called here. It saves the document,
 	# which updates `modified` in the DB while the Settings form client still
 	# holds the old timestamp — causing a version conflict on the user's next
 	# Save. Sync runs in onload() when the admin opens the Settings form.
-	defaults = {row.reference_name: row for row in settings.default_application_fields if row.reference_name}
+	live_fields = {df.fieldname for df in frappe.get_meta("Job Applicant").fields if df.fieldname}
+	defaults = {
+		row.reference_name: row
+		for row in settings.default_application_fields
+		if row.reference_name and row.reference_name in live_fields
+	}
 
 	overrides = {}
 	if opening:
-		op = frappe.get_doc("Job Opening", opening)
-		overrides = {row.reference_name: row for row in op.custom_application_fields if row.reference_name}
+		# Read ONLY the override rows. frappe.get_doc("Job Opening", ...) would pull
+		# the parent plus every one of its child tables (candidate list, hiring
+		# stages, screener questions, posting channels, …) — 13 extra queries for a
+		# table we don't touch, on a call that runs on every Job Opening form load
+		# AND behind every candidate-facing channel form.
+		overrides = {
+			row.reference_name: row
+			for row in frappe.get_all(
+				"Job Opening Application Field",
+				filters={
+					"parent": opening,
+					"parenttype": "Job Opening",
+					"parentfield": "custom_application_fields",
+				},
+				fields=["*"],
+				order_by="idx asc",
+			)
+			if row.reference_name
+		}
 
 	def pick(ref, attr, fallback=0):
 		row = overrides.get(ref) or defaults.get(ref)

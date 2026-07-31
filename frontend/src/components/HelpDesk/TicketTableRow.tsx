@@ -85,7 +85,7 @@ const TicketTableRow = ({
                     {getCategoryName(ticket.custom_category)}
                 </Typography>
             </td>
-            <td className="px-4 py-3">
+            <td className="px-4 py-3 flex justify-center">
                 {(() => {
                     const badgeConfig = getStatusBadgeConfig(ticket.status);
                     return (

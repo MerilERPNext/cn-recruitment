@@ -10,7 +10,7 @@ import { NoDataFound } from "../../shared/atoms/NoDataFound";
 import { Card } from "../../shared/atoms/Card";
 import { useTaxSheetPayrollPriodsData } from "../../../hooks/useTaxSheet";
 import SalaryAssignmentHeader from "./PayPackageHeader";
-import { CalendarDays } from "lucide-react";
+import { Download } from "lucide-react";
 import StatusBadge from "../../shared/atoms/statusBadge";
 import { formatCurrency } from "../../../utils/currency";
 import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
@@ -18,13 +18,6 @@ import formatToIndianDate from "../../../utils/formatToIndianDate";
 import DataListView from "../../DataListView";
 
 type SalaryItem = any;
-
-type CTCComponentItem = {
-  component?: string;
-  type?: string;
-  amount?: number;
-  annual_amount?: number;
-};
 
 type PayrollPeriod = {
   name: string;
@@ -42,6 +35,7 @@ type RowProps = {
 };
 
 const renderAmount = (value: number | string | undefined, showAmount: boolean) => {
+  if (value === undefined || value === null || value === "") return "—";
   if (showAmount) {
     return (
       <Typography variant="bodySmall" component="span" className="blur-sm select-none">
@@ -49,13 +43,25 @@ const renderAmount = (value: number | string | undefined, showAmount: boolean) =
       </Typography>
     );
   }
-  if (value === undefined || value === null) return "—";
-  return `${formatCurrency(Number(value).toLocaleString("en-IN"))}`;
+  return `${formatCurrency(value)}`;
+};
+
+/**
+ * Extracts flat display values from the nested API response arrays.
+ * API returns: fixed_gross[0].monthly_amount, fixed_ctc[0].monthly_amount, etc.
+ * We need:   fixed_gross_monthly, monthly_ctc, fixed_gross_annual, annual_ctc
+ */
+const getDisplayValues = (item: SalaryItem) => {
+  const fixedGrossMonthly = item.fixed_gross?.[0]?.monthly_amount;
+  const fixedGrossAnnual = item.fixed_gross?.[0]?.annual_amount;
+  const monthlyCTC = item.fixed_ctc?.[0]?.monthly_amount;
+  const annualCTC = item.total_final_ctc?.[0]?.annual_amount;
+  return { fixedGrossMonthly, fixedGrossAnnual, monthlyCTC, annualCTC };
 };
 
 const DesktopRow = ({ item, showAmount, onView, onVersions }: RowProps) => {
-  console.log("Rendering DesktopRow for item:", item);
   const columnWidths = ["1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"];
+  const { fixedGrossMonthly, fixedGrossAnnual, monthlyCTC, annualCTC } = getDisplayValues(item);
   return (
     <div
       className="grid max-w-screen items-center gap-4 px-6 h-16 border-b border-gray-50 transition-colors cursor-pointer hover:bg-primary/10"
@@ -70,19 +76,19 @@ const DesktopRow = ({ item, showAmount, onView, onVersions }: RowProps) => {
       </div>
 
       <Typography variant="bodySmall" className="font-medium text-center">
-        {renderAmount(item.fixed_gross_monthly, showAmount)}
+        {renderAmount(fixedGrossMonthly, showAmount)}
       </Typography>
 
       <Typography variant="bodySmall" className="font-medium text-center">
-        {renderAmount(item.monthly_ctc, showAmount)}
+        {renderAmount(monthlyCTC, showAmount)}
       </Typography>
 
       <Typography variant="bodySmall" className="font-medium text-center">
-        {renderAmount(item.fixed_gross_annual, showAmount)}
+        {renderAmount(fixedGrossAnnual, showAmount)}
       </Typography>
 
       <Typography variant="bodySmall" className="font-medium text-center">
-        {renderAmount(item.annual_ctc, showAmount)}
+        {renderAmount(annualCTC, showAmount)}
       </Typography>
 
       <div className="flex items-center justify-center gap-2">
@@ -103,77 +109,80 @@ const DesktopRow = ({ item, showAmount, onView, onVersions }: RowProps) => {
   );
 };
 
-const MobileRow = ({ item, showAmount, onView, onVersions }: RowProps) => (
-  <div
-    className="cursor-pointer border-t-4 border-x border-b 
+const MobileRow = ({ item, showAmount, onView, onVersions }: RowProps) => {
+  const { fixedGrossMonthly, fixedGrossAnnual, monthlyCTC, annualCTC } = getDisplayValues(item);
+  return (
+    <div
+      className="cursor-pointer border-t-4 border-x border-b 
       border-x-primary/20 border-b-primary/20 
       shadow-sm border-primary bg-white rounded-xl"
-  >
-    <div className="p-4 flex flex-col gap-3 w-full">
-      {/* Row 1: Effective Date + Status */}
-      <div className="flex items-start justify-between">
-        <div className="flex flex-col gap-1">
-          <Typography variant="mobileCardLabel">Effective Date</Typography>
-          <Typography variant="mobileCardValue">
-            {formatToIndianDate(item.from_date)}
-          </Typography>
+    >
+      <div className="p-4 flex flex-col gap-3 w-full">
+        {/* Row 1: Effective Date + Status */}
+        <div className="flex items-start justify-between">
+          <div className="flex flex-col gap-1">
+            <Typography variant="mobileCardLabel">Effective Date</Typography>
+            <Typography variant="mobileCardValue">
+              {formatToIndianDate(item.from_date)}
+            </Typography>
+          </div>
+          <div className="flex flex-col gap-1 items-end">
+            <Typography variant="mobileCardLabel">Status</Typography>
+            <StatusBadge status={item.active === 1 ? "Active" : "Inactive"} />
+          </div>
         </div>
-        <div className="flex flex-col gap-1 items-end">
-          <Typography variant="mobileCardLabel">Status</Typography>
-          <StatusBadge status={item.active === 1 ? "Active" : "Inactive"} />
-        </div>
-      </div>
 
-      {/* Row 2: Fixed Gross Monthly + Monthly CTC */}
-      <div className="flex items-start justify-between">
-        <div className="flex flex-col gap-1">
-          <Typography variant="mobileCardLabel">Fixed Gross Monthly</Typography>
-          <Typography variant="mobileCardValue">
-            {renderAmount(item.fixed_gross_monthly, showAmount)}
-          </Typography>
+        {/* Row 2: Fixed Gross Monthly + Monthly CTC */}
+        <div className="flex items-start justify-between">
+          <div className="flex flex-col gap-1">
+            <Typography variant="mobileCardLabel">Fixed Gross Monthly</Typography>
+            <Typography variant="mobileCardValue">
+              {renderAmount(fixedGrossMonthly, showAmount)}
+            </Typography>
+          </div>
+          <div className="flex flex-col gap-1 text-right">
+            <Typography variant="mobileCardLabel">Monthly CTC</Typography>
+            <Typography variant="mobileCardValue">
+              {renderAmount(monthlyCTC, showAmount)}
+            </Typography>
+          </div>
         </div>
-        <div className="flex flex-col gap-1 text-right">
-          <Typography variant="mobileCardLabel">Monthly CTC</Typography>
-          <Typography variant="mobileCardValue">
-            {renderAmount(item.monthly_ctc, showAmount)}
-          </Typography>
-        </div>
-      </div>
 
-      {/* Row 3: Fixed Gross Annual + Annual CTC */}
-      <div className="flex items-start justify-between">
-        <div className="flex flex-col gap-1">
-          <Typography variant="mobileCardLabel">Fixed Gross Annual</Typography>
-          <Typography variant="mobileCardValue">
-            {renderAmount(item.fixed_gross_annual, showAmount)}
-          </Typography>
+        {/* Row 3: Fixed Gross Annual + Annual CTC */}
+        <div className="flex items-start justify-between">
+          <div className="flex flex-col gap-1">
+            <Typography variant="mobileCardLabel">Fixed Gross Annual</Typography>
+            <Typography variant="mobileCardValue">
+              {renderAmount(fixedGrossAnnual, showAmount)}
+            </Typography>
+          </div>
+          <div className="flex flex-col gap-1 text-right">
+            <Typography variant="mobileCardLabel">Annual CTC</Typography>
+            <Typography variant="mobileCardValue">
+              {renderAmount(annualCTC, showAmount)}
+            </Typography>
+          </div>
         </div>
-        <div className="flex flex-col gap-1 text-right">
-          <Typography variant="mobileCardLabel">Annual CTC</Typography>
-          <Typography variant="mobileCardValue">
-            {renderAmount(item.annual_ctc, showAmount)}
-          </Typography>
-        </div>
-      </div>
 
-      {/* Footer: View + Versions buttons */}
-      <div className="flex gap-3 pt-2 border-t border-primary/10">
-        <button
-          onClick={() => onView(item)}
-          className="flex-1 text-center text-primary border border-primary/40 px-3 py-1.5 rounded-lg hover:bg-primary/10 text-sm font-medium transition-colors"
-        >
-          View
-        </button>
-        <button
-          onClick={() => onVersions(item)}
-          className="flex-1 text-center text-primary border border-primary/40 px-3 py-1.5 rounded-lg hover:bg-primary/10 text-sm font-medium transition-colors"
-        >
-          Versions
-        </button>
+        {/* Footer: View + Versions buttons */}
+        <div className="flex gap-3 pt-2 border-t border-primary/10">
+          <button
+            onClick={() => onView(item)}
+            className="flex-1 text-center text-primary border border-primary/40 px-3 py-1.5 rounded-lg hover:bg-primary/10 text-sm font-medium transition-colors"
+          >
+            View
+          </button>
+          <button
+            onClick={() => onVersions(item)}
+            className="flex-1 text-center text-primary border border-primary/40 px-3 py-1.5 rounded-lg hover:bg-primary/10 text-sm font-medium transition-colors"
+          >
+            Versions
+          </button>
+        </div>
       </div>
     </div>
-  </div>
-);
+  );
+};
 
 // ---- Main Component ----
 
@@ -393,236 +402,119 @@ export default function SalaryAssignmentList() {
       {selected && (
         <div className="fixed inset-0 z-50 flex items-center justify-end bg-black/40">
           <div
-            className={`bg-white flex flex-col w-full ${isDesktop ? "max-w-[600px]" : ""
+            className={`bg-white flex flex-col w-full ${isDesktop ? "max-w-[700px]" : ""
               } shadow-lg relative h-screen`}
           >
-            <div className="flex justify-between items-center p-4 border-b">
-              <Typography variant="subheading" color="body1">
-                CTC Breakdown
-              </Typography>
-              <button
-                onClick={() => setSelected(null)}
-                className="text-gray-500 hover:text-black"
-              >
-                ✕
-              </button>
+            <div className="flex justify-between items-start p-6 pb-2">
+              <div className="flex flex-col gap-2">
+                <Typography variant="subheading" color="body1" className="font-semibold text-lg">
+                  CTC Proration
+                </Typography>
+                <Typography variant="bodySmall" color="body2">
+                  Effective Date : {selected.from_date ? formatToIndianDate(selected.from_date) : "—"}
+                </Typography>
+              </div>
+              <div className="flex flex-col items-end gap-2">
+                <div className="flex items-center gap-4">
+                  <button className="text-primary flex items-center gap-1 text-sm font-medium hover:underline">
+                    <Download className="w-4 h-4" /> Download
+                  </button>
+                  <button
+                    onClick={() => setSelected(null)}
+                    className="text-gray-500 hover:text-black"
+                  >
+                    ✕
+                  </button>
+                </div>
+                <Typography variant="bodySmall" className="font-semibold mt-2">
+                  Currency: INR
+                </Typography>
+              </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto">
-              <div className="p-4 space-y-6 text-sm">
-                <div className="flex justify-between">
-                  <Typography
-                    variant="bodySmall"
-                    color="body1"
-                    className="font-semibold"
-                  >
-                    Effective From
-                  </Typography>
-                  <div className="bg-success-100 rounded px-2 py-0.5 max-w-full flex items-center gap-1">
-                    <CalendarDays className="w-4 h-4" />
-                    <Typography
-                      variant="bodySmall"
-                      color="success"
-                      className="font-semibold"
-                    >
-                      {selected.from_date}
-                    </Typography>
-                  </div>
-                </div>
+            <div className="flex-1 overflow-y-auto p-6 pt-2">
+              <div className="border border-gray-200 rounded-lg overflow-x-auto">
+                <table className="w-full min-w-[500px] text-left text-sm">
+                  <thead className="bg-slate-50 border-b border-gray-200">
+                    <tr>
+                      <th className="px-4 py-3 font-semibold text-gray-700 w-[50%]">Earnings</th>
+                      <th className="px-4 py-3 font-semibold text-gray-700 text-center w-[25%]">Monthly</th>
+                      <th className="px-4 py-3 font-semibold text-gray-700 text-right w-[25%]">Annually</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {/* Earnings */}
+                    {selected.earning_part_of_ctc?.map((item: any, idx: number) => (
+                      <tr key={`earn-${idx}`} className="hover:bg-gray-50">
+                        <td className="px-4 py-3">{item.component}</td>
+                        <td className="px-4 py-3 text-center">{renderAmount(item.amount, showAmount)}</td>
+                        <td className="px-4 py-3 text-right">{renderAmount(item.annual_amount, showAmount)}</td>
+                      </tr>
+                    ))}
 
-                <Card className="grid gap-3 border border-gray-200 p-4 rounded">
-                  <div className="flex justify-between">
-                    <Typography variant="bodySmall" className="font-medium">
-                      Fixed Gross Monthly CTC
-                    </Typography>
-                    <Typography
-                      variant="bodySmall"
-                      color="body1"
-                      className="font-semibold"
-                    >
-                      {renderAmount(selected.fixed_gross_monthly, showAmount)}
-                    </Typography>
-                  </div>
+                    {/* Fixed Gross */}
+                    {selected.fixed_gross?.map((item: any, idx: number) => (
+                      <tr key={`gross-${idx}`} className="bg-slate-50/70 font-semibold border-y border-gray-200">
+                        <td className="px-4 py-3">{item.component}</td>
+                        <td className="px-4 py-3 text-center">{renderAmount(item.monthly_amount, showAmount)}</td>
+                        <td className="px-4 py-3 text-right">{renderAmount(item.annual_amount, showAmount)}</td>
+                      </tr>
+                    ))}
 
-                  <div className="flex justify-between">
-                    <Typography variant="bodySmall" className="font-medium">
-                      Monthly CTC
-                    </Typography>
-                    <Typography
-                      variant="bodySmall"
-                      color="body1"
-                      className="font-semibold"
-                    >
-                      {renderAmount(selected.monthly_ctc, showAmount)}
-                    </Typography>
-                  </div>
+                    {/* Deductions */}
+                    {selected.deduction_part_of_ctc?.map((item: any, idx: number) => (
+                      <tr key={`ded-${idx}`} className="hover:bg-gray-50">
+                        <td className="px-4 py-3">{item.component}</td>
+                        <td className="px-4 py-3 text-center">{renderAmount(item.amount, showAmount)}</td>
+                        <td className="px-4 py-3 text-right">{renderAmount(item.annual_amount, showAmount)}</td>
+                      </tr>
+                    ))}
 
-                  <div className="flex justify-between">
-                    <Typography variant="bodySmall" className="font-medium">
-                      Fixed Gross Annual CTC
-                    </Typography>
-                    <Typography
-                      variant="bodySmall"
-                      color="body1"
-                      className="font-semibold"
-                    >
-                      {renderAmount(selected.fixed_gross_annual, showAmount)}
-                    </Typography>
-                  </div>
+                    {/* Reimbursements */}
+                    {selected.reimbursements_part_of_ctc?.map((item: any, idx: number) => (
+                      <tr key={`reimb-${idx}`} className="hover:bg-gray-50">
+                        <td className="px-4 py-3">{item.component}</td>
+                        <td className="px-4 py-3 text-center">{renderAmount(item.amount, showAmount)}</td>
+                        <td className="px-4 py-3 text-right">{renderAmount(item.annual_amount, showAmount)}</td>
+                      </tr>
+                    ))}
 
-                  <div className="flex justify-between">
-                    <Typography variant="bodySmall" className="font-medium">
-                      Annual CTC
-                    </Typography>
-                    <Typography
-                      variant="bodySmall"
-                      color="body1"
-                      className="font-semibold"
-                    >
-                      {renderAmount(selected.annual_ctc, showAmount)}
-                    </Typography>
-                  </div>
-                </Card>
+                    {/* Fixed CTC */}
+                    {selected.fixed_ctc?.map((item: any, idx: number) => (
+                      <tr key={`fctc-${idx}`} className="bg-slate-50/70 font-semibold border-y border-gray-200">
+                        <td className="px-4 py-3">{item.component}</td>
+                        <td className="px-4 py-3 text-center">{renderAmount(item.monthly_amount, showAmount)}</td>
+                        <td className="px-4 py-3 text-right">{renderAmount(item.annual_amount, showAmount)}</td>
+                      </tr>
+                    ))}
 
-                <div className="space-y-6">
-                  {/* Salary Components */}
-                  <Typography
-                    variant="bodyMedium"
-                    color="body1"
-                    className="font-semibold"
-                  >
-                    Salary Components
-                  </Typography>
+                    {/* Variable Pay Include/Exclude CTC */}
+                    {selected.variable_pay_include_ctc?.map((item: any, idx: number) => (
+                      <tr key={`varinc-${idx}`} className="hover:bg-gray-50">
+                        <td className="px-4 py-3">{item.component}</td>
+                        <td className="px-4 py-3 text-center">{item.amount || item.monthly_amount ? renderAmount(item.amount || item.monthly_amount, showAmount) : "—"}</td>
+                        <td className="px-4 py-3 text-right">{renderAmount(item.annual_amount, showAmount)}</td>
+                      </tr>
+                    ))}
 
-                  <Card className="space-y-3 border border-gray-200 rounded p-4">
-                    {selected.component_part_of_ctc?.map(
-                      (item: CTCComponentItem, index: number) => (
-                        <div
-                          key={item.component ?? index}
-                          className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-1 sm:gap-2 pb-3 border-b border-gray-100 last:border-b-0 last:pb-0"
-                        >
-                          <div className="flex items-baseline gap-1 min-w-0">
-                            <Typography
-                              variant="bodySmall"
-                              className="font-medium"
-                            >
-                              {item.component}
-                            </Typography>
-                            <Typography variant="caption" color="body2">
-                              ({item.type})
-                            </Typography>
-                          </div>
+                    {selected.variable_pay_exclude_ctc?.map((item: any, idx: number) => (
+                      <tr key={`varexc-${idx}`} className="hover:bg-gray-50">
+                        <td className="px-4 py-3">{item.component}</td>
+                        <td className="px-4 py-3 text-center">{item.amount || item.monthly_amount ? renderAmount(item.amount || item.monthly_amount, showAmount) : "—"}</td>
+                        <td className="px-4 py-3 text-right">{renderAmount(item.annual_amount, showAmount)}</td>
+                      </tr>
+                    ))}
 
-                          <div className="flex items-center gap-3 sm:flex-col sm:items-end sm:gap-0">
-                            <Typography
-                              variant="bodySmall"
-                              className="font-medium whitespace-nowrap"
-                            >
-                              Annual: {renderAmount(item.annual_amount, showAmount)}
-                            </Typography>
-                            <Typography
-                              variant="caption"
-                              color="body2"
-                              className="whitespace-nowrap"
-                            >
-                              Monthly:{" "}
-                              {renderAmount(
-                                item.amount ? item.amount : undefined,
-                                showAmount,
-                              )}
-                            </Typography>
-                          </div>
-                        </div>
-                      ),
-                    )}
-                  </Card>
-
-                  {/* Variable Pay Include CTC */}
-                  {selected.variable_pay_include_ctc?.length > 0 && (
-                    <>
-                      <Typography
-                        variant="bodyMedium"
-                        color="body1"
-                        className="font-semibold"
-                      >
-                        Variable Pay (Included in CTC)
-                      </Typography>
-
-                      <Card className="space-y-3 border border-gray-200 rounded p-4">
-                        {selected.variable_pay_include_ctc.map(
-                          (item: any, index: number) => (
-                            <div
-                              key={`include-${item.component ?? index}`}
-                              className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-1 sm:gap-2 pb-3 border-b border-gray-100 last:border-b-0 last:pb-0"
-                            >
-                              <div className="flex items-baseline gap-1 min-w-0">
-                                <Typography
-                                  variant="bodySmall"
-                                  className="font-medium"
-                                >
-                                  {item.component}
-                                </Typography>
-                              </div>
-
-                              <div className="flex items-center gap-3 sm:flex-col sm:items-end sm:gap-0">
-                                <Typography
-                                  variant="bodySmall"
-                                  className="font-medium whitespace-nowrap"
-                                >
-                                  Annual:{" "}
-                                  {renderAmount(item.annual_amount, showAmount)}
-                                </Typography>
-                              </div>
-                            </div>
-                          ),
-                        )}
-                      </Card>
-                    </>
-                  )}
-
-                  {/* Variable Pay Exclude CTC */}
-                  {selected.variable_pay_exclude_ctc?.length > 0 && (
-                    <>
-                      <Typography
-                        variant="bodyMedium"
-                        color="body1"
-                        className="font-semibold"
-                      >
-                        Variable Pay (Excluded from CTC)
-                      </Typography>
-
-                      <Card className="space-y-3 border border-gray-200 rounded p-4">
-                        {selected.variable_pay_exclude_ctc.map(
-                          (item: any, index: number) => (
-                            <div
-                              key={`exclude-${item.component ?? index}`}
-                              className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-1 sm:gap-2 pb-3 border-b border-gray-100 last:border-b-0 last:pb-0"
-                            >
-                              <div className="flex items-baseline gap-1 min-w-0">
-                                <Typography
-                                  variant="bodySmall"
-                                  className="font-medium"
-                                >
-                                  {item.component}
-                                </Typography>
-                              </div>
-
-                              <div className="flex items-center gap-3 sm:flex-col sm:items-end sm:gap-0">
-                                <Typography
-                                  variant="bodySmall"
-                                  className="font-medium whitespace-nowrap"
-                                >
-                                  Annual:{" "}
-                                  {renderAmount(item.annual_amount, showAmount)}
-                                </Typography>
-                              </div>
-                            </div>
-                          ),
-                        )}
-                      </Card>
-                    </>
-                  )}
-                </div>
+                    {/* Total Final CTC */}
+                    {selected.total_final_ctc?.map((item: any, idx: number) => (
+                      <tr key={`total-${idx}`} className="bg-slate-50/70 font-semibold border-y border-gray-200">
+                        <td className="px-4 py-3">{item.component}</td>
+                        <td className="px-4 py-3 text-center">{item.monthly_amount ? renderAmount(item.monthly_amount, showAmount) : "—"}</td>
+                        <td className="px-4 py-3 text-right">{renderAmount(item.annual_amount, showAmount)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </div>
           </div>

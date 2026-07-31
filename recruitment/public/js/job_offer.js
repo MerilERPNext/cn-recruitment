@@ -80,6 +80,12 @@ frappe.ui.form.on("Job Offer", {
 		frm.set_query("component", "custom_earnings", () => ({ filters: { type: "Earning" } }));
 		frm.set_query("component", "custom_deduction", () => ({ filters: { type: "Deduction" } }));
 
+        frm.set_query("clause_type", "custom_offer_clauses", () => ({ filters: { custom_variable_part_of_ctc: 1 } }));
+		frm.set_query("salary_component", "custom_extra_payment", () => ({ filters: { custom_is_special_payment: 1 } }));
+
+
+
+
 		// Offer Letter Template picker: only Document Templates whose reference
 		// doctype is Job Offer.
 		frm.set_query("custom_offer_letter_template", () => ({
@@ -326,23 +332,36 @@ frappe.ui.form.on("Job Offer", {
 
 
 
-        // Clause type picker → only active clause types.
-        frm.set_query("clause_type", "custom_offer_clauses", () => ({ filters: { custom_variable_part_of_ctc: 1 } }));
+        // Clause type picker (Job Offer Clause.clause_type → Salary Component).
+        //
+        // This filtered on `custom_variable_part_of_ctc`, which exists on no
+        // doctype in any installed app. HRMS v15 silently drops an unknown filter
+        // field, but v16 validates it and aborts the link search with a
+        // "You do not have permission to access field" PermissionError — so the
+        // picker was dead on v16. Left unfiltered until the intended rule is
+        // confirmed: the closest real fields (`custom_is_part_of_ctc` +
+        // `custom_component_sub_type = "Variable"`) match NO component at all, so
+        // guessing would just swap the error for an empty list.
+        // frm.set_query("clause_type", "custom_offer_clauses", () => ({}));
 
-        frm.set_query("salary_component", "custom_extra_payment", () => ({ filters: { custom_is_special_payment: 1 } }));
+        // Extra payment picker → components flagged as extra payments.
+        // Was `custom_is_special_payment`, which likewise doesn't exist; the real
+        // flag on Salary Component is `custom_is_extra_payment` ("Is Extra
+        // Payment"), matching this table's own name.
+        frm.set_query("salary_component", "custom_extra_payment", () => ({
+            filters: { custom_is_extra_payment: 1 },
+        }));
+
+        frm.set_query("clause_type", "custom_offer_clauses", () => ({
+            filters: { custom_variable_part_of_ctc: 1 },
+        }));
 
 
 
 
         
 
-        // Clause template picker → only active templates of the row's type.
-        frm.set_query("clause_template", "custom_offer_clauses", (doc, cdt, cdn) => {
-            const row = locals[cdt][cdn];
-            const filters = { is_active: 1 };
-            if (row && row.clause_type) filters.clause_type = row.clause_type;
-            return { filters };
-        });
+        
 
         // Compute button only in "Auto by Grade" mode — the default/legacy
         // "Salary Structure" flow is left completely untouched.
@@ -393,4 +412,44 @@ frappe.ui.form.on("Job Offer Clause", {
         const row = locals[cdt][cdn];
         if (row.clause_template) frappe.model.set_value(cdt, cdn, "clause_template", null);
     },
+});
+
+
+frappe.ui.form.on("Extra Payment Child Doc", {
+    recovery_applicable: function(frm, cdt, cdn) {
+        let row = locals[cdt][cdn];
+
+        if (row.recovery_applicable) {
+                frappe.call({
+                    method: "frappe.client.get",
+                    args: {
+                        doctype: "Payroll Settings",
+                       
+                    },
+                    callback: function(r) {
+                        if (r.message) {
+                            let days = r.message.clock_back_days || 0;
+
+                            console.log(days,"444")
+
+                            if (frm.doc.offer_date) {
+                                let clock_back = frappe.datetime.add_days(
+                                    frm.doc.offer_date,
+                                    days
+                                );
+
+                                console.log(clock_back,"55555555")
+
+                                frappe.model.set_value(
+                                    cdt,
+                                    cdn,
+                                    "date",        // child table fieldname
+                                    clock_back
+                                );
+                            }
+                        }
+                    }
+                });
+        }
+    }
 });

@@ -75,14 +75,14 @@ export const EditAttendance = ({
         employee: employeeName || employeeId || "",
         attendance_date: data[0].attendance_date,
         // Display label only; the raw code (data[0].shift) is what's sent back to the API in handleSubmit.
-        shift: data[0].custom_shift_name || data[0].shift || shiftData?.shift || "",
+        shift: data[0].shift_name || data[0].shift || shiftData?.shift || "",
 
         in_time: normalizeTimeValue(data[0].in_time) || normalizeTimeValue(shiftData?.start_time),
         out_time: normalizeTimeValue(data[0].out_time) || normalizeTimeValue(shiftData?.end_time),
         status: data[0].status || "",
         working_hours: data[0].working_hours || 0,
         // Display label only; the raw code (data[0].department) is what's sent back to the API in handleSubmit.
-        department: data[0].custom_department_name || data[0].department || "",
+        department: data[0].department_name || data[0].department || "",
         company: data[0].company || "",
       },
     };

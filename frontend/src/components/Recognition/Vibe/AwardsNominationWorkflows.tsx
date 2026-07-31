@@ -1,6 +1,7 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import React, { useEffect, useMemo, useState } from "react";
 import { Card } from "../../shared/atoms/Card";
+import { Typography } from "../../shared/atoms/Typography";
 import {
   ArrowDown,
   ArrowUp,
@@ -329,8 +330,8 @@ const AwardsNominationWorkflows: React.FC = () => {
         <div className="overflow-x-auto">
           <table className="w-full min-w-[1050px] text-left">
             <thead>
-              <tr className="text-sm text-gray-600 border-y border-gray-100">
-                <th className="px-4 py-3 font-semibold">
+              <tr className="border-y border-gray-100">
+                <th className="px-4 py-3">
                   <input
                     type="checkbox"
                     className="accent-primary"
@@ -339,20 +340,20 @@ const AwardsNominationWorkflows: React.FC = () => {
                     onChange={toggleAll}
                   />
                 </th>
-                {showCol("id") && <th className="px-4 py-3 font-semibold">Nomination ID</th>}
+                {showCol("id") && <th className="px-4 py-3"><Typography variant="bodySmall" className="font-semibold whitespace-nowrap">Nomination ID</Typography></th>}
                 {showCol("program") && (
-                  <th className="px-4 py-3 font-semibold">Nomination Program Names(ID)</th>
+                  <th className="px-4 py-3"><Typography variant="bodySmall" className="font-semibold whitespace-nowrap">Nomination Program Names(ID)</Typography></th>
                 )}
                 {showCol("nominatedBy") && (
-                  <th className="px-4 py-3 font-semibold">{recognizerLabel}</th>
+                  <th className="px-4 py-3"><Typography variant="bodySmall" className="font-semibold whitespace-nowrap">{recognizerLabel}</Typography></th>
                 )}
                 {showCol("nominationDate") && (
-                  <th className="px-4 py-3 font-semibold">
+                  <th className="px-4 py-3">
                     <button
                       onClick={() => setSortDir((d) => (d === "asc" ? "desc" : "asc"))}
                       className="flex items-center gap-1 hover:text-gray-800"
                     >
-                      Nomination Date
+                      <Typography variant="bodySmall" className="font-semibold whitespace-nowrap">Nomination Date</Typography>
                       {sortDir === "asc" ? (
                         <ArrowUp className="size-3.5" />
                       ) : (
@@ -362,15 +363,15 @@ const AwardsNominationWorkflows: React.FC = () => {
                   </th>
                 )}
                 {showCol("lastActionDate") && (
-                  <th className="px-4 py-3 font-semibold">Last Action Date</th>
+                  <th className="px-4 py-3"><Typography variant="bodySmall" className="font-semibold whitespace-nowrap">Last Action Date</Typography></th>
                 )}
                 {showCol("status") && (
-                  <th className="px-4 py-3 font-semibold">Approval Status</th>
+                  <th className="px-4 py-3"><Typography variant="bodySmall" className="font-semibold whitespace-nowrap">Approval Status</Typography></th>
                 )}
                 {showCol("published") && (
-                  <th className="px-4 py-3 font-semibold">Published</th>
+                  <th className="px-4 py-3"><Typography variant="bodySmall" className="font-semibold whitespace-nowrap">Published</Typography></th>
                 )}
-                <th className="px-4 py-3 font-semibold">Actions</th>
+                <th className="px-4 py-3"><Typography variant="bodySmall" className="font-semibold whitespace-nowrap">Actions</Typography></th>
               </tr>
             </thead>
             <tbody>
@@ -401,37 +402,37 @@ const AwardsNominationWorkflows: React.FC = () => {
                         />
                       </td>
                       {showCol("id") && (
-                        <td className={`px-4 ${rowPad} text-sm font-medium text-gray-800`}>
-                          {row.id}
+                        <td className={`px-4 ${rowPad}`}>
+                          <Typography variant="bodyMedium" color="body1">{row.id}</Typography>
                         </td>
                       )}
                       {showCol("program") && (
                         <td
-                          className={`px-4 ${rowPad} text-sm text-gray-700 max-w-[280px] truncate`}
+                          className={`px-4 ${rowPad} max-w-[280px] truncate`}
                           title={row.program}
                         >
-                          {row.program}
+                          <Typography variant="bodyMedium" color="body1">{row.program}</Typography>
                         </td>
                       )}
                       {showCol("nominatedBy") && (
-                        <td className={`px-4 ${rowPad} text-sm text-gray-700`}>
-                          {row.nominatedBy}
+                        <td className={`px-4 ${rowPad}`}>
+                          <Typography variant="bodyMedium" color="body1">{row.nominatedBy}</Typography>
                         </td>
                       )}
                       {showCol("nominationDate") && (
-                        <td className={`px-4 ${rowPad} text-sm text-gray-700`}>
-                          {row.nominationDate}
+                        <td className={`px-4 ${rowPad}`}>
+                          <Typography variant="bodyMedium" color="body1">{row.nominationDate}</Typography>
                         </td>
                       )}
                       {showCol("lastActionDate") && (
-                        <td className={`px-4 ${rowPad} text-sm text-gray-700`}>
-                          {row.lastActionDate}
+                        <td className={`px-4 ${rowPad}`}>
+                          <Typography variant="bodyMedium" color="body1">{row.lastActionDate}</Typography>
                         </td>
                       )}
                       {showCol("status") && (
                         <td className={`px-4 ${rowPad}`}>
                           <span
-                            className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium ${s.wrap}`}
+                            className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-semibold ${s.wrap}`}
                           >
                             <span className={`size-1.5 rounded-full ${s.dot}`} />
                             {row.status}
@@ -441,12 +442,12 @@ const AwardsNominationWorkflows: React.FC = () => {
                       {showCol("published") && (
                         <td className={`px-4 ${rowPad}`}>
                           {row.published ? (
-                            <span className="inline-flex items-center gap-1.5 rounded-md bg-green-50 px-2.5 py-1 text-xs font-medium text-green-700">
+                            <span className="inline-flex items-center gap-1.5 rounded-md bg-green-50 px-2.5 py-1 text-xs font-semibold text-green-800">
                               <CircleCheckBig className="size-3.5" />
                               Published
                             </span>
                           ) : (
-                            <span className="inline-flex items-center gap-1.5 rounded-md bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-600">
+                            <span className="inline-flex items-center gap-1.5 rounded-md bg-gray-100 px-2.5 py-1 text-xs font-semibold text-gray-700">
                               <FileText className="size-3.5" />
                               Draft
                             </span>

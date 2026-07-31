@@ -17,10 +17,19 @@
 	const METHOD =
 		"recruitment.recruitment.doctype.ta_interview_strategy_template.ta_interview_strategy_template.get_hiring_stages_for_job_opening";
 
+	// "Interview" stages name a real interview round (Interview Round on HRMS v15,
+	// Interview Type on v16) — see interview_round_link.js.
+	const STAGE_LINK = {
+		grid: "custom_hiring_stages",
+		name_field: "stage_name",
+		type_field: "stage_type",
+	};
+
 	function applyStages(frm, stages) {
 		frm.clear_table("custom_hiring_stages");
 		(stages || []).forEach((s) => frm.add_child("custom_hiring_stages", s));
 		frm.refresh_field("custom_hiring_stages");
+		recruitment.interview_round_link.sync(frm, STAGE_LINK);
 	}
 
 	function fetchAndFill(frm, opts) {
@@ -63,6 +72,9 @@
 
 	frappe.ui.form.on("Job Opening", {
 		refresh(frm) {
+			// Stage Name is a round picker on Interview rows, free text elsewhere.
+			recruitment.interview_round_link.sync(frm, STAGE_LINK);
+
 			// Master switch: when the Hiring Workflow feature is off, add no
 			// button and don't auto-fill — the Job Opening behaves as before.
 			frappe.call({
@@ -86,6 +98,20 @@
 					fetchAndFill(frm);
 				},
 			});
+		},
+	});
+
+	// Switching a row's type flips its Stage Name between a round picker and free
+	// text; a freshly added row starts as free text until a type is chosen.
+	frappe.ui.form.on("Job Opening Hiring Stage", {
+		stage_type(frm, cdt, cdn) {
+			recruitment.interview_round_link.sync_row(frm, STAGE_LINK, cdt, cdn);
+		},
+	});
+
+	frappe.ui.form.on("Job Opening", {
+		custom_hiring_stages_add(frm, cdt, cdn) {
+			recruitment.interview_round_link.sync_row(frm, STAGE_LINK, cdt, cdn);
 		},
 	});
 

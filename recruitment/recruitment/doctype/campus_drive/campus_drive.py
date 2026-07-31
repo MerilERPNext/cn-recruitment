@@ -2,7 +2,10 @@ import frappe
 from frappe import _
 from frappe.model.document import Document
 
-from recruitment.recruitment.campus_helpers import validate_unique_job_openings
+from recruitment.recruitment.campus_helpers import (
+	sync_drive_applicant_links,
+	validate_unique_job_openings,
+)
 
 # Round types that need an interview panel / GD grouping in the reference portal.
 PANEL_ROUND_TYPES = {"Group Discussion", "Technical", "HR"}
@@ -100,6 +103,11 @@ class CampusDrive(Document):
 			self._validate_links()
 
 	def on_update(self):
+		# Point this drive's candidates at it. Runs on every save (after the invite
+		# tables are settled) so adding an invite immediately pulls in the applicants
+		# who came through it, and removing one lets them go.
+		self._link_applicants()
+
 		# Auto-generate the QR the first time the form is enabled. Refreshing is
 		# manual (the "Generate QR Code" button) so the image isn't rebuilt on
 		# every save. Best-effort: a QR failure must never block the save.
@@ -108,6 +116,35 @@ class CampusDrive(Document):
 				self._write_registration_qr(self._registration_url())
 			except Exception:
 				frappe.log_error(frappe.get_traceback(), "Campus Drive: QR auto-generate failed")
+
+	def on_trash(self):
+		# Release the candidates before Frappe's link check runs (it would otherwise
+		# refuse the delete now that Job Applicants point back at the drive).
+		for name in frappe.get_all("Job Applicant", filters={"custom_campus_drive": self.name},
+		                           pluck="name", ignore_permissions=True):
+			frappe.db.set_value("Job Applicant", name, "custom_campus_drive", None,
+			                    update_modified=False)
+
+	def _link_applicants(self):
+		"""Write this drive onto the Job Applicants of its Campus Invites (and off the
+		ones whose invite was removed), then tell HR what moved.
+
+		Best-effort: a save must never fail because of the back-link.
+		"""
+		try:
+			result = sync_drive_applicant_links(self.name, _drive_invites(self))
+		except Exception:
+			frappe.log_error(frappe.get_traceback(), "Campus Drive: applicant linking failed")
+			return
+
+		parts = []
+		if result["linked"]:
+			parts.append(_("{0} candidate(s) linked to this drive").format(result["linked"]))
+		if result["released"]:
+			parts.append(_("{0} released (their invite is no longer on it)").format(result["released"]))
+		if parts:
+			frappe.msgprint(", ".join(parts), title=_("Campus Candidates"), indicator="green",
+			                alert=True)
 
 	def _validate_drive_window(self):
 		if self.drive_start_date and self.drive_end_date:
@@ -767,16 +804,21 @@ _INTERVIEW_CORE_FIELDS = {
 
 
 def _set_interview_round(iv, round_name):
-	"""Set the Interview Round on whatever field links to it.
+	"""Set the interview round on whatever field links to it.
 
-	The fieldname differs across HRMS versions — v15 calls it ``interview_round``,
-	v16 renamed it to ``interview_type`` — so we target EVERY Link field whose options
-	is the "Interview Round" doctype instead of hardcoding a name. This is why the
-	round wasn't landing on v16: our old ``iv.interview_round = ...`` set a field that
-	no longer exists there.
+	Both the fieldname and the target doctype differ across HRMS versions — v15
+	has ``interview_round`` → "Interview Round", v16 renamed it to
+	``interview_type`` → "Interview Type" — so we target EVERY Link field whose
+	options is the doctype this version actually uses (resolved once by
+	``get_interview_round_doctype``) instead of hardcoding a name. This is why the
+	round wasn't landing on v16: our old ``iv.interview_round = ...`` set a field
+	that no longer exists there.
 	"""
+	from recruitment.api.hiring_stage import get_interview_round_doctype
+
+	round_doctype = get_interview_round_doctype()
 	targets = [df.fieldname for df in iv.meta.fields
-	           if df.fieldtype == "Link" and df.options == "Interview Round"]
+	           if df.fieldtype == "Link" and round_doctype and df.options == round_doctype]
 	if not targets and iv.meta.get_field("interview_round"):
 		targets = ["interview_round"]
 	for fn in targets:
@@ -899,12 +941,34 @@ def _panels_for_round(doc, round_code, emp_users=None):
 	return {k: panels[k] for k in order}, missing
 
 
-@frappe.whitelist()
-def get_offer_candidates(campus_drive, round_code):
-	"""Candidates who have reached an Offer round's stage — i.e. cleared everything
-	before it — so HR can select them and raise Job Offers straight from the drive.
-	Flags anyone who already has a Job Offer so they aren't offered twice.
+def _round_kind(row, stage_type):
+	"""Which body a round drives: ``"pre_offer"``, ``"offer"``, or None (a normal
+	interview/assessment round).
+
+	Decided by the **hiring stage the round is mapped to**, not by a second switch
+	of its own. That keeps the Job Opening's ``custom_enable_pre_job_offer``
+	checkbox as the single source of truth: ``get_opening_stages`` appends the
+	virtual "Pre Job Offer" stage only when it is checked, so a round can only be
+	mapped to a Pre Offer stage on openings that enabled it — and on openings that
+	didn't, the same round maps to the Offer stage and raises Job Offers instead.
+
+	``round_type`` is still honoured as a fallback so drives configured before the
+	stage drove this keep working unchanged.
 	"""
+	stage = (row.hiring_stage or "").strip()
+	declared = (row.round_type or "").strip()
+	if (stage_type or {}).get(stage) == "Pre Offer" or declared == "Pre Offer":
+		return "pre_offer"
+	if (stage_type or {}).get(stage) == "Offer" or declared == "Offer":
+		return "offer"
+	return None
+
+
+def _terminal_round_pool(campus_drive, round_code):
+	"""``(stage, [Job Applicant rows])`` for a terminal (Offer / Pre Offer) round —
+	everyone parked at that round's hiring stage, i.e. who cleared everything before
+	it. Shared by the offer and pre-offer candidate lists so both read the pipeline
+	the same way."""
 	doc = _drive_lite(campus_drive)
 	row = _round_by_code(doc, round_code)
 	stage = (row.hiring_stage or "").strip()
@@ -913,9 +977,9 @@ def get_offer_candidates(campus_drive, round_code):
 
 	invites = _drive_invites(doc)
 	if not invites:
-		return {"stage": stage, "candidates": []}
+		return stage, []
 
-	rows = frappe.get_all(
+	return stage, frappe.get_all(
 		"Job Applicant",
 		filters={"custom_campus_invite": ["in", invites], "custom_current_stage": stage},
 		fields=["name", "applicant_name", "custom_applicant_last_name",
@@ -923,6 +987,27 @@ def get_offer_candidates(campus_drive, round_code):
 		        "designation", "status"],
 		order_by="job_title asc, name asc",
 	)
+
+
+def _candidate_card(r, **extra):
+	card = {
+		"name": r.name,
+		"applicant_name": _full_name(r.applicant_name, r.get("custom_applicant_last_name")),
+		"institute": r.institute,
+		"job_opening": r.job_opening,
+		"designation": r.designation,
+	}
+	card.update(extra)
+	return card
+
+
+@frappe.whitelist()
+def get_offer_candidates(campus_drive, round_code):
+	"""Candidates who have reached an Offer round's stage — i.e. cleared everything
+	before it — so HR can select them and raise Job Offers straight from the drive.
+	Flags anyone who already has a Job Offer so they aren't offered twice.
+	"""
+	stage, rows = _terminal_round_pool(campus_drive, round_code)
 	names = [r.name for r in rows]
 	with_offer = set(frappe.get_all(
 		"Job Offer", filters={"job_applicant": ["in", names or [""]], "docstatus": ["!=", 2]},
@@ -930,14 +1015,31 @@ def get_offer_candidates(campus_drive, round_code):
 
 	return {
 		"stage": stage,
-		"candidates": [{
-			"name": r.name,
-			"applicant_name": _full_name(r.applicant_name, r.get("custom_applicant_last_name")),
-			"institute": r.institute,
-			"job_opening": r.job_opening,
-			"designation": r.designation,
-			"has_offer": r.name in with_offer,
-		} for r in rows],
+		"candidates": [_candidate_card(r, has_offer=r.name in with_offer) for r in rows],
+	}
+
+
+@frappe.whitelist()
+def get_pre_offer_candidates(campus_drive, round_code):
+	"""Candidates who have reached a Pre Offer round's stage, so HR can send them the
+	pre-offer form straight from the drive.
+
+	Unlike a Job Offer, a pre-offer is legitimately re-sendable — each send is a new
+	round (see ``_send_pre_offer_for_applicant``) — so an already-sent candidate is
+	flagged but NOT locked out; the UI just leaves them unticked so a bulk click
+	can't re-spam them by accident.
+	"""
+	stage, rows = _terminal_round_pool(campus_drive, round_code)
+	names = [r.name for r in rows]
+	already_sent = set(frappe.get_all(
+		"Job Applicant Pre Offer Form",
+		filters={"parenttype": "Job Applicant", "parent": ["in", names or [""]],
+		         "status": ["in", ("Sent", "Filled", "Reviewed")]},
+		pluck="parent")) if names else set()
+
+	return {
+		"stage": stage,
+		"candidates": [_candidate_card(r, pre_offer_sent=r.name in already_sent) for r in rows],
 	}
 
 
@@ -949,6 +1051,17 @@ def create_offers_for_candidates(campus_drive, applicants):
 
 	_gd_guard(campus_drive)
 	return create_bulk_job_offer(applicants)
+
+
+@frappe.whitelist()
+def send_pre_offers_for_candidates(campus_drive, applicants):
+	"""Send the pre-offer form to the selected candidates (reuses the shared bulk
+	sender, so the forms and Action Center items are raised exactly as they are from
+	the Job Applicant flow)."""
+	from recruitment.api.action_center import send_bulk_pre_offer
+
+	_gd_guard(campus_drive)
+	return send_bulk_pre_offer(applicants)
 
 
 @frappe.whitelist()
@@ -1319,7 +1432,10 @@ def get_rounds_overview(campus_drive):
 		):
 			s = r.stage or ""
 			stage_applicants.setdefault(s, set()).add(r.name)
-			if r.status not in ("Rejected", "Accepted"):
+			# "Hold" candidates were deliberately knocked out (eligibility not met);
+			# like Rejected/Accepted they are parked on purpose, so they must not
+			# count toward the "stuck at a stage no round covers" health warning.
+			if r.status not in ("Rejected", "Accepted", "Hold"):
 				stage_active[s] = stage_active.get(s, 0) + 1
 
 	# Interviews this drive created, with their feedback progress
@@ -1376,6 +1492,9 @@ def get_rounds_overview(campus_drive):
 
 	empty_stat = {"total": 0, "cleared": 0, "rejected": 0, "awaiting": 0, "pending": 0,
 	              "scheduled": set()}
+	# Computed before the loop so each round can report the kind of body it drives.
+	stage_options = _stage_options(doc)
+	stage_type = stage_options.get("stage_type") or {}
 	rounds = []
 	for r in (doc.rounds or []):
 		panels, missing = panels_by_round[r.round_code]
@@ -1393,6 +1512,7 @@ def get_rounds_overview(campus_drive):
 			"round_status": r.round_status,
 			"scheduled_at": str(r.scheduled_at)[:10] if r.scheduled_at else None,
 			"is_gd": bool(r.requires_gd_grouping),
+			"round_kind": _round_kind(r, stage_type),
 			"waiting": waiting,
 			"panels": [
 				{"panel": k, "role": v["role"], "role_title": role_titles.get(v["role"]) or v["role"],
@@ -1408,7 +1528,6 @@ def get_rounds_overview(campus_drive):
 		})
 
 	# Folded in so the client gets rounds + the stage picker's options in ONE call.
-	stage_options = _stage_options(doc)
 	return {"rounds": rounds, "invites": invites,
 	        "roles": [{"job_opening": k, "job_title": v} for k, v in role_titles.items()],
 	        "stage_options": stage_options,
@@ -1422,7 +1541,9 @@ def _drive_health(doc, stage_options, stage_active):
 	  1. A round with no Hiring Stage.
 	  2. A round mapped to a stage none of the linked openings has.
 	  3. An interview round mapped to a stage that isn't of type "Interview" (feedback
-	     won't auto-advance those candidates).
+	     won't auto-advance those candidates). Offer / Pre Offer rounds are exempt —
+	     those stage types are exactly what makes them terminal rounds, so flagging
+	     them buried the real issues under a warning on correct configuration.
 	  4. Candidates stranded at a stage no round on the drive covers.
 	"""
 	stage_names = set(stage_options.get("stages") or [])
@@ -1445,6 +1566,8 @@ def _drive_health(doc, stage_options, stage_active):
 				"title": _("Round “{0}” points to a stage no opening has").format(r.round_name or r.round_code),
 				"detail": _("“{0}” isn’t in any linked opening’s hiring workflow, so candidates can never reach this round. Change it to one of: {1}.").format(
 					hs, ", ".join(sorted(stage_names)))})
+		elif _round_kind(r, stage_type):
+			continue  # terminal round — an Offer / Pre Offer stage is the point of it
 		elif stage_type.get(hs) and stage_type.get(hs) != "Interview":
 			issues.append({"level": "warning",
 				"title": _("Round “{0}”’s stage isn’t an Interview stage").format(r.round_name or r.round_code),
@@ -1483,12 +1606,15 @@ def _stage_options(doc):
 	if not openings:
 		return {"stages": [], "common": [], "partial": [], "openings": 0}
 
-	from recruitment.api.hiring_stage import get_opening_stages
+	from recruitment.api.hiring_stage import get_openings_stages
+
+	# Batched: two queries for the whole drive rather than two per linked opening.
+	stages_by_opening = get_openings_stages(openings)
 
 	per_opening, stage_type = {}, {}
 	for op in openings:
 		per_opening[op] = []
-		for s in (get_opening_stages(op) or []):
+		for s in (stages_by_opening.get(op) or []):
 			nm = s.get("stage_name")
 			if nm:
 				per_opening[op].append(nm)

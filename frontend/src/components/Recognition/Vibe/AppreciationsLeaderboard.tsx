@@ -4,6 +4,7 @@ import { Typography } from "../../shared/atoms/Typography";
 import { Card } from "../../shared/atoms/Card";
 import { Search, Star } from "lucide-react";
 import Avatar from "./Avatar";
+import WrapperHoverCard from "../../shared/WrapperHoverCard";
 import { useCurrentEmployeeDetails } from "../../../hooks/useEmployee";
 import { useTargetUser } from "../../../context/ViewedUserContext";
 import {
@@ -43,7 +44,8 @@ const PodiumColumn: React.FC<{
   height: string;
   size: number;
   score: number;
-}> = ({ person, height, size, score }) => (
+  employeeId: string;
+}> = ({ person, height, size, score, employeeId }) => (
   <div className={`flex flex-col items-center ${height}`}>
     <div className="relative mb-3">
       <StarBadge rank={person.rank} />
@@ -55,9 +57,11 @@ const PodiumColumn: React.FC<{
       />
     </div>
     <Card radius="xl" className="border border-gray-100 shadow-sm px-4 py-4 w-full text-center bg-white">
-      <Typography variant="bodyMedium" className="font-semibold">
-        {person.employee_name}
-      </Typography>
+      <WrapperHoverCard employeeId={employeeId}>
+        <Typography variant="bodyMedium" className="font-semibold cursor-pointer">
+          {person.employee_name}
+        </Typography>
+      </WrapperHoverCard>
       <Typography variant="bodySmall" color="body2" className="block truncate">
         {person.designation}
       </Typography>
@@ -75,9 +79,11 @@ const AppreciationNoteCard: React.FC<{ item: AppreciationApiItem }> = ({ item })
     <div className="flex items-center gap-3 mb-2">
       <Avatar name={item.person} photo={resolveImage(item.person_image)} size={36} />
       <div className="min-w-0">
-        <Typography variant="bodyMedium" className="font-semibold truncate">
-          {item.person}
-        </Typography>
+        <WrapperHoverCard employeeId={item.employee_id ?? undefined}>
+          <Typography variant="bodyMedium" className="font-semibold truncate cursor-pointer">
+            {item.person}
+          </Typography>
+        </WrapperHoverCard>
         <Typography variant="caption" color="body2" className="block">
           {item.direction === "received" ? "From" : "To"} · {formatToIndianDate(item.date)}
         </Typography>
@@ -241,6 +247,7 @@ const AppreciationsLeaderboard: React.FC = () => {
                           height={col.height}
                           size={col.size}
                           score={scoreOf(col.person!)}
+                          employeeId={col.person!.employee}
                         />
                       ))}
                     </div>
@@ -268,9 +275,11 @@ const AppreciationsLeaderboard: React.FC = () => {
                           size={40}
                         />
                         <div className="min-w-0 flex-1">
-                          <Typography variant="bodyMedium" className="font-semibold">
-                            {person.employee_name}
-                          </Typography>
+                          <WrapperHoverCard employeeId={person.employee}>
+                            <Typography variant="bodyMedium" className="font-semibold cursor-pointer">
+                              {person.employee_name}
+                            </Typography>
+                          </WrapperHoverCard>
                           <Typography variant="bodySmall" color="body2" className="block truncate">
                             {person.designation}
                           </Typography>

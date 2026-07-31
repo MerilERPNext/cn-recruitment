@@ -11,13 +11,15 @@
   "amount",
   "note",
   "paid_after_confirmation",
-  "recovery_applicable"
+  "recovery_applicable",
+  "date"
  ],
  "fields": [
   {
    "allow_on_submit": 1,
    "fieldname": "salary_component",
    "fieldtype": "Link",
+   "in_list_view": 1,
    "label": "Salary Component",
    "options": "Salary Component"
   },
@@ -25,13 +27,15 @@
    "allow_on_submit": 1,
    "fieldname": "pay_frequency",
    "fieldtype": "Select",
+   "in_list_view": 1,
    "label": "Pay Frequency",
-   "options": "\nMonthly (12 payouts)\nQuarterly (4 payouts)\nHalf-Yearly (2 payouts)\nYearly (1 payout)"
+   "options": "\nMonthly\nQuarterly\nHalf-Yearly\nYearly"
   },
   {
    "allow_on_submit": 1,
    "fieldname": "amount",
    "fieldtype": "Float",
+   "in_list_view": 1,
    "label": "Amount",
    "mandatory_depends_on": "salary_component"
   },
@@ -39,6 +43,7 @@
    "allow_on_submit": 1,
    "fieldname": "note",
    "fieldtype": "Small Text",
+   "in_list_view": 1,
    "label": "Note"
   },
   {
@@ -55,14 +60,22 @@
    "default": "0",
    "fieldname": "recovery_applicable",
    "fieldtype": "Check",
+   "in_list_view": 1,
    "label": "Recovery Applicable"
+  },
+  {
+   "depends_on": "recovery_applicable",
+   "fieldname": "date",
+   "fieldtype": "Date",
+   "label": "Clock Back Date",
+   "mandatory_depends_on": "recovery_applicable"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2026-07-28 21:21:31.075161",
+ "modified": "2026-07-30 17:25:47.075004",
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "Extra Payment Child Doc",
