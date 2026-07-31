@@ -1,12 +1,12 @@
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Paperclip, Loader2, AlertCircle, ClipboardList, ExternalLink, X } from 'lucide-react';
+import { ArrowLeft, Paperclip, Loader2, AlertCircle, ClipboardList, ExternalLink, X, Edit, Plus, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Typography } from '../../../shared/atoms/Typography';
 import Badge, { type BadgeVariant } from '../../../shared/Badge';
 import Button from '../../../shared/atoms/Button';
 import { Card } from '../../../shared/atoms/Card';
-import { useGoalCheckIns, useGoalDetail, useSubmitGoalCheckIn } from '../../../../hooks/usePerformance';
+import { useGoalCheckIns, useGoalDetail, useSubmitGoalCheckIn, useSaveGoals } from '../../../../hooks/usePerformance';
 import useCurrentUser from '../../../../hooks/useCurrentUser';
 import type { GoalCheckInSentiment, GoalDetailKeyResult } from '../../../../types/goal';
 import FrappeAPI from '../../../../utils/frappeAPI';
@@ -91,6 +91,7 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, onBack }) => {
   const { data: goalResponse, isLoading, isError, error } = useGoalDetail(id);
   const { data: checkInsResponse, isLoading: isCheckInsLoading } = useGoalCheckIns(id);
   const { mutateAsync: submitCheckIn, isPending: isSubmittingCheckIn } = useSubmitGoalCheckIn();
+  const { mutateAsync: saveGoals, isPending: isSavingGoals } = useSaveGoals();
   const { data: currentUser } = useCurrentUser();
 
   const topRef = React.useRef<HTMLDivElement>(null);
@@ -101,6 +102,9 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, onBack }) => {
   const [attachment, setAttachment] = React.useState<File | null>(null);
   const [latestProgress, setLatestProgress] = React.useState<number | null>(null);
 
+  const [isEditingKRs, setIsEditingKRs] = React.useState(false);
+  const [editingKRs, setEditingKRs] = React.useState<{ id: string; title: string; weightage: string; goal_key?: string }[]>([]);
+
   React.useEffect(() => {
     if (goalResponse?.data) {
       setNewValue(String(goalResponse.data.achievement ?? 0));
@@ -108,6 +112,68 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, onBack }) => {
       setLatestProgress(null);
     }
   }, [goalResponse?.data?.goal_key]);
+
+  const handleStartEditKRs = () => {
+    if (goalResponse?.data?.key_results && goalResponse.data.key_results.length > 0) {
+      setEditingKRs(goalResponse.data.key_results.map((kr: any, idx: number) => ({
+        id: `kr-${Date.now()}-${idx}`,
+        title: kr.title || '',
+        weightage: String(kr.weightage || ''),
+        goal_key: kr.goal_key,
+      })));
+    } else {
+      setEditingKRs([{ id: `kr-${Date.now()}`, title: '', weightage: '' }]);
+    }
+    setIsEditingKRs(true);
+  };
+
+  const handleCancelEditKRs = () => {
+    setIsEditingKRs(false);
+    setEditingKRs([]);
+  };
+
+  const handleUpdateKRs = async () => {
+    const hasEmpty = editingKRs.some(kr => !kr.title.trim() || !kr.weightage || Number(kr.weightage) <= 0);
+    if (hasEmpty) {
+      toast.error('Please fill or delete the empty key result.');
+      return;
+    }
+    const totalWeight = editingKRs.reduce((sum, kr) => sum + Number(kr.weightage), 0);
+    if (totalWeight !== 100) {
+      toast.error(`Total weightage must be 100% (currently ${totalWeight}%).`);
+      return;
+    }
+
+    try {
+      const payload = {
+        action: 'draft' as const,
+        goals: [{
+          goal: goalResponse!.data.goal,
+          goal_type: goalResponse!.data.goal_type,
+          title: goalResponse!.data.title,
+          description: goalResponse!.data.description || '',
+          weightage: goalResponse!.data.weightage,
+          department: goalResponse!.data.department,
+          designation: goalResponse!.data.designation,
+          key_results: editingKRs.map(kr => ({
+            title: kr.title,
+            weightage: Number(kr.weightage)
+          }))
+        }]
+      };
+      await saveGoals(payload);
+      toast.success('Key results updated successfully.');
+      setIsEditingKRs(false);
+    } catch (e: any) {
+      toast.error(getPerformanceErrorMessage(e, 'Failed to update key results.'));
+    }
+  };
+
+  const addKRField = () => setEditingKRs(prev => [...prev, { id: `kr-${Date.now()}`, title: '', weightage: '' }]);
+  const updateKRField = (id: string, field: 'title' | 'weightage', value: string) => {
+    setEditingKRs(prev => prev.map(kr => kr.id === id ? { ...kr, [field]: value } : kr));
+  };
+  const removeKRField = (id: string) => setEditingKRs(prev => prev.filter(kr => kr.id !== id));
 
   const handleSubmitCheckIn = async () => {
     const parsedValue = Number(newValue);
@@ -186,6 +252,7 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, onBack }) => {
   const ownerName = currentUser?.full_name || currentUser?.first_name || currentUser?.email || '-';
   const checkIns = checkInsResponse?.data?.check_ins ?? [];
   const displayedProgress = latestProgress ?? goal.achievement ?? 0;
+  const isPendingGoal = goal.goal_status?.toLowerCase() === 'pending';
 
   return (
     <div ref={topRef} id="goal-details-container" className="min-h-full bg-[#f8fafc] overflow-y-auto p-3 font-sans sm:p-6">
@@ -267,12 +334,94 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, onBack }) => {
             
             {/* Key Results */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6">
-              <div className="flex items-center gap-2 mb-4 sm:mb-6">
+              <div className="flex items-center justify-between mb-4 sm:mb-6">
                 <Typography variant="h4">Key Results</Typography>
+                {!isEditingKRs && isPendingGoal && (
+                  <Button 
+                    variant="outline" 
+                    bgColor="text"
+                    size="sm" 
+                    onClick={handleStartEditKRs}
+                    icon={goal.key_results?.length ? <Edit className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
+                  >
+                    {goal.key_results?.length ? 'Edit' : 'Add KR'}
+                  </Button>
+                )}
               </div>
 
               <div className="space-y-4 sm:space-y-6">
-                {goal.key_results && goal.key_results.length > 0 ? (
+                {isEditingKRs ? (
+                  <div className="space-y-4">
+                    {editingKRs.map((kr, idx) => (
+                      <div key={kr.id} className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
+                        <div className="flex-1 w-full">
+                          <label className="block text-xs font-medium text-gray-600 mb-1">Key Result Title</label>
+                          <input 
+                            type="text"
+                            value={kr.title}
+                            onChange={(e) => updateKRField(kr.id, 'title', e.target.value)}
+                            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                            placeholder="Enter key result"
+                          />
+                        </div>
+                        <div className="w-full sm:w-24 shrink-0">
+                          <label className="block text-xs font-medium text-gray-600 mb-1">Weight (%)</label>
+                          <input 
+                            type="number"
+                            value={kr.weightage}
+                            onChange={(e) => updateKRField(kr.id, 'weightage', e.target.value)}
+                            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                            placeholder="%"
+                          />
+                        </div>
+                        <div className="pt-0 sm:pt-5">
+                          <button
+                            type="button"
+                            onClick={() => removeKRField(kr.id)}
+                            className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                            aria-label="Remove KR"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                    
+                    <button
+                      type="button"
+                      onClick={addKRField}
+                      className="flex items-center gap-2 text-sm font-medium text-blue-600 hover:text-blue-700 mt-2"
+                    >
+                      <Plus className="w-4 h-4" />
+                      Add More
+                    </button>
+
+                    {(() => {
+                      const currentTotalWeight = editingKRs.reduce((sum, kr) => sum + Number(kr.weightage || 0), 0);
+                      return (
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mt-6 pt-4 border-t border-gray-100">
+                          <div>
+                            {currentTotalWeight !== 100 && (
+                              <span className="text-xs font-medium text-red-500">
+                                Total weightage must be 100% (currently {currentTotalWeight}%)
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
+                            <Button variant="outline" bgColor="text" onClick={handleCancelEditKRs}>
+                              Cancel
+                            </Button>
+                            <Button variant="contain" bgColor="primary" onClick={handleUpdateKRs} disabled={isSavingGoals}>
+                              {isSavingGoals 
+                                ? (goal.key_results?.length ? 'Updating...' : 'Adding...') 
+                                : (goal.key_results?.length ? 'Update' : 'Add')}
+                            </Button>
+                          </div>
+                        </div>
+                      );
+                    })()}
+                  </div>
+                ) : goal.key_results && goal.key_results.length > 0 ? (
                   goal.key_results.map((kr: GoalDetailKeyResult, idx: number) => (
                     <div key={kr.goal_key || idx} className="relative">
                       <div className="flex flex-col gap-2 mb-2 sm:flex-row sm:items-center sm:justify-between">
@@ -280,7 +429,10 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, onBack }) => {
                           <Badge label={`KR ${idx + 1}`} variant="purple" size="sm" />
                           <Typography variant="bodyMedium" className="font-medium leading-snug text-gray-900">{kr.title || '-'}</Typography>
                         </div>
-                        <Typography variant="bodyMedium" className="font-bold text-gray-900 sm:text-right">{kr.achievement ?? 0}%</Typography>
+                        <div className="text-left sm:text-right">
+                          <Typography variant="bodyMedium" className="font-bold text-gray-900">{kr.achievement ?? 0}% Achieved</Typography>
+                          <Typography variant="caption" className="text-gray-500">Weightage: {kr.weightage ?? 0}%</Typography>
+                        </div>
                       </div>
                       <div className="w-full bg-gray-100 rounded-md h-2 overflow-hidden">
                         <div 

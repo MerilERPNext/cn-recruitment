@@ -41,7 +41,6 @@ const OverviewHeader = () => {
                 </div>
                 <div className="flex w-full min-w-0 flex-col items-start lg:w-auto lg:items-end">
                   <div className="flex w-full min-w-0 flex-col gap-3 sm:flex-row sm:items-center lg:w-auto lg:justify-end">
-                    <Typography variant="bodySmall" className="font-medium text-blue-600">Self-Review due 21 May</Typography>
             <Button
               variant="contain"
               bgColor="primary"
@@ -55,34 +54,36 @@ const OverviewHeader = () => {
               </div>
     
               {/* Stepper */}
-             <div className="flex items-center gap-0 overflow-x-auto pb-1 scrollbar-hide">
-                     {steps.map((step, idx) => (
-                       <React.Fragment key={step.label}>
-                         {idx > 0 && <div className="h-px w-10 shrink-0 bg-gray-200 mx-3" />}
-                         <div
-                           className={`flex items-center gap-2 shrink-0 ${!step.done && !step.active ? "opacity-40" : ""}`}
-                         >
-                           {step.done ? (
-                             <div className="w-5 h-5 rounded-full bg-green-500 text-white flex items-center justify-center">
-                               <Check className="w-3 h-3" />
-                             </div>
-                           ) : (
-                             <div
-                               className={`w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold ${step.active ? "bg-[#1a73e8] text-white" : "bg-gray-100 text-gray-500"}`}
-                             >
-                               {step.n}
-                             </div>
-                           )}
-                           <Typography
-                             variant="caption"
-                             className={`whitespace-nowrap font-medium text-[11px] ${step.active ? "text-[#1a73e8] font-bold" : step.done ? "text-green-600 font-bold" : "text-gray-500"}`}
-                           >
-                             {step.label}
-                           </Typography>
-                         </div>
-                       </React.Fragment>
-                     ))}
-                   </div>
+              {(!overview?.stages || overview.stages.length > 0) && (
+                <div className="flex items-center gap-0 overflow-x-auto pb-1 scrollbar-hide">
+                  {steps.map((step, idx) => (
+                    <React.Fragment key={step.label}>
+                      {idx > 0 && <div className="h-px w-10 shrink-0 bg-gray-200 mx-3" />}
+                      <div
+                        className={`flex items-center gap-2 shrink-0 ${!step.done && !step.active ? "opacity-40" : ""}`}
+                      >
+                        {step.done ? (
+                          <div className="w-5 h-5 rounded-full bg-green-500 text-white flex items-center justify-center">
+                            <Check className="w-3 h-3" />
+                          </div>
+                        ) : (
+                          <div
+                            className={`w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold ${step.active ? "bg-[#1a73e8] text-white" : "bg-gray-100 text-gray-500"}`}
+                          >
+                            {step.n}
+                          </div>
+                        )}
+                        <Typography
+                          variant="caption"
+                          className={`whitespace-nowrap font-medium text-[11px] ${step.active ? "text-[#1a73e8] font-bold" : step.done ? "text-green-600 font-bold" : "text-gray-500"}`}
+                        >
+                          {step.label}
+                        </Typography>
+                      </div>
+                    </React.Fragment>
+                  ))}
+                </div>
+              )}
             </article>
     
   )

@@ -536,6 +536,18 @@ export interface PerformanceOverviewData {
   company: string;
   configured_by: string;
   participants: number;
+  stages?: any[];
+  current_stage?: string | null;
+  locks_on?: string | null;
+  overall_progress?: number;
+  goal_count?: number;
+  days_remaining?: number;
+  checkins?: {
+    done: number;
+    expected: number;
+    streak: number;
+  };
+  last_manager_1on1?: string | null;
 }
 
 export interface PerformanceOverviewResponse {
