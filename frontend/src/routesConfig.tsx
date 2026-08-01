@@ -651,6 +651,12 @@ const TimesheetApp = lazyWithRetry(
   "TimesheetApp",
 );
 
+// const TimesheetCreate = lazyWithRetry(
+//   () => import("./components/Timesheet/TimesheetCreate/TimesheetCreate"),
+//   "TimesheetCreate",
+// );
+
+
 // eslint-disable-next-line react-refresh/only-export-components
 const AddExpensePage = () => {
   const location = useLocation();
@@ -805,7 +811,7 @@ export const routesConfig: AppRoute[] = [
     permissionKey: "Dashboard",
   },
   {
-    path: "/webapp/timesheet",
+    path: "/webapp/timesheet/timesheet-create",
     element: <TimesheetApp />,
     permissionKey: "Timesheet",
   },
