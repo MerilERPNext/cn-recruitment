@@ -497,7 +497,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
     {
       icon: Clock,
       label: "Timesheet",
-      path: "/webapp/timesheet",
+      path: "/webapp/timesheet/timesheet-create",
       permissionKey: "Timesheet",
     },
     {
