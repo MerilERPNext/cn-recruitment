@@ -352,7 +352,7 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, onBack }) => {
               <div className="space-y-4 sm:space-y-6">
                 {isEditingKRs ? (
                   <div className="space-y-4">
-                    {editingKRs.map((kr, idx) => (
+                    {editingKRs.map((kr) => (
                       <div key={kr.id} className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
                         <div className="flex-1 w-full">
                           <label className="block text-xs font-medium text-gray-600 mb-1">Key Result Title</label>
