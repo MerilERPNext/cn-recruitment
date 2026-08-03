@@ -378,7 +378,7 @@ const TeamReviews: React.FC = () => {
                 variant="contain"
                 bgColor="primary"
                 className="h-10 w-full justify-center rounded-lg bg-blue-600 px-4 text-white hover:bg-blue-700 sm:col-span-2 lg:w-auto"
-                onClick={() => navigate("/webapp/performance-app/team-pre-release-preview")}
+                onClick={() => navigate("/webapp/performance-app/team-reviews/team-pre-release-preview")}
               >
                 Next: Achievements
                 <ArrowRight className="h-4 w-4" />

@@ -4,6 +4,8 @@ import Button from "../../../../shared/atoms/Button";
 import { Typography } from "../../../../shared/atoms/Typography";
 import Badge from "../../../../shared/Badge";
 
+import { useNavigate } from "react-router-dom";
+
 const steps = [
   { n: null, label: "Goal Setting", done: true },
   { n: 2, label: "Self-Review", active: true },
@@ -14,10 +16,11 @@ const steps = [
 
 interface HeroCardProps {
   isCompact: boolean;
-  setActiveTab: React.Dispatch<React.SetStateAction<"overview" | "goals" | "reviews" | "calibration" | "check-ins">>
 }
 
-const HeroCard: React.FC<HeroCardProps> = ({ isCompact, setActiveTab }) => {
+const HeroCard: React.FC<HeroCardProps> = ({ isCompact }) => {
+  const navigate = useNavigate();
+
   return (
     <section className="overflow-hidden rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5 lg:p-6">
       <div aria-label="Cycle Details" className="mb-5 flex min-w-0 flex-col justify-between gap-4 sm:mb-8 lg:flex-row lg:items-end">
@@ -50,7 +53,7 @@ const HeroCard: React.FC<HeroCardProps> = ({ isCompact, setActiveTab }) => {
             <Button
               variant="contain"
               bgColor="primary"
-              onClick={() => setActiveTab("reviews")}
+              onClick={() => navigate("/webapp/performance-app/team-reviews")}
               className={`${isCompact ? "w-full sm:w-auto" : "px-5 py-2.5"} bg-[#1a73e8] hover:bg-blue-600 font-semibold rounded-lg shadow-sm text-sm inline-flex items-center justify-center`}
             >
               Continue Self-Review <ArrowRight className="w-4 h-4 ml-1.5" />
