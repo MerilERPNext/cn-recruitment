@@ -46,7 +46,7 @@ const GoalLibraryPopup = ({ onClose, onUseTemplate }: GoalLibraryPopupProps) => 
     });
 
     const goals = refGoalsData?.data?.goals || [];
-    const recommendedGoals: GoalTemplate[] | any = useMemo(() => {
+    const recommendedGoals: GoalTemplate[]  = useMemo(() => {
         if (goalRepo?.data?.repositories && Array.isArray(goalRepo.data.repositories) && goalRepo.data.repositories.length > 0) {
             return goalRepo.data.repositories.map((repo) => {
                 const mappedGoals = (repo.goals || []).map((g) => ({
