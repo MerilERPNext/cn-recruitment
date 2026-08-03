@@ -471,7 +471,15 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
           icon: Users,
           href: "/webapp/performance-app/team-overview",
           permissionKey: "My Team",
-          tabRoutes: ["/webapp/performance-app/team-pre-release-preview", "/webapp/performance-app/team-goals"],
+          // tabRoutes: ["/webapp/performance-app/team-pre-release-preview", "/webapp/performance-app/team-goals/assign-goal"],
+          tabRoutes: [
+            "/webapp/performance-app/team-reviews",
+            "/webapp/performance-app/team-goals",
+            "/webapp/performance-app/team-calibration",
+            "/webapp/performance-app/team-check-ins",
+            "/webapp/performance-app/team-goals/assign-goal",
+            "/webapp/performance-app/team-reviews/team-pre-release-preview",
+          ],
         },
 
 

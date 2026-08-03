@@ -114,6 +114,10 @@ const TeamOverview = lazyWithRetry(
   () => import("./components/Performance/MyTeam/TeamOverview"),
   "TeamOverview",
 );
+const MyTeamLayout = lazyWithRetry(
+  () => import("./components/Performance/MyTeam/MyTeamLayout"),
+  "MyTeamLayout",
+);
 const TeamGoals = lazyWithRetry(
   () => import("./components/Performance/MyTeam/TeamGoals"),
   "TeamGoals",
@@ -1544,39 +1548,46 @@ export const routesConfig: AppRoute[] = [
         ]
       },
       {
-        path: "team-overview",
-        element: <TeamOverview />,
+        path: "",
+        element: <MyTeamLayout />,
         permissionKey: "Team Overview",
-      },
-      {
-        path: "team-goals",
-        element: <TeamGoals />,
-        permissionKey: "Team Goals",
-      },
-      {
-        path: "team-goals/assign-goal",
-        element: <AssignGoal />,
-        permissionKey: "Team Goals",
-      },
-      {
-        path: "team-reviews",
-        element: <TeamReviews />,
-        permissionKey: "Team Reviews",
-      },
-      {
-        path: "team-pre-release-preview",
-        element: <PreReleasePreview />,
-        permissionKey: "Team Reviews",
-      },
-      {
-        path: "team-calibration",
-        element: <TeamCalibration />,
-        permissionKey: "Team Calibration",
-      },
-      {
-        path: "team-check-ins",
-        element: <TeamCheckIns />,
-        permissionKey: "Team Check-Ins",
+        children: [
+          {
+            path: "team-overview",
+            element: <TeamOverview />,
+            permissionKey: "Team Overview",
+          },
+          {
+            path: "team-goals",
+            element: <TeamGoals />,
+            permissionKey: "Team Goals",
+          },
+          {
+            path: "team-goals/assign-goal",
+            element: <AssignGoal />,
+            permissionKey: "Team Goals",
+          },
+          {
+            path: "team-reviews",
+            element: <TeamReviews />,
+            permissionKey: "Team Reviews",
+          },
+          {
+            path: "team-reviews/team-pre-release-preview",
+            element: <PreReleasePreview />,
+            permissionKey: "Team Reviews",
+          },
+          {
+            path: "team-calibration",
+            element: <TeamCalibration />,
+            permissionKey: "Team Calibration",
+          },
+          {
+            path: "team-check-ins",
+            element: <TeamCheckIns />,
+            permissionKey: "Team Check-Ins",
+          },
+        ]
       },
       {
         path: "appraisal-cycle-wizard",
