@@ -10,7 +10,7 @@ type FetchHTMLArgs = {
 
 
 export const getTaxSheetData = async (
-empId: string | null | undefined, company: string | null | undefined, selectedPeriod: string | null) => {
+  empId: string | null | undefined, company: string | null | undefined, selectedPeriod: string | null) => {
   try {
     const response = await FrappeAPI.callMethod(
       "cn_indian_payroll.cn_indian_payroll.overrides.webapp_api.tds_projection.get_annual_statement",
@@ -28,7 +28,7 @@ empId: string | null | undefined, company: string | null | undefined, selectedPe
 };
 
 export const getIncomeTaxComputationData = async (
-empId: string | null | undefined, selectedPeriod: string | null | undefined, company: string | null) => {
+  empId: string | null | undefined, selectedPeriod: string | null | undefined, company: string | null) => {
   try {
     const response = await FrappeAPI.callMethod(
       "cn_indian_payroll.cn_indian_payroll.overrides.webapp_api.tds_projection.get_employee_declaration_investments",
@@ -65,7 +65,7 @@ export const getTaxSheetHTML = async (employee: string, payroll_period: string, 
 };
 
 
-  
+
 
 
 
@@ -75,7 +75,7 @@ export const PayrollPeriodsService = {
   // own company so results are scoped to it.
   getPayrollPeriods: async (company: string | null) => {
     const response = await FrappeAPI.getDocumentList("Payroll Period", {
-      fields: ["name","start_date","end_date"],
+      fields: ["name", "start_date", "end_date", "company"],
       orderBy: "start_date desc",
       ...(company ? { filters: [["company", "=", company]] } : {}),
     });

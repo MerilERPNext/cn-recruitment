@@ -65,7 +65,7 @@ export default function FlexiDeclaration() {
   // employee via switch-user it sends the TARGET user's company).
   const { data: yearOptions, isLoading: isYearOptionsLoading } =
     useTaxSheetPayrollPriodsData(currentEmployee?.company || null) as {
-      data?: { name: string; start_date?: string; end_date?: string }[];
+      data?: { name: string; start_date?: string; end_date?: string, company?: string }[];
       isLoading: boolean;
     };
 
@@ -286,8 +286,8 @@ export default function FlexiDeclaration() {
                   onChange={(e) => setSelectedPeriod(e.target.value)}
                   className="font-bold text-[13px] text-text-title bg-gray-100 px-2.5 py-0.5 pr-7 rounded-md border-none outline-none cursor-pointer appearance-none"
                 >
-                  {yearOptions?.map((opt: { name: string }) => (
-                    <option key={opt.name} value={opt.name}>{opt.name}</option>
+                  {yearOptions?.map((opt: { name: string, company?: string }) => (
+                    <option key={opt.name} value={opt.name}>{opt.name} ({opt.company})</option>
                   ))}
                   {!yearOptions && <option value="25-26">2026–27</option>}
                 </select>
