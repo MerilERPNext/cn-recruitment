@@ -87,6 +87,7 @@ export interface WeeklyTimesheetRecord {
   docstatus: number;
   total_hours: number;
   is_editable: boolean;
+  file_info?: TimesheetFileInfo;
   time_logs: WeeklyTimesheetTimeLog[];
   timesheet_hours: number;
 }
@@ -100,6 +101,16 @@ export interface WeeklyTimesheetDay {
   timesheet_records: WeeklyTimesheetRecord[];
 }
 
+export interface TimesheetFileInfo {
+  name: string;
+  file_name: string;
+  file_url: string;
+  is_private: number;
+  file_size: number;
+  creation: string;
+  attached_to_name: string;
+}
+
 export interface WeeklyTimesheetResponse {
   success: boolean;
   employee: string;
@@ -108,6 +119,7 @@ export interface WeeklyTimesheetResponse {
   project_id: string | null;
   project_name: string | null;
   is_editable: boolean;
+  file_info?: TimesheetFileInfo;
   days: WeeklyTimesheetDay[];
 }
 
