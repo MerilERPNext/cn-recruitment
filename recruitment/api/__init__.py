@@ -713,6 +713,29 @@ def get_user_notices(filters: Optional[Dict] = None) -> List[Dict[str, Any]]:
         return []
 
 @frappe.whitelist()
+def get_ess_notices(limit: int = 50) -> List[Dict[str, Any]]:
+    """ESS Portal notices — the existing (nextai) user-notice list, filtered to
+    those visible in the ESS Portal.
+
+    Visibility: ``show_in_ess_portal = 1`` OR both portal flags unchecked (legacy
+    default). Returns the SAME raw shape as ``nextai ... get_user_notices`` so the
+    existing ESS frontend needs no other change. Before the flag fields are
+    migrated this returns the unfiltered list — fully backward compatible.
+    """
+    try:
+        from nextai.nextai.doctype.notice.notice import (
+            get_user_notices as nextai_get_user_notices,
+        )
+        from recruitment.recruitment.notice_visibility import filter_notices_by_portal
+
+        notices = nextai_get_user_notices(user=frappe.session.user, limit=limit) or []
+        return filter_notices_by_portal(notices, "ess")
+    except Exception as e:
+        frappe.log_error(f"Error fetching ESS notices: {str(e)}")
+        return []
+
+
+@frappe.whitelist()
 def get_unread_notices_count() -> int:
     """Get count of unread notices for current user"""
     

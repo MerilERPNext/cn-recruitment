@@ -1,68 +1,169 @@
-import Badge from '../../../../shared/Badge';
-import { Card } from '../../../../shared/atoms/Card';
-import { Typography } from '../../../../shared/atoms/Typography';
-import type { KeyResult } from '../DefineGoal';
+import { CheckCircle2, Circle } from "lucide-react";
+import Badge from "../../../../shared/Badge";
+import { Card } from "../../../../shared/atoms/Card";
+import { Typography } from "../../../../shared/atoms/Typography";
+import type { KeyResult } from "../DefineGoal";
+import { useCurrentEmployeeDetails } from "../../../../../hooks/useEmployee";
 
 interface LivePreviewCardProps {
-    weightage: number;
-    keyResults: KeyResult[];
+  goalType?: string;
+  goalTitle?: string;
+  department?: string;
+  designation?: string;
+  weightage: number;
+  keyResults: KeyResult[];
+  goalNumber?: number;
+  minimumKeyResults: number;
+  maximumKeyResults: number | null;
 }
 
 export const LivePreviewCard = ({
-    weightage,
-    keyResults,
+  goalType = "OKR",
+  goalTitle = "",
+  department,
+  designation,
+  weightage,
+  keyResults,
+  goalNumber,
+  maximumKeyResults,
 }: LivePreviewCardProps) => {
-    return (
-        <aside className="space-y-4">
-            <Card className="overflow-hidden border border-gray-800 bg-gray-950 p-0 text-white shadow-sm" radius="xl" padding="none">
-                <div className="border-b border-white/10 px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-gray-400">
-                    Live Preview - how your manager will see it
-                </div>
-                <div className="p-4">
-                    <div className="rounded-xl bg-white p-4 text-gray-900">
-                        <div className="mb-3 flex flex-wrap gap-2">
-                            <Badge label="OKR" variant="purple" size="sm" />
-                            <Badge label="Individual" variant="default" size="sm" />
-                            <Badge label="Draft" variant="default" size="sm" />
-                        </div>
+  const { data: currentEmployee } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
+  const approverName = currentEmployee?.reports_to_name || "Manager";
 
-                        <Typography variant="bodyMedium" className="text-sm font-semibold text-gray-900">
-                            Ship Oxygen 2.0 dashboard to 100% of PW employees
-                        </Typography>
+  const isTitleFilled = !!goalTitle.trim();
+  const isDepartmentFilled = !!department && department.trim() !== "";
+  const isDesignationFilled = !!designation && designation.trim() !== "";
 
-                        <div className="mt-3 grid grid-cols-3 gap-2 text-[11px] text-gray-500">
-                            <span>{weightage}% weight</span>
-                            <span>Q1-Q3 FY26</span>
-                            <span>{keyResults.length} KRs</span>
-                        </div>
+  const isObjectiveWeightageFilled = weightage > 0;
 
-                        <div className="mt-3 space-y-2">
-                            {keyResults.map((result, index) => (
-                                <div key={result.id} className="grid grid-cols-[auto_1fr_52px] items-center gap-2 text-[11px]">
-                                    <Badge label={result.id} variant="purple" size="sm" />
-                                    <span className="truncate text-gray-600">{result.title}</span>
-                                    <div className="h-1 rounded-md bg-gray-200">
-                                        <div className="h-full rounded-md bg-blue-500" style={{ width: `${index === 0 ? 72 : index === 1 ? 28 : 0}%` }} />
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
+  const krsWithTitle = keyResults.filter((kr) => !!kr.title.trim());
+  const hasAnyKrTitle = krsWithTitle.length > 0;
+  const krWeightageSum = keyResults.reduce((sum, kr) => sum + (parseFloat(kr.weight) || 0), 0);
+  const hasEmptyKrWeightage = krsWithTitle.some(kr => !kr.weight || parseFloat(kr.weight) <= 0);
+  const isKrWeightage100 = krWeightageSum === 100 && !hasEmptyKrWeightage;
+
+  const checklist = [
+    { label: "Objective title", isCompleted: isTitleFilled },
+    { label: "Objective weightage is filled", isCompleted: isObjectiveWeightageFilled },
+    { label: "Department selected", isCompleted: isDepartmentFilled },
+    { label: "Designation selected", isCompleted: isDesignationFilled },
+    ...(hasAnyKrTitle ? [{ label: "KR weightage totals 100%", isCompleted: isKrWeightage100 }] : []),
+  ];
+
+  return (
+    <aside className="space-y-4">
+      <Card
+        className="overflow-hidden border border-gray-200 bg-white shadow-sm"
+        radius="xl"
+        padding="none"
+      >
+        <div className="border-b border-gray-100 bg-gray-50 px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-gray-500">
+          Live Preview {goalNumber ? `— Goal ${goalNumber}` : ""}
+        </div>
+
+        <div className="p-4">
+          <div className="rounded-xl border border-gray-100 bg-slate-50/50 p-4 text-gray-900">
+            <div className="mb-3 flex flex-wrap gap-2">
+              <Badge label={goalType || "OKR"} variant="purple" size="sm" />
+              {department && <Badge label={department} variant="default" size="sm" />}
+              {designation && <Badge label={designation} variant="info" size="sm" />}
+            </div>
+
+            <Typography
+              variant="bodyMedium"
+              className="text-sm font-semibold text-gray-900"
+            >
+              {goalTitle.trim() ? goalTitle : "Untitled Objective"}
+            </Typography>
+
+            <div className="mt-3 grid grid-cols-3 gap-2 text-[11px] text-gray-500">
+              <span>{weightage}% weight</span>
+              <span>Q1-Q3 FY26</span>
+              <span>{keyResults.length} KRs</span>
+            </div>
+
+            <div className="mt-3 space-y-2">
+              {keyResults.map((result) => {
+                const weightNum = parseFloat(result.weight) || 0;
+                return (
+                  <div
+                    key={result.id}
+                    className="grid grid-cols-[auto_1fr_60px] items-center gap-2 text-[11px]"
+                  >
+                    <Badge label={result.id} variant="purple" size="sm" />
+                    <span className="truncate text-gray-600 font-medium">
+                      {result.title.trim()
+                        ? result.title
+                        : "Untitled Key Result"}
+                    </span>
+                    <div className="flex items-center gap-1.5">
+                      <div className="h-1 flex-1 rounded-md bg-gray-200 overflow-hidden">
+                        <div
+                          className="h-full rounded-md bg-blue-500 transition-all duration-300"
+                          style={{
+                            width: `${Math.min(100, Math.max(0, weightNum))}%`,
+                          }}
+                        />
+                      </div>
+                      <span className="text-[10px] text-gray-400 font-medium shrink-0">
+                        {weightNum > 0 ? `${weightNum}%` : "0%"}
+                      </span>
                     </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
 
-                    <Typography variant="caption" className="mt-3 block text-gray-400">
-                        Updates as you type - approval required from Rohit Khanna
-                    </Typography>
-                </div>
-            </Card>
+          <Typography variant="caption" className="mt-3 block text-gray-500">
+            Updates as you type - approval required from {approverName}
+          </Typography>
+        </div>
+      </Card>
 
-            <Card className="border bg-[#fffdf1] p-4 shadow-sm" radius="xl" padding="none">
-                <Typography variant="bodyMedium" className="font-semibold text-amber-800">
-                    3 KRs is the minimum for OKR
-                </Typography>
-                <Typography variant="caption" className="mt-1 block text-amber-700">
-                    Most high-performing PW OKRs have 3-4 KRs. More than 5 dilutes focus.
-                </Typography>
-            </Card>
-        </aside>
-    );
+      <Card
+        className="border border-amber-200 bg-[#fffdf1] p-4 shadow-sm"
+        radius="xl"
+      >
+        <Typography
+          variant="bodyMedium"
+          className="font-semibold text-amber-800"
+        >
+          No minimum · {maximumKeyResults === null ? "No maximum" : `${maximumKeyResults} KRs maximum`}
+        </Typography>
+        <Typography variant="caption" className="mt-1 block text-amber-700">
+          Most high-performing PW OKRs have 3-4 KRs. More than 5 dilutes focus.
+        </Typography>
+      </Card>
+
+      <Card
+        className="overflow-hidden border border-gray-200 bg-white shadow-sm"
+        radius="xl"
+        padding="none"
+      >
+        <div className="border-b border-gray-100 bg-gray-50 px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-gray-500">
+          Required Fields
+        </div>
+        <div className="p-4">
+          <ul className="space-y-2.5">
+          {checklist.map((item, index) => (
+            <li key={index} className="flex items-center gap-2">
+              {item.isCompleted ? (
+                <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" />
+              ) : (
+                <Circle className="h-4 w-4 text-gray-300 shrink-0" />
+              )}
+              <Typography
+                variant="caption"
+                className={item.isCompleted ? "text-gray-700" : "text-gray-500"}
+              >
+                {item.label}
+              </Typography>
+            </li>
+          ))}
+          </ul>
+        </div>
+      </Card>
+    </aside>
+  );
 };

@@ -5,6 +5,7 @@ import { Typography } from "./atoms/Typography";
 interface PageLayoutWrapperProps {
     title: string;
     subtitle?: string;
+    titleSlot?: React.ReactNode;
     steps?: Array<{ label: string; active?: boolean }>;
     footerLeft?: React.ReactNode;
     footerRight?: React.ReactNode;
@@ -15,6 +16,7 @@ interface PageLayoutWrapperProps {
 const PageLayoutWrapper: React.FC<PageLayoutWrapperProps> = ({
     title,
     subtitle,
+    titleSlot,
     steps,
     footerLeft,
     footerRight,
@@ -33,16 +35,22 @@ const PageLayoutWrapper: React.FC<PageLayoutWrapperProps> = ({
             window.scrollTo({ top: 0, behavior: "smooth" });
             contentRef.current?.scrollTo({ top: 0, behavior: "smooth" });
         });
-    }, [resetScrollKey]);
-
+    }, [resetScrollKey]); 
+       
     return (
-        <div className="min-h-screen bg-[#f8fafc] font-sans flex flex-col">
-            <div className="bg-white border-b border-gray-200 px-6 sm:px-10 py-5">
+        <div className="relative flex-1 flex flex-col min-h-0 bg-[#f8fafc] font-sans">
+            <div className="md:sticky top-0 z-20 shrink-0 bg-white/95 backdrop-blur-md border-b border-gray-200 px-6 sm:px-10 py-5 shadow-2xs">
                 <div className="max-w-screen mx-auto flex flex-col lg:flex-row md:items-center justify-between gap-6">
                     <div className="text-left w-full lg:min-w-0 lg:flex-1">
-                        <Typography variant="h3" className="text-gray-900 mb-1">
-                            {title}
-                        </Typography>
+                        {titleSlot ? (
+                            <Typography variant="h3" className="text-gray-900 mb-1">
+                                {titleSlot}
+                            </Typography>
+                        ) : (
+                            <Typography variant="h3" className="text-gray-900 mb-1">
+                                {title}
+                            </Typography>
+                        )}
                         {subtitle ? (
                             <Typography variant="bodyMedium" className="text-gray-500">
                                 {subtitle}
@@ -83,15 +91,17 @@ const PageLayoutWrapper: React.FC<PageLayoutWrapperProps> = ({
                 </div>
             </div>
 
-            <div ref={contentRef} className="flex-1 overflow-y-auto ">
+            <div ref={contentRef} className="flex-1 overflow-y-auto">
                 <div className="max-w-screen mx-auto px-4 sm:px-6 py-8">
                     {children}
                 </div>
             </div>
 
-            <div className="md:sticky bottom-0 left-0 right-0 z-10 flex flex-col gap-2 border-t border-gray-200 bg-white px-6 py-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] md:flex-row md:items-center md:justify-between">
-                <div className="w-full md:min-w-0 md:flex-1">{footerLeft}</div>
-                <div className="w-full md:w-auto md:flex-none">{footerRight}</div>
+            <div className="sticky bottom-0 z-20 shrink-0 bg-white/95 backdrop-blur-md border-t border-gray-200/80 px-4 py-3 sm:px-6 md:py-4 shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
+                <div className="max-w-5xl mx-auto flex flex-col gap-2.5 md:flex-row md:items-center md:justify-between">
+                    <div className="w-full md:min-w-0 md:flex-1">{footerLeft}</div>
+                    <div className="w-full md:w-auto md:flex-none">{footerRight}</div>
+                </div>
             </div>
         </div>
     );

@@ -242,6 +242,15 @@
 		return null;
 	}
 
+	// `state` is module-level and survives navigation, so when you arrive from the
+	// Job Opening list (or switch between openings) the cached header would render
+	// the PREVIOUS opening until fetchAux lands. Drop it as soon as the live filter
+	// disagrees, so we show nothing rather than the wrong opening.
+	function syncOpeningFromFilters() {
+		const name = resolveJobOpening();
+		if (!name || (state.opening && state.opening.name !== name)) state.opening = null;
+	}
+
 	function renderHeader() {
 		const container = document.getElementById("ja-header-container");
 		if (!container) return;
@@ -574,6 +583,7 @@
 			mountAboveList(listview);
 			installRenderOverride(listview);
 			syncActiveTabFromFilters(listview);
+			syncOpeningFromFilters();
 			renderHeader();
 			renderPipelineTop();
 			renderTabs();
@@ -643,6 +653,7 @@
 			mountAboveList(listview);
 			installRenderOverride(listview);
 			syncActiveTabFromFilters(listview);
+			syncOpeningFromFilters();
 			renderHeader();
 			renderPipelineTop();
 			renderTabs();

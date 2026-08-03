@@ -191,7 +191,11 @@
 
 			.jo-check { width: 16px; height: 16px; cursor: pointer; }
 			.jo-opening-title { font-weight: 600; color: #111827; }
+			.jo-opening-title a { color: inherit; text-decoration: none; }
+			.jo-opening-title a:hover { text-decoration: underline; text-underline-offset: 2px; }
 			.jo-opening-sub { font-size: 12px; color: #6B7280; margin-top: 2px; }
+			.jo-open-form { color: #6B7280; text-decoration: none; }
+			.jo-open-form:hover { color: #2563EB; text-decoration: underline; text-underline-offset: 2px; }
 			.jo-status-pill {
 				display: inline-flex; align-items: center; gap: 6px;
 				padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 500;
@@ -356,12 +360,20 @@
 
 	function renderRow(doc, listview) {
 		const sub = [doc.designation, doc.department, doc.location].filter(Boolean).map(escapeHtml).join("  ·  ");
+		// Title -> applicants for this opening, ID -> the opening form. Both are real
+		// anchors so ctrl / middle click opens a new tab natively; a plain left click
+		// is intercepted by Frappe's router (no page reload). The whole row falls back
+		// to the applicants list via the delegated handler in bindTable().
 		return `
 			<tr data-name="${escapeHtml(doc.name)}">
 				<td class="jo-col-check"><input type="checkbox" class="jo-check list-row-checkbox" data-doctype="${DOCTYPE}" data-name="${escapeHtml(doc.name)}"/></td>
 				<td class="jo-col-opening">
-					<div class="jo-opening-title">${escapeHtml(doc.job_title || doc.name)}</div>
-					<div class="jo-opening-sub">${escapeHtml(doc.name)}${sub ? "  ·  " + sub : ""}</div>
+					<div class="jo-opening-title">
+						<a href="${applicantsUrl(doc.name)}" title="${escapeHtml(__("View applicants"))}">${escapeHtml(doc.job_title || doc.name)}</a>
+					</div>
+					<div class="jo-opening-sub">
+						<a class="jo-open-form" href="${formUrl(doc.name)}" title="${escapeHtml(__("Open job opening"))}">${escapeHtml(doc.name)}</a>${sub ? "  ·  " + sub : ""}
+					</div>
 				</td>
 				<td class="jo-col-status">${renderStatusPill(doc.status)}</td>
 				<td class="jo-col-applicants" data-stat="applicants"><span class="jo-applicants">0</span><span class="jo-applicants-sub">total</span></td>
@@ -397,6 +409,39 @@
 		});
 	}
 
+	// --- Opening -> its applicants -------------------------------------------
+	// Job Applicant.job_title is the Link to Job Opening (and is search-indexed),
+	// so scoping the list is a single `job_title = <opening>` filter.
+	const APPLICANT_DOCTYPE = "Job Applicant";
+	const APPLICANT_LINK_FIELD = "job_title";
+
+	// Doctype -> URL segment, the same transform frappe.router.slug does. Inlined so
+	// these links don't depend on a router internal staying put across versions.
+	function slug(doctype) { return doctype.toLowerCase().replace(/ /g, "-"); }
+
+	// `/view/list` is explicit on purpose: a bare `/app/job-applicant` is bounced by
+	// ListView.load_last_view() to whatever view that user last used (Report, Kanban,
+	// …), which would drop them somewhere other than the designed applicants screen.
+	function applicantsUrl(name) {
+		return `/app/${slug(APPLICANT_DOCTYPE)}/view/list` +
+			`?${APPLICANT_LINK_FIELD}=${encodeURIComponent(name)}`;
+	}
+
+	function formUrl(name) {
+		return `/app/${slug(DOCTYPE)}/${encodeURIComponent(name)}`;
+	}
+
+	// Route to the applicant list already scoped to this opening.
+	// `frappe.route_options` is consumed by the list view's `before_refresh`, which
+	// clears the previous filters and applies ours with refreshes suppressed BEFORE
+	// the first fetch — so the scoped list loads in ONE query instead of pulling
+	// every applicant and then re-fetching. (Same path Frappe's own anchor handler
+	// takes for the `?job_title=` links above, so both entry points behave alike.)
+	function openApplicants(name) {
+		frappe.route_options = { [APPLICANT_LINK_FIELD]: name };
+		frappe.set_route("List", APPLICANT_DOCTYPE, "List");
+	}
+
 	function updateSelectAllState(container) {
 		const selectAll = container.querySelector(".jo-select-all");
 		if (!selectAll) return;
@@ -420,12 +465,14 @@
 		});
 		updateSelectAllState(container);
 
-		// Row click → open the Job Opening form
+		// Row click → the applicants for this opening (NOT the opening form; the
+		// opening ID in the sub-line links to that, as does "Open job opening" in
+		// the header of the applicant list we land on).
 		container.querySelectorAll("tr[data-name]").forEach((tr) => {
 			tr.addEventListener("click", (e) => {
 				if (e.target && e.target.closest("input, button, a, .like-action, .jo-activity, .filterable")) return;
 				const name = tr.getAttribute("data-name");
-				frappe.set_route("Form", DOCTYPE, name);
+				if (name) openApplicants(name);
 			});
 		});
 	}

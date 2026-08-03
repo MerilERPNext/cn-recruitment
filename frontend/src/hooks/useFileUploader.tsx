@@ -1,6 +1,6 @@
 import { useState } from "react";
 import toast from "react-hot-toast";
-import { useFileUpload } from "./useFrappeQuery";
+import { useFileUpload, useAttachFileToDocuments } from "./useFrappeQuery";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type UploadResponse = {
@@ -16,19 +16,20 @@ export const useFileUploader = (): {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     fileObjs: any[],
     doctype?: string,
-    docName?: string,
+    docName?: string | string[],
     onComplete?: () => void
   ) => Promise<UploadResponse[]>;
   loading: boolean;
 } => {
   const uploadMutation = useFileUpload();
+  const attachMutation = useAttachFileToDocuments();
   const [loading, setLoading] = useState(false);
 
   const uploadFiles = async (
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     fileObjs: any[],
     doctype?: string,
-    docName?: string,
+    docName?: string | string[],
     onComplete?: () => void
   ): Promise<UploadResponse[]> => {
     if (!fileObjs || fileObjs.length === 0) {
@@ -49,11 +50,20 @@ export const useFileUploader = (): {
           }
 
           try {
+            const isMultiple = Array.isArray(docName);
             const res = await uploadMutation.mutateAsync({
               file,
-              doctype,
-              docName,
+              doctype: isMultiple ? undefined : doctype,
+              docName: isMultiple ? undefined : (docName as string),
             });
+
+            if (res && res.file_url && doctype && isMultiple && docName.length > 0) {
+              await attachMutation.mutateAsync({
+                file_url: res.file_url,
+                doctype,
+                docNames: docName as string[],
+              });
+            }
 
             console.log(`File "${file.name}" uploaded successfully.`);
             return res;

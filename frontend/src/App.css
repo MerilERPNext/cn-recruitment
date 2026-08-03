@@ -323,3 +323,28 @@ body {
   content: "" !important;
   display: none !important;
 } */
+
+/* Inline time entry Formio dropdown styles */
+.add-time-entry-form-inline .choices {
+  margin-bottom: 0 !important;
+}
+.add-time-entry-form-inline .choices__inner {
+  min-height: 38px !important;
+  padding: 4px 8px !important;
+}
+.add-time-entry-form-inline .choices__list--dropdown .choices__item {
+  white-space: normal !important;
+  word-break: break-word !important;
+  font-size: 13px !important;
+  line-height: 1.4 !important;
+  padding: 8px 12px !important;
+}
+.add-time-entry-form-inline .form-group {
+  margin-bottom: 8px !important;
+}
+.add-time-entry-form-inline .control-label {
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  color: #4b5563 !important;
+  margin-bottom: 2px !important;
+}

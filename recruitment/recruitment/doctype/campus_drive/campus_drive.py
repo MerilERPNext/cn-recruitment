@@ -2,7 +2,10 @@ import frappe
 from frappe import _
 from frappe.model.document import Document
 
-from recruitment.recruitment.campus_helpers import validate_unique_job_openings
+from recruitment.recruitment.campus_helpers import (
+	sync_drive_applicant_links,
+	validate_unique_job_openings,
+)
 
 # Round types that need an interview panel / GD grouping in the reference portal.
 PANEL_ROUND_TYPES = {"Group Discussion", "Technical", "HR"}
@@ -100,6 +103,11 @@ class CampusDrive(Document):
 			self._validate_links()
 
 	def on_update(self):
+		# Point this drive's candidates at it. Runs on every save (after the invite
+		# tables are settled) so adding an invite immediately pulls in the applicants
+		# who came through it, and removing one lets them go.
+		self._link_applicants()
+
 		# Auto-generate the QR the first time the form is enabled. Refreshing is
 		# manual (the "Generate QR Code" button) so the image isn't rebuilt on
 		# every save. Best-effort: a QR failure must never block the save.
@@ -108,6 +116,35 @@ class CampusDrive(Document):
 				self._write_registration_qr(self._registration_url())
 			except Exception:
 				frappe.log_error(frappe.get_traceback(), "Campus Drive: QR auto-generate failed")
+
+	def on_trash(self):
+		# Release the candidates before Frappe's link check runs (it would otherwise
+		# refuse the delete now that Job Applicants point back at the drive).
+		for name in frappe.get_all("Job Applicant", filters={"custom_campus_drive": self.name},
+		                           pluck="name", ignore_permissions=True):
+			frappe.db.set_value("Job Applicant", name, "custom_campus_drive", None,
+			                    update_modified=False)
+
+	def _link_applicants(self):
+		"""Write this drive onto the Job Applicants of its Campus Invites (and off the
+		ones whose invite was removed), then tell HR what moved.
+
+		Best-effort: a save must never fail because of the back-link.
+		"""
+		try:
+			result = sync_drive_applicant_links(self.name, _drive_invites(self))
+		except Exception:
+			frappe.log_error(frappe.get_traceback(), "Campus Drive: applicant linking failed")
+			return
+
+		parts = []
+		if result["linked"]:
+			parts.append(_("{0} candidate(s) linked to this drive").format(result["linked"]))
+		if result["released"]:
+			parts.append(_("{0} released (their invite is no longer on it)").format(result["released"]))
+		if parts:
+			frappe.msgprint(", ".join(parts), title=_("Campus Candidates"), indicator="green",
+			                alert=True)
 
 	def _validate_drive_window(self):
 		if self.drive_start_date and self.drive_end_date:
@@ -1395,7 +1432,10 @@ def get_rounds_overview(campus_drive):
 		):
 			s = r.stage or ""
 			stage_applicants.setdefault(s, set()).add(r.name)
-			if r.status not in ("Rejected", "Accepted"):
+			# "Hold" candidates were deliberately knocked out (eligibility not met);
+			# like Rejected/Accepted they are parked on purpose, so they must not
+			# count toward the "stuck at a stage no round covers" health warning.
+			if r.status not in ("Rejected", "Accepted", "Hold"):
 				stage_active[s] = stage_active.get(s, 0) + 1
 
 	# Interviews this drive created, with their feedback progress

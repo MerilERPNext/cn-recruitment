@@ -80,11 +80,21 @@ frappe.ui.form.on("Job Offer", {
 		frm.set_query("component", "custom_earnings", () => ({ filters: { type: "Earning" } }));
 		frm.set_query("component", "custom_deduction", () => ({ filters: { type: "Deduction" } }));
 
+        frm.set_query("clause_type", "custom_offer_clauses", () => ({ filters: { custom_variable_part_of_ctc: 1 } }));
+		frm.set_query("salary_component", "custom_extra_payment", () => ({ filters: { custom_is_special_payment: 1 } }));
+
+
+
+
 		// Offer Letter Template picker: only Document Templates whose reference
 		// doctype is Job Offer.
 		frm.set_query("custom_offer_letter_template", () => ({
 			filters: { doctype_name: "Job Offer" },
 		}));
+
+		// Offer Letter tab (Template / Preview), rendered inline on the form.
+		recruitment_offer_letter_styles();
+		recruitment_render_offer_letter_tab(frm);
 
 		// Offer-letter buttons — each gated by a Recruitment Settings toggle
 		// (both default ON). Only for a saved Job Offer.
@@ -326,23 +336,36 @@ frappe.ui.form.on("Job Offer", {
 
 
 
-        // Clause type picker → only active clause types.
-        frm.set_query("clause_type", "custom_offer_clauses", () => ({ filters: { custom_variable_part_of_ctc: 1 } }));
+        // Clause type picker (Job Offer Clause.clause_type → Salary Component).
+        //
+        // This filtered on `custom_variable_part_of_ctc`, which exists on no
+        // doctype in any installed app. HRMS v15 silently drops an unknown filter
+        // field, but v16 validates it and aborts the link search with a
+        // "You do not have permission to access field" PermissionError — so the
+        // picker was dead on v16. Left unfiltered until the intended rule is
+        // confirmed: the closest real fields (`custom_is_part_of_ctc` +
+        // `custom_component_sub_type = "Variable"`) match NO component at all, so
+        // guessing would just swap the error for an empty list.
+        // frm.set_query("clause_type", "custom_offer_clauses", () => ({}));
 
-        frm.set_query("salary_component", "custom_extra_payment", () => ({ filters: { custom_is_special_payment: 1 } }));
+        // Extra payment picker → components flagged as extra payments.
+        // Was `custom_is_special_payment`, which likewise doesn't exist; the real
+        // flag on Salary Component is `custom_is_extra_payment` ("Is Extra
+        // Payment"), matching this table's own name.
+        frm.set_query("salary_component", "custom_extra_payment", () => ({
+            filters: { custom_is_extra_payment: 1 },
+        }));
+
+        frm.set_query("clause_type", "custom_offer_clauses", () => ({
+            filters: { custom_variable_part_of_ctc: 1 },
+        }));
 
 
 
 
         
 
-        // Clause template picker → only active templates of the row's type.
-        frm.set_query("clause_template", "custom_offer_clauses", (doc, cdt, cdn) => {
-            const row = locals[cdt][cdn];
-            const filters = { is_active: 1 };
-            if (row && row.clause_type) filters.clause_type = row.clause_type;
-            return { filters };
-        });
+        
 
         // Compute button only in "Auto by Grade" mode — the default/legacy
         // "Salary Structure" flow is left completely untouched.
@@ -394,3 +417,136 @@ frappe.ui.form.on("Job Offer Clause", {
         if (row.clause_template) frappe.model.set_value(cdt, cdn, "clause_template", null);
     },
 });
+
+
+frappe.ui.form.on("Extra Payment Child Doc", {
+    recovery_applicable: function(frm, cdt, cdn) {
+        let row = locals[cdt][cdn];
+
+        if (row.recovery_applicable) {
+                frappe.call({
+                    method: "frappe.client.get",
+                    args: {
+                        doctype: "Payroll Settings",
+                       
+                    },
+                    callback: function(r) {
+                        if (r.message) {
+                            let days = r.message.clock_back_days || 0;
+
+                            console.log(days,"444")
+
+                            if (frm.doc.offer_date) {
+                                let clock_back = frappe.datetime.add_days(
+                                    frm.doc.offer_date,
+                                    days
+                                );
+
+                                console.log(clock_back,"55555555")
+
+                                frappe.model.set_value(
+                                    cdt,
+                                    cdn,
+                                    "date",        // child table fieldname
+                                    clock_back
+                                );
+                            }
+                        }
+                    }
+                });
+        }
+    }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Offer Letter tab — Template (raw placeholders) + Preview (rendered).
+//
+// Same two endpoints the dialog uses, rendered inline on the form's "Offer
+// Letter" tab so the letter sits beside the fields instead of behind a button.
+// `get_offer_letter_preview_html` resolves the Document Template first and falls
+// back to the Job Offer print format, so Preview always shows something.
+// ─────────────────────────────────────────────────────────────────────────────
+function recruitment_render_offer_letter_tab(frm) {
+	const field = frm.fields_dict && frm.fields_dict.custom_offer_letter_html;
+	if (!field || !field.$wrapper) return;
+	const $w = field.$wrapper;
+
+	if (frm.is_new()) {
+		$w.html(`<div class="ol-empty">${__("Save this Job Offer to see its offer letter.")}</div>`);
+		return;
+	}
+
+	// Cache per document — switching tabs shouldn't re-render the PDF each time.
+	if (frm._ol_cache_for !== frm.doc.name) {
+		frm._ol_cache_for = frm.doc.name;
+		frm._ol_cache = {};
+	}
+
+	// Shell is painted once and kept: switching Template <-> Preview swaps only the
+	// body, so the tab bar never repaints and the click binding survives.
+	$w.html(`
+		<div class="ol-tabs">
+			<button type="button" class="ol-tab active" data-tab="template">${__("Template")}</button>
+			<button type="button" class="ol-tab" data-tab="preview">${__("Preview")}</button>
+		</div>
+		<div class="ol-body"></div>`);
+
+	const $body = $w.find(".ol-body");
+	let active = "template";
+
+	function paint(tab) {
+		if (frm._ol_cache[tab]) {
+			$body.html(frm._ol_cache[tab]);
+			return;
+		}
+		$body.html(`<div class="ol-empty">${__("Loading…")}</div>`);
+		const method = tab === "template"
+			? "recruitment.job_offer_utils.get_offer_template_raw_html"
+			: "recruitment.job_offer_utils.get_offer_letter_preview_html";
+		frappe.call({ method, args: { job_offer: frm.doc.name } }).then(function (r) {
+			const html = (r && r.message && r.message.html)
+				|| `<div class="ol-empty">${__("Nothing to show.")}</div>`;
+			frm._ol_cache[tab] = html;
+			if (active === tab) $body.html(html);   // user may have switched while we waited
+		});
+	}
+
+	$w.find(".ol-tab").on("click", function () {
+		const tab = this.dataset.tab;
+		if (tab === active) return;
+		active = tab;
+		$w.find(".ol-tab").each(function () { this.classList.toggle("active", this.dataset.tab === tab); });
+		paint(tab);
+	});
+
+	// Don't fetch until the tab is actually looked at — Preview renders a PDF
+	// server-side, which is far too heavy to fire on every form refresh.
+	const tab = ((frm.layout && frm.layout.tabs) || []).find(
+		(t) => t.df && t.df.fieldname === "custom_offer_letter_tab"
+	);
+	const isShowing = !tab || !tab.tab_link || tab.tab_link.find("a").hasClass("active");
+	if (isShowing) {
+		paint(active);
+	} else {
+		tab.tab_link.find("a").one("click", () => paint(active));
+	}
+}
+
+function recruitment_offer_letter_styles() {
+	if (document.getElementById("ol-tab-styles")) return;
+	const style = document.createElement("style");
+	style.id = "ol-tab-styles";
+	style.textContent = `
+		.ol-tabs { display:flex; gap:4px; border-bottom:1px solid var(--border-color,#e2e6e9); margin-bottom:16px; }
+		.ol-tab {
+			border:none; background:none; padding:9px 18px; cursor:pointer;
+			font-size:13px; font-weight:500; color:var(--text-muted,#6b7280);
+			border-bottom:2px solid transparent; margin-bottom:-1px;
+		}
+		.ol-tab:hover { color:var(--text-color,#1f272e); }
+		.ol-tab.active { color:var(--blue-600,#1479d6); font-weight:600; border-bottom-color:var(--blue-600,#1479d6); }
+		.ol-body { min-height:340px; }
+		.ol-empty { padding:48px; text-align:center; color:var(--text-muted,#8d99a6); }
+	`;
+	document.head.appendChild(style);
+}
