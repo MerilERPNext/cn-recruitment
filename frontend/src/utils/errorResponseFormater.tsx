@@ -53,7 +53,7 @@ export const errorResponseFormater = (
       ?.split(":")
       .slice(1)
       .join(":")
-      .trim() || error?.response?.data?.message || error?.response?.data?.message?.error;
+      .trim() || error?.response?.data?.message?.message || error?.response?.data?.message || error?.response?.data?.message?.error;
   } catch {
     console.error("Failed to parse error message:", error);
     err = fallback;

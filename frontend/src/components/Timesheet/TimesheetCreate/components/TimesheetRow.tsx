@@ -78,6 +78,7 @@ export interface TimesheetRowProps {
   handleOpenComment: (rowId: string, dateKey: string, projectName: string, dayLabel: string) => void;
   getRowTotal: (row: TimesheetRowType) => number;
   handleDeleteRow: (rowId: string) => void;
+  disabledDays?: string[];
 }
 
 export const TimesheetRow: React.FC<TimesheetRowProps> = ({
@@ -94,15 +95,16 @@ export const TimesheetRow: React.FC<TimesheetRowProps> = ({
   handleHourChange,
   handleOpenComment,
   getRowTotal,
-  handleDeleteRow
+  handleDeleteRow,
+  disabledDays = []
 }) => {
   const { isDesktop } = useScreenSize();
 
   if (!isDesktop) {
     return (
-      <tr className="block border-b border-gray-100 p-4">
+      <tr className="block border-b border-gray-100 px-2 py-3 sm:p-4">
         <td className="block w-full">
-          <div className="bg-white border rounded-xl p-4 shadow-sm space-y-4">
+          <div className="bg-white border border-t-[3px] border-t-primary rounded-xl p-3 shadow-sm space-y-4">
             <div className="flex justify-between items-start">
               {isGridEditable ? (
                 <div className={`flex-1 w-full add-time-entry-form-inline p-2 rounded-lg border ${validationErrors[`${row.id}_project_task`] ? 'border-red-500 bg-red-50/50' : 'bg-gray-50/50 border-gray-150'}`}>
@@ -118,27 +120,29 @@ export const TimesheetRow: React.FC<TimesheetRowProps> = ({
                   )}
                 </div>
               ) : (
-                <div className="flex-1 flex flex-wrap items-center gap-2">
+                <div className="flex-1 flex flex-col gap-1">
                   <span className="font-bold text-gray-900 text-sm">{projName}</span>
-                  <span className="text-gray-300 text-xs">|</span>
-                  <span className="text-gray-500 text-xs font-medium">{taskName}</span>
-                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${row.isBillable ? "bg-emerald-50 text-emerald-700" : "bg-gray-100 text-gray-600"}`}>
-                    {row.isBillable ? "Billable" : "Non-Billable"}
-                  </span>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-gray-500 text-xs font-medium">{taskName}</span>
+                    <span className="text-gray-300 text-xs">|</span>
+                    <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${row.isBillable ? "bg-emerald-50 text-emerald-700" : "bg-gray-100 text-gray-600"}`}>
+                      {row.isBillable ? "Billable" : "Non-Billable"}
+                    </span>
+                  </div>
                 </div>
               )}
               {isGridEditable && (
                 <button
                   type="button"
                   onClick={() => handleDeleteRow(row.id)}
-                  className="text-gray-400 hover:text-red-500 p-2 hover:bg-red-50 rounded-lg transition-colors focus:outline-none ml-2"
+                  className="text-gray-400 hover:text-red-500 p-1.5 hover:bg-red-50 rounded-lg transition-colors focus:outline-none ml-2 flex-shrink-0"
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
               )}
             </div>
 
-            <div className="grid grid-cols-5 gap-2">
+            <div className="grid grid-cols-7 gap-1">
               {daysOfWeek.map(day => {
                 const dateKey = format(day, "yyyy-MM-dd");
                 const cell = row.days[dateKey] || { hours: 0, description: "" };
@@ -147,10 +151,12 @@ export const TimesheetRow: React.FC<TimesheetRowProps> = ({
                 const commentError = validationErrors[`${row.id}_${dateKey}_comment`];
                 return (
                   <div key={dateKey} className="flex flex-col items-center">
-                    <div className="text-xs font-semibold text-gray-500 mb-1">{format(day, "d MMM")}</div>
+                    <div className="text-[10px] font-bold text-gray-700 leading-tight">{format(day, "d")}</div>
+                    <div className="text-[9px] font-medium text-gray-400 mb-1 leading-tight">{format(day, "EEE")}</div>
                     <input
+                      key={`mob-input-${dateKey}-${cell.hours}`}
                       type="text"
-                      placeholder="0:00"
+                      placeholder="0"
                       defaultValue={cell.hours > 0 ? formatCellOnBlur(cell.hours) : ""}
                       onBlur={(e) => {
                         handleHourChange(row.id, dateKey, e.target.value);
@@ -166,12 +172,13 @@ export const TimesheetRow: React.FC<TimesheetRowProps> = ({
                           e.target.value = "";
                         }
                       }}
-                      disabled={isReadOnly || !isGridEditable}
-                      className={`w-full max-w-[60px] text-center border rounded-lg py-1 px-1.5 font-medium text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary disabled:bg-gray-100 disabled:text-gray-800 ${hoursError ? "border-red-500 ring-1 ring-red-500" : "border-gray-200"}`}
+                      disabled={isReadOnly || !isGridEditable || disabledDays.includes(dateKey)}
+                      className={`w-full text-center border rounded-md py-1 px-0.5 font-medium text-xs focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary disabled:bg-gray-100 disabled:text-gray-800 ${hoursError ? "border-red-500 ring-1 ring-red-500" : "border-gray-200"}`}
                     />
                     <button
                       onClick={() => handleOpenComment(row.id, dateKey, projName, format(day, "EEE, dd MMM"))}
-                      className={`mt-1 text-[10px] font-bold transition-all px-1 py-0.5 rounded border ${commentError ? 'border-red-500 text-red-500 bg-red-50' : (hasComment ? "text-primary hover:text-primary-600 border-transparent" : "text-gray-400 hover:text-gray-600 border-transparent")}`}
+                      disabled={isReadOnly || !isGridEditable || disabledDays.includes(dateKey)}
+                      className={`mt-1 text-[9px] font-bold transition-all w-full py-0.5 rounded border disabled:opacity-50 disabled:cursor-not-allowed ${commentError ? 'border-red-500 text-red-500 bg-red-50' : (hasComment ? "text-primary hover:text-primary-600 border-transparent bg-primary/10" : "text-gray-400 hover:text-gray-600 border-transparent")}`}
                     >
                       {hasComment ? "★" : "+"}
                     </button>
@@ -182,7 +189,7 @@ export const TimesheetRow: React.FC<TimesheetRowProps> = ({
 
             <div className="flex justify-between items-center pt-2 border-t border-gray-50">
               <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Total Hours</span>
-              <span className="font-bold text-gray-900">{formatCellOnBlur(getRowTotal(row)) || "0:00"}</span>
+              <span className="font-bold text-primary">{formatCellOnBlur(getRowTotal(row)) || "0:00"}</span>
             </div>
           </div>
         </td>
@@ -247,6 +254,7 @@ export const TimesheetRow: React.FC<TimesheetRowProps> = ({
                   <div className="flex flex-col items-center justify-center relative pb-3">
                     <div className="flex items-center justify-center gap-1">
                       <input
+                        key={`desk-input-${dateKey}-${cell.hours}`}
                         type="text"
                         placeholder="0:00"
                         defaultValue={cell.hours > 0 ? formatCellOnBlur(cell.hours) : ""}
@@ -264,7 +272,7 @@ export const TimesheetRow: React.FC<TimesheetRowProps> = ({
                             e.target.value = "";
                           }
                         }}
-                        disabled={isReadOnly || !isGridEditable}
+                        disabled={isReadOnly || !isGridEditable || disabledDays.includes(dateKey)}
                         className={`w-16 text-center border rounded-lg py-1 px-1.5 font-medium text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary disabled:bg-gray-100 disabled:text-gray-800 ${hoursError ? "border-red-500 ring-1 ring-red-500" : "border-gray-200"
                           }`}
                       />
@@ -279,7 +287,8 @@ export const TimesheetRow: React.FC<TimesheetRowProps> = ({
                         projName,
                         format(day, "EEE, dd MMM")
                       )}
-                      className={`text-[10px] font-bold transition-all px-2 py-0.5 rounded border ${commentError ? 'border-red-500 text-red-500 bg-red-50' :
+                      disabled={isReadOnly || !isGridEditable || disabledDays.includes(dateKey)}
+                      className={`text-[10px] font-bold transition-all px-2 py-0.5 rounded border disabled:opacity-50 disabled:cursor-not-allowed ${commentError ? 'border-red-500 text-red-500 bg-red-50' :
                         (hasComment ? "text-primary hover:text-primary-600 border-transparent" : "text-gray-400 hover:text-gray-600 border-transparent")
                         }`}
                     >
