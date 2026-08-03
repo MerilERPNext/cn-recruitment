@@ -330,7 +330,7 @@ def mark_relieved_employees_as_left():
         filters=[
             ["relieving_date", "is", "set"],
             ["relieving_date", "<=", current_date],
-            ["status", "!=", "Left"],
+            ["status", "!=", "Inactive"],
         ],
         fields=["name", "employee_name", "user_id", "relieving_date"],
     )
@@ -342,8 +342,8 @@ def mark_relieved_employees_as_left():
             "docstatus": 1,
         })
         frappe.db.set_value("Employee", emp.name, {
-            "status": "Left",
-            "custom_employment_status": "Terminated" if is_termination else "Left",
+            "status": "Inactive",
+            "custom_employment_status": "Terminated" if is_termination else "Separated",
         })
 
         if emp.user_id:
