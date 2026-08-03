@@ -273,7 +273,7 @@ const NewGoal: React.FC<NewGoalProps> = ({ onClose }) => {
                             {currentStep.nextLabel} {!isLastStep && <ArrowRight className="w-4 h-4 ml-1" />}
                         </Button>
                     </div>
-                }
+                } 
             >
                 <Suspense fallback={<LazySectionFallback />}>
                     {renderStepContent()}
