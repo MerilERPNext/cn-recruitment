@@ -90,10 +90,10 @@ const DefineGoal = ({ goalType, formConfig, onGoalsChange }: DefineGoalProps) =>
                         weight: String(kr.weightage || ''),
                     }))
                     : createInitialKeyResults(minimumKeyResults),
-                isCollapsed: idx !== 0, // Sirf pehle goal ko open rakho, baaki collapsed
+                isCollapsed: idx !== 0, //only first goal will open other will collapsed
             }));
         }
-        // 3. Fallback: Agar koi draft nahi hai toh default 1 empty goal
+        // 3. Fallback:if there is no goal
         return [{
             id: 'goal-1',
             title: '',
