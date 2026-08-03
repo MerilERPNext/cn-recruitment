@@ -66,6 +66,12 @@ interface SubMenuItem {
   href?: string;
   subItems?: SubSubMenuItem[];
   permissionKey: string;
+  /**
+   * Additional URL path prefixes that should also activate this sidebar entry.
+   * Use this for tab-based pages where each tab has its own URL but all tabs
+   * logically belong to the same sidebar item (e.g. Performance Overview tabs).
+   */
+  tabRoutes?: string[];
 }
 
 interface NavigationItem {
@@ -452,6 +458,14 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
           icon: Telescope,
           href: "/webapp/performance-app/overview",
           permissionKey: "Overview",
+          // Tab URLs that live inside the Overview page — each tab changes the
+          // URL but they all logically belong to this sidebar entry.
+          tabRoutes: [
+            "/webapp/performance-app/my-goals",
+            "/webapp/performance-app/skills",
+            "/webapp/performance-app/review",
+            "/webapp/performance-app/feedback",
+          ],
         },
         {
           name: "My Team",
@@ -466,6 +480,9 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
           icon: ChartNoAxesCombined,
           href: "/webapp/performance-app/appraisal-cycle-wizard/cycle-details",
           permissionKey: "Appraisal Cycle Wizard",
+          // All wizard steps share this base path prefix, so one entry covers
+          // every step (eligibility, stages, form-builder, goal-pull-in, etc.)
+          tabRoutes: ["/webapp/performance-app/appraisal-cycle-wizard"],
         },
         {
           name: "Calibrator",
@@ -750,6 +767,21 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
     ) {
       return true;
     }
+
+    // Check tabRoutes — additional URL patterns (e.g. tab URLs) that should
+    // also activate this sidebar entry even though they aren't its main href.
+    if (subItem.tabRoutes?.length) {
+      const matchesTabRoute = subItem.tabRoutes.some((route) => {
+        if (location.pathname === route) return true;
+        if (location.pathname.startsWith(route)) {
+          const remaining = location.pathname.substring(route.length);
+          return remaining === "" || remaining.startsWith("/");
+        }
+        return false;
+      });
+      if (matchesTabRoute) return true;
+    }
+
     if (subItem.href) {
       const [path, query] = subItem.href.split("?", 2);
 
