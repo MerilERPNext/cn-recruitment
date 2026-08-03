@@ -24,6 +24,7 @@ import { toast } from "react-hot-toast";
 
 import { useCurrentUser } from "../../../hooks/useCurrentUser";
 import { useCurrentEmployeeDetails } from "../../../hooks/useEmployee";
+import { useGetAllEventsAndAttendance } from "../../../hooks/useAttendance";
 import { useCreateOrUpdateTimesheetEntries, useWeeklyTimesheetData } from "../../../hooks/useTimesheet";
 import { getWeeklyTimesheetData } from "../../../services/timesheetService";
 import { useGetUiPermission } from "../../../hooks/userUiPermission";
@@ -34,13 +35,13 @@ import { useFileUploader } from "../../../hooks/useFileUploader";
 
 import Button from "../../shared/atoms/Button";
 import { Typography } from "../../shared/atoms/Typography";
-import Modal from "../../shared/Modal";
 
 import { addTimeEntrySchema } from "./addTimeEntrySchema";
 import { errorResponseFormater } from "../../../utils/errorResponseFormater";
 import { useLoadingOverlay } from "../../../context/OverlayContext";
 import { TimesheetRow } from "./components/TimesheetRow";
 import { AttachmentCard } from "../../shared/molecules/AttachmentCard";
+import { CommentModal } from "./components/CommentModal";
 
 
 export interface TimesheetRow {
@@ -83,11 +84,11 @@ const TimesheetCreate: React.FC = () => {
   // Date states
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
   const [isSavingLocally, setIsSavingLocally] = useState<boolean>(false);
-  const currentWeekStart = useMemo(() => startOfWeek(currentDate, { weekStartsOn: 1 }), [currentDate]);
-  const currentWeekEnd = useMemo(() => addDays(currentWeekStart, 4), [currentWeekStart]);
+  const currentWeekStart = useMemo(() => startOfWeek(currentDate, { weekStartsOn: 0 }), [currentDate]);
+  const currentWeekEnd = useMemo(() => addDays(currentWeekStart, 6), [currentWeekStart]);
 
   const realToday = useMemo(() => new Date(), []);
-  const realCurrentWeekStart = useMemo(() => startOfWeek(realToday, { weekStartsOn: 1 }), [realToday]);
+  const realCurrentWeekStart = useMemo(() => startOfWeek(realToday, { weekStartsOn: 0 }), [realToday]);
   const realCurrentWeekEnd = useMemo(() => addDays(realCurrentWeekStart, 6), [realCurrentWeekStart]);
 
   const disableNextWeek = currentWeekStart.getTime() >= realCurrentWeekStart.getTime();
@@ -95,7 +96,7 @@ const TimesheetCreate: React.FC = () => {
   const startOfWeekStr = useMemo(() => format(currentWeekStart, "yyyy-MM-dd"), [currentWeekStart]);
 
   const daysOfWeek = useMemo(() => {
-    return Array.from({ length: 5 }).map((_, idx) => addDays(currentWeekStart, idx));
+    return Array.from({ length: 7 }).map((_, idx) => addDays(currentWeekStart, idx));
   }, [currentWeekStart]);
 
   // Employee details
@@ -151,11 +152,22 @@ const TimesheetCreate: React.FC = () => {
     return Array.from(files.values());
   }, [weeklyData]);
 
+  const { data: attendanceEvents } = useGetAllEventsAndAttendance({
+    start: startOfWeekStr,
+    end: format(currentWeekEnd, "yyyy-MM-dd"),
+  });
+
+  const weekOffDates = useMemo(() => {
+    if (!attendanceEvents) return [];
+    return attendanceEvents
+      .filter((event) => event.status === "Weekly Off" || event.custom_status === "Weekly Off" || event.title === "Weekly Off")
+      .map((event) => event.start?.split(" ")[0] || "");
+  }, [attendanceEvents]);
+
   // Project & Task names are now provided directly in the API response
   // No need for separate projectsList / tasksList fetches
 
   // Timesheet Fetching
-  const [timesheetName, setTimesheetName] = useState<string>("");
   const [timesheetStatus, setTimesheetStatus] = useState<string>("Not Submitted");
 
   // Grid/Rows data
@@ -254,9 +266,8 @@ const TimesheetCreate: React.FC = () => {
 
     // Use is_editable from the response
     setIsBackendEditable(weeklyData.is_editable !== false);
-    setTimesheetName(foundName);
     setTimesheetStatus(foundStatus);
-    
+
     const parsedData = Object.values(rowsMap);
     setProjectsData(parsedData);
     setInitialProjectsData(parsedData);
@@ -377,7 +388,7 @@ const TimesheetCreate: React.FC = () => {
   const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.value) {
       const selected = new Date(e.target.value);
-      const selectedStart = startOfWeek(selected, { weekStartsOn: 1 });
+      const selectedStart = startOfWeek(selected, { weekStartsOn: 0 });
       if (selectedStart.getTime() > realCurrentWeekStart.getTime()) {
         toast.error("You cannot select dates in the future.");
         return;
@@ -407,8 +418,7 @@ const TimesheetCreate: React.FC = () => {
       (prevData.days || []).forEach(day => {
         const logDate = day.date; // "yyyy-MM-dd"
         // Shift date to current week
-        const logDayIndex = (parseISO(logDate).getDay() + 6) % 7; // Mon-0, Sun-6
-        if (logDayIndex > 4) return; // Skip Saturday (5) and Sunday (6)
+        const logDayIndex = parseISO(logDate).getDay(); // Sun-0, Mon-1...
         const shiftedDateStr = format(addDays(currentWeekStart, logDayIndex), "yyyy-MM-dd");
 
         (day.timesheet_records || []).forEach(record => {
@@ -718,11 +728,6 @@ const TimesheetCreate: React.FC = () => {
         <div>
           <Typography variant="h4" className="text-gray-900 flex items-center gap-3">
             <span>Weekly Timesheet Entry</span>
-            {timesheetName && (
-              <span className="text-sm font-normal text-gray-500 bg-gray-100 px-2 py-0.5 rounded">
-                ID: {timesheetName}
-              </span>
-            )}
           </Typography>
           <Typography variant="bodySmall" color="body2" className="mt-1">
             Log your daily project and task timesheets.
@@ -778,17 +783,17 @@ const TimesheetCreate: React.FC = () => {
 
           {/* Center Actions */}
           <div className="flex items-center gap-3">
-
-            <Button
-              variant="outline"
-              bgColor="primary"
-              size="md"
-              icon={<Copy className="w-4 h-4" />}
-              onClick={handleCopyLastWeek}
-              disabled={isReadOnly || !isGridEditable}
-            >
-              Copy last week hours
-            </Button>
+            {(!isReadOnly && isGridEditable) && (
+              <Button
+                variant="outline"
+                bgColor="primary"
+                size="md"
+                icon={<Copy className="w-4 h-4" />}
+                onClick={handleCopyLastWeek}
+              >
+                Copy last week hours
+              </Button>
+            )}
           </div>
 
           {/* Right Status / Submit toggle */}
@@ -854,9 +859,9 @@ const TimesheetCreate: React.FC = () => {
             <Typography variant="subheading" className="text-gray-800 text-sm font-semibold">Attached File{attachedFilesList.length > 1 ? "s" : ""}</Typography>
             <div className="w-full md:w-2/3 grid grid-cols-1 sm:grid-cols-2 gap-4">
               {attachedFilesList.map((fileInfo, idx) => (
-                <AttachmentCard 
+                <AttachmentCard
                   key={idx}
-                  fileUrl={fileInfo.file_url} 
+                  fileUrl={fileInfo.file_url}
                   fileName={fileInfo.file_name}
                 />
               ))}
@@ -939,22 +944,23 @@ const TimesheetCreate: React.FC = () => {
                         <td className="border-l border-gray-50"></td>
                       </tr>
                     ) : (
-                      <tr className="block border-b border-gray-100 p-4">
+                      <tr className="block border-b border-gray-100 px-2 py-3 sm:p-4">
                         <td className="block w-full">
-                          <div className="bg-gray-50 rounded-xl p-4 shadow-sm space-y-4">
+                          <div className="bg-gray-50 rounded-xl p-3 shadow-sm space-y-4">
                             <div className="flex justify-between items-center font-semibold text-gray-700">
-                              <span>Attendance Hours</span>
+                              <span className="text-sm">Attendance Hours</span>
                               <span className="text-primary font-bold">
                                 {formatCellOnBlur(daysOfWeek.reduce((acc, day) => acc + ((weeklyData.days.find(d => d.date === format(day, "yyyy-MM-dd")))?.attendance_hours || 0), 0)) || "0:00"}
                               </span>
                             </div>
-                            <div className="grid grid-cols-5 gap-2">
+                            <div className="grid grid-cols-7 gap-1">
                               {daysOfWeek.map(day => {
                                 const dateKey = format(day, "yyyy-MM-dd");
                                 return (
                                   <div key={dateKey} className="flex flex-col items-center">
-                                    <span className="text-[10px] font-semibold text-gray-500 mb-1">{format(day, "d MMM")}</span>
-                                    <span className="text-xs font-medium text-gray-700">{attendanceHoursMap[dateKey] || "0h"}</span>
+                                    <span className="text-[10px] font-bold text-gray-600 leading-tight">{format(day, "d")}</span>
+                                    <span className="text-[9px] text-gray-400 mb-1 leading-tight">{format(day, "EEE")}</span>
+                                    <span className="text-[10px] font-bold text-gray-700 bg-gray-200/50 w-full text-center py-1 rounded">{attendanceHoursMap[dateKey] || "0h"}</span>
                                   </div>
                                 );
                               })}
@@ -969,7 +975,7 @@ const TimesheetCreate: React.FC = () => {
                   {projectsData.length === 0 ? (
                     isDesktop ? (
                       <tr>
-                        <td colSpan={8} className="px-6 py-12 text-center text-gray-400">
+                        <td colSpan={10} className="px-6 py-12 text-center text-gray-400">
                           <div className="flex flex-col items-center justify-center gap-2">
                             <FileText className="w-8 h-8 text-gray-300" />
                             <span>No time logs added. Click "+ Add Time Entry" to add project rows.</span>
@@ -1014,6 +1020,7 @@ const TimesheetCreate: React.FC = () => {
                           handleOpenComment={handleOpenComment}
                           getRowTotal={getRowTotal}
                           handleDeleteRow={handleDeleteRow}
+                          disabledDays={weekOffDates}
                         />
                       );
                     })
@@ -1023,7 +1030,7 @@ const TimesheetCreate: React.FC = () => {
                   {!isReadOnly && isGridEditable && (
                     isDesktop ? (
                       <tr>
-                        <td colSpan={8} className="px-6 py-4 bg-gray-50/50">
+                        <td colSpan={10} className="px-6 py-4 bg-gray-50/50">
                           <AddTimeEntryButton onClick={handleAddBlankRow} variant="desktop" />
                         </td>
                       </tr>
@@ -1057,21 +1064,22 @@ const TimesheetCreate: React.FC = () => {
                       <td className="border-l border-gray-100"></td>
                     </tr>
                   ) : (
-                    <tr className="block border-t border-gray-200 p-4 bg-gray-50">
+                    <tr className="block border-t border-gray-200 px-2 py-4 sm:p-4 bg-gray-50/50">
                       <td className="block w-full">
-                        <div className="space-y-4">
+                        <div className="space-y-4 bg-white p-3 rounded-xl border border-gray-200 shadow-sm">
                           <div className="flex justify-between items-center font-bold text-gray-900">
-                            <span>Total Weekly Hours</span>
+                            <span className="text-sm">Total Weekly Hours</span>
                             <span className="text-primary text-lg">{formatCellOnBlur(totals.totalWeeklyHours) || "0:00"}</span>
                           </div>
-                          <div className="grid grid-cols-5 gap-2">
+                          <div className="grid grid-cols-7 gap-1">
                             {daysOfWeek.map(day => {
                               const dateKey = format(day, "yyyy-MM-dd");
                               const dayHrs = totals.dailyTotals[dateKey] || 0;
                               return (
                                 <div key={dateKey} className="flex flex-col items-center">
-                                  <span className="text-[10px] font-semibold text-gray-500 mb-1">{format(day, "d MMM")}</span>
-                                  <span className="text-xs font-bold text-gray-800">{formatCellOnBlur(dayHrs) || "0:00"}</span>
+                                  <span className="text-[10px] font-bold text-gray-600 leading-tight">{format(day, "d")}</span>
+                                  <span className="text-[9px] text-gray-400 mb-1 leading-tight">{format(day, "EEE")}</span>
+                                  <span className="text-[10px] font-bold bg-primary/10 text-primary w-full text-center py-1 rounded">{formatCellOnBlur(dayHrs) || "0:00"}</span>
                                 </div>
                               );
                             })}
@@ -1093,90 +1101,42 @@ const TimesheetCreate: React.FC = () => {
 
 
       {/* Edit Cell Comment Modal */}
-      {commentModalConfig?.isOpen && (
-        <Modal isOpen={true} onClose={() => setCommentModalConfig(null)} size="md">
-          <div className="flex flex-col bg-white overflow-hidden rounded-2xl">
-            <div className="flex items-center justify-between p-6 border-b border-gray-100">
-              <div>
-                <Typography variant="h4" className="text-gray-900">
-                  Daily Log Comment
-                </Typography>
-                <Typography variant="bodySmall" color="body2" className="mt-1">
-                  {commentModalConfig.projectName} • {commentModalConfig.dayLabel}
-                </Typography>
-              </div>
-              <button
-                onClick={() => setCommentModalConfig(null)}
-                className="p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 rounded-full transition-colors focus:outline-none"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-
-            <div className="p-6 space-y-4">
-              <label className="block text-sm font-semibold text-gray-700">
-                Description / Comment <span className="text-red-500">*</span>
-              </label>
-              <textarea
-                placeholder="Enter log comments here..."
-                value={modalCommentText}
-                onChange={(e) => setModalCommentText(e.target.value)}
-                disabled={isReadOnly || !isGridEditable}
-                id="timesheet-cell-comment-textarea"
-                rows={4}
-                className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary disabled:bg-gray-100 disabled:text-gray-800"
-              />
-            </div>
-
-            <div className="px-6 py-4 border-t border-gray-100 flex justify-end gap-3 bg-gray-50/50">
-              <Button
-                variant="outline"
-                bgColor="primary"
-                size="md"
-                onClick={() => setCommentModalConfig(null)}
-              >
-                Close
-              </Button>
-              {!isReadOnly && isGridEditable && (
-                <Button
-                  variant="contain"
-                  bgColor="primary"
-                  size="md"
-                  disabled={!modalCommentText.trim()}
-                  onClick={() => {
-                    handleSaveComment(modalCommentText);
-                  }}
-                >
-                  Save Comment
-                </Button>
-              )}
-            </div>
-          </div>
-        </Modal>
-      )}
+      {commentModalConfig?.isOpen &&
+        <CommentModal
+          onClose={() => setCommentModalConfig(null)}
+          label={`${commentModalConfig?.projectName} • ${commentModalConfig?.dayLabel}`}
+          value={modalCommentText}
+          onChange={(e) => setModalCommentText(e.target.value)}
+          disabled={isReadOnly || !isGridEditable}
+          showSubmitButton={!isReadOnly && isGridEditable}
+          handleSaveComment={() => {
+            handleSaveComment(modalCommentText);
+          }}
+        />
+      }
 
       {/* Action Footer Bar */}
-      <div className="fixed bottom-6 left-6 right-6 z-30 pointer-events-none">
-        <div className="max-w-[1600px] mx-auto flex flex-col md:flex-row md:items-end justify-between gap-4">
+      <div className="fixed bottom-4 left-4 right-4 sm:bottom-6 sm:left-6 sm:right-6 z-30 pointer-events-none">
+        <div className="max-w-[1600px] mx-auto flex flex-col md:flex-row md:items-end justify-between gap-3 md:gap-4">
           <div className="flex items-center gap-6 pointer-events-auto">
 
 
             {lastSavedTime && (
-              <span className="text-gray-500 text-xs font-semibold bg-white/90 backdrop-blur px-4 py-2 rounded-xl shadow-lg border border-gray-100">
+              <span className="text-gray-500 text-xs font-semibold bg-white/90 backdrop-blur px-4 py-2 rounded-xl shadow-lg border border-gray-100 hidden sm:inline-block">
                 Saved at {lastSavedTime}
               </span>
             )}
           </div>
 
-          <div className="flex items-center gap-4 pointer-events-auto bg-white/90 backdrop-blur-md px-4 py-3 rounded-2xl shadow-2xl border border-gray-200">
+          <div className="flex flex-wrap justify-center sm:justify-end items-center gap-2 sm:gap-4 pointer-events-auto bg-white/90 backdrop-blur-md p-3 sm:px-4 sm:py-3 rounded-2xl shadow-2xl border border-gray-200">
 
-            {isGridEditable ? (
+            {!isGridEditable ? (
               <>
                 {/* File Attachment Upload */}
                 <div className="relative">
-                  <label className="flex items-center gap-2 cursor-pointer text-gray-600 hover:text-gray-800 text-sm font-semibold border border-gray-200 rounded-xl px-4 py-2.5 hover:bg-gray-50 transition-colors bg-white">
-                    <Upload className="w-4 h-4" />
-                    <span>{attachedFile ? attachedFile.name : "Attach File"}</span>
+                  <label className="flex items-center gap-2 cursor-pointer text-gray-600 hover:text-gray-800 text-sm font-semibold border border-gray-200 rounded-xl px-3 py-2 sm:px-4 sm:py-2.5 hover:bg-gray-50 transition-colors bg-white">
+                    <Upload className="w-4 h-4 flex-shrink-0" />
+                    <span className="truncate max-w-[80px] sm:max-w-[200px]">{attachedFile ? attachedFile.name : "Attach"}</span>
                     <input
                       type="file"
                       onChange={handleFileChange}
@@ -1205,7 +1165,7 @@ const TimesheetCreate: React.FC = () => {
                     icon={<Check className="w-4 h-4" />}
                     onClick={() => handleSaveOrSubmit(true)}
                   >
-                    {isSaving ? "Submitting..." : "Submit Timesheet"}
+                    {isSaving ? "Submitting..." : "Submit"}
                   </Button>
                 )}
               </>
