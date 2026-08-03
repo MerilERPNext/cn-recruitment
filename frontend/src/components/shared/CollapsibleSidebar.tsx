@@ -326,7 +326,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
         },
         {
           name: "Team Advances",
-          icon: Coins,
+          icon: Users,
           href: "/webapp/salary-slip-app/team-advances-list",
           permissionKey: "Team Advances",
         },
@@ -358,7 +358,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
         },
         {
           name: "My Requests",
-          icon: Users,
+          icon: User,
           href: "/webapp/benefits-app/my-requests",
           permissionKey: "My Requests",
         },
@@ -403,13 +403,13 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
         },
         {
           name: "My Advances",
-          icon: ArrowUpDown,
+          icon: IndianRupee,
           href: "/webapp/expenses-app/my-advance-expense",
           permissionKey: "My Advances",
         },
         {
           name: "Team Advances",
-          icon: ArrowUpDown,
+          icon: Users,
           href: "/webapp/expenses-app/team-advance-expense",
           permissionKey: "Team Advances",
         },
@@ -423,13 +423,13 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
       subItems: [
         {
           name: "Flow Requests",
-          icon: ArrowDownUp,
+          icon: Workflow,
           href: "/webapp/flow-app/flow-requests",
           permissionKey: "Flow Requests",
         },
         {
           name: "Onboarding",
-          icon: ArrowDownUp,
+          icon: UserPlus,
           href: "/webapp/flow-app/onboarding",
           permissionKey: "Onboarding",
         },
