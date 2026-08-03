@@ -36,9 +36,10 @@ const RecommendedTemplates = ({
                     key={getGoalKey(template)}
                     template={template}
                     onUseTemplate={(t) => {
-                        const repoGoals = (t as any);
-                        if (repoGoals) {
-                            onUseTemplate?.(repoGoals.repository_goals);
+                        if (t.repository_goals) {
+                            onUseTemplate?.(t.repository_goals);
+                        } else {
+                            onUseTemplate?.(t);
                         }
                     }}
                 />

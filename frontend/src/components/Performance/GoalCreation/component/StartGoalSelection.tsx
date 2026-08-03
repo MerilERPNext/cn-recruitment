@@ -1,38 +1,21 @@
-import { Dispatch, SetStateAction, useMemo, useState } from "react";
-import {
-  ArrowRight,
-  FileText,
-  Plus,
-  Inbox,
-  Sparkles,
-  GitMerge,
-  CheckCircle,
-  FolderX,
-  AlertCircle,
-  RefreshCw,
-} from "lucide-react";
-import { useNavigate } from "react-router-dom";
-import { Typography } from "../../../shared/atoms/Typography";
-import Button from "../../../shared/atoms/Button";
-import Modal from "../../../shared/Modal";
-import GoalLibraryPopup from "./GoalLibraryPopup";
-import AcknowledgmentPopup, { getWeightageColor } from "./AcknowledgmentPopup";
-import { useGoalModel } from "../../GoalModelContext";
-import {
-  useCascadeMangerGoals,
-  useGetMandotaryGoals,
-} from "../../../../hooks/usePerformance";
-import { Templates } from "../../../../types/goal";
-import { useGetUiPermission } from "../../../../hooks/userUiPermission";
-import { getActionsEnabled } from "../../../../utils/uiPermission";
-import TeamGoalLibraryPopup from "./TeamGoalLibraryPopup";
-import TemplateCard, { TemplateCardsSkeleton } from "./GoalSelectionCard";
-import {
-  MandatoryGoalsSkeleton,
-  MandatoryGoalsError,
-} from "./MandatoryGoalsStatus";
-import toast from "react-hot-toast";
-import { useCurrentEmployeeDetails } from "../../../../hooks/useEmployee";
+import { Dispatch, SetStateAction, useMemo, useState } from 'react';
+import { ArrowRight, FileText, Plus, Inbox, GitMerge, CheckCircle, FolderX, AlertCircle, RefreshCw } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Typography } from '../../../shared/atoms/Typography';
+import Button from '../../../shared/atoms/Button';
+import Modal from '../../../shared/Modal';
+import GoalLibraryPopup from './GoalLibraryPopup';
+import AcknowledgmentPopup, { getWeightageColor } from './AcknowledgmentPopup';
+import { useGoalModel } from '../../GoalModelContext';
+import { useCascadeMangerGoals, useGetMandotaryGoals } from '../../../../hooks/usePerformance';
+import { CascadeGoal, Templates } from '../../../../types/goal';
+import { useGetUiPermission } from '../../../../hooks/userUiPermission';
+import { getActionsEnabled } from '../../../../utils/uiPermission';
+import TeamGoalLibraryPopup from './TeamGoalLibraryPopup';
+import TemplateCard, { TemplateCardsSkeleton } from './GoalSelectionCard';
+import { MandatoryGoalsSkeleton, MandatoryGoalsError } from './MandatoryGoalsStatus';
+import toast from 'react-hot-toast';
+import { useCurrentEmployeeDetails } from '../../../../hooks/useEmployee';
 
 const APP_NAME = "Performance";
 const PAGE_NAME = "Goal Creation";
@@ -250,154 +233,109 @@ const StartGoalSelection = ({ onContinue }: StartGoalSelectionProps) => {
               </TemplateCard>
             )}
 
-            {/* AI Suggestion Card */}
-            {canUseAI && (
-              <TemplateCard
-                containerClass={`relative overflow-hidden rounded-2xl border border-amber-300 bg-[#FFFCF4] shadow-sm flex flex-col ${!canCascade ? "lg:col-span-2" : ""}`}
-                icon={<Sparkles className="w-4 h-4" />}
-                iconClass="mt-0.5 rounded-xl bg-amber-100 p-2 text-amber-500 flex items-center justify-center shrink-0"
-                title="AI Suggestion (Marissa™)"
-                badge={
-                  <span className="rounded-md bg-amber-400 px-2 py-[2px] text-[10px] font-semibold uppercase tracking-wide text-slate-900">
-                    Recommended
-                  </span>
-                }
-                description="Marissa proposes an OKR based on your role, last cycle, and recent check-ins."
-                statPrimary="Beta · 84% acceptance rate"
-                statSecondary="Median time: ~ 60 seconds"
-                onUse={() => {
-                  setDraftGoals([]);
-                  onContinue?.();
-                }}
-                ariaLabel="Use AI suggested goal"
-                buttonClass="bg-amber-400 hover:bg-amber-500 text-slate-900"
-              >
-                <div className="mt-4 rounded-xl border border-dashed border-amber-300 bg-[#FFF8E8] px-4 py-3">
-                  <Typography className="text-[13px] italic leading-6 text-slate-700">
-                    ✨ Marissa™ would suggest:
-                  </Typography>
-                  <Typography className="mt-1 text-[13px] leading-6 text-slate-700">
-                    “Ship Oxygen 2.0 dashboard to 100% of PW employees by Q4
-                    with WAU ≥ 80%, NPS ≥ 65, and accessibility audit complete.”
-                  </Typography>
-                </div>
-              </TemplateCard>
-            )}
-
-            {/* Cascade Card */}
-            {canCascade && (
-              <TemplateCard
-                containerClass={`overflow-hidden rounded-2xl border ${
-                  teamGoalsLoading
-                    ? "border-slate-200 bg-white"
-                    : teamGoalerr
-                      ? "border-red-200 bg-red-50/20"
-                      : (teamGoals?.data?.goals?.length ?? 0) > 0
-                        ? "border-slate-200 bg-white"
-                        : "border-gray-200 bg-gray-50/60 opacity-80"
-                } shadow-sm flex flex-col ${!canUseAI ? "lg:col-span-2" : ""}`}
-                icon={<GitMerge className="h-4 w-4" />}
-                iconClass={`rounded-xl ${
-                  teamGoalsLoading
-                    ? "bg-indigo-50 text-indigo-500 animate-pulse"
-                    : teamGoalerr
-                      ? "bg-red-100 text-red-500"
-                      : (teamGoals?.data?.goals?.length ?? 0) > 0
-                        ? "bg-indigo-50 text-indigo-500"
-                        : "bg-gray-200 text-gray-400"
-                } p-2 flex items-center justify-center shrink-0`}
-                title="Cascade from Manager"
-                description={
-                  teamGoalsLoading
-                    ? "Loading manager goals..."
-                    : teamGoalerr
-                      ? "Failed to load manager goals."
-                      : (teamGoals?.data?.goals?.length ?? 0) > 0
-                        ? `Inherit a sub-OKR from one of ${currentEmployee?.reports_to_name ?? "-"}'s ${teamGoals?.data?.goals?.length} active goals.`
-                        : "No active manager goals available to cascade."
-                }
-                statPrimary={
-                  teamGoalsLoading
-                    ? "Fetching active goals..."
-                    : teamGoalerr
-                      ? "Error fetching goals"
-                      : (teamGoals?.data?.goals?.length ?? 0) > 0
-                        ? `${teamGoals?.data?.goals?.length} active parent goal${(teamGoals?.data?.goals?.length ?? 0) > 1 ? "s" : ""}`
-                        : "0 active parent goals available"
-                }
-                onUse={
-                  teamGoalsLoading
-                    ? undefined
-                    : teamGoalerr
-                      ? () => refetchteamgoals()
-                      : (teamGoals?.data?.goals?.length ?? 0) > 0
-                        ? () => setOpenTeamGoals(true)
-                        : () => toast("No manager goals available to cascade.")
-                }
-                buttonClass={
-                  teamGoalsLoading
-                    ? "bg-gray-200 text-gray-400 cursor-not-allowed pointer-events-none"
-                    : (teamGoals?.data?.goals?.length ?? 0) > 0
-                      ? "bg-indigo-500 hover:bg-indigo-600 text-white"
-                      : "bg-gray-200 text-gray-400 cursor-not-allowed pointer-events-none"
-                }
-                buttonText={"Use this"}
-              >
-                {teamGoalsLoading ? (
-                  <div className="mt-4 space-y-2 animate-pulse">
-                    <div className="h-8 w-full rounded-lg bg-slate-100"></div>
-                    <div className="h-8 w-full rounded-lg bg-slate-100"></div>
-                  </div>
-                ) : teamGoalerr ? (
-                  <div className="mt-4 flex flex-col items-center justify-center p-3.5 rounded-xl border border-dashed border-red-200 bg-red-50/60 text-center">
-                    <div className="flex items-center gap-1.5 text-red-600 mb-1">
-                      <AlertCircle className="w-4 h-4" />
-                      <Typography className="text-xs font-semibold">
-                        Failed to load manager goals
-                      </Typography>
-                    </div>
-                    <Typography className="text-[11px] text-slate-500 mb-2">
-                      {teamGoalerr?.message ||
-                        "Something went wrong while fetching manager goals."}
-                    </Typography>
-                    <button
-                      type="button"
-                      onClick={() => refetchteamgoals()}
-                      className="text-xs font-semibold text-blue-600 hover:text-blue-700 underline inline-flex items-center gap-1"
-                    >
-                      <RefreshCw className="w-3 h-3" /> Try Again
-                    </button>
-                  </div>
-                ) : (teamGoals?.data?.goals?.length ?? 0) > 0 ? (
-                  <div className="mt-3 rounded-xl border border-slate-200/80 bg-slate-50/50 p-2 space-y-1.5">
-                    {teamGoals?.data?.goals
-                      ?.slice(0, 3)
-                      .map((goal: any, index: number) => (
-                        <div
-                          key={goal.goal || goal.id || index}
-                          className="flex items-start justify-between gap-3 rounded-lg bg-white border border-slate-100 px-3 py-2 shadow-2xs"
+                    {/* Cascade Card */}
+                    {canCascade && (
+                        <TemplateCard
+                            containerClass={`overflow-hidden rounded-2xl border ${teamGoalsLoading
+                                ? 'border-slate-200 bg-white'
+                                : teamGoalerr
+                                    ? 'border-red-200 bg-red-50/20'
+                                    : (teamGoals?.data?.goals?.length ?? 0) > 0
+                                        ? 'border-slate-200 bg-white'
+                                        : 'border-gray-200 bg-gray-50/60 opacity-80'
+                                } shadow-sm flex flex-col ${!canUseAI ? 'lg:col-span-2' : ''}`}
+                            icon={<GitMerge className="h-4 w-4" />}
+                            iconClass={`rounded-xl ${teamGoalsLoading
+                                ? 'bg-indigo-50 text-indigo-500 animate-pulse'
+                                : teamGoalerr
+                                    ? 'bg-red-100 text-red-500'
+                                    : (teamGoals?.data?.goals?.length ?? 0) > 0
+                                        ? 'bg-indigo-50 text-indigo-500'
+                                        : 'bg-gray-200 text-gray-400'
+                                } p-2 flex items-center justify-center shrink-0`}
+                            title="Cascade from Manager"
+                            description={
+                                teamGoalsLoading
+                                    ? 'Loading manager goals...'
+                                    : teamGoalerr
+                                        ? 'Failed to load manager goals.'
+                                        : (teamGoals?.data?.goals?.length ?? 0) > 0
+                                            ? `Inherit a sub-OKR from one of ${currentEmployee?.reports_to_name ?? "-"}'s ${teamGoals?.data?.goals?.length} active goals.`
+                                            : 'No active manager goals available to cascade.'
+                            }
+                            statPrimary={
+                                teamGoalsLoading
+                                    ? 'Fetching active goals...'
+                                    : teamGoalerr
+                                        ? 'Error fetching goals'
+                                        : (teamGoals?.data?.goals?.length ?? 0) > 0
+                                            ? `${teamGoals?.data?.goals?.length} active parent goal${(teamGoals?.data?.goals?.length ?? 0) > 1 ? 's' : ''}`
+                                            : '0 active parent goals available'
+                            }
+                            onUse={
+                                teamGoalsLoading
+                                    ? undefined
+                                    : teamGoalerr
+                                        ? () => refetchteamgoals()
+                                        : (teamGoals?.data?.goals?.length ?? 0) > 0
+                                            ? () => setOpenTeamGoals(true)
+                                            : () => toast('No manager goals available to cascade.')
+                            }
+                            buttonClass={
+                              teamGoalsLoading ? 'bg-gray-200 text-gray-400 cursor-not-allowed pointer-events-none'
+                                    : (teamGoals?.data?.goals?.length ?? 0) > 0
+                                        ? 'bg-indigo-500 hover:bg-indigo-600 text-white'
+                                        : 'bg-gray-200 text-gray-400 cursor-not-allowed pointer-events-none'
+                            }
+                            buttonText={'Use this'}
                         >
-                          <span className="min-w-0 text-[12px] text-slate-700 font-medium truncate">
-                            {goal.title || goal.goal_title}
-                          </span>
-                          {goal.weightage !== undefined && (
-                            <span className="shrink-0 text-[12px] font-semibold text-indigo-600">
-                              {goal.weightage}%
-                            </span>
-                          )}
-                        </div>
-                      ))}
-                  </div>
-                ) : (
-                  <div className="mt-4 rounded-xl border border-dashed border-gray-300 bg-white/70 p-3.5 text-center">
-                    <Typography className="text-xs text-gray-500 font-medium">
-                      🚫 No active manager goals available to cascade.
-                    </Typography>
-                  </div>
-                )}
-              </TemplateCard>
-            )}
-          </>
+                            {teamGoalsLoading ? (
+                                <div className="mt-4 space-y-2 animate-pulse">
+                                    <div className="h-8 w-full rounded-lg bg-slate-100"></div>
+                                    <div className="h-8 w-full rounded-lg bg-slate-100"></div>
+                                </div>
+                            ) : teamGoalerr ? (
+                                <div className="mt-4 flex flex-col items-center justify-center p-3.5 rounded-xl border border-dashed border-red-200 bg-red-50/60 text-center">
+                                    <div className="flex items-center gap-1.5 text-red-600 mb-1">
+                                        <AlertCircle className="w-4 h-4" />
+                                        <Typography className="text-xs font-semibold">Failed to load manager goals</Typography>
+                                    </div>
+                                    <Typography className="text-[11px] text-slate-500 mb-2">
+                                        {teamGoalerr?.message || 'Something went wrong while fetching manager goals.'}
+                                    </Typography>
+                                    <button
+                                        type="button"
+                                        onClick={() => refetchteamgoals()}
+                                        className="text-xs font-semibold text-blue-600 hover:text-blue-700 underline inline-flex items-center gap-1"
+                                    >
+                                        <RefreshCw className="w-3 h-3" /> Try Again
+                                    </button>
+                                </div>
+                            ) : (teamGoals?.data?.goals?.length ?? 0) > 0 ? (
+                                <div className="mt-3 rounded-xl border border-slate-200/80 bg-slate-50/50 p-2 space-y-1.5">
+                                                {teamGoals?.data?.goals?.slice(0, 3).map((goal: CascadeGoal, index: number) => (
+                                        <div key={goal.goal || index} className="flex items-start justify-between gap-3 rounded-lg bg-white border border-slate-100 px-3 py-2 shadow-2xs">
+                                            <span className="min-w-0 text-[12px] text-slate-700 font-medium truncate">
+                                                {goal.title}
+                                            </span>
+                                            {goal.weightage !== undefined && (
+                                                <span className="shrink-0 text-[12px] font-semibold text-indigo-600">
+                                                    {goal.weightage}%
+                                                </span>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="mt-4 rounded-xl border border-dashed border-gray-300 bg-white/70 p-3.5 text-center">
+                                    <Typography className="text-xs text-gray-500 font-medium">
+                                        🚫 No active manager goals available to cascade.
+                                    </Typography>
+                                </div>
+                            )}
+                        </TemplateCard>
+                    )}
+                </>
         ) : (
           <div className="col-span-full bg-white rounded-2xl border border-gray-200 shadow-sm p-8 sm:p-10 text-center flex flex-col items-center justify-center min-h-[240px]">
             <div className="w-14 h-14 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center mb-4 border border-amber-100/80 shadow-xs">
@@ -452,44 +390,44 @@ const StartGoalSelection = ({ onContinue }: StartGoalSelectionProps) => {
         </div>
       )}
 
-      <Modal
-        isOpen={isGoalLibraryOpen}
-        onClose={() => setIsGoalLibraryOpen(false)}
-        size="xl"
-        className="max-w-[1300px] p-0"
-      >
-        <GoalLibraryPopup
-          onClose={() => setIsGoalLibraryOpen(false)}
-          onUseTemplate={(selected, source) => {
-            setIsGoalLibraryOpen(false);
-            const selectedGoals = Array.isArray(selected)
-              ? selected
-              : [selected];
-            if (source === "recommended") {
-              setDraftGoals(selectedGoals);
-            } else {
-              setDraftGoals([]);
-              addDraftGoals(selectedGoals);
-            }
-            onContinue?.();
-          }}
-        />
-      </Modal>
-      <Modal
-        isOpen={openTeamGoals}
-        onClose={() => setOpenTeamGoals(false)}
-        size="xl"
-        className="max-w-[1300px] p-0"
-      >
-        <TeamGoalLibraryPopup
-          onClose={() => setOpenTeamGoals(false)}
-          onUseTemplate={(selected) => {
-            setOpenTeamGoals(false);
-            setDraftGoals(selected as any);
-            onContinue?.();
-          }}
-        />
-      </Modal>
+        <Modal
+            isOpen={isGoalLibraryOpen}
+            onClose={() => setIsGoalLibraryOpen(false)}
+            size="xl"
+            className="max-w-[1300px] p-0"
+        >
+            <GoalLibraryPopup
+                onClose={() => setIsGoalLibraryOpen(false)}
+                onUseTemplate={(selected, source) => {
+                    setIsGoalLibraryOpen(false);
+                    const selectedGoals = Array.isArray(selected) ? selected : [selected];
+                    if (source === 'recommended') {
+                        setDraftGoals(selectedGoals);
+                    } else {
+                        setDraftGoals([])
+                        addDraftGoals(selectedGoals);
+                    }
+                    onContinue?.();
+                }}
+            />
+        </Modal>
+        <Modal
+            isOpen={openTeamGoals}
+            onClose={() => setOpenTeamGoals(false)}
+            size="xl"
+            className="max-w-[1300px] p-0"
+        >
+            <TeamGoalLibraryPopup
+                onClose={() => setOpenTeamGoals(false)}
+                onUseTemplate={(selected) => {
+                    setOpenTeamGoals(false);
+                    setDraftGoals(selected as CascadeGoal[])
+                    onContinue?.()
+
+
+                }}
+            />
+        </Modal>
 
       <Modal
         isOpen={!!acknowledgementGoalsData}

@@ -1,10 +1,10 @@
-import { useMemo, useState } from "react";
+import { ChangeEvent, useMemo, useState } from "react";
 import { Form } from "@tsed/react-formio";
 import { format, isValid, parse } from "date-fns";
 import { ChevronDown, ChevronUp, X } from "lucide-react";
 import Badge from "../../../../shared/Badge";
 import { Card } from "../../../../shared/atoms/Card";
-import { AsyncSelect } from "../../../../shared/atoms/AsyncSelect";
+import { AsyncSelect, SelectOption } from "../../../../shared/atoms/AsyncSelect";
 import { performanceService } from "../../../../../services/performanceService";
 import { Typography } from "../../../../shared/atoms/Typography";
 import type { DepartmentSelectOption, DesignationSelectOption, KeyResult } from "../DefineGoal";
@@ -325,7 +325,7 @@ export const ObjectiveCard = ({
                   aria-label="Goal weightage"
                   className="h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm font-medium text-gray-900 outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100 placeholder:text-gray-400"
                   value={weightage === 0 ? "" : weightage}
-                  onChange={(e:any) => {
+                  onChange={(e: ChangeEvent<HTMLInputElement>) => {
                     const rawVal = e.target.value;
                     if (rawVal === "") {
                       setWeightage(0);
@@ -349,7 +349,7 @@ export const ObjectiveCard = ({
               <AsyncSelect
                 fetchOptions={fetchDepartmentOptions}
                 value={selectedDepartment}
-                onChange={(opt: any) => setSelectedDepartment(opt)}
+                onChange={(opt: SelectOption ) => setSelectedDepartment(opt)}
                 className="relative w-full"
                 placeholder="Search department..."
               />
@@ -360,7 +360,7 @@ export const ObjectiveCard = ({
               <AsyncSelect
                 fetchOptions={fetchDesignationOptions}
                 value={selectedDesignation || { label: 'Select', value: '' }}
-                onChange={(opt: any) => setSelectedDesignation?.(opt)}
+                onChange={(opt: SelectOption) => setSelectedDesignation?.(opt)}
                 className="relative w-full"
                 placeholder="Search designation..."
                 disabled={!selectedDepartment?.value}

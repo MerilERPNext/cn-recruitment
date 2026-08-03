@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { AlertCircle, ArrowRight, Search, X } from 'lucide-react';
 import Button from '../../../shared/atoms/Button';
-import { AsyncSelect } from '../../../shared/atoms/AsyncSelect';
+import { AsyncSelect, SelectOption } from '../../../shared/atoms/AsyncSelect';
 import { Typography } from '../../../shared/atoms/Typography';
 import { GoalTemplate, filterTemplates, getGoalKey } from './goal-model/types';
 import RecommendedTemplates from './goal-model/RecommendedTemplates';
@@ -13,6 +13,7 @@ import { fetchDepartmentOptions, fetchDesignationOptions, useGoalRepository, use
 import { useCurrentEmployeeDetails } from '../../../../hooks/useEmployee';
 import useDebounce from '../../../../hooks/useDebounce';
 import LoadingAllOrgSkeleton from './LoadingAllOrgSkeleton';
+import { KeyResult } from '../../../../types/goal';
 
 interface GoalLibraryPopupProps {
     onClose?: () => void;
@@ -45,7 +46,7 @@ const GoalLibraryPopup = ({ onClose, onUseTemplate }: GoalLibraryPopupProps) => 
     });
 
     const goals = refGoalsData?.data?.goals || [];
-    const recommendedGoals: GoalTemplate[] | any = useMemo(() => {
+    const recommendedGoals: GoalTemplate[]  = useMemo(() => {
         if (goalRepo?.data?.repositories && Array.isArray(goalRepo.data.repositories) && goalRepo.data.repositories.length > 0) {
             return goalRepo.data.repositories.map((repo) => {
                 const mappedGoals = (repo.goals || []).map((g) => ({
@@ -58,7 +59,7 @@ const GoalLibraryPopup = ({ onClose, onUseTemplate }: GoalLibraryPopupProps) => 
                     department: g.department,
                     scorecard_pillar: g.scorecard_pillar,
                     weightage: g.weightage,
-                    key_results: Array.isArray(g.key_results) ? g.key_results.map((kr: any) => ({
+                    key_results: Array.isArray(g.key_results) ? g.key_results.map((kr: KeyResult) => ({
                         title: kr.title,
                         weightage: kr.weightage,
                         metric: kr.metric,
@@ -116,7 +117,7 @@ const GoalLibraryPopup = ({ onClose, onUseTemplate }: GoalLibraryPopupProps) => 
 
     const handleSubmitFooter = () => {
         if (selectedTemplates.length > 0) {
-            const allGoals = selectedTemplates.flatMap((t: any) =>
+            const allGoals = selectedTemplates.flatMap((t:GoalTemplate) =>
                 t.repository_goals ? t.repository_goals : t
             );
             onUseTemplate?.(allGoals, activeTab);
@@ -126,8 +127,8 @@ const GoalLibraryPopup = ({ onClose, onUseTemplate }: GoalLibraryPopupProps) => 
     const counts = useMemo(() => ({
         recommended: recommendedGoals.length,
         allOrg: goals.length,
-        department: goals.filter((g: any) => Boolean(g.department || g.department_title)).length,
-        designation: goals.filter((g: any) => Boolean(g.designation)).length,
+        department: goals.filter((g: GoalTemplate ) => Boolean(g.department || g.department_title)).length,
+        designation: goals.filter((g: GoalTemplate) => Boolean(g.designation)).length,
         roleBased: filterTemplates(roleBasedTemplatesData, debouncedSearchQuery, selectedDepartment.value, selectedLevel.value).length,
     }), [debouncedSearchQuery, selectedDepartment.value, selectedLevel.value, goals, recommendedGoals, refGoalsData?.data?.total, goalRepo?.data?.total]);
 
@@ -271,7 +272,7 @@ const GoalLibraryPopup = ({ onClose, onUseTemplate }: GoalLibraryPopupProps) => 
                                 return skip === 0 ? [{ label: 'All Departments', value: 'All' }, ...res] : res;
                             }}
                             value={selectedDepartment}
-                            onChange={(opt: any) => {
+                            onChange={(opt: SelectOption ) => {
                                 setSelectedDepartment(opt);
                                 setSelectedLevel({ label: 'All Designations', value: 'All' });
                             }}
@@ -284,7 +285,7 @@ const GoalLibraryPopup = ({ onClose, onUseTemplate }: GoalLibraryPopupProps) => 
                                 return skip === 0 ? [{ label: 'All Designations', value: 'All' }, ...res] : res;
                             }}
                             value={selectedLevel}
-                            onChange={(opt: any) => setSelectedLevel(opt)}
+                            onChange={(opt: SelectOption ) => setSelectedLevel(opt)}
                             className="relative w-full min-w-0 sm:col-span-2 lg:col-span-1 [&>button]:h-9 [&>button]:min-w-0 [&>button]:px-3 [&>button]:text-sm [&>div]:!w-full sm:[&>button]:h-11"
                             placeholder="Search designation..."
                         />

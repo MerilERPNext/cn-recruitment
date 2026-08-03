@@ -4,9 +4,9 @@ import {
   DraftGoalItem,
   RequestLeaveDefaults,
   GoalModelContextType,
+  CascadeGoal,
 } from "../../types/goal";
 
-export type { DraftGoalItem, RequestLeaveDefaults, GoalModelContextType };
 
 const GoalModelContext = createContext<
   GoalModelContextType | undefined
@@ -28,10 +28,10 @@ export const GoalModelProvider: React.FC<{
   };
 
   // Draft goals state initialized from localStorage
-  const [draftGoals, setDraftGoals] = useState<DraftGoalItem[]>([]);
+  const [draftGoals, setDraftGoals] = useState<(DraftGoalItem | CascadeGoal)[]>([]);
 
 
-  const addDraftGoals = useCallback((goals: GoalTemplate | GoalTemplate[]) => {
+  const addDraftGoals = useCallback((goals: GoalTemplate | CascadeGoal | (GoalTemplate | CascadeGoal)[]) => {
     const goalArray = Array.isArray(goals) ? goals : [goals];
     setDraftGoals((prev) => {
       const existingKeys = new Set(prev.map((g) => getGoalKey(g)));

@@ -292,11 +292,12 @@ export type GoalModelContextType = {
   defaults: RequestLeaveDefaults | null;
 
   // Global Draft Goals State & Actions
-  draftGoals: DraftGoalItem[];
-  setDraftGoals: React.Dispatch<React.SetStateAction<DraftGoalItem[]>>;
-  addDraftGoals: (goals: GoalTemplate | GoalTemplate[]) => void;
+  draftGoals: (DraftGoalItem | CascadeGoal)[];
+  setDraftGoals: React.Dispatch<React.SetStateAction<(DraftGoalItem | CascadeGoal)[]>>;
+
+  addDraftGoals: (goals: GoalTemplate | CascadeGoal | (GoalTemplate | CascadeGoal)[]) => void;
   removeDraftGoal: (id: string) => void;
-  updateDraftGoalWeightage: (id: string, weightage: number) => void;
+    updateDraftGoalWeightage: (id: string, weightage: number) => void;
   clearDraftGoals: () => void;
 };
 
@@ -341,6 +342,8 @@ export interface KeyResult {
   achieved?: number | string;
   weightage?: number;
   status?: string;
+  metric: number | null;
+  target_type: string;
 }
 
 export interface ReferenceGoalsParams {
@@ -397,8 +400,11 @@ export interface CascadeGoal {
   title: string;
   description?: string | null;
   goal_type?: string;
+  scope?: string;
   category?: string;
   department?: string | null;
+  department_title?: string | null;
+  recommended?: boolean;
   weightage?: number;
   scorecard_pillar?: string | null;
   performance_cycle?: string;
@@ -408,6 +414,7 @@ export interface CascadeGoal {
   owner_designation?: string | null;
   used_by_count?: number;
   key_results?: KeyResult[];
+  designation?:string
 }
 
 export interface CascadeGoalsData {
