@@ -1536,7 +1536,7 @@ export const routesConfig: AppRoute[] = [
             permissionKey: "Skills And Proficiency",
           },
           {
-            path: "performance-review",
+            path: "review/performance-review",
             element: <PerformanceReviewApp />,
             permissionKey: "Performance Review",
           },
