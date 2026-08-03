@@ -1,5 +1,5 @@
 import type React from "react";
-import { useState, useEffect, useMemo, memo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import {
   ChevronLeft,
   ChevronRight,
@@ -28,18 +28,22 @@ import { useCreateOrUpdateTimesheetEntries, useWeeklyTimesheetData } from "../..
 import { getWeeklyTimesheetData } from "../../../services/timesheetService";
 import { useGetUiPermission } from "../../../hooks/userUiPermission";
 import { isActionEnabled } from "../../../utils/uiPermission";
+import { useScreenSize } from "../../../hooks/useScreenSize";
+import { useFileUploader } from "../../../hooks/useFileUploader";
 
 
 import Button from "../../shared/atoms/Button";
 import { Typography } from "../../shared/atoms/Typography";
 import Modal from "../../shared/Modal";
-import { Form } from "@tsed/react-formio";
+
 import { addTimeEntrySchema } from "./addTimeEntrySchema";
 import { errorResponseFormater } from "../../../utils/errorResponseFormater";
 import { useLoadingOverlay } from "../../../context/OverlayContext";
+import { TimesheetRow } from "./components/TimesheetRow";
+import { AttachmentCard } from "../../shared/molecules/AttachmentCard";
 
 
-interface TimesheetRow {
+export interface TimesheetRow {
   id: string; // key: project_task_activity_billable
   project: string;
   projectName: string;
@@ -57,15 +61,36 @@ interface RowItemType {
   hrs: number;
 }
 
+const AddTimeEntryButton = ({ onClick, variant }: { onClick: () => void; variant: "desktop" | "mobile" }) => {
+  if (variant === "desktop") {
+    return (
+      <Button variant="soft" onClick={onClick} size="md">
+        <Plus className="w-4 h-4" /> Add Time Entry
+      </Button>
+    )
+  }
+  return (
+    <button onClick={onClick} className="inline-flex items-center gap-2 text-primary hover:text-primary-600 font-semibold text-sm transition-colors focus:outline-none py-2 px-4 bg-primary/10 rounded-lg">
+      <Plus className="w-4 h-4" /> Add Time Entry
+    </button>
+  )
+}
 
 const TimesheetCreate: React.FC = () => {
   const loadingOverlay = useLoadingOverlay();
+  const { isDesktop } = useScreenSize();
 
   // Date states
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
   const [isSavingLocally, setIsSavingLocally] = useState<boolean>(false);
   const currentWeekStart = useMemo(() => startOfWeek(currentDate, { weekStartsOn: 1 }), [currentDate]);
   const currentWeekEnd = useMemo(() => addDays(currentWeekStart, 4), [currentWeekStart]);
+
+  const realToday = useMemo(() => new Date(), []);
+  const realCurrentWeekStart = useMemo(() => startOfWeek(realToday, { weekStartsOn: 1 }), [realToday]);
+  const realCurrentWeekEnd = useMemo(() => addDays(realCurrentWeekStart, 6), [realCurrentWeekStart]);
+
+  const disableNextWeek = currentWeekStart.getTime() >= realCurrentWeekStart.getTime();
 
   const startOfWeekStr = useMemo(() => format(currentWeekStart, "yyyy-MM-dd"), [currentWeekStart]);
 
@@ -105,6 +130,27 @@ const TimesheetCreate: React.FC = () => {
     return map;
   }, [weeklyData]);
 
+  // Extract all unique file attachments from the response
+  const attachedFilesList = useMemo(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const files = new Map<string, any>();
+    if (weeklyData?.file_info) {
+      files.set(weeklyData.file_info.file_url, weeklyData.file_info);
+    }
+    if (weeklyData?.days) {
+      weeklyData.days.forEach(day => {
+        if (day.timesheet_records) {
+          day.timesheet_records.forEach(record => {
+            if (record.file_info) {
+              files.set(record.file_info.file_url, record.file_info);
+            }
+          });
+        }
+      });
+    }
+    return Array.from(files.values());
+  }, [weeklyData]);
+
   // Project & Task names are now provided directly in the API response
   // No need for separate projectsList / tasksList fetches
 
@@ -114,9 +160,17 @@ const TimesheetCreate: React.FC = () => {
 
   // Grid/Rows data
   const [projectsData, setProjectsData] = useState<TimesheetRow[]>([]);
+  const [initialProjectsData, setInitialProjectsData] = useState<TimesheetRow[]>([]);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [lastSavedTime, setLastSavedTime] = useState<string>("");
   const [attachedFile, setAttachedFile] = useState<File | null>(null);
+  const [isFileModified, setIsFileModified] = useState<boolean>(false);
+
+  const { uploadFiles } = useFileUploader();
+
+  const hasChanges = useMemo(() => {
+    return JSON.stringify(projectsData) !== JSON.stringify(initialProjectsData) || isFileModified;
+  }, [projectsData, initialProjectsData, isFileModified]);
 
   const { data: uiPermission } = useGetUiPermission("Timesheet");
   const hasSavePermission = isActionEnabled(uiPermission, "save", "Timesheet");
@@ -142,6 +196,12 @@ const TimesheetCreate: React.FC = () => {
   // Mutation hooks
   const { mutate: createOrUpdateEntries, isPending } = useCreateOrUpdateTimesheetEntries();
   const isSaving = isPending || isSavingLocally;
+
+  // Clear local attachment state when week changes
+  useEffect(() => {
+    setAttachedFile(null);
+    setIsFileModified(false);
+  }, [startOfWeekStr]);
 
 
   // Load timesheet data from weekly timesheet hook response
@@ -196,7 +256,10 @@ const TimesheetCreate: React.FC = () => {
     setIsBackendEditable(weeklyData.is_editable !== false);
     setTimesheetName(foundName);
     setTimesheetStatus(foundStatus);
-    setProjectsData(Object.values(rowsMap));
+    
+    const parsedData = Object.values(rowsMap);
+    setProjectsData(parsedData);
+    setInitialProjectsData(parsedData);
   }, [weeklyData]);
 
   // Add cell hour changes
@@ -304,12 +367,22 @@ const TimesheetCreate: React.FC = () => {
   };
 
   const handleNextWeek = () => {
-    setCurrentDate(prev => addDays(prev, 7));
+    if (!disableNextWeek) {
+      setCurrentDate(prev => addDays(prev, 7));
+    } else {
+      toast.error("You cannot select dates in the future.");
+    }
   };
 
   const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.value) {
-      setCurrentDate(new Date(e.target.value));
+      const selected = new Date(e.target.value);
+      const selectedStart = startOfWeek(selected, { weekStartsOn: 1 });
+      if (selectedStart.getTime() > realCurrentWeekStart.getTime()) {
+        toast.error("You cannot select dates in the future.");
+        return;
+      }
+      setCurrentDate(selected);
     }
   };
 
@@ -397,7 +470,7 @@ const TimesheetCreate: React.FC = () => {
 
   // Configure inline Formio row
   {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */ }
-  const handleConfigureRow = (rowId: string, submission: any) => {
+  const handleConfigureRow = useCallback((rowId: string, submission: any) => {
     const data = submission.data;
     const projectVal = data.project || "";
     const taskVal = data.task || "";
@@ -422,56 +495,8 @@ const TimesheetCreate: React.FC = () => {
       delete newErrs[`${rowId}_project_task`];
       return newErrs;
     });
-  };
+  }, []);
   const formSchema = useMemo(() => addTimeEntrySchema, []);
-
-  const InlineFormRow = memo(({ row }: { row: TimesheetRow; }) => {
-    const submission = useMemo(
-      () => ({
-        data: {
-          project: row.project,
-          task: row.task,
-          is_billable: row.isBillable,
-        },
-      }),
-      [row.project, row.task, row.isBillable]
-    );
-    return (
-      <Form
-        form={formSchema}
-        submission={submission}
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        onChange={(sub: any) => {
-          const data = sub.data;
-
-          if (!data.project || !data.task) return;
-
-          if (
-            data.project === row.project &&
-            data.task === row.task &&
-            (data.is_billable ?? true) === row.isBillable
-          ) {
-            return;
-          }
-
-          handleConfigureRow(row.id, sub);
-        }}
-        // onSubmit={onSubmit}
-        options={{
-          buttonSettings: {
-            showSubmit: true,
-            submitText: "Confirm"
-          }
-        }}
-      />
-    );
-  }, (prevProps, nextProps) => {
-    return (
-      prevProps.row.project === nextProps.row.project &&
-      prevProps.row.task === nextProps.row.task &&
-      prevProps.row.isBillable === nextProps.row.isBillable
-    );
-  });
 
 
   // Comments handlers
@@ -549,14 +574,11 @@ const TimesheetCreate: React.FC = () => {
         const dateKey = format(day, "yyyy-MM-dd");
         const cell = row.days[dateKey];
 
-        if (!cell || !cell.hours || cell.hours <= 0) {
-          hasValidationError = true;
-          newErrors[`${row.id}_${dateKey}_hours`] = "Required";
-        }
-
-        if (!cell || !cell.description || !cell.description.trim()) {
-          hasValidationError = true;
-          newErrors[`${row.id}_${dateKey}_comment`] = "Required";
+        if (cell && cell.hours > 0) {
+          if (!cell.description || !cell.description.trim()) {
+            hasValidationError = true;
+            newErrors[`${row.id}_${dateKey}_comment`] = "Required";
+          }
         }
       }
     }
@@ -564,7 +586,7 @@ const TimesheetCreate: React.FC = () => {
     setValidationErrors(newErrors);
 
     if (hasValidationError) {
-      toast.error("Please fill all mandatory fields (Project, Task, Hours, and Comments).");
+      toast.error("Please fill comments for all days where hours are logged, and ensure project/task are selected.");
       return;
     }
 
@@ -604,7 +626,8 @@ const TimesheetCreate: React.FC = () => {
     setIsSavingLocally(true);
 
     createOrUpdateEntries(payload, {
-      onSuccess: () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      onSuccess: async (data: any) => {
         setIsSavingLocally(false);
         loadingOverlay.hide();
         toast.success(isSubmit ? "Timesheet submitted successfully" : "Timesheet saved successfully");
@@ -613,6 +636,25 @@ const TimesheetCreate: React.FC = () => {
           setTimesheetStatus("Submitted");
         } else {
           setTimesheetStatus("Draft");
+        }
+
+        setInitialProjectsData(projectsData);
+
+        if (attachedFile && isFileModified) {
+          const timesheetIds = data?.timesheets || [];
+          if (timesheetIds.length > 0) {
+            try {
+              loadingOverlay.show("Uploading attached file...");
+              await uploadFiles([{ file: attachedFile }], "Timesheet", timesheetIds);
+              setIsFileModified(false);
+              toast.success("File uploaded and attached successfully.");
+            } catch (err) {
+              console.error("Failed to upload/attach file", err);
+              toast.error("Failed to upload attached file.");
+            } finally {
+              loadingOverlay.hide();
+            }
+          }
         }
       },
       onError: (err) => {
@@ -664,6 +706,7 @@ const TimesheetCreate: React.FC = () => {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       setAttachedFile(e.target.files[0]);
+      setIsFileModified(true);
       toast.success(`Attached file: ${e.target.files[0].name}`);
     }
   };
@@ -726,6 +769,7 @@ const TimesheetCreate: React.FC = () => {
                   type="date"
                   onChange={handleDateChange}
                   value={format(currentDate, "yyyy-MM-dd")}
+                  max={format(realCurrentWeekEnd, "yyyy-MM-dd")}
                   className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
                 />
               </label>
@@ -805,6 +849,21 @@ const TimesheetCreate: React.FC = () => {
           </div>
         </div>
 
+        {!isDetailLoading && attachedFilesList.length > 0 && (
+          <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex flex-col gap-3">
+            <Typography variant="subheading" className="text-gray-800 text-sm font-semibold">Attached File{attachedFilesList.length > 1 ? "s" : ""}</Typography>
+            <div className="w-full md:w-2/3 grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {attachedFilesList.map((fileInfo, idx) => (
+                <AttachmentCard 
+                  key={idx}
+                  fileUrl={fileInfo.file_url} 
+                  fileName={fileInfo.file_name}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Weekly Grid Sheet Table */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
           {isDetailLoading ? (
@@ -814,241 +873,213 @@ const TimesheetCreate: React.FC = () => {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full text-sm text-left border-collapse min-w-[1000px]">
-                <thead className="bg-gray-50/70 border-b border-gray-100">
-                  <tr>
-                    <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider min-w-[380px]">
-                      Projects / Tasks
-                    </th>
-                    {daysOfWeek.map((day) => {
-                      const dateKey = format(day, "yyyy-MM-dd");
-                      return (
-                        <th
-                          key={dateKey}
-                          className="px-3 py-3 text-center border-l border-gray-50 min-w-[100px]"
-                        >
-                          <div className="text-gray-900 font-bold text-sm">
-                            {format(day, "d MMM")}
-                          </div>
-                          <div className="text-gray-500 text-xs font-semibold mt-0.5">
-                            {format(day, "EEE").toUpperCase()}
-                          </div>
-                          {attendanceHoursMap[dateKey] && (
-                            <div className="text-[10px] text-gray-400 font-normal mt-1 bg-gray-100/50 py-0.5 rounded">
-                              {attendanceHoursMap[dateKey]}
+              <table className={`w-full text-sm text-left border-collapse ${isDesktop ? "min-w-[1000px]" : ""}`}>
+                {isDesktop && (
+                  <thead className="bg-gray-50/70 border-b border-gray-100">
+                    <tr>
+                      <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider min-w-[380px]">
+                        Projects / Tasks
+                      </th>
+                      {daysOfWeek.map((day) => {
+                        const dateKey = format(day, "yyyy-MM-dd");
+                        return (
+                          <th
+                            key={dateKey}
+                            className="px-3 py-3 text-center border-l border-gray-50 min-w-[100px]"
+                          >
+                            <div className="text-gray-900 font-bold text-sm">
+                              {format(day, "d MMM")}
                             </div>
-                          )}
-                        </th>
-                      );
-                    })}
-                    <th className="px-4 py-3 text-center border-l border-gray-50 text-xs font-bold text-gray-500 uppercase tracking-wider w-[120px]">
-                      Total Hours
-                    </th>
-                  </tr>
-                </thead>
+                            <div className="text-gray-500 text-xs font-semibold mt-0.5">
+                              {format(day, "EEE").toUpperCase()}
+                            </div>
+                            {attendanceHoursMap[dateKey] && (
+                              <div className="text-[10px] text-gray-400 font-normal mt-1 bg-gray-100/50 py-0.5 rounded">
+                                {attendanceHoursMap[dateKey]}
+                              </div>
+                            )}
+                          </th>
+                        );
+                      })}
+                      <th className="px-4 py-3 text-center border-l border-gray-50 text-xs font-bold text-gray-500 uppercase tracking-wider w-[120px]">
+                        Total Hours
+                      </th>
+                      <th className="px-4 py-3 text-center border-l border-gray-50 text-xs font-bold text-gray-500 uppercase tracking-wider w-[60px]">
+
+                      </th>
+                    </tr>
+                  </thead>
+                )}
                 <tbody className="divide-y divide-gray-100">
                   {/* Attendance row */}
                   {weeklyData?.days && (
-                    <tr className="bg-gray-50/40 text-gray-600 font-medium">
-                      <td className="px-6 py-3 font-semibold text-gray-700">
-                        Attendance Hours
-                      </td>
-                      {daysOfWeek.map(day => {
-                        const dateKey = format(day, "yyyy-MM-dd");
-                        return (
-                          <td key={dateKey} className="px-3 py-3 text-center border-l border-gray-50">
-                            {attendanceHoursMap[dateKey] || "0h 0m"}
-                          </td>
-                        );
-                      })}
-                      <td className="px-4 py-3 text-center border-l border-gray-50 font-bold">
-                        {/* sum up daily attendance hours */}
-                        {formatCellOnBlur(
-                          daysOfWeek.reduce((acc, day) => {
-                            const dateKey = format(day, "yyyy-MM-dd");
-                            const dData = weeklyData.days.find(d => d.date === dateKey);
-                            return acc + (dData?.attendance_hours || 0);
-                          }, 0)
-                        ) || "0:00"}
-                      </td>
-                    </tr>
+                    isDesktop ? (
+                      <tr className="bg-gray-50/40 text-gray-600 font-medium">
+                        <td className="px-6 py-3 font-semibold text-gray-700">
+                          Attendance Hours
+                        </td>
+                        {daysOfWeek.map(day => {
+                          const dateKey = format(day, "yyyy-MM-dd");
+                          return (
+                            <td key={dateKey} className="px-3 py-3 text-center border-l border-gray-50">
+                              {attendanceHoursMap[dateKey] || "0h 0m"}
+                            </td>
+                          );
+                        })}
+                        <td className="px-4 py-3 text-center border-l border-gray-50 font-bold">
+                          {/* sum up daily attendance hours */}
+                          {formatCellOnBlur(
+                            daysOfWeek.reduce((acc, day) => {
+                              const dateKey = format(day, "yyyy-MM-dd");
+                              const dData = weeklyData.days.find(d => d.date === dateKey);
+                              return acc + (dData?.attendance_hours || 0);
+                            }, 0)
+                          ) || "0:00"}
+                        </td>
+                        <td className="border-l border-gray-50"></td>
+                      </tr>
+                    ) : (
+                      <tr className="block border-b border-gray-100 p-4">
+                        <td className="block w-full">
+                          <div className="bg-gray-50 rounded-xl p-4 shadow-sm space-y-4">
+                            <div className="flex justify-between items-center font-semibold text-gray-700">
+                              <span>Attendance Hours</span>
+                              <span className="text-primary font-bold">
+                                {formatCellOnBlur(daysOfWeek.reduce((acc, day) => acc + ((weeklyData.days.find(d => d.date === format(day, "yyyy-MM-dd")))?.attendance_hours || 0), 0)) || "0:00"}
+                              </span>
+                            </div>
+                            <div className="grid grid-cols-5 gap-2">
+                              {daysOfWeek.map(day => {
+                                const dateKey = format(day, "yyyy-MM-dd");
+                                return (
+                                  <div key={dateKey} className="flex flex-col items-center">
+                                    <span className="text-[10px] font-semibold text-gray-500 mb-1">{format(day, "d MMM")}</span>
+                                    <span className="text-xs font-medium text-gray-700">{attendanceHoursMap[dateKey] || "0h"}</span>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    )
                   )}
 
                   {/* Project Rows */}
                   {projectsData.length === 0 ? (
-                    <tr>
-                      <td colSpan={7} className="px-6 py-12 text-center text-gray-400">
-                        <div className="flex flex-col items-center justify-center gap-2">
-                          <FileText className="w-8 h-8 text-gray-300" />
-                          <span>No time logs added. Click "+ Add Time Entry" to add project rows.</span>
-                          {!isReadOnly && isGridEditable && (
-                            <button
-                              onClick={handleAddBlankRow}
-                              className="mt-3 flex items-center gap-2 text-primary hover:text-primary-600 font-semibold text-sm transition-colors focus:outline-none"
-                            >
-                              <Plus className="w-4 h-4" /> Add Time Entry
-                            </button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
+                    isDesktop ? (
+                      <tr>
+                        <td colSpan={8} className="px-6 py-12 text-center text-gray-400">
+                          <div className="flex flex-col items-center justify-center gap-2">
+                            <FileText className="w-8 h-8 text-gray-300" />
+                            <span>No time logs added. Click "+ Add Time Entry" to add project rows.</span>
+                            {!isReadOnly && isGridEditable && (
+                              <AddTimeEntryButton onClick={handleAddBlankRow} variant="desktop" />
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ) : (
+                      <tr className="block p-8 text-center text-gray-400">
+                        <td className="block w-full">
+                          <div className="flex flex-col items-center justify-center gap-2">
+                            <FileText className="w-8 h-8 text-gray-300" />
+                            <span className="text-sm">No time logs added. Click "+ Add Time Entry" to add project rows.</span>
+                            {!isReadOnly && isGridEditable && (
+                              <AddTimeEntryButton onClick={handleAddBlankRow} variant="mobile" />
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    )
                   ) : (
                     projectsData.map(row => {
                       const projName = row.projectName || row.project || "[No Project]";
                       const taskName = row.taskSubject || row.task || "[No Task]";
 
                       return (
-                        <tr key={row.id} className="hover:bg-gray-50/50">
-                          {/* Row Projects info */}
-                          <td className="px-6 py-4 align-middle">
-                            {isGridEditable ? (
-                              <div className="flex items-start gap-2">
-                                <button
-                                  type="button"
-                                  onClick={() => handleDeleteRow(row.id)}
-                                  className="text-gray-400 hover:text-red-500 p-1.5 hover:bg-gray-100 rounded-lg transition-colors focus:outline-none mt-1"
-                                  title="Cancel / Delete"
-                                >
-                                  <X className="w-4 h-4" />
-                                </button>
-                                <div className={`add-time-entry-form-inline flex-1 min-w-[340px] max-w-[360px] p-2 rounded-lg border ${validationErrors[`${row.id}_project_task`] ? 'border-red-500 bg-red-50/50' : 'bg-gray-50/50 border-gray-150'}`}>
-                                  <InlineFormRow
-                                    key={row.id}
-                                    row={row}
-                                  />
-                                  {validationErrors[`${row.id}_project_task`] && (
-                                    <div className="text-red-500 text-[10px] mt-1 font-semibold text-center">
-                                      Project and Task are required
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                            ) : (
-                              <div className="flex items-center justify-between gap-4">
-                                <div className="flex flex-wrap items-center gap-2">
-                                  <span className="font-bold text-gray-900 text-sm">
-                                    {projName}
-                                  </span>
-                                  <span className="text-gray-300 text-xs">|</span>
-                                  <span className="text-gray-500 text-xs font-medium">
-                                    {taskName}
-                                  </span>
-                                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${row.isBillable ? "bg-emerald-50 text-emerald-700" : "bg-gray-100 text-gray-600"
-                                    }`}>
-                                    {row.isBillable ? "Billable" : "Non-Billable"}
-                                  </span>
-                                </div>
-                              </div>
-                            )}
-                          </td>
-
-                          {/* Day input cells */}
-                          {daysOfWeek.map(day => {
-                            const dateKey = format(day, "yyyy-MM-dd");
-                            const cell = row.days[dateKey] || { hours: 0, description: "" };
-                            const hasComment = !!cell.description;
-
-                            return (
-                              <td
-                                key={dateKey}
-                                className="px-2 py-3 text-center border-l border-gray-50 align-middle"
-                              >
-                                {(() => {
-                                  const hoursError = validationErrors[`${row.id}_${dateKey}_hours`];
-                                  const commentError = validationErrors[`${row.id}_${dateKey}_comment`];
-                                  return (
-                                    <>
-                                      <div className="flex flex-col items-center justify-center relative pb-3">
-                                        <div className="flex items-center justify-center gap-1">
-                                          <input
-                                            type="text"
-                                            placeholder="0:00"
-                                            defaultValue={cell.hours > 0 ? formatCellOnBlur(cell.hours) : ""}
-                                            onBlur={(e) => {
-                                              handleHourChange(row.id, dateKey, e.target.value);
-                                              const parsed = parseFloat(e.target.value);
-                                              if (e.target.value.includes(":")) {
-                                                const [h, m] = e.target.value.split(":").map(Number);
-                                                if (!isNaN(h) && !isNaN(m)) {
-                                                  e.target.value = formatCellOnBlur(h + m / 60);
-                                                }
-                                              } else if (!isNaN(parsed)) {
-                                                e.target.value = formatCellOnBlur(parsed);
-                                              } else {
-                                                e.target.value = "";
-                                              }
-                                            }}
-                                            disabled={isReadOnly || !isGridEditable}
-                                            className={`w-16 text-center border rounded-lg py-1 px-1.5 font-medium text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary disabled:bg-gray-100 disabled:text-gray-800 ${hoursError ? "border-red-500 ring-1 ring-red-500" : "border-gray-200"
-                                              }`}
-                                          />
-                                          <span className="text-red-500">*</span>
-                                        </div>
-                                      </div>
-
-                                      <div className="mt-1 flex flex-col items-center relative pb-3">
-                                        <button
-                                          onClick={() => handleOpenComment(
-                                            row.id,
-                                            dateKey,
-                                            projName,
-                                            format(day, "EEE, dd MMM")
-                                          )}
-                                          className={`text-[10px] font-bold transition-all px-2 py-0.5 rounded border ${commentError ? 'border-red-500 text-red-500 bg-red-50' :
-                                              (hasComment ? "text-primary hover:text-primary-600 border-transparent" : "text-gray-400 hover:text-gray-600 border-transparent")
-                                            }`}
-                                        >
-                                          {hasComment ? "★ Comment" : "Comment"} <span className="text-red-500">*</span>
-                                        </button>
-                                      </div>
-                                    </>
-                                  );
-                                })()}
-                              </td>
-                            );
-                          })}
-
-                          {/* Row Total */}
-                          <td className="px-4 py-3 text-center border-l border-gray-50 font-bold text-gray-900 align-middle">
-                            {formatCellOnBlur(getRowTotal(row)) || "0:00"}
-                          </td>
-                        </tr>
+                        <TimesheetRow
+                          key={row.id}
+                          row={row}
+                          projName={projName}
+                          taskName={taskName}
+                          isGridEditable={isGridEditable}
+                          isReadOnly={isReadOnly}
+                          validationErrors={validationErrors}
+                          handleConfigureRow={handleConfigureRow}
+                          formSchema={formSchema}
+                          daysOfWeek={daysOfWeek}
+                          formatCellOnBlur={formatCellOnBlur}
+                          handleHourChange={handleHourChange}
+                          handleOpenComment={handleOpenComment}
+                          getRowTotal={getRowTotal}
+                          handleDeleteRow={handleDeleteRow}
+                        />
                       );
                     })
                   )}
 
                   {/* Add Entry Action Row */}
                   {!isReadOnly && isGridEditable && (
-                    <tr>
-                      <td colSpan={7} className="px-6 py-4 bg-gray-50/50">
-                        <button
-                          onClick={handleAddBlankRow}
-                          className="flex items-center gap-2 text-primary hover:text-primary-600 font-semibold text-sm transition-colors focus:outline-none"
-                        >
-                          <Plus className="w-4 h-4" /> Add Time Entry
-                        </button>
-                      </td>
-                    </tr>
+                    isDesktop ? (
+                      <tr>
+                        <td colSpan={8} className="px-6 py-4 bg-gray-50/50">
+                          <AddTimeEntryButton onClick={handleAddBlankRow} variant="desktop" />
+                        </td>
+                      </tr>
+                    ) : (
+                      <tr className="block p-4">
+                        <td className="block w-full text-center">
+                          <AddTimeEntryButton onClick={handleAddBlankRow} variant="mobile" />
+                        </td>
+                      </tr>
+                    )
                   )}
 
                   {/* Table Footer Totals */}
-                  <tr className="bg-gray-100/50 text-gray-900 font-bold border-t border-gray-200">
-                    <td className="px-6 py-4 font-bold text-gray-800">
-                      Total hours/day
-                    </td>
-                    {daysOfWeek.map(day => {
-                      const dateKey = format(day, "yyyy-MM-dd");
-                      const dayHrs = totals.dailyTotals[dateKey] || 0;
-                      return (
-                        <td key={dateKey} className="px-3 py-4 text-center border-l border-gray-100">
-                          {formatCellOnBlur(dayHrs) || "0:00"}
-                        </td>
-                      );
-                    })}
-                    <td className="px-4 py-4 text-center border-l border-gray-100 text-base font-extrabold text-primary">
-                      {formatCellOnBlur(totals.totalWeeklyHours) || "0:00"}
-                    </td>
-                  </tr>
+                  {isDesktop ? (
+                    <tr className="bg-gray-100/50 text-gray-900 font-bold border-t border-gray-200">
+                      <td className="px-6 py-4 font-bold text-gray-800">
+                        Total hours/day
+                      </td>
+                      {daysOfWeek.map(day => {
+                        const dateKey = format(day, "yyyy-MM-dd");
+                        const dayHrs = totals.dailyTotals[dateKey] || 0;
+                        return (
+                          <td key={dateKey} className="px-3 py-4 text-center border-l border-gray-100">
+                            {formatCellOnBlur(dayHrs) || "0:00"}
+                          </td>
+                        );
+                      })}
+                      <td className="px-4 py-4 text-center border-l border-gray-100 text-base font-extrabold text-primary">
+                        {formatCellOnBlur(totals.totalWeeklyHours) || "0:00"}
+                      </td>
+                      <td className="border-l border-gray-100"></td>
+                    </tr>
+                  ) : (
+                    <tr className="block border-t border-gray-200 p-4 bg-gray-50">
+                      <td className="block w-full">
+                        <div className="space-y-4">
+                          <div className="flex justify-between items-center font-bold text-gray-900">
+                            <span>Total Weekly Hours</span>
+                            <span className="text-primary text-lg">{formatCellOnBlur(totals.totalWeeklyHours) || "0:00"}</span>
+                          </div>
+                          <div className="grid grid-cols-5 gap-2">
+                            {daysOfWeek.map(day => {
+                              const dateKey = format(day, "yyyy-MM-dd");
+                              const dayHrs = totals.dailyTotals[dateKey] || 0;
+                              return (
+                                <div key={dateKey} className="flex flex-col items-center">
+                                  <span className="text-[10px] font-semibold text-gray-500 mb-1">{format(day, "d MMM")}</span>
+                                  <span className="text-xs font-bold text-gray-800">{formatCellOnBlur(dayHrs) || "0:00"}</span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
@@ -1138,27 +1169,27 @@ const TimesheetCreate: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-4 pointer-events-auto bg-white/90 backdrop-blur-md px-4 py-3 rounded-2xl shadow-2xl border border-gray-200">
-            {/* File Attachment Upload */}
-            <div className="relative">
-              <label className="flex items-center gap-2 cursor-pointer text-gray-600 hover:text-gray-800 text-sm font-semibold border border-gray-200 rounded-xl px-4 py-2.5 hover:bg-gray-50 transition-colors bg-white">
-                <Upload className="w-4 h-4" />
-                <span>{attachedFile ? attachedFile.name : "Attach File"}</span>
-                <input
-                  type="file"
-                  onChange={handleFileChange}
-                  className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                />
-              </label>
-            </div>
 
             {isGridEditable ? (
               <>
+                {/* File Attachment Upload */}
+                <div className="relative">
+                  <label className="flex items-center gap-2 cursor-pointer text-gray-600 hover:text-gray-800 text-sm font-semibold border border-gray-200 rounded-xl px-4 py-2.5 hover:bg-gray-50 transition-colors bg-white">
+                    <Upload className="w-4 h-4" />
+                    <span>{attachedFile ? attachedFile.name : "Attach File"}</span>
+                    <input
+                      type="file"
+                      onChange={handleFileChange}
+                      className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                    />
+                  </label>
+                </div>
                 {hasSavePermission && (
                   <Button
                     variant="outline"
                     bgColor="primary"
                     size="md"
-                    disabled={isSaving}
+                    disabled={isSaving || !hasChanges}
                     icon={<Save className="w-4 h-4" />}
                     onClick={() => handleSaveOrSubmit(false)}
                   >
