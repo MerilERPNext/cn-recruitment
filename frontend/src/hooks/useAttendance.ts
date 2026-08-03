@@ -106,6 +106,16 @@ export const usePolicyVisibilityFlags = (): UseQueryResult<any, Error> => {
   });
 };
 
+// Attendance Settings flag that gates the calendar Comp-Off (Co+/Co-) + Late
+// Entry / Early Exit markers and legend.
+export const useCompoffLateDetailsEnabled = (): UseQueryResult<boolean, Error> => {
+  return useQuery<boolean, Error>({
+    queryKey: ["compoff-late-details-enabled"],
+    queryFn: () => attendanceService.getCompoffLateDetailsEnabled(),
+    ...defaultQueryOptions,
+  });
+};
+
 export const useUserMicroApps = (
   filters?: string
 ): UseQueryResult<any, Error> => {

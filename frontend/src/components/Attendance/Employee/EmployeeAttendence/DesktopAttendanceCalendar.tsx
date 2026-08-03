@@ -8,6 +8,7 @@ import { AttendanceRecord } from "../../../../types/attendance";
 import Button from "../../../shared/atoms/Button";
 import { useSearchParams } from "react-router-dom";
 import Tooltip from "../../../shared/Tooltip";
+import { useCompoffLateDetailsEnabled } from "../../../../hooks/useAttendance";
 
 type Status =
     | "present"
@@ -172,6 +173,7 @@ const DesktopAttendanceCalendar: React.FC<attendanceProps> = ({
     setShowDetailsFor,
 }) => {
     const [searchParams, setSearchParams] = useSearchParams();
+    const { data: showCompoffLate = false } = useCompoffLateDetailsEnabled();
 
     useEffect(() => {
         if (!selectedDate && !searchParams.get("date")) return;
@@ -492,24 +494,28 @@ const DesktopAttendanceCalendar: React.FC<attendanceProps> = ({
                     <span>Optional Holiday</span>
                 </div>
 
-                <div className="w-px h-3.5 bg-gray-200 mx-1" />
+                {showCompoffLate && (
+                    <>
+                        <div className="w-px h-3.5 bg-gray-200 mx-1" />
 
-                <div className="flex items-center gap-1">
-                    <span className="text-[9px] font-bold px-1 py-0.5 rounded bg-green-600 text-white leading-none">Co+</span>
-                    <span>Comp Off Earned</span>
-                </div>
-                <div className="flex items-center gap-1">
-                    <span className="text-[9px] font-bold px-1 py-0.5 rounded bg-red-600 text-white leading-none">Co-</span>
-                    <span>Comp Off Applied</span>
-                </div>
-                <div className="flex items-center gap-1">
-                    <span className="text-[9px] font-bold px-1 py-0.5 rounded bg-amber-500 text-white leading-none">LE</span>
-                    <span>Late Entry</span>
-                </div>
-                <div className="flex items-center gap-1">
-                    <span className="text-[9px] font-bold px-1 py-0.5 rounded bg-violet-500 text-white leading-none">EE</span>
-                    <span>Early Exit</span>
-                </div>
+                        <div className="flex items-center gap-1">
+                            <span className="text-[9px] font-bold px-1 py-0.5 rounded bg-green-600 text-white leading-none">Co+</span>
+                            <span>Comp Off Earned</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                            <span className="text-[9px] font-bold px-1 py-0.5 rounded bg-red-600 text-white leading-none">Co-</span>
+                            <span>Comp Off Applied</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                            <span className="text-[9px] font-bold px-1 py-0.5 rounded bg-amber-500 text-white leading-none">LE</span>
+                            <span>Late Entry</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                            <span className="text-[9px] font-bold px-1 py-0.5 rounded bg-violet-500 text-white leading-none">EE</span>
+                            <span>Early Exit</span>
+                        </div>
+                    </>
+                )}
 
                 <div className="w-px h-3.5 bg-gray-200 mx-1" />
 
