@@ -48,6 +48,8 @@ import SearchMembers from "./components/SearchMembers";
 import OnboardingFieldApproval from "./components/Onboarding/component/fieldLabelApproval.tsx";
 import BoxGrid from "./components/Performance/Calibrator/BoxGrid.tsx";
 import CalibratorSession from "./components/Performance/Calibrator/Calibrator.tsx";
+import GoalDrafts from "./components/Performance/GoalCreation/GoalDrafts.tsx";
+import BulkImportGoals from "./components/Performance/GoalCreation/BulkImportGoals.tsx";
 
 const TeamApprovalListExemptionTable = lazyWithRetry(
   () =>
@@ -159,7 +161,7 @@ const Feedback = lazyWithRetry(
   "Feedback",
 );
 const NewGoal = lazyWithRetry(
-  () => import("./components/Performance/GoalCreation/NewGaol"),
+  () => import("./components/Performance/GoalCreation/NewGoal"),
   "NewGoal",
 );
 const SkillsAndProficiency = lazyWithRetry(
@@ -1493,6 +1495,21 @@ export const routesConfig: AppRoute[] = [
             permissionKey: "My Goals",
           },
           {
+            path: "my-goals/new-goal",
+            element: <NewGoal />,
+            permissionKey: "Goal Creation",
+          },
+          {
+            path: "my-goals/goal-draft",
+            element: <GoalDrafts />,
+            permissionKey: "New Goal Plan",
+          },
+          {
+            path: "my-goals/bulk-import",
+            element: <BulkImportGoals />,
+            permissionKey: "Goal Creation",
+          },
+          {
             path: "my-goals/:id",
             element: <GoalDetails />,
             permissionKey: "My Goals",
@@ -1512,11 +1529,7 @@ export const routesConfig: AppRoute[] = [
             element: <Feedback />,
             permissionKey: "Feedback",
           },
-          {
-            path: "my-goals/new-goal",
-            element: <NewGoal />,
-            permissionKey: "New Goal Plan",
-          },
+         
           {
             path: "skills",
             element: <SkillsAndProficiency />,
@@ -1527,6 +1540,7 @@ export const routesConfig: AppRoute[] = [
             element: <PerformanceReviewApp />,
             permissionKey: "Performance Review",
           },
+         
         ]
       },
       {

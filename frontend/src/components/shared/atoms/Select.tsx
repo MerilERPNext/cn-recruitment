@@ -1,5 +1,5 @@
 import { ChevronDown } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Button from "./Button";
 
 interface SelectOption<T = string> {
@@ -14,6 +14,7 @@ interface SelectProps<T, O extends SelectOption<T> = SelectOption<T>> {
     onChange: (value: O) => void;
     disabled?: boolean;
     className?: string;
+    searchable?: boolean;
 }
 
 export const Select = <
@@ -26,9 +27,18 @@ export const Select = <
     onChange,
     disabled = false,
     className = "",
+    searchable = false,
 }: SelectProps<T, O>) => {
     const [open, setOpen] = useState(false);
+    const [searchTerm, setSearchTerm] = useState("");
+    const [visibleOptionCount, setVisibleOptionCount] = useState(20);
     const ref = useRef<HTMLDivElement>(null);
+
+    const filteredOptions = useMemo(
+        () => options.filter((option) => option.label.toLowerCase().includes(searchTerm.toLowerCase())),
+        [options, searchTerm],
+    );
+    const visibleOptions = filteredOptions.slice(0, visibleOptionCount);
 
     useEffect(() => {
         const handler = (e: MouseEvent) => {
@@ -39,6 +49,13 @@ export const Select = <
         document.addEventListener("mousedown", handler);
         return () => document.removeEventListener("mousedown", handler);
     }, []);
+
+    useEffect(() => {
+        if (!open) {
+            setSearchTerm("");
+            setVisibleOptionCount(20);
+        }
+    }, [open]);
 
     return (
         <div className={`w-64 ${className}`} ref={ref}>
@@ -82,8 +99,31 @@ export const Select = <
             animate-in fade-in zoom-in-95
           "
                 >
-                    <ul className="max-h-60 overflow-auto p-1">
-                        {options.map((opt) => {
+                    {searchable && (
+                        <div className="p-2 pb-1">
+                            <input
+                                type="search"
+                                value={searchTerm}
+                                onChange={(event) => {
+                                    setSearchTerm(event.target.value);
+                                    setVisibleOptionCount(20);
+                                }}
+                                placeholder="Search..."
+                                className="h-9 w-full rounded-lg border border-gray-200 px-3 text-sm outline-none focus:border-primary-400 focus:ring-2 focus:ring-primary-500/20"
+                                aria-label={`Search ${label ?? "options"}`}
+                            />
+                        </div>
+                    )}
+                    <ul
+                        className="max-h-60 overflow-auto p-1"
+                        onScroll={(event) => {
+                            const list = event.currentTarget;
+                            if (list.scrollTop + list.clientHeight >= list.scrollHeight - 8) {
+                                setVisibleOptionCount((count) => Math.min(count + 20, filteredOptions.length));
+                            }
+                        }}
+                    >
+                        {visibleOptions.map((opt) => {
                             const selected = opt.value === value.value;
 
                             return (
@@ -107,6 +147,9 @@ export const Select = <
                                 </li>
                             );
                         })}
+                        {visibleOptions.length === 0 && (
+                            <li className="px-3 py-2 text-sm text-gray-500">No options found</li>
+                        )}
                     </ul>
                 </div>
             )}
