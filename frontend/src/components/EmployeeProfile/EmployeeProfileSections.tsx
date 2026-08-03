@@ -25,6 +25,7 @@ import { Card } from "../shared/atoms/Card";
 import ProfileSkeleton from "../shared/molecules/Skeletons/ProfileSkeleton";
 import { useGetUiPermission } from "../../hooks/userUiPermission";
 import { isActionEnabled } from "../../utils/uiPermission";
+import formatToIndianDate from "../../utils/formatToIndianDate";
 
 interface EditableField {
     key: string;
@@ -275,7 +276,7 @@ const FieldCell = ({ field, tabKey, tabLabel, canEdit, isTable, onEdit }: FieldC
             />
         ) : (
             <Typography variant="bodyMedium" className="font-bold text-gray-900">
-                {field.value || "—"}
+                {formatValue(field.value, field.type)}
             </Typography>
         )}
     </div>
@@ -398,7 +399,7 @@ const GenericCard = ({ data, onEdit, canEdit }: { data: Record<string, any>, onE
                                     </Link>
                                 ) : (
                                     <Typography variant="bodySmall" className="font-bold text-gray-800 break-words">
-                                        {formatValue(value)}
+                                        {formatValue(value, type)}
                                     </Typography>
                                 )}
                             </div>
@@ -415,9 +416,14 @@ const formatKey = (key: string) =>
         .replace(/([a-z])([A-Z])/g, "$1 $2");
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const formatValue = (value: string | object | any[] | null | undefined) => {
+const formatValue = (value: string | object | any[] | null | undefined, type?: string | null) => {
     if (value === null || value === undefined || value === "")
         return "—";
+
+    if (type === "date") {
+        const formatted = formatToIndianDate(String(value));
+        if (formatted) return formatted;
+    }
 
     if (typeof value === "boolean")
         return value ? "Yes" : "No";

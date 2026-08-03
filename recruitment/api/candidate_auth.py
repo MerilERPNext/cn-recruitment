@@ -12,6 +12,7 @@ from frappe.utils import add_to_date, cint, get_datetime, now_datetime
 from frappe.utils.jinja import render_template
 
 from recruitment.recruitment.doctype.candidate_portal_auth_settings.candidate_portal_auth_settings import (
+    DEFAULT_PRIMARY_COLOR,
     get_settings,
 )
 
@@ -30,6 +31,7 @@ SAFE_SETTINGS_FIELDS = (
     "enable_mobile_otp",
     "mobile_delivery_mode",
     "redirect_to",
+    "primary_color",
 )
 
 
@@ -110,10 +112,15 @@ def enforce_candidate_identity(email=None, job_applicant_id=None):
 @frappe.whitelist(allow_guest=True)
 def get_auth_settings():
     settings = get_settings()
-    return {
+    data = {
         field: cint(settings.get(field)) if field.startswith(("allow_", "enable_", "signup_", "require_", "enabled")) else settings.get(field)
         for field in SAFE_SETTINGS_FIELDS
     }
+    # Defaulted here, not in apply_missing_defaults: a missing value there makes
+    # this guest endpoint save the Single, so one unauthenticated hit per upgraded
+    # site would fire a full document write.
+    data["primary_color"] = data["primary_color"] or DEFAULT_PRIMARY_COLOR
+    return data
 
 
 @frappe.whitelist(allow_guest=True)

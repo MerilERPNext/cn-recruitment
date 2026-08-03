@@ -673,7 +673,7 @@ export class EmployeeService {
     const response = await FrappeAPI.callMethod("frappe.client.get_list", {
       doctype: "Employee",
       filters: [["user_id", "=", userId]],
-      fields: ["name", "employee_name", "department"],
+      fields: ["name", "employee_name", "department", "status", "relieving_date"],
       limit: 1,
     });
 

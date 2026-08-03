@@ -302,7 +302,8 @@
   {
    "fieldname": "gd_groups_html",
    "fieldtype": "HTML",
-   "label": "GD Groups"
+   "label": "GD Groups",
+   "hidden": 1
   }
  ],
  "grid_page_length": 50,

@@ -62,7 +62,13 @@ def ensure_tpo_permissions():
 # Doctypes a TPO must be able to *reference* (e.g. pick a Campus Invite on a
 # Candidate Registration) but never create or modify. Row visibility is further
 # scoped by permission_query_conditions -> campus_invite_query.
-TPO_READONLY_DOCTYPES = ("Campus Invite",)
+#
+# Institute is here because Candidate Registration carries an Institute link that
+# is filled in for the TPO, plus an `institute_name` field that fetches from it.
+# Without read the form greets every TPO with "You do not have Read or Select
+# Permissions for Institute", then "Cannot Fetch Values". `select` alone is not
+# enough — a fetch_from lookup needs read.
+TPO_READONLY_DOCTYPES = ("Campus Invite", "Institute")
 
 
 def ensure_tpo_readonly_permissions():

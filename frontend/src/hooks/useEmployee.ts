@@ -144,6 +144,7 @@ export interface EmployeeDetilsType {
   employee_number: string | null;
 
   company: string;
+  company_short_name: string;
   department: string;
   designation: string;
   custom_designation_title: string;

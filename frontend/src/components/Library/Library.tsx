@@ -16,6 +16,7 @@ import { FilePreview } from "../shared/molecules/FilePreview";
 import toast from "react-hot-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { getFileNameFromUrl } from "../../utils/urlFormating";
+import formatToIndianDate from "../../utils/formatToIndianDate";
 
 const DocumentLibrary = () => {
   const [activeTab, setActiveTab] = useState("awaiting");
@@ -194,7 +195,7 @@ const DocumentLibrary = () => {
                       {doc.employee_name}
                     </td>
                     <td className="py-4 px-6 text-gray-600">
-                      {new Date(doc.creation).toLocaleDateString()}
+                      {formatToIndianDate(doc.creation)}
                     </td>
                     <td className="py-4 px-6">
                       <span

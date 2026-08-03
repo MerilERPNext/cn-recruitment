@@ -13,7 +13,7 @@ import StatusBadge from "../shared/atoms/statusBadge";
 import TeamApprovalActionPill from "../shared/atoms/TeamApprovalActionPill";
 import { Typography } from "../shared/atoms/Typography";
 import MobileAllocatedTo from "../shared/MobileAllocatedTo";
-import RejectionReasonModal from "../shared/RejectionReasonModal";
+import ActionReasonModal from "../shared/ActionReasonModal";
 import Tooltip from "../shared/Tooltip";
 import WrapperHoverCard from "../shared/WrapperHoverCard";
 
@@ -416,22 +416,24 @@ const LeaveApprovalCard = ({
           </div>
         </div>
       )}
-      <RejectionReasonModal
+      <ActionReasonModal
         isOpen={showCommentModal}
         isPending={approvalCommentMutation.isPending}
+        type={pendingActionData?.action?.toLowerCase() === "approve" ? "approval" : "rejection"}
         title="Comment Required"
         description={`Please add a comment before ${pendingActionData?.action?.toLowerCase() === "approve"
-            ? "approving"
-            : "rejecting"
+          ? "approving"
+          : "rejecting"
           } this leave request.`}
         label={`${pendingActionData?.action?.toLowerCase() === "approve"
-            ? "APPROVAL"
-            : "REJECTION"
+          ? "APPROVAL"
+          : "REJECTION"
           } COMMENT *`}
         placeholder={`Enter ${pendingActionData?.action?.toLowerCase() === "approve"
-            ? "approval"
-            : "rejection"
+          ? "approval"
+          : "rejection"
           } comment...`}
+        todo_id={data?.todo_id}
         onCancel={handleCancelComment}
         onSave={handleSaveComment}
       />

@@ -246,3 +246,11 @@ export const useTargetUser = () => {
   }
   return context;
 };
+
+// Non-throwing accessor for the current target employee id. Returns null when
+// used outside a ViewedUserProvider (e.g. shared hooks rendered above the
+// provider), where impersonation is not in effect anyway.
+// eslint-disable-next-line react-refresh/only-export-components
+export const useOptionalTargetEmployeeId = (): string | null => {
+  return useContext(ViewedUserContext)?.targetEmployeeId ?? null;
+};

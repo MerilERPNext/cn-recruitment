@@ -10,7 +10,7 @@ import BottomDrawer from "../shared/BottomDrawer";
 import Badge from "../shared/Badge";
 import WrapperHoverCard from "../shared/WrapperHoverCard";
 import NoDataFound from "../shared/atoms/NoDataFound";
-import { showCloseTicketButton } from "./hdelpdeskUtils";
+import { getStatusBadgeConfig, showCloseTicketButton } from "./hdelpdeskUtils";
 import HDActionPill from "./HDActionPills";
 import TicketTableRow from "./TicketTableRow";
 import SimplifiedChatView from "./Helpdesk/SimplifiedChatView";
@@ -60,55 +60,6 @@ const getAssignedName = (
   return "-";
 };
 
-// Status badge config for Badge component
-const getStatusBadgeConfig = (
-  status: string,
-): { label: string; backgroundColor: string; textColor: string } => {
-  switch (status) {
-    case "Open":
-      return {
-        label: "Open",
-        backgroundColor: "bg-blue-100",
-        textColor: "text-blue-600",
-      };
-    case "Replied":
-      return {
-        label: "Replied",
-        backgroundColor: "bg-purple-100",
-        textColor: "text-purple-600",
-      };
-    case "Resolved":
-      return {
-        label: "Resolved",
-        backgroundColor: "bg-green-100",
-        textColor: "text-green-600",
-      };
-    case "Closed":
-      return {
-        label: "Closed",
-        backgroundColor: "bg-gray-100",
-        textColor: "text-gray-600",
-      };
-    case "Reopened":
-      return {
-        label: "Reopened",
-        backgroundColor: "bg-yellow-100",
-        textColor: "text-yellow-600",
-      };
-    case "Revoked":
-      return {
-        label: "Revoked",
-        backgroundColor: "bg-red-100",
-        textColor: "text-red-600",
-      };
-    default:
-      return {
-        label: status,
-        backgroundColor: "bg-gray-100",
-        textColor: "text-gray-600",
-      };
-  }
-};
 
 const getAssignedEmail = (assignStr: string | null): string | null => {
   if (!assignStr) return null;
@@ -820,7 +771,7 @@ const TicketTable: React.FC<TicketTableProps> = ({
                   className={`py-4 ${col.width} ${col.sortable ? "cursor-pointer hover:bg-gray-100" : ""} ${col.key === "name" ? "pl-6 pr-4" : "px-4"}`}
                   onClick={() => col.sortable && onSort(col.key)}
                 >
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1 justify-center">
                     <Typography
                       variant="bodySmall"
                       color="body2"

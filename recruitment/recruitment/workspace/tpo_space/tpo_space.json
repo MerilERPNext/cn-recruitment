@@ -1,9 +1,13 @@
 {
- "app": "recruitment",
  "charts": [],
- "content": "[{\"id\":\"tpo_head\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>TPO Space</b></span>\",\"col\":12}},{\"id\":\"c17rieHEXD\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Candidate Registration\",\"col\":3}}]",
- "creation": "2026-07-06 00:00:00",
- "custom_blocks": [],
+ "content": "[{\"id\": \"tpo_head\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>TPO Space</b></span>\", \"col\": 12}}, {\"id\": \"tpo_drives_block\", \"type\": \"custom_block\", \"data\": {\"custom_block_name\": \"TPO Campus Drives\", \"col\": 12}}, {\"id\": \"c17rieHEXD\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Candidate Registration\", \"col\": 3}}]",
+ "creation": "2026-07-06 00:00:00.000000",
+ "custom_blocks": [
+  {
+   "custom_block_name": "TPO Campus Drives",
+   "label": "TPO Campus Drives"
+  }
+ ],
  "docstatus": 0,
  "doctype": "Workspace",
  "hide_custom": 0,
@@ -13,7 +17,7 @@
  "is_hidden": 0,
  "label": "TPO Space",
  "links": [],
- "modified": "2026-07-07 09:58:45.779492",
+ "modified": "2026-07-25 13:59:02.323134",
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "TPO Space",
@@ -37,6 +41,5 @@
    "type": "DocType"
   }
  ],
- "title": "TPO Space",
- "type": "Workspace"
+ "title": "TPO Space"
 }

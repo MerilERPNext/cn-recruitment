@@ -12,13 +12,13 @@ const EmployeeDirectoryLayout: React.FC = () => {
     <div className="flex border-b border-gray-200 mb-2 px-4 md:px-0 bg-white md:bg-transparent">
       <button
         onClick={() => setActiveTab('my_reportees')}
-        className={`px-4 py-3 text-sm font-semibold uppercase tracking-wider ${activeTab === 'my_reportees' ? 'border-b-2 border-primary text-primary' : 'text-gray-500 hover:text-gray-700'}`}
+        className={`px-4 py-3 text-sm font-bold uppercase tracking-wider ${activeTab === 'my_reportees' ? 'border-b-2 border-primary text-primary' : 'text-gray-600 hover:text-gray-800'}`}
       >
         My Reportees
       </button>
       <button
         onClick={() => setActiveTab('directory')}
-        className={`px-4 py-3 text-sm font-semibold uppercase tracking-wider ${activeTab === 'directory' ? 'border-b-2 border-primary text-primary' : 'text-gray-500 hover:text-gray-700'}`}
+        className={`px-4 py-3 text-sm font-bold uppercase tracking-wider ${activeTab === 'directory' ? 'border-b-2 border-primary text-primary' : 'text-gray-600 hover:text-gray-800'}`}
       >
         Directory
       </button>

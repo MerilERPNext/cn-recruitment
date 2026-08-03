@@ -96,28 +96,74 @@ function poa_buildChildParts(entry) {
 }
 
 
-// Frappe hides "empty" tabs during the initial refresh before this HTML field's
-// content lands; force the Pre Offer Approval tab visible after we render.
-function poa_keepTabVisible(frm) {
+// ── Pre Offer Approval tab visibility ──────────────────────────────────────
+// The tab is hidden by default (`hidden: 1` on the Custom Field) and only
+// appears once the pre-offer is actually in play — either it has been triggered
+// for this candidate (a form was sent, or approval rows exist), or the user
+// clicked "View Pre Offer Form" on the Pre Offer stage of the hiring workflow.
+const POA_TAB  = "custom_pre_offer_approval_tab";
+const POA_HTML = "custom_pre_offer_approval_html";
+
+function poa_isTriggered(frm) {
+    return !!(
+        (frm.doc.custom_pre_offer_forms || []).length ||
+        (frm.doc.custom_pre_offer_field_approvals || []).length
+    );
+}
+
+// Frappe caches ONE form object per doctype and reuses it across docnames, so
+// the "user asked to see it" flag has to be keyed by the applicant it was set
+// for — otherwise revealing it for one candidate reveals it for the next.
+function poa_isRevealed(frm) {
+    return frm._poa_tab_revealed_for === frm.doc.name;
+}
+
+function poa_setTabVisible(frm, show) {
     try {
         (frm.layout && frm.layout.tabs || []).forEach((t) => {
-            if (t.df && t.df.fieldname === "custom_pre_offer_approval_tab") t.toggle(true);
+            if (t.df && t.df.fieldname === POA_TAB) {
+                // Set df.hidden too, so Frappe's own refresh_tabs() agrees with
+                // us instead of undoing this on the next section refresh.
+                t.df.hidden = show ? 0 : 1;
+                t.toggle(show);
+            }
         });
-        const field = frm.fields_dict["custom_pre_offer_approval_html"];
+        const field = frm.fields_dict[POA_HTML];
         if (field && field.$wrapper) {
-            field.df.hidden = 0;
-            field.$wrapper.removeClass("hide-control").show();
-            field.$wrapper.closest(".form-section")
-                .removeClass("empty-section").addClass("visible-section");
+            field.df.hidden = show ? 0 : 1;
+            if (show) {
+                // Frappe marks the HTML field's section `empty-section` during the
+                // initial refresh — before our content lands — and never re-checks.
+                field.$wrapper.removeClass("hide-control").show();
+                field.$wrapper.closest(".form-section")
+                    .removeClass("empty-section").addClass("visible-section");
+            }
         }
     } catch (e) { /* non-fatal */ }
 }
 
+function poa_syncTabVisibility(frm) {
+    poa_setTabVisible(frm, poa_isRevealed(frm) || poa_isTriggered(frm));
+}
+
+/** Reveal + open the Pre Offer Approval tab. Called by the "View Pre Offer Form"
+ *  action on the hiring workflow's Pre Offer stage (hiring_workflow_flow.js). */
+function poa_reveal_pre_offer_tab(frm) {
+    frm._poa_tab_revealed_for = frm.doc.name;
+    poa_setTabVisible(frm, true);
+    const tab = (frm.layout && frm.layout.tabs || []).find(
+        (t) => t.df && t.df.fieldname === POA_TAB
+    );
+    if (tab && tab.set_active) tab.set_active();
+    else if (frm.scroll_to_field) frm.scroll_to_field(POA_HTML);
+    if (!frm._poa_list) poa_load(frm);
+}
+
 // ── MAIN RENDER ─────────────────────────────────────────────────────────────
 function poa_render(frm, filterStatus, filterText) {
-    const $wrapper = frm.fields_dict["custom_pre_offer_approval_html"]?.$wrapper;
+    const $wrapper = frm.fields_dict[POA_HTML]?.$wrapper;
     if (!$wrapper || !$wrapper.length) return;
-    poa_keepTabVisible(frm);
+    poa_syncTabVisibility(frm);
 
     const list = poa_parseList(frm);
 
@@ -523,6 +569,9 @@ function poa_bulkUpdate(frm, newStatus, comment) {
 frappe.ui.form.on("Job Applicant", {
     refresh(frm) {
         frm._poa_list = null;
+        // Settle the tab straight away (before the 200ms load) so it never
+        // flashes into view on a candidate that has no pre-offer in play.
+        poa_syncTabVisibility(frm);
         if (!frm.is_new()) {
             setTimeout(() => poa_load(frm), 200);
         }

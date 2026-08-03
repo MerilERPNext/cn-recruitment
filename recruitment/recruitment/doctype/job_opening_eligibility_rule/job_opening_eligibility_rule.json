@@ -7,6 +7,8 @@
  "engine": "InnoDB",
  "field_order": [
   "field_name",
+  "match_field",
+  "match_value",
   "operator",
   "value",
   "action"
@@ -22,6 +24,25 @@
    "reqd": 1
   },
   {
+   "fieldname": "match_field",
+   "fieldtype": "Select",
+   "label": "Match Row Where",
+   "options": "",
+   "in_list_view": 1,
+   "columns": 2,
+   "depends_on": "eval:doc.field_name && doc.field_name.indexOf('::')>-1",
+   "description": "For child-table rules: which row-field to match on."
+  },
+  {
+   "fieldname": "match_value",
+   "fieldtype": "Data",
+   "label": "= Value",
+   "in_list_view": 1,
+   "columns": 1,
+   "depends_on": "eval:doc.field_name && doc.field_name.indexOf('::')>-1",
+   "description": "The value that identifies the row (e.g. 10th, Graduate)."
+  },
+  {
    "columns": 1,
    "fieldname": "operator",
    "fieldtype": "Select",
@@ -31,7 +52,7 @@
    "reqd": 1
   },
   {
-   "columns": 2,
+   "columns": 1,
    "fieldname": "value",
    "fieldtype": "Data",
    "in_list_view": 1,

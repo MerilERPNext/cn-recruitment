@@ -621,12 +621,14 @@ export const attendanceService = {
   getAttendanceById: async (
     filters?: FilterCondition[]
   ): Promise<Attendance[]> => {
-    const response = await FrappeAPI.getDocumentList("Attendance", {
-      fields: ["*"],
-      filters: filters,
-      orderBy: "creation desc",
-    });
-    return response.data as Attendance[];
+    const response = await FrappeAPI.getMethod(
+      "recruitment.api.attendance.get_attendance_list",
+      {
+        filters: filters ? JSON.stringify(filters) : undefined,
+        order_by: "creation desc",
+      }
+    );
+    return response as Attendance[];
   },
   getUserRoles: async (filters?: FilterCondition[]): Promise<UserRoles> => {
     const response = await FrappeAPI.getMethod(

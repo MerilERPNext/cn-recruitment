@@ -29,6 +29,7 @@ import {
 import { useCurrentUser } from "./hooks/useCurrentUser";
 import { ViewedUserProvider, useTargetUser } from "./context/ViewedUserContext";
 import { setTargetEmployeeId } from "./utils/frappeAPI";
+import { initializeDateFormat } from "./utils/dateFormatStore";
 import { useGetUiPermission } from "./hooks/userUiPermission";
 import { PermissionProvider } from "./context/PermissionContext";
 import { LoadingOverlayProvider } from "./context/OverlayContext";
@@ -52,6 +53,11 @@ const TargetUserSync: React.FC = () => {
 };
 
 const App: React.FC = () => {
+  // Initialize system date format from backend settings once at app boot
+  useEffect(() => {
+    initializeDateFormat();
+  }, []);
+
   const { data: currentUser, isLoading } = useCurrentUser();
   const location = useLocation();
   const { data: brandingData } = useWebsiteBranding();

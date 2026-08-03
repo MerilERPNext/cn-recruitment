@@ -65,8 +65,7 @@
    "reqd": 1
   },
   {
-   "fetch_from": "job_applicant.applicant_name",
-   "fetch_if_empty": 0,
+   "description": "Full name (first + last) of the applicant, set on save.",
    "fieldname": "applicant_name",
    "fieldtype": "Data",
    "in_list_view": 1,

@@ -20,7 +20,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import Button from "./shared/atoms/Button";
 import { FilePreview } from "./shared/molecules/FilePreview";
 import { useFrappeDocumentCount } from "../hooks/useFrappeQuery";
-import { formatDateToDDMMYYYY } from "../utils/helperUtils";
+import formatToIndianDate from "../utils/formatToIndianDate";
 
 
 // Skeleton component for loading states
@@ -124,7 +124,7 @@ const DocumentItem: React.FC<DocumentItemProps> = ({ item }) => {
             </span>
             {item?.end_date && (
               <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700 border border-gray-200">
-                Due: {formatDateToDDMMYYYY(item.end_date)}
+                Due: {formatToIndianDate(item.end_date)}
               </span>
             )}
           </div>
