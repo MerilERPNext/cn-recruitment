@@ -273,7 +273,6 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
                         location_name={item.location_name}
                         date_of_joining={item.date_of_joining}
                         relieving_date={item.relieving_date}
-                        current_employee_joining_date={data?.date_of_joining || null}
                         image={item?.image}
                       />
                     </div>
