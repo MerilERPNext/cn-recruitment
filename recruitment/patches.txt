@@ -22,3 +22,5 @@ recruitment.patches.create_tpo_campus_drives_block
 recruitment.patches.setup_education_stage_master
 recruitment.patches.backfill_stage_status_substatus
 recruitment.patches.backfill_campus_drive_on_applicants
+recruitment.patches.anchor_orphan_job_applicant_fields
+recruitment.patches.merge_job_offer_ctc_tab

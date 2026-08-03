@@ -95,7 +95,7 @@ const Overview: React.FC = () => {
                   {[
                     { id: 'self', name: 'Self Review', path: '/webapp/performance-app/review' },
                     { id: 'peer', name: 'Peer Nomination', path: '/webapp/performance-app/review/peer-nomination' },
-                    { id: 'final', name: 'Final Rating', path: '/webapp/performance-app/performance-review' },
+                    { id: 'final', name: 'Final Rating', path: '/webapp/performance-app/review/performance-review' },
                   ].map((subTab) => {
                     const isActive = activeReviewTab === subTab.id;
                     return (

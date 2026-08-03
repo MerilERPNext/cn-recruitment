@@ -3,46 +3,61 @@ import { BarChart2, Calendar, Sparkles, MessageSquare } from 'lucide-react';
 import { Typography } from '../../../shared/atoms/Typography';
 import type { StatItem } from '../types';
 
-const statsData: StatItem[] = [
-  {
-    id: 'overall-goal-progress',
-    title: 'Overall Goal Progress',
-    icon: BarChart2,
-    iconBgColor: 'bg-blue-50',
-    iconTextColor: 'text-blue-500',
-    value: '61%',
-    subtitle: 'weighted avg \u00b7 5 goals',
-  },
-  {
-    id: 'cycle-days-remaining',
-    title: 'Cycle Days Remaining',
-    icon: Calendar,
-    iconBgColor: 'bg-blue-50',
-    iconTextColor: 'text-blue-500',
-    value: '42d',
-    subtitle: 'self-review locks 21 May',
-  },
-  {
-    id: 'check-ins-this-quarter',
-    title: 'Check-ins This Quarter',
-    icon: Sparkles,
-    iconBgColor: 'bg-green-50',
-    iconTextColor: 'text-green-500',
-    value: '11 / 12',
-    subtitle: '1 week missed \u00b7 streak 7',
-  },
-  {
-    id: 'last-manager-1-on-1',
-    title: 'Last Manager 1:1',
-    icon: MessageSquare,
-    iconBgColor: 'bg-purple-50',
-    iconTextColor: 'text-purple-500',
-    value: '3 days ago',
-    subtitle: 'Rohit Khanna \u00b7 30 min',
-  },
-];
+import { usePerformanceOverview } from '../../../../hooks/usePerformance';
 
 const OverviewStats: React.FC = () => {
+  const { data: overviewResponse } = usePerformanceOverview();
+  const overview = overviewResponse?.data;
+
+  const formatDate = (dateString?: string | null) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return dateString;
+    return new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short' }).format(date);
+  };
+
+  const checkins = overview?.checkins;
+  const missedWeeks = checkins ? Math.max(0, checkins.expected - checkins.done) : 0;
+
+  const statsData: StatItem[] = [
+    {
+      id: 'overall-goal-progress',
+      title: 'Overall Goal Progress',
+      icon: BarChart2,
+      iconBgColor: 'bg-blue-50',
+      iconTextColor: 'text-blue-500',
+      value: overview?.overall_progress !== undefined ? `${overview.overall_progress}%` : '0%',
+      subtitle: overview?.goal_count !== undefined ? `weighted avg \u00b7 ${overview.goal_count} goal${overview.goal_count !== 1 ? 's' : ''}` : 'No goals',
+    },
+    {
+      id: 'cycle-days-remaining',
+      title: 'Cycle Days Remaining',
+      icon: Calendar,
+      iconBgColor: 'bg-blue-50',
+      iconTextColor: 'text-blue-500',
+      value: overview?.days_remaining !== undefined ? `${overview.days_remaining}d` : '-',
+      subtitle: overview?.locks_on ? `self-review locks ${formatDate(overview.locks_on)}` : 'No upcoming locks',
+    },
+    {
+      id: 'check-ins-this-quarter',
+      title: 'Check-ins This Quarter',
+      icon: Sparkles,
+      iconBgColor: 'bg-green-50',
+      iconTextColor: 'text-green-500',
+      value: checkins ? `${checkins.done} / ${checkins.expected}` : '- / -',
+      subtitle: checkins ? `${missedWeeks > 0 ? `${missedWeeks} week${missedWeeks > 1 ? 's' : ''} missed \u00b7 ` : ''}streak ${checkins.streak}` : 'No check-ins',
+    },
+    {
+      id: 'last-manager-1-on-1',
+      title: 'Last Manager 1:1',
+      icon: MessageSquare,
+      iconBgColor: 'bg-purple-50',
+      iconTextColor: 'text-purple-500',
+      value: overview?.last_manager_1on1 || 'None',
+      subtitle: overview?.last_manager_1on1 ? '' : 'Not scheduled',
+    },
+  ];
+
   return (
     <div aria-label="Statistics Grid" className="grid min-w-0 grid-cols-1 gap-3 min-[380px]:grid-cols-2 sm:gap-4 xl:grid-cols-4">
       {statsData.map((stat) => {

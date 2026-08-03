@@ -442,6 +442,68 @@ const EmployeeAttendanceDetails = ({
     );
   };
 
+  // Comp-Off (Co+ earned / Co- applied) + Late Entry / Early Exit details.
+  // Sourced from the calendar record/events, which only carry these fields when
+  // the "Show Comp-Off and Late Entry Details in Calendar" Attendance Setting is
+  // enabled (gated in cn_leave_shift_managment.get_events) — so this section
+  // stays hidden unless the feature is on and the day actually has such flags.
+  const renderCompoffLateDetails = () => {
+    const combined = [data, ...(events ?? [])];
+    const earnedRec = combined.find((r) => r?.comp_off === "earned");
+    const appliedRec = combined.find((r) => r?.comp_off === "applied");
+    const compEarned = !!earnedRec;
+    const compApplied = !!appliedRec;
+    const lateEntry = !!data?.late_entry;
+    const earlyExit = !!data?.early_exit;
+
+    if (!compEarned && !compApplied && !lateEntry && !earlyExit) return null;
+
+    const leaveTypeOf = (rec?: AttendanceRecord) =>
+      rec?.leave_type_name || rec?.leave_type || "";
+
+    const rows: { label: string; value: string; valueClass: string }[] = [];
+    if (compEarned)
+      rows.push({
+        label: "Compensatory Off",
+        value: ["Earned (Co+)", leaveTypeOf(earnedRec)].filter(Boolean).join(" · "),
+        valueClass: "text-green-700",
+      });
+    if (compApplied)
+      rows.push({
+        label: "Compensatory Off",
+        value: ["Applied (Co-)", leaveTypeOf(appliedRec)].filter(Boolean).join(" · "),
+        valueClass: "text-red-700",
+      });
+    if (lateEntry)
+      rows.push({ label: "Late Entry", value: "Yes", valueClass: "text-amber-700" });
+    if (earlyExit)
+      rows.push({ label: "Early Exit", value: "Yes", valueClass: "text-violet-700" });
+
+    return (
+      <div className="pt-4 border-t border-gray-100">
+        <Typography variant="subheading" className="font-semibold mb-1">
+          Comp-Off &amp; Attendance Flags
+        </Typography>
+        <div className="flex flex-col">
+          {rows.map((row, i) => (
+            <div key={i} className="flex items-center justify-between py-2">
+              <Typography
+                variant="label"
+                color="body2"
+                className="text-xs text-gray-500 uppercase tracking-wide font-medium"
+              >
+                {row.label}
+              </Typography>
+              <span className={`text-sm font-semibold text-right ${row.valueClass}`}>
+                {row.value}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
   const renderMainContent = () => {
     if (data?.status.toLowerCase() === "holiday" && data?.title) {
       return (
@@ -454,12 +516,14 @@ const EmployeeAttendanceDetails = ({
               {data.title}
             </Typography>
           </div>
+          {renderCompoffLateDetails()}
         </div>
       );
     }
     return (
       <div className="flex-grow overflow-y-auto p-4 space-y-6 ">
         {(status === "week off" || isWeeklyOff) && renderWeekOffMessage()}
+        {renderCompoffLateDetails()}
         {isLoading ? (
           renderLoadingState()
         ) : (

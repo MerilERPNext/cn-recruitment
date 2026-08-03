@@ -968,9 +968,13 @@ function cdGdBind($root, frm) {
 		const el = $(this);
 		const rowName = el.attr("data-gd-row");
 		const field = el.attr("data-gd-set");
-		const value = el.attr("data-gd-value");
+		let value = el.attr("data-gd-value");
 		const row = cdGdMemberRow(frm, rowName);
-		if (!row || row[field] === value) return;
+		if (!row) return;
+		// Clicking the already-selected chip again clears it back to "Pending"
+		// (the neutral / none state) so a mistaken Pass/Fail or Present/Absent
+		// can be undone — otherwise there was no way to deselect.
+		if (row[field] === value) value = "Pending";
 		cdGdCall("set_gd_member_field", {
 			campus_drive: drive,
 			row_name: rowName,

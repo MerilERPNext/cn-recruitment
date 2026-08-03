@@ -8,6 +8,7 @@ import { AttendanceRecord } from "../../../../types/attendance";
 import Button from "../../../shared/atoms/Button";
 import { useSearchParams } from "react-router-dom";
 import Tooltip from "../../../shared/Tooltip";
+import { useCompoffLateDetailsEnabled } from "../../../../hooks/useAttendance";
 
 type Status =
     | "present"
@@ -85,6 +86,46 @@ const getEventDetail = (event: AttendanceRecord): string => {
     );
 };
 
+type ExtraMarker = { text: string; className: string; title: string };
+
+// Comp-Off (Co+/Co-) + Late Entry / Early Exit markers. These fields are only
+// present on records when the "Show Comp-Off and Late Entry Details in Calendar"
+// Attendance Setting is enabled (gated in cn_leave_shift_managment.get_events),
+// so nothing renders unless the admin has turned the feature on.
+const getExtraMarkers = (attendance: AttendanceStatusInfo): ExtraMarker[] => {
+    const all = [attendance?.record, ...(attendance?.events ?? [])].filter(
+        Boolean
+    ) as AttendanceRecord[];
+    const markers: ExtraMarker[] = [];
+    if (all.some((r) => r?.comp_off === "earned"))
+        markers.push({ text: "Co+", className: "bg-green-600 text-white", title: "Compensatory Off Earned" });
+    if (all.some((r) => r?.comp_off === "applied"))
+        markers.push({ text: "Co-", className: "bg-red-600 text-white", title: "Compensatory Off Applied" });
+    if (attendance?.record?.late_entry)
+        markers.push({ text: "LE", className: "bg-amber-500 text-white", title: "Late Entry" });
+    if (attendance?.record?.early_exit)
+        markers.push({ text: "EE", className: "bg-violet-500 text-white", title: "Early Exit" });
+    return markers;
+};
+
+const ExtraMarkers: React.FC<{ attendance: AttendanceStatusInfo }> = ({ attendance }) => {
+    const markers = getExtraMarkers(attendance);
+    if (markers.length === 0) return null;
+    return (
+        <div className="flex gap-1 flex-wrap">
+            {markers.map((m, i) => (
+                <span
+                    key={i}
+                    title={m.title}
+                    className={`text-[9px] leading-none font-bold px-1 py-0.5 rounded ${m.className}`}
+                >
+                    {m.text}
+                </span>
+            ))}
+        </div>
+    );
+};
+
 const getEventDisplay = (event: AttendanceRecord): { label: string; className: string } => {
     const detail = getEventDetail(event);
     const detailText = detail ? ` (${detail})` : "";
@@ -132,6 +173,7 @@ const DesktopAttendanceCalendar: React.FC<attendanceProps> = ({
     setShowDetailsFor,
 }) => {
     const [searchParams, setSearchParams] = useSearchParams();
+    const { data: showCompoffLate = false } = useCompoffLateDetailsEnabled();
 
     useEffect(() => {
         if (!selectedDate && !searchParams.get("date")) return;
@@ -184,6 +226,10 @@ const DesktopAttendanceCalendar: React.FC<attendanceProps> = ({
                                 ? "Out Duty"
                                 : event?.doctype;
                         if (doctypeKey === "Employee Checkin") {
+                            return null;
+                        }
+                        // Comp-off earned is surfaced compactly via the Co+ marker instead.
+                        if (doctypeKey === "Compensatory Leave Request") {
                             return null;
                         }
                         const eventDisplay = getEventDisplay({ ...event, doctype: doctypeKey });
@@ -412,6 +458,7 @@ const DesktopAttendanceCalendar: React.FC<attendanceProps> = ({
                             </div>
                             <div className="mt-auto flex flex-col gap-1">
                                 {renderStatusBadge(attendance)}
+                                <ExtraMarkers attendance={attendance} />
                                 {getAttendanceEvents(attendance)}
                             </div>
                         </div>
@@ -446,6 +493,29 @@ const DesktopAttendanceCalendar: React.FC<attendanceProps> = ({
                     <CalendarRange className="w-3.5 h-3.5 text-blue-500" />
                     <span>Optional Holiday</span>
                 </div>
+
+                {showCompoffLate && (
+                    <>
+                        <div className="w-px h-3.5 bg-gray-200 mx-1" />
+
+                        <div className="flex items-center gap-1">
+                            <span className="text-[9px] font-bold px-1 py-0.5 rounded bg-green-600 text-white leading-none">Co+</span>
+                            <span>Comp Off Earned</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                            <span className="text-[9px] font-bold px-1 py-0.5 rounded bg-red-600 text-white leading-none">Co-</span>
+                            <span>Comp Off Applied</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                            <span className="text-[9px] font-bold px-1 py-0.5 rounded bg-amber-500 text-white leading-none">LE</span>
+                            <span>Late Entry</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                            <span className="text-[9px] font-bold px-1 py-0.5 rounded bg-violet-500 text-white leading-none">EE</span>
+                            <span>Early Exit</span>
+                        </div>
+                    </>
+                )}
 
                 <div className="w-px h-3.5 bg-gray-200 mx-1" />
 

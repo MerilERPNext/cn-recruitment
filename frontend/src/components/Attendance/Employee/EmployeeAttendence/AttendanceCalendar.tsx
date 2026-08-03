@@ -44,6 +44,46 @@ const getEventDotColor = (doctype: string): string => {
   }
 };
 
+type ExtraMarker = { text: string; className: string; title: string };
+
+// Comp-Off (Co+/Co-) + Late Entry / Early Exit markers. These fields are only
+// present on records when the "Show Comp-Off and Late Entry Details in Calendar"
+// Attendance Setting is enabled (gated in cn_leave_shift_managment.get_events),
+// so nothing renders unless the admin has turned the feature on.
+const getExtraMarkers = (attendance: AttendanceStatusInfo): ExtraMarker[] => {
+  const all = [attendance?.record, ...(attendance?.events ?? [])].filter(
+    Boolean
+  ) as AttendanceRecord[];
+  const markers: ExtraMarker[] = [];
+  if (all.some((r) => r?.comp_off === "earned"))
+    markers.push({ text: "Co+", className: "bg-green-600 text-white", title: "Compensatory Off Earned" });
+  if (all.some((r) => r?.comp_off === "applied"))
+    markers.push({ text: "Co-", className: "bg-red-600 text-white", title: "Compensatory Off Applied" });
+  if (attendance?.record?.late_entry)
+    markers.push({ text: "LE", className: "bg-amber-500 text-white", title: "Late Entry" });
+  if (attendance?.record?.early_exit)
+    markers.push({ text: "EE", className: "bg-violet-500 text-white", title: "Early Exit" });
+  return markers;
+};
+
+const ExtraMarkers: React.FC<{ attendance: AttendanceStatusInfo }> = ({ attendance }) => {
+  const markers = getExtraMarkers(attendance);
+  if (markers.length === 0) return null;
+  return (
+    <div className="flex gap-0.5 flex-wrap justify-center">
+      {markers.map((m, i) => (
+        <span
+          key={i}
+          title={m.title}
+          className={`text-[7px] leading-none font-bold px-1 py-[1px] rounded ${m.className}`}
+        >
+          {m.text}
+        </span>
+      ))}
+    </div>
+  );
+};
+
 type ShowDetailsType = {
   date: Date;
   status: string;
@@ -92,7 +132,7 @@ const AttendanceCalendar: React.FC<attendanceProps> = ({
             )
           )
         ).map((doctype, index) => (
-          doctype !== "Employee Checkin" && <div
+          doctype !== "Employee Checkin" && doctype !== "Compensatory Leave Request" && <div
             key={index}
             className={`w-[6px] h-[6px] rounded-full ${getEventDotColor(
               doctype
@@ -231,6 +271,7 @@ const AttendanceCalendar: React.FC<attendanceProps> = ({
                   {day}
                 </span>
                 {getAttendanceEvents(attendance)}
+                <ExtraMarkers attendance={attendance} />
               </div>
             );
           }
@@ -239,6 +280,7 @@ const AttendanceCalendar: React.FC<attendanceProps> = ({
               <div className="flex flex-col items-center gap-1">
                 <span>{day}</span>
                 {getAttendanceEvents(attendance)}
+                <ExtraMarkers attendance={attendance} />
               </div>
             </div>
           );

@@ -77,6 +77,8 @@ doctype_js = {
         "public/js/job_applicant.js",
         "public/js/hiring_workflow_flow.js",
         "public/js/pre_offer_field_approval.js",
+        "public/js/job_applicant_banner.js",
+        "public/js/job_applicant_section_nav.js",
     ],
     "Job Opening": [
         "public/js/job_opening.js",
@@ -261,6 +263,10 @@ doc_events = {
             "recruitment.customizations.job_applicant.validation_blacklist_on_doctypes",
             # Hiring Lead Permission Settings (change designation at offer stage).
             "recruitment.customizations.hiring_lead_permissions.validate_job_offer_hiring_lead_edits",
+            # Active offer / missing requisition / no headcount left. Runs on
+            # insert only, so every creation path is gated, not just the
+            # hiring workflow button.
+            "recruitment.api.offer_validation.validate_job_offer",
         ],
         "before_save": "recruitment.customizations.job_offer.calculate_salary_structure",
         "after_insert": "recruitment.api.action_center.sync_job_offer_action_item",

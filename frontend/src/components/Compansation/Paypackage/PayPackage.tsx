@@ -10,7 +10,6 @@ import { NoDataFound } from "../../shared/atoms/NoDataFound";
 import { Card } from "../../shared/atoms/Card";
 import { useTaxSheetPayrollPriodsData } from "../../../hooks/useTaxSheet";
 import SalaryAssignmentHeader from "./PayPackageHeader";
-import { Download } from "lucide-react";
 import StatusBadge from "../../shared/atoms/statusBadge";
 import { formatCurrency } from "../../../utils/currency";
 import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
@@ -416,9 +415,7 @@ export default function SalaryAssignmentList() {
               </div>
               <div className="flex flex-col items-end gap-2">
                 <div className="flex items-center gap-4">
-                  <button className="text-primary flex items-center gap-1 text-sm font-medium hover:underline">
-                    <Download className="w-4 h-4" /> Download
-                  </button>
+
                   <button
                     onClick={() => setSelected(null)}
                     className="text-gray-500 hover:text-black"

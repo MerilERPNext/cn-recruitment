@@ -48,6 +48,7 @@ import SearchMembers from "./components/SearchMembers";
 import OnboardingFieldApproval from "./components/Onboarding/component/fieldLabelApproval.tsx";
 import BoxGrid from "./components/Performance/Calibrator/BoxGrid.tsx";
 import CalibratorSession from "./components/Performance/Calibrator/Calibrator.tsx";
+import BulkImportGoals from "./components/Performance/GoalCreation/BulkImportGoals.tsx";
 
 const TeamApprovalListExemptionTable = lazyWithRetry(
   () =>
@@ -112,6 +113,10 @@ const TeamOverview = lazyWithRetry(
   () => import("./components/Performance/MyTeam/TeamOverview"),
   "TeamOverview",
 );
+const MyTeamLayout = lazyWithRetry(
+  () => import("./components/Performance/MyTeam/MyTeamLayout"),
+  "MyTeamLayout",
+);
 const TeamGoals = lazyWithRetry(
   () => import("./components/Performance/MyTeam/TeamGoals"),
   "TeamGoals",
@@ -159,7 +164,7 @@ const Feedback = lazyWithRetry(
   "Feedback",
 );
 const NewGoal = lazyWithRetry(
-  () => import("./components/Performance/GoalCreation/NewGaol"),
+  () => import("./components/Performance/GoalCreation/NewGoal"),
   "NewGoal",
 );
 const SkillsAndProficiency = lazyWithRetry(
@@ -651,6 +656,12 @@ const TimesheetApp = lazyWithRetry(
   "TimesheetApp",
 );
 
+// const TimesheetCreate = lazyWithRetry(
+//   () => import("./components/Timesheet/TimesheetCreate/TimesheetCreate"),
+//   "TimesheetCreate",
+// );
+
+
 // eslint-disable-next-line react-refresh/only-export-components
 const AddExpensePage = () => {
   const location = useLocation();
@@ -805,7 +816,7 @@ export const routesConfig: AppRoute[] = [
     permissionKey: "Dashboard",
   },
   {
-    path: "/webapp/timesheet",
+    path: "/webapp/timesheet/timesheet-create",
     element: <TimesheetApp />,
     permissionKey: "Timesheet",
   },
@@ -1487,6 +1498,17 @@ export const routesConfig: AppRoute[] = [
             permissionKey: "My Goals",
           },
           {
+            path: "my-goals/new-goal",
+            element: <NewGoal />,
+            permissionKey: "Goal Creation",
+          },
+         
+          {
+            path: "my-goals/bulk-import",
+            element: <BulkImportGoals />,
+            permissionKey: "Goal Creation",
+          },
+          {
             path: "my-goals/:id",
             element: <GoalDetails />,
             permissionKey: "My Goals",
@@ -1506,57 +1528,61 @@ export const routesConfig: AppRoute[] = [
             element: <Feedback />,
             permissionKey: "Feedback",
           },
-          {
-            path: "my-goals/new-goal",
-            element: <NewGoal />,
-            permissionKey: "New Goal Plan",
-          },
+         
           {
             path: "skills",
             element: <SkillsAndProficiency />,
             permissionKey: "Skills And Proficiency",
           },
           {
-            path: "performance-review",
+            path: "review/performance-review",
             element: <PerformanceReviewApp />,
             permissionKey: "Performance Review",
           },
+         
         ]
       },
       {
-        path: "team-overview",
-        element: <TeamOverview />,
+        path: "",
+        element: <MyTeamLayout />,
         permissionKey: "Team Overview",
-      },
-      {
-        path: "team-goals",
-        element: <TeamGoals />,
-        permissionKey: "Team Goals",
-      },
-      {
-        path: "team-goals/assign-goal",
-        element: <AssignGoal />,
-        permissionKey: "Team Goals",
-      },
-      {
-        path: "team-reviews",
-        element: <TeamReviews />,
-        permissionKey: "Team Reviews",
-      },
-      {
-        path: "team-pre-release-preview",
-        element: <PreReleasePreview />,
-        permissionKey: "Team Reviews",
-      },
-      {
-        path: "team-calibration",
-        element: <TeamCalibration />,
-        permissionKey: "Team Calibration",
-      },
-      {
-        path: "team-check-ins",
-        element: <TeamCheckIns />,
-        permissionKey: "Team Check-Ins",
+        children: [
+          {
+            path: "team-overview",
+            element: <TeamOverview />,
+            permissionKey: "Team Overview",
+          },
+          {
+            path: "team-goals",
+            element: <TeamGoals />,
+            permissionKey: "Team Goals",
+          },
+          {
+            path: "team-goals/assign-goal",
+            element: <AssignGoal />,
+            permissionKey: "Team Goals",
+          },
+          {
+            path: "team-reviews",
+            element: <TeamReviews />,
+            permissionKey: "Team Reviews",
+          },
+          {
+            path: "team-reviews/team-pre-release-preview",
+            element: <PreReleasePreview />,
+            permissionKey: "Team Reviews",
+          },
+          {
+            path: "team-calibration",
+            element: <TeamCalibration />,
+            permissionKey: "Team Calibration",
+          },
+          {
+            path: "team-check-ins",
+            element: <TeamCheckIns />,
+            permissionKey: "Team Check-Ins",
+          },
+        ]
       },
       {
         path: "appraisal-cycle-wizard",

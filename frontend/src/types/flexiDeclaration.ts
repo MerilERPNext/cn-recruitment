@@ -7,6 +7,10 @@ export interface FlexiComponent {
   variable_name: string;
   check_box_variable_name: string | null;
   amount: number;
+  component_type?: string;
+  custom_old_regime_max_percentage?: number;
+  custom_new_regime_max_percentage?: number;
+  custom_nps_type?: "Amount" | "Percentage";
 }
 
 export interface ComponentPartOfCTC {
@@ -22,6 +26,8 @@ export interface SalaryData {
   active: number;
   from_date: string;
   salary_structure: string;
+  custom_tax_regime?: string;
+  income_tax_slab?: string;
   component_part_of_ctc: ComponentPartOfCTC[];
   variable_pay_include_ctc: any[];
   variable_pay_exclude_ctc: any[];

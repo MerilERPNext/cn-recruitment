@@ -261,7 +261,7 @@ const Competencies = () => {
               <span className="text-sm text-gray-500">Function</span>
               <span className="text-sm font-semibold text-gray-900 text-right">
                 Design
-              </span>
+              </span>   
             </div>
             <div className="flex justify-between items-start gap-2">
               <span className="text-sm text-gray-500">BU</span>

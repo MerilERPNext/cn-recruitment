@@ -1,5 +1,4 @@
 import {
-  ArrowDownUp,
   ArrowUpDown,
   Award,
   BadgeIndianRupee,
@@ -66,6 +65,12 @@ interface SubMenuItem {
   href?: string;
   subItems?: SubSubMenuItem[];
   permissionKey: string;
+  /**
+   * Additional URL path prefixes that should also activate this sidebar entry.
+   * Use this for tab-based pages where each tab has its own URL but all tabs
+   * logically belong to the same sidebar item (e.g. Performance Overview tabs).
+   */
+  tabRoutes?: string[];
 }
 
 interface NavigationItem {
@@ -320,7 +325,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
         },
         {
           name: "Team Advances",
-          icon: Coins,
+          icon: Users,
           href: "/webapp/salary-slip-app/team-advances-list",
           permissionKey: "Team Advances",
         },
@@ -352,7 +357,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
         },
         {
           name: "My Requests",
-          icon: Users,
+          icon: User,
           href: "/webapp/benefits-app/my-requests",
           permissionKey: "My Requests",
         },
@@ -397,13 +402,13 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
         },
         {
           name: "My Advances",
-          icon: ArrowUpDown,
+          icon: IndianRupee,
           href: "/webapp/expenses-app/my-advance-expense",
           permissionKey: "My Advances",
         },
         {
           name: "Team Advances",
-          icon: ArrowUpDown,
+          icon: Users,
           href: "/webapp/expenses-app/team-advance-expense",
           permissionKey: "Team Advances",
         },
@@ -417,13 +422,13 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
       subItems: [
         {
           name: "Flow Requests",
-          icon: ArrowDownUp,
+          icon: Workflow,
           href: "/webapp/flow-app/flow-requests",
           permissionKey: "Flow Requests",
         },
         {
           name: "Onboarding",
-          icon: ArrowDownUp,
+          icon: UserPlus,
           href: "/webapp/flow-app/onboarding",
           permissionKey: "Onboarding",
         },
@@ -452,12 +457,29 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
           icon: Telescope,
           href: "/webapp/performance-app/overview",
           permissionKey: "Overview",
+          // Tab URLs that live inside the Overview page — each tab changes the
+          // URL but they all logically belong to this sidebar entry.
+          tabRoutes: [
+            "/webapp/performance-app/my-goals",
+            "/webapp/performance-app/skills",
+            "/webapp/performance-app/review",
+            "/webapp/performance-app/feedback",
+          ],
         },
         {
           name: "My Team",
           icon: Users,
           href: "/webapp/performance-app/team-overview",
           permissionKey: "My Team",
+          // tabRoutes: ["/webapp/performance-app/team-pre-release-preview", "/webapp/performance-app/team-goals/assign-goal"],
+          tabRoutes: [
+            "/webapp/performance-app/team-reviews",
+            "/webapp/performance-app/team-goals",
+            "/webapp/performance-app/team-calibration",
+            "/webapp/performance-app/team-check-ins",
+            "/webapp/performance-app/team-goals/assign-goal",
+            "/webapp/performance-app/team-reviews/team-pre-release-preview",
+          ],
         },
 
 
@@ -466,6 +488,9 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
           icon: ChartNoAxesCombined,
           href: "/webapp/performance-app/appraisal-cycle-wizard/cycle-details",
           permissionKey: "Appraisal Cycle Wizard",
+          // All wizard steps share this base path prefix, so one entry covers
+          // every step (eligibility, stages, form-builder, goal-pull-in, etc.)
+          tabRoutes: ["/webapp/performance-app/appraisal-cycle-wizard"],
         },
         {
           name: "Calibrator",
@@ -497,7 +522,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
     {
       icon: Clock,
       label: "Timesheet",
-      path: "/webapp/timesheet",
+      path: "/webapp/timesheet/timesheet-create",
       permissionKey: "Timesheet",
     },
     {
@@ -750,6 +775,21 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
     ) {
       return true;
     }
+
+    // Check tabRoutes — additional URL patterns (e.g. tab URLs) that should
+    // also activate this sidebar entry even though they aren't its main href.
+    if (subItem.tabRoutes?.length) {
+      const matchesTabRoute = subItem.tabRoutes.some((route) => {
+        if (location.pathname === route) return true;
+        if (location.pathname.startsWith(route)) {
+          const remaining = location.pathname.substring(route.length);
+          return remaining === "" || remaining.startsWith("/");
+        }
+        return false;
+      });
+      if (matchesTabRoute) return true;
+    }
+
     if (subItem.href) {
       const [path, query] = subItem.href.split("?", 2);
 
@@ -1129,7 +1169,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                                     `}
                                     />
                                     <div className="flex items-center justify-start space-x-2 w-full">
-                                      {/* <SubIcon className="h-3.5 w-3.5 opacity-70" /> */}
+                                      <SubIcon className="h-3.5 w-3.5 opacity-70" />
                                       <div className="flex items-center transition-all duration-300 whitespace-nowrap overflow-hidden">
                                         <span
                                           className={`transition-all duration-300 whitespace-nowrap ${isExpanded
