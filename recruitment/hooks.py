@@ -13,6 +13,11 @@ app_license = "mit"
 app_include_css = "/assets/recruitment/css/job_applicant.css"
 app_include_js = [
 	"/assets/recruitment/js/teams_utils.js",
+	# Shared Application Fields grid (styles + renderers + toolbar) used by both
+	# Job Applicant Profile Settings and the Job Opening's Job application tab.
+	# Included globally rather than per-doctype because a doctype's own JS is
+	# evaluated BEFORE any doctype_js hook, which would be too late for it.
+	"/assets/recruitment/js/applicant_fields_ui.js",
 ]
 
 add_to_apps_screen = [
@@ -25,10 +30,7 @@ add_to_apps_screen = [
 	}
 ]
 
-# on_session_creation = [
-#      "recruitment.www.custom_login.role_based_home_page"
-# ]
-# website user home page (by Role)
+# Website user home page (by Role)
 role_home_page = {
 	"System User": "/webapp",
 	# External recruiters land on their (scoped) Job Opening list in Desk.
@@ -75,13 +77,18 @@ doctype_js = {
         "public/js/job_applicant.js",
         "public/js/hiring_workflow_flow.js",
         "public/js/pre_offer_field_approval.js",
+        "public/js/job_applicant_banner.js",
+        "public/js/job_applicant_section_nav.js",
     ],
     "Job Opening": [
         "public/js/job_opening.js",
+        "public/js/interview_round_link.js",
         "public/js/job_opening_hiring_workflow.js",
         "public/js/job_opening_attach_resumes.js",
         "public/js/applicant_field_picker.js",
+        "public/js/job_opening_eligibility_ui.js",
     ],
+    "TA Interview Strategy Template": ["public/js/interview_round_link.js"],
     "TA Duplicity Check Settings": ["public/js/applicant_field_picker.js"],
     "TA Rehire Check Settings": ["public/js/applicant_field_picker.js"],
     "Job Description": ["public/js/job_description.js"],
@@ -256,6 +263,10 @@ doc_events = {
             "recruitment.customizations.job_applicant.validation_blacklist_on_doctypes",
             # Hiring Lead Permission Settings (change designation at offer stage).
             "recruitment.customizations.hiring_lead_permissions.validate_job_offer_hiring_lead_edits",
+            # Active offer / missing requisition / no headcount left. Runs on
+            # insert only, so every creation path is gated, not just the
+            # hiring workflow button.
+            "recruitment.api.offer_validation.validate_job_offer",
         ],
         "before_save": "recruitment.customizations.job_offer.calculate_salary_structure",
         "after_insert": "recruitment.api.action_center.sync_job_offer_action_item",
@@ -311,10 +322,19 @@ doc_events = {
             "recruitment.recruitment.referral_reward_engine.generate_referral_reward_on_employee",
         ],
         "before_save": "recruitment.recruitment.employee_confirmation_hooks.calculate_final_confirmation_date",
+        # Keep the User's "Is Alumni Employee" flag in sync with status == "Left"
+        # (only sets that checkbox; never touches Employee.status or User.enabled).
+        "on_update": "recruitment.recruitment.alumni_portal.sync_alumni_flag",
     },
     "Job Applicant": {
         "before_insert": "recruitment.customizations.ta_duplicity_check.check_duplicity",
-        "before_save": "recruitment.customizations.job_applicant.validate_blacklist",
+        "before_save": [
+            "recruitment.customizations.job_applicant.validate_blacklist",
+            # Campus candidates arrive carrying their Campus Invite; resolve the
+            # Campus Drive that selected that invite so the drive link is filled
+            # for applications created after the drive was set up.
+            "recruitment.recruitment.campus_helpers.set_applicant_drive_from_invite",
+        ],
         # Hiring Lead Permission Settings (update candidate source).
         "validate": "recruitment.customizations.hiring_lead_permissions.validate_job_applicant_hiring_lead_edits",
         # Place a new applicant on the linked opening's first hiring stage
@@ -323,6 +343,12 @@ doc_events = {
     },
     "Appointment Letter": {
         "validate": "recruitment.customizations.job_applicant.validation_blacklist_on_doctypes"
+    },
+    # Alumni Employee Request: when the approval Workflow reaches "Approved",
+    # flag the linked Employee as an alumnus (once). See
+    # recruitment.recruitment.alumni_employee_request_service.handle_workflow_transition.
+    "Alumni Employee Request": {
+        "on_update": "recruitment.recruitment.alumni_employee_request_service.handle_workflow_transition",
     },
     "Employee Onboarding": {
         "validate": "recruitment.customizations.job_applicant.validation_blacklist_on_doctypes",
@@ -369,6 +395,8 @@ scheduler_events = {
         "0 6 * * *": [
             "recruitment.recruitment.scheduled_jobs.trigger_confirmation_todos",
             "recruitment.recruitment.scheduled_jobs.create_extension_confirmations",
+            # Move Campus Drives through Draft -> Live -> Completed by their window.
+            "recruitment.recruitment.doctype.campus_drive.campus_drive.update_drive_statuses",
         ],
         "0 7 * * *": [
             "recruitment.recruitment.scheduled_jobs.auto_separate_employees_on_lwd",
@@ -478,9 +506,12 @@ override_doctype_class = {
 # Authentication and authorization
 # --------------------------------
 
-# auth_hooks = [
-# 	"recruitment.auth.validate"
-# ]
+# Centralized Alumni Portal isolation: runs after the session user is resolved,
+# on every request. Confines alumni sessions to the alumni_portal namespace and
+# leaves every other user (ESS) completely unaffected. See alumni_guard.py.
+auth_hooks = [
+    "recruitment.recruitment.alumni_guard.enforce_alumni_isolation"
+]
 
 # Automatically update python controller files with type annotations for this app.
 # export_python_type_annotations = True

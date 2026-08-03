@@ -354,7 +354,7 @@ const AllEmpAttendance = () => {
       return next;
     });
   };
-  console.log(selectedRows, "-----------")
+
   /* Error state */
   if (isError) {
     return (

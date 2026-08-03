@@ -332,7 +332,6 @@ const ConfirmationWorkflow = () => {
           {separationData?.show_button && (
             <Button
               variant="contain"
-              size="md"
               onClick={handleSeparationClick}
             >
               Separation
@@ -413,9 +412,9 @@ const ConfirmationWorkflow = () => {
                   </Typography>
                 </div>
 
-                <div className="flex justify-between max-lg:flex-row-reverse items-start px-4 pt-1 pb-3">
+                <div className="flex justify-between max-lg:flex-row max-sm:flex-col items-start gap-3 px-4 pt-1 pb-3">
                   {td?.show_view_form_btn && (
-                    <ViewFormButton onClick={() => handleShowForm()} />
+                    <ViewFormButton variant="contain" size="sm" onClick={() => handleShowForm()} />
                   )}
                   {td.show_confirmation_button && (
                     <Button

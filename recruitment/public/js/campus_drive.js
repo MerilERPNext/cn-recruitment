@@ -62,9 +62,9 @@ frappe.ui.form.on("Campus Drive", {
 		cdSetQueries(frm);
 		// The two data-backed boards each cost a server round-trip, so they load only
 		// when their tab is actually opened. Opening the form (or saving it) fetches
-		// nothing; the GD board reads frm.doc and is free.
+		// nothing. GD is now rendered INSIDE its round card in Round Tracking (not a
+		// separate section), so the whole interview pipeline lives in one place.
 		cdWhenVisible(frm, "institute_candidates_html", () => cdRenderCandidates(frm));
-		cdRenderGdGroups(frm);
 		cdWhenVisible(frm, "interview_rounds_html", () => cdRenderRounds(frm));
 	},
 });
@@ -162,10 +162,41 @@ function cdRenderRounds(frm) {
 	$root.on("click", "[data-rd-extra]", function () {
 		cdAddCandidateInterview(frm, $(this).attr("data-rd-extra"), () => cdRenderRounds(frm));
 	});
+	// Assign candidates across panels -> creates their Interview records
+	$root.on("click", "[data-rd-assign]", function () {
+		cdAssignPanels(frm, $(this).attr("data-rd-assign"), () => cdRenderRounds(frm));
+	});
+	// Read-only view of the panels and each candidate's interview status
+	$root.on("click", "[data-rd-open]", function () {
+		cdOpenPanelsDialog(frm, $(this).attr("data-rd-open"));
+	});
+	// "⋯" — per-candidate extra interview + feedback nudge
+	$root.on("click", "[data-rd-more]", function () {
+		const code = $(this).attr("data-rd-more");
+		const r = (cdRoundsData.rounds || []).find((x) => x.round_code === code) || {};
+		const items = [
+			{ label: __("Add extra interview for one candidate"), action: () => cdAddCandidateInterview(frm, code, () => cdRenderRounds(frm)) },
+			{ label: __("Sync results from interviews (fix stuck candidates)"), action: () => cdReconcileRound(frm, code, () => cdRenderRounds(frm)) },
+		];
+		if (r.awaiting_feedback) {
+			items.push({ label: __("Nudge {0} pending feedback", [r.awaiting_feedback]), action: () => cdNudgeFeedback(frm, code, () => cdRenderRounds(frm)) });
+		}
+		const d = new frappe.ui.Dialog({ title: __("Round options — {0}", [code]), fields: [{ fieldname: "b", fieldtype: "HTML" }] });
+		const $b = d.fields_dict.b.$wrapper;
+		items.forEach((it) => {
+			$(`<button class="btn btn-default btn-sm" style="display:block;width:100%;text-align:left;margin-bottom:6px">${frappe.utils.escape_html(it.label)}</button>`)
+				.appendTo($b).on("click", () => { d.hide(); it.action(); });
+		});
+		d.show();
+	});
 	$root.on("click", "[data-rd-list]", function () {
 		const filters = { custom_campus_drive: frm.doc.name, custom_campus_round_code: $(this).attr("data-rd-list") };
 		const st = $(this).attr("data-rd-status");
-		if (st) filters.status = st;
+		if (st) {
+			// A comma list (e.g. the awaiting tile: "Appeared,Under Review") becomes an
+			// "in" filter so the list matches the tile's count exactly.
+			filters.status = st.includes(",") ? ["in", st.split(",")] : st;
+		}
 		frappe.set_route("List", "Interview", filters);
 	});
 	$root.on("click", "[data-rd-pool]", function () {
@@ -388,6 +419,24 @@ function cdAddCandidateInterview(frm, roundCode, done) {
 	d.show();
 }
 
+function cdReconcileRound(frm, roundCode, done) {
+	frappe.call({
+		method: "recruitment.recruitment.doctype.campus_drive.campus_drive.reconcile_round",
+		args: { campus_drive: frm.doc.name, round_code: roundCode },
+		callback: (r) => {
+			const m = r.message || {};
+			frappe.msgprint({
+				title: __("Synced from interviews"),
+				indicator: m.advanced || m.rejected ? "green" : "blue",
+				message: (m.advanced || m.rejected)
+					? __("Advanced {0} cleared candidate(s), rejected {1}. Any who cleared earlier but got stuck are now moved on.", [m.advanced, m.rejected])
+					: __("Everything already in sync — no stuck candidates."),
+			});
+			if (done) done();
+		},
+	});
+}
+
 function cdNudgeFeedback(frm, roundCode, done) {
 	frappe.call({
 		method: "recruitment.recruitment.doctype.campus_drive.campus_drive.nudge_pending_feedback",
@@ -434,7 +483,6 @@ function cdDrawRounds($root, frm, data) {
 			})
 			.join("");
 
-		const s = r.by_status || {};
 		const cnt = (label, val, color, status) =>
 			`<div class="cd-tile" data-rd-list="${esc(r.round_code)}" ${
 				status ? `data-rd-status="${esc(status)}"` : ""
@@ -452,6 +500,48 @@ function cdDrawRounds($root, frm, data) {
 			  )}</div>`
 			: "";
 
+		// Terminal rounds ("offer" / "pre_offer") are resolved server-side from the
+		// stage the round maps to — the Job Opening's pre-offer checkbox is what
+		// decides which of the two a drive can have. See _round_kind().
+		const isTerminal = r.round_kind === "offer" || r.round_kind === "pre_offer";
+
+		// Header action buttons differ by round kind. GD and terminal rounds drive
+		// their own bodies (grouping / candidate list), so no header buttons there.
+		const headActions = (r.is_gd || isTerminal)
+			? ""
+			: `<button class="btn btn-xs btn-primary cd-rd-btn" data-rd-assign="${esc(r.round_code)}"
+					title="${__("Divide waiting candidates across this round's panels and create their interviews")}">${
+					r.interviews ? __("Assign More") : __("Assign to Panels")
+				}</button>
+				${r.interviews ? `<button class="btn btn-xs btn-default cd-rd-btn" data-rd-open="${esc(
+					r.round_code)}">${__("View Panels")}</button>` : ""}
+				<button class="btn btn-xs btn-default cd-rd-btn" data-rd-more="${esc(r.round_code)}"
+					title="${__("Other options")}">⋯</button>`;
+
+		// Body differs by round kind.
+		let body;
+		if (r.is_gd) {
+			// GD grouping workspace mounts here (was a separate section).
+			body = `<div class="campus-dash cd-gd-host" data-gd-round="${esc(r.round_code)}"></div>`;
+		} else if (isTerminal) {
+			// Cleared candidates who reached this stage → select & raise Job Offers,
+			// or send them the pre-offer form.
+			body = `<div class="cd-offer-host" data-offer-round="${esc(r.round_code)}"
+				data-offer-kind="${esc(r.round_kind)}">
+				<div class="cd-loading text-muted">${__("Loading candidates…")}</div></div>`;
+		} else {
+			body =
+				(panels ? `<div class="cd-rd-panels">${panels}</div>` :
+					`<div class="cd-rd-warn">${__("No panel set up for this round yet — add Round Panelists (round + panel + interviewers) once; every drive reuses them.")}</div>`) +
+				`<div class="cd-tiles">
+					${cnt(__("Interviews"), r.interviews, "#6366f1", null)}
+					${cnt(__("Pending"), r.pending, "#6B7280", "Pending")}
+					${cnt(__("Awaiting Feedback"), r.awaiting_feedback, "#F59E0B", "Appeared,Under Review")}
+					${cnt(__("Cleared"), r.cleared, "#10B981", "Cleared")}
+					${cnt(__("Rejected"), r.rejected, "#EF4444", "Rejected")}
+				</div>`;
+		}
+
 		return `<div class="cd-card cd-card-accent" style="--cd-accent:${accent}">
 			<div class="cd-card-head">
 				<span class="cd-card-title"><span class="cd-role-dot" style="background:${accent}"></span>${esc(
@@ -464,23 +554,7 @@ function cdDrawRounds($root, frm, data) {
 					${r.hiring_stage ? `<span class="cd-chip cd-chip-tot" data-rd-pool="${esc(r.hiring_stage)}">${
 						r.waiting
 					} ${__("waiting")}</span>` : ""}
-					${
-						r.is_gd
-							? ""
-							: `<button class="btn btn-xs btn-primary cd-rd-btn" data-rd-schedule="${esc(
-									r.round_code
-							  )}">${__("Schedule Interviews")}</button>
-							<button class="btn btn-xs btn-default cd-rd-btn" data-rd-extra="${esc(
-									r.round_code
-							  )}" title="${__("Add one more interview for a single candidate")}">${__(
-									"+ Candidate"
-							  )}</button>` +
-							  (r.awaiting_feedback
-									? `<button class="btn btn-xs btn-default cd-rd-btn" data-rd-nudge="${esc(
-											r.round_code
-									  )}">${__("Nudge {0}", [r.awaiting_feedback])}</button>`
-									: "")
-					}
+					${headActions}
 				</span>
 			</div>
 			${noStage}${warn}
@@ -489,23 +563,264 @@ function cdDrawRounds($root, frm, data) {
 				${r.scheduled_at ? `<span class="cd-pill">${esc(r.scheduled_at)}</span>` : ""}
 				<span class="cd-pill">${esc(r.round_status || "")}</span>
 			</div>
-			${panels ? `<div class="cd-rd-panels">${panels}</div>` : r.is_gd ? "" :
-				`<div class="cd-rd-warn">${__("No panel set up for this round yet — add Round Panelists (round + position) once and every schedule run will reuse them.")}</div>`}
-			<div class="cd-tiles">
-				${cnt(__("Scheduled"), r.interviews, "#6366f1", null)}
-				${cnt(__("Awaiting Feedback"), r.awaiting_feedback, "#F59E0B", null)}
-				${cnt(__("Cleared"), s.Cleared, "#10B981", "Cleared")}
-				${cnt(__("Rejected"), s.Rejected, "#EF4444", "Rejected")}
-			</div>
+			${body}
 		</div>`;
 	};
+
+	// Health banner — surfaces misconfigurations (a round mapped to a stage no opening
+	// has, wrong stage type, candidates stranded on an uncovered stage) so HR sees the
+	// cause of a silent "0 waiting" instead of guessing.
+	const health = data.health || [];
+	const healthHtml = health.length
+		? `<div class="cd-health">${health
+				.map(
+					(h) => `<div class="cd-health-item cd-health-${h.level === "error" ? "err" : "warn"}">
+						<span class="cd-health-icon">${h.level === "error" ? "⛔" : "⚠️"}</span>
+						<span class="cd-health-text"><b>${esc(h.title)}</b><br>${esc(h.detail)}</span>
+					</div>`
+				)
+				.join("")}</div>`
+		: `<div class="cd-health cd-health-ok">✓ ${__("All rounds are wired to valid stages — no pipeline issues detected.")}</div>`;
 
 	$root.html(
 		`<div class="cd-toolbar"><div class="cd-toolbar-title">${__("Round Tracking")}
 			<span class="cd-hint text-muted">${__(
-				"panels are set up once per round & position, then reused on every schedule"
-			)}</span></div></div>` + rounds.map(card).join("")
+				"panels are set up once per round; on-site, deal candidates into them — interviews are created and feedback drives the result"
+			)}</span></div></div>` + healthHtml + rounds.map(card).join("")
 	);
+
+	// Mount the GD grouping workspace inside each GD round's card.
+	$root.find(".cd-gd-host").each(function () {
+		cdMountGd(frm, this);
+	});
+	// Load the cleared-candidate list inside each Offer / Pre Offer round's card.
+	$root.find(".cd-offer-host").each(function () {
+		cdMountTerminal(frm, this, $(this).attr("data-offer-round"), $(this).attr("data-offer-kind"));
+	});
+}
+
+// Terminal round bodies (Offer / Pre Offer): list the candidates who reached this
+// stage (cleared everything before it), let HR tick them and act on the whole set
+// straight from the drive. Which of the two a round is comes from the stage it maps
+// to, so the Job Opening's pre-offer checkbox is the only switch — see _round_kind().
+//
+// The two differ in one behaviour that matters: a Job Offer can't be raised twice,
+// so an already-offered candidate is locked out; a pre-offer is legitimately
+// re-sendable (each send is a new round), so an already-sent one stays selectable
+// but starts unticked — a "Select all" then can't silently re-spam them.
+const CD_TERMINAL = {
+	offer: {
+		fetch: "get_offer_candidates",
+		act: "create_offers_for_candidates",
+		flag: "has_offer",
+		lock_flagged: true,
+		col: () => __("Offer"),
+		flagged_pill: () => __("Offer exists"),
+		action_label: () => __("Create Job Offers"),
+		confirm: (n) => __("Create Job Offers for {0} candidate(s)?", [n]),
+		freeze: () => __("Creating offers…"),
+		done: () => __("Job Offers created."),
+	},
+	pre_offer: {
+		fetch: "get_pre_offer_candidates",
+		act: "send_pre_offers_for_candidates",
+		flag: "pre_offer_sent",
+		lock_flagged: false,
+		col: () => __("Pre Offer"),
+		flagged_pill: () => __("Already sent"),
+		action_label: () => __("Send Pre Offer Forms"),
+		confirm: (n) => __("Send the Pre Offer form to {0} candidate(s)?", [n]),
+		freeze: () => __("Sending pre offer forms…"),
+		done: () => __("Pre Offer forms sent."),
+	},
+};
+
+function cdMountTerminal(frm, hostEl, roundCode, kind) {
+	const $host = $(hostEl);
+	const esc = (s) => frappe.utils.escape_html(String(s == null ? "" : s));
+	const cfg = CD_TERMINAL[kind] || CD_TERMINAL.offer;
+
+	frappe.call({
+		method: `recruitment.recruitment.doctype.campus_drive.campus_drive.${cfg.fetch}`,
+		args: { campus_drive: frm.doc.name, round_code: roundCode },
+		callback: (r) => {
+			const cands = (r.message || {}).candidates || [];
+			if (!cands.length) {
+				$host.html(`<div class="cd-empty text-muted">${__(
+					"No candidates have reached this stage yet — they’ll appear here once they clear the previous round."
+				)}</div>`);
+				return;
+			}
+			const rows = cands
+				.map((c) => {
+					const flagged = !!c[cfg.flag];
+					const locked = flagged && cfg.lock_flagged;
+					return `<tr>
+					<td><input type="checkbox" class="cd-offer-pick" data-name="${esc(c.name)}" ${
+						locked ? "disabled" : ""
+					} ${flagged ? "" : "checked"}></td>
+					<td class="cd-pick-name">${esc(c.applicant_name || c.name)}</td>
+					<td class="text-muted">${esc(c.institute || "—")}</td>
+					<td class="text-muted">${esc(c.designation || "—")}</td>
+					<td>${
+						flagged
+							? `<span class="cd-pill cd-pill-green">${cfg.flagged_pill()}</span>`
+							: `<span class="cd-pill">${__("Ready")}</span>`
+					}</td>
+				</tr>`;
+				})
+				.join("");
+			$host.html(`
+				<div class="cd-offer-bar">
+					<button class="btn btn-xs btn-default" data-offer-all>${__("Select all")}</button>
+					<button class="btn btn-xs btn-default" data-offer-none>${__("Clear")}</button>
+					<span class="cd-offer-count"></span>
+					<button class="btn btn-xs btn-primary" data-offer-create="${esc(roundCode)}">${
+				cfg.action_label()
+			}</button>
+				</div>
+				<div class="cd-table-wrap"><table class="cd-table">
+					<thead><tr><th></th><th class="cd-inst-col">${__("Candidate")}</th>
+					<th class="cd-inst-col">${__("Institute")}</th><th class="cd-inst-col">${__("Designation")}</th>
+					<th>${cfg.col()}</th></tr></thead>
+					<tbody>${rows}</tbody>
+				</table></div>`);
+
+			const sync = () =>
+				$host.find(".cd-offer-count").text(
+					__("{0} selected", [$host.find(".cd-offer-pick:checked").length])
+				);
+			$host.off("click.cdoffer change.cdoffer");
+			$host.on("click.cdoffer", "[data-offer-all]", () => {
+				$host.find(".cd-offer-pick:not(:disabled)").prop("checked", true);
+				sync();
+			});
+			$host.on("click.cdoffer", "[data-offer-none]", () => {
+				$host.find(".cd-offer-pick").prop("checked", false);
+				sync();
+			});
+			$host.on("change.cdoffer", ".cd-offer-pick", sync);
+			$host.on("click.cdoffer", "[data-offer-create]", () => {
+				const picked = $host.find(".cd-offer-pick:checked").map((_i, el) => $(el).data("name")).get();
+				if (!picked.length) {
+					frappe.msgprint(__("Select at least one candidate."));
+					return;
+				}
+				frappe.confirm(cfg.confirm(picked.length), () => {
+					frappe.dom.freeze(cfg.freeze());
+					frappe.call({
+						method: `recruitment.recruitment.doctype.campus_drive.campus_drive.${cfg.act}`,
+						args: { campus_drive: frm.doc.name, applicants: JSON.stringify(picked) },
+						callback: (res) => {
+							frappe.dom.unfreeze();
+							frappe.show_alert({ message: cfg.done(), indicator: "green" });
+							cdMountTerminal(frm, hostEl, roundCode, kind); // refresh the list
+						},
+						error: () => frappe.dom.unfreeze(),
+					});
+				});
+			});
+			sync();
+		},
+	});
+}
+
+// "Assign to Panels": divide the waiting candidates across this round's panels and
+// create a standard Interview per candidate with that panel's interviewers. From
+// there it's the normal Interview + Interview Feedback flow — the drive only shows
+// the status. Reuses cdScheduleRound (date + candidate pick + deals across panels).
+function cdAssignPanels(frm, roundCode, done) {
+	cdScheduleRound(frm, roundCode, done);
+}
+
+// Read-only panel view: each panel, its interviewers, and its candidates with their
+// live INTERVIEW status. No Pass/Fail here — that comes from Interview Feedback.
+function cdOpenPanelsDialog(frm, roundCode) {
+	const esc = (s) => frappe.utils.escape_html(String(s == null ? "" : s));
+	const d = new frappe.ui.Dialog({
+		title: __("Panels — {0}", [roundCode]),
+		size: "extra-large",
+		fields: [{ fieldname: "body", fieldtype: "HTML" }],
+	});
+	const $body = () => d.fields_dict.body.$wrapper;
+
+	const statusColor = (st) =>
+		({ Cleared: "#10B981", Rejected: "#EF4444", "Under Review": "#F59E0B", Pending: "#6B7280" }[st] ||
+			"#6B7280");
+
+	function load() {
+		$body().html('<div class="cd-loading text-muted">' + __("Loading…") + "</div>");
+		frappe.call({
+			method: "recruitment.recruitment.doctype.campus_drive.campus_drive.get_round_interviews",
+			args: { campus_drive: frm.doc.name, round_code: roundCode },
+			callback: (r) => render(r.message || { panels: [] }),
+		});
+	}
+
+	function render(data) {
+		const panels = (data.panels || []).filter((p) => p.candidates.length || p.interviewers.length);
+		if (!panels.length) {
+			$body().html(
+				`<div class="cd-empty text-muted">${__(
+					"No interviews yet. Close this and click “Assign to Panels”."
+				)}</div>`
+			);
+			return;
+		}
+		const panelCard = (p) => {
+			const who = p.interviewers.length
+				? p.interviewers.map((i) => `<span class="cd-pill" title="${esc(i.user)}">${esc(i.name)}</span>`).join("")
+				: `<span class="cd-pill cd-pill-fail">${__("no interviewer")}</span>`;
+			const rows = p.candidates
+				.map((c) => {
+					const col = statusColor(c.status);
+					const fb = c.feedback_expected
+						? `${c.feedback_got}/${c.feedback_expected}`
+						: "—";
+					return `<tr>
+						<td class="cd-gd-cand">${cdAvatar(c.applicant_name || c.job_applicant, cdColorFor(c.job_applicant))}
+							<span class="cd-link" data-pv-applicant="${esc(c.job_applicant)}">${esc(
+						c.applicant_name || c.job_applicant
+					)}</span></td>
+						<td><span class="cd-badge" style="background:${cdTint(col, 0.15)};color:${col}">${esc(
+						c.status
+					)}</span></td>
+						<td class="text-muted">${__("feedback")}: ${fb}</td>
+						<td><span class="cd-link" data-pv-interview="${esc(c.interview)}">${esc(c.interview)}</span></td>
+					</tr>`;
+				})
+				.join("");
+			return `<div class="cd-card cd-card-accent" style="--cd-accent:${cdColorFor(p.panel)}">
+				<div class="cd-card-head">
+					<span class="cd-card-title">${esc(p.panel)}
+						<span class="cd-pill">${p.candidates.length} ${__("candidates")}</span></span>
+					<span class="cd-rd-who">${who}</span>
+				</div>
+				${p.candidates.length ? `<div class="cd-table-wrap"><table class="cd-table cd-gd-table">
+					<thead><tr><th class="cd-inst-col">${__("Candidate")}</th><th>${__("Interview Status")}</th>
+					<th>${__("Feedback")}</th><th>${__("Interview")}</th></tr></thead>
+					<tbody>${rows}</tbody></table></div>`
+					: `<div class="cd-empty text-muted">${__("No candidates dealt to this panel yet.")}</div>`}
+			</div>`;
+		};
+		$body().html(
+			`<div class="cd-hint text-muted" style="margin-bottom:10px">${__(
+				"Interviewers submit feedback on the Interview record; the result and stage move update automatically. This view is read-only."
+			)}</div>` +
+			`<div class="campus-dash">${panels.map(panelCard).join("")}</div>`
+		);
+	}
+
+	$body().on("click", "[data-pv-applicant]", function () {
+		frappe.set_route("Form", "Job Applicant", $(this).attr("data-pv-applicant"));
+	});
+	$body().on("click", "[data-pv-interview]", function () {
+		frappe.set_route("Form", "Interview", $(this).attr("data-pv-interview"));
+	});
+
+	cdInjectStyles();
+	d.show();
+	load();
 }
 
 // ---------------------------------------------------------------------------
@@ -522,19 +837,13 @@ function cdGdRounds(frm) {
 	return (frm.doc.rounds || []).filter((r) => r.requires_gd_grouping);
 }
 
-function cdRenderGdGroups(frm) {
-	const field = frm.fields_dict.gd_groups_html;
-	if (!field) return;
-	const $wrap = $(field.wrapper).empty();
-	cdInjectStyles();
-	const $root = $('<div class="campus-dash"></div>').appendTo($wrap);
-
-	if (frm.is_new()) {
-		$root.html(`<div class="cd-empty text-muted">${__("Save the drive to plan GD groups.")}</div>`);
-		return;
-	}
-	cdGdBind($root, frm);
-	cdGdDraw($root, frm);
+// Mount the GD grouping workspace INTO a host element inside the GD round's card
+// (Round Tracking), instead of a separate section. Called after the round board is
+// rendered; the host is a fresh element each render, so bindings never duplicate.
+function cdMountGd(frm, hostEl) {
+	const $host = $(hostEl);
+	cdGdBind($host, frm);
+	cdGdDraw($host, frm);
 }
 
 // --- server helpers ---------------------------------------------------------
@@ -659,9 +968,13 @@ function cdGdBind($root, frm) {
 		const el = $(this);
 		const rowName = el.attr("data-gd-row");
 		const field = el.attr("data-gd-set");
-		const value = el.attr("data-gd-value");
+		let value = el.attr("data-gd-value");
 		const row = cdGdMemberRow(frm, rowName);
-		if (!row || row[field] === value) return;
+		if (!row) return;
+		// Clicking the already-selected chip again clears it back to "Pending"
+		// (the neutral / none state) so a mistaken Pass/Fail or Present/Absent
+		// can be undone — otherwise there was no way to deselect.
+		if (row[field] === value) value = "Pending";
 		cdGdCall("set_gd_member_field", {
 			campus_drive: drive,
 			row_name: rowName,
@@ -829,7 +1142,8 @@ function cdGdList(frm, instColor, esc) {
 	const card = (g, accent, showRoleMix) => {
 		const mem = membersOf(g);
 		const present = mem.filter((m) => m.attendance === "Present").length;
-		const done = mem.filter((m) => m.result && m.result !== "Pending").length;
+		const passed = mem.filter((m) => m.result === "Pass").length;
+		const failed = mem.filter((m) => m.result === "Fail").length;
 		const faces = mem
 			.slice(0, 6)
 			.map((m) => cdAvatar(m.applicant_name || m.job_applicant, instColor[m.institute] || "#9CA3AF"))
@@ -867,7 +1181,8 @@ function cdGdList(frm, instColor, esc) {
 			<div class="cd-gd-meta">
 				<span class="cd-pill cd-pill-blue">${mem.length} ${__("candidates")}</span>
 				<span class="cd-pill cd-pill-green">${present} ${__("present")}</span>
-				<span class="cd-pill cd-pill-amber">${done} ${__("marked")}</span>
+				<span class="cd-pill cd-pill-pass">✓ ${passed} ${__("pass")}</span>
+				<span class="cd-pill cd-pill-fail">✕ ${failed} ${__("fail")}</span>
 			</div>
 			<div class="cd-gd-openhint">${__("Open group →")}</div>
 		</div>`;
@@ -1262,6 +1577,8 @@ function cdInjectStyles() {
 .cd-pill-blue{background:rgba(59,130,246,.14);color:#3B82F6}
 .cd-pill-green{background:rgba(16,185,129,.14);color:#10B981}
 .cd-pill-amber{background:rgba(245,158,11,.16);color:#D97706}
+.cd-pill-pass{background:rgba(16,185,129,.16);color:#059669}
+.cd-pill-fail{background:rgba(239,68,68,.14);color:#DC2626}
 .cd-card{background:var(--card-bg,var(--fg-color));border:1px solid var(--border-color);border-radius:14px;padding:16px 18px;margin-bottom:14px}
 .cd-drive-strip{border-style:dashed}
 .cd-card-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:12px}
@@ -1326,6 +1643,21 @@ function cdInjectStyles() {
 .cd-rd-who{display:flex;gap:4px;flex-wrap:wrap}
 .cd-rd-warn{font-size:11px;color:#B45309;background:rgba(245,158,11,.13);border-radius:8px;padding:7px 10px;margin-bottom:10px}
 .cd-rd-btn{margin-left:6px}
+.cd-rd-batch{margin-top:10px;padding:10px 12px;border-radius:10px;background:var(--control-bg,rgba(0,0,0,.03));border:1px solid var(--border-color)}
+.cd-rd-batch-head{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+.cd-rd-batch-title{font-size:12px;font-weight:700;color:var(--heading-color,var(--text-color));margin-right:4px}
+.cd-rd-batch-actions{display:flex;gap:8px;flex-wrap:wrap}
+.cd-health{margin-bottom:14px;display:flex;flex-direction:column;gap:8px}
+.cd-health-ok{padding:10px 12px;border-radius:10px;font-size:12px;font-weight:600;color:#15803d;background:rgba(22,163,74,.12);border:1px solid rgba(22,163,74,.25)}
+.cd-health-item{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border-radius:10px;font-size:12px;line-height:1.5}
+.cd-health-err{color:#b42318;background:rgba(239,68,68,.10);border:1px solid rgba(239,68,68,.28)}
+.cd-health-warn{color:#b45309;background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.3)}
+.cd-health-icon{flex:0 0 auto;font-size:14px}
+.cd-health-text{color:var(--text-color)}
+.cd-health-err .cd-health-text b{color:#b42318}
+.cd-health-warn .cd-health-text b{color:#b45309}
+.cd-offer-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.cd-offer-count{font-size:12px;color:var(--text-muted);font-weight:600;margin-right:auto}
 .cd-picker-bar{display:flex;align-items:center;gap:8px;margin-bottom:8px}
 .cd-picker-count{font-size:12px;color:var(--text-muted);font-weight:600}
 .cd-picker-scroll{max-height:320px;overflow-y:auto;border:1px solid var(--border-color);border-radius:8px}

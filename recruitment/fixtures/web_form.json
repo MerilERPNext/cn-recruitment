@@ -166,7 +166,7 @@
     "mandatory_depends_on": null,
     "max_length": 0,
     "max_value": 0,
-    "options": "\nUnmarried\nMarried\nDivorced\nWidowed",
+    "options": "\nSingle\nMarried\nDivorced\nWidowed",
     "parent": "employee-onboarding",
     "parentfield": "web_form_fields",
     "parenttype": "Web Form",

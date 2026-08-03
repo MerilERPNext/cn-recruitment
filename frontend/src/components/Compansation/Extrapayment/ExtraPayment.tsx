@@ -1,11 +1,15 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
+import { useEffect, useState } from "react";
 import { useCurrentEmployeeDetails } from "../../../hooks/useEmployee";
 import { useTargetUser } from "../../../context/ViewedUserContext";
+import { useTargetEmployeeCompany } from "../../../hooks/useTargetEmployeeCompany";
+import { useTaxSheetPayrollPriodsData } from "../../../hooks/useTaxSheet";
 import { Typography } from "../../shared/atoms/Typography";
 import { NoDataFound } from "../../shared/atoms/NoDataFound";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 import CardTable, { ColumnSortConfig } from "../../shared/CardTable";
+import CustomDropdown from "../../shared/CustomDropdown";
 import StatusBadge from "../../shared/atoms/statusBadge";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import { formatCurrency } from "../../../utils/currency";
@@ -67,8 +71,32 @@ export default function ExtraPayment() {
   const { data: user } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
   const { targetEmployeeId } = useTargetUser();
   const effectiveEmployee = targetEmployeeId || user?.employee;
+
+  // Use the viewed employee's company (target-user support), not the logged-in
+  // user's, so payroll periods and the list query match the employee on screen.
+  const { targetCompany } = useTargetEmployeeCompany();
+  const effectiveCompany = (targetEmployeeId ? targetCompany : user?.company) ?? "";
+
+  // ── Payroll period filter ────────────────────────────────────────────────────
+  // Periods for the employee's company; default to the one covering today (else
+  // the most recent), exactly like SalarySlipList.
+  const { data: payrollPeriods } = useTaxSheetPayrollPriodsData(
+    effectiveCompany || null,
+  ) as { data: { name: string; start_date: string; end_date: string }[] | undefined };
+  const [selectedPeriod, setSelectedPeriod] = useState<string>("");
+  useEffect(() => {
+    if (!payrollPeriods?.length || selectedPeriod) return;
+    const today = new Date();
+    const matched = payrollPeriods.find((p) => {
+      const start = new Date(p.start_date);
+      const end = new Date(p.end_date);
+      return today >= start && today <= end;
+    });
+    setSelectedPeriod(matched?.name || payrollPeriods[0].name);
+  }, [payrollPeriods, selectedPeriod]);
+
   // Don't render until we have employee + company info
-  if (!effectiveEmployee || !user?.company) {
+  if (!effectiveEmployee || !effectiveCompany) {
     return (
       <div className="flex flex-col h-full">
         <div className="flex-shrink-0">
@@ -87,7 +115,8 @@ export default function ExtraPayment() {
     method: "cn_indian_payroll.cn_indian_payroll.overrides.webapp_api.extra_payment_api.get_extra_payment_list",
     params: {
       employee: effectiveEmployee,
-      company: user.company,
+      company: effectiveCompany,
+      payroll_period: selectedPeriod,
     },
     transformResponse: (res: any) => {
       return res.extra_payments || [];
@@ -207,7 +236,18 @@ export default function ExtraPayment() {
           <div className="sm:flex items-center justify-between h-[52px] px-7 ">
             <span className="font-bold text-[17px] text-text-title tracking-tight">Extra Payment History</span>
             <div className="flex items-center gap-3.5">
-              {/* No other buttons inside header */}
+              <div className="flex items-center gap-1.5">
+                <span className="text-[13px] text-text-body2">Payroll Period</span>
+                <CustomDropdown
+                  value={selectedPeriod}
+                  onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+                    setSelectedPeriod(e.target.value)
+                  }
+                  options={
+                    payrollPeriods?.map((p) => ({ value: p.name, label: p.name })) || []
+                  }
+                />
+              </div>
             </div>
           </div>
         )}
@@ -217,6 +257,15 @@ export default function ExtraPayment() {
           <div className="flex flex-col px-4 pt-3 pb-3 gap-2.5">
             <div className="flex items-center justify-between">
               <span className="font-bold text-[16px] text-text-title tracking-tight">Extra Payment History</span>
+              <CustomDropdown
+                value={selectedPeriod}
+                onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+                  setSelectedPeriod(e.target.value)
+                }
+                options={
+                  payrollPeriods?.map((p) => ({ value: p.name, label: p.name })) || []
+                }
+              />
             </div>
           </div>
         )}
@@ -227,7 +276,7 @@ export default function ExtraPayment() {
         <div className="flex-1 overflow-y-auto md:px-4 pt-3 md:pt-4 pb-5 md:pb-20">
           <CardTable titles={titles} columnWidths={columnWidths} columnSortConfig={PERQUISITE_SORT_CONFIG}>
             <DataListView
-              queryKey={["extra-payments", effectiveEmployee, user.company]}
+              queryKey={["extra-payments", effectiveEmployee, effectiveCompany, selectedPeriod]}
               customAPI={customAPI}
               isSearch={true}
               isFilter={false}
@@ -245,7 +294,7 @@ export default function ExtraPayment() {
       {!isDesktop && (
         <div className="space-y-4 px-1">
           <DataListView
-            queryKey={["extra-payments", effectiveEmployee, user.company]}
+            queryKey={["extra-payments", effectiveEmployee, effectiveCompany, selectedPeriod]}
             customAPI={customAPI}
             isSearch={true}
             isFilter={false}

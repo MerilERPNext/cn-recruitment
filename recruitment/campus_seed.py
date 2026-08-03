@@ -863,10 +863,11 @@ def walkthrough_report():
                             fields=["parent", "job_opening"]):
         inv_ops.setdefault(r.parent, []).append(r.job_opening)
     reg_counts = {}
+    # Counted in Python: a SQL aggregate in `fields` is rejected by Frappe v16.
     for r in frappe.get_all("Candidate Registration Detail",
                             filters={"parent": ["in", [r.name for r in regs] or [""]]},
-                            fields=["parent", "count(name) as c"], group_by="parent"):
-        reg_counts[r.parent] = r.c
+                            fields=["parent"], limit_page_length=0):
+        reg_counts[r.parent] = reg_counts.get(r.parent, 0) + 1
 
     _log("=" * 78)
     _log(f"STEP 1 — JOB REQUISITIONS (campus / fresher, region-based): {len(reqs)}")
@@ -1039,3 +1040,817 @@ def create_region_drives():
         _log(f"      openings  : {[r.job_opening for r in d.linked_job_openings]}")
     _log("=" * 76)
     return {"drives": [m[0] for m in made]}
+
+
+def demo_panel_flow(drive_name="Campus Drive 2026 - Karnataka", round_code="R2",
+                    stage="Technical Round 1", panels=3, per_panel_interviewers=1):
+    """Exercise the CORRECTED interview flow: define panels, assign candidates across
+    them (which creates one standard Interview per candidate with that panel's
+    interviewers), then submit feedback so the verdict advances the candidate. The
+    drive only displays status — it never marks Pass/Fail itself."""
+    from frappe.utils import today
+    from collections import Counter
+    from recruitment.recruitment.doctype.campus_drive.campus_drive import (
+        schedule_round_interviews, get_round_interviews)
+
+    d = frappe.db.get_value("Campus Drive", {"drive_name": drive_name}, "name")
+    doc = frappe.get_doc("Campus Drive", d)
+    inv = [r.campus_invite for r in doc.campus_invites]
+
+    names = frappe.get_all("Job Applicant",
+                           filters={"custom_campus_invite": ["in", inv]}, pluck="name", limit=30)
+    for n in names:
+        frappe.db.set_value("Job Applicant", n, "custom_current_stage", stage, update_modified=False)
+
+    emps = frappe.get_all("Employee", filters={"user_id": ["!=", ""], "status": "Active"},
+                          pluck="name", limit=panels * per_panel_interviewers)
+    doc = frappe.get_doc("Campus Drive", d)
+    doc.set("round_panelists", [p for p in doc.round_panelists if p.round_code != round_code])
+    i = 0
+    for pnum in range(1, panels + 1):
+        for _s in range(per_panel_interviewers):
+            if i >= len(emps):
+                break
+            doc.append("round_panelists", {"round_code": round_code, "panelist": emps[i],
+                                           "panel_name": f"Panel {pnum}"})
+            i += 1
+    doc.save(ignore_permissions=True)
+    frappe.db.commit()
+
+    res = schedule_round_interviews(d, round_code, scheduled_on=today())
+    view = get_round_interviews(d, round_code)
+    panel_sizes = {p["panel"]: len(p["candidates"]) for p in view["panels"] if p["candidates"]}
+    out = {"scheduled": {k: v for k, v in res.items() if k != "skipped"},
+           "panel_sizes": panel_sizes, "total_interviews": view["total_interviews"]}
+    _log(f"demo_panel_flow: {out}")
+    return out
+
+
+def clear_interview_batches(drive_name=None):
+    """Remove the mistaken GD-style panel batches (gd_group_members/gd_groups) from
+    NON-GD rounds — the corrected flow uses real Interview records, not batch marking.
+    Leaves the actual Group Discussion round's groups intact."""
+    drives = ([frappe.db.get_value("Campus Drive", {"drive_name": drive_name}, "name")]
+              if drive_name else
+              frappe.get_all("Campus Drive", pluck="name"))
+    cleared = 0
+    for d in filter(None, drives):
+        doc = frappe.get_doc("Campus Drive", d)
+        gd_codes = {r.round_code for r in doc.rounds if r.requires_gd_grouping}
+        before_g, before_m = len(doc.gd_groups), len(doc.gd_group_members)
+        doc.set("gd_groups", [g for g in doc.gd_groups if g.round_code in gd_codes])
+        doc.set("gd_group_members", [m for m in doc.gd_group_members if m.round_code in gd_codes])
+        if len(doc.gd_groups) != before_g or len(doc.gd_group_members) != before_m:
+            doc.save(ignore_permissions=True)
+            cleared += 1
+    frappe.db.commit()
+    _log(f"clear_interview_batches: cleaned {cleared} drives")
+    return {"drives_cleaned": cleared}
+
+
+def demo_perf_check(drive="DRV-2026-2981", round_code="R2"):
+    """Query-count each campus-drive read endpoint + a bulk schedule, to confirm no
+    N+1 (query count should NOT scale with candidate/interview count)."""
+    from frappe.utils import today
+    from recruitment.recruitment.doctype.campus_drive.campus_drive import (
+        get_rounds_overview, get_round_interviews, get_round_pool,
+        schedule_round_interviews)
+
+    def q(label, fn):
+        state = {"n": 0}
+        orig = frappe.db.sql
+        def cap(*a, **k):
+            state["n"] += 1
+            return orig(*a, **k)
+        frappe.db.sql = cap
+        try:
+            out = fn()
+        finally:
+            frappe.db.sql = orig
+        return state["n"], out
+
+    r1, _ = q("rounds_overview", lambda: get_rounds_overview(drive))
+    r2, _ = q("round_interviews", lambda: get_round_interviews(drive, round_code))
+    r3, _ = q("round_pool", lambda: get_round_pool(drive, round_code))
+
+    # park 6 candidates and schedule, then park 12 and schedule — queries should grow
+    # only ~linearly with inserts (unavoidable), NOT quadratically.
+    doc = frappe.get_doc("Campus Drive", drive)
+    inv = [x.campus_invite for x in doc.campus_invites]
+
+    # free up 6 candidates: clear any existing interviews of theirs for this round
+    names = frappe.get_all("Job Applicant", filters={"custom_campus_invite": ["in", inv]},
+                           pluck="name", limit=6)
+    for iv in frappe.get_all("Interview", filters={"custom_campus_drive": drive,
+                             "custom_campus_round_code": round_code,
+                             "job_applicant": ["in", names]}, pluck="name"):
+        frappe.delete_doc("Interview", iv, force=True, ignore_permissions=True)
+    for nm in names:
+        frappe.db.set_value("Job Applicant", nm, "custom_current_stage",
+                            "Technical Round 1", update_modified=False)
+    frappe.db.commit()
+    n6, res6 = q("schedule", lambda: schedule_round_interviews(drive, round_code, scheduled_on=today()))
+    out = {"rounds_overview_q": r1, "round_interviews_q": r2, "round_pool_q": r3,
+           "schedule_q": n6, "schedule_created": res6["created"],
+           "schedule_q_per_interview": round(n6 / max(res6["created"], 1), 1)}
+    _log(f"demo_perf_check: {out}")
+    return out
+
+
+def demo_ro_hotspots(drive="DRV-2026-2981"):
+    import re as _re
+    from collections import Counter
+    from recruitment.recruitment.doctype.campus_drive.campus_drive import get_rounds_overview
+    seen=[]; orig=frappe.db.sql
+    def cap(q,*a,**k):
+        t=_re.sub(r"'[^']*'","?",str(q)); t=_re.sub(r"\s+"," ",t).strip()[:80]; seen.append(t); return orig(q,*a,**k)
+    frappe.db.sql=cap
+    try: get_rounds_overview(drive)
+    finally: frappe.db.sql=orig
+    _log(f"demo_ro_hotspots total={len(seen)} distinct={len(set(seen))}")
+    for q,n in Counter(seen).most_common(6): _log(f"  x{n:3d} {q}")
+    return {"total":len(seen),"distinct":len(set(seen))}
+
+
+def demo_clear_advances_next_round(drive="DRV-2026-2980"):
+    """Prove: clearing a Technical Round 1 interview moves the candidate into the
+    Technical Round 2 round's 'waiting'."""
+    from recruitment.recruitment.doctype.campus_drive.campus_drive import get_rounds_overview
+    doc = frappe.get_doc("Campus Drive", drive)
+    # ensure a Technical Round 2 round exists
+    if not any((r.hiring_stage or "") == "Technical Round 2" for r in doc.rounds):
+        doc.append("rounds", {"round_name": "T2", "round_type": "Technical",
+                              "hiring_stage": "Technical Round 2"})
+        doc.save(ignore_permissions=True)
+    t2_before = next(r["waiting"] for r in get_rounds_overview(drive)["rounds"]
+                     if r["hiring_stage"] == "Technical Round 2")
+
+    iv = frappe.get_all("Interview", filters={"custom_campus_drive": drive,
+                        "custom_campus_round_code": "R2", "status": "Pending"},
+                        fields=["name", "job_applicant"], limit=1)
+    if not iv:
+        return {"error": "no pending R2 interview"}
+    stage_before = frappe.db.get_value("Job Applicant", iv[0].job_applicant, "custom_current_stage")
+    res = demo_submit_feedback(interview=iv[0].name, result="Cleared")
+    t2_after = next(r["waiting"] for r in get_rounds_overview(drive)["rounds"]
+                    if r["hiring_stage"] == "Technical Round 2")
+    out = {"cleared_interview": iv[0].name, "stage_before": stage_before,
+           "stage_after": res["stage_after"], "interview_status": res["interview_status"],
+           "T2_waiting_before": t2_before, "T2_waiting_after": t2_after}
+    _log(f"demo_clear_advances_next_round: {out}")
+    return out
+
+
+def demo_debug_advance(interview="HR-INT-2026-0168"):
+    """Directly run the stage-advance for a cleared interview and surface any error the
+    live hook was swallowing."""
+    import traceback
+    from recruitment.api.hiring_stage import (
+        get_opening_stages, _find_stage, _enter_stage, advance_on_interview_result)
+    iv = frappe.get_doc("Interview", interview)
+    ja = frappe.get_doc("Job Applicant", iv.job_applicant)
+    st = get_opening_stages(ja.job_title)
+    idx = _find_stage(st, ja.custom_current_stage)
+    out = {"iv_status": iv.status, "stage_before": ja.custom_current_stage, "idx": idx}
+    try:
+        advance_on_interview_result(interview)
+        out["after_advance_fn"] = frappe.db.get_value("Job Applicant", ja.name, "custom_current_stage")
+    except Exception:
+        out["advance_fn_error"] = traceback.format_exc()[-400:]
+    if idx >= 0 and idx + 1 < len(st):
+        try:
+            _enter_stage(ja, st[idx + 1], result="Auto (Cleared)", interview=interview,
+                         ignore_permissions=True)
+            out["after_enter_stage"] = frappe.db.get_value("Job Applicant", ja.name, "custom_current_stage")
+        except Exception:
+            out["enter_stage_error"] = traceback.format_exc()[-500:]
+    _log(f"demo_debug_advance: {out}")
+    return out
+
+
+def fix_stale_marital_status():
+    """Repair seeded Job Applicants whose custom_marital_status holds a value no longer
+    in the field's Select options (e.g. 'Unmarried' after it was renamed to 'Single').
+    A stale Select value makes EVERY full save of the record fail, which silently
+    blocks the interview stage-advance. Uses db.set_value to bypass validation."""
+    df = frappe.get_meta("Job Applicant").get_field("custom_marital_status")
+    valid = {o.strip() for o in (df.options or "").split("\n")}
+    target = "Single" if "Single" in valid else ""
+    rows = frappe.get_all("Job Applicant",
+                          filters={"email_id": ["like", f"{CAND_PREFIX}%{TPO_DOMAIN}"]},
+                          fields=["name", "custom_marital_status"])
+    fixed = 0
+    for r in rows:
+        if (r.custom_marital_status or "") not in valid:
+            frappe.db.set_value("Job Applicant", r.name, "custom_marital_status", target,
+                                update_modified=False)
+            fixed += 1
+    frappe.db.commit()
+    _log(f"fix_stale_marital_status: valid={sorted(valid)} target={target!r} fixed={fixed}")
+    return {"fixed": fixed, "target": target}
+
+
+def demo_health_check(drive="DRV-2026-2980"):
+    """Verify the Drive Health Check catches the misconfigurations that used to be
+    silent: a round mapped to a non-existent stage, and a candidate stranded on an
+    orphan stage."""
+    from recruitment.recruitment.doctype.campus_drive.campus_drive import get_rounds_overview
+    doc = frappe.get_doc("Campus Drive", drive)
+    inv = [r.campus_invite for r in doc.campus_invites]
+
+    # 1) baseline
+    base = get_rounds_overview(drive)["health"]
+
+    # 2) add a round mapped to a stage no opening has
+    if not any((r.hiring_stage or "") == "Nonexistent Stage" for r in doc.rounds):
+        doc.append("rounds", {"round_name": "Bogus", "round_type": "Technical",
+                              "hiring_stage": "Nonexistent Stage"})
+        doc.save(ignore_permissions=True)
+
+    # 3) strand a candidate on an orphan stage
+    victim = frappe.get_all("Job Applicant", filters={"custom_campus_invite": ["in", inv]},
+                            pluck="name", limit=1)[0]
+    frappe.db.set_value("Job Applicant", victim, "custom_current_stage", "Ghost Stage",
+                        update_modified=False)
+    frappe.db.set_value("Job Applicant", victim, "status", "Open", update_modified=False)
+    frappe.db.commit()
+
+    after = get_rounds_overview(drive)["health"]
+    _log(f"demo_health_check baseline_issues={len(base)}")
+    for h in after:
+        _log(f"  [{h['level']}] {h['title']} :: {h['detail'][:70]}")
+    return {"baseline": len(base), "after": len(after)}
+
+
+def demo_offer_flow(drive="DRV-2026-2980"):
+    """Park 2 candidates at the Offer round's stage and raise Job Offers, to verify
+    the offer-round flow (get_offer_candidates + create_offers_for_candidates)."""
+    import traceback
+    from recruitment.recruitment.doctype.campus_drive.campus_drive import (
+        get_offer_candidates, create_offers_for_candidates)
+    doc = frappe.get_doc("Campus Drive", drive)
+    if not any((r.round_type or "") == "Offer" for r in doc.rounds):
+        doc.append("rounds", {"round_name": "Offer", "round_type": "Offer", "hiring_stage": "HR Round"})
+        doc.save(ignore_permissions=True)
+        frappe.db.commit()
+        doc = frappe.get_doc("Campus Drive", drive)
+    oround = next(r.round_code for r in doc.rounds if (r.round_type or "") == "Offer")
+    stage = next(r.hiring_stage for r in doc.rounds if r.round_code == oround)
+    inv = [r.campus_invite for r in doc.campus_invites]
+    names = frappe.get_all("Job Applicant", filters={"custom_campus_invite": ["in", inv]},
+                           pluck="name", limit=2)
+    for n in names:
+        frappe.db.set_value("Job Applicant", n, "custom_current_stage", stage, update_modified=False)
+        frappe.db.set_value("Job Applicant", n, "status", "Open", update_modified=False)
+    frappe.db.commit()
+    out = {"offer_round": oround, "stage": stage}
+    oc = get_offer_candidates(drive, oround)
+    out["candidates"] = [(c["applicant_name"], c["has_offer"]) for c in oc["candidates"]]
+    picked = [c["name"] for c in oc["candidates"] if not c["has_offer"]]
+    try:
+        out["create_result"] = create_offers_for_candidates(drive, frappe.as_json(picked))
+    except Exception:
+        out["create_error"] = traceback.format_exc()[-500:]
+    out["offers"] = frappe.get_all("Job Offer", filters={"job_applicant": ["in", picked or [""]]},
+                                   fields=["name", "job_applicant", "status", "company"])
+    _log(f"demo_offer_flow: {out}")
+    return out
+
+
+def create_ready_drive(drive_name="Campus Drive 2026 - DEMO (ready)"):
+    """Create a Campus Drive fully set up for HR to run the flow: rounds aligned to the
+    opening's stages, and panels/interviewers pre-loaded. Everything after this (GD
+    grouping, scheduling, feedback, offers) is left for the user to do.
+    """
+    existing = frappe.db.get_value("Campus Drive", {"drive_name": drive_name}, "name")
+    if existing:
+        frappe.delete_doc("Campus Drive", existing, force=True, ignore_permissions=True)
+
+    inv = frappe.get_all("Campus Invite",
+                         filters={"campus_invite_name": ["like", f"{INVITE_PREFIX}%"], "docstatus": 1},
+                         fields=["name", "campus_invite_name"], order_by="creation desc", limit=1)
+    if not inv:
+        return {"error": "no submitted seed invite — run campus_seed.run first"}
+    invite = inv[0]
+
+    doc = frappe.new_doc("Campus Drive")
+    doc.drive_name = drive_name
+    doc.drive_status = "Live"
+    doc.drive_owner = "Administrator"
+    doc.drive_start_date = today()
+    doc.drive_end_date = add_days(today(), 30)
+    doc.append("campus_invites", {"campus_invite": invite.name,
+                                  "campus_invite_name": invite.campus_invite_name})
+
+    # Rounds aligned to the seeded opening's stages (so the pipeline flows cleanly):
+    #   GD -> Technical Round 1 -> Technical Round 2 -> HR Round -> Offer
+    rounds = [
+        ("Group Discussion", "Group Discussion", "Group Discussion"),
+        ("Technical Round 1", "Technical", "Technical Round 1"),
+        ("Technical Round 2", "Technical", "Technical Round 2"),
+        ("HR Round", "HR", "HR Round"),
+        ("Offer", "Offer", "Pre Job Offer"),
+    ]
+    for (rname, rtype, stage) in rounds:
+        doc.append("rounds", {"round_name": rname, "round_type": rtype, "hiring_stage": stage})
+
+    doc.insert(ignore_permissions=True)
+    frappe.db.commit()
+    doc = frappe.get_doc("Campus Drive", doc.name)
+
+    # Panelists: 3 panels for each interview round (Technical R1/R2, HR), each with one
+    # interviewer that has a User login. GD and Offer rounds don't need panels.
+    emps = frappe.get_all("Employee", filters={"user_id": ["!=", ""], "status": "Active"},
+                          pluck="name", limit=9)
+    interview_round_codes = [r.round_code for r in doc.rounds
+                             if r.round_type in ("Technical", "HR")]
+    i = 0
+    for code in interview_round_codes:
+        for pnum in range(1, 4):  # Panel 1, 2, 3
+            if i >= len(emps):
+                i = 0  # reuse interviewers if we run out
+            doc.append("round_panelists", {"round_code": code, "panelist": emps[i],
+                                           "panel_name": f"Panel {pnum}"})
+            i += 1
+    doc.save(ignore_permissions=True)
+    frappe.db.commit()
+
+    doc.reload()
+    _log("=" * 72)
+    _log(f"READY DRIVE: {doc.name}  ({drive_name})  status={doc.drive_status}")
+    _log(f"  invite: {invite.name} ({invite.campus_invite_name})")
+    _log(f"  institutes: {[r.institute for r in doc.participating_institutes]}")
+    _log(f"  openings: {[r.job_opening for r in doc.linked_job_openings]}")
+    _log(f"  rounds:")
+    for r in doc.rounds:
+        _log(f"      {r.round_code}  {r.round_name}  ({r.round_type})  -> stage “{r.hiring_stage}”")
+    _log(f"  panelists ({len(doc.round_panelists)}):")
+    for p in doc.round_panelists:
+        _log(f"      {p.round_code}  {p.panel_name}  {p.panelist}")
+    _log(f"  shortlisted candidates ready for GD: {frappe.db.count('Job Applicant', {'custom_campus_invite': invite.name, 'status': 'Shortlisted'})}")
+    _log("=" * 72)
+    return {"drive": doc.name}
+
+
+# The rounds every ready/test drive ships with, aligned to the seeded openings' stages.
+READY_ROUNDS = [
+    ("Group Discussion", "Group Discussion", "Group Discussion"),
+    ("Technical Round 1", "Technical", "Technical Round 1"),
+    ("Technical Round 2", "Technical", "Technical Round 2"),
+    ("HR Round", "HR", "HR Round"),
+    ("Offer", "Offer", "Pre Job Offer"),
+]
+
+
+def _reset_invite_candidates(invite_name):
+    """Put an invite's candidates back to a clean pre-GD start so a fresh test drive
+    has consistent numbers — everyone Shortlisted (genuine Hold kept) at the first
+    stage, with no leftover advancement/substatus from prior runs. Also removes any
+    interviews from earlier drives on these candidates so counts start at zero."""
+    rows = frappe.get_all("Job Applicant", filters={"custom_campus_invite": invite_name},
+                          fields=["name", "status"])
+    names = [r.name for r in rows]
+    for r in rows:
+        is_hold = r.status == "Hold"
+        frappe.db.set_value("Job Applicant", r.name, {
+            # Shortlisted (resume-screened) candidates wait AT the drive's first
+            # round — Group Discussion — so the GD round shows them and no health
+            # warning fires. Held candidates stay parked at Resume Screening.
+            "custom_current_stage": "Resume Screening" if is_hold else "Group Discussion",
+            "status": r.status if is_hold else "Shortlisted",
+            "custom_substatus": None,
+        }, update_modified=False)
+    # drop interviews these candidates picked up in earlier drives AND their feedback,
+    # else the feedback orphans and (with interview-number reuse) re-attaches to a new
+    # interview, showing a phantom "awaiting feedback".
+    if names:
+        for iv in frappe.get_all("Interview", filters={"job_applicant": ["in", names]}, pluck="name"):
+            _delete_interview_with_feedback(iv)
+    frappe.db.commit()
+    return len(rows)
+
+
+def _force_delete(doctype, name):
+    try:
+        d = frappe.get_doc(doctype, name)
+        if d.docstatus == 1:
+            d.flags.ignore_permissions = True
+            d.cancel()
+        frappe.delete_doc(doctype, name, force=True, ignore_permissions=True)
+    except Exception as e:
+        print(f"[campus_seed] delete {doctype} {name}: {type(e).__name__}: {e}")
+
+
+def _delete_interview_with_feedback(interview):
+    for fb in frappe.get_all("Interview Feedback", filters={"interview": interview}, pluck="name"):
+        _force_delete("Interview Feedback", fb)
+    _force_delete("Interview", interview)
+
+
+def cleanup_orphan_feedback():
+    """Delete Interview Feedback that no longer matches its interview: the interview is
+    gone, or the feedback predates it (a re-attached orphan from interview-number
+    reuse). Fixes phantom 'awaiting feedback' counts on the round board."""
+    removed = 0
+    for fb in frappe.get_all("Interview Feedback",
+                             fields=["name", "interview", "creation"], limit_page_length=0):
+        iv_creation = frappe.db.get_value("Interview", fb.interview, "creation") if fb.interview else None
+        if not iv_creation or str(fb.creation) < str(iv_creation):
+            _force_delete("Interview Feedback", fb.name)
+            removed += 1
+    frappe.db.commit()
+    _log(f"cleanup_orphan_feedback: removed {removed}")
+    return {"removed": removed}
+
+
+def _build_ready_drive(drive_name, invite):
+    existing = frappe.db.get_value("Campus Drive", {"drive_name": drive_name}, "name")
+    if existing:
+        frappe.delete_doc("Campus Drive", existing, force=True, ignore_permissions=True)
+
+    doc = frappe.new_doc("Campus Drive")
+    doc.drive_name = drive_name
+    doc.drive_status = "Live"
+    doc.drive_owner = "Administrator"
+    doc.drive_start_date = today()
+    doc.drive_end_date = add_days(today(), 30)
+    doc.append("campus_invites", {"campus_invite": invite.name,
+                                  "campus_invite_name": invite.campus_invite_name})
+    for (rname, rtype, stage) in READY_ROUNDS:
+        doc.append("rounds", {"round_name": rname, "round_type": rtype, "hiring_stage": stage})
+    doc.insert(ignore_permissions=True)
+    frappe.db.commit()
+
+    doc = frappe.get_doc("Campus Drive", doc.name)
+    emps = frappe.get_all("Employee", filters={"user_id": ["!=", ""], "status": "Active"},
+                          pluck="name", limit=9)
+    i = 0
+    for r in doc.rounds:
+        if r.round_type not in ("Technical", "HR"):
+            continue
+        for pnum in range(1, 4):
+            if i >= len(emps):
+                i = 0
+            doc.append("round_panelists", {"round_code": r.round_code, "panelist": emps[i],
+                                           "panel_name": f"Panel {pnum}"})
+            i += 1
+    doc.save(ignore_permissions=True)
+    frappe.db.commit()
+    return doc.name
+
+
+def create_test_drives(count=3):
+    """Create `count` independent, clean test drives — each on its OWN region invite so
+    their candidates never overlap, each reset to a fresh pre-GD start, each with rounds
+    + panelists ready. Run the whole flow on each without one affecting another."""
+    invites = frappe.get_all(
+        "Campus Invite",
+        filters={"campus_invite_name": ["like", f"{INVITE_PREFIX}%"], "docstatus": 1},
+        fields=["name", "campus_invite_name", "region"], order_by="creation desc", limit=count)
+    if not invites:
+        return {"error": "no submitted seed invites — run campus_seed.run first"}
+
+    made = []
+    for idx, inv in enumerate(invites, start=1):
+        reset = _reset_invite_candidates(inv.name)
+        region = frappe.db.get_value("Region", inv.region, "location_region") or inv.campus_invite_name
+        name = f"TEST Drive {idx} - {region}"
+        drive = _build_ready_drive(name, inv)
+        shortlisted = frappe.db.count("Job Applicant", {"custom_campus_invite": inv.name, "status": "Shortlisted"})
+        made.append((drive, name, inv.name, reset, shortlisted))
+
+    _log("=" * 72)
+    _log(f"CREATED {len(made)} INDEPENDENT TEST DRIVES (each clean, rounds + panels ready)")
+    for (drive, name, invn, reset, sl) in made:
+        _log(f"  {drive}  {name}")
+        _log(f"      invite {invn} · {reset} candidates reset · {sl} Shortlisted ready for GD")
+    _log("  Each has: GD → Technical R1 → Technical R2 → HR Round → Offer, 3 panels per interview round.")
+    _log("=" * 72)
+    return {"drives": [m[0] for m in made]}
+
+
+def demo_check_interviewer_scope(drive="DRV-2026-3054"):
+    """Log in AS a real panelist and confirm they see only their own interviews."""
+    doc = frappe.get_doc("Campus Drive", drive)
+    panelist_emp = next((p.panelist for p in doc.round_panelists), None)
+    user = frappe.db.get_value("Employee", panelist_emp, "user_id") if panelist_emp else None
+    if not user:
+        return {"error": "no panelist with a user"}
+    roles = frappe.get_roles(user)
+    total = frappe.db.count("Interview")
+    original = frappe.session.user
+    try:
+        frappe.set_user(user)
+        visible = len(frappe.get_list("Interview", limit_page_length=0, ignore_permissions=False))
+        # of the visible, how many actually have this user on the panel
+        mine = frappe.get_all("Interview Detail",
+                              filters={"interviewer": user, "parenttype": "Interview"}, pluck="parent")
+        mine = len(set(mine))
+    finally:
+        frappe.set_user(original)
+    out = {"interviewer_user": user, "roles": [r for r in roles if r not in ("All", "Guest")],
+           "total_interviews_in_system": total, "visible_to_this_user": visible,
+           "actually_on_their_panel": mine}
+    _log(f"demo_check_interviewer_scope: {out}")
+    return out
+
+
+def demo_check_scope_plain_interviewer():
+    """Prove the permission query restricts a NON-privileged interviewer.
+    Creates a throwaway user with only Employee+Interviewer roles, puts them
+    on exactly one Interview panel, then lists Interviews AS them."""
+    from frappe.utils import random_string
+    email = "scope.test.interviewer@example.com"
+    if not frappe.db.exists("User", email):
+        u = frappe.new_doc("User")
+        u.email = email
+        u.first_name = "Scope Test"
+        u.send_welcome_email = 0
+        u.flags.ignore_permissions = True
+        u.insert(ignore_permissions=True)
+        for r in ("Employee", "Interviewer"):
+            if frappe.db.exists("Role", r):
+                u.append("roles", {"role": r})
+        u.save(ignore_permissions=True)
+    roles = [r for r in frappe.get_roles(email) if r not in ("All", "Guest")]
+    # attach them to a single interview panel
+    iv = frappe.get_all("Interview", limit=1, pluck="name")
+    if not iv:
+        return {"error": "no interviews in system"}
+    iv = iv[0]
+    ivdoc = frappe.get_doc("Interview", iv)
+    if not any(d.interviewer == email for d in ivdoc.interview_details):
+        ivdoc.append("interview_details", {"interviewer": email})
+        ivdoc.save(ignore_permissions=True)
+    total = frappe.db.count("Interview")
+    original = frappe.session.user
+    try:
+        frappe.set_user(email)
+        visible = frappe.get_list("Interview", limit_page_length=0, pluck="name")
+    finally:
+        frappe.set_user(original)
+    out = {"user": email, "roles": roles, "total_interviews": total,
+           "visible_count": len(visible), "visible": visible, "put_on_panel_of": iv}
+    _log(f"demo_check_scope_plain_interviewer: {out}")
+    return out
+
+
+def demo_cleanup_scope_test():
+    email = "scope.test.interviewer@example.com"
+    for iv in frappe.get_all("Interview", pluck="name"):
+        d = frappe.get_doc("Interview", iv)
+        rows = [r for r in d.interview_details if r.interviewer == email]
+        if rows:
+            for r in rows:
+                d.remove(r)
+            d.save(ignore_permissions=True)
+    if frappe.db.exists("User", email):
+        frappe.delete_doc("User", email, ignore_permissions=True, force=True)
+    frappe.db.commit()
+    _log("demo_cleanup_scope_test: removed throwaway user + panel rows")
+
+
+def repair_and_verify(drive="DRV-2026-3062"):
+    """Undo any demo_health_check pollution on `drive` and print a READ-ONLY summary:
+    remove synthetic rounds, un-strand ghost-stage candidates, then report config."""
+    from recruitment.recruitment.doctype.campus_drive.campus_drive import get_rounds_overview
+    doc = frappe.get_doc("Campus Drive", drive)
+    inv = [r.campus_invite for r in doc.campus_invites]
+
+    # 1) drop synthetic "Bogus"/nonexistent-stage rounds
+    good = [r for r in doc.rounds if (r.hiring_stage or "") != "Nonexistent Stage"
+            and (r.round_name or "") != "Bogus"]
+    if len(good) != len(doc.rounds):
+        doc.set("rounds", good)
+        doc.save(ignore_permissions=True)
+
+    # 2) un-strand anyone parked on a ghost/orphan stage back to a clean start
+    valid_stages = {r.hiring_stage for r in doc.rounds if r.hiring_stage}
+    for ja in frappe.get_all("Job Applicant", filters={"custom_campus_invite": ["in", inv]},
+                             fields=["name", "custom_current_stage", "status"]):
+        st = ja.custom_current_stage or ""
+        if st in ("Ghost Stage", "Nonexistent Stage"):
+            frappe.db.set_value("Job Applicant", ja.name, {
+                "custom_current_stage": "Resume Screening",
+                "status": "Shortlisted" if ja.status != "Hold" else "Hold",
+            }, update_modified=False)
+    frappe.db.commit()
+
+    doc.reload()
+    ov = get_rounds_overview(drive)
+    _log("=" * 60)
+    _log(f"DRIVE {drive}  ({doc.drive_name})  status={doc.drive_status}")
+    _log(f"  window: {doc.drive_start_date} -> {doc.drive_end_date}")
+    _log(f"  invites: {inv}")
+    _log(f"  openings: {[r.job_opening for r in doc.linked_job_openings]}")
+    _log(f"  rounds:")
+    for r in doc.rounds:
+        _log(f"      {r.round_code}  {r.round_name}  ({r.round_type})  -> stage “{r.hiring_stage}”")
+    npanel = {}
+    for p in doc.round_panelists:
+        npanel[p.round_code] = npanel.get(p.round_code, 0) + 1
+    _log(f"  panels per round: {npanel}")
+    sl = frappe.db.count("Job Applicant", {"custom_campus_invite": ["in", inv], "status": "Shortlisted"})
+    hold = frappe.db.count("Job Applicant", {"custom_campus_invite": ["in", inv], "status": "Hold"})
+    _log(f"  candidates: Shortlisted={sl}  Hold={hold}")
+    health = ov.get("health", [])
+    _log(f"  HEALTH: {'OK — no issues' if not health else str(len(health)) + ' issue(s)'}")
+    for h in health:
+        _log(f"      [{h['level']}] {h['title']}")
+    _log("=" * 60)
+    return {"health_issues": len(health), "shortlisted": sl}
+
+
+def demo_schedule_r2(drive="DRV-2026-3062"):
+    """Move the GD-passed pool into Technical Round 1 and schedule panel interviews,
+    to prove the custom_extra_payment AttributeError is gone."""
+    from recruitment.recruitment.doctype.campus_drive.campus_drive import (
+        get_round_pool, schedule_round_interviews)
+    doc = frappe.get_doc("Campus Drive", drive)
+    inv = [r.campus_invite for r in doc.campus_invites]
+    # park a handful of shortlisted candidates at the Technical Round 1 stage
+    names = frappe.get_all("Job Applicant",
+                           filters={"custom_campus_invite": ["in", inv], "status": "Shortlisted"},
+                           pluck="name", limit=6)
+    for n in names:
+        frappe.db.set_value("Job Applicant", n, "custom_current_stage", "Technical Round 1",
+                            update_modified=False)
+    frappe.db.commit()
+    res = schedule_round_interviews(drive, "R2", "2026-07-30", None, None, frappe.as_json(names))
+    _log(f"demo_schedule_r2: created={res.get('created')} skipped_count={res.get('skipped_count')} "
+         f"skipped={res.get('skipped')}")
+    return res
+
+
+def skip_pre_job_offer(drive="DRV-2026-3062"):
+    """Turn OFF Pre Job Offer for a drive's openings and re-point the Offer round to
+    'Job Offer', so the flow goes HR Round -> Job Offer directly. Also un-stick any
+    candidate parked on the now-removed 'Pre Job Offer' stage."""
+    from recruitment.recruitment.doctype.campus_drive.campus_drive import get_rounds_overview
+    doc = frappe.get_doc("Campus Drive", drive)
+    openings = [r.job_opening for r in doc.linked_job_openings if r.job_opening]
+    inv = [r.campus_invite for r in doc.campus_invites]
+
+    # 1) disable the virtual Pre Job Offer stage on every linked opening
+    for op in openings:
+        frappe.db.set_value("Job Opening", op, "custom_enable_pre_job_offer", 0,
+                            update_modified=False)
+
+    # 2) re-point the Offer round to the Job Offer stage
+    for r in doc.rounds:
+        if (r.round_type or "") == "Offer" and (r.hiring_stage or "") == "Pre Job Offer":
+            r.hiring_stage = "Job Offer"
+    doc.save(ignore_permissions=True)
+
+    # 3) move anyone stranded on Pre Job Offer to Job Offer
+    moved = 0
+    for ja in frappe.get_all("Job Applicant",
+                             filters={"custom_campus_invite": ["in", inv],
+                                      "custom_current_stage": "Pre Job Offer"}, pluck="name"):
+        frappe.db.set_value("Job Applicant", ja, "custom_current_stage", "Job Offer",
+                            update_modified=False)
+        moved += 1
+    frappe.db.commit()
+
+    doc.reload()
+    ov = get_rounds_overview(drive)
+    _log(f"skip_pre_job_offer: openings={openings} moved={moved}")
+    for r in doc.rounds:
+        _log(f"   {r.round_code} {r.round_name} ({r.round_type}) -> “{r.hiring_stage}”")
+    _log(f"   HEALTH: {'OK' if not ov.get('health') else ov['health']}")
+    return {"openings": openings, "moved": moved,
+            "health_issues": len(ov.get("health") or [])}
+
+
+def create_ready_mini_drives(count=3, per=10):
+    """Create `count` independent, ready-to-use drives, each on its OWN new submitted
+    invite with `per` fresh candidates (Shortlisted, parked at Group Discussion), rounds
+    + panels ready. Candidates never overlap between drives. Reuses the existing seed
+    openings + institute; only the invite + candidates are new per drive."""
+    count = int(count); per = int(per)
+    openings = frappe.get_all("Job Opening",
+                              filters={"job_title": ["like", f"{OPENING_PREFIX}%"]}, pluck="name")[:2]
+    if not openings:
+        return {"error": "no seed openings — run campus_seed.run first"}
+    op_desig = {op: frappe.db.get_value("Job Opening", op, "designation") for op in openings}
+    insts = frappe.get_all("Institute", filters={"institute_name": ["like", f"%{SEED_SUFFIX}"]}, pluck="name")
+    inst = insts[0] if insts else None
+    regions = frappe.get_all("Region", fields=["name", "location_region"], limit=max(count, 1))
+    if not regions:
+        return {"error": "no Region records"}
+
+    _orig = frappe.sendmail
+    frappe.sendmail = lambda *a, **k: None
+    made = []
+    try:
+        for idx in range(count):
+            region = regions[idx % len(regions)]
+            invite = frappe.new_doc("Campus Invite")
+            invite.campus_invite_name = f"{INVITE_PREFIX}{region.location_region} mini {idx + 1}"
+            if invite.meta.has_field("region"):
+                invite.region = region.name
+            if inst:
+                invite.append("institutes", {"institute": inst})
+            for op in openings:
+                invite.append("job_openings", {"job_opening": op})
+            invite.insert(ignore_permissions=True)
+            invite.submit()
+
+            short = 0
+            for c in range(per):
+                gnum = 900 + idx * 100 + c
+                fn = FIRST_NAMES[gnum % len(FIRST_NAMES)]
+                ln = LAST_NAMES[gnum % len(LAST_NAMES)]
+                op = openings[c % len(openings)]
+                ja = frappe.new_doc("Job Applicant")
+                ja.applicant_name = f"{fn} {ln}"
+                if ja.meta.has_field("custom_applicant_last_name"):
+                    ja.custom_applicant_last_name = ln
+                ja.email_id = f"{CAND_PREFIX}m{idx + 1}.{c + 1:03d}{TPO_DOMAIN}"
+                ja.phone_number = f"9{gnum:09d}"[:10]
+                ja.job_title = op
+                ja.designation = op_desig.get(op)
+                ja.custom_campus_invite = invite.name
+                if ja.meta.has_field("custom_institute") and inst:
+                    ja.custom_institute = inst
+                ja.status = "Open"
+                ja.insert(ignore_permissions=True)
+                frappe.db.set_value("Job Applicant", ja.name, {
+                    "status": "Shortlisted", "custom_current_stage": "Group Discussion",
+                }, update_modified=False)
+                short += 1
+            frappe.db.commit()
+
+            inv_row = frappe._dict(name=invite.name, campus_invite_name=invite.campus_invite_name)
+            drive = _build_ready_drive(f"MINI Drive {idx + 1} - {region.location_region}", inv_row)
+            made.append((drive, invite.name, region.location_region, short))
+    finally:
+        frappe.sendmail = _orig
+
+    _log("=" * 72)
+    _log(f"CREATED {len(made)} READY-TO-USE MINI DRIVES ({per} candidates each)")
+    for (drive, invn, reg, sl) in made:
+        _log(f"  {drive}  (MINI Drive - {reg})  invite {invn} · {sl} Shortlisted ready for GD")
+    _log("  Each has: GD → Technical R1 → Technical R2 → HR Round → Offer, 3 panels per interview round.")
+    _log("=" * 72)
+    return {"drives": [m[0] for m in made]}
+
+
+def test_todo_prefetch_fix():
+    """Verify the cn_todo_manager parent-prefetch no longer nulls all fields when one
+    configured field isn't a real column (the variable_pay bug)."""
+    from cn_todo_manager.chatnext_todo_manager.api.todo_api import _prefetch_reference_data
+    reqs = frappe.get_all("Job Requisition", limit=2, pluck="name")
+    if not reqs:
+        return {"error": "no Job Requisition records locally"}
+    todos = [{"reference_type": "Job Requisition", "reference_name": n} for n in reqs]
+    lvf = [
+        {"fieldname": "designation", "fieldtype": "Link", "options": "Designation"},
+        {"fieldname": "company", "fieldtype": "Link", "options": "Company"},
+        {"fieldname": "variable_pay", "fieldtype": "Int", "options": ""},        # not a column
+        {"fieldname": "definitely_not_a_field_xyz", "fieldtype": "Data"},         # bogus
+    ]
+    pref = _prefetch_reference_data(todos, lvf)
+    out = {}
+    for n in reqs:
+        out[n] = (pref.get(("Job Requisition", str(n))) or {}).get("_parent")
+    _log(f"test_todo_prefetch_fix: {out}")
+    return out
+
+
+def test_todo_prefetch_debug():
+    import traceback
+    reqs = frappe.get_all("Job Requisition", limit=2, pluck="name")
+    rt = "Job Requisition"
+    meta = frappe.get_meta(rt)
+    vc = set(meta.get_valid_columns())
+    parent_fields = {"designation", "company", "variable_pay", "definitely_not_a_field_xyz"}
+    fetch = [f for f in parent_fields if f in vc]
+    _log(f"valid? designation={'designation' in vc} company={'company' in vc} "
+         f"variable_pay={'variable_pay' in vc}")
+    _log(f"fetch_fields={fetch}")
+    try:
+        rows = frappe.get_all(rt, filters={"name": ["in", reqs]}, fields=["name", *fetch])
+        _log(f"query OK rows={rows}")
+    except Exception:
+        _log(f"query FAILED: {traceback.format_exc()[-300:]}")
+    return {}
+
+
+def test_todo_prefetch_debug2():
+    import traceback
+    rt = "Job Requisition"
+    reqs = frappe.get_all(rt, limit=2, pluck="name")
+    real_cols = set(frappe.db.get_table_columns(rt))
+    _log(f"variable_pay in real table columns? {'variable_pay' in real_cols}")
+    _log(f"designation in real cols? {'designation' in real_cols}  company? {'company' in real_cols}")
+    try:
+        frappe.get_all(rt, filters={"name": ["in", reqs]}, fields=["name", "variable_pay"])
+    except Exception:
+        _log(f"variable_pay query err: {traceback.format_exc().splitlines()[-1][:160]}")
+    # with real-column filter
+    parent_fields = {"designation", "company", "variable_pay", "definitely_not_a_field_xyz"}
+    fetch = [f for f in parent_fields if f in real_cols]
+    rows = frappe.get_all(rt, filters={"name": ["in", reqs]}, fields=["name", *fetch])
+    _log(f"fetch={fetch} rows={rows}")
+    return {}

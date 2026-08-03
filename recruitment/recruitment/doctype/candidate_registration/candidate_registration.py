@@ -1,15 +1,29 @@
 # Copyright (c) 2026, Recruitment and contributors
 # For license information, please see license.txt
 
+import re
+
 import frappe
 from frappe import _
 from frappe.model.document import Document
+from frappe.utils import escape_html
 
 from recruitment.recruitment.tpo_access import PRIMARY_TPO_ROLE
 
 # Roles that pick the Institute themselves; everyone else with TPO gets it forced
 # to the institute mapped to their login.
 INSTITUTE_CHOOSER_ROLES = {"System Manager", "HR Manager"}
+
+# Mobile numbers are Indian campus numbers — exactly ten digits once the usual
+# formatting (spaces, hyphens, brackets, a +91 / 0 prefix) is taken off.
+MOBILE_DIGITS = 10
+_NON_DIGITS = re.compile(r"\D")
+
+
+def _safe(value):
+	"""Bold, HTML-escaped. frappe.bold() does not escape and msgprint renders HTML,
+	so candidate-supplied text would otherwise be injectable."""
+	return frappe.bold(escape_html(str(value or "")))
 
 
 def is_tpo_only(user=None):
@@ -59,6 +73,7 @@ class CandidateRegistration(Document):
 
 		self._apply_tpo_institute()
 		self._validate_institute_on_invite()
+		self._validate_candidates()
 
 	def _apply_tpo_institute(self):
 		"""Force a TPO's Institute to the one mapped to their login.
@@ -101,6 +116,126 @@ class CandidateRegistration(Document):
 					", ".join(invited),
 				)
 			)
+
+	def _validate_candidates(self):
+		"""Ten-digit mobiles, and no email/mobile repeated inside this batch.
+
+		Duplicates matter because on submit each row is emailed its own apply link
+		and the campus flow keys a candidate to an invite by email, so the same
+		student twice means two mails and two Job Applicants.
+		"""
+		emails, mobiles = {}, {}
+
+		for row in self.candidates or []:
+			who = row.first_name or row.email_id or _("Row {0}").format(row.idx)
+			row.email_id = (row.email_id or "").strip().lower()
+			row.mobile_number = self._clean_mobile(row.mobile_number, row.idx, who)
+
+			for value, seen, title in (
+				(row.email_id, emails, _("Duplicate Email")),
+				(row.mobile_number, mobiles, _("Duplicate Mobile Number")),
+			):
+				if not value:
+					continue
+				if value in seen:
+					frappe.throw(
+						_("Row {0}: {1} is already used by row {2}.").format(
+							row.idx, _safe(value), seen[value]
+						),
+						title=title,
+					)
+				seen[value] = row.idx
+
+		self._validate_not_registered_elsewhere(emails, mobiles)
+
+	def _clean_mobile(self, value, idx, who):
+		"""Exactly MOBILE_DIGITS digits, or throw. Blank passes — the field is optional.
+
+		A leading 91/0 is dropped only when that lands on exactly ten digits, so
+		"+91 98765-43210" is accepted while a genuinely wrong length still fails.
+		"""
+		value = (value or "").strip()
+		if not value:
+			return ""
+
+		digits = _NON_DIGITS.sub("", value)
+		for prefix in ("91", "0"):
+			if len(digits) == MOBILE_DIGITS + len(prefix) and digits.startswith(prefix):
+				digits = digits[len(prefix) :]
+				break
+
+		if len(digits) != MOBILE_DIGITS:
+			frappe.throw(
+				_("Row {0} ({1}): {2} is not a valid mobile number. Enter exactly {3} digits.").format(
+					idx, _safe(who), _safe(value), MOBILE_DIGITS
+				),
+				title=_("Invalid Mobile Number"),
+			)
+		return digits
+
+	def _validate_not_registered_elsewhere(self, emails, mobiles):
+		"""Reject candidates already on another registration for this same invite.
+
+		Same student on a different drive is legitimate, so this is scoped to one
+		invite. Drafts count, or two drafts could each pass and then both submit.
+		Reads unscoped on purpose: a clash must be caught even when the other
+		registration belongs to a different TPO.
+		"""
+		if not (self.campus_invite and (emails or mobiles)):
+			return
+
+		others = frappe.get_all(
+			"Candidate Registration",
+			filters={
+				"campus_invite": self.campus_invite,
+				"docstatus": ["<", 2],
+				"name": ["!=", self.name or ""],
+			},
+			fields=["name", "owner"],
+		)
+		if not others:
+			return
+
+		or_filters = [
+			f
+			for f in (
+				["email_id", "in", list(emails)] if emails else None,
+				["mobile_number", "in", list(mobiles)] if mobiles else None,
+			)
+			if f
+		]
+		clashes = frappe.get_all(
+			"Candidate Registration Detail",
+			filters={
+				"parenttype": "Candidate Registration",
+				"parentfield": "candidates",
+				"parent": ["in", [o.name for o in others]],
+			},
+			or_filters=or_filters,
+			fields=["parent", "email_id", "mobile_number"],
+			limit_page_length=0,
+		)
+
+		owners = {o.name: o.owner for o in others}
+		for hit in clashes:
+			for value, seen, title in (
+				((hit.email_id or "").strip().lower(), emails, _("Duplicate Email")),
+				((hit.mobile_number or "").strip(), mobiles, _("Duplicate Mobile Number")),
+			):
+				if value in seen:
+					frappe.throw(
+						_("Row {0}: {1} is already registered on {2}.").format(
+							seen[value], _safe(value), self._clash_source(hit.parent, owners)
+						),
+						title=title,
+					)
+
+	def _clash_source(self, registration, owners):
+		"""Name the clashing record only to someone entitled to see it — a TPO must
+		not learn what another college submitted."""
+		if not is_tpo_only() or owners.get(registration) == frappe.session.user:
+			return _("Candidate Registration {0}").format(_safe(registration))
+		return _("another registration for this campus drive")
 
 	def on_submit(self):
 		self._email_candidates()

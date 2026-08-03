@@ -96,10 +96,9 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
   const { data: currentEmployee } = useCurrentEmployeeDetails({
     logged_in_employee_details: true,
   });
-
-  const currentEmployeeCompany = currentEmployee?.company;
+  const currentEmployeeCompany = currentEmployee?.company_short_name || currentEmployee?.company_name || currentEmployee?.company || "-";
   const { data: singleCompanyLogo } = useSingleCompanyLogo(
-    currentEmployeeCompany || "",
+    currentEmployee?.company || "",
   );
 
   const logoToShow = singleCompanyLogo?.company_logo || "";
@@ -496,6 +495,12 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
       permissionKey: "Employee Directory",
     },
     {
+      icon: Clock,
+      label: "Timesheet",
+      path: "/webapp/timesheet/timesheet-create",
+      permissionKey: "Timesheet",
+    },
+    {
       icon: UserSearch,
       label: "Recruitment",
       path: "/webapp/recruitment",
@@ -715,6 +720,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
         };
       })
       .filter((item): item is NavigationItem => item !== null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [uiPermissions, recognitionFlags.hideRewardsPointSummary]);
 
   const isSubSubItemActive = (subSubItem: SubSubMenuItem) => {
@@ -846,6 +852,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
     );
 
     setOpenDropdown(activeParent?.label || null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.pathname, navigationItems]);
 
   if (isUiPermissionsLoading) {

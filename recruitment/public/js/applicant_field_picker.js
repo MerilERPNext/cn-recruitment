@@ -15,24 +15,28 @@ frappe.provide("recruitment.applicant_field_picker");
 
 recruitment.applicant_field_picker._cache = null;
 
-recruitment.applicant_field_picker.load = function () {
-	// Fetch once per page load, reuse across grids/forms.
-	if (recruitment.applicant_field_picker._cache) {
-		return Promise.resolve(recruitment.applicant_field_picker._cache);
+recruitment.applicant_field_picker._cache = {};
+
+recruitment.applicant_field_picker.load = function (includeChildren) {
+	// Fetch once per (includeChildren) variant per page load, reuse across grids.
+	const key = includeChildren ? "1" : "0";
+	if (recruitment.applicant_field_picker._cache[key]) {
+		return Promise.resolve(recruitment.applicant_field_picker._cache[key]);
 	}
 	return frappe.call({
 		method: "recruitment.api.applicant_field_options.get_job_applicant_field_options",
+		args: { include_children: includeChildren ? 1 : 0 },
 	}).then((r) => {
-		recruitment.applicant_field_picker._cache = (r && r.message) || [];
-		return recruitment.applicant_field_picker._cache;
+		recruitment.applicant_field_picker._cache[key] = (r && r.message) || [];
+		return recruitment.applicant_field_picker._cache[key];
 	});
 };
 
 // Apply the {label, value} options to one grid's Select column.
-recruitment.applicant_field_picker.apply = function (frm, gridFieldname, selectField) {
+recruitment.applicant_field_picker.apply = function (frm, gridFieldname, selectField, includeChildren) {
 	const grid = frm.fields_dict[gridFieldname] && frm.fields_dict[gridFieldname].grid;
 	if (!grid) return;
-	recruitment.applicant_field_picker.load().then((options) => {
+	recruitment.applicant_field_picker.load(includeChildren).then((options) => {
 		grid.update_docfield_property(selectField, "options", options);
 		(grid.grid_rows || []).forEach((row) => {
 			const f = row.on_grid_fields_dict && row.on_grid_fields_dict[selectField];
@@ -45,7 +49,10 @@ recruitment.applicant_field_picker.apply = function (frm, gridFieldname, selectF
 // ── Job Opening: eligibility rules + screener questions ─────────────────────
 frappe.ui.form.on("Job Opening", {
 	refresh(frm) {
-		recruitment.applicant_field_picker.apply(frm, "custom_eligibility_rules", "field_name");
+		// Eligibility rules can target child-row fields (Education, Work Experience),
+		// so field_name + match_field include child-table fields.
+		recruitment.applicant_field_picker.apply(frm, "custom_eligibility_rules", "field_name", true);
+		recruitment.applicant_field_picker.apply(frm, "custom_eligibility_rules", "match_field", true);
 		recruitment.applicant_field_picker.apply(frm, "custom_screener_questions", "applicant_field");
 	},
 });

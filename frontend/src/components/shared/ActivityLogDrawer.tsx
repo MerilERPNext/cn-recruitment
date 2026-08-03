@@ -5,6 +5,7 @@ import NoDataFound from "./atoms/NoDataFound";
 import type { FunnelActivityLogEntry } from "../../types/flows";
 import { useGetFunnelActivityLog } from "../../hooks/useFlows";
 import { Typography } from "./atoms/Typography";
+import { formatLogTimestamp } from "../../utils/formatToIndianDate";
 
 interface ActivityLogDrawerProps {
   open: boolean;
@@ -14,78 +15,7 @@ interface ActivityLogDrawerProps {
   size?: "sm" | "md" | "lg" | "xl" | "xxl" | "full";
 }
 
-const formatLogTimestamp = (value: string): { date: string; time: string } => {
-  // API returns MySQL datetime with microseconds, ex: "2026-04-23 18:30:36.815713"
-  if (!value) return { date: "", time: "" };
 
-  try {
-    const normalized = value.replace(" ", "T");
-    const [base, fractional] = normalized.split(".");
-    
-    // Check if the input specifies a timezone (ends with Z or has +/- offset)
-    const hasTimezone = /Z|[+-]\d{2}:?\d{2}$/.test(value);
-
-    let d: Date;
-    if (hasTimezone) {
-      let safeIso = normalized;
-      if (fractional) {
-        const tzMatch = fractional.match(/Z|[+-].*$/);
-        const tzSuffix = tzMatch ? tzMatch[0] : "";
-        const numericFraction = tzMatch ? fractional.slice(0, tzMatch.index) : fractional;
-        safeIso = `${base}.${numericFraction.slice(0, 3)}${tzSuffix}`;
-      }
-      d = new Date(safeIso);
-    } else {
-      const safeIso = fractional
-        ? `${base}.${fractional.slice(0, 3)}Z`
-        : `${base}Z`;
-      d = new Date(safeIso);
-    }
-
-    if (Number.isNaN(d.getTime())) return { date: "", time: "" };
-
-    if (hasTimezone) {
-      const dateParts = new Intl.DateTimeFormat("en-GB", {
-        timeZone: "Asia/Kolkata",
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-      }).formatToParts(d);
-
-      const day = dateParts.find((p) => p.type === "day")?.value ?? "";
-      const month = dateParts.find((p) => p.type === "month")?.value ?? "";
-      const year = dateParts.find((p) => p.type === "year")?.value ?? "";
-      const date = day && month && year ? `${day}-${month}-${year}` : "";
-
-      const time = d.toLocaleTimeString("en-IN", {
-        timeZone: "Asia/Kolkata",
-        hour: "2-digit",
-        minute: "2-digit",
-        hour12: true,
-      });
-
-      return { date, time };
-    } else {
-      const day = String(d.getUTCDate()).padStart(2, "0");
-      const month = String(d.getUTCMonth() + 1).padStart(2, "0");
-      const year = d.getUTCFullYear();
-      const date = `${day}-${month}-${year}`;
-
-      let hours = d.getUTCHours();
-      const minutes = String(d.getUTCMinutes()).padStart(2, "0");
-      const ampm = hours >= 12 ? "PM" : "AM";
-      hours = hours % 12;
-      hours = hours ? hours : 12;
-      const formattedHours = String(hours).padStart(2, "0");
-      const time = `${formattedHours}:${minutes} ${ampm}`;
-
-      return { date, time };
-    }
-  } catch (error) {
-    console.error("Error formatting log timestamp:", error);
-    return { date: "", time: "" };
-  }
-};
 
 const ActivityTimelineItem: React.FC<{
   entry: FunnelActivityLogEntry;

@@ -9,6 +9,7 @@ import {
 import { LeaveBalance } from "../../../../types/leaves";
 import { useCurrentEmployeeDetails } from "../../../../hooks/useEmployee";
 import { NoDataFound } from "../../../shared/atoms/NoDataFound";
+import formatToIndianDate, { formatToIndianDateWithTime } from "../../../../utils/formatToIndianDate";
 
 interface PassbookTabProps {
   leaveData: LeaveBalance;
@@ -76,17 +77,6 @@ const PassbookTab: React.FC<PassbookTabProps> = ({ leaveData }) => {
   }) => {
     const cycle = submission?.data?.cycleStarts;
     setSelectedCycle(cycle || "");
-  };
-
-  const formatDateTime = (dateTime: string) => {
-    if (!dateTime) return null;
-    const [date, time] = dateTime.split(" ");
-    return (
-      <div className="flex flex-col">
-        <span className="font-medium">{date}</span>
-        <span className="text-xs text-gray-500">{time}</span>
-      </div>
-    );
   };
 
   const formatDateRange = (fromDate: string, toDate: string) => {
@@ -178,9 +168,9 @@ const PassbookTab: React.FC<PassbookTabProps> = ({ leaveData }) => {
           {selectedCycle ? (
             <p className="text-base font-medium text-gray-800">
               {formatDateRange(
-                metadata?.transaction_range?.from_date || "",
+               formatToIndianDate(metadata?.transaction_range?.from_date) || "",
 
-                metadata?.transaction_range?.to_date || ""
+                formatToIndianDate(metadata?.transaction_range?.to_date) || ""
               )}
             </p>
           ) : (
@@ -284,7 +274,7 @@ const PassbookTab: React.FC<PassbookTabProps> = ({ leaveData }) => {
               transactions.entries.map((t, i) => (
                 <tr key={i} className="hover:bg-gray-50 transition-colors">
                   <td className="px-4 py-3 whitespace-nowrap">
-                    {formatDateTime(t.time)}
+                    {formatToIndianDateWithTime(t.time)}
                   </td>
                   <td className="px-4 py-3">
                     <p className="text-gray-700 max-w-md">{t.comment}</p>

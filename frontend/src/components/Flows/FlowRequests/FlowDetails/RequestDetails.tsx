@@ -29,7 +29,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import DropdownMenu from "../../../shared/DropDownMenu";
 import WrapperHoverCard from "../../../shared/WrapperHoverCard";
 import toast from "react-hot-toast";
-import RejectionReasonModal from "../../../shared/RejectionReasonModal";
+import ActionReasonModal from "../../../shared/ActionReasonModal";
 import { errorResponseFormater } from "../../../../utils/errorResponseFormater";
 
 type JsonToFormData = {
@@ -350,22 +350,22 @@ const RequestDetails: React.FC = () => {
                       items={[
                         ...(showRevokeButton
                           ? [
-                              {
-                                label: "Revoke Request",
-                                icon: <XCircle size={16} />,
-                                onClick: () => setIsRevokeModalOpen(true),
-                                className: "text-red-600 hover:bg-red-50 hover:text-red-700",
-                              },
-                            ]
+                            {
+                              label: "Revoke Request",
+                              icon: <XCircle size={16} />,
+                              onClick: () => setIsRevokeModalOpen(true),
+                              className: "text-red-600 hover:bg-red-50 hover:text-red-700",
+                            },
+                          ]
                           : []),
                         ...(haveInitiatorForm
                           ? [
-                              {
-                                label: "Initiation Form",
-                                icon: <Eye size={16} className="text-primary-600" />,
-                                onClick: handleShowSelfForm,
-                              },
-                            ]
+                            {
+                              label: "Initiation Form",
+                              icon: <Eye size={16} className="text-primary-600" />,
+                              onClick: handleShowSelfForm,
+                            },
+                          ]
                           : []),
                         {
                           label: "Activity Log",
@@ -689,9 +689,10 @@ const RequestDetails: React.FC = () => {
           </ReviewForm>,
           document.body,
         )}
-      <RejectionReasonModal
+      <ActionReasonModal
         isOpen={isRevokeModalOpen}
         isPending={revokeFlowMutation.isPending}
+        type="act"
         required={true}
         title="Revoke Flow Request"
         description="Are you sure you want to revoke this flow request? Please provide a reason."

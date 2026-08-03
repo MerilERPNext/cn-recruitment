@@ -707,7 +707,7 @@ export const useEmployeeByUserEmail = (email: string | null) => {
         const result = await FrappeAPI.callMethod("frappe.client.get_list", {
           doctype: "Employee",
           fields: ["name"],
-          filters: { user_id: email },
+          filters: { user_id: email, status: "Active" },
           limit_page_length: 1,
         });
         const employees = result as Array<{ name: string }>;
@@ -934,7 +934,7 @@ export const useEmployeesByEmails = (emails: string[]) => {
       const result = await FrappeAPI.callMethod("frappe.client.get_list", {
         doctype: "Employee",
         fields: ["name", "user_id"],
-        filters: { user_id: ["in", emails] },
+        filters: { user_id: ["in", emails], status: "Active" },
         limit_page_length: 100,
       });
       const map = new Map<string, string>();

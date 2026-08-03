@@ -2,7 +2,7 @@
 
 import frappe
 from frappe.utils import add_days, today
-
+from frappe import _
 @frappe.whitelist()
 def validate_applicant(job_applicant):
     if job_applicant:
@@ -44,6 +44,31 @@ def validation_blacklist_on_doctypes(self,method):
         doc=frappe.get_doc("Job Applicant",self.job_applicant)
         if doc.custom_blacklist:
             frappe.throw("The Applicant Is Blacklisted.So You Cannot Create {0} ".format(self.doctype))
+
+        # custom_extra_payment is a Job Offer-only child table. This validator is
+        # shared (via the `validate` hook) with Interview / Appointment Letter /
+        # Employee Onboarding, none of which have the field — use .get() so those
+        # doctypes skip the block instead of raising AttributeError.
+        if self.get("custom_extra_payment"):
+            for row in self.custom_extra_payment:
+
+                if not row.salary_component:
+                    continue
+
+                paid_after_confirmation = frappe.db.get_value(
+                    "Salary Component",
+                    row.salary_component,
+                    "custom_paid_after_confirmation"
+                )
+
+                if paid_after_confirmation and row.pay_frequency:
+                    frappe.throw(
+                        _("Row #{0}: You cannot select Pay Frequency for Salary Component <b>{1}</b> because it is marked as 'Paid After Confirmation'.").format(
+                            row.idx,
+                            row.salary_component
+                        )
+                    )
+
 
 def validate_blacklist_employee(self,method):
     if self.job_applicant:

@@ -6,9 +6,9 @@
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
+  "step_type",
   "round_name",
   "is_mandatory",
-  "step_type",
   "evaluation_form",
   "auto_rejection_of_candidates",
   "skip_stage_for_sources",
@@ -20,6 +20,16 @@
  ],
  "fields": [
   {
+   "columns": 1,
+   "fieldname": "step_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Step Type",
+   "options": "\nInterview"
+  },
+  {
+   "columns": 2,
+   "description": "Pick the interview round on an Interview step; free text otherwise.",
    "fieldname": "round_name",
    "fieldtype": "Data",
    "in_list_view": 1,
@@ -32,12 +42,6 @@
    "fieldtype": "Check",
    "in_list_view": 1,
    "label": "Mandatory"
-  },
-  {
-   "fieldname": "step_type",
-   "fieldtype": "Select",
-   "label": "Step Type",
-   "options": "\nInterview"
   },
   {
    "depends_on": "eval:doc.step_type == 'Interview'",
