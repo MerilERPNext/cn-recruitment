@@ -1,5 +1,4 @@
 import {
-  ArrowDownUp,
   ArrowUpDown,
   Award,
   BadgeIndianRupee,
@@ -472,6 +471,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
           icon: Users,
           href: "/webapp/performance-app/team-overview",
           permissionKey: "My Team",
+          tabRoutes: ["/webapp/performance-app/team-pre-release-preview", "/webapp/performance-app/team-goals"],
         },
 
 
