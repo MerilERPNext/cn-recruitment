@@ -301,6 +301,11 @@ export type AttendanceRecord = {
   employee_name?: string;
   is_optional_leave?: boolean;
   weekly_off?: number;
+  // Only present when "Show Comp-Off and Late Entry Details in Calendar"
+  // Attendance Setting is enabled (populated by cn_leave_shift_managment.get_events).
+  late_entry?: number;
+  early_exit?: number;
+  comp_off?: "earned" | "applied";
 };
 
 export type PolicyQuestion = {
