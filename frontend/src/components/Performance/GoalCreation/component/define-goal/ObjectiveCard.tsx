@@ -65,6 +65,7 @@ const buildGoalPeriodFormSchema = (minDateStr?: string, maxDateStr?: string) => 
               placeholder: "Select start date",
               format: "dd-MM-yyyy",
               enableTime: false,
+              validateOn: "blur",
               validate: { required: true },
               customClass: "mb-0",
               input: true,
@@ -105,6 +106,7 @@ const buildGoalPeriodFormSchema = (minDateStr?: string, maxDateStr?: string) => 
               placeholder: "Select end date",
               format: "dd-MM-yyyy",
               enableTime: false,
+              validateOn: "blur",
               validate: { required: true },
               customClass: "mb-0",
               input: true,
@@ -397,6 +399,7 @@ export const ObjectiveCard = ({
                 options={{
                   noAlerts: true,
                   submitButton: false,
+                  validateOn: "change",
                 }}
               />
             </div>
