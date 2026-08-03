@@ -1129,7 +1129,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                                     `}
                                     />
                                     <div className="flex items-center justify-start space-x-2 w-full">
-                                      {/* <SubIcon className="h-3.5 w-3.5 opacity-70" /> */}
+                                      <SubIcon className="h-3.5 w-3.5 opacity-70" />
                                       <div className="flex items-center transition-all duration-300 whitespace-nowrap overflow-hidden">
                                         <span
                                           className={`transition-all duration-300 whitespace-nowrap ${isExpanded
