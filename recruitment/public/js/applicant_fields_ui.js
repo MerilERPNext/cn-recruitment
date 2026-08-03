@@ -414,18 +414,41 @@ frappe.provide("recruitment.applicant_fields_ui");
 				background: color-mix(in srgb, var(--apf-g-campus) 14%, transparent); color: var(--apf-g-campus);
 				border-radius: 4px; padding: 1px 5px; margin-left: 5px; vertical-align: middle;
 			}
+			/* The row is only a marker now — its panel has been moved to the dock, so
+			   showing it would draw a stray 2px border under the parent row. The
+			   caller still toggles its inline display, and bindChildDock reads that
+			   to decide which panel to show. */
+			.apf-child-row { display: none !important; }
 			.apf-child-row td {
 				background: var(--apf-bg-sub) !important;
 				border-bottom: 2px solid var(--apf-border) !important; padding: 0 !important;
 			}
+			/* Panels live here, below the scrolling grid — see AFU.dockChildPanels.
+			   Being outside .apf-scroll is what makes the frozen FIELD column work:
+			   the panel no longer moves with the grid's horizontal scroll. */
+			.apf-child-dock:empty { display: none; }
 			.apf-child-container {
-				margin: 10px 16px; border: 1px solid var(--apf-border); border-radius: 10px; overflow: hidden;
+				margin: 10px 12px 12px; border: 1px solid var(--apf-border);
+				border-radius: 10px; overflow: hidden; background: var(--apf-bg);
 			}
+			.apf-child-container[hidden] { display: none; }
+			/* The child's own scroller: its columns scroll here, independently of the
+			   parent, and it is the ancestor the frozen FIELD column sticks to. */
+			.apf-child-scroll { overflow-x: auto; overflow-y: hidden; }
 			.apf-child-header {
 				background: color-mix(in srgb, var(--apf-g-campus) 12%, transparent); color: var(--apf-g-campus);
 				font-size: 10.5px; font-weight: 700; padding: 7px 12px; letter-spacing: .06em; text-transform: uppercase;
 			}
-			.apf-child-table { width: 100%; border-collapse: collapse; font-size: 11.5px; background: var(--apf-bg); }
+			/* separate, not collapse: a collapsed table shares its borders between
+			   neighbouring cells, so a sticky cell scrolls away from the border it is
+			   drawn with. The parent table uses separate for the same reason.
+			   min-width must exceed the container so there is something to scroll:
+			   280 field + 10 channel columns x 108. */
+			.apf-child-table {
+				width: 100%; min-width: 1360px;
+				border-collapse: separate; border-spacing: 0;
+				font-size: 11.5px; background: var(--apf-bg);
+			}
 			.apf-child-table thead th {
 				padding: 6px 8px; background: var(--apf-bg-head); color: var(--apf-text-dim); font-size: 9.5px;
 				font-weight: 700; text-align: center; border-bottom: 1px solid var(--apf-border); letter-spacing: .05em;
@@ -438,6 +461,21 @@ frappe.provide("recruitment.applicant_fields_ui");
 			}
 			.apf-child-table tbody tr:last-child td { border-bottom: none; }
 			.apf-child-table tbody td.apf-child-col-field { text-align: left; }
+
+			/* Frozen FIELD column — the toggles scroll under it, exactly as they do
+			   in the parent table. Needs an opaque background (sticky cells are
+			   painted over otherwise) and a z-index above the scrolling cells; the
+			   header sits one level higher again so it wins where the two overlap. */
+			/* 280px = the parent's frozen block (34 check + 38 no. + 208 field), so the
+			   freeze boundary is one straight line down the whole table. */
+			.apf-child-table th.apf-child-col-field,
+			.apf-child-table td.apf-child-col-field {
+				position: sticky; left: 0; width: 280px; min-width: 280px;
+				box-shadow: 1px 0 0 var(--apf-border);
+			}
+			.apf-child-table tbody td.apf-child-col-field { background: var(--apf-bg); z-index: 2; }
+			.apf-child-table thead th.apf-child-col-field { background: var(--apf-bg-head); z-index: 3; }
+			.apf-child-table tbody tr:hover td.apf-child-col-field { background: var(--apf-hover); }
 			.apf-child-field-label { color: var(--apf-text); font-weight: 500; font-size: 11.5px; }
 			.apf-child-field-ref {
 				color: var(--apf-text-faint); font-size: 10px; font-family: var(--font-stack-mono, monospace);
@@ -501,6 +539,69 @@ frappe.provide("recruitment.applicant_fields_ui");
 		</label>`;
 	};
 
+	/**
+	 * Lift the child-field panels out of the scrolling table and dock them beneath
+	 * it.
+	 *
+	 * Inline under their row, the panels sit inside a <td> of a table that is
+	 * 1922px wide inside an 1150px scrollport — so scrolling right to reach a
+	 * channel drags the panel's field names off-screen. Three attempts to pin them
+	 * in place with position:sticky failed: a sticky box can only travel inside its
+	 * containing block, and every arrangement inside that cell either had no travel
+	 * or lost the scrollport to a nested one.
+	 *
+	 * Docked below the scroller the problem disappears rather than being worked
+	 * around: the panel is no longer inside the horizontal scroll at all, it owns
+	 * its own scrollbar, and its FIELD column freezes against a plain div — the
+	 * ordinary case sticky is built for.
+	 */
+	AFU.dockChildPanels = function (host) {
+		const pane = host && host.querySelector(".apf-scroll");
+		if (!pane) return;
+
+		let dock = host.querySelector(".apf-child-dock");
+		if (!dock) {
+			dock = document.createElement("div");
+			dock.className = "apf-child-dock";
+			pane.insertAdjacentElement("afterend", dock);
+		}
+
+		// Panels are rendered inside their row (renderChildConfigRow) and moved here
+		// once, so the row markup stays the single source of truth.
+		host.querySelectorAll(".apf-child-row .apf-child-container").forEach((panel) => {
+			const row = panel.closest(".apf-child-row");
+			panel.setAttribute("data-parent-ref", row.getAttribute("data-parent-ref") || "");
+			panel.hidden = true;
+			dock.appendChild(panel);
+		});
+	};
+
+	/**
+	 * Mirror the caller's expand toggle onto the docked panel.
+	 *
+	 * Both screens toggle the child <tr> themselves; that row is now empty, so this
+	 * reads the state it just set and shows the matching panel. One delegated
+	 * listener per host, in the bubble phase so it runs after their handler.
+	 */
+	AFU.bindChildDock = function (host) {
+		if (!host || host._apfDockBound) return;
+		host._apfDockBound = true;
+
+		host.addEventListener("click", (e) => {
+			const btn = e.target.closest && e.target.closest(".apf-expand");
+			if (!btn) return;
+			const ref = btn.getAttribute("data-ref");
+			const row = host.querySelector(`.apf-child-row[data-parent-ref="${ref}"]`);
+			const panel = host.querySelector(`.apf-child-dock > [data-parent-ref="${ref}"]`);
+			if (!panel) return;
+			const open = row && row.style.display !== "none";
+			// One panel at a time — two docked panels would push the grid off-screen.
+			host.querySelectorAll(".apf-child-dock > .apf-child-container").forEach((p) => {
+				p.hidden = p !== panel || !open;
+			});
+		});
+	};
+
 	AFU.renderChildConfigRow = function (row) {
 		const ref = row.reference_name || "";
 		let config = {};
@@ -534,14 +635,20 @@ frappe.provide("recruitment.applicant_fields_ui");
 			).join("")).join("")}
 		</tr>`;
 
+		// The container is pinned to the left of the parent's viewport and carries
+		// its OWN horizontal scroller. Without that the child table is just more
+		// content inside the parent's 1922px row, so scrolling to reach a channel
+		// drags the child's field names off-screen with it.
 		return `<tr class="apf-child-row" data-parent-ref="${esc(ref)}" style="display:none">
 			<td colspan="${AFU.TOTAL_COLS}">
 				<div class="apf-child-container">
 					<div class="apf-child-header">Child Fields — ${esc(row.display_name || ref)}</div>
-					<table class="apf-child-table">
-						<thead>${groupHeaderRow}${colHeaderRow}</thead>
-						<tbody>${bodyHtml}</tbody>
-					</table>
+					<div class="apf-child-scroll">
+						<table class="apf-child-table">
+							<thead>${groupHeaderRow}${colHeaderRow}</thead>
+							<tbody>${bodyHtml}</tbody>
+						</table>
+					</div>
 				</div>
 			</td>
 		</tr>`;
@@ -670,6 +777,9 @@ frappe.provide("recruitment.applicant_fields_ui");
 	 * @param {object}      opts      {applyBulk(col, value, refs)}
 	 */
 	AFU.bindToolbar = function (host, opts) {
+		AFU.dockChildPanels(host);
+		AFU.bindChildDock(host);
+
 		const search = host.querySelector(".apf-search");
 		const bulk = host.querySelector(".apf-bulk");
 		const selectAll = host.querySelector(".apf-select-all");
@@ -698,9 +808,13 @@ frappe.provide("recruitment.applicant_fields_ui");
 			mainRows().forEach((tr) => {
 				const hit = !q || (tr.getAttribute("data-search") || "").includes(q);
 				tr.classList.toggle("apf-filtered-out", !hit);
-				// Keep a table field's child-config row with its parent.
-				const child = host.querySelector(`.apf-child-row[data-parent-ref="${tr.getAttribute("data-ref")}"]`);
+				// Keep a table field's child-config row with its parent, and don't
+				// leave its docked panel open once the field itself is filtered out.
+				const ref = tr.getAttribute("data-ref");
+				const child = host.querySelector(`.apf-child-row[data-parent-ref="${ref}"]`);
 				if (child) child.classList.toggle("apf-filtered-out", !hit);
+				const panel = host.querySelector(`.apf-child-dock > [data-parent-ref="${ref}"]`);
+				if (panel && !hit) panel.hidden = true;
 				if (hit) shown += 1;
 			});
 			const showing = host.querySelector(".apf-showing");

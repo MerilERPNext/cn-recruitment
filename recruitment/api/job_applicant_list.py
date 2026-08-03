@@ -81,13 +81,15 @@ def get_job_applicants_with_stats(job_opening=None, owners=None, filters=None):
 	# SQL-function-in-fields aggregate (count(name) as c) that Frappe v16 rejects
 	# ("SQL functions are not allowed as strings in SELECT"). get_list keeps the
 	# user's permission filtering, so counts match the visible rows.
-	rows = frappe.get_list("Job Applicant", filters=scoped, fields=["status"], limit_page_length=0)
-	tab_counts = {"All": len(rows)}
+	# `pluck` returns a flat list of values instead of a dict per row — same single
+	# query, but none of the per-row dict building on a table that can be large.
+	statuses = frappe.get_list("Job Applicant", filters=scoped, pluck="status", limit_page_length=0)
+	tab_counts = {"All": len(statuses)}
 	for opt in status_options:
 		tab_counts[opt] = 0
-	for r in rows:
-		if r.status in tab_counts:
-			tab_counts[r.status] += 1
+	for status in statuses:
+		if status in tab_counts:
+			tab_counts[status] += 1
 
 	# --- Opening header (when scoped) ---
 	opening_info = None
