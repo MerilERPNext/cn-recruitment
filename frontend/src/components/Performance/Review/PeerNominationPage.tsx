@@ -2,6 +2,7 @@ import { CircleHelp } from "lucide-react";
 import { Suspense, lazy, useState } from "react";
 import Button from "../../shared/atoms/Button";
 import { Typography } from "../../shared/atoms/Typography";
+import toast from "react-hot-toast";
 
 const PeerNominationHeader = lazy(() =>
   import("./components/PeerNominationHeader").then((m) => ({
@@ -92,6 +93,14 @@ const PeerNominationPage = () => {
   const selectedCount = reviewers.filter((r) => r.selected).length;
 
   const toggleSelection = (id: number) => {
+    const target = reviewers.find((r) => r.id === id);
+    if (!target) return;
+
+    if (!target.selected && selectedCount >= 7) {
+      toast.error("Maximum 7 peer reviewers can be selected.");
+      return;
+    }
+
     setReviewers((prev) =>
       prev.map((reviewer) =>
         reviewer.id === id

@@ -1,4 +1,3 @@
-import { Sparkles } from "lucide-react";
 import { Typography } from "../../../shared/atoms/Typography";
 import Badge from "../../../shared/Badge";
 

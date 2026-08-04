@@ -1,6 +1,5 @@
 import React from 'react';
-import { Search, Sparkles } from 'lucide-react';
-import Button from '../../../shared/atoms/Button';
+import { Search } from 'lucide-react';
 import { Select } from '../../../shared/atoms/Select';
 
 interface PeerNominationFilterBarProps {
@@ -12,7 +11,6 @@ interface PeerNominationFilterBarProps {
 export const PeerNominationFilterBar: React.FC<PeerNominationFilterBarProps> = ({ 
   searchTerm, 
   onSearchChange,
-  aiSuggestionCount = 8
 }) => {
   return (
     <div className="flex min-w-0 flex-col gap-3 border-b border-gray-100 bg-white p-4 sm:flex-row sm:items-center">
@@ -38,13 +36,7 @@ export const PeerNominationFilterBar: React.FC<PeerNominationFilterBarProps> = (
             className="!w-full [&>button]:h-10 [&>button]:py-0 [&>button]:shadow-none"
           />
         </div>
-        <Button 
-          variant="soft" 
-          className="h-10 w-full justify-center bg-purple-50 px-3 text-purple-700 hover:bg-purple-100 sm:w-auto sm:whitespace-nowrap sm:px-4" 
-          icon={<Sparkles className="w-4 h-4 text-purple-500" />}
-        >
-          AI suggestions<span className="hidden min-[360px]:inline"> ({aiSuggestionCount})</span>
-        </Button>
+      
       </div>
     </div>
   );
