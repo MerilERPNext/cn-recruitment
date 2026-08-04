@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { AlertCircle, ArrowRight, Search, X } from 'lucide-react';
 import Button from '../../../shared/atoms/Button';
 import { AsyncSelect, SelectOption } from '../../../shared/atoms/AsyncSelect';
@@ -9,7 +9,8 @@ import AllOrgTemplates from './goal-model/AllOrgTemplates';
 import DepartmentTemplates from './goal-model/DepartmentTemplates';
 import DesignationTemplates from './goal-model/DesignationTemplates';
 import RoleBasedTemplates from './goal-model/RoleBasedTemplates';
-import { fetchDepartmentOptions, fetchDesignationOptions, useGoalRepository, useReferanceGoals } from '../../../../hooks/usePerformance';
+import { useGoalRepository, useReferanceGoals } from '../../../../hooks/usePerformance';
+import { performanceService } from '../../../../services/performanceService';
 import { useCurrentEmployeeDetails } from '../../../../hooks/useEmployee';
 import useDebounce from '../../../../hooks/useDebounce';
 import LoadingAllOrgSkeleton from './LoadingAllOrgSkeleton';
@@ -32,6 +33,38 @@ const GoalLibraryPopup = ({ onClose, onUseTemplate }: GoalLibraryPopupProps) => 
     const [selectedTemplates, setSelectedTemplates] = useState<GoalTemplate[]>([]);
     const [weightages, setWeightages] = useState<Record<string, number>>({});
     const debouncedSearchQuery = useDebounce(searchQuery, 300);
+
+    const fetchDepartmentOptions = useCallback(
+        async (search: string, skip: number) => {
+            try {
+                return await performanceService.getDepartmentOptions({
+                    search_text: search,
+                    skip,
+                    company: currentCompany,
+                });
+            } catch (e) {
+                console.error("Failed to fetch department options", e);
+                return [];
+            }
+        },
+        [currentCompany]
+    );
+
+    const fetchDesignationOptions = useCallback(
+        (department: string) => async (search: string, skip: number) => {
+            try {
+                return await performanceService.getDesignationOptions({
+                    search_text: search,
+                    skip,
+                    ...(department && department !== "All" ? { department } : {}),
+                });
+            } catch (e) {
+                console.error("Failed to fetch designation options", e);
+                return [];
+            }
+        },
+        []
+    );
 
     const { data: refGoalsData, isLoading, error, refetch: refetchRefGoals } = useReferanceGoals({
         search: debouncedSearchQuery || undefined,
@@ -274,7 +307,7 @@ const GoalLibraryPopup = ({ onClose, onUseTemplate }: GoalLibraryPopupProps) => 
                         </div>
                         <AsyncSelect
                             fetchOptions={async (search, skip) => {
-                                const res = await fetchDepartmentOptions(currentCompany)(search, skip);
+                                const res = await fetchDepartmentOptions(search, skip);
                                 return skip === 0 ? [{ label: 'All Departments', value: 'All' }, ...res] : res;
                             }}
                             value={selectedDepartment}
