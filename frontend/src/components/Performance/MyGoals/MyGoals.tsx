@@ -295,7 +295,7 @@ const MyGoals: React.FC<MyGoalsProps> = ({ onCreateGoal, onSelectGoal }) => {
           </div>
 
           <div className="flex min-w-0 flex-col gap-3 p-4 sm:p-5 md:flex-row md:items-center md:justify-between">
-            <div className="relative flex h-10 w-full min-w-0 items-center md:max-w-[400px]">
+            <div className="relative flex h-10 w-full min-w-0 items-center ">
               <Search className="absolute left-3 h-4 w-4 text-slate-400 pointer-events-none" />
               <input
                 type="text"
@@ -306,14 +306,14 @@ const MyGoals: React.FC<MyGoalsProps> = ({ onCreateGoal, onSelectGoal }) => {
               />
             </div>
 
-            <div className="grid w-full shrink-0 grid-cols-2 gap-3 sm:flex sm:items-center md:w-auto">
+            <div className="grid w-full shrink-0 grid-cols-2 gap-1 sm:flex sm:items-center md:w-auto">
               <CustomDropdown
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
                 options={statusOptions}
                 label="Filter Status"
                 contentAlign="start"
-                className="w-36"
+                className="w-30"
                 menuClassName="!w-40 !min-w-0"
               />
               <Button
@@ -328,7 +328,7 @@ const MyGoals: React.FC<MyGoalsProps> = ({ onCreateGoal, onSelectGoal }) => {
                 bgColor="primary"
                 size="sm"
                 icon={<Plus className="h-4 w-4" />}
-                className="h-10 w-full justify-center sm:w-auto"
+                className="h-10 w-full  justify-center sm:w-auto"
               >
                 New Goal
               </Button>
