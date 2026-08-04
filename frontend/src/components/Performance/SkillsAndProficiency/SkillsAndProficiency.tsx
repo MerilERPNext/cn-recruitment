@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { ChevronRight, Download, Plus, Sparkles, TrendingUp } from "lucide-react";
+import { ChevronRight, Download, Plus, SquareCheck, TrendingUp } from "lucide-react";
 import Badge from "../../shared/Badge";
 import { Typography } from "../../shared/atoms/Typography";
 import EditSkillPopup from "./EditSkillPopup";
@@ -248,7 +248,7 @@ const SkillsAndProficiency: React.FC = () => {
               <div className="mt-4 space-y-3">
                 {focusAreas.map((area) => (
                   <div key={area} className="flex items-center gap-3 rounded-lg border border-warning-200 bg-warning-50 p-3">
-                    <Sparkles className="h-4 w-4 shrink-0 text-warning-600" />
+                    <SquareCheck className="h-4 w-4 shrink-0 text-warning-600" />
                     <div>
                       <Typography variant="bodySmall" className="font-semibold text-text-title">
                         {area}

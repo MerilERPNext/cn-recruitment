@@ -1,7 +1,8 @@
 import { CircleHelp } from "lucide-react";
-import { Suspense, lazy, useState } from "react";
+import { Suspense, lazy, useMemo, useState } from "react";
 import Button from "../../shared/atoms/Button";
 import { Typography } from "../../shared/atoms/Typography";
+import toast from "react-hot-toast";
 
 const PeerNominationHeader = lazy(() =>
   import("./components/PeerNominationHeader").then((m) => ({
@@ -26,6 +27,7 @@ const INITIAL_REVIEWERS = [
     name: "Karthik Iyer",
     role: "Eng Lead · Platform",
     suggestionText: "Worked on Oxygen 2.0 (84 PRs)",
+    bu: "india_tech",
     selected: true,
   },
   {
@@ -34,6 +36,7 @@ const INITIAL_REVIEWERS = [
     name: "Neha Patel",
     role: "Product Manager · Oxygen",
     suggestionText: "PM partner on dashboard rebuild",
+    bu: "india_tech",
     selected: true,
   },
   {
@@ -42,6 +45,7 @@ const INITIAL_REVIEWERS = [
     name: "Mohit Sinha",
     role: "Sr. Designer · Recruitment",
     suggestionText: "Frequent design crit collaborator",
+    bu: "india_tech",
     selected: true,
   },
   {
@@ -50,6 +54,7 @@ const INITIAL_REVIEWERS = [
     name: "Riya Banerjee",
     role: "Research Lead",
     suggestionText: "Joint research projects (3)",
+    bu: "us_tech",
     selected: true,
   },
   {
@@ -58,6 +63,7 @@ const INITIAL_REVIEWERS = [
     name: "Aman Bhatt",
     role: "Frontend Eng",
     suggestionText: "Slack DMs (high freq) + 12 PRs",
+    bu: "india_tech",
     selected: false,
   },
   {
@@ -66,6 +72,7 @@ const INITIAL_REVIEWERS = [
     name: "Shreya Das",
     role: "Content Strategist",
     suggestionText: "Cross-functional workshop facilitator",
+    bu: "uk_tech",
     selected: false,
   },
   {
@@ -74,6 +81,7 @@ const INITIAL_REVIEWERS = [
     name: "Vikram Rao",
     role: "Sr. Designer · LMS",
     suggestionText: "Design system v2 co-author",
+    bu: "us_tech",
     selected: false,
   },
   {
@@ -82,6 +90,7 @@ const INITIAL_REVIEWERS = [
     name: "Priya Menon",
     role: "QA Lead",
     suggestionText: "Joint usability testing",
+    bu: "india_tech",
     selected: false,
   },
 ];
@@ -89,9 +98,34 @@ const INITIAL_REVIEWERS = [
 const PeerNominationPage = () => {
   const [reviewers, setReviewers] = useState(INITIAL_REVIEWERS);
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedBu, setSelectedBu] = useState("all");
+
   const selectedCount = reviewers.filter((r) => r.selected).length;
 
+  const filteredReviewers = useMemo(() => {
+    return reviewers.filter((r) => {
+      const matchesBu = selectedBu === "all" || r.bu === selectedBu;
+
+      const q = searchTerm.trim().toLowerCase();
+      const matchesSearch =
+        !q ||
+        r.name.toLowerCase().includes(q) ||
+        r.role.toLowerCase().includes(q) ||
+        r.suggestionText.toLowerCase().includes(q);
+
+      return matchesBu && matchesSearch;
+    });
+  }, [reviewers, searchTerm, selectedBu]);
+
   const toggleSelection = (id: number) => {
+    const target = reviewers.find((r) => r.id === id);
+    if (!target) return;
+
+    if (!target.selected && selectedCount >= 7) {
+      toast.error("Maximum 7 peer reviewers can be selected.");
+      return;
+    }
+
     setReviewers((prev) =>
       prev.map((reviewer) =>
         reviewer.id === id
@@ -116,6 +150,8 @@ const PeerNominationPage = () => {
             <PeerNominationFilterBar
               searchTerm={searchTerm}
               onSearchChange={setSearchTerm}
+              selectedBu={selectedBu}
+              onBuChange={setSelectedBu}
             />
 
             {/* List Header */}
@@ -124,7 +160,7 @@ const PeerNominationPage = () => {
                 variant="caption"
                 className="font-semibold text-gray-500 tracking-wider"
               >
-                SUGGESTED REVIEWERS (8)
+                SUGGESTED REVIEWERS ({filteredReviewers.length})
               </Typography>
               <Typography variant="caption" className="text-gray-500">
                 Inferred from Slack, Jira & Figma · last 90 days
@@ -133,17 +169,19 @@ const PeerNominationPage = () => {
 
             {/* List Content */}
             <div className="flex flex-col divide-y divide-gray-100">
-              {reviewers
-                .filter((r) =>
-                  r.name.toLowerCase().includes(searchTerm.toLowerCase()),
-                )
-                .map((reviewer) => (
+              {filteredReviewers.length === 0 ? (
+                <div className="p-8 text-center text-sm text-gray-500 font-medium">
+                  No reviewers found matching the selected filters.
+                </div>
+              ) : (
+                filteredReviewers.map((reviewer) => (
                   <ReviewerCard
                     key={reviewer.id}
                     reviewer={reviewer}
                     onToggleSelection={toggleSelection}
                   />
-                ))}
+                ))
+              )}
             </div>
 
             <div className="border-t border-gray-100 p-4">

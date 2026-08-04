@@ -5,7 +5,8 @@ import { AsyncSelect, SelectOption } from '../../../shared/atoms/AsyncSelect';
 import { Typography } from '../../../shared/atoms/Typography';
 import GoalItemCard from './GoalItemCard';
 import { GoalTemplate } from './goal-model/types';
-import { useCascadeMangerGoals, fetchDepartmentOptions, fetchDesignationOptions } from '../../../../hooks/usePerformance';
+import { useCascadeMangerGoals } from '../../../../hooks/usePerformance';
+import { performanceService } from '../../../../services/performanceService';
 import { useCurrentEmployeeDetails } from '../../../../hooks/useEmployee';
 import { CascadeGoal } from '../../../../types/goal';
 import { useGoalModel } from '../../GoalModelContext';
@@ -26,6 +27,39 @@ const TeamGoalLibraryPopup: React.FC<TeamGoalLibraryPopupProps> = ({ onClose, on
     const [selectedDepartment, setSelectedDepartment] = useState({ label: 'All Departments', value: 'All' });
     const [selectedLevel, setSelectedLevel] = useState({ label: 'All Designations', value: 'All' });
     const [selectedTemplates, setSelectedTemplates] = useState<GoalTemplate[]>([]);
+
+    const fetchDepartmentOptionsCallback = useCallback(
+        async (search: string, skip: number) => {
+            try {
+                return await performanceService.getDepartmentOptions({
+                    search_text: search,
+                    skip,
+                    company: currentCompany,
+                });
+            } catch (e) {
+                console.error("Failed to fetch department options", e);
+                return [];
+            }
+        },
+        [currentCompany]
+    );
+
+    const fetchDesignationOptionsCallback = useCallback(
+        (department: string) => async (search: string, skip: number) => {
+            try {
+                return await performanceService.getDesignationOptions({
+                    search_text: search,
+                    skip,
+                    ...(department && department !== "All" ? { department } : {}),
+                    ...(currentCompany ? { company: currentCompany } : {}),
+                });
+            } catch (e) {
+                console.error("Failed to fetch designation options", e);
+                return [];
+            }
+        },
+        [currentCompany]
+    );
 
     const { data: teamGoals, isLoading: teamGoalsLoading, error, refetch } = useCascadeMangerGoals({
         search: debouncedSearchQuery || undefined,
@@ -103,7 +137,7 @@ const TeamGoalLibraryPopup: React.FC<TeamGoalLibraryPopupProps> = ({ onClose, on
                                 type="text"
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                className="h-9 w-full rounded-lg border border-gray-200 bg-gray-50 pl-10 pr-8 text-sm text-gray-700 outline-none transition placeholder:text-gray-400 focus:border-blue-400 focus:bg-white focus:ring-2 focus:ring-blue-100 sm:h-11"
+                                className="h-full w-full rounded-lg border border-slate-200 bg-slate-50 pl-9 pr-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition-colors focus:border-blue-300 focus:bg-white focus:ring-2 focus:ring-blue-100"
                                 placeholder="Search manager goals or team OKRs..."
                                 aria-label="Search goal templates"
                             />
@@ -120,7 +154,7 @@ const TeamGoalLibraryPopup: React.FC<TeamGoalLibraryPopupProps> = ({ onClose, on
                         </div>
                         <AsyncSelect
                             fetchOptions={async (search, skip) => {
-                                const res = await fetchDepartmentOptions(currentCompany)(search, skip);
+                                const res = await fetchDepartmentOptionsCallback(search, skip);
                                 return skip === 0 ? [{ label: 'All Departments', value: 'All' }, ...res] : res;
                             }}
                             value={selectedDepartment}
@@ -133,7 +167,7 @@ const TeamGoalLibraryPopup: React.FC<TeamGoalLibraryPopupProps> = ({ onClose, on
                         />
                         <AsyncSelect
                             fetchOptions={async (search, skip) => {
-                                const res = await fetchDesignationOptions(selectedDepartment.value)(search, skip);
+                                const res = await fetchDesignationOptionsCallback(selectedDepartment.value)(search, skip);
                                 return skip === 0 ? [{ label: 'All Designations', value: 'All' }, ...res] : res;
                             }}
                             value={selectedLevel}

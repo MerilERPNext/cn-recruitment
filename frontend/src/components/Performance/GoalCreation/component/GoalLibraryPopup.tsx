@@ -1,15 +1,16 @@
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { AlertCircle, ArrowRight, Search, X } from 'lucide-react';
 import Button from '../../../shared/atoms/Button';
 import { AsyncSelect, SelectOption } from '../../../shared/atoms/AsyncSelect';
 import { Typography } from '../../../shared/atoms/Typography';
-import { GoalTemplate, filterTemplates, getGoalKey } from './goal-model/types';
+import { GoalTemplate, getGoalKey } from './goal-model/types';
 import RecommendedTemplates from './goal-model/RecommendedTemplates';
 import AllOrgTemplates from './goal-model/AllOrgTemplates';
 import DepartmentTemplates from './goal-model/DepartmentTemplates';
 import DesignationTemplates from './goal-model/DesignationTemplates';
-import RoleBasedTemplates, { roleBasedTemplatesData } from './goal-model/RoleBasedTemplates';
-import { fetchDepartmentOptions, fetchDesignationOptions, useGoalRepository, useReferanceGoals } from '../../../../hooks/usePerformance';
+import RoleBasedTemplates from './goal-model/RoleBasedTemplates';
+import { useGoalRepository, useReferanceGoals } from '../../../../hooks/usePerformance';
+import { performanceService } from '../../../../services/performanceService';
 import { useCurrentEmployeeDetails } from '../../../../hooks/useEmployee';
 import useDebounce from '../../../../hooks/useDebounce';
 import LoadingAllOrgSkeleton from './LoadingAllOrgSkeleton';
@@ -32,6 +33,38 @@ const GoalLibraryPopup = ({ onClose, onUseTemplate }: GoalLibraryPopupProps) => 
     const [selectedTemplates, setSelectedTemplates] = useState<GoalTemplate[]>([]);
     const [weightages, setWeightages] = useState<Record<string, number>>({});
     const debouncedSearchQuery = useDebounce(searchQuery, 300);
+
+    const fetchDepartmentOptions = useCallback(
+        async (search: string, skip: number) => {
+            try {
+                return await performanceService.getDepartmentOptions({
+                    search_text: search,
+                    skip,
+                    company: currentCompany,
+                });
+            } catch (e) {
+                console.error("Failed to fetch department options", e);
+                return [];
+            }
+        },
+        [currentCompany]
+    );
+
+    const fetchDesignationOptions = useCallback(
+        (department: string) => async (search: string, skip: number) => {
+            try {
+                return await performanceService.getDesignationOptions({
+                    search_text: search,
+                    skip,
+                    ...(department && department !== "All" ? { department } : {}),
+                });
+            } catch (e) {
+                console.error("Failed to fetch designation options", e);
+                return [];
+            }
+        },
+        []
+    );
 
     const { data: refGoalsData, isLoading, error, refetch: refetchRefGoals } = useReferanceGoals({
         search: debouncedSearchQuery || undefined,
@@ -84,36 +117,35 @@ const GoalLibraryPopup = ({ onClose, onUseTemplate }: GoalLibraryPopupProps) => 
         return (goalRepoLoading || goalRepo?.data?.repositories?.length === 0) ? [] : [];
     }, [goalRepo, goalRepoLoading]);
 
-    const handleToggleSelect = (template: GoalTemplate) => {
+    const handleToggleSelect = useCallback((template: GoalTemplate) => {
         const key = getGoalKey(template);
         setSelectedTemplates((prev) =>
             prev.some((t) => getGoalKey(t) === key)
                 ? prev.filter((t) => getGoalKey(t) !== key)
                 : [...prev, template]
         );
-    };
+    }, []);
 
-    const handleSelectAll = (templatesToToggle: GoalTemplate[]) => {
-        const toggleKeys = new Set(templatesToToggle.map((t) => getGoalKey(t)));
-        const allIncluded =
-            templatesToToggle.length > 0 &&
-            templatesToToggle.every((t) => selectedTemplates.some((st) => getGoalKey(st) === getGoalKey(t)));
+    const handleSelectAll = useCallback((templatesToToggle: GoalTemplate[]) => {
+        if (!templatesToToggle || templatesToToggle.length === 0) return;
+        const toggleKeys = new Set(templatesToToggle.map((t) => getGoalKey(t)).filter(Boolean));
+        setSelectedTemplates((prev) => {
+            const existingKeys = new Set(prev.map((t) => getGoalKey(t)));
+            const allIncluded = templatesToToggle.every((t) => existingKeys.has(getGoalKey(t)));
 
-        if (allIncluded) {
-            setSelectedTemplates((prev) => prev.filter((t) => !toggleKeys.has(getGoalKey(t))));
-        } else {
-            setSelectedTemplates((prev) => {
-                const existingKeys = new Set(prev.map((t) => getGoalKey(t)));
+            if (allIncluded) {
+                return prev.filter((t) => !toggleKeys.has(getGoalKey(t)));
+            } else {
                 const newItems = templatesToToggle.filter((t) => !existingKeys.has(getGoalKey(t)));
                 return [...prev, ...newItems];
-            });
-        }
-    };
+            }
+        });
+    }, []);
 
-    const handleWeightageChange = (template: GoalTemplate, weight: number) => {
+    const handleWeightageChange = useCallback((template: GoalTemplate, weight: number) => {
         const key = getGoalKey(template);
         setWeightages((prev) => ({ ...prev, [key]: weight }));
-    };
+    }, []);
 
     const handleSubmitFooter = () => {
         if (selectedTemplates.length > 0) {
@@ -127,9 +159,15 @@ const GoalLibraryPopup = ({ onClose, onUseTemplate }: GoalLibraryPopupProps) => 
     const counts = useMemo(() => ({
         recommended: recommendedGoals.length,
         allOrg: goals.length,
-        department: goals.filter((g: GoalTemplate ) => Boolean(g.department || g.department_title)).length,
-        designation: goals.filter((g: GoalTemplate) => Boolean(g.designation)).length,
-        roleBased: filterTemplates(roleBasedTemplatesData, debouncedSearchQuery, selectedDepartment.value, selectedLevel.value).length,
+        department: goals.filter((g: GoalTemplate) => Boolean(g.department || g.department_title)).length,
+        designation: goals.filter((g: GoalTemplate) => Boolean(g.designation || g.designation_title || g.designation_name)).length,
+        roleBased: goals.filter((g: GoalTemplate) => Boolean(
+            g?.role ||
+            g?.role_title ||
+            g?.role_name ||
+            g?.job_role ||
+            g?.role_based 
+        )).length,
     }), [debouncedSearchQuery, selectedDepartment.value, selectedLevel.value, goals, recommendedGoals, refGoalsData?.data?.total, goalRepo?.data?.total]);
 
     const tabs: { key: TabKey; label: string; count: number }[] = useMemo(() => [
@@ -251,7 +289,7 @@ const GoalLibraryPopup = ({ onClose, onUseTemplate }: GoalLibraryPopupProps) => 
                                 type="text"
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                className="h-9 w-full rounded-lg border border-gray-200 bg-gray-50 pl-10 pr-8 text-sm text-gray-700 outline-none transition placeholder:text-gray-400 focus:border-blue-400 focus:bg-white focus:ring-2 focus:ring-blue-100 sm:h-11"
+                                className="h-full w-full rounded-lg border border-slate-200 bg-slate-50 pl-9 pr-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition-colors focus:border-blue-300 focus:bg-white focus:ring-2 focus:ring-blue-100"
                                 placeholder="Search templates · 'design'"
                                 aria-label="Search goal templates"
                             />
@@ -268,7 +306,7 @@ const GoalLibraryPopup = ({ onClose, onUseTemplate }: GoalLibraryPopupProps) => 
                         </div>
                         <AsyncSelect
                             fetchOptions={async (search, skip) => {
-                                const res = await fetchDepartmentOptions(currentCompany)(search, skip);
+                                const res = await fetchDepartmentOptions(search, skip);
                                 return skip === 0 ? [{ label: 'All Departments', value: 'All' }, ...res] : res;
                             }}
                             value={selectedDepartment}
@@ -332,6 +370,7 @@ const GoalLibraryPopup = ({ onClose, onUseTemplate }: GoalLibraryPopupProps) => 
                     <Button
                         type="button"
                         variant="contain"
+                        disabled={selectedTemplates.length === 0 || activeTab === "recommended"}
                         bgColor="primary"
                         className="h-10 w-full justify-center rounded-lg bg-blue-600 px-4 text-white hover:bg-blue-700 sm:h-9 sm:w-auto"
                         onClick={handleSubmitFooter}
