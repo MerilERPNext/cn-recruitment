@@ -8,6 +8,8 @@
  "field_order": [
   "round_code",
   "group_name",
+  "job_opening",
+  "job_title",
   "candidate_count",
   "group_status"
  ],
@@ -27,6 +29,21 @@
    "in_list_view": 1,
    "label": "Group Name",
    "reqd": 1
+  },
+  {
+   "fieldname": "job_opening",
+   "fieldtype": "Link",
+   "label": "Role / Job Opening",
+   "options": "Job Opening",
+   "in_list_view": 1,
+   "columns": 2,
+   "read_only": 1
+  },
+  {
+   "fieldname": "job_title",
+   "fieldtype": "Data",
+   "label": "Role",
+   "read_only": 1
   },
   {
    "columns": 1,

@@ -6,8 +6,8 @@
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
-  "stage_name",
   "stage_type",
+  "stage_name",
   "sla",
   "sla_unit",
   "owner_role",
@@ -17,20 +17,21 @@
  ],
  "fields": [
   {
-   "columns": 2,
-   "fieldname": "stage_name",
-   "fieldtype": "Data",
-   "in_list_view": 1,
-   "label": "Stage Name",
-   "reqd": 1
-  },
-  {
    "columns": 1,
    "fieldname": "stage_type",
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Stage Type",
    "options": "System\nScreening\nShortlist\nInterview\nPre Offer\nOffer\nDone",
+   "reqd": 1
+  },
+  {
+   "columns": 2,
+   "description": "Pick the interview round on an Interview stage; free text otherwise.",
+   "fieldname": "stage_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Stage Name",
    "reqd": 1
   },
   {

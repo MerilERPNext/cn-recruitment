@@ -16,6 +16,7 @@ def after_migrate():
     ensure_performance_indexes()
     ensure_job_offer_salary_period()
     ensure_tpo_access()
+    ensure_custom_html_blocks()
     ensure_offer_compensation()
     ensure_alumni_employee_field()
     ensure_alumni_employee_employee_field()
@@ -266,6 +267,18 @@ def ensure_alumni_employee_request_workflow():
         )
 
 
+def ensure_custom_html_blocks():
+    """Push every app-managed Custom HTML Block (html/css/js kept as source files
+    under recruitment/recruitment/custom_blocks) into its DB record. Idempotent —
+    it only writes when the files actually changed."""
+    try:
+        from recruitment.recruitment.custom_blocks import sync_custom_html_blocks
+
+        sync_custom_html_blocks()
+    except Exception:
+        frappe.logger("recruitment").warning("ensure_custom_html_blocks: skipped")
+
+
 def ensure_offer_compensation():
     """Set up the dynamic Offer Compensation + Clauses feature: custom fields on
     Employee Grade / Job Offer, standard Salary Components, settings defaults,
@@ -358,6 +371,14 @@ _PERF_INDEX_TARGETS = [
     ("Job Opening Posting Channel", "external_recruiter"),
     ("Job Opening Posting Channel", "external_recruiter_group"),
     ("TA External Recruiter Group Member", "external_recruiter"),
+    # Scanned on every Candidate Registration save by the duplicate check, and by
+    # the TPO drive cards.
+    ("Candidate Registration", "campus_invite"),
+    # The hiring-workflow engine filters Job Applicant by these on every campus
+    # round card, offer/pre-offer candidate list, stage-pipeline report and SLA
+    # sweep — all currently full scans.
+    ("Job Applicant", "custom_current_stage"),
+    ("Job Applicant", "custom_campus_invite"),
 ]
 
 

@@ -251,6 +251,104 @@ class OnbBuilder {
 		this.commit();
 	}
 
+	/** Detach `sec` from its current tab and place it in `targetTab`. No commit —
+	 * callers decide when to sync/render. */
+	move_section_to_tab(sec, targetTab) {
+		const src = this.state.tabs.find((t) => t.sections.some((s) => s.id === sec.id));
+		if (!src || !targetTab || src.id === targetTab.id) return false;
+		src.sections = src.sections.filter((s) => s.id !== sec.id);
+		// Rows are grouped by tab+section label on reload, so two same-titled
+		// sections in one tab would collapse anyway — merge instead of duplicating.
+		const twin = targetTab.sections.find((s) => (s.title || "") === (sec.title || ""));
+		if (twin) {
+			sec.fields.forEach((f) => {
+				if (!twin.fields.some((x) => x.fieldname === f.fieldname)) twin.fields.push(f);
+			});
+		} else {
+			targetTab.sections.push(sec);
+		}
+		return true;
+	}
+
+	/** Section dropped onto a tab pill. */
+	drop_section_on_tab(secId, tabId) {
+		const target = this.state.tabs.find((t) => t.id === tabId);
+		const src = this.state.tabs.find((t) => t.sections.some((s) => s.id === secId));
+		const sec = src && src.sections.find((s) => s.id === secId);
+		// Same tab / unknown target: re-render to undo Sortable's DOM move.
+		if (!target || !sec || !this.move_section_to_tab(sec, target)) {
+			this.render();
+			return;
+		}
+		this.state.activeTab = target.id;
+		this.commit();
+		frappe.show_alert({
+			message: __("Moved section “{0}” to {1}", [sec.title || __("Untitled section"), target.title]),
+			indicator: "green",
+		});
+	}
+
+	/** Move a whole section to another (or a brand new) tab, via prompt. */
+	move_section(tab, sec) {
+		const NEW_TAB = "➕ New tab";
+		const tabTitles = this.state.tabs.map((t) => t.title);
+		frappe.prompt(
+			[
+				{
+					fieldname: "target_tab",
+					fieldtype: "Select",
+					label: __("Move section to tab"),
+					options: tabTitles.concat([NEW_TAB]).join("\n"),
+					default: tab.title,
+					reqd: 1,
+				},
+				{
+					fieldname: "new_tab",
+					fieldtype: "Data",
+					label: __("New tab name"),
+					depends_on: `eval:doc.target_tab=='${NEW_TAB}'`,
+					mandatory_depends_on: `eval:doc.target_tab=='${NEW_TAB}'`,
+				},
+			],
+			(v) => {
+				const title = v.target_tab === NEW_TAB ? (v.new_tab || "New tab").trim() : v.target_tab;
+				let ttab = this.state.tabs.find((t) => t.title === title);
+				if (!ttab) {
+					ttab = { id: this.nid("tab"), title, sections: [] };
+					this.state.tabs.push(ttab);
+				}
+				if (!this.move_section_to_tab(sec, ttab)) return;
+				this.state.activeTab = ttab.id;
+				this.commit();
+				frappe.show_alert({
+					message: __("Moved section “{0}” to {1}", [sec.title || __("Untitled section"), title]),
+					indicator: "green",
+				});
+			},
+			__("Move section"),
+			__("Move")
+		);
+	}
+
+	/** Read section order back out of the DOM after a drag-reorder. */
+	sync_sections_from_dom() {
+		const tab = this.active();
+		if (!tab) return;
+		const $wrap = this.$wrapper.find(`.jrfb-sections[data-tab="${tab.id}"]`);
+		if (!$wrap.length) return;
+		const ordered = [];
+		$wrap.children(".jrfb-section").each((_, el) => {
+			const sec = tab.sections.find((s) => s.id === el.getAttribute("data-secid"));
+			if (sec && !ordered.includes(sec)) ordered.push(sec);
+		});
+		// Keep anything the DOM didn't account for rather than dropping it.
+		tab.sections.forEach((s) => {
+			if (!ordered.includes(s)) ordered.push(s);
+		});
+		tab.sections = ordered;
+		this.commit();
+	}
+
 	add_field_to_active(fieldname) {
 		if (this.is_placed(fieldname)) return;
 		let tab = this.active();
@@ -590,7 +688,9 @@ class OnbBuilder {
 		const $tabs = $('<div class="jrfb-tabs"></div>');
 		this.state.tabs.forEach((tab) => {
 			const n = tab.sections.reduce((a, s) => a + s.fields.length, 0);
-			const $pill = $('<div class="jrfb-pill ' + (tab.id === this.state.activeTab ? "active" : "") + '"></div>');
+			const $pill = $(
+				'<div class="jrfb-pill ' + (tab.id === this.state.activeTab ? "active" : "") + '"></div>'
+			).attr("data-tabid", tab.id);
 			$pill.append(
 				'<span class="jrfb-pill-label">' +
 					frappe.utils.escape_html(tab.title || "—") +
@@ -637,24 +737,31 @@ class OnbBuilder {
 
 		const $sections = $('<div class="jrfb-sections" data-tab="' + tab.id + '"></div>');
 		tab.sections.forEach((sec) => $sections.append(this.render_section(tab, sec)));
-		$('<button class="jrfb-addsec">＋ ' + __("Add Section") + "</button>")
-			.appendTo($sections)
-			.on("click", () => this.add_section(tab));
 		$c.append($sections);
+		// Kept OUTSIDE .jrfb-sections so it never acts as a drop slot while
+		// sections are being dragged.
+		$('<button class="jrfb-addsec">＋ ' + __("Add Section") + "</button>")
+			.appendTo($c)
+			.on("click", () => this.add_section(tab));
 		return $c;
 	}
 
 	render_section(tab, sec) {
-		const $s = $('<div class="jrfb-section"></div>');
+		const $s = $('<div class="jrfb-section"></div>').attr("data-secid", sec.id);
 		const $head = $('<div class="jrfb-sec-head"></div>');
 		$head.append(
-			'<span class="jrfb-sec-dot"></span><span class="jrfb-sec-title">' +
+			'<span class="jrfb-sec-grip" title="' +
+				__("Drag to reorder — or drop on a tab to move this section there") +
+				'">⠿</span><span class="jrfb-sec-dot"></span><span class="jrfb-sec-title">' +
 				frappe.utils.escape_html(sec.title || __("Untitled section")) +
 				'</span><span class="jrfb-sec-count">' +
 				sec.fields.length +
 				"</span>"
 		);
 		const $ht = $('<span class="jrfb-sec-tools"></span>');
+		$('<span class="jrfb-mini" title="Move section to tab">⤿</span>')
+			.appendTo($ht)
+			.on("click", () => this.move_section(tab, sec));
 		$('<span class="jrfb-mini" title="Rename">✎</span>')
 			.appendTo($ht)
 			.on("click", () => this.rename(sec, __("Section name")));
@@ -732,8 +839,17 @@ class OnbBuilder {
 	wire_sortables() {
 		const Sortable = window.Sortable;
 		if (!Sortable) return;
+		const self = this;
+		// A palette-only refresh re-visits elements that already have an instance,
+		// so drop the old one first instead of stacking a second handler on it.
+		const mk = (el, opts) => {
+			const existing = Sortable.get(el);
+			if (existing) existing.destroy();
+			return Sortable.create(el, opts);
+		};
+
 		this.$wrapper.find(".jrfb-groups").each((_, el) => {
-			Sortable.create(el, {
+			mk(el, {
 				group: { name: "onb", pull: "clone", put: false },
 				sort: false,
 				filter: ".is-placed, .jrfb-group-head",
@@ -741,9 +857,8 @@ class OnbBuilder {
 				animation: 150,
 			});
 		});
-		const self = this;
 		this.$wrapper.find(".jrfb-droplist").each((_, el) => {
-			Sortable.create(el, {
+			mk(el, {
 				group: { name: "onb", pull: true, put: true },
 				draggable: ".jrfb-chip, .jrfb-pitem",
 				animation: 150,
@@ -753,6 +868,43 @@ class OnbBuilder {
 				},
 				onUpdate() {
 					self.sync_from_dom();
+				},
+			});
+		});
+
+		// Whole-section drag. Its own Sortable group ("onbsec") so section drags
+		// and field-chip drags never target each other's drop zones.
+		this.$wrapper.find(".jrfb-sections").each((_, el) => {
+			mk(el, {
+				group: { name: "onbsec", pull: true, put: true },
+				draggable: ".jrfb-section",
+				handle: ".jrfb-sec-grip",
+				animation: 150,
+				ghostClass: "jrfb-sec-ghost",
+				onStart() {
+					self.$wrapper.find(".jrfb").addClass("jrfb-dragsec");
+				},
+				onEnd() {
+					self.$wrapper.find(".jrfb").removeClass("jrfb-dragsec");
+				},
+				onUpdate() {
+					self.sync_sections_from_dom();
+				},
+			});
+		});
+		// Each tab pill accepts a dropped section — that's the "move to another
+		// tab" gesture. sort:false so pills themselves stay put.
+		this.$wrapper.find(".jrfb-pill").each((_, el) => {
+			mk(el, {
+				group: { name: "onbsec", pull: false, put: true },
+				draggable: ".jrfb-section",
+				sort: false,
+				onAdd(evt) {
+					self.$wrapper.find(".jrfb").removeClass("jrfb-dragsec");
+					self.drop_section_on_tab(
+						evt.item.getAttribute("data-secid"),
+						el.getAttribute("data-tabid")
+					);
 				},
 			});
 		});
@@ -815,6 +967,13 @@ function onb_inject_styles() {
 .jrfb-mini-danger:hover { color:#e24c4c; }
 .jrfb-section { border:1px solid var(--border-color); border-radius:10px; margin-bottom:12px; background:var(--card-bg,#fff); box-shadow:0 1px 2px rgba(0,0,0,.04); }
 .jrfb-sec-head { display:flex; align-items:center; gap:8px; padding:9px 12px; border-bottom:1px solid var(--border-color); background:var(--subtle-fg,#fafbfc); border-radius:10px 10px 0 0; }
+.jrfb-sec-grip { color:var(--text-muted); opacity:.4; font-size:12px; cursor:grab; letter-spacing:-2px; }
+.jrfb-sec-grip:hover { opacity:.95; }
+.jrfb-sec-grip:active { cursor:grabbing; }
+.jrfb-sec-ghost { opacity:.4; }
+/* While a section is in flight, advertise the tab pills as drop targets. */
+.jrfb-dragsec .jrfb-pill { outline:2px dashed rgba(36,144,239,.65); outline-offset:2px; }
+.jrfb-dragsec .jrfb-pill.active { outline-color:rgba(255,255,255,.85); }
 .jrfb-sec-dot { width:7px; height:7px; border-radius:50%; background:#2490ef; }
 .jrfb-sec-title { font-weight:600; font-size:13.5px; flex:1; }
 .jrfb-sec-count { background:var(--border-color); color:var(--text-muted); border-radius:10px; padding:0 7px; font-size:10px; font-weight:700; }

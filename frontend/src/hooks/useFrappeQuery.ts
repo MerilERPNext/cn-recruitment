@@ -265,3 +265,26 @@ export const useFileUpload = () => {
     },
   });
 };
+
+export const useAttachFileToDocuments = () => {
+  return useMutation({
+    mutationKey: ["attachFileToDocuments"],
+    mutationFn: async ({
+      file_url,
+      doctype,
+      docNames,
+    }: {
+      file_url: string;
+      doctype: string;
+      docNames: string[];
+    }) => {
+      const promises = docNames.map((docName) =>
+        frappeService.attachFileToDocument(file_url, doctype, docName)
+      );
+      return Promise.all(promises);
+    },
+    onError: (error) => {
+      console.error("Error attaching file to documents:", error);
+    },
+  });
+};

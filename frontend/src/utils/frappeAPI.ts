@@ -289,6 +289,19 @@ export const FrappeAPI = {
 
     return response.data.message;
   },
+
+  attachFileToDocument: async (
+    file_url: string,
+    doctype: string,
+    docname: string,
+  ): Promise<unknown> => {
+    const response = await apiClient.post(`/api/resource/File`, {
+      file_url,
+      attached_to_doctype: doctype,
+      attached_to_name: docname,
+    });
+    return response.data.data;
+  },
 };
 
 export default FrappeAPI;

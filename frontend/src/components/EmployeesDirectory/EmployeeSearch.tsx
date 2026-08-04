@@ -123,6 +123,14 @@ const EmployeeSearch = ({
         const dateStr =
           typeof value === "string" ? value.split("T")[0] : String(value);
         filters.push(["date_of_joining", "<=", dateStr]);
+      } else if (key === "status") {
+        if (value === "Inactive") {
+          filters.push(["status", "in", ["Inactive", "Left", "Suspended"]]);
+        } else if (Array.isArray(value) && value.length > 0) {
+          filters.push(["status", "in", value]);
+        } else {
+          filters.push(["status", "=", value]);
+        }
       } else if (Array.isArray(value) && value.length > 0) {
         filters.push([key, "in", value]);
       } else if (!Array.isArray(value)) {
@@ -282,14 +290,13 @@ const EmployeeSearch = ({
 
         {/* Action buttons */}
         <div
-          className={`flex gap-2 items-start h-full ${!isDesktop ? "w-full" : ""}`}
+          className={`flex gap-2 items-center ${!isDesktop ? "w-full" : ""}`}
         >
           {hasPendingChanges && (
             <>
               <Button
                 variant="contain"
                 size="sm"
-                className="h-full"
                 onClick={handleApplyEmployeeSelection}
               >
                 <Check size={12} />
@@ -300,7 +307,6 @@ const EmployeeSearch = ({
               <Button
                 variant="outline"
                 size="sm"
-                className="h-full"
                 onClick={handleSyncEmployeeSelection}
               >
                 <RefreshCw size={12} />
@@ -308,11 +314,10 @@ const EmployeeSearch = ({
               </Button>
             </>
           )}
-          <div className="relative h-full">
+          <div className="relative">
             <Button
               variant="soft"
               size="sm"
-              className="h-full"
               onClick={() => {
                 setIsFilterOpen(true);
               }}

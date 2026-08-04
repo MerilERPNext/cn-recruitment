@@ -1,5 +1,4 @@
 import {
-  ArrowDownUp,
   ArrowUpDown,
   Award,
   BadgeIndianRupee,
@@ -16,7 +15,6 @@ import {
   FileSpreadsheet,
   FileText,
   Gift,
-  Goal,
   Grid3X3,
   HandCoins,
   HelpCircle,
@@ -67,6 +65,12 @@ interface SubMenuItem {
   href?: string;
   subItems?: SubSubMenuItem[];
   permissionKey: string;
+  /**
+   * Additional URL path prefixes that should also activate this sidebar entry.
+   * Use this for tab-based pages where each tab has its own URL but all tabs
+   * logically belong to the same sidebar item (e.g. Performance Overview tabs).
+   */
+  tabRoutes?: string[];
 }
 
 interface NavigationItem {
@@ -97,10 +101,9 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
   const { data: currentEmployee } = useCurrentEmployeeDetails({
     logged_in_employee_details: true,
   });
-
-  const currentEmployeeCompany = currentEmployee?.company;
+  const currentEmployeeCompany = currentEmployee?.company_short_name || currentEmployee?.company_name || currentEmployee?.company || "-";
   const { data: singleCompanyLogo } = useSingleCompanyLogo(
-    currentEmployeeCompany || "",
+    currentEmployee?.company || "",
   );
 
   const logoToShow = singleCompanyLogo?.company_logo || "";
@@ -322,7 +325,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
         },
         {
           name: "Team Advances",
-          icon: Coins,
+          icon: Users,
           href: "/webapp/salary-slip-app/team-advances-list",
           permissionKey: "Team Advances",
         },
@@ -354,7 +357,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
         },
         {
           name: "My Requests",
-          icon: Users,
+          icon: User,
           href: "/webapp/benefits-app/my-requests",
           permissionKey: "My Requests",
         },
@@ -399,13 +402,13 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
         },
         {
           name: "My Advances",
-          icon: ArrowUpDown,
+          icon: IndianRupee,
           href: "/webapp/expenses-app/my-advance-expense",
           permissionKey: "My Advances",
         },
         {
           name: "Team Advances",
-          icon: ArrowUpDown,
+          icon: Users,
           href: "/webapp/expenses-app/team-advance-expense",
           permissionKey: "Team Advances",
         },
@@ -419,13 +422,13 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
       subItems: [
         {
           name: "Flow Requests",
-          icon: ArrowDownUp,
+          icon: Workflow,
           href: "/webapp/flow-app/flow-requests",
           permissionKey: "Flow Requests",
         },
         {
           name: "Onboarding",
-          icon: ArrowDownUp,
+          icon: UserPlus,
           href: "/webapp/flow-app/onboarding",
           permissionKey: "Onboarding",
         },
@@ -454,88 +457,40 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
           icon: Telescope,
           href: "/webapp/performance-app/overview",
           permissionKey: "Overview",
-        },
-        {
-          name: "My Goals",
-          icon: Goal,
-          href: "/webapp/performance-app/my-goals",
-          permissionKey: "My Goals",
+          // Tab URLs that live inside the Overview page — each tab changes the
+          // URL but they all logically belong to this sidebar entry.
+          tabRoutes: [
+            "/webapp/performance-app/my-goals",
+            "/webapp/performance-app/skills",
+            "/webapp/performance-app/review",
+            "/webapp/performance-app/feedback",
+          ],
         },
         {
           name: "My Team",
           icon: Users,
           href: "/webapp/performance-app/team-overview",
           permissionKey: "My Team",
-          subItems: [
-            {
-              name: "Overview",
-              icon: ChartNoAxesCombined,
-              href: "/webapp/performance-app/team-overview",
-            },
-            {
-              name: "Team Goals",
-              icon: Goal,
-              href: "/webapp/performance-app/team-goals",
-            },
-            {
-              name: "Reviews",
-              icon: CheckCircle,
-              href: "/webapp/performance-app/team-reviews",
-            },
-            {
-              name: "Calibration",
-              icon: SlidersHorizontal,
-              href: "/webapp/performance-app/team-calibration",
-            },
-            {
-              name: "Check-Ins",
-              icon: Clock,
-              href: "/webapp/performance-app/team-check-ins",
-            },
+          // tabRoutes: ["/webapp/performance-app/team-pre-release-preview", "/webapp/performance-app/team-goals/assign-goal"],
+          tabRoutes: [
+            "/webapp/performance-app/team-reviews",
+            "/webapp/performance-app/team-goals",
+            "/webapp/performance-app/team-calibration",
+            "/webapp/performance-app/team-check-ins",
+            "/webapp/performance-app/team-goals/assign-goal",
+            "/webapp/performance-app/team-reviews/team-pre-release-preview",
           ],
-        },
-        {
-          name: "Review",
-          icon: CheckCircle,
-          href: "/webapp/performance-app",
-          permissionKey: "Review",
-          subItems: [
-            {
-              name: "Self Review",
-              icon: User,
-              href: "/webapp/performance-app/review",
-            },
-            {
-              name: "Peer Nomination",
-              icon: Award,
-              href: "/webapp/performance-app/review/peer-nomination",
-            },
-          ],
-        },
-        {
-          name: "Feedback",
-          icon: Goal,
-          href: "/webapp/performance-app/feedback",
-          permissionKey: "Feedback",
         },
 
-        {
-          name: "Skills And Proficiency",
-          icon: Goal,
-          href: "/webapp/performance-app/skills",
-          permissionKey: "Skills And Proficiency",
-        },
-        {
-          name: "Performance Review",
-          icon: ChartNoAxesCombined,
-          href: "/webapp/performance-app/performance-review",
-          permissionKey: "Performance Review",
-        },
+
         {
           name: "Cycle",
           icon: ChartNoAxesCombined,
           href: "/webapp/performance-app/appraisal-cycle-wizard/cycle-details",
           permissionKey: "Appraisal Cycle Wizard",
+          // All wizard steps share this base path prefix, so one entry covers
+          // every step (eligibility, stages, form-builder, goal-pull-in, etc.)
+          tabRoutes: ["/webapp/performance-app/appraisal-cycle-wizard"],
         },
         {
           name: "Calibrator",
@@ -563,6 +518,12 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
       label: "Employee Directory",
       path: "/webapp/employees-directory",
       permissionKey: "Employee Directory",
+    },
+    {
+      icon: Clock,
+      label: "Timesheet",
+      path: "/webapp/timesheet/timesheet-create",
+      permissionKey: "Timesheet",
     },
     {
       icon: UserSearch,
@@ -784,6 +745,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
         };
       })
       .filter((item): item is NavigationItem => item !== null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [uiPermissions, recognitionFlags.hideRewardsPointSummary]);
 
   const isSubSubItemActive = (subSubItem: SubSubMenuItem) => {
@@ -813,6 +775,21 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
     ) {
       return true;
     }
+
+    // Check tabRoutes — additional URL patterns (e.g. tab URLs) that should
+    // also activate this sidebar entry even though they aren't its main href.
+    if (subItem.tabRoutes?.length) {
+      const matchesTabRoute = subItem.tabRoutes.some((route) => {
+        if (location.pathname === route) return true;
+        if (location.pathname.startsWith(route)) {
+          const remaining = location.pathname.substring(route.length);
+          return remaining === "" || remaining.startsWith("/");
+        }
+        return false;
+      });
+      if (matchesTabRoute) return true;
+    }
+
     if (subItem.href) {
       const [path, query] = subItem.href.split("?", 2);
 
@@ -915,6 +892,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
     );
 
     setOpenDropdown(activeParent?.label || null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.pathname, navigationItems]);
 
   if (isUiPermissionsLoading) {
@@ -1191,7 +1169,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                                     `}
                                     />
                                     <div className="flex items-center justify-start space-x-2 w-full">
-                                      {/* <SubIcon className="h-3.5 w-3.5 opacity-70" /> */}
+                                      <SubIcon className="h-3.5 w-3.5 opacity-70" />
                                       <div className="flex items-center transition-all duration-300 whitespace-nowrap overflow-hidden">
                                         <span
                                           className={`transition-all duration-300 whitespace-nowrap ${isExpanded

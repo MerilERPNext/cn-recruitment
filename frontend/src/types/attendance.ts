@@ -21,8 +21,10 @@ export type Attendance = {
   attendance_date: string; // ISO date string (e.g. '2025-07-01')
   company: string;
   department: string;
+  department_name?: string | null;
   attendance_request: string | null;
   shift: string | null;
+  shift_name?: string | null;
   in_time: string | null;
   out_time: string | null;
   late_entry: number;
@@ -299,6 +301,11 @@ export type AttendanceRecord = {
   employee_name?: string;
   is_optional_leave?: boolean;
   weekly_off?: number;
+  // Only present when "Show Comp-Off and Late Entry Details in Calendar"
+  // Attendance Setting is enabled (populated by cn_leave_shift_managment.get_events).
+  late_entry?: number;
+  early_exit?: number;
+  comp_off?: "earned" | "applied";
 };
 
 export type PolicyQuestion = {

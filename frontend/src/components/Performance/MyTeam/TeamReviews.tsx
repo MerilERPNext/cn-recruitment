@@ -151,7 +151,7 @@ const TeamReviews: React.FC = () => {
   );
 
   return (
-    <main className="min-h-full overflow-y-auto overflow-x-hidden bg-[#f4f7fb] px-3 py-4 font-sans text-gray-900 sm:px-4 lg:px-6 lg:py-6">
+    <main className="min-h-full overflow-y-auto overflow-x-hidden bg-[#f4f7fb] px-3 py-4 font-sans text-gray-900 sm:px-4 lg:px-1 lg:py-1">
       <div className="mx-auto grid w-full  min-w-0 gap-4 xl:grid-cols-[260px_minmax(0,1fr)] 2xl:grid-cols-[260px_minmax(0,1fr)_300px]">
         <aside className="order-2 min-w-0 xl:order-1 xl:sticky  xl:self-start">
           <section className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
@@ -378,7 +378,7 @@ const TeamReviews: React.FC = () => {
                 variant="contain"
                 bgColor="primary"
                 className="h-10 w-full justify-center rounded-lg bg-blue-600 px-4 text-white hover:bg-blue-700 sm:col-span-2 lg:w-auto"
-                onClick={() => navigate("/webapp/performance-app/team-pre-release-preview")}
+                onClick={() => navigate("/webapp/performance-app/team-reviews/team-pre-release-preview")}
               >
                 Next: Achievements
                 <ArrowRight className="h-4 w-4" />

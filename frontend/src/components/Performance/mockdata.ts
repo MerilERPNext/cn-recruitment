@@ -138,3 +138,40 @@ export const learningPlan: LearningPlanItem[] = [
   { icon: Sparkles, title: "Just Enough Research - Erika Hall", action: "Book - LMS" },
   { icon: BookOpen, title: "Shadow 4 usability sessions this quarter", action: "Action" },
 ];
+
+export interface TeamGoalItem {
+  id: string;
+  scope: string;
+  title: string;
+  usedCount: number;
+  recommended?: boolean;
+  department?: string;
+  designation?: string;
+  ownerName: string;
+  ownerRole: string;
+  isManager?: boolean;
+  cycle: string;
+}
+
+
+
+export const defaultDepartmentOptions = [
+  { label: "All Departments", value: "All" },
+  { label: "Design", value: "Design" },
+  { label: "Engineering", value: "Engineering" },
+  { label: "Product", value: "Product" },
+  { label: "Marketing", value: "Marketing" },
+  { label: "HR", value: "HR" },
+  { label: "Sales", value: "Sales" },
+  { label: "Finance", value: "Finance" },
+];
+
+export const defaultLevelOptions = [
+  { label: "All Designations", value: "All" },
+  { label: "L1 / L2", value: "L1 / L2" },
+  { label: "L3 / L4", value: "L3 / L4" },
+  { label: "L5 / L6", value: "L5 / L6" },
+  { label: "Manager", value: "Manager" },
+  { label: "Director", value: "Director" },
+  { label: "VP", value: "VP" },
+];

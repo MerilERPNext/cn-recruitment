@@ -300,7 +300,7 @@ const TeamCalibration: React.FC = () => {
 
   return (
     <main
-      className={`min-h-full overflow-y-auto overflow-x-hidden bg-[#f8fafc] font-sans ${isMobile ? "p-4" : "p-8 pb-32"}`}
+      className={`min-h-full overflow-y-auto overflow-x-hidden bg-[#f8fafc] font-sans ${isMobile ? "p-4" : "p-1 pb-10"}`}
     >
       <div className="mx-auto w-full max-w-screen space-y-5">
         {/* ── Header ──────────────────────────────────────────────────── */}

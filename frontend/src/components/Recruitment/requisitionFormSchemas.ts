@@ -445,7 +445,7 @@ export const requisitionFormSchemas = {
                 placeholder: "Select Branch",
                 dataSrc: "url",
                 data: {
-                  url: "/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=Branch&company={{ data.company }}",
+                  url: "/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=Branch&custom_company={{ data.company }}",
                   headers: [{ key: "Accept", value: "application/json" }],
                 },
                 selectValues: "message.results",
@@ -641,7 +641,7 @@ export const requisitionFormSchemas = {
                 dataSrc: "url",
                 data: {
                   // Scoped to the requisition's company (top-level `data.company`).
-                  url: "/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=Branch&company={{ data.company }}",
+                  url: "/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=Branch&custom_company={{ data.company }}",
                   headers: [{ key: "Accept", value: "application/json" }],
                 },
                 limit: 20,

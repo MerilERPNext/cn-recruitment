@@ -1,19 +1,11 @@
-import { format } from "date-fns";
 import { LeaveApplication } from "../../../types/leaves";
 import Badge from "../../shared/Badge";
 import { getBadgePropsByStatus } from "../../../utils/helperUtils";
 import { Typography } from "../../shared/atoms/Typography";
 import Tooltip from "../../shared/Tooltip";
-import { formatToIndianDateWithTime } from "../../../utils/formatToIndianDate";
+import formatToIndianDate, { formatToIndianDateWithTime } from "../../../utils/formatToIndianDate";
 
 export const LeaveDetailsCard = ({ data, propStatus }: { data: LeaveApplication, propStatus?: string }) => {
-  const formatDate = (dateString: string) => {
-    try {
-      return format(new Date(dateString), "dd-MM-yyyy");
-    } catch {
-      return dateString;
-    }
-  };
 
   const isHalfDay = data.half_day === 1;
   const status = getBadgePropsByStatus(data.status);
@@ -26,7 +18,7 @@ export const LeaveDetailsCard = ({ data, propStatus }: { data: LeaveApplication,
     value: React.ReactNode;
   }) => (
     <div className="flex items-start justify-between py-3">
-      <Typography variant="label" color="body2" className="font-medium text-xs text-gray-500 font-medium uppercase tracking-wide block">
+      <Typography variant="label" color="body2" className="text-xs text-gray-500 font-medium uppercase tracking-wide block">
         {label}</Typography>
       <Typography variant="bodySmall" className="text-gray-900">
         {value}
@@ -83,7 +75,7 @@ export const LeaveDetailsCard = ({ data, propStatus }: { data: LeaveApplication,
 
         <Row
           label="Duration"
-          value={`${formatDate(data.from_date)} – ${formatDate(
+          value={`${formatToIndianDate(data.from_date)} – ${formatToIndianDate(
             data.to_date
           )}`}
         />
@@ -110,7 +102,7 @@ export const LeaveDetailsCard = ({ data, propStatus }: { data: LeaveApplication,
                 <div className="flex justify-between text-xs">
                   <span className="text-blue-700">Half Day Date</span>
                   <span className="font-medium text-blue-900 bg-white px-2 py-1 rounded">
-                    {formatDate(data.half_day_date)}
+                    {formatToIndianDate(data.half_day_date)}
                   </span>
                 </div>
               )}
@@ -128,7 +120,7 @@ export const LeaveDetailsCard = ({ data, propStatus }: { data: LeaveApplication,
                 <div className="flex justify-between text-xs">
                   <span className="text-blue-700">Second Half Date</span>
                   <span className="font-medium text-blue-900 bg-white px-2 py-1 rounded">
-                    {formatDate(data.custom_second_half_day_date)}
+                    {formatToIndianDate(data.custom_second_half_day_date)}
                   </span>
                 </div>
               )}
@@ -159,7 +151,7 @@ export const LeaveDetailsCard = ({ data, propStatus }: { data: LeaveApplication,
       {/* Description */}
       {data.description && data.description.trim() && (
         <div className="mt-5">
-          <Typography variant="label" color="body2" className="font-medium text-xs text-gray-500 font-medium uppercase tracking-wide block">
+          <Typography variant="label" color="body2" className="font-medium text-xs text-gray-500 uppercase tracking-wide block">
             Description
           </Typography>
           <Typography

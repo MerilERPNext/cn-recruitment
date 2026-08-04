@@ -39,7 +39,7 @@ import Appreciations from "./Appreciations";
 import { AwardsSection } from "./EmployeeAwards";
 
 import { useGetUiPermission } from "../../hooks/userUiPermission";
-import { isActionEnabled } from "../../utils/uiPermission";
+import { isActionEnabled, isPageEnabled } from "../../utils/uiPermission";
 import Overview from "./Overview/Overview";
 
 export interface PersonalInfoProps {
@@ -59,6 +59,11 @@ const EmployeeProfile: React.FC = () => {
   const { targetEmployeeId, isViewingOtherUser, clearTargetEmployee } =
     useTargetUser();
   const { data: userUiPermission } = useGetUiPermission("Profile");
+  // "Employee Profile" page permission is evaluated per target on the backend:
+  // "Employee Self" enables your own profile; manager/HRBP/CXO/HOD queries enable
+  // specific reports. Actions alone don't gate the page, so enforce the page flag
+  // here to block viewing a profile you're not permitted to see.
+  const canViewProfilePage = isPageEnabled(userUiPermission, "Employee Profile");
   // const canAttendanceAssignments = isActionEnabled(
   //   userUiPermission,
   //   "attendance_assignments",
@@ -120,6 +125,17 @@ const EmployeeProfile: React.FC = () => {
   useEffect(() => {
     setImageLoadError(false);
   }, [uploadedImage, user?.image]);
+
+  // Block viewing another employee's profile without permission. Own profile
+  // ("Employee Self") is always allowed; a disallowed target resolves the
+  // "Employee Profile" page to disabled, so bounce back to the user's own profile.
+  useEffect(() => {
+    if (!userUiPermission) return; // wait for the per-target permission to load
+    if (isViewingOtherUser && !canViewProfilePage) {
+      toast.error("You do not have permission to view this profile.");
+      clearTargetEmployee();
+    }
+  }, [userUiPermission, isViewingOtherUser, canViewProfilePage, clearTargetEmployee]);
 
   const profileImageSrc = imageLoadError
     ? defaultProfile
@@ -780,6 +796,18 @@ const EmployeeProfile: React.FC = () => {
       /> */}
     </DesktopLayoutWrapper>
   );
+
+  // Don't render another employee's profile until the per-target permission
+  // confirms access. While viewing someone else, the "Profile" permission query
+  // is keyed by target, so `data` is undefined until it resolves — this also
+  // prevents flashing another employee's data before the guard redirects back.
+  if (isViewingOtherUser && !canViewProfilePage) {
+    return (
+      <div className="min-h-[50vh] flex items-center justify-center">
+        <CircularLoader size="sm" color="blue-500" />
+      </div>
+    );
+  }
 
   return (
     <>

@@ -112,6 +112,7 @@ def get_employee_details(employee_id):
             "department_name": frappe.db.get_value("Department", employee.department, "department_name") if employee.department else None,
             "company": employee.company,
             "company_name": frappe.db.get_value("Company", employee.company, "company_name") if employee.company else None,
+            "company_short_name":frappe.db.get_value("Company", employee.company, "abbr") if employee.company else None,
             "branch": employee.branch,
             "branch_name": frappe.db.get_value("Branch", employee.branch, "branch") if employee.branch else None,
             "date_of_joining": employee.date_of_joining,

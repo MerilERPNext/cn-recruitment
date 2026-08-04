@@ -1,14 +1,16 @@
 {
  "actions": [],
  "allow_rename": 1,
- "creation": "2026-07-13 10:00:00.000000",
+ "creation": "2026-07-13 10:00:00",
  "doctype": "DocType",
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
   "clause_type",
   "clause_template",
-  "clause_text"
+  "clause_text",
+  "amount",
+  "is_part_of_ctc"
  ],
  "fields": [
   {
@@ -17,7 +19,7 @@
    "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Clause Type",
-   "options": "Job Offer Clause Type",
+   "options": "Salary Component",
    "reqd": 1
   },
   {
@@ -37,17 +39,29 @@
    "in_list_view": 1,
    "label": "Clause Text",
    "reqd": 1
+  },
+  {
+   "fieldname": "amount",
+   "fieldtype": "Currency",
+   "label": "Amount"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_part_of_ctc",
+   "fieldtype": "Check",
+   "label": "Is Part of CTC"
   }
  ],
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2026-07-13 10:00:00.000000",
+ "modified": "2026-07-28 17:34:30.973319",
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "Job Offer Clause",
  "owner": "Administrator",
  "permissions": [],
+ "row_format": "Dynamic",
  "sort_field": "creation",
  "sort_order": "DESC",
  "states": []

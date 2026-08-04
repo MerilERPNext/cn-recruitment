@@ -10,7 +10,7 @@ import {
   useFlexiLockingPeriodVisibility
 } from "../../../hooks/payroll/useFlexiDeclaration";
 import { format } from "date-fns";
-import { FlexiComponent, ComponentPartOfCTC } from "../../../types/flexiDeclaration";
+import { FlexiComponent, ComponentPartOfCTC, SummaryCTCRow, VariablePayRow, TotalCTCRow } from "../../../types/flexiDeclaration";
 import { IoIosArrowDown } from "react-icons/io";
 import { EditFlexiLockingPeriod } from "./Component/EditFlexiLockingPeriod";
 import { SquarePen } from "lucide-react";
@@ -65,7 +65,7 @@ export default function FlexiDeclaration() {
   // employee via switch-user it sends the TARGET user's company).
   const { data: yearOptions, isLoading: isYearOptionsLoading } =
     useTaxSheetPayrollPriodsData(currentEmployee?.company || null) as {
-      data?: { name: string; start_date?: string; end_date?: string }[];
+      data?: { name: string; start_date?: string; end_date?: string, company?: string }[];
       isLoading: boolean;
     };
 
@@ -120,24 +120,36 @@ export default function FlexiDeclaration() {
   const updateMutation = useUpdateFlexiComponents();
 
   const [flexi, setFlexi] = useState<Record<string, string>>({});
+  const [npsType, setNpsType] = useState<"Amount" | "Percentage">("Amount");
 
   useEffect(() => {
     if (flexiData?.flexi_components) {
       const initialFlexi: Record<string, string> = {};
       flexiData.flexi_components.forEach((comp: FlexiComponent) => {
         initialFlexi[comp.salary_component] = comp.amount?.toString() || "";
+        if (comp.salary_component === "NPS" && comp.custom_nps_type) {
+          setNpsType(comp.custom_nps_type);
+        }
       });
       setFlexi(initialFlexi);
       setErrors({});
     }
   }, [flexiData]);
 
-  const earningsData = flexiData?.salary_data?.component_part_of_ctc?.map((item: ComponentPartOfCTC) => ({
+  // ── Structured salary sections from new API shape ──
+  const earningsData = (flexiData?.salary_data?.earning_part_of_ctc || flexiData?.salary_data?.component_part_of_ctc || []).map((item: ComponentPartOfCTC) => ({
     label: item.component,
     monthly: item.amount,
     annually: item.annual_amount,
     info: false,
-  })) || [];
+  }));
+
+  const fixedGrossData: SummaryCTCRow[] = flexiData?.salary_data?.fixed_gross || [];
+  const deductionData: ComponentPartOfCTC[] = flexiData?.salary_data?.deduction_part_of_ctc || [];
+  const reimbursementData: ComponentPartOfCTC[] = flexiData?.salary_data?.reimbursements_part_of_ctc || [];
+  const fixedCTCData: SummaryCTCRow[] = flexiData?.salary_data?.fixed_ctc || [];
+  const variablePayInclude: VariablePayRow[] = flexiData?.salary_data?.variable_pay_include_ctc || [];
+  const totalFinalCTC: TotalCTCRow[] = flexiData?.salary_data?.total_final_ctc || [];
 
   const flexiComponents = flexiData?.flexi_components || [];
 
@@ -148,16 +160,37 @@ export default function FlexiDeclaration() {
     ? !isWindowOpen
     : lockingPeriodData?.status === "Closed";
 
-  const handleInputChange = (componentName: string, value: string, maxAmount: number) => {
-    setFlexi(f => ({ ...f, [componentName]: value }));
+  const handleInputChange = (comp: FlexiComponent, value: string) => {
+    setFlexi(f => ({ ...f, [comp.salary_component]: value }));
 
-    const error = validateFlexiField(value, maxAmount);
+    let maxAmount = Number(comp.max_amount) || 0;
+    let error: string | null = null;
+
+    if (comp.salary_component === "NPS" && npsType === "Percentage") {
+      maxAmount = flexiData?.salary_data?.custom_tax_regime === "New Regime"
+        ? (comp.custom_new_regime_max_percentage || 14)
+        : (comp.custom_old_regime_max_percentage || 10);
+
+      const strVal = value !== undefined && value !== null ? String(value) : "";
+      const cleanValue = strVal.replace(/,/g, "");
+      const numericVal = Number(cleanValue);
+      if (strVal.trim() !== "" && isNaN(numericVal)) {
+        error = "Please enter a valid number";
+      } else if (numericVal < 0) {
+        error = "Percentage cannot be negative";
+      } else if (numericVal > maxAmount) {
+        error = `Percentage cannot exceed ${maxAmount}%`;
+      }
+    } else {
+      error = validateFlexiField(value, maxAmount);
+    }
+
     setErrors(e => {
       const next = { ...e };
       if (error) {
-        next[componentName] = error;
+        next[comp.salary_component] = error;
       } else {
-        delete next[componentName];
+        delete next[comp.salary_component];
       }
       return next;
     });
@@ -174,8 +207,27 @@ export default function FlexiDeclaration() {
     const newErrors: Record<string, string> = {};
     flexiComponents.forEach((comp) => {
       const val = flexi[comp.salary_component];
-      const maxAmt = Number(comp.max_amount) || 0;
-      const error = validateFlexiField(val, maxAmt);
+
+      let maxAmount = Number(comp.max_amount) || 0;
+      let error: string | null = null;
+      if (comp.salary_component === "NPS" && npsType === "Percentage") {
+        maxAmount = flexiData?.salary_data?.custom_tax_regime === "New Regime"
+          ? (comp.custom_new_regime_max_percentage || 14)
+          : (comp.custom_old_regime_max_percentage || 10);
+        const strVal = val !== undefined && val !== null ? String(val) : "";
+        const cleanValue = strVal.replace(/,/g, "");
+        const numericVal = Number(cleanValue);
+        if (strVal.trim() !== "" && isNaN(numericVal)) {
+          error = "Please enter a valid number";
+        } else if (numericVal < 0) {
+          error = "Percentage cannot be negative";
+        } else if (numericVal > maxAmount) {
+          error = `Percentage cannot exceed ${maxAmount}%`;
+        }
+      } else {
+        error = validateFlexiField(val, maxAmount);
+      }
+
       if (error) {
         newErrors[comp.salary_component] = error;
       }
@@ -197,10 +249,14 @@ export default function FlexiDeclaration() {
       const val = flexi[comp.salary_component];
       const strVal = val !== undefined && val !== null ? String(val) : "0";
       const cleanVal = strVal.replace(/,/g, '');
-      return {
+      const payload: any = {
         ...comp,
         amount: Number(cleanVal) || 0
       };
+      if (comp.salary_component === "NPS") {
+        payload.custom_nps_type = npsType;
+      }
+      return payload;
     });
 
     console.log("Submitting updated components payload:", updatedComponents);
@@ -238,8 +294,8 @@ export default function FlexiDeclaration() {
                   onChange={(e) => setSelectedPeriod(e.target.value)}
                   className="font-bold text-[13px] text-text-title bg-gray-100 px-2.5 py-0.5 pr-7 rounded-md border-none outline-none cursor-pointer appearance-none"
                 >
-                  {yearOptions?.map((opt: { name: string }) => (
-                    <option key={opt.name} value={opt.name}>{opt.name}</option>
+                  {yearOptions?.map((opt: { name: string, company?: string }) => (
+                    <option key={opt.name} value={opt.name}>{opt.name} ({opt.company})</option>
                   ))}
                   {!yearOptions && <option value="25-26">2026–27</option>}
                 </select>
@@ -371,18 +427,70 @@ export default function FlexiDeclaration() {
             <div className="flex flex-col gap-4">
               {flexiComponents.map((comp: FlexiComponent) => {
                 const isEditable = !isClosed && comp.visibility_type === "Editable";
-                const maxAmt = Number(comp.max_amount) || 0;
                 const hasError = !!errors[comp.salary_component];
                 return (
                   <div key={comp.salary_component}>
-                    <label className="text-[12px] text-text-body2 block mb-1.5 font-medium">
-                      {comp.salary_component} (0 - {formatINR(comp.max_amount)}) Annual
-                    </label>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="text-[12px] text-text-body2 font-medium">
+                        {comp.salary_component === "NPS"
+                          ? npsType === "Percentage"
+                            ? `${comp.salary_component} (0 - ${flexiData?.salary_data?.custom_tax_regime === "New Regime" ? comp.custom_new_regime_max_percentage || 14 : comp.custom_old_regime_max_percentage || 10}%) Annual`
+                            : `${comp.salary_component} (0 - ${formatINR(comp.max_amount)}) Annual`
+                          : `${comp.salary_component} (0 - ${formatINR(comp.max_amount)}) Annual`
+                        }
+                      </label>
+                      {comp.salary_component === "NPS" && (
+                        <div className="flex items-center gap-3">
+                          <label className="flex items-center gap-1 cursor-pointer text-[12px] text-text-body2">
+                            <input
+                              type="radio"
+                              name="npsType"
+                              value="Amount"
+                              checked={npsType === "Amount"}
+                              onChange={() => {
+                                setNpsType("Amount");
+                                setFlexi(f => ({ ...f, [comp.salary_component]: "" }));
+                                setErrors(e => {
+                                  const next = { ...e };
+                                  delete next[comp.salary_component];
+                                  return next;
+                                });
+                              }}
+                              disabled={!isEditable}
+                              className="accent-primary"
+                            />
+                            Amount (₹)
+                          </label>
+                          <label className="flex items-center gap-1 cursor-pointer text-[12px] text-text-body2">
+                            <input
+                              type="radio"
+                              name="npsType"
+                              value="Percentage"
+                              checked={npsType === "Percentage"}
+                              onChange={() => {
+                                setNpsType("Percentage");
+                                setFlexi(f => ({ ...f, [comp.salary_component]: "" }));
+                                setErrors(e => {
+                                  const next = { ...e };
+                                  delete next[comp.salary_component];
+                                  return next;
+                                });
+                              }}
+                              disabled={!isEditable}
+                              className="accent-primary"
+                            />
+                            Percentage (%)
+                          </label>
+                        </div>
+                      )}
+                    </div>
                     <input
                       type="text"
-                      placeholder={comp.salary_component === "NPS" ? "Enter Amount" : undefined}
+                      placeholder={comp.salary_component === "NPS"
+                        ? (npsType === "Percentage" ? "Enter Percentage" : "Enter Amount")
+                        : undefined}
                       value={flexi[comp.salary_component] || ""}
-                      onChange={e => handleInputChange(comp.salary_component, e.target.value, maxAmt)}
+                      onChange={e => handleInputChange(comp, e.target.value)}
                       className={`w-full border rounded-[7px] px-3.5 py-2.5 text-[14px] text-text-title outline-none box-border transition-colors duration-150 ${hasError ? "border-error focus:border-error focus:ring-1 focus:ring-error" : "border-gray-100"
                         } ${!isEditable ? "bg-gray-10/50 cursor-not-allowed" : "bg-white"
                         }`}
@@ -420,7 +528,8 @@ export default function FlexiDeclaration() {
                 <span className="text-[11px] sm:text-[12px] font-semibold text-text-body1 text-right">Annually</span>
               </div>
 
-              {earningsData.map((row, i) => (
+              {/* ── Earning Part of CTC (Basic, HRA, etc.) ── */}
+              {earningsData.map((row: { label: string; monthly: number; annually: number; info: boolean }, i: number) => (
                 <div
                   key={row.label}
                   className={`grid grid-cols-[1fr_90px_90px] sm:grid-cols-[1fr_130px_130px] px-3 sm:px-4 py-[10px] sm:py-[11px] items-center ${i % 2 === 0 ? "bg-white" : "bg-gray-10/10"} ${i < earningsData.length - 1 ? "border-b border-gray-50" : ""}`}
@@ -447,29 +556,90 @@ export default function FlexiDeclaration() {
 
               {flexiData?.salary_data && (
                 <>
-                  {/* Fixed Gross (Annual)(Eg-100000) */}
-                  <div
-                    className="grid grid-cols-[1fr_90px_90px] sm:grid-cols-[1fr_130px_130px] px-3 sm:px-4 py-[10px] sm:py-[11px] items-center bg-primary/10 border-t border-gray-200 font-bold"
-                  >
-                    <span className="text-[12px] sm:text-[13px] text-text-body1 leading-snug">
-                      Fixed Gross (Annual)(Eg-100000)
-                    </span>
-                    <span className="text-[12px] sm:text-[13px] text-text-title text-right tabular-nums">
-                      {showValues ? formatINR(flexiData.salary_data.fixed_gross_monthly) : "*****"}
-                    </span>
-                    <span className="text-[12px] sm:text-[13px] text-text-title text-right tabular-nums">
-                      {showValues ? formatINR(flexiData.salary_data.fixed_gross_annual) : "*****"}
-                    </span>
-                  </div>
+                  {/* ── Fixed Gross ── */}
+                  {fixedGrossData.map((row: SummaryCTCRow, idx: number) => (
+                    <div
+                      key={`fg-${row.component || idx}`}
+                      className="grid grid-cols-[1fr_90px_90px] sm:grid-cols-[1fr_130px_130px] px-3 sm:px-4 py-[10px] sm:py-[11px] items-center bg-primary/10 border-t border-gray-200 font-bold"
+                    >
+                      <span className="text-[12px] sm:text-[13px] text-text-body1 leading-snug">
+                        {row.component}
+                      </span>
+                      <span className="text-[12px] sm:text-[13px] text-text-title text-right tabular-nums">
+                        {showValues ? formatINR(row.monthly_amount) : "*****"}
+                      </span>
+                      <span className="text-[12px] sm:text-[13px] text-text-title text-right tabular-nums">
+                        {showValues ? formatINR(row.annual_amount) : "*****"}
+                      </span>
+                    </div>
+                  ))}
 
-                  {/* Variable Pay Included in CTC */}
-                  {flexiData.salary_data.variable_pay_include_ctc?.map((item: any, idx: number) => (
+                  {/* ── Deductions (EPF, etc.) ── */}
+                  {deductionData.length > 0 && (
+                    <>
+                      {deductionData.map((item: ComponentPartOfCTC, i: number) => (
+                        <div
+                          key={`ded-${item.component}`}
+                          className={`grid grid-cols-[1fr_90px_90px] sm:grid-cols-[1fr_130px_130px] px-3 sm:px-4 py-[10px] sm:py-[11px] items-center ${i % 2 === 0 ? "bg-white" : "bg-gray-10/10"} border-t border-gray-50`}
+                        >
+                          <span className="text-[12px] sm:text-[13px] text-text-body1 leading-snug">{item.component}</span>
+                          <span className="text-[12px] sm:text-[13px] text-text-title text-right tabular-nums">
+                            {showValues ? formatINR(item.amount) : "*****"}
+                          </span>
+                          <span className="text-[12px] sm:text-[13px] text-text-title text-right tabular-nums">
+                            {showValues ? formatINR(item.annual_amount) : "*****"}
+                          </span>
+                        </div>
+                      ))}
+                    </>
+                  )}
+
+                  {/* ── Reimbursements Part of CTC ── */}
+                  {reimbursementData.length > 0 && (
+                    <>
+                      {reimbursementData.map((item: ComponentPartOfCTC, i: number) => (
+                        <div
+                          key={`reimb-${item.component}`}
+                          className={`grid grid-cols-[1fr_90px_90px] sm:grid-cols-[1fr_130px_130px] px-3 sm:px-4 py-[10px] sm:py-[11px] items-center ${i % 2 === 0 ? "bg-white" : "bg-gray-10/10"} border-t border-gray-50`}
+                        >
+                          <span className="text-[12px] sm:text-[13px] text-text-body1 leading-snug">{item.component}</span>
+                          <span className="text-[12px] sm:text-[13px] text-text-title text-right tabular-nums">
+                            {showValues ? formatINR(item.amount) : "*****"}
+                          </span>
+                          <span className="text-[12px] sm:text-[13px] text-text-title text-right tabular-nums">
+                            {showValues ? formatINR(item.annual_amount) : "*****"}
+                          </span>
+                        </div>
+                      ))}
+                    </>
+                  )}
+
+                  {/* ── Fixed CTC ── */}
+                  {fixedCTCData.map((row: SummaryCTCRow, idx: number) => (
+                    <div
+                      key={`fctc-${row.component || idx}`}
+                      className="grid grid-cols-[1fr_90px_90px] sm:grid-cols-[1fr_130px_130px] px-3 sm:px-4 py-[10px] sm:py-[11px] items-center bg-primary/10 border-t border-gray-200 font-bold"
+                    >
+                      <span className="text-[12px] sm:text-[13px] text-text-body1 leading-snug">
+                        {row.component}
+                      </span>
+                      <span className="text-[12px] sm:text-[13px] text-text-title text-right tabular-nums">
+                        {showValues ? formatINR(row.monthly_amount) : "*****"}
+                      </span>
+                      <span className="text-[12px] sm:text-[13px] text-text-title text-right tabular-nums">
+                        {showValues ? formatINR(row.annual_amount) : "*****"}
+                      </span>
+                    </div>
+                  ))}
+
+                  {/* ── Variable Pay Included in CTC ── */}
+                  {variablePayInclude.map((item: VariablePayRow, idx: number) => (
                     <div
                       key={`var-${item.component || idx}`}
                       className="grid grid-cols-[1fr_90px_90px] sm:grid-cols-[1fr_130px_130px] px-3 sm:px-4 py-[10px] sm:py-[11px] items-center bg-white border-t border-gray-100"
                     >
                       <span className="text-[12px] sm:text-[13px] text-text-body1 leading-snug">
-                        {item.component}
+                        {item.component || "Variable Pay"}
                       </span>
                       <span className="text-[12px] sm:text-[13px] text-text-title text-right tabular-nums">
                         -
@@ -480,25 +650,28 @@ export default function FlexiDeclaration() {
                     </div>
                   ))}
 
-                  {/* Total CTC */}
-                  <div
-                    className="grid grid-cols-[1fr_90px_90px] sm:grid-cols-[1fr_130px_130px] px-3 sm:px-4 py-[10px] sm:py-[11px] items-center bg-primary/10 border-t border-gray-200 font-bold"
-                  >
-                    <span className="text-[12px] sm:text-[13px] text-text-body1 leading-snug">
-                      Total CTC
-                    </span>
-                    <span className="text-[12px] sm:text-[13px] text-text-title text-right tabular-nums">
-                      -
-                    </span>
-                    <span className="text-[12px] sm:text-[13px] text-text-title text-right tabular-nums">
-                      {showValues ? formatINR(flexiData.salary_data.total_ctc || flexiData.salary_data.annual_ctc) : "*****"}
-                    </span>
-                  </div>
+                  {/* ── Total Final CTC ── */}
+                  {totalFinalCTC.map((row: TotalCTCRow, idx: number) => (
+                    <div
+                      key={`tctc-${row.component || idx}`}
+                      className="grid grid-cols-[1fr_90px_90px] sm:grid-cols-[1fr_130px_130px] px-3 sm:px-4 py-[10px] sm:py-[11px] items-center bg-primary/10 border-t border-gray-200 font-bold"
+                    >
+                      <span className="text-[12px] sm:text-[13px] text-text-body1 leading-snug">
+                        {row.component}
+                      </span>
+                      <span className="text-[12px] sm:text-[13px] text-text-title text-right tabular-nums">
+                        -
+                      </span>
+                      <span className="text-[12px] sm:text-[13px] text-text-title text-right tabular-nums">
+                        {showValues ? formatINR(row.annual_amount) : "*****"}
+                      </span>
+                    </div>
+                  ))}
                 </>
               )}
             </div>
 
-            {/* Variable Pay (Excluded from CTC) */}
+            {/* ── Variable Pay (Excluded from CTC) ── */}
             {flexiData?.salary_data?.variable_pay_exclude_ctc && flexiData.salary_data.variable_pay_exclude_ctc.length > 0 && (
               <div className="mt-6">
                 <div className="mb-4">
@@ -513,13 +686,13 @@ export default function FlexiDeclaration() {
                     <span className="text-[11px] sm:text-[12px] font-semibold text-text-body1 text-right">Annually</span>
                   </div>
 
-                  {flexiData.salary_data.variable_pay_exclude_ctc.map((item: any, i: number) => (
+                  {flexiData.salary_data.variable_pay_exclude_ctc.map((item: VariablePayRow, i: number) => (
                     <div
-                      key={item.component || i}
+                      key={`${item.component || i}`}
                       className={`grid grid-cols-[1fr_90px] sm:grid-cols-[1fr_130px] px-3 sm:px-4 py-[10px] sm:py-[11px] items-center ${i % 2 === 0 ? "bg-white" : "bg-gray-10/10"} ${i < flexiData.salary_data.variable_pay_exclude_ctc.length - 1 ? "border-b border-gray-50" : ""}`}
                     >
                       <span className="text-[12px] sm:text-[13px] text-text-body1 flex items-center gap-1 leading-snug">
-                        {item.component}
+                        {item.component || "Variable Pay"}
                       </span>
                       <span className="text-[12px] sm:text-[13px] text-text-title text-right tabular-nums">
                         {showValues ? formatINR(item.annual_amount) : "*****"}

@@ -2,6 +2,9 @@ import { ArrowRight, Check } from "lucide-react";
 import React from "react";
 import Button from "../../../../shared/atoms/Button";
 import { Typography } from "../../../../shared/atoms/Typography";
+import Badge from "../../../../shared/Badge";
+
+import { useNavigate } from "react-router-dom";
 
 const steps = [
   { n: null, label: "Goal Setting", done: true },
@@ -16,59 +19,49 @@ interface HeroCardProps {
 }
 
 const HeroCard: React.FC<HeroCardProps> = ({ isCompact }) => {
+  const navigate = useNavigate();
+
   return (
     <section className="overflow-hidden rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5 lg:p-6">
-      <div
-        className={`mb-5 flex ${isCompact ? "flex-col gap-4" : "items-start justify-between"} lg:mb-6`}
-      >
-        <div className="space-y-2 min-w-0">
-          <div className="flex flex-wrap items-center gap-2">
-            <div className="flex items-center gap-1.5 rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-blue-600">
-              <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
-              CYCLE LIVE
-            </div>
-            <Typography variant="caption" className="text-gray-500 font-medium">
-              Apr 2026 → Mar 2027 · India Tech
-            </Typography>
+      <div aria-label="Cycle Details" className="mb-5 flex min-w-0 flex-col justify-between gap-4 sm:mb-8 lg:flex-row lg:items-end">
+        <div className="min-w-0">
+          <div className="mb-3 flex flex-wrap items-center gap-2">
+            <Badge label="CYCLE LIVE" backgroundColor="bg-blue-100 " textColor="text-blue-700" size="sm" pulse={{ show: true, color: "bg-blue-600" }} />
+            <Typography variant="bodySmall" className="break-words text-gray-500">Apr 2026 &rarr; Mar 2027 &middot; India Tech</Typography>
           </div>
-          <div className="pt-0.5">
-            <h1 className="mb-1 text-xl font-bold leading-tight text-slate-950">
-              FY26 Annual Performance Cycle
-            </h1>
-            <Typography
-              variant="bodySmall"
-              className="text-gray-500 font-medium"
-            >
-              Your team · 8 reportees · India Tech BU
-            </Typography>
-          </div>
+          <Typography variant="h3" className="break-words text-xl leading-tight sm:text-2xl">FY26 Annual Performance Cycle</Typography>
+          <Typography variant="bodySmall" className="mt-1 block break-words text-gray-500">  Your team · 8 reportees · India Tech BU</Typography>
         </div>
-        <div
-          className={`flex ${isCompact ? "w-full flex-col sm:flex-row items-start sm:items-center sm:justify-between" : "items-end"} gap-4 shrink-0`}
-        >
-          <div className="flex flex-col items-start sm:items-center">
-            <Typography
-              variant="caption"
-              className="text-gray-400 uppercase tracking-widest font-bold text-[10px]"
+        
+        <div className="flex w-full min-w-0 flex-col items-start lg:w-auto lg:items-end">
+         
+                 <div className="flex w-full min-w-0  flex-col gap-3 sm:flex-row sm:items-center lg:w-auto lg:justify-end">
+            <div className="flex flex-col items-start sm:items-center">
+              <Typography
+                variant="caption"
+                className="text-gray-400 uppercase tracking-widest font-bold text-[10px]"
+              >
+                NEXT DEADLINE
+              </Typography>
+              <Typography
+                variant="bodySmall"
+                className="text-[#1a73e8] font-bold"
+              >
+                Self-Review due 21 May
+              </Typography>
+            </div>
+            <Button
+              variant="contain"
+              bgColor="primary"
+              onClick={() => navigate("/webapp/performance-app/team-reviews")}
+              className={`${isCompact ? "w-full sm:w-auto" : "px-5 py-2.5"} bg-[#1a73e8] hover:bg-blue-600 font-semibold rounded-lg shadow-sm text-sm inline-flex items-center justify-center`}
             >
-              NEXT DEADLINE
-            </Typography>
-            <Typography
-              variant="bodySmall"
-              className="text-[#1a73e8] font-bold"
-            >
-              Self-Review due 21 May
-            </Typography>
+              Continue Self-Review <ArrowRight className="w-4 h-4 ml-1.5" />
+            </Button>
           </div>
-          <Button
-            variant="contain"
-            bgColor="primary"
-            className={`${isCompact ? "w-full sm:w-auto" : "px-5 py-2.5"} bg-[#1a73e8] hover:bg-blue-600 font-semibold rounded-lg shadow-sm text-sm inline-flex items-center justify-center`}
-          >
-            Continue Self-Review <ArrowRight className="w-4 h-4 ml-1.5" />
-          </Button>
         </div>
       </div>
+    
 
       <div className="flex items-center gap-0 overflow-x-auto pb-1 scrollbar-hide">
         {steps.map((step, idx) => (

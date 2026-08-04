@@ -486,6 +486,25 @@ export const attendanceService = {
     }
   },
 
+  // Attendance Settings gate for the calendar Comp-Off (Co+/Co-) + Late Entry /
+  // Early Exit markers & legend. Mirrors get_events' server-side gating so the
+  // legend only appears when the admin has enabled the feature.
+  getCompoffLateDetailsEnabled: async (): Promise<boolean> => {
+    try {
+      const res = await FrappeAPI.callMethod("frappe.client.get_single_value", {
+        doctype: "Attendance Settings",
+        field: "show_compoff_late_details_in_calendar",
+      });
+      return Number(res) === 1;
+    } catch (error) {
+      console.error(
+        "📡 Error while reading Comp-Off / Late Entry calendar setting:",
+        error
+      );
+      return false;
+    }
+  },
+
   getPolicyForDate: async (
     filters: AllEventsAndAttendanceT
   ): Promise<string> => {
@@ -621,12 +640,14 @@ export const attendanceService = {
   getAttendanceById: async (
     filters?: FilterCondition[]
   ): Promise<Attendance[]> => {
-    const response = await FrappeAPI.getDocumentList("Attendance", {
-      fields: ["*"],
-      filters: filters,
-      orderBy: "creation desc",
-    });
-    return response.data as Attendance[];
+    const response = await FrappeAPI.getMethod(
+      "recruitment.api.attendance.get_attendance_list",
+      {
+        filters: filters ? JSON.stringify(filters) : undefined,
+        order_by: "creation desc",
+      }
+    );
+    return response as Attendance[];
   },
   getUserRoles: async (filters?: FilterCondition[]): Promise<UserRoles> => {
     const response = await FrappeAPI.getMethod(

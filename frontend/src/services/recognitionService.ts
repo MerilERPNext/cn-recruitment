@@ -247,15 +247,15 @@ export const useGetEmployeeRecognitionPoints = (employee?: string) => {
           fields: ["name"],
           limit: 1,
         });
-        
+
         if (employeeDoc.data.length === 0) {
           return { success: true, points: 0 };
         }
-        
+
         const firstEmployee = employeeDoc.data[0] as { name: string };
         employee = firstEmployee.name;
       }
-      
+
       // Get employee recognitions and calculate points
       const recognitions = await FrappeAPI.getDocumentList("Employee Recognition", {
         filters: [
@@ -265,12 +265,12 @@ export const useGetEmployeeRecognitionPoints = (employee?: string) => {
         ],
         fields: ["recognition_type"],
       });
-      
+
       let totalPoints = 0;
       for (const rec of recognitions.data) {
         const recItem = rec as { recognition_type?: string };
         if (!recItem.recognition_type) continue;
-        
+
         try {
           const recType = await FrappeAPI.getDocument(
             "Recognition Type",
@@ -283,7 +283,7 @@ export const useGetEmployeeRecognitionPoints = (employee?: string) => {
           // Skip if recognition type not found
         }
       }
-      
+
       return { success: true, points: totalPoints };
     },
     enabled: !!employee || true, // Always enabled, will fetch current user if employee not provided

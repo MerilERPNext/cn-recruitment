@@ -5,6 +5,7 @@ import { Card } from "../../shared/atoms/Card";
 import { Search, Star } from "lucide-react";
 import Avatar from "./Avatar";
 import WrapperHoverCard from "../../shared/WrapperHoverCard";
+import WrapperHoverCard from "../../shared/WrapperHoverCard";
 import { useCurrentEmployeeDetails } from "../../../hooks/useEmployee";
 import { useTargetUser } from "../../../context/ViewedUserContext";
 import {
@@ -13,6 +14,7 @@ import {
   LeaderboardPersonEntry,
   AppreciationApiItem,
 } from "../../../services/recognitionService";
+import formatToIndianDate from "../../../utils/formatToIndianDate";
 
 // Resolve relative Frappe file paths (e.g. "/private/files/..") against the API host.
 const API_HOST =
@@ -43,7 +45,8 @@ const PodiumColumn: React.FC<{
   height: string;
   size: number;
   score: number;
-}> = ({ person, height, size, score }) => (
+  employeeId: string;
+}> = ({ person, height, size, score, employeeId }) => (
   <div className={`flex flex-col items-center ${height}`}>
     <div className="relative mb-3">
       <StarBadge rank={person.rank} />
@@ -83,7 +86,7 @@ const AppreciationNoteCard: React.FC<{ item: AppreciationApiItem }> = ({ item })
           </Typography>
         </WrapperHoverCard>
         <Typography variant="caption" color="body2" className="block">
-          {item.direction === "received" ? "From" : "To"} · {item.date}
+          {item.direction === "received" ? "From" : "To"} · {formatToIndianDate(item.date)}
         </Typography>
       </div>
     </div>
@@ -245,6 +248,7 @@ const AppreciationsLeaderboard: React.FC = () => {
                           height={col.height}
                           size={col.size}
                           score={scoreOf(col.person!)}
+                          employeeId={col.person!.employee}
                         />
                       ))}
                     </div>

@@ -13,7 +13,7 @@ import AllocatedToTooltip from "../../shared/AllocatedToTooltip";
 import MobileAllocatedTo from "../../shared/MobileAllocatedTo";
 import { RoleAssignedUsersType } from "../../../types/flows";
 import { errorResponseFormater } from "../../../utils/errorResponseFormater";
-import formatToIndianDate from "../../../utils/formatToIndianDate";
+import formatToIndianDate, { formatDatesInText } from "../../../utils/formatToIndianDate";
 export type CompensatoryRequestItem = {
   name: string;
   leave_type: string;
@@ -76,7 +76,8 @@ const CompensatoryRequestCard = ({
   };
 
   const cleanReason = sanitizeToPlainText(item.reason);
-  const truncatedReason = truncateByChars(cleanReason);
+  const formattedReason = formatDatesInText(cleanReason);
+  const truncatedReason = truncateByChars(formattedReason);
 
   const resolvedStatus = resolveCompOffStatus(item?.custom_status, item?.docstatus);
   const isPendingStatus = ["pending", "open"].includes(resolvedStatus?.toLowerCase());
@@ -99,7 +100,7 @@ const CompensatoryRequestCard = ({
         {formatToIndianDate(item.work_end_date)}
       </Typography>
 
-      <Tooltip content={cleanReason}>
+      <Tooltip content={formattedReason}>
         <Typography
           variant="bodySmall"
           className="font-medium text-center truncate"
@@ -186,7 +187,7 @@ const CompensatoryRequestCard = ({
               <Typography variant="mobileCardLabel">Reason</Typography>
 
               <Typography variant="mobileCardValue">
-                {truncateByChars(cleanReason, 60)}
+                {truncateByChars(formattedReason, 60)}
               </Typography>
             </div>
           )}
