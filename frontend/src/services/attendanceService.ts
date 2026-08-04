@@ -2,6 +2,7 @@
 import FrappeAPI from "../utils/frappeAPI";
 import type {
   AllEventsAndAttendanceT,
+  ApprovalFlowResponse,
   Attendance,
   AttendanceRecord,
   AttendanceRequest,
@@ -240,6 +241,25 @@ export const attendanceService = {
       throw error;
     }
   },
+  getApprovalFlow: async (
+    doctype: string,
+    docname: string
+  ): Promise<ApprovalFlowResponse> => {
+    try {
+      const response = await FrappeAPI.getMethod(
+        "cn_leave_shift_managment.api.get_approval_flow",
+        {
+          doctype,
+          docname,
+        }
+      );
+      return response as ApprovalFlowResponse;
+    } catch (error) {
+      console.error("📡 Error in fetching approval flow:", error);
+      throw error;
+    }
+  },
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   getEmployeeDeviceId: async (): Promise<any> => {
     try {
