@@ -1130,7 +1130,7 @@ const TimesheetCreate: React.FC = () => {
 
           <div className="flex flex-wrap justify-center sm:justify-end items-center gap-2 sm:gap-4 pointer-events-auto bg-white/90 backdrop-blur-md p-3 sm:px-4 sm:py-3 rounded-2xl shadow-2xl border border-gray-200">
 
-            {!isGridEditable ? (
+            {isGridEditable ? (
               <>
                 {/* File Attachment Upload */}
                 <div className="relative">
