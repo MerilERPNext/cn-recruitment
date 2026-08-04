@@ -3,7 +3,6 @@ import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import {
   ChevronRight,
-  Filter,
   Info,
   Trash2,
   Plus,
@@ -26,6 +25,7 @@ import {
 } from "../../../hooks/usePerformance";
 import type { MyGoalsGoal, MyGoalsKeyResult } from "../../../types/goal";
 import { getPerformanceErrorMessage } from "../../../services/performanceService";
+import CustomDropdown from "../../shared/CustomDropdown";
 
 const getStatusVariant = (status?: string): BadgeVariant => {
   const s = (status ?? "").toLowerCase();
@@ -45,6 +45,14 @@ const getSubmissionVariant = (state?: string): BadgeVariant => {
   if (s === "draft") return "info";
   return "info";
 };
+const statusOptions = [
+  { value: "all", label: "All Status" },
+  { value: "pending", label: "Pending" },
+  { value: "draft", label: "Draft" },
+  { value: "submitted", label: "Submitted" },
+  { value: "approved", label: "Approved" },
+  { value: "rejected", label: "Rejected" },
+];
 
 const getBarColor = (status?: string): string => {
   const s = (status ?? "").toLowerCase();
@@ -76,12 +84,14 @@ const MyGoals: React.FC<MyGoalsProps> = ({ onCreateGoal, onSelectGoal }) => {
   const [selectedGoals, setSelectedGoals] = useState<string[]>([]);
   const [editedWeightages, setEditedWeightages] = useState<Record<string, number>>({});
   const [goalsToDelete, setGoalsToDelete] = useState<string[]>([]);
+  const [statusFilter, setStatusFilter] = useState<string>("all");
 
   const { data: myGoalsResponse, isLoading, isError, error } = useMyGoals();
   const { mutateAsync: submitSelectedGoals, isPending: isSubmitting } = useSubmitSelectedGoals();
   const { mutateAsync: deleteGoals, isPending: isDeleting } = useDeleteGoals();
 
   const goalsData = myGoalsResponse?.data;
+  console.log(goalsData,'==============================my goalsssssss')
   const allGoals: MyGoalsGoal[] = goalsData?.goals ?? [];
   const totalGoals = goalsData?.total ?? 0;
   const activeCycle = goalsData?.active_cycle ?? "";
@@ -92,16 +102,18 @@ const MyGoals: React.FC<MyGoalsProps> = ({ onCreateGoal, onSelectGoal }) => {
   }, 0);
 
   const goals = useMemo(() => {
-    if (!searchQuery.trim()) return allGoals;
-    const q = searchQuery.toLowerCase();
-    return allGoals.filter(
-      (g) =>
-        (g.title || "").toLowerCase().includes(q) ||
+    return allGoals.filter(g=>{
+      const goalStatus = (getGoalSubmissionStatus(g) || "").toLocaleLowerCase()
+      const matchStatus = statusFilter === "all" || goalStatus === statusFilter.toLocaleLowerCase()
+      const q = searchQuery.trim().toLocaleLowerCase()
+      const matchSearch = !q || (g.title || "").toLowerCase().includes(q) ||
         (g.description || "").toLowerCase().includes(q) ||
         (g.department_title || "").toLowerCase().includes(q) ||
         (g.goal_type || "").toLowerCase().includes(q)
-    );
-  }, [allGoals, searchQuery]);
+
+        return matchStatus && matchSearch
+      })
+  }, [allGoals, searchQuery, statusFilter]);
 
   const handleDeleteDraftGoal = (e: React.MouseEvent, goal: MyGoalsGoal) => {
     e.stopPropagation();
@@ -296,15 +308,15 @@ const MyGoals: React.FC<MyGoalsProps> = ({ onCreateGoal, onSelectGoal }) => {
             </div>
 
             <div className="grid w-full shrink-0 grid-cols-2 gap-3 sm:flex sm:items-center md:w-auto">
-              <Button
-                variant="outline"
-                bgColor="text"
-                size="sm"
-                icon={<Filter className="h-4 w-4" />}
-                className="h-10 w-full justify-center bg-white sm:w-auto"
-              >
-                Filter
-              </Button>
+              <CustomDropdown
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                options={statusOptions}
+                label="Filter Status"
+                contentAlign="start"
+                className="w-36"
+                menuClassName="!w-40 !min-w-0"
+              />
               <Button
                 onClick={() => {
                   if (onCreateGoal) {
