@@ -1112,6 +1112,10 @@ const TimesheetCreate: React.FC = () => {
           handleSaveComment={() => {
             handleSaveComment(modalCommentText);
           }}
+          onReset={() => {
+            setModalCommentText("");
+            handleSaveComment("");
+          }}
         />
       }
 
