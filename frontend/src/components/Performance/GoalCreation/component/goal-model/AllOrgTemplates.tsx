@@ -2,11 +2,9 @@ import React from 'react';
 import { CheckSquare, Square, Search } from 'lucide-react';
 import TemplateCard from './TemplateCard';
 import { GoalTemplate, TemplateListProps, getGoalKey } from './types';
-import Button from '../../../../shared/atoms/Button';
 import { Typography } from '../../../../shared/atoms/Typography';
 
 const AllOrgTemplates = ({
-    onUseTemplate,
     selectedTemplates = [],
     onToggleSelect,
     onSelectAll,
