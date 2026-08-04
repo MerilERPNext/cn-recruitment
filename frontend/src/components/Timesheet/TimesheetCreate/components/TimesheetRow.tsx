@@ -102,8 +102,8 @@ export const TimesheetRow: React.FC<TimesheetRowProps> = ({
 
   if (!isDesktop) {
     return (
-      <tr className="block border-b border-gray-100 px-2 py-3 sm:p-4">
-        <td className="block w-full">
+      <tr className="block border-none px-2 py-3 sm:p-4">
+        <td className="block border-none w-full">
           <div className="bg-white border border-t-[3px] border-t-primary rounded-xl p-3 shadow-sm space-y-4">
             <div className="flex justify-between items-start">
               {isGridEditable ? (
@@ -131,19 +131,11 @@ export const TimesheetRow: React.FC<TimesheetRowProps> = ({
                   </div>
                 </div>
               )}
-              {isGridEditable && (
-                <button
-                  type="button"
-                  onClick={() => handleDeleteRow(row.id)}
-                  className="text-gray-400 hover:text-red-500 p-1.5 hover:bg-red-50 rounded-lg transition-colors focus:outline-none ml-2 flex-shrink-0"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              )}
             </div>
 
-            <div className="grid grid-cols-7 gap-1">
-              {daysOfWeek.map(day => {
+            <div className={`mt-2 p-1 rounded-lg ${validationErrors[`${row.id}_empty_row`] ? 'bg-red-50/50 border border-red-500' : ''}`}>
+              <div className="grid grid-cols-7 gap-1">
+                {daysOfWeek.map(day => {
                 const dateKey = format(day, "yyyy-MM-dd");
                 const cell = row.days[dateKey] || { hours: 0, description: "" };
                 const hasComment = !!cell.description;
@@ -185,12 +177,31 @@ export const TimesheetRow: React.FC<TimesheetRowProps> = ({
                   </div>
                 );
               })}
+              </div>
+              {validationErrors[`${row.id}_empty_row`] && (
+                <div className="text-red-500 text-[10px] mt-2 font-semibold text-center">
+                  Must have at least one logged hour
+                </div>
+              )}
             </div>
 
             <div className="flex justify-between items-center pt-2 border-t border-gray-50">
               <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Total Hours</span>
               <span className="font-bold text-primary">{formatCellOnBlur(getRowTotal(row)) || "0:00"}</span>
             </div>
+
+            {isGridEditable && (
+              <div className="pt-2">
+                <button
+                  type="button"
+                  onClick={() => handleDeleteRow(row.id)}
+                  className="w-full h-9 flex items-center justify-center gap-2 rounded-xl bg-gray-50 hover:bg-red-50 text-red-400 hover:text-red-500 transition-colors focus:outline-none border border-gray-100 hover:border-red-100"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  <span className="text-sm font-semibold">Remove</span>
+                </button>
+              </div>
+            )}
           </div>
         </td>
       </tr>
@@ -198,7 +209,8 @@ export const TimesheetRow: React.FC<TimesheetRowProps> = ({
   }
 
   return (
-    <tr className="hover:bg-gray-50/50">
+    <>
+    <tr className={`hover:bg-gray-50/50 ${validationErrors[`${row.id}_empty_row`] ? 'bg-red-50/30' : ''}`}>
       {/* Row Projects info */}
       <td className="px-6 py-4 align-middle">
         {isGridEditable ? (
@@ -309,17 +321,31 @@ export const TimesheetRow: React.FC<TimesheetRowProps> = ({
       {/* Delete Action */}
       <td className="px-4 py-3 text-center border-l border-gray-50 align-middle">
         {isGridEditable && (
-          <Tooltip content="Delete row" position="top">
-            <button
-              type="button"
-              onClick={() => handleDeleteRow(row.id)}
-              className="mx-auto flex items-center justify-center text-gray-400 hover:text-red-500 p-2 hover:bg-red-50 rounded-lg transition-colors focus:outline-none"
-            >
-              <Trash2 className="w-4 h-4" />
-            </button>
-          </Tooltip>
+          <div className="h-8 flex items-center justify-center gap-1 px-3 py-1 rounded-3xl bg-gray-10 w-fit mx-auto">
+            <Tooltip content="Delete row" position="top">
+              <button
+                type="button"
+                onClick={() => handleDeleteRow(row.id)}
+                className="flex items-center justify-center focus:outline-none"
+              >
+                <Trash2 className="w-4 h-4 text-red-400 hover:text-red-500 transition-colors" />
+              </button>
+            </Tooltip>
+          </div>
         )}
       </td>
     </tr>
+    {validationErrors[`${row.id}_empty_row`] && (
+      <tr>
+        <td></td>
+        <td colSpan={7} className="px-2 pb-2">
+          <div className="text-red-500 text-[11px] font-semibold text-center bg-red-50 border border-red-200 rounded p-1.5 shadow-sm">
+            Must have at least one logged hour
+          </div>
+        </td>
+        <td colSpan={2}></td>
+      </tr>
+    )}
+    </>
   );
 };
