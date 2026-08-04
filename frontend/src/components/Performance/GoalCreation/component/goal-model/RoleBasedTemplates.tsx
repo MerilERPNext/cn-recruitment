@@ -29,16 +29,23 @@ const RoleBasedTemplates = ({
         }, [allOrgTemplatesData]);
    
 
-    const selectedIds = selectedTemplates.map((t) => getGoalKey(t));
+    const selectedSet = useMemo(() => {
+        return new Set(selectedTemplates.map((t) => getGoalKey(t)));
+    }, [selectedTemplates]);
 
-    const isAllSelected =
-        filteredTemplates.length > 0 &&
-        filteredTemplates.every((t) => selectedIds.includes(getGoalKey(t)));
+    const isAllSelected = useMemo(() => {
+        return (
+            filteredTemplates.length > 0 &&
+            filteredTemplates.every((t) => selectedSet.has(getGoalKey(t)))
+        );
+    }, [filteredTemplates, selectedSet]);
 
-    const totalSelectedWeightage = selectedTemplates.reduce(
-        (acc, item) => acc + (weightages[getGoalKey(item)] ?? 10),
-        0
-    );
+    const totalSelectedWeightage = useMemo(() => {
+        return selectedTemplates.reduce(
+            (acc, item) => acc + (weightages[getGoalKey(item)] ?? 10),
+            0
+        );
+    }, [selectedTemplates, weightages]);
 
     if (filteredTemplates.length === 0) {
         return (
@@ -83,7 +90,7 @@ const RoleBasedTemplates = ({
                         key={getGoalKey(template)}
                         template={template}
                         hideUseTemplate={true}
-                        isSelected={selectedIds.includes(getGoalKey(template))}
+                        isSelected={selectedSet.has(getGoalKey(template))}
                         onToggleSelect={onToggleSelect}
                         weightage={weightages[getGoalKey(template)] ?? 10}
                         onWeightageChange={onWeightageChange}

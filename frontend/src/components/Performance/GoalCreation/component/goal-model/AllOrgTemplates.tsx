@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { CheckSquare, Square, Search } from 'lucide-react';
 import TemplateCard from './TemplateCard';
 import { GoalTemplate, TemplateListProps, getGoalKey } from './types';
@@ -13,16 +13,23 @@ const AllOrgTemplates = ({
     allOrgTemplatesData = []
 }: TemplateListProps) => {
 
-    const selectedIds = selectedTemplates.map((t) => getGoalKey(t));
+    const selectedSet = useMemo(() => {
+        return new Set(selectedTemplates.map((t) => getGoalKey(t)));
+    }, [selectedTemplates]);
 
-    const isAllSelected =
-        allOrgTemplatesData.length > 0 &&
-        allOrgTemplatesData.every((t) => selectedIds.includes(getGoalKey(t)));
+    const isAllSelected = useMemo(() => {
+        return (
+            allOrgTemplatesData.length > 0 &&
+            allOrgTemplatesData.every((t) => selectedSet.has(getGoalKey(t)))
+        );
+    }, [allOrgTemplatesData, selectedSet]);
 
-    const totalSelectedWeightage = selectedTemplates.reduce(
-        (acc, item) => acc + (weightages[getGoalKey(item)] ?? 10),
-        0
-    );
+    const totalSelectedWeightage = useMemo(() => {
+        return selectedTemplates.reduce(
+            (acc, item) => acc + (weightages[getGoalKey(item)] ?? 10),
+            0
+        );
+    }, [selectedTemplates, weightages]);
 
     if (allOrgTemplatesData.length === 0) {
         return (
@@ -68,7 +75,7 @@ const AllOrgTemplates = ({
                         key={getGoalKey(template)}
                         template={template}
                         hideUseTemplate={true}
-                        isSelected={selectedIds.includes(getGoalKey(template))}
+                        isSelected={selectedSet.has(getGoalKey(template))}
                         onToggleSelect={onToggleSelect}
                         weightage={weightages[getGoalKey(template)] ?? 10}
                         onWeightageChange={onWeightageChange}

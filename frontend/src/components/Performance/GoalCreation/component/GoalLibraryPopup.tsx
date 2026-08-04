@@ -117,36 +117,36 @@ const GoalLibraryPopup = ({ onClose, onUseTemplate }: GoalLibraryPopupProps) => 
         return (goalRepoLoading || goalRepo?.data?.repositories?.length === 0) ? [] : [];
     }, [goalRepo, goalRepoLoading]);
 
-    const handleToggleSelect = (template: GoalTemplate) => {
+    const handleToggleSelect = useCallback((template: GoalTemplate) => {
         const key = getGoalKey(template);
         setSelectedTemplates((prev) =>
             prev.some((t) => getGoalKey(t) === key)
                 ? prev.filter((t) => getGoalKey(t) !== key)
                 : [...prev, template]
         );
-    };
+    }, []);
 
-    const handleSelectAll = (templatesToToggle: GoalTemplate[]) => {
+    const handleSelectAll = useCallback((templatesToToggle: GoalTemplate[]) => {
         const toggleKeys = new Set(templatesToToggle.map((t) => getGoalKey(t)));
-        const allIncluded =
-            templatesToToggle.length > 0 &&
-            templatesToToggle.every((t) => selectedTemplates.some((st) => getGoalKey(st) === getGoalKey(t)));
+        setSelectedTemplates((prev) => {
+            const allIncluded =
+                templatesToToggle.length > 0 &&
+                templatesToToggle.every((t) => prev.some((st) => getGoalKey(st) === getGoalKey(t)));
 
-        if (allIncluded) {
-            setSelectedTemplates((prev) => prev.filter((t) => !toggleKeys.has(getGoalKey(t))));
-        } else {
-            setSelectedTemplates((prev) => {
+            if (allIncluded) {
+                return prev.filter((t) => !toggleKeys.has(getGoalKey(t)));
+            } else {
                 const existingKeys = new Set(prev.map((t) => getGoalKey(t)));
                 const newItems = templatesToToggle.filter((t) => !existingKeys.has(getGoalKey(t)));
                 return [...prev, ...newItems];
-            });
-        }
-    };
+            }
+        });
+    }, []);
 
-    const handleWeightageChange = (template: GoalTemplate, weight: number) => {
+    const handleWeightageChange = useCallback((template: GoalTemplate, weight: number) => {
         const key = getGoalKey(template);
         setWeightages((prev) => ({ ...prev, [key]: weight }));
-    };
+    }, []);
 
     const handleSubmitFooter = () => {
         if (selectedTemplates.length > 0) {
