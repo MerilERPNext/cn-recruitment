@@ -1,5 +1,5 @@
 import React from 'react';
-import { BarChart2, Calendar, Sparkles, MessageSquare } from 'lucide-react';
+import { BarChart2, Calendar, CheckSquare, MessageSquare } from 'lucide-react';
 import { Typography } from '../../../shared/atoms/Typography';
 import type { StatItem } from '../types';
 
@@ -41,7 +41,7 @@ const OverviewStats: React.FC = () => {
     {
       id: 'check-ins-this-quarter',
       title: 'Check-ins This Quarter',
-      icon: Sparkles,
+      icon: CheckSquare,
       iconBgColor: 'bg-green-50',
       iconTextColor: 'text-green-500',
       value: checkins ? `${checkins.done} / ${checkins.expected}` : '- / -',
