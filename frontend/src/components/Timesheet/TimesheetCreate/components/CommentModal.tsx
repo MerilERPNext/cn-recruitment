@@ -1,7 +1,7 @@
 import Modal from '../../../shared/Modal';
 import { Typography } from '../../../shared/atoms/Typography';
 import Button from '../../../shared/atoms/Button';
-import { X } from 'lucide-react';
+import { X, RotateCcw } from 'lucide-react';
 
 interface CommentModalProps {
     onClose: () => void;
@@ -11,6 +11,7 @@ interface CommentModalProps {
     disabled?: boolean;
     showSubmitButton?: boolean;
     handleSaveComment: () => void;
+    onReset?: () => void;
 }
 
 export const CommentModal: React.FC<CommentModalProps> = ({
@@ -20,7 +21,8 @@ export const CommentModal: React.FC<CommentModalProps> = ({
     onChange,
     disabled = false,
     showSubmitButton = true,
-    handleSaveComment
+    handleSaveComment,
+    onReset
 }) => {
     return (
         <Modal isOpen={true} onClose={onClose} size="md">
@@ -66,6 +68,17 @@ export const CommentModal: React.FC<CommentModalProps> = ({
                     >
                         Close
                     </Button>
+                    {showSubmitButton && onReset && value.trim() && (
+                        <Button
+                            variant="outline"
+                            bgColor="danger"
+                            size="md"
+                            onClick={onReset}
+                        >
+                            <RotateCcw className="h-4 w-4 mr-1.5" />
+                            Reset
+                        </Button>
+                    )}
                     {showSubmitButton && (
                         <Button
                             variant="contain"

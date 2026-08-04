@@ -12,7 +12,10 @@
   "replacement_for",
   "reporting_manager",
   "employee_type",
-  "cost_center_allocations"
+  "cost_center_allocations",
+  "approval_status",
+  "approved_by",
+  "approved_on"
  ],
  "fields": [
   {
@@ -76,6 +79,29 @@
    "fieldname": "cost_center_allocations",
    "fieldtype": "Long Text",
    "label": "Cost Center Allocations"
+  },
+  {
+   "default": "Pending",
+   "description": "Outcome of this position's own approval, stamped by the approval matrix when the position's reporting manager acts on it.",
+   "fieldname": "approval_status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Approval Status",
+   "options": "Pending\nApproved\nRejected",
+   "read_only": 1
+  },
+  {
+   "fieldname": "approved_by",
+   "fieldtype": "Link",
+   "label": "Approved By",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "approved_on",
+   "fieldtype": "Datetime",
+   "label": "Approved On",
+   "read_only": 1
   }
  ],
  "grid_page_length": 50,
