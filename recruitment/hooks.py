@@ -286,6 +286,11 @@ doc_events = {
             "recruitment.recruitment.doctype.raise_requisition_scope.raise_requisition_scope.enforce_can_raise",
         ],
         "validate": [
+            # While a row-level approval stage is running, every position row has
+            # its own approval task. Adding a row would let an unapproved position
+            # through and removing one would strand a live task, so the table is
+            # frozen until the approval completes or is revoked.
+            "nextai.funnel.doctype.funnel_task.utils.row_approval.guard_row_table_edits",
             # Keep no_of_positions in sync with the actual custom_position_details
             # row count on every save (Desk UI edits, scripted updates, etc.).
             "recruitment.api.job_requisition.sync_no_of_positions",
