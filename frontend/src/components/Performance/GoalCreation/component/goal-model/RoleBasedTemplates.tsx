@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { CheckSquare, Square, Search } from 'lucide-react';
 import TemplateCard from './TemplateCard';
-import { GoalTemplate, TemplateListProps, filterTemplates, getGoalKey } from './types';
+import { GoalTemplate, TemplateListProps, getGoalKey } from './types';
 import Button from '../../../../shared/atoms/Button';
 import { Typography } from '../../../../shared/atoms/Typography';
 
@@ -11,21 +11,25 @@ export const roleBasedTemplatesData: GoalTemplate[] = [
 
 const RoleBasedTemplates = ({
     onUseTemplate,
-    searchQuery = '',
-    selectedDepartment = 'All',
-    selectedDesignation = 'All',
     selectedTemplates = [],
     onToggleSelect,
     onSelectAll,
     weightages = {},
     onWeightageChange,
+    allOrgTemplatesData=[]
 }: TemplateListProps) => {
-    const filteredTemplates = filterTemplates(
-        roleBasedTemplatesData,
-        searchQuery,
-        selectedDepartment,
-        selectedDesignation
-    );
+      const filteredTemplates = useMemo(() => {
+            return (allOrgTemplatesData || []).filter((t) => {
+                return Boolean(
+                    t?.role ||
+                    t?.role_title ||
+                    t?.role_name ||
+                    t?.job_role ||
+                    t?.role_based 
+                );
+            });
+        }, [allOrgTemplatesData]);
+   
 
     const selectedIds = selectedTemplates.map((t) => getGoalKey(t));
 

@@ -8,12 +8,21 @@ export type GoalTemplate = Partial<Goal> & {
     usedCount?: number;
     recommended?: boolean;
     department?: string | null;
+    department_title?: string | null;
     designation?: string;
-    total_weightage?:number;
-    goal_count?:number;
+    designation_title?: string | null;
+    designation_name?: string | null;
+    role?: string | null;
+    role_title?: string | null;
+    role_name?: string | null;
+    job_role?: string | null;
+    role_based?: boolean | number | string | null;
+    total_weightage?: number;
+    goal_count?: number;
     used_by_count?: number; 
     owner_designation?: string | null;
-    repository_goals?: GoalTemplate[]
+    owner_employee_name?: string | null;
+    repository_goals?: GoalTemplate[];
 };
 
 export const getGoalKey = (template: GoalTemplate | CascadeGoal | DraftGoalItem): string => {

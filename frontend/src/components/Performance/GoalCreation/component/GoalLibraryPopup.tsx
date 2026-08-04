@@ -3,12 +3,12 @@ import { AlertCircle, ArrowRight, Search, X } from 'lucide-react';
 import Button from '../../../shared/atoms/Button';
 import { AsyncSelect, SelectOption } from '../../../shared/atoms/AsyncSelect';
 import { Typography } from '../../../shared/atoms/Typography';
-import { GoalTemplate, filterTemplates, getGoalKey } from './goal-model/types';
+import { GoalTemplate, getGoalKey } from './goal-model/types';
 import RecommendedTemplates from './goal-model/RecommendedTemplates';
 import AllOrgTemplates from './goal-model/AllOrgTemplates';
 import DepartmentTemplates from './goal-model/DepartmentTemplates';
 import DesignationTemplates from './goal-model/DesignationTemplates';
-import RoleBasedTemplates, { roleBasedTemplatesData } from './goal-model/RoleBasedTemplates';
+import RoleBasedTemplates from './goal-model/RoleBasedTemplates';
 import { fetchDepartmentOptions, fetchDesignationOptions, useGoalRepository, useReferanceGoals } from '../../../../hooks/usePerformance';
 import { useCurrentEmployeeDetails } from '../../../../hooks/useEmployee';
 import useDebounce from '../../../../hooks/useDebounce';
@@ -127,9 +127,15 @@ const GoalLibraryPopup = ({ onClose, onUseTemplate }: GoalLibraryPopupProps) => 
     const counts = useMemo(() => ({
         recommended: recommendedGoals.length,
         allOrg: goals.length,
-        department: goals.filter((g: GoalTemplate ) => Boolean(g.department || g.department_title)).length,
-        designation: goals.filter((g: GoalTemplate) => Boolean(g.designation)).length,
-        roleBased: filterTemplates(roleBasedTemplatesData, debouncedSearchQuery, selectedDepartment.value, selectedLevel.value).length,
+        department: goals.filter((g: GoalTemplate) => Boolean(g.department || g.department_title)).length,
+        designation: goals.filter((g: GoalTemplate) => Boolean(g.designation || g.designation_title || g.designation_name)).length,
+        roleBased: goals.filter((g: GoalTemplate) => Boolean(
+            g?.role ||
+            g?.role_title ||
+            g?.role_name ||
+            g?.job_role ||
+            g?.role_based 
+        )).length,
     }), [debouncedSearchQuery, selectedDepartment.value, selectedLevel.value, goals, recommendedGoals, refGoalsData?.data?.total, goalRepo?.data?.total]);
 
     const tabs: { key: TabKey; label: string; count: number }[] = useMemo(() => [
