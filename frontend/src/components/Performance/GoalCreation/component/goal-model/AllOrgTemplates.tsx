@@ -62,19 +62,6 @@ const AllOrgTemplates = ({
                     </button>
                 </div>
 
-                {selectedTemplates.length > 0 && (
-                    <div className="flex items-center gap-2">
-                        <Button
-                            type="button"
-                            variant="contain"
-                            bgColor="primary"
-                            className="h-8 text-xs bg-blue-600 text-white hover:bg-blue-700"
-                            onClick={() => onUseTemplate?.(selectedTemplates)}
-                        >
-                            Add {selectedTemplates.length} Selected Goal{selectedTemplates.length > 1 ? 's' : ''}
-                        </Button>
-                    </div>
-                )}
             </div>
 
             <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 xl:grid-cols-3">
