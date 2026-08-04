@@ -3,6 +3,7 @@ import { Typography } from "../../../shared/atoms/Typography";
 import AppreciationImage from "./AppreciationImage";
 import HistoryActions from "./HistoryActions";
 import PersonAvatar from "./PersonAvatar";
+import WrapperHoverCard from "../../../shared/WrapperHoverCard";
 import { TABLE_TITLES, TABLE_WIDTHS } from "./constants";
 import type { AppreciationHistoryItem } from "./types";
 
@@ -47,12 +48,14 @@ const HistoryTable = ({ items, relationLabel }: HistoryTableProps) => (
 
             <div className="flex min-w-0 items-center justify-center gap-2">
               <PersonAvatar name={item.person} imageUrl={item.personImage} />
-              <Typography
-                variant="bodySmall"
-                className="truncate font-bold text-blue-600"
-              >
-                {item.person}
-              </Typography>
+              <WrapperHoverCard employeeId={item.personId}>
+                <Typography
+                  variant="bodySmall"
+                  className="truncate font-bold text-blue-600 cursor-pointer"
+                >
+                  {item.person}
+                </Typography>
+              </WrapperHoverCard>
             </div>
             <Typography
               variant="bodySmall"

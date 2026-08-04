@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from "react";
 import { Typography } from "../shared/atoms/Typography";
 import Avatar from "../shared/Avatar";
+import WrapperHoverCard from "../shared/WrapperHoverCard";
 import { useSubmitVote } from "../../services/recognitionService";
 import { NomineeForVoting } from "../../types/recognition";
 import toast from "react-hot-toast";
@@ -88,9 +89,11 @@ export const VotingPanel: React.FC<VotingPanelProps> = ({ nominees }) => {
               />
 
               <div className="flex-1 min-w-0">
-                <Typography variant="bodySmall" className="font-medium">
-                  {nominee.employee_name}
-                </Typography>
+                <WrapperHoverCard employeeId={nominee.employee}>
+                  <Typography variant="bodySmall" className="font-medium cursor-pointer">
+                    {nominee.employee_name}
+                  </Typography>
+                </WrapperHoverCard>
                 <Typography variant="bodySmall" color="body2">
                   {[nominee.designation, nominee.department]
                     .filter(Boolean)

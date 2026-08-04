@@ -18,6 +18,7 @@ import { useCurrentEmployeeDetails } from "../../../hooks/useEmployee";
 import { useTargetUser } from "../../../context/ViewedUserContext";
 import { useAwardPrograms, useDoctypeOptions } from "../../../services/recognitionService";
 import EmployeeMultiSelect from "../components/MyAppreciationsHistory/EmployeeMultiSelect";
+import WrapperHoverCard from "../../shared/WrapperHoverCard";
 import RecognitionRowActions from "../components/RecognitionRowActions";
 import { useGetUiPermission } from "../../../hooks/userUiPermission";
 import { isActionEnabled } from "../../../utils/uiPermission";
@@ -323,7 +324,11 @@ const AwardsHistory: React.FC = () => {
                     <td className="px-5 py-4">
                       <ValueChips values={row.values} fallback={row.value} />
                     </td>
-                    <td className="px-5 py-4 text-sm font-medium text-blue-600">{row.person}</td>
+                    <td className="px-5 py-4 text-sm font-medium text-blue-600">
+                      <WrapperHoverCard employeeId={row.person_id}>
+                        <span className="cursor-pointer">{row.person}</span>
+                      </WrapperHoverCard>
+                    </td>
                     <td className="px-5 py-4 text-sm text-gray-700">{row.date}</td>
                     <td className="px-5 py-4">
                       <RecognitionRowActions

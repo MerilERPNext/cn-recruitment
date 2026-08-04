@@ -62,6 +62,18 @@ class TestAlumniGuard(FrappeTestCase):
         self.assertFalse(allow("resource", "Employee"))       # /api/resource/* blocked
         self.assertFalse(allow("resource", "Salary Slip"))
         self.assertFalse(allow("other", "/app"))
+        # Alumni Helpdesk namespace is also allowed.
+        self.assertTrue(allow("method", "recruitment.recruitment.alumni_helpdesk.get_alumni_hd_categories"))
+
+    # ── login-attempt detection (pure) — all ESS login entry points ──
+    def test_login_attempt_detection(self):
+        login = g._is_login_attempt
+        self.assertTrue(login("method", "login", ""))
+        self.assertTrue(login("method", "frappe.core.doctype.user.user.login", ""))
+        self.assertTrue(login("other", "/login", "/login"))
+        self.assertTrue(login("other", "/login", "/login/"))
+        self.assertFalse(login("method", "frappe.client.get_list", ""))
+        self.assertFalse(login("other", "/app", "/app"))
 
     # ── the hook ──
     def _run(self, user: str, path: str):
@@ -82,6 +94,22 @@ class TestAlumniGuard(FrappeTestCase):
     def test_alumni_blocked_on_ess_login(self):
         with self.assertRaises(frappe.PermissionError):
             self._run(ALUMNI, "/api/method/login")
+
+    def test_alumni_blocked_on_website_login(self):
+        # Website login-form POST (outside /api/method/) is also blocked.
+        with self.assertRaises(frappe.PermissionError):
+            self._run(ALUMNI, "/login")
+
+    def test_alumni_blocked_on_hrms_and_resource_variants(self):
+        for path in (
+            "/api/method/hrms.api.get_leave_applications",
+            "/api/method/frappe.client.get_count",
+            "/api/resource/Leave Application",
+            "/api/resource/Attendance",
+            "/app/employee",
+        ):
+            with self.assertRaises(frappe.PermissionError):
+                self._run(ALUMNI, path)
 
     def test_alumni_allowed_on_namespace(self):
         # Must NOT raise.

@@ -5,6 +5,7 @@ import { Typography } from "../../shared/atoms/Typography";
 import { Card } from "../../shared/atoms/Card";
 import { Check, ChevronDown, Search, Trophy } from "lucide-react";
 import Avatar from "./Avatar";
+import WrapperHoverCard from "../../shared/WrapperHoverCard";
 import { useCurrentEmployeeDetails } from "../../../hooks/useEmployee";
 import { useTargetUser } from "../../../context/ViewedUserContext";
 import {
@@ -136,9 +137,11 @@ const ProgramCard: React.FC<{ program: ProgramVM; showWinners: boolean }> = ({
             {program.winners.map((w) => (
               <div key={w.employee} className="flex flex-col items-center text-center w-20 sm:w-24">
                 <Avatar name={w.name} initials={w.initials} photo={w.photo} size={56} />
-                <Typography variant="bodySmall" className="mt-2 font-semibold leading-tight">
-                  {w.name}
-                </Typography>
+                <WrapperHoverCard employeeId={w.employee}>
+                  <Typography variant="bodySmall" className="mt-2 font-semibold leading-tight cursor-pointer">
+                    {w.name}
+                  </Typography>
+                </WrapperHoverCard>
                 <Typography variant="caption" color="body2" className="leading-tight">
                   {w.designation}
                 </Typography>
@@ -258,7 +261,9 @@ const MyAwardCard: React.FC<{ award: AwardProgramItem }> = ({ award }) => (
     {award.person && (
       <div className="mt-1 text-center text-xs text-gray-400">
         {award.direction === "received" ? "From" : "To"}{" "}
-        <span className="font-medium text-gray-600">{award.person}</span>
+        <WrapperHoverCard employeeId={award.person_id}>
+          <span className="font-medium text-gray-600 cursor-pointer">{award.person}</span>
+        </WrapperHoverCard>
       </div>
     )}
     {award.message && (

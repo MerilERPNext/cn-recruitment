@@ -31,6 +31,7 @@ import {
   type AwardNominationRow,
 } from "../../../services/recognitionService";
 import RecognitionRowActions from "../components/RecognitionRowActions";
+import WrapperHoverCard from "../../shared/WrapperHoverCard";
 import { useGetUiPermission } from "../../../hooks/userUiPermission";
 import { isActionEnabled } from "../../../utils/uiPermission";
 
@@ -415,7 +416,13 @@ const AwardsNominationWorkflows: React.FC = () => {
                       )}
                       {showCol("nominatedBy") && (
                         <td className={`px-4 ${rowPad} text-sm text-gray-700`}>
-                          {row.nominatedBy}
+                          {row.recognizerType === "Employee" && row.recognizer ? (
+                            <WrapperHoverCard employeeId={row.recognizer}>
+                              <span className="cursor-pointer">{row.nominatedBy}</span>
+                            </WrapperHoverCard>
+                          ) : (
+                            row.nominatedBy
+                          )}
                         </td>
                       )}
                       {showCol("nominationDate") && (
