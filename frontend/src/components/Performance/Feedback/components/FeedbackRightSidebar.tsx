@@ -1,5 +1,5 @@
 import React from 'react';
-import { Sparkles, FileText } from 'lucide-react';
+import {  FileText, SquareCheck } from 'lucide-react';
 import { Typography } from '../../../shared/atoms/Typography';
 
 export interface ReviewParticipant {
@@ -58,7 +58,7 @@ export const FeedbackRightSidebar: React.FC<FeedbackRightSidebarProps> = ({
               {isActive ? (
                 <Typography variant="caption" className="text-blue-600 font-semibold text-xs">NOW</Typography>
               ) : review.status === 'done' ? (
-                <Sparkles className="w-4 h-4 text-green-500" />
+                <SquareCheck className="w-4 h-4 text-green-500" />
               ) : (
                 <Typography variant="caption" className="text-gray-300">—</Typography>
               )}
