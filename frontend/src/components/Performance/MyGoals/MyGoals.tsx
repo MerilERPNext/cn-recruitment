@@ -91,7 +91,6 @@ const MyGoals: React.FC<MyGoalsProps> = ({ onCreateGoal, onSelectGoal }) => {
   const { mutateAsync: deleteGoals, isPending: isDeleting } = useDeleteGoals();
 
   const goalsData = myGoalsResponse?.data;
-  console.log(goalsData,'==============================my goalsssssss')
   const allGoals: MyGoalsGoal[] = goalsData?.goals ?? [];
   const totalGoals = goalsData?.total ?? 0;
   const activeCycle = goalsData?.active_cycle ?? "";
