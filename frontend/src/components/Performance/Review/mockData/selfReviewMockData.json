@@ -1,0 +1,164 @@
+{
+  "steps": [
+    {
+      "id": 1,
+      "key": "goals",
+      "label": "Goals & KRs",
+      "questions": "5Q",
+      "sectionText": "SECTION 1 OF 5",
+      "title": "Goals & Key Results",
+      "description": "Review and evaluate your progress on key performance goals and key results for this evaluation cycle.",
+      "addLabel": "Add another goal",
+      "titleLabel": "Goal / KR Title",
+      "impactLabel": "Self Reflection & Impact Evidence"
+    },
+    {
+      "id": 2,
+      "key": "achievements",
+      "label": "Achievements",
+      "questions": "3Q",
+      "sectionText": "SECTION 2 OF 5",
+      "title": "Achievements",
+      "description": "Capture 2-3 of your most impactful accomplishments this cycle. Focus on outcome, not activity.",
+      "addLabel": "Add another achievement",
+      "titleLabel": "Achievement title",
+      "impactLabel": "Impact & evidence"
+    },
+    {
+      "id": 3,
+      "key": "developmentPlan",
+      "label": "Development Plan",
+      "questions": "4Q",
+      "sectionText": "SECTION 3 OF 5",
+      "title": "Development Plan",
+      "description": "Outline growth areas, skill targets, and learning initiatives for your personal development.",
+      "addLabel": "Add another skill goal",
+      "titleLabel": "Skill Area / Focus Goal",
+      "impactLabel": "Key Action Items & Learning Targets"
+    },
+    {
+      "id": 4,
+      "key": "careerAspirations",
+      "label": "Career Aspirations",
+      "questions": "2Q",
+      "sectionText": "SECTION 4 OF 5",
+      "title": "Career Aspirations",
+      "description": "Share your short-term and long-term career goals, preferred role progression, and growth direction.",
+      "addLabel": "Add another career goal",
+      "titleLabel": "Aspiration Title",
+      "impactLabel": "Career Goal & Plan"
+    },
+    {
+      "id": 5,
+      "key": "overallComments",
+      "label": "Overall Comments",
+      "questions": "1Q",
+      "sectionText": "SECTION 5 OF 5",
+      "title": "Overall Comments",
+      "description": "Summarize your overall performance, key takeaways, and any additional context for your review.",
+      "addLabel": "Add additional comments",
+      "titleLabel": "Summary Title",
+      "impactLabel": "Overall Self Summary"
+    }
+  ],
+  "goals": [
+    {
+      "id": 1,
+      "title": "Oxygen 2.0 Dashboard Rebuild",
+      "impact": "Drove design + research for full redesign. Shipped 24 of 32 v2 components; WAU adoption reached 52% by end of cycle (target 80% by Q3).",
+      "chars": 139
+    },
+    {
+      "id": 2,
+      "title": "Design → Engineering Handoff Automation",
+      "impact": "Built Figma→Storybook automation; introduced clickable prototypes as the new spec format. Median handoff time fell from 4.2 to 3.4 days.",
+      "chars": 136
+    },
+    {
+      "id": 3,
+      "title": "Team Mentorship & Skill Development",
+      "impact": "Weekly 1:1s + portfolio reviews with Riya and Shreya. Both shipped 4+ features and were promotion-eligible by end of cycle.",
+      "chars": 123
+    },
+    {
+      "id": 4,
+      "title": "Accessibility WCAG 2.2 Compliance",
+      "impact": "Audited and fixed 45 accessibility violations across core apps. Created accessible color system tokens and keyboard navigation patterns.",
+      "chars": 140
+    },
+    {
+      "id": 5,
+      "title": "User Research & Usability Benchmarking",
+      "impact": "Completed 5 usability testing sessions with 30+ participant insights. Insights directly influenced the Q3 product roadmap priorities.",
+      "chars": 135
+    }
+  ],
+  "achievements": [
+    {
+      "id": 1,
+      "title": "Led the Oxygen 2.0 dashboard rebuild",
+      "impact": "Drove design + research for the full redesign. Shipped 24 of 32 v2 components; WAU adoption reached 52% by end of cycle (target 80% by Q3).",
+      "chars": 139
+    },
+    {
+      "id": 2,
+      "title": "Cut design → engineering handoff time",
+      "impact": "Built Figma→Storybook automation; introduced clickable prototypes as the new spec format. Median handoff time fell from 4.2 to 3.4 days.",
+      "chars": 136
+    },
+    {
+      "id": 3,
+      "title": "Mentored two designers to mid-level",
+      "impact": "Weekly 1:1s + portfolio reviews with Riya and Shreya. Both shipped 4+ features and were promotion-eligible by end of cycle.",
+      "chars": 123
+    }
+  ],
+  "developmentPlan": [
+    {
+      "id": 1,
+      "title": "User Research & Generative Testing",
+      "impact": "Conduct 5+ generative user research sessions for upcoming product features and present findings to leadership (Target Level: Advanced L4).",
+      "chars": 140
+    },
+    {
+      "id": 2,
+      "title": "Design Systems Architecture & Tokenization",
+      "impact": "Lead multi-platform design token migration across Web and Mobile UI repositories (Target Level: Expert L5).",
+      "chars": 120
+    },
+    {
+      "id": 3,
+      "title": "Product Analytics & UX Instrumentation",
+      "impact": "Complete Mixpanel & Amplitude analytics certification to evaluate feature adoption independently (Target Level: Intermediate L3).",
+      "chars": 130
+    },
+    {
+      "id": 4,
+      "title": "Cross-Functional Leadership & Mentorship",
+      "impact": "Mentor 2 junior product designers on design system guidelines and scalable component creation.",
+      "chars": 105
+    }
+  ],
+  "careerAspirations": [
+    {
+      "id": 1,
+      "title": "Short-Term Goal (1-2 Years)",
+      "impact": "Step into a Staff Product Designer role, leading core design system architecture and mentoring mid-level designers across squads.",
+      "chars": 130
+    },
+    {
+      "id": 2,
+      "title": "Long-Term Vision (3-5 Years)",
+      "impact": "Lead an end-to-end Product Experience & Design Systems team, setting UX standards and strategic direction for enterprise applications.",
+      "chars": 140
+    }
+  ],
+  "overallComments": [
+    {
+      "id": 1,
+      "title": "Self-Evaluation Summary & Highlights",
+      "impact": "This cycle focused on delivering key architectural redesigns (Oxygen 2.0) and establishing automated engineering handoffs. I achieved strong outcomes across all major OKRs and mentored team members effectively. Moving into next cycle, my focus will be expanding research rigor and scaling our design tokens systemwide.",
+      "chars": 315
+    }
+  ]
+}
