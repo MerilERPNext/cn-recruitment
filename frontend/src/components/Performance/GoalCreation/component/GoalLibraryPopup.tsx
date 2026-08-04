@@ -127,16 +127,15 @@ const GoalLibraryPopup = ({ onClose, onUseTemplate }: GoalLibraryPopupProps) => 
     }, []);
 
     const handleSelectAll = useCallback((templatesToToggle: GoalTemplate[]) => {
-        const toggleKeys = new Set(templatesToToggle.map((t) => getGoalKey(t)));
+        if (!templatesToToggle || templatesToToggle.length === 0) return;
+        const toggleKeys = new Set(templatesToToggle.map((t) => getGoalKey(t)).filter(Boolean));
         setSelectedTemplates((prev) => {
-            const allIncluded =
-                templatesToToggle.length > 0 &&
-                templatesToToggle.every((t) => prev.some((st) => getGoalKey(st) === getGoalKey(t)));
+            const existingKeys = new Set(prev.map((t) => getGoalKey(t)));
+            const allIncluded = templatesToToggle.every((t) => existingKeys.has(getGoalKey(t)));
 
             if (allIncluded) {
                 return prev.filter((t) => !toggleKeys.has(getGoalKey(t)));
             } else {
-                const existingKeys = new Set(prev.map((t) => getGoalKey(t)));
                 const newItems = templatesToToggle.filter((t) => !existingKeys.has(getGoalKey(t)));
                 return [...prev, ...newItems];
             }
