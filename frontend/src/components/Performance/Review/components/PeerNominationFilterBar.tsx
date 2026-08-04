@@ -47,7 +47,7 @@ export const PeerNominationFilterBar: React.FC<PeerNominationFilterBarProps> = (
           position="bottom-left"
           contentAlign="start"
           className="w-full sm:w-auto"
-          menuClassName="!min-w-[140px] text-sm"
+          menuClassName="!max-w-[140px] text-sm"
         />
       </div>
     </div>
