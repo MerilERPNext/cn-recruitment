@@ -42,10 +42,12 @@ export default function LoanList({
   const titles = [
     "",
     "Loan Name",
+    "Assigned Users",
     "Loan Type",
     "Loan Amount",
     "Rate of Interest",
     "Standard Interest",
+    "Creation Date",
     "EMI Type",
     "Tenure",
     "Start Date",
@@ -56,6 +58,8 @@ export default function LoanList({
 
   const columnWidths = [
     "0.1rem",
+    "1fr",
+    "1fr",
     "1fr",
     "1fr",
     "1fr",
@@ -278,7 +282,7 @@ export const LoanRow = ({
         <div className="bg-app px-6 py-4 border-t border-gray-200">
           <div className="space-y-4">
             <LoanDetails loan={loan} />
-            <LoanInstallments installments={loan.repayment_schedule} />
+            <LoanInstallments installments={loan.repayment_schedule} standardInterest={loan.standard_interest} />
           </div>
         </div>
       )}

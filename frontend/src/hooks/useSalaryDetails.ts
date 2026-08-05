@@ -8,7 +8,6 @@ import {
         getBenefitPayslipHTML,
         getOffCyclePayslipHTML,
         getSalarySlipHTML,
-        PrintFormatMenuOptionsService,
         getSalarySlipName,
         updateSalarySlip,
         releaseSalarySlip,
@@ -69,14 +68,6 @@ export const useDownloadSalarySlipPDF = (options: { onSuccess?: (data: any) => v
 
 export { isPermissionError }
 
-export const usePrintFormatMenuOptions = (employee_name: string, name: string) => {
-  return useQuery({
-    queryKey: ["print-format-menu-options", name, employee_name],
-    queryFn: () => PrintFormatMenuOptionsService(employee_name, name),
-    enabled: !!employee_name && !!name, // skip call when slip id / employee missing
-    placeholderData: [], // prevents undefined
-  });
-};
 
 // Roles allowed to release salary slips — fetched from Payroll Settings via API
 export const usePayrollAdminRoles = (employee?: string) => {

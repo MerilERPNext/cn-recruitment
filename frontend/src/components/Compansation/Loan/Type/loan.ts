@@ -62,6 +62,12 @@ export interface Loan {
   name: string
   employee: string;
   todo_list: TodoType[] | null;
+  pending_principal?: number;
+  pending_principal_with_interest?: number;
+  total_principal?: number;
+  total_principal_interest?: number;
+  paid_principal?: number;
+  paid_principal_with_interest?: number;
 }
 
 
