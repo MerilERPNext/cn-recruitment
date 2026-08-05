@@ -29,7 +29,7 @@ const TemplateCard = memo(({
 
     return (
         <div
-            className={`group flex min-w-0 flex-col rounded-xl border p-4 transition-all duration-200 hover:shadow-md sm:min-h-[148px] ${
+            className={`group flex min-w-0 flex-col rounded-xl border p-4 transition-shadow duration-200 hover:shadow-md sm:min-h-[148px] ${
                 isSelected
                     ? 'border-blue-500 bg-blue-50/40 ring-2 ring-blue-500/20 shadow-sm'
                     : template?.recommended
@@ -142,7 +142,7 @@ const TemplateCard = memo(({
                             type="button"
                             variant={isSelected ? 'contain' : 'outline'}
                             bgColor="primary"
-                            className={`h-8 min-w-[120px] shrink-0 justify-center rounded-lg px-3 text-xs font-semibold transition-all ${
+                            className={`h-8 min-w-[120px] shrink-0 justify-center rounded-lg px-3 text-xs font-semibold !transition-none ${
                                 isSelected
                                     ? 'bg-blue-600 text-white shadow-xs hover:bg-blue-700'
                                     : 'border-blue-200 bg-white text-blue-600 hover:bg-blue-50'
