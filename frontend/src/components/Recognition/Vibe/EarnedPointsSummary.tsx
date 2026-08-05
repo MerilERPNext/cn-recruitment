@@ -24,8 +24,8 @@ import {
 } from "../../../services/recognitionService";
 
 const REDEMPTION_FILTER_FIELDS: FilterField[] = [
-  { key: "dateOfRedemption", label: "Date of Redemption", type: "daterange" },
-  { key: "redeemedPoints", label: "Redeemed Points", type: "numberrange" },
+  { key: "dateOfRedemption", label: "Date of Transaction", type: "daterange" },
+  { key: "redeemedPoints", label: "Transacted Points", type: "numberrange" },
 ];
 
 const INITIAL_FILTER_VALUES: FilterValues = {
@@ -86,15 +86,20 @@ const EarnedPointsSummary: React.FC = () => {
       id: r.name,
       date: r.date ? formatToIndianDate(r.date) : "—",
       orderId: r.name,
-      transactionId: "—",
+      transactionId: r.transaction_id || "—",
       entryType: r.entry_type,
       points: r.points,
-      source: r.program || r.award || r.recognition_type || "—",
-      comments: r.remarks || "—",
+      // Points added -> the programme they came from; points redeemed -> the
+      // vendor the redemption was made via. Employee Points Entry has no vendor
+      // field yet, so redemption rows fall back to the programme/award.
+      source:
+        r.entry_type === "Redeemed"
+          ? r.program_title || r.program || r.award || "—"
+          : r.program_title || r.program || r.award || r.recognition_type || "—",
     }));
     if (!q) return rows;
     return rows.filter((row) =>
-      [row.date, row.orderId, row.transactionId, String(row.points), row.source, row.comments]
+      [row.date, row.orderId, row.transactionId, String(row.points), row.source]
         .join(" ")
         .toLowerCase()
         .includes(q),
@@ -111,7 +116,7 @@ const EarnedPointsSummary: React.FC = () => {
   return (
     <div className="p-4 md:p-6">
       <Typography variant="h2" className="mb-5 text-2xl font-bold">
-        Earned Points Summary
+        Points Summary
       </Typography>
 
       {/* Summary bar */}
@@ -179,27 +184,26 @@ const EarnedPointsSummary: React.FC = () => {
               <tr className="bg-blue-50/40 text-sm text-gray-600">
                 <th className="px-5 py-3 font-semibold">
                   <span className="flex items-center gap-1">
-                    Date of Redemption <ArrowUp className="size-3.5" />
+                    Date of Transaction <ArrowUp className="size-3.5" />
                   </span>
                 </th>
                 <th className="px-5 py-3 font-semibold">Order ID</th>
                 <th className="px-5 py-3 font-semibold">Transaction ID</th>
-                <th className="px-5 py-3 font-semibold">Redeemed Points</th>
+                <th className="px-5 py-3 font-semibold">Transacted Points</th>
                 <th className="px-5 py-3 font-semibold">Source</th>
-                <th className="px-5 py-3 font-semibold">Comments</th>
               </tr>
             </thead>
             <tbody>
               {isLoading && (
                 <tr>
-                  <td colSpan={6} className="px-5 py-8 text-center text-sm text-gray-400">
+                  <td colSpan={5} className="px-5 py-8 text-center text-sm text-gray-400">
                     Loading…
                   </td>
                 </tr>
               )}
               {!isLoading && filteredHistory.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-5 py-8 text-center text-sm text-gray-400">
+                  <td colSpan={5} className="px-5 py-8 text-center text-sm text-gray-400">
                     No records found.
                   </td>
                 </tr>
@@ -218,7 +222,6 @@ const EarnedPointsSummary: React.FC = () => {
                     {row.points}
                   </td>
                   <td className="px-5 py-4 text-sm text-gray-700">{row.source}</td>
-                  <td className="px-5 py-4 text-sm text-gray-700">{row.comments}</td>
                 </tr>
               ))}
             </tbody>

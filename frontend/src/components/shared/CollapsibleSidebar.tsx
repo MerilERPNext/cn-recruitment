@@ -582,28 +582,22 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
           permissionKey: "Dashboard",
         },
         {
-          name: "My Appreciations History",
+          name: "History",
           icon: FileText,
-          href: "/webapp/recognition/vibe/my-appreciations-history",
-          permissionKey: "My Appreciations History",
+          href: "/webapp/recognition/vibe/history",
+          permissionKey: "History",
         },
         {
-          name: "Appreciations-Leaderboard",
+          name: "Leaderboard",
           icon: ChartNoAxesCombined,
           href: "/webapp/recognition/vibe/appreciations-leaderboard",
           permissionKey: "Appreciations Leaderboard",
         },
         {
-          name: "Awards-Live Programs & Winners",
+          name: "All Awards",
           icon: Award,
           href: "/webapp/recognition/vibe/awards-live",
           permissionKey: "Awards Live",
-        },
-        {
-          name: "Awards-History",
-          icon: FileText,
-          href: "/webapp/recognition/vibe/awards-history",
-          permissionKey: "Awards History",
         },
         {
           name: "Awards-Nomination Workflows",
@@ -612,7 +606,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
           permissionKey: "Nomination Workflows",
         },
         {
-          name: "Earned Points Summary",
+          name: "Points Summary",
           icon: Coins,
           href: "/webapp/recognition/vibe/earned-points",
           // Recognition resolves visibility by route via RECOGNITION_ROUTE_PAGES;
@@ -686,7 +680,11 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
         // Points Advanced Settings flag still applies.
         if (item.permissionKey === "Recognition") {
           const RECOGNITION_ROUTE_PAGES: Record<string, string[]> = {
-            "/my-appreciations-history": ["Appreciations History"],
+            "/history": [
+              "Appreciations History",
+              "Individual Awards History",
+              "Team Awards history",
+            ],
             "/appreciations-leaderboard": ["Appreciations Leaderboard"],
             "/earned-points": ["Earned Points Summary page"],
             "/awards-live": [
@@ -695,7 +693,6 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
               "Team Award programs",
               "Team Award Winners",
             ],
-            "/awards-history": ["Individual Awards History", "Team Awards history"],
             "/nomination-workflows": [
               "Nominations Workflows - Individual Nominations Raised",
               "Nominations Workflows - Individual Nominations Received",

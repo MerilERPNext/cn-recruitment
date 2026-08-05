@@ -91,7 +91,15 @@ const AppreciationDetailDrawer: React.FC<Props> = ({
     : item.direction === "given"
       ? "Given To"
       : "Recognized by";
-  const dateLabel = isNomination ? "Nomination Date" : "Received Date";
+  // On the "Given" side the viewer is the recogniser, so the date and points
+  // read from their perspective ("awarded") rather than the recipient's.
+  const dateLabel = isNomination
+    ? "Nomination Date"
+    : item.direction === "given"
+      ? "Appreciation Date"
+      : "Received Date";
+  const pointsLabel =
+    item.direction === "given" ? "Points Awarded" : "Points Received";
   const noteLabel = isNomination ? "Nomination Note" : "Nomination Note";
 
   return (
@@ -140,7 +148,7 @@ const AppreciationDetailDrawer: React.FC<Props> = ({
               )}
 
               {typeof points === "number" && points > 0 && (
-                <Section label="Points Received">
+                <Section label={pointsLabel}>
                   <p className="text-sm text-gray-700">{points}</p>
                 </Section>
               )}

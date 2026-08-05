@@ -28,6 +28,11 @@ const resolveImage = (image?: string | null): string | undefined => {
   return image;
 };
 
+// Leaderboard rows read department; designation is the fallback for employees
+// with no department set so the line never renders empty.
+const subtitleOf = (p: LeaderboardPersonEntry): string =>
+  p.department || p.designation || "";
+
 const StarBadge: React.FC<{ rank: number }> = ({ rank }) => (
   <div className="absolute -top-4 left-1/2 -translate-x-1/2">
     <div className="relative">
@@ -63,12 +68,14 @@ const PodiumColumn: React.FC<{
         </Typography>
       </WrapperHoverCard>
       <Typography variant="bodySmall" color="body2" className="block truncate">
-        {person.designation}
+        {subtitleOf(person)}
       </Typography>
-      <div className="flex items-center justify-center gap-1.5 mt-2 text-gray-700">
-        <Star className="size-4 text-gray-400" />
-        <span className="font-semibold">{score}</span>
-      </div>
+      {score > 0 && (
+        <div className="flex items-center justify-center gap-1.5 mt-2 text-gray-700">
+          <Star className="size-4 text-gray-400" />
+          <span className="font-semibold">{score}</span>
+        </div>
+      )}
     </Card>
   </div>
 );
@@ -138,7 +145,7 @@ const AppreciationsLeaderboard: React.FC = () => {
     ? rest.filter(
         (p) =>
           p.employee_name.toLowerCase().includes(q) ||
-          p.designation.toLowerCase().includes(q),
+          subtitleOf(p).toLowerCase().includes(q),
       )
     : rest;
 
@@ -281,13 +288,15 @@ const AppreciationsLeaderboard: React.FC = () => {
                             </Typography>
                           </WrapperHoverCard>
                           <Typography variant="bodySmall" color="body2" className="block truncate">
-                            {person.designation}
+                            {subtitleOf(person)}
                           </Typography>
                         </div>
-                        <div className="flex items-center gap-1.5 text-gray-700 shrink-0">
-                          <Star className="size-4 text-gray-400" />
-                          <span className="font-semibold">{scoreOf(person)}</span>
-                        </div>
+                        {scoreOf(person) > 0 && (
+                          <div className="flex items-center gap-1.5 text-gray-700 shrink-0">
+                            <Star className="size-4 text-gray-400" />
+                            <span className="font-semibold">{scoreOf(person)}</span>
+                          </div>
+                        )}
                       </div>
                     ))
                   )}
@@ -305,7 +314,7 @@ const AppreciationsLeaderboard: React.FC = () => {
                 My Appreciations
               </Typography>
               <button
-                onClick={() => navigate("/webapp/recognition/vibe/my-appreciations-history")}
+                onClick={() => navigate("/webapp/recognition/vibe/history")}
                 className="text-sm font-medium text-primary"
               >
                 View All
@@ -354,7 +363,7 @@ const AppreciationsLeaderboard: React.FC = () => {
                 ))}
                 {hiddenItems > 0 && (
                   <button
-                    onClick={() => navigate("/webapp/recognition/vibe/my-appreciations-history")}
+                    onClick={() => navigate("/webapp/recognition/vibe/history")}
                     className="w-full rounded-lg border border-gray-200 py-2 text-sm font-medium text-primary hover:bg-gray-50"
                   >
                     View all {activeItems.length} {appreciationTab.toLowerCase()}
