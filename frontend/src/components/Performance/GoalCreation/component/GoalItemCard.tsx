@@ -84,12 +84,12 @@ const GoalItemCard: React.FC<GoalItemCardProps> = ({
             </div>
 
             {onToggleSelect && (
-                <div className="flex items-center gap-3 shrink-0 self-end sm:self-center">
+                <div className="flex  mx-auto w-full md:w-auto items-center gap-3 shrink-0 self-end sm:self-center">
                     <Button
                         type="button"
                         variant={isSelected ? "contain" : "outline"}
                         bgColor={isSelected ? "primary" : "text"}
-                        className={`h-9 rounded-xl px-4 text-xs font-semibold transition-all ${
+                        className={`h-9 w-full md:w-auto rounded-xl px-4 text-xs font-semibold transition-all ${
                             isSelected
                                 ? 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-xs'
                                 : 'border-gray-200 bg-white text-gray-700 hover:border-indigo-300 hover:bg-indigo-50/50'
@@ -102,10 +102,10 @@ const GoalItemCard: React.FC<GoalItemCardProps> = ({
                                 {addedBtnLabel}
                             </>
                         ) : (
-                            <>
-                                <Plus className="mr-1.5 h-3.5 w-3.5 text-indigo-600" />
+                            <span className='flex gap-3 items-center  '>
+                                <Plus className="mr-1.5 mx-auto h-3.5 w-3.5 text-indigo-600" />
                                 {addBtnLabel}
-                            </>
+                            </span>
                         )}
                     </Button>
                 </div>
