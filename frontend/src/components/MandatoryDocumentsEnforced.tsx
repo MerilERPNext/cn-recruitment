@@ -115,12 +115,9 @@ const DocumentItem: React.FC<DocumentItemProps> = ({ item }) => {
 
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-1.5 sm:gap-3 mt-1 pl-1">
             <span
-              className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${item?.enable_mandatory_acknowledgement
-                ? "bg-red-50 text-red-700 border border-red-100"
-                : "bg-blue-50 text-blue-700 border border-blue-100"
-                }`}
+              className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-50 text-red-700 border border-red-100"
             >
-              {item?.enable_mandatory_acknowledgement ? "Mandatory" : "Optional"}
+              Mandatory
             </span>
             {item?.end_date && (
               <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700 border border-gray-200">
