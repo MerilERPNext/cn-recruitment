@@ -1,3 +1,5 @@
+import re
+
 import frappe
 from frappe import _
 from frappe.model.document import Document
@@ -10,6 +12,8 @@ DEFAULT_EMAIL_TEMPLATE = (
     "<p>This code expires in {{ expiry_minutes }} minutes.</p>"
 )
 DEFAULT_SMS_TEMPLATE = "Your Candidate Portal OTP is {{ otp }}. It expires in {{ expiry_minutes }} minutes."
+DEFAULT_PRIMARY_COLOR = "#5a4bda"
+HEX_COLOR = re.compile(r"^#[0-9a-fA-F]{6}$")
 
 
 class CandidatePortalAuthSettings(Document):
@@ -17,8 +21,10 @@ class CandidatePortalAuthSettings(Document):
         self.email_otp_subject = self.email_otp_subject or DEFAULT_EMAIL_SUBJECT
         self.email_otp_template = self.email_otp_template or DEFAULT_EMAIL_TEMPLATE
         self.sms_otp_template = self.sms_otp_template or DEFAULT_SMS_TEMPLATE
+        self.primary_color = self.primary_color or DEFAULT_PRIMARY_COLOR
         self._validate_policy_numbers()
         self._validate_channels()
+        self._validate_primary_color()
 
     def _validate_policy_numbers(self):
         limits = {
@@ -34,6 +40,11 @@ class CandidatePortalAuthSettings(Document):
             if value < minimum or value > maximum:
                 label = self.meta.get_label(fieldname) or fieldname
                 frappe.throw(_("{0} must be between {1} and {2}.").format(label, minimum, maximum))
+
+    def _validate_primary_color(self):
+        """The portal drops this into a CSS variable; a malformed value breaks its theme."""
+        if not HEX_COLOR.match(self.primary_color or ""):
+            frappe.throw(_("Primary Color must be a hex colour like {0}.").format(DEFAULT_PRIMARY_COLOR))
 
     def _validate_channels(self):
         if not cint(self.enable_email_otp) and not cint(self.enable_mobile_otp):

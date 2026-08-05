@@ -2,7 +2,10 @@ import frappe
 from frappe import _
 from frappe.model.document import Document
 
-from recruitment.recruitment.campus_helpers import validate_unique_job_openings
+from recruitment.recruitment.campus_helpers import (
+	sync_drive_applicant_links,
+	validate_unique_job_openings,
+)
 
 # Round types that need an interview panel / GD grouping in the reference portal.
 PANEL_ROUND_TYPES = {"Group Discussion", "Technical", "HR"}
@@ -13,10 +16,35 @@ class CampusDrive(Document):
 	def validate(self):
 		self.drive_id = self.name
 		self._validate_drive_window()
+		self._apply_lifecycle_status()
 		self._sync_campus_invites()
 		validate_unique_job_openings(self, table_fieldname="linked_job_openings")
 		self._set_registration_defaults()
 		self._set_round_codes()
+		self._warn_round_stage_alignment()
+
+	def _lifecycle_status(self):
+		"""Where the drive sits in its window: Draft before it starts, Live during,
+		Completed after it ends. Returns None if there's no start date to judge by."""
+		from frappe.utils import getdate, nowdate
+
+		if not self.drive_start_date:
+			return None
+		today = getdate(nowdate())
+		if today < getdate(self.drive_start_date):
+			return "Draft"
+		if self.drive_end_date and today > getdate(self.drive_end_date):
+			return "Completed"
+		return "Live"
+
+	def _apply_lifecycle_status(self):
+		"""Auto-advance the status from the drive window. 'Closed' is a manual, terminal
+		state we never override; everything else tracks the dates."""
+		if self.drive_status == "Closed":
+			return
+		target = self._lifecycle_status()
+		if target and self.drive_status != target:
+			self.drive_status = target
 
 	def _sync_campus_invites(self):
 		"""Merge each linked Campus Invite's Institute and Job Openings into
@@ -75,6 +103,11 @@ class CampusDrive(Document):
 			self._validate_links()
 
 	def on_update(self):
+		# Point this drive's candidates at it. Runs on every save (after the invite
+		# tables are settled) so adding an invite immediately pulls in the applicants
+		# who came through it, and removing one lets them go.
+		self._link_applicants()
+
 		# Auto-generate the QR the first time the form is enabled. Refreshing is
 		# manual (the "Generate QR Code" button) so the image isn't rebuilt on
 		# every save. Best-effort: a QR failure must never block the save.
@@ -83,6 +116,35 @@ class CampusDrive(Document):
 				self._write_registration_qr(self._registration_url())
 			except Exception:
 				frappe.log_error(frappe.get_traceback(), "Campus Drive: QR auto-generate failed")
+
+	def on_trash(self):
+		# Release the candidates before Frappe's link check runs (it would otherwise
+		# refuse the delete now that Job Applicants point back at the drive).
+		for name in frappe.get_all("Job Applicant", filters={"custom_campus_drive": self.name},
+		                           pluck="name", ignore_permissions=True):
+			frappe.db.set_value("Job Applicant", name, "custom_campus_drive", None,
+			                    update_modified=False)
+
+	def _link_applicants(self):
+		"""Write this drive onto the Job Applicants of its Campus Invites (and off the
+		ones whose invite was removed), then tell HR what moved.
+
+		Best-effort: a save must never fail because of the back-link.
+		"""
+		try:
+			result = sync_drive_applicant_links(self.name, _drive_invites(self))
+		except Exception:
+			frappe.log_error(frappe.get_traceback(), "Campus Drive: applicant linking failed")
+			return
+
+		parts = []
+		if result["linked"]:
+			parts.append(_("{0} candidate(s) linked to this drive").format(result["linked"]))
+		if result["released"]:
+			parts.append(_("{0} released (their invite is no longer on it)").format(result["released"]))
+		if parts:
+			frappe.msgprint(", ".join(parts), title=_("Campus Candidates"), indicator="green",
+			                alert=True)
 
 	def _validate_drive_window(self):
 		if self.drive_start_date and self.drive_end_date:
@@ -106,6 +168,26 @@ class CampusDrive(Document):
 			# portal knows which round cards render a Panel / GD Groups block.
 			row.requires_panel = 1 if row.round_type in PANEL_ROUND_TYPES else 0
 			row.requires_gd_grouping = 1 if row.round_type in GD_ROUND_TYPES else 0
+
+	def _warn_round_stage_alignment(self):
+		"""Warn (never block) when a round's Hiring Stage isn't a real stage on the
+		linked openings — the exact misconfiguration that otherwise surfaces only as a
+		silent '0 waiting'. Skipped for new/unsaved drives (openings sync on save)."""
+		if self.is_new():
+			return
+		opening_stages = set(_stage_options(self).get("stages") or [])
+		if not opening_stages:
+			return
+		for r in (self.rounds or []):
+			if r.requires_gd_grouping:
+				continue
+			hs = (r.hiring_stage or "").strip()
+			if hs and hs not in opening_stages:
+				frappe.msgprint(
+					_("Round “{0}” is mapped to stage “{1}”, which none of this drive’s "
+					  "openings have. Candidates will never reach it — pick one of: {2}.").format(
+						r.round_name or r.round_code, hs, ", ".join(sorted(opening_stages))),
+					title=_("Round stage not on any opening"), indicator="orange")
 
 	# ------------------------------------------------------------------
 	# Registration QR code
@@ -198,24 +280,29 @@ def get_campus_invite_details(campus_invite):
 	}
 
 
-SHORTLISTED_STATUS = "Shortlisted"
-HOLD_STATUS = "Hold"
+def _ja_status_options():
+	"""Every status the Job Applicant status field offers, in its declared order."""
+	df = frappe.get_meta("Job Applicant").get_field("status")
+	return [s.strip() for s in (df.options or "").split("\n") if s and s.strip()]
 
 
 @frappe.whitelist()
-def get_institute_breakdown(campus_drive):
-	"""Institute- and opening-wise candidate counts for a Campus Drive, scoped to the
-	campus invites selected on that drive.
+def get_drive_breakdown(campus_drive):
+	"""Candidate counts for a Campus Drive, MERGED across the invites it selected.
 
-	An invite carries several institutes AND several job openings; a candidate at an
-	institute may apply to any (or several) of those openings. So for every selected
-	Campus Invite we list its institutes and, under each, a row per invite opening with
-	Applied / Shortlisted / On Hold counts. Applicants carry `custom_campus_invite` +
-	`custom_institute` + `job_title` (the opening), which is what pins each application
-	to one invite + institute + opening. Returns:
-	    {"summary": {...},
-	     "invites": [ {invite, institutes:[ {institute, openings:[{...counts}]} ]}, ...]}
+	A drive merges its Campus Invites: once we're running the drive the institute a
+	candidate came from no longer splits the pipeline — what matters is the ROLE
+	(Job Opening). So counts roll up per opening across every institute and invite.
+	The per-institute split is still returned under each opening so the UI can toggle
+	into it on demand.
+
+	Counts are reported for EVERY status on the Job Applicant status field (Draft,
+	Open, Shortlisted, Interview, Hold, Approvals, Accepted, Rejected, ...), not just
+	a fixed pair. Applicants carry custom_campus_invite + custom_institute + job_title.
 	"""
+	statuses = _ja_status_options()
+	zero = lambda: {s: 0 for s in statuses}  # noqa: E731
+
 	invite_names = frappe.get_all(
 		"Campus Drive Invite",
 		filters={"parenttype": "Campus Drive", "parent": campus_drive},
@@ -223,48 +310,42 @@ def get_institute_breakdown(campus_drive):
 		order_by="idx asc",
 	)
 	invite_names = [i for i in dict.fromkeys(invite_names) if i]
-	summary = {"invites": 0, "institutes": 0, "openings": 0,
-	           "applied": 0, "shortlisted": 0, "hold": 0}
 	if not invite_names:
-		return {"summary": summary, "invites": []}
+		return {
+			"statuses": statuses, "invites": [], "openings": [],
+			"summary": {"invites": 0, "institutes": 0, "openings": 0,
+			            "total": 0, "by_status": zero()},
+		}
 
-	invites = frappe.get_all(
-		"Campus Invite",
-		filters={"name": ["in", invite_names]},
-		fields=["name", "campus_invite_name", "status", "region"],
-	)
-	invites.sort(key=lambda i: invite_names.index(i.name))
-
-	region_ids = list({i.region for i in invites if i.region})
-	region_label = {
-		r.name: r.location_region
-		for r in frappe.get_all("Region", filters={"name": ["in", region_ids]},
-		                        fields=["name", "location_region"])
-	} if region_ids else {}
-
-	# Institutes per invite
-	inst_map = {}
+	# invite -> institutes / openings
+	inst_map, op_map = {}, {}
 	for row in frappe.get_all(
 		"Campus Invite Institute",
 		filters={"parenttype": "Campus Invite", "parent": ["in", invite_names]},
-		fields=["parent", "institute"],
-		order_by="idx asc",
+		fields=["parent", "institute"], order_by="idx asc",
 	):
-		bucket = inst_map.setdefault(row.parent, [])
-		if row.institute and row.institute not in bucket:
-			bucket.append(row.institute)
-
-	# Openings per invite
-	opening_map = {}
+		b = inst_map.setdefault(row.parent, [])
+		if row.institute and row.institute not in b:
+			b.append(row.institute)
 	for row in frappe.get_all(
 		"Campus Invite Job Opening",
 		filters={"parenttype": "Campus Invite", "parent": ["in", invite_names]},
-		fields=["parent", "job_opening"],
-		order_by="idx asc",
+		fields=["parent", "job_opening"], order_by="idx asc",
 	):
-		bucket = opening_map.setdefault(row.parent, [])
-		if row.job_opening and row.job_opening not in bucket:
-			bucket.append(row.job_opening)
+		b = op_map.setdefault(row.parent, [])
+		if row.job_opening and row.job_opening not in b:
+			b.append(row.job_opening)
+
+	# opening -> institutes (union across every invite carrying that opening)
+	opening_order, opening_institutes = [], {}
+	for inv in invite_names:
+		for op in op_map.get(inv, []):
+			if op not in opening_institutes:
+				opening_institutes[op] = []
+				opening_order.append(op)
+			for inst in inst_map.get(inv, []):
+				if inst not in opening_institutes[op]:
+					opening_institutes[op].append(inst)
 
 	all_insts = list({i for lst in inst_map.values() for i in lst})
 	inst_name = {
@@ -272,72 +353,1429 @@ def get_institute_breakdown(campus_drive):
 		for r in frappe.get_all("Institute", filters={"name": ["in", all_insts]},
 		                        fields=["name", "institute_name"])
 	} if all_insts else {}
-
-	all_ops = list({o for lst in opening_map.values() for o in lst})
 	op_title = {
 		r.name: r.job_title
-		for r in frappe.get_all("Job Opening", filters={"name": ["in", all_ops]},
+		for r in frappe.get_all("Job Opening", filters={"name": ["in", opening_order]},
 		                        fields=["name", "job_title"])
-	} if all_ops else {}
+	} if opening_order else {}
 
-	# Counts by invite + institute + opening (job_title) + status
+	# counts: opening -> institute -> status.
+	# Tallied in Python rather than with a SQL aggregate in `fields`: Frappe v16
+	# rejects "count(name) as cnt" as a string in SELECT, and its dict form isn't
+	# available on v15 — a plain fetch works identically on both.
 	agg = {}
 	for c in frappe.get_all(
 		"Job Applicant",
 		filters={"custom_campus_invite": ["in", invite_names]},
-		fields=["custom_campus_invite as invite", "custom_institute as institute",
-		        "job_title as opening", "status", "count(name) as cnt"],
-		group_by="custom_campus_invite, custom_institute, job_title, status",
+		fields=["job_title as opening", "custom_institute as institute", "status"],
+		limit_page_length=0,
 	):
-		if not c.institute:
+		if not c.opening:
 			continue
-		d = (agg.setdefault(c.invite, {})
-		        .setdefault(c.institute, {})
-		        .setdefault(c.opening, {"applied": 0, "shortlisted": 0, "hold": 0}))
-		d["applied"] += c.cnt
-		if c.status == SHORTLISTED_STATUS:
-			d["shortlisted"] += c.cnt
-		elif c.status == HOLD_STATUS:
-			d["hold"] += c.cnt
+		by_status = agg.setdefault(c.opening, {}).setdefault(c.institute or "", {})
+		by_status[c.status] = by_status.get(c.status, 0) + 1
 
-	out = []
-	for i in invites:
-		insts = inst_map.get(i.name, [])
-		ops = opening_map.get(i.name, [])
-		inst_cards, inv_app, inv_sl, inv_hold = [], 0, 0, 0
-		for inst in insts:
-			op_cards, t_app, t_sl, t_hold = [], 0, 0, 0
-			for op in ops:
-				d = agg.get(i.name, {}).get(inst, {}).get(
-					op, {"applied": 0, "shortlisted": 0, "hold": 0})
-				op_cards.append({
-					"job_opening": op,
-					"job_title": op_title.get(op, op),
-					"applied": d["applied"], "shortlisted": d["shortlisted"], "hold": d["hold"],
-				})
-				t_app += d["applied"]; t_sl += d["shortlisted"]; t_hold += d["hold"]
-			inst_cards.append({
+	openings_out = []
+	drive_by_status, grand_total = zero(), 0
+	for op in opening_order:
+		op_counts = agg.get(op, {})
+		listed = opening_institutes.get(op, [])
+		merged, op_total, inst_out = zero(), 0, []
+
+		for inst in listed:
+			st_map = op_counts.get(inst, {})
+			bys, tot = zero(), 0
+			for s, n in st_map.items():
+				if s in bys:
+					bys[s] += n
+				tot += n
+			inst_out.append({
 				"institute": inst,
 				"institute_name": inst_name.get(inst, inst),
-				"applied": t_app, "shortlisted": t_sl, "hold": t_hold,
-				"openings": op_cards,
+				"total": tot, "by_status": bys,
 			})
-			inv_app += t_app; inv_sl += t_sl; inv_hold += t_hold
-		out.append({
-			"invite": i.name,
-			"invite_name": i.campus_invite_name or i.name,
-			"region_label": region_label.get(i.region, i.region or "—"),
-			"status": i.status or "—",
-			"total_institutes": len(insts),
-			"total_openings": len(ops),
-			"total_applied": inv_app, "total_shortlisted": inv_sl, "total_hold": inv_hold,
-			"institutes": inst_cards,
-		})
-		summary["institutes"] += len(insts)
-		summary["openings"] += len(ops)
-		summary["applied"] += inv_app
-		summary["shortlisted"] += inv_sl
-		summary["hold"] += inv_hold
-	summary["invites"] = len(invites)
+			for s in statuses:
+				merged[s] += bys[s]
+			op_total += tot
 
-	return {"summary": summary, "invites": out}
+		# Applicants whose institute isn't one the invites listed (defensive) still
+		# count toward the merged role totals, they just get no institute row.
+		for inst, st_map in op_counts.items():
+			if inst in listed:
+				continue
+			for s, n in st_map.items():
+				if s in merged:
+					merged[s] += n
+				op_total += n
+
+		openings_out.append({
+			"job_opening": op, "job_title": op_title.get(op, op),
+			"total": op_total, "by_status": merged, "institutes": inst_out,
+		})
+		for s in statuses:
+			drive_by_status[s] += merged[s]
+		grand_total += op_total
+
+	return {
+		"statuses": statuses,
+		"invites": invite_names,
+		"openings": openings_out,
+		"summary": {
+			"invites": len(invite_names),
+			"institutes": len(all_insts),
+			"openings": len(opening_order),
+			"total": grand_total,
+			"by_status": drive_by_status,
+		},
+	}
+
+
+# ---------------------------------------------------------------------------
+# Group Discussion — automatic grouping
+# ---------------------------------------------------------------------------
+
+GD_POOL_STATUS = "Shortlisted"
+DEFAULT_GD_GROUP_SIZE = 5
+
+# Interview statuses that mean "candidate appeared, awaiting the panel's verdict".
+# Sites may use "Appeared" and/or the stock "Under Review"; both count as awaiting.
+# Kept in sync with the client (campus_drive.js) so the tile filter matches the count.
+AWAITING_INTERVIEW_STATUSES = ("Appeared", "Under Review")
+
+
+def _balanced_group_sizes(total, size):
+	"""Split `total` candidates into groups of about `size`, with NO undersized
+	group left over: the remainder is spread one-per-group across the earliest
+	groups (52 @ 5 -> two groups of 6 + eight of 5, not ten of 5 + one of 2).
+
+	When there are fewer than 2*size candidates a single group is returned — the
+	only case a group can exceed size+1, because splitting would leave a tiny one.
+	"""
+	if total <= 0:
+		return []
+	groups = max(1, total // size)
+	base, extra = divmod(total, groups)
+	return [base + 1] * extra + [base] * (groups - extra)
+
+
+def _interleave_buckets(buckets):
+	"""Deal round-robin across buckets, largest bucket first, so consecutive picks
+	alternate between them and the big buckets spread evenly instead of clumping
+	into the last groups."""
+	order = sorted((list(v) for v in buckets.values()), key=len, reverse=True)
+	out = []
+	while any(order):
+		for rows in order:
+			if rows:
+				out.append(rows.pop(0))
+	return out
+
+
+def _interleave_by_institute(candidates):
+	"""Order candidates so consecutive slices mix colleges (each institute's own
+	candidates are shuffled first)."""
+	import random
+
+	buckets = {}
+	for c in candidates:
+		buckets.setdefault(c.get("institute") or "", []).append(c)
+	for rows in buckets.values():
+		random.shuffle(rows)
+	return _interleave_buckets(buckets)
+
+
+def _interleave_roles_and_institutes(candidates):
+	"""Order candidates so a slice mixes BOTH roles and colleges: each role's pool is
+	institute-interleaved first, then the roles are dealt round-robin. With 30 RSM and
+	30 CSM shortlisted, a group of 6 comes out ~3 RSM + 3 CSM."""
+	by_role = {}
+	for c in candidates:
+		by_role.setdefault(c.get("job_opening") or "", []).append(c)
+	return _interleave_buckets({r: _interleave_by_institute(rows) for r, rows in by_role.items()})
+
+
+@frappe.whitelist()
+def generate_gd_groups(campus_drive, round_code=None, group_size=None, split_by="drive"):
+	"""Build Group Discussion groups for a drive and store them on the drive.
+
+	Pool  : Shortlisted Job Applicants on the drive's campus invites.
+	Split : ``"drive"`` (default) pools EVERY candidate on the drive together, so one
+	        group can hold candidates from several roles (3 RSM + 3 CSM in a group of
+	        6) — a GD panel judges communication, not the role. ``"role"`` instead
+	        keeps each Job Opening in its own groups, for drives that run role-wise
+	        panels; a candidate who applied to two roles is then grouped in each.
+	Mix   : roles and institutes are dealt round-robin so a group spans both.
+	Sizes : balanced, so no undersized group is left behind.
+
+	Regenerating replaces the existing groups for that round only.
+	"""
+	doc = frappe.get_doc("Campus Drive", campus_drive)
+
+	# --- resolve the GD round ---
+	gd_rounds = [r for r in (doc.rounds or []) if r.requires_gd_grouping]
+	if not gd_rounds:
+		frappe.throw(_("Add a round of type <b>Group Discussion</b> before generating groups."))
+	if round_code:
+		row = next((r for r in gd_rounds if r.round_code == round_code), None)
+		if not row:
+			frappe.throw(_("No Group Discussion round with code {0} on this drive.").format(round_code))
+	elif len(gd_rounds) == 1:
+		row = gd_rounds[0]
+	else:
+		frappe.throw(
+			_("This drive has {0} Group Discussion rounds — pick which one to group.").format(len(gd_rounds))
+		)
+
+	size = int(group_size or row.gd_group_size or DEFAULT_GD_GROUP_SIZE)
+	if size < 2:
+		frappe.throw(_("Group size must be at least 2."))
+	code = row.round_code or "GD"
+	# Remember the size actually used, so the round (and the UI's size box) reflects
+	# the last generation instead of drifting back to the old stored value.
+	row.gd_group_size = size
+
+	# --- candidate pool: Shortlisted applicants on this drive's invites ---
+	invite_names = [r.campus_invite for r in (doc.campus_invites or []) if r.campus_invite]
+	invite_names = list(dict.fromkeys(invite_names))
+	if not invite_names:
+		frappe.throw(_("Add at least one Campus Invite to the drive first."))
+
+	applicants = frappe.get_all(
+		"Job Applicant",
+		filters={"custom_campus_invite": ["in", invite_names], "status": GD_POOL_STATUS},
+		fields=["name", "applicant_name", "custom_applicant_last_name",
+		        "custom_institute as institute", "job_title as job_opening"],
+		order_by="name asc",
+	)
+	if not applicants:
+		frappe.throw(
+			_("No {0} candidates found on this drive's campus invites.").format(frappe.bold(GD_POOL_STATUS))
+		)
+	for a in applicants:  # store the full name on the group member snapshot
+		a.applicant_name = _full_name(a.applicant_name, a.get("custom_applicant_last_name"))
+
+	by_role = {}
+	for a in applicants:
+		by_role.setdefault(a.job_opening or "", []).append(a)
+
+	role_titles = {
+		r.name: r.job_title
+		for r in frappe.get_all("Job Opening", filters={"name": ["in", list(by_role)]},
+		                        fields=["name", "job_title"])
+	} if by_role else {}
+
+	# One pool for the whole drive (default), or one pool per role.
+	if split_by == "role":
+		pools = [
+			(role, role_titles.get(role, role), _interleave_by_institute(by_role[role]))
+			for role in sorted(by_role, key=lambda r: role_titles.get(r, r) or "")
+		]
+	else:
+		pools = [(None, _("All Roles"), _interleave_roles_and_institutes(applicants))]
+
+	# Drop this round's previous groups; leave any other round's rows untouched.
+	doc.set("gd_groups", [g for g in (doc.gd_groups or []) if g.round_code != code])
+	doc.set("gd_group_members", [m for m in (doc.gd_group_members or []) if m.round_code != code])
+
+	group_no, made_groups, made_members = 0, 0, 0
+	for (role, role_title, ordered) in pools:
+		cursor = 0
+		for count in _balanced_group_sizes(len(ordered), size):
+			group_no += 1
+			group_name = f"Group {group_no}"
+			members = ordered[cursor:cursor + count]
+			cursor += count
+
+			doc.append("gd_groups", {
+				"round_code": code,
+				"group_name": group_name,
+				"job_opening": role or None,
+				"job_title": role_title,
+				"candidate_count": len(members),
+				"group_status": "Planned",
+			})
+			made_groups += 1
+			for m in members:
+				doc.append("gd_group_members", {
+					"round_code": code,
+					"group_name": group_name,
+					"job_applicant": m.name,
+					"applicant_name": m.applicant_name,
+					"institute": m.institute or None,
+					# The candidate's OWN role — in a merged group this differs per
+					# member, which is what lets the UI show the RSM/CSM mix.
+					"job_opening": m.job_opening or None,
+					"attendance": "Pending",
+					"result": "Pending",
+				})
+				made_members += 1
+
+	doc.save()
+	frappe.db.commit()
+	return {
+		"round_code": code,
+		"group_size": size,
+		"groups": made_groups,
+		"candidates": made_members,
+		"roles": len(by_role),
+		"split_by": "role" if split_by == "role" else "drive",
+	}
+
+
+# ---------------------------------------------------------------------------
+# GD workspace actions (called from the Campus Drive HTML renderer)
+#
+# These write single child-row fields with update_modified=False so the parent's
+# `modified` stamp is untouched: HR can click Present/Pass all day without the
+# open form going dirty or hitting a "Document has been modified" conflict.
+# ---------------------------------------------------------------------------
+
+GD_MEMBER_DT = "Campus Drive GD Group Member"
+GD_GROUP_DT = "Campus Drive GD Group"
+
+
+def _gd_guard(campus_drive):
+	# Doctype-level check on purpose: passing the doc NAME would make Frappe load the
+	# whole Campus Drive (every child table, incl. hundreds of GD member rows) just to
+	# answer a permission question, on every button click.
+	if not frappe.has_permission("Campus Drive", "write"):
+		frappe.throw(_("Not permitted to update this Campus Drive."), frappe.PermissionError)
+
+
+def _gd_member_row(campus_drive, row_name):
+	row = frappe.db.get_value(
+		GD_MEMBER_DT, row_name,
+		["name", "parent", "parenttype", "round_code", "group_name", "job_opening"],
+		as_dict=True,
+	)
+	if not row or row.parent != campus_drive or row.parenttype != "Campus Drive":
+		frappe.throw(_("That candidate row does not belong to this Campus Drive."))
+	return row
+
+
+def _sync_group_count(campus_drive, round_code, group_name):
+	"""Keep the group header's candidate_count true after members move."""
+	filters = {"parent": campus_drive, "parenttype": "Campus Drive",
+	           "round_code": round_code, "group_name": group_name}
+	n = frappe.db.count(GD_MEMBER_DT, filters)
+	grp = frappe.db.get_value(GD_GROUP_DT, filters, "name")
+	if grp:
+		frappe.db.set_value(GD_GROUP_DT, grp, "candidate_count", n, update_modified=False)
+	return n
+
+
+@frappe.whitelist()
+def set_gd_member_field(campus_drive, row_name, field, value):
+	"""Set one candidate's attendance / result within their GD group."""
+	allowed = {
+		"attendance": {"Pending", "Present", "Absent"},
+		"result": {"Pending", "Pass", "Fail"},
+	}
+	if field not in allowed:
+		frappe.throw(_("Only attendance and result can be set here."))
+	if value not in allowed[field]:
+		frappe.throw(_("{0} is not a valid {1}.").format(value, field))
+
+	_gd_guard(campus_drive)
+	row = _gd_member_row(campus_drive, row_name)
+	frappe.db.set_value(GD_MEMBER_DT, row.name, field, value, update_modified=False)
+	frappe.db.commit()
+	return {"row": row.name, "field": field, "value": value}
+
+
+@frappe.whitelist()
+def bulk_gd_attendance(campus_drive, round_code, group_name, value):
+	"""Mark every candidate in one GD group Present / Absent / Pending."""
+	if value not in ("Pending", "Present", "Absent"):
+		frappe.throw(_("{0} is not a valid attendance value.").format(value))
+	_gd_guard(campus_drive)
+	rows = frappe.get_all(GD_MEMBER_DT, filters={
+		"parent": campus_drive, "parenttype": "Campus Drive",
+		"round_code": round_code, "group_name": group_name}, pluck="name")
+	for r in rows:
+		frappe.db.set_value(GD_MEMBER_DT, r, "attendance", value, update_modified=False)
+	frappe.db.commit()
+	return {"updated": len(rows), "value": value}
+
+
+@frappe.whitelist()
+def set_gd_group_status(campus_drive, round_code, group_name, status):
+	"""Set a GD group's own status (Planned / Scheduled / In Progress / Completed)."""
+	if status not in ("Planned", "Scheduled", "In Progress", "Completed"):
+		frappe.throw(_("{0} is not a valid group status.").format(status))
+	_gd_guard(campus_drive)
+	grp = frappe.db.get_value(GD_GROUP_DT, {
+		"parent": campus_drive, "parenttype": "Campus Drive",
+		"round_code": round_code, "group_name": group_name}, "name")
+	if not grp:
+		frappe.throw(_("Group {0} not found on this drive.").format(group_name))
+	frappe.db.set_value(GD_GROUP_DT, grp, "group_status", status, update_modified=False)
+	frappe.db.commit()
+	return {"group_name": group_name, "status": status}
+
+
+@frappe.whitelist()
+def move_gd_member(campus_drive, row_name, target_group):
+	"""Move one candidate into another group of the SAME round and SAME role, and
+	refresh both groups' counts."""
+	_gd_guard(campus_drive)
+	row = _gd_member_row(campus_drive, row_name)
+	if target_group == row.group_name:
+		return {"moved": False}
+
+	grp = frappe.db.get_value(GD_GROUP_DT, {
+		"parent": campus_drive, "parenttype": "Campus Drive",
+		"round_code": row.round_code, "group_name": target_group},
+		["name", "job_opening"], as_dict=True)
+	if not grp:
+		frappe.throw(_("Group {0} not found in this round.").format(target_group))
+	# Only role-scoped groups (job_opening set on the GROUP) are restricted. Groups
+	# built from the whole drive are role-mixed by design, so any move is fine.
+	source_grp_role = frappe.db.get_value(GD_GROUP_DT, {
+		"parent": campus_drive, "parenttype": "Campus Drive",
+		"round_code": row.round_code, "group_name": row.group_name}, "job_opening")
+	if grp.job_opening and source_grp_role and grp.job_opening != source_grp_role:
+		frappe.throw(_("These GD groups are per role — a candidate can only move within the same role."))
+
+	previous = row.group_name
+	frappe.db.set_value(GD_MEMBER_DT, row.name, "group_name", target_group, update_modified=False)
+	_sync_group_count(campus_drive, row.round_code, previous)
+	_sync_group_count(campus_drive, row.round_code, target_group)
+	frappe.db.commit()
+	return {"moved": True, "from": previous, "to": target_group}
+
+
+# ---------------------------------------------------------------------------
+# Bulk interview scheduling
+#
+# We do NOT build a parallel interview system: this creates real HRMS `Interview`
+# records, so the existing chain runs untouched —
+#   Interview Feedback (per interviewer) -> majority verdict on the Interview
+#   -> advance_on_interview_result -> the applicant's hiring stage moves on.
+# Campus rounds map to a hiring stage via Campus Drive Round.hiring_stage, so the
+# pool for "Technical Round 2" is simply whoever is sitting at that stage.
+# ---------------------------------------------------------------------------
+
+# Campus interviews are walk-in: HR gives a date, candidates arrive in any order.
+# Interview.from_time / to_time are mandatory in HRMS (and drive its reminders and
+# calendar events), so we stamp a day-long window rather than asking HR for times.
+DEFAULT_DAY_START = "09:00:00"
+DEFAULT_DAY_END = "18:00:00"
+
+
+def _round_by_code(doc, round_code):
+	row = next((r for r in (doc.rounds or []) if r.round_code == round_code), None)
+	if not row:
+		frappe.throw(_("No round with code {0} on this drive.").format(round_code))
+	return row
+
+
+def _full_name(first, last):
+	"""Full candidate name for display: campus applications store the first name in
+	`applicant_name` and the surname in `custom_applicant_last_name`, so combine them
+	(guarding against a surname already present in the first field)."""
+	full = (first or "").strip()
+	last = (last or "").strip()
+	if last and last.lower() not in full.lower():
+		full = (full + " " + last).strip()
+	return full or last
+
+
+def _applicant_full_names(ja_names):
+	"""Map {job_applicant: full name} for a set of Job Applicants, in one query."""
+	ja_names = [n for n in set(ja_names) if n]
+	if not ja_names:
+		return {}
+	return {
+		r.name: _full_name(r.applicant_name, r.get("custom_applicant_last_name"))
+		for r in frappe.get_all(
+			"Job Applicant", filters={"name": ["in", ja_names]},
+			fields=["name", "applicant_name", "custom_applicant_last_name"],
+		)
+	}
+
+
+# Interview fields THIS module already sets — never touched by the auto-filler.
+_INTERVIEW_CORE_FIELDS = {
+	"job_applicant", "job_opening", "interview_round", "interview_type", "designation",
+	"scheduled_on", "from_time", "to_time", "status", "custom_campus_drive",
+	"custom_campus_round_code", "custom_interview_panel", "interview_details",
+}
+
+
+def _set_interview_round(iv, round_name):
+	"""Set the interview round on whatever field links to it.
+
+	Both the fieldname and the target doctype differ across HRMS versions — v15
+	has ``interview_round`` → "Interview Round", v16 renamed it to
+	``interview_type`` → "Interview Type" — so we target EVERY Link field whose
+	options is the doctype this version actually uses (resolved once by
+	``get_interview_round_doctype``) instead of hardcoding a name. This is why the
+	round wasn't landing on v16: our old ``iv.interview_round = ...`` set a field
+	that no longer exists there.
+	"""
+	from recruitment.api.hiring_stage import get_interview_round_doctype
+
+	round_doctype = get_interview_round_doctype()
+	targets = [df.fieldname for df in iv.meta.fields
+	           if df.fieldtype == "Link" and round_doctype and df.options == round_doctype]
+	if not targets and iv.meta.get_field("interview_round"):
+		targets = ["interview_round"]
+	for fn in targets:
+		iv.set(fn, round_name)
+	return targets
+
+
+def _interview_autofill_defaults():
+	"""Compute default values for mandatory Interview fields ONCE per bulk run.
+
+	This is the version-safety net: HRMS v16 made ``interview_type`` a required stock
+	field that v15 didn't have, and different client sites add their own required
+	fields — we can't hardcode each, so we default every reqd, non-core field:
+
+	  - Select      -> "On-Site" if offered, else the first option
+	  - Data / Text -> "On-Site" for a *type*-ish field, else a neutral "Campus Drive"
+	  - Link        -> any existing record of the target doctype (just to satisfy the
+	                   constraint; HR can correct it on the Interview if needed)
+
+	Computed once and reused across all interviews in a schedule — the meta scan and
+	the link-master lookups do NOT repeat per row (that was a query per interview).
+	"""
+	defaults = {}
+	for df in frappe.get_meta("Interview").fields:
+		if not df.reqd or df.fieldname in _INTERVIEW_CORE_FIELDS:
+			continue
+		ftype = df.fieldtype
+		if ftype == "Select":
+			options = [o.strip() for o in (df.options or "").split("\n") if o.strip()]
+			if options:
+				defaults[df.fieldname] = "On-Site" if "On-Site" in options else options[0]
+		elif ftype in ("Data", "Small Text", "Text", "Long Text"):
+			label_blob = f"{df.fieldname} {df.label or ''}".lower()
+			defaults[df.fieldname] = "On-Site" if "type" in label_blob else "Campus Drive"
+		elif ftype == "Link" and df.options:
+			rec = frappe.db.get_value(df.options, {}, "name")  # one lookup, cached here
+			if rec:
+				defaults[df.fieldname] = rec
+	return defaults
+
+
+def _apply_interview_defaults(iv, defaults):
+	"""Apply the precomputed defaults to one Interview, without overriding set values."""
+	for fieldname, value in (defaults or {}).items():
+		if not iv.get(fieldname):
+			iv.set(fieldname, value)
+
+
+def _drive_invites(doc):
+	names = [r.campus_invite for r in (doc.campus_invites or []) if r.campus_invite]
+	return list(dict.fromkeys(names))
+
+
+# Child tables the round board actually needs. frappe.get_doc() would also pull
+# gd_groups / gd_group_members (hundreds of rows on a real drive) for nothing.
+_DRIVE_LITE_TABLES = {
+	"campus_invites": ("Campus Drive Invite", ["campus_invite"]),
+	"rounds": ("Campus Drive Round", ["round_code", "round_name", "round_type", "hiring_stage",
+	                                  "round_status", "scheduled_at", "requires_gd_grouping"]),
+	"round_panelists": ("Campus Drive Round Panelist", ["round_code", "panelist", "panel_name",
+	                                                    "job_opening"]),
+	"linked_job_openings": ("Campus Drive Job Opening", ["job_opening", "job_title"]),
+}
+
+
+def _drive_lite(campus_drive):
+	"""Load ONLY the child tables the round board reads, ordered as on the form."""
+	out = frappe._dict({"name": campus_drive})
+	for field, (doctype, cols) in _DRIVE_LITE_TABLES.items():
+		out[field] = frappe.get_all(
+			doctype,
+			filters={"parenttype": "Campus Drive", "parent": campus_drive, "parentfield": field},
+			fields=cols, order_by="idx asc",
+		)
+	return out
+
+
+def _employee_user_map(doc):
+	"""Employee -> user_id for every panelist on the drive, in ONE query.
+
+	Callers that walk all rounds pass this in, so we don't re-query Employees once
+	per round.
+	"""
+	ids = list({p.panelist for p in (doc.round_panelists or []) if p.panelist})
+	if not ids:
+		return {}
+	return {
+		e.name: e.user_id
+		for e in frappe.get_all("Employee", filters={"name": ["in", ids]},
+		                        fields=["name", "user_id"])
+	}
+
+
+def _panels_for_round(doc, round_code, emp_users=None):
+	"""Group this round's panelists into panels: {panel_name: {"users":[...], "role":opening}}.
+
+	Interview Detail.interviewer is a User, while panelists are Employees — so we map
+	through Employee.user_id and skip anyone without a login.
+	"""
+	rows = [p for p in (doc.round_panelists or []) if p.round_code == round_code and p.panelist]
+	if not rows:
+		return {}, []
+
+	if emp_users is None:
+		emp_users = _employee_user_map(doc)
+	panels, order, missing = {}, [], []
+	for r in rows:
+		user = emp_users.get(r.panelist)
+		if not user:
+			missing.append(r.panelist)
+			continue
+		key = r.panel_name or "Panel 1"
+		if key not in panels:
+			panels[key] = {"users": [], "role": r.job_opening or None}
+			order.append(key)
+		if user not in panels[key]["users"]:
+			panels[key]["users"].append(user)
+		if r.job_opening and not panels[key]["role"]:
+			panels[key]["role"] = r.job_opening
+	return {k: panels[k] for k in order}, missing
+
+
+def _round_kind(row, stage_type):
+	"""Which body a round drives: ``"pre_offer"``, ``"offer"``, or None (a normal
+	interview/assessment round).
+
+	Decided by the **hiring stage the round is mapped to**, not by a second switch
+	of its own. That keeps the Job Opening's ``custom_enable_pre_job_offer``
+	checkbox as the single source of truth: ``get_opening_stages`` appends the
+	virtual "Pre Job Offer" stage only when it is checked, so a round can only be
+	mapped to a Pre Offer stage on openings that enabled it — and on openings that
+	didn't, the same round maps to the Offer stage and raises Job Offers instead.
+
+	``round_type`` is still honoured as a fallback so drives configured before the
+	stage drove this keep working unchanged.
+	"""
+	stage = (row.hiring_stage or "").strip()
+	declared = (row.round_type or "").strip()
+	if (stage_type or {}).get(stage) == "Pre Offer" or declared == "Pre Offer":
+		return "pre_offer"
+	if (stage_type or {}).get(stage) == "Offer" or declared == "Offer":
+		return "offer"
+	return None
+
+
+def _terminal_round_pool(campus_drive, round_code):
+	"""``(stage, [Job Applicant rows])`` for a terminal (Offer / Pre Offer) round —
+	everyone parked at that round's hiring stage, i.e. who cleared everything before
+	it. Shared by the offer and pre-offer candidate lists so both read the pipeline
+	the same way."""
+	doc = _drive_lite(campus_drive)
+	row = _round_by_code(doc, round_code)
+	stage = (row.hiring_stage or "").strip()
+	if not stage:
+		frappe.throw(_("Set the Hiring Stage on round {0} first.").format(round_code))
+
+	invites = _drive_invites(doc)
+	if not invites:
+		return stage, []
+
+	return stage, frappe.get_all(
+		"Job Applicant",
+		filters={"custom_campus_invite": ["in", invites], "custom_current_stage": stage},
+		fields=["name", "applicant_name", "custom_applicant_last_name",
+		        "custom_institute as institute", "job_title as job_opening",
+		        "designation", "status"],
+		order_by="job_title asc, name asc",
+	)
+
+
+def _candidate_card(r, **extra):
+	card = {
+		"name": r.name,
+		"applicant_name": _full_name(r.applicant_name, r.get("custom_applicant_last_name")),
+		"institute": r.institute,
+		"job_opening": r.job_opening,
+		"designation": r.designation,
+	}
+	card.update(extra)
+	return card
+
+
+@frappe.whitelist()
+def get_offer_candidates(campus_drive, round_code):
+	"""Candidates who have reached an Offer round's stage — i.e. cleared everything
+	before it — so HR can select them and raise Job Offers straight from the drive.
+	Flags anyone who already has a Job Offer so they aren't offered twice.
+	"""
+	stage, rows = _terminal_round_pool(campus_drive, round_code)
+	names = [r.name for r in rows]
+	with_offer = set(frappe.get_all(
+		"Job Offer", filters={"job_applicant": ["in", names or [""]], "docstatus": ["!=", 2]},
+		pluck="job_applicant")) if names else set()
+
+	return {
+		"stage": stage,
+		"candidates": [_candidate_card(r, has_offer=r.name in with_offer) for r in rows],
+	}
+
+
+@frappe.whitelist()
+def get_pre_offer_candidates(campus_drive, round_code):
+	"""Candidates who have reached a Pre Offer round's stage, so HR can send them the
+	pre-offer form straight from the drive.
+
+	Unlike a Job Offer, a pre-offer is legitimately re-sendable — each send is a new
+	round (see ``_send_pre_offer_for_applicant``) — so an already-sent candidate is
+	flagged but NOT locked out; the UI just leaves them unticked so a bulk click
+	can't re-spam them by accident.
+	"""
+	stage, rows = _terminal_round_pool(campus_drive, round_code)
+	names = [r.name for r in rows]
+	already_sent = set(frappe.get_all(
+		"Job Applicant Pre Offer Form",
+		filters={"parenttype": "Job Applicant", "parent": ["in", names or [""]],
+		         "status": ["in", ("Sent", "Filled", "Reviewed")]},
+		pluck="parent")) if names else set()
+
+	return {
+		"stage": stage,
+		"candidates": [_candidate_card(r, pre_offer_sent=r.name in already_sent) for r in rows],
+	}
+
+
+@frappe.whitelist()
+def create_offers_for_candidates(campus_drive, applicants):
+	"""Raise Job Offers for the selected candidates (reuses the shared bulk creator so
+	the offer records are built exactly like the rest of the app)."""
+	from recruitment.api.bulk_job_offer import create_bulk_job_offer
+
+	_gd_guard(campus_drive)
+	return create_bulk_job_offer(applicants)
+
+
+@frappe.whitelist()
+def send_pre_offers_for_candidates(campus_drive, applicants):
+	"""Send the pre-offer form to the selected candidates (reuses the shared bulk
+	sender, so the forms and Action Center items are raised exactly as they are from
+	the Job Applicant flow)."""
+	from recruitment.api.action_center import send_bulk_pre_offer
+
+	_gd_guard(campus_drive)
+	return send_bulk_pre_offer(applicants)
+
+
+@frappe.whitelist()
+def get_round_pool(campus_drive, round_code):
+	"""Candidates waiting at this round's hiring stage, grouped by role.
+
+	Returns the pool plus anyone already scheduled, so the UI can show what a
+	"Schedule" click would actually do before doing it.
+	"""
+	doc = frappe.get_doc("Campus Drive", campus_drive)
+	row = _round_by_code(doc, round_code)
+	stage = (row.hiring_stage or "").strip()
+	if not stage:
+		frappe.throw(_("Set the <b>Hiring Stage</b> on round {0} first.").format(round_code))
+
+	invites = _drive_invites(doc)
+	if not invites:
+		return {"stage": stage, "pool": [], "scheduled": 0}
+
+	pool = frappe.get_all(
+		"Job Applicant",
+		filters={"custom_campus_invite": ["in", invites], "custom_current_stage": stage},
+		fields=["name", "applicant_name", "custom_applicant_last_name",
+		        "custom_institute as institute", "job_title as job_opening", "designation"],
+		order_by="job_title asc, name asc",
+	)
+	for c in pool:  # show full name in the schedule picker
+		c["applicant_name"] = _full_name(c.applicant_name, c.get("custom_applicant_last_name"))
+	already = set(frappe.get_all(
+		"Interview",
+		filters={"custom_campus_drive": campus_drive, "custom_campus_round_code": round_code,
+		         "docstatus": ["<", 2]},
+		pluck="job_applicant",
+	))
+	return {
+		"stage": stage,
+		"pool": [p for p in pool if p.name not in already],
+		"already_scheduled": len([p for p in pool if p.name in already]),
+	}
+
+
+@frappe.whitelist()
+def schedule_round_interviews(campus_drive, round_code, scheduled_on=None,
+                              from_time=None, to_time=None, applicants=None):
+	"""Bulk-create Interviews for everyone waiting at this round's stage.
+
+	Candidates are dealt to panels round-robin. Panels tagged with a role only take
+	that role's candidates (per-role scheduling); untagged panels take anyone.
+	"""
+	from recruitment.api.hiring_stage import _ensure_interview_round
+
+	doc = frappe.get_doc("Campus Drive", campus_drive)
+	row = _round_by_code(doc, round_code)
+	stage = (row.hiring_stage or "").strip()
+	if not stage:
+		frappe.throw(_("Set the <b>Hiring Stage</b> on round {0} first.").format(round_code))
+
+	date = scheduled_on or (row.scheduled_at and str(row.scheduled_at)[:10]) or None
+	if not date:
+		frappe.throw(_("Pick the interview date for this round."))
+
+	panels, missing = _panels_for_round(doc, round_code)
+	if not panels:
+		msg = _("Add panelists for round {0} before scheduling.").format(round_code)
+		if missing:
+			msg += " " + _("These employees have no linked User account: {0}").format(", ".join(missing))
+		frappe.throw(msg)
+
+	data = get_round_pool(campus_drive, round_code)
+	pool = data["pool"]
+
+	# Optional explicit selection — schedule only these candidates (e.g. 30 today,
+	# the rest tomorrow). Anything not in the eligible pool is ignored rather than
+	# force-scheduled, so a stale UI can't create interviews for the wrong people.
+	if applicants:
+		if isinstance(applicants, str):
+			applicants = frappe.parse_json(applicants)
+		wanted = {a for a in (applicants or []) if a}
+		pool = [p for p in pool if p.name in wanted]
+		if not pool:
+			frappe.throw(_("None of the selected candidates are still waiting at stage {0}.")
+			             .format(frappe.bold(stage)))
+	elif not pool:
+		frappe.throw(_("Nobody is waiting at stage {0} for this drive.").format(frappe.bold(stage)))
+
+	interview_round = _ensure_interview_round(stage)
+	autofill = _interview_autofill_defaults()  # computed ONCE, reused for every row
+	# Panels that name a role serve only that role; the rest are general-purpose.
+	by_role = {}
+	general = [k for k, v in panels.items() if not v["role"]]
+	for k, v in panels.items():
+		if v["role"]:
+			by_role.setdefault(v["role"], []).append(k)
+
+	created, skipped, cursor = [], [], {}
+	for cand in pool:
+		choices = by_role.get(cand.job_opening) or general
+		if not choices:
+			skipped.append({"applicant": cand.name, "reason": "no panel for this role"})
+			continue
+		i = cursor.get(cand.job_opening or "", 0)
+		panel_name = choices[i % len(choices)]
+		cursor[cand.job_opening or ""] = i + 1
+
+		try:
+			iv = frappe.new_doc("Interview")
+			iv.job_applicant = cand.name
+			iv.job_opening = cand.job_opening
+			_set_interview_round(iv, interview_round)
+			iv.designation = cand.designation
+			iv.scheduled_on = date
+			iv.from_time = from_time or DEFAULT_DAY_START
+			iv.to_time = to_time or DEFAULT_DAY_END
+			iv.status = "Pending"
+			for user in panels[panel_name]["users"]:
+				iv.append("interview_details", {"interviewer": user})
+			iv.custom_campus_drive = campus_drive
+			iv.custom_campus_round_code = round_code
+			iv.custom_interview_panel = panel_name
+			_apply_interview_defaults(iv, autofill)
+			iv.flags.ignore_permissions = True
+			iv.insert(ignore_permissions=True)
+			created.append(iv.name)
+		except Exception as e:
+			skipped.append({"applicant": cand.name, "reason": f"{type(e).__name__}: {e}"})
+
+	frappe.db.commit()
+	return {
+		"round_code": round_code, "stage": stage, "scheduled_on": date,
+		"created": len(created), "skipped": skipped[:10], "skipped_count": len(skipped),
+		"panels": list(panels),
+	}
+
+
+@frappe.whitelist()
+def get_round_interviews(campus_drive, round_code):
+	"""Read-only panel view for an interview round: each panel with its interviewers
+	and the candidates assigned to it, showing each candidate's INTERVIEW status.
+
+	Panel assignment creates one standard Interview per candidate (see
+	schedule_round_interviews), stamped with the panel name. Feedback is given on
+	those Interview records and the verdict advances the candidate automatically —
+	the drive only displays the outcome, it never marks Pass/Fail itself.
+	"""
+	doc = _drive_lite(campus_drive)
+	panels, missing = _panels_for_round(doc, round_code)
+	users = set()
+	for v in panels.values():
+		users.update(v["users"])
+	names = {
+		u.name: (u.full_name or u.name)
+		for u in frappe.get_all("User", filters={"name": ["in", list(users)]},
+		                        fields=["name", "full_name"])
+	} if users else {}
+
+	ivs = frappe.get_all(
+		"Interview",
+		filters={"custom_campus_drive": campus_drive, "custom_campus_round_code": round_code,
+		         "docstatus": ["<", 2]},
+		fields=["name", "job_applicant", "status", "custom_interview_panel as panel",
+		        "scheduled_on"],
+		limit_page_length=0,
+	)
+	iv_names = [i.name for i in ivs]
+	applicant_name = _applicant_full_names([i.job_applicant for i in ivs])
+	got, expected = {}, {}
+	if iv_names:
+		for f in frappe.get_all("Interview Feedback",
+		                        filters={"interview": ["in", iv_names], "docstatus": 1},
+		                        fields=["interview"], limit_page_length=0):
+			got[f.interview] = got.get(f.interview, 0) + 1
+		for de in frappe.get_all("Interview Detail",
+		                         filters={"parent": ["in", iv_names], "parenttype": "Interview"},
+		                         fields=["parent"], limit_page_length=0):
+			expected[de.parent] = expected.get(de.parent, 0) + 1
+
+	by_panel = {}
+	for i in ivs:
+		by_panel.setdefault(i.panel or "", []).append({
+			"interview": i.name,
+			"job_applicant": i.job_applicant,
+			"applicant_name": applicant_name.get(i.job_applicant, i.job_applicant),
+			"status": i.status,
+			"scheduled_on": str(i.scheduled_on) if i.scheduled_on else None,
+			"feedback_got": got.get(i.name, 0),
+			"feedback_expected": expected.get(i.name, 0),
+		})
+
+	out = []
+	for panel_name, v in panels.items():
+		out.append({
+			"panel": panel_name,
+			"role": v["role"],
+			"interviewers": [{"user": u, "name": names.get(u, u)} for u in v["users"]],
+			"candidates": by_panel.get(panel_name, []),
+		})
+	for panel_name, rows in by_panel.items():
+		if panel_name not in panels:
+			out.append({"panel": panel_name or "(unassigned)", "role": None,
+			            "interviewers": [], "candidates": rows})
+	return {"round_code": round_code, "panels": out, "missing_user": missing,
+	        "total_interviews": len(ivs)}
+
+
+@frappe.whitelist()
+def apply_gd_results(campus_drive, round_code):
+	"""Push a GD round's results into the hiring workflow.
+
+	Pass -> the candidate lands on the stage AFTER the GD round's own hiring stage
+	(so a pass always means "into the next round", wherever they were sitting before).
+	Fail -> Rejected. Anyone still Pending is left alone, so HR can run this again as
+	results come in. Nobody is ever moved backwards.
+	"""
+	from recruitment.api.hiring_stage import (
+		_enter_stage, _find_stage, get_opening_stages, _append_history,
+	)
+
+	_gd_guard(campus_drive)
+	# The GD round's own stage anchors the hand-off: pass => the stage after it.
+	gd_stage = frappe.db.get_value(
+		"Campus Drive Round",
+		{"parent": campus_drive, "parenttype": "Campus Drive", "round_code": round_code},
+		"hiring_stage",
+	)
+
+	rows = frappe.get_all(
+		GD_MEMBER_DT,
+		filters={"parent": campus_drive, "parenttype": "Campus Drive", "round_code": round_code},
+		fields=["name", "job_applicant", "result"],
+	)
+	passed = failed = skipped = pending = 0
+	stage_cache = {}  # opening -> stages; the pool shares only a handful of openings
+	for r in rows:
+		if not r.job_applicant or r.result not in ("Pass", "Fail"):
+			pending += 1
+			continue
+		try:
+			ja = frappe.get_doc("Job Applicant", r.job_applicant)
+			if r.result == "Fail":
+				ja.status = "Rejected"
+				ja.save(ignore_permissions=True)
+				failed += 1
+				continue
+
+			opening = ja.get("job_title")
+			if opening not in stage_cache:
+				stage_cache[opening] = get_opening_stages(opening)
+			stages = stage_cache[opening]
+			current = ja.get("custom_current_stage")
+			current_idx = _find_stage(stages, current) if current else -1
+
+			# Anchor on the GD round's stage when it maps onto this opening's workflow;
+			# otherwise fall back to wherever the candidate currently is.
+			anchor = _find_stage(stages, gd_stage) if gd_stage else -1
+			if anchor < 0:
+				anchor = current_idx
+			target = anchor + 1
+
+			if anchor < 0 or target >= len(stages):
+				if current_idx >= 0:
+					_append_history(ja, stages[current_idx], "GD Cleared")
+					ja.save(ignore_permissions=True)
+				skipped += 1
+				continue
+			if target <= current_idx:
+				# Already at or beyond the next round — record it, don't move backwards.
+				_append_history(ja, stages[current_idx], "GD Cleared")
+				ja.save(ignore_permissions=True)
+				skipped += 1
+				continue
+
+			_enter_stage(ja, stages[target], result="GD Cleared", ignore_permissions=True)
+			passed += 1
+		except Exception as e:
+			skipped += 1
+			frappe.log_error(frappe.get_traceback(), f"Campus GD result push failed for {r.job_applicant}: {e}")
+
+	frappe.db.commit()
+	return {"advanced": passed, "rejected": failed, "skipped": skipped,
+	        "pending": pending, "total": len(rows),
+	        "gd_stage": gd_stage, "moved_to": None if not gd_stage else "stage after " + gd_stage}
+
+
+@frappe.whitelist()
+def reconcile_round(campus_drive, round_code):
+	"""Re-sync a round's Cleared/Rejected interviews into the hiring pipeline.
+
+	The auto-advance on feedback is best-effort — if saving the candidate failed at
+	the time (e.g. a stale field value), the interview shows Cleared but the candidate
+	never moved. This catches up any such stragglers. Safe to re-run: it only advances
+	candidates STILL sitting at this round's stage, so already-advanced ones are left
+	alone (never double-advanced).
+	"""
+	from recruitment.api.hiring_stage import get_opening_stages, _find_stage, _enter_stage
+
+	_gd_guard(campus_drive)
+	row = _round_by_code(frappe.get_doc("Campus Drive", campus_drive), round_code)
+	stage = (row.hiring_stage or "").strip()
+	if not stage:
+		frappe.throw(_("Set the Hiring Stage on round {0} first.").format(round_code))
+
+	ivs = frappe.get_all(
+		"Interview",
+		filters={"custom_campus_drive": campus_drive, "custom_campus_round_code": round_code,
+		         "status": ["in", ["Cleared", "Rejected"]], "docstatus": ["<", 2]},
+		fields=["name", "status", "job_applicant"],
+	)
+	advanced = rejected = skipped = 0
+	stage_cache = {}
+	for iv in ivs:
+		try:
+			ja = frappe.get_doc("Job Applicant", iv.job_applicant)
+			if iv.status == "Rejected":
+				if ja.status != "Rejected":
+					ja.status = "Rejected"
+					ja.save(ignore_permissions=True)
+					rejected += 1
+				else:
+					skipped += 1
+				continue
+			# Cleared — advance only if still parked at THIS round's stage.
+			if (ja.custom_current_stage or "") != stage:
+				skipped += 1
+				continue
+			opening = ja.job_title
+			if opening not in stage_cache:
+				stage_cache[opening] = get_opening_stages(opening)
+			stages = stage_cache[opening]
+			idx = _find_stage(stages, stage)
+			if idx < 0 or idx + 1 >= len(stages):
+				skipped += 1
+				continue
+			_enter_stage(ja, stages[idx + 1], result="Auto (Cleared)", interview=iv.name,
+			             ignore_permissions=True)
+			advanced += 1
+		except Exception as e:
+			skipped += 1
+			frappe.log_error(frappe.get_traceback(), f"Campus reconcile failed for {iv.name}: {e}")
+	frappe.db.commit()
+	return {"advanced": advanced, "rejected": rejected, "skipped": skipped, "processed": len(ivs)}
+
+
+@frappe.whitelist()
+def get_rounds_overview(campus_drive):
+	"""Per-round tracking for the drive: who is waiting, what is scheduled, what is
+	still awaiting interviewer feedback, and how it concluded.
+
+	Interviewers are configured ONCE on the round (round_panelists: round + position
+	+ panel), so this also reports each round's standing panels — scheduling reuses
+	them every time instead of asking HR to pick people again.
+	"""
+	doc = _drive_lite(campus_drive)
+	invites = _drive_invites(doc)
+
+	# Which drive candidates sit at each hiring stage right now (names, so "waiting"
+	# can exclude those already scheduled for the round). Counted in Python — a SQL
+	# aggregate in `fields` is rejected by Frappe v16 and the dict form isn't on v15.
+	stage_applicants = {}
+	# Non-terminal candidates parked at each stage — used by the health check to spot
+	# candidates stranded on a stage no round covers.
+	stage_active = {}
+	if invites:
+		for r in frappe.get_all(
+			"Job Applicant",
+			filters={"custom_campus_invite": ["in", invites]},
+			fields=["name", "custom_current_stage as stage", "status"],
+			limit_page_length=0,
+		):
+			s = r.stage or ""
+			stage_applicants.setdefault(s, set()).add(r.name)
+			# "Hold" candidates were deliberately knocked out (eligibility not met);
+			# like Rejected/Accepted they are parked on purpose, so they must not
+			# count toward the "stuck at a stage no round covers" health warning.
+			if r.status not in ("Rejected", "Accepted", "Hold"):
+				stage_active[s] = stage_active.get(s, 0) + 1
+
+	# Interviews this drive created, with their feedback progress
+	iv_rows = frappe.get_all(
+		"Interview",
+		filters={"custom_campus_drive": campus_drive, "docstatus": ["<", 2]},
+		fields=["name", "custom_campus_round_code as code", "status", "job_applicant"],
+		limit_page_length=0,
+	)
+	iv_names = [i.name for i in iv_rows]
+	got = {}
+	if iv_names:
+		for f in frappe.get_all("Interview Feedback",
+		                        filters={"interview": ["in", iv_names], "docstatus": 1},
+		                        fields=["interview"], limit_page_length=0):
+			got[f.interview] = got.get(f.interview, 0) + 1
+
+	# Per round: a clean, mutually-exclusive status breakdown that sums to `total`, and
+	# the set of candidates already scheduled (to net off "waiting").
+	#   Cleared / Rejected  -> the verdict
+	#   Awaiting Feedback   -> the candidate appeared (or feedback started) but no
+	#                          verdict yet
+	#   Pending             -> everything else (created, not yet appeared)
+	by_round = {}
+	for i in iv_rows:
+		b = by_round.setdefault(i.code or "", {
+			"total": 0, "cleared": 0, "rejected": 0, "awaiting": 0, "pending": 0,
+			"scheduled": set()})
+		b["total"] += 1
+		b["scheduled"].add(i.job_applicant)
+		if i.status == "Cleared":
+			b["cleared"] += 1
+		elif i.status == "Rejected":
+			b["rejected"] += 1
+		elif i.status in AWAITING_INTERVIEW_STATUSES or got.get(i.name, 0) > 0:
+			b["awaiting"] += 1
+		else:
+			b["pending"] += 1
+
+	role_titles = {r.job_opening: r.job_title for r in (doc.linked_job_openings or [])}
+	all_users = set()
+	panels_by_round = {}
+	emp_users = _employee_user_map(doc)  # one Employee query for the whole drive
+	for r in (doc.rounds or []):
+		panels, missing = _panels_for_round(doc, r.round_code, emp_users)
+		panels_by_round[r.round_code] = (panels, missing)
+		for v in panels.values():
+			all_users.update(v["users"])
+	names = {
+		u.name: (u.full_name or u.name)
+		for u in frappe.get_all("User", filters={"name": ["in", list(all_users)]},
+		                        fields=["name", "full_name"])
+	} if all_users else {}
+
+	empty_stat = {"total": 0, "cleared": 0, "rejected": 0, "awaiting": 0, "pending": 0,
+	              "scheduled": set()}
+	# Computed before the loop so each round can report the kind of body it drives.
+	stage_options = _stage_options(doc)
+	stage_type = stage_options.get("stage_type") or {}
+	rounds = []
+	for r in (doc.rounds or []):
+		panels, missing = panels_by_round[r.round_code]
+		stat = by_round.get(r.round_code, empty_stat)
+		# "waiting" = candidates at this round's stage who are NOT yet scheduled for it
+		# (so it drops to 0 once everyone's been assigned, and the NEXT round's waiting
+		# rises as candidates clear into its stage).
+		at_stage = stage_applicants.get(r.hiring_stage, set()) if r.hiring_stage else set()
+		waiting = len(at_stage - stat["scheduled"])
+		rounds.append({
+			"round_code": r.round_code,
+			"round_name": r.round_name,
+			"round_type": r.round_type,
+			"hiring_stage": r.hiring_stage or "",
+			"round_status": r.round_status,
+			"scheduled_at": str(r.scheduled_at)[:10] if r.scheduled_at else None,
+			"is_gd": bool(r.requires_gd_grouping),
+			"round_kind": _round_kind(r, stage_type),
+			"waiting": waiting,
+			"panels": [
+				{"panel": k, "role": v["role"], "role_title": role_titles.get(v["role"]) or v["role"],
+				 "interviewers": [{"user": u, "name": names.get(u, u)} for u in v["users"]]}
+				for k, v in panels.items()
+			],
+			"missing_user": missing,
+			"interviews": stat["total"],
+			"cleared": stat["cleared"],
+			"rejected": stat["rejected"],
+			"awaiting_feedback": stat["awaiting"],
+			"pending": stat["pending"],
+		})
+
+	# Folded in so the client gets rounds + the stage picker's options in ONE call.
+	return {"rounds": rounds, "invites": invites,
+	        "roles": [{"job_opening": k, "job_title": v} for k, v in role_titles.items()],
+	        "stage_options": stage_options,
+	        "health": _drive_health(doc, stage_options, stage_active)}
+
+
+def _drive_health(doc, stage_options, stage_active):
+	"""Surface, in plain language, the misconfigurations that otherwise show up only
+	as a silent "0 waiting" — so HR can see and fix them on the form instead of
+	guessing. Checks:
+	  1. A round with no Hiring Stage.
+	  2. A round mapped to a stage none of the linked openings has.
+	  3. An interview round mapped to a stage that isn't of type "Interview" (feedback
+	     won't auto-advance those candidates). Offer / Pre Offer rounds are exempt —
+	     those stage types are exactly what makes them terminal rounds, so flagging
+	     them buried the real issues under a warning on correct configuration.
+	  4. Candidates stranded at a stage no round on the drive covers.
+	"""
+	stage_names = set(stage_options.get("stages") or [])
+	stage_type = stage_options.get("stage_type") or {}
+	rounds = doc.rounds or []
+	covered = {(r.hiring_stage or "").strip() for r in rounds if r.hiring_stage}
+
+	issues = []
+	for r in rounds:
+		if r.requires_gd_grouping:
+			continue
+		hs = (r.hiring_stage or "").strip()
+		if not hs:
+			issues.append({"level": "error",
+				"title": _("Round “{0}” has no Hiring Stage").format(r.round_name or r.round_code),
+				"detail": _("Set its Hiring Stage so cleared candidates can flow into it.")})
+			continue
+		if stage_names and hs not in stage_names:
+			issues.append({"level": "error",
+				"title": _("Round “{0}” points to a stage no opening has").format(r.round_name or r.round_code),
+				"detail": _("“{0}” isn’t in any linked opening’s hiring workflow, so candidates can never reach this round. Change it to one of: {1}.").format(
+					hs, ", ".join(sorted(stage_names)))})
+		elif _round_kind(r, stage_type):
+			continue  # terminal round — an Offer / Pre Offer stage is the point of it
+		elif stage_type.get(hs) and stage_type.get(hs) != "Interview":
+			issues.append({"level": "warning",
+				"title": _("Round “{0}”’s stage isn’t an Interview stage").format(r.round_name or r.round_code),
+				"detail": _("Stage “{0}” is type “{1}” on the opening. Interview feedback only auto-advances candidates from Interview-type stages — set it to Interview, or this round won’t move people on.").format(
+					hs, stage_type.get(hs))})
+
+	# Stranded candidates: sitting (non-terminal) on a stage no round covers.
+	for stg, cnt in sorted(stage_active.items()):
+		if not stg or stg in covered:
+			continue
+		orphan = bool(stage_names) and stg not in stage_names
+		issues.append({"level": "error" if orphan else "warning",
+			"title": _("{0} candidate(s) stuck at “{1}”").format(cnt, stg),
+			"detail": (_("This stage is no longer in the opening’s workflow, so these candidates are orphaned — add a round for it or move them to a valid stage.")
+			           if orphan else
+			           _("No round on this drive covers “{0}”. Add a round mapped to it, or move these candidates.").format(stg)),
+			"stage": stg})
+	return issues
+
+
+@frappe.whitelist()
+def get_drive_stage_options(campus_drive):
+	"""Stage names available on this drive's linked openings (standalone endpoint)."""
+	return _stage_options(frappe.get_doc("Campus Drive", campus_drive))
+
+
+def _stage_options(doc):
+	"""Stage names available on this drive's linked openings.
+
+	Feeds the Hiring Stage picker on a round so HR can't mistype a stage that no
+	opening has (which would silently strand every candidate). When the openings
+	disagree on their stage lists we report it — a round maps to ONE stage name, so
+	a name missing from some openings would only schedule part of the drive.
+	"""
+	openings = [r.job_opening for r in (doc.linked_job_openings or []) if r.job_opening]
+	if not openings:
+		return {"stages": [], "common": [], "partial": [], "openings": 0}
+
+	from recruitment.api.hiring_stage import get_openings_stages
+
+	# Batched: two queries for the whole drive rather than two per linked opening.
+	stages_by_opening = get_openings_stages(openings)
+
+	per_opening, stage_type = {}, {}
+	for op in openings:
+		per_opening[op] = []
+		for s in (stages_by_opening.get(op) or []):
+			nm = s.get("stage_name")
+			if nm:
+				per_opening[op].append(nm)
+				stage_type.setdefault(nm, s.get("stage_type"))
+
+	ordered, seen = [], set()
+	for op in openings:
+		for s in per_opening[op]:
+			if s not in seen:
+				seen.add(s)
+				ordered.append(s)
+	common = [s for s in ordered if all(s in v for v in per_opening.values())]
+	return {
+		"stages": ordered,
+		"common": common,
+		"partial": [s for s in ordered if s not in common],
+		"stage_type": stage_type,
+		"openings": len(openings),
+	}
+
+
+@frappe.whitelist()
+def nudge_pending_feedback(campus_drive, round_code):
+	"""Assign the still-open interviews to the interviewers who owe feedback.
+
+	Creates a ToDo per (interviewer, interview) so it lands in their "Assigned to me"
+	without emailing anyone — deliberate, so a nudge on a 58-candidate round can't
+	blast mail at real people. Idempotent: an existing open ToDo is left alone.
+	"""
+	from frappe.desk.form.assign_to import add as assign_to
+
+	_gd_guard(campus_drive)
+	ivs = frappe.get_all(
+		"Interview",
+		filters={"custom_campus_drive": campus_drive, "custom_campus_round_code": round_code,
+		         "status": ["in", ["Pending", "Under Review"]], "docstatus": ["<", 2]},
+		pluck="name",
+	)
+	if not ivs:
+		return {"nudged": 0, "interviews": 0}
+
+	submitted = {}
+	for f in frappe.get_all("Interview Feedback",
+	                        filters={"interview": ["in", ivs], "docstatus": 1},
+	                        fields=["interview", "interviewer"]):
+		submitted.setdefault(f.interview, set()).add(f.interviewer)
+
+	# Panel members and existing open ToDos are fetched ONCE for every interview in
+	# the round — doing either per-interview turned a 58-candidate nudge into ~170
+	# queries.
+	panel_of = {}
+	for row in frappe.get_all("Interview Detail",
+	                          filters={"parent": ["in", ivs], "parenttype": "Interview"},
+	                          fields=["parent", "interviewer"]):
+		panel_of.setdefault(row.parent, []).append(row.interviewer)
+
+	open_todos = set()
+	for t in frappe.get_all("ToDo",
+	                        filters={"reference_type": "Interview", "reference_name": ["in", ivs],
+	                                 "status": "Open"},
+	                        fields=["reference_name", "allocated_to"]):
+		open_todos.add((t.reference_name, t.allocated_to))
+
+	nudged, people = 0, set()
+	for iv in ivs:
+		done = submitted.get(iv, set())
+		for who in panel_of.get(iv, []):
+			if not who or who in done or (iv, who) in open_todos:
+				continue
+			try:
+				assign_to({
+					"doctype": "Interview", "name": iv, "assign_to": [who],
+					"description": _("Interview feedback pending for {0}").format(iv),
+					"notify": 0,
+				})
+				nudged += 1
+				people.add(who)
+			except Exception:
+				frappe.log_error(frappe.get_traceback(), f"Campus nudge failed for {iv} / {who}")
+
+	frappe.db.commit()
+	return {"nudged": nudged, "interviewers": len(people), "interviews": len(ivs)}
+
+
+@frappe.whitelist()
+def add_candidate_interview(campus_drive, job_applicant, stage_name, scheduled_on,
+                            round_code=None, panel=None, from_time=None, to_time=None):
+	"""Give ONE candidate an extra interview — an additional round beyond the standard
+	pipeline (e.g. a third technical round just for this person).
+
+	The candidate's stage is left untouched: this adds an interview, it does not
+	rewrite the opening's workflow for everyone.
+	"""
+	from recruitment.api.hiring_stage import _ensure_interview_round
+
+	_gd_guard(campus_drive)
+	if not (job_applicant and stage_name and scheduled_on):
+		frappe.throw(_("Candidate, stage and date are all required."))
+
+	ja = frappe.db.get_value("Job Applicant", job_applicant,
+	                         ["name", "job_title", "designation"], as_dict=True)
+	if not ja:
+		frappe.throw(_("Job Applicant {0} not found.").format(job_applicant))
+
+	doc = frappe.get_doc("Campus Drive", campus_drive)
+	users = []
+	if round_code:
+		panels, _missing = _panels_for_round(doc, round_code)
+		if panel and panel in panels:
+			users = panels[panel]["users"]
+		elif panels:
+			users = list(panels.values())[0]["users"]
+
+	iv = frappe.new_doc("Interview")
+	iv.job_applicant = ja.name
+	iv.job_opening = ja.job_title
+	_set_interview_round(iv, _ensure_interview_round(stage_name))
+	iv.designation = ja.designation
+	iv.scheduled_on = scheduled_on
+	iv.from_time = from_time or DEFAULT_DAY_START
+	iv.to_time = to_time or DEFAULT_DAY_END
+	iv.status = "Pending"
+	for u in users:
+		iv.append("interview_details", {"interviewer": u})
+	iv.custom_campus_drive = campus_drive
+	if round_code:
+		iv.custom_campus_round_code = round_code
+	if panel:
+		iv.custom_interview_panel = panel
+	_apply_interview_defaults(iv, _interview_autofill_defaults())
+	iv.insert(ignore_permissions=True)
+	frappe.db.commit()
+	return {"interview": iv.name, "job_applicant": ja.name, "stage": stage_name,
+	        "interviewers": len(users)}
+
+
+def update_drive_statuses():
+	"""Daily scheduler job: move each drive's status in step with its window, since a
+	drive going Live / Completed happens by the calendar passing, not by a save.
+	Manually 'Closed' drives are left untouched.
+	"""
+	from frappe.utils import getdate, nowdate
+
+	today = getdate(nowdate())
+	changed = 0
+	for d in frappe.get_all(
+		"Campus Drive",
+		filters={"drive_status": ["!=", "Closed"]},
+		fields=["name", "drive_start_date", "drive_end_date", "drive_status"],
+	):
+		if not d.drive_start_date:
+			continue
+		if today < getdate(d.drive_start_date):
+			target = "Draft"
+		elif d.drive_end_date and today > getdate(d.drive_end_date):
+			target = "Completed"
+		else:
+			target = "Live"
+		if target != d.drive_status:
+			frappe.db.set_value("Campus Drive", d.name, "drive_status", target,
+			                    update_modified=False)
+			changed += 1
+	frappe.db.commit()
+	return {"updated": changed}

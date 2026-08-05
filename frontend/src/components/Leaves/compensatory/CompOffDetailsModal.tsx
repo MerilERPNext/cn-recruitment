@@ -1,6 +1,6 @@
 import React from "react";
 import { CompensatoryRequestItem } from "./CompensatoryRequestCard";
-import { format } from "date-fns";
+import formatToIndianDate, { formatDatesInText } from "../../../utils/formatToIndianDate";
 import { usePayCompOff } from "../../../hooks/useLeaves";
 import toast from "react-hot-toast";
 import { Typography } from "../../shared/atoms/Typography";
@@ -35,11 +35,11 @@ const CompOffDetailsModal: React.FC<CompOffDetailsModalProps> = ({
   };
 
   const formattedFromDate = compOff.work_from_date
-    ? format(new Date(compOff.work_from_date), "dd MMM yyyy")
+    ? formatToIndianDate(compOff.work_from_date)
     : "N/A";
 
   const formattedToDate = compOff.work_end_date
-    ? format(new Date(compOff.work_end_date), "dd MMM yyyy")
+    ? formatToIndianDate(compOff.work_end_date)
     : "N/A";
 
   return (
@@ -102,7 +102,7 @@ const CompOffDetailsModal: React.FC<CompOffDetailsModalProps> = ({
             <Typography variant="mobileCardLabel">Reason</Typography>
 
             <Typography variant="mobileCardValue">
-              {compOff.reason || "—"}
+              {formatDatesInText(compOff.reason || "") || "—"}
             </Typography>
           </div>
         </div>

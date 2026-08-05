@@ -12,7 +12,7 @@ import MobileAllocatedTo from "../../shared/MobileAllocatedTo";
 import Tooltip from "../../shared/Tooltip";
 import WrapperHoverCard from "../../shared/WrapperHoverCard";
 import Button from "../../shared/atoms/Button";
-import RejectionReasonModal from "../../shared/RejectionReasonModal";
+import ActionReasonModal from "../../shared/ActionReasonModal";
 import TeamApprovalActionPill from "../../shared/atoms/TeamApprovalActionPill";
 import { Typography } from "../../shared/atoms/Typography";
 import StatusBadge from "../../shared/atoms/statusBadge";
@@ -543,13 +543,15 @@ const ExpenseApprovalCard = ({
         </div>
       )}
 
-      <RejectionReasonModal
+      <ActionReasonModal
         isOpen={showCommentModal}
         isPending={commentMutation.isPending}
+        type={pendingActionData?.action?.toLowerCase() === "approve" ? "approval" : "rejection"}
         title="Comment Required"
         description={`Please add a comment before ${pendingActionData?.action?.toLowerCase() === "approve" ? "approving" : "rejecting"} this expense claim.`}
         label={`${pendingActionData?.action?.toLowerCase() === "approve" ? "APPROVAL" : "REJECTION"} COMMENT *`}
         placeholder={`Enter your ${pendingActionData?.action?.toLowerCase() === "approve" ? "approval" : "rejection"} comment...`}
+        todo_id={data?.todo_id}
         onCancel={handleCancelComment}
         onSave={handleSaveComment}
       />

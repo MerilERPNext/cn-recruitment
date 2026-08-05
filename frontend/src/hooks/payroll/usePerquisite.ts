@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { getInvoiceHTMLSheet, getInvoiceSalarySlip, getPerquisite } from "../../services/payrollApi/perquisiteService";
+import { getEmployeePerquisites, getInvoiceHTMLSheet, getInvoiceSalarySlip, getPerquisite } from "../../services/payrollApi/perquisiteService";
 
 
 
@@ -16,6 +16,19 @@ enabled: true,
 staleTime: 5 * 60 * 1000, // 5 minutes
 });
 }
+
+// Month-wise Perquisite Calendar + summary for an employee & payroll period.
+export const useEmployeePerquisites = (
+  employeeId?: string,
+  payroll_period?: string,
+) => {
+  return useQuery({
+    queryKey: ["employee-perquisites", employeeId, payroll_period],
+    queryFn: () => getEmployeePerquisites(employeeId, payroll_period),
+    enabled: !!employeeId && !!payroll_period,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+};
 
 export const useInvoiceSalarySlip = (
   employeeId?: string,

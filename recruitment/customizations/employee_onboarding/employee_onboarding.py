@@ -1,43 +1,17 @@
 import frappe
-from frappe.model.mapper import get_mapped_doc
-import json
+
+from recruitment.auto_fetch_fields import make_employee as _make_employee
+
 
 @frappe.whitelist()
 def make_employee(source_name, target_doc=None):
-    doc = frappe.get_doc("Employee Onboarding", source_name)
-    settings = frappe.get_doc('Recruitment Settings')
+    """HRMS's Employee Onboarding -> Employee mapper, redirected here by
+    ``hooks.override_whitelisted_methods``.
 
-    def set_missing_values(source, target):
-        target.personal_email = frappe.db.get_value("Job Applicant", source.job_applicant, "email_id")
-        target.status = "Active"
-
-        # Structural link, not a configurable mapping: HRMS resolves
-        # Employee Onboarding.employee by matching Employee.job_applicant (see
-        # EmployeeOnboarding.set_employee). Without it the onboarding never learns
-        # which Employee it produced. Set here rather than in Recruitment Settings
-        # so a missing config row cannot break the chain.
-        target.job_applicant = source.job_applicant
-
-        # Connector for the Field Flow chain: setting it before insert lets the
-        # managed fetch_from fields auto-populate from Onboarding -> Employee.
-        from recruitment.recruitment.field_flow_sync import populate_employee_connector
-
-        populate_employee_connector(target, source.name)
-
-    field_map = {}
-    for fieldrow in settings.mapping_fields:
-        field_map[fieldrow.employee_onboarding] = fieldrow.employee
-
-    doc = get_mapped_doc(
-        "Employee Onboarding",
-        source_name,
-        {
-            "Employee Onboarding": {
-                "doctype": "Employee",
-                "field_map": field_map,
-            }
-        },
-        target_doc,
-        set_missing_values,
-    )
-    return doc
+    Delegates to the single implementation in ``recruitment.auto_fetch_fields``,
+    which is also what the form's "Create Employee" button calls. The two used to
+    be separate copies that had drifted: this one read the legacy
+    ``mapping_fields`` table while the button read ``recruitment_tool``, so which
+    button you pressed decided whether the configured mapping applied at all.
+    """
+    return _make_employee(source_name, target_doc)

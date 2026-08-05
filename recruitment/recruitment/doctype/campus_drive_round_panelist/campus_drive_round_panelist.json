@@ -8,6 +8,8 @@
  "field_order": [
   "round_code",
   "panelist",
+  "panel_name",
+  "job_opening",
   "panel_type",
   "slots"
  ],
@@ -28,6 +30,23 @@
    "label": "Panelist",
    "options": "Employee",
    "reqd": 1
+  },
+  {
+   "fieldname": "panel_name",
+   "fieldtype": "Data",
+   "label": "Panel",
+   "in_list_view": 1,
+   "columns": 1,
+   "description": "Interviewers sharing a Panel name sit on the same interview together"
+  },
+  {
+   "fieldname": "job_opening",
+   "fieldtype": "Link",
+   "label": "Role / Job Opening",
+   "options": "Job Opening",
+   "in_list_view": 1,
+   "columns": 2,
+   "description": "Leave blank to let this panel cover every role"
   },
   {
    "columns": 1,
@@ -57,4 +76,3 @@
  "sort_order": "ASC",
  "states": []
 }
-

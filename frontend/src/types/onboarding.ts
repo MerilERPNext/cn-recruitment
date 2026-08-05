@@ -161,6 +161,7 @@ export interface EmployeeOnboardingDetail {
   job_applicant: string | null;
   employee: string | null;
   header: {
+    custom_employment_status: "On Probation" | "Confirmed" | "Probation Extended" | "On Notice Period" | "Terminated" | "Separated" | "Recommended for Separation" | null;
     employee_name: string | null;
     employee_id: string | null;
     designation: string | null;

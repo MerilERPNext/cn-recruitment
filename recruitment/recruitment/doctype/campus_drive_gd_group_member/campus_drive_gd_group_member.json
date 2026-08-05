@@ -1,0 +1,102 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2026-07-16 00:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "round_code",
+  "group_name",
+  "job_applicant",
+  "applicant_name",
+  "institute",
+  "job_opening",
+  "attendance",
+  "result"
+ ],
+ "fields": [
+  {
+   "columns": 1,
+   "fieldname": "round_code",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Round Code",
+   "reqd": 1
+  },
+  {
+   "columns": 1,
+   "fieldname": "group_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Group",
+   "reqd": 1
+  },
+  {
+   "columns": 2,
+   "fieldname": "job_applicant",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Job Applicant",
+   "options": "Job Applicant",
+   "reqd": 1
+  },
+  {
+   "columns": 2,
+   "fetch_from": "job_applicant.applicant_name",
+   "fieldname": "applicant_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Candidate",
+   "read_only": 1
+  },
+  {
+   "columns": 2,
+   "fieldname": "institute",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Institute",
+   "options": "Institute",
+   "read_only": 1
+  },
+  {
+   "fieldname": "job_opening",
+   "fieldtype": "Link",
+   "label": "Role / Job Opening",
+   "options": "Job Opening",
+   "read_only": 1
+  },
+  {
+   "columns": 1,
+   "default": "Pending",
+   "fieldname": "attendance",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Attendance",
+   "options": "Pending\nPresent\nAbsent"
+  },
+  {
+   "columns": 1,
+   "default": "Pending",
+   "fieldname": "result",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Result",
+   "options": "Pending\nPass\nFail"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-07-16 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Recruitment",
+ "name": "Campus Drive GD Group Member",
+ "owner": "Administrator",
+ "permissions": [],
+ "quick_entry": 0,
+ "row_format": "Dynamic",
+ "sort_field": "creation",
+ "sort_order": "ASC",
+ "states": []
+}

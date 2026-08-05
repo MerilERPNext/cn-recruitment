@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { Typography } from "../../shared/atoms/Typography";
 import {
   ChevronLeft,
   ChevronRight,
@@ -28,6 +29,7 @@ import {
   useDoctypeOptions,
   type RecognitionAdminParams,
 } from "../../../services/recognitionService";
+import formatToIndianDate from "../../../utils/formatToIndianDate";
 
 /* ────────────────────────────────────────────────────────────────────────────
  * Types
@@ -87,9 +89,8 @@ const StatusPill = ({ status }: { status: string }) => {
   };
   return (
     <span
-      className={`inline-flex items-center rounded-md border px-2.5 py-0.5 text-xs font-medium ${
-        map[status] || map.Inactive
-      }`}
+      className={`inline-flex items-center rounded-md border px-2.5 py-0.5 text-xs font-medium ${map[status] || map.Inactive
+        }`}
     >
       {status}
     </span>
@@ -254,8 +255,8 @@ function DataTable<T>({
           >
             <Settings2 className="h-4 w-4" />
           </button>
-   
-        
+
+
         </div>
       </div>
 
@@ -274,11 +275,12 @@ function DataTable<T>({
                   key={col.key}
                   disabled={!col.sortable}
                   onClick={() => col.sortable && toggleSort(col.key)}
-                  className={`flex items-center gap-1 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 ${
-                    col.sortable ? "cursor-pointer hover:text-gray-700" : "cursor-default"
-                  }`}
+                  className={`flex items-center gap-1 text-left ${col.sortable ? "cursor-pointer hover:text-gray-700" : "cursor-default"
+                    }`}
                 >
-                  {col.header}
+                  <Typography variant="bodySmall" className="font-semibold whitespace-nowrap">
+                    {col.header}
+                  </Typography>
                   {col.sortable &&
                     active &&
                     (sortDir === "asc" ? (
@@ -305,7 +307,7 @@ function DataTable<T>({
             pageRows.map((row, idx) => (
               <div
                 key={idx}
-                className={`grid items-center gap-4 border-b border-gray-50 px-5 ${rowPad} text-sm text-gray-700 last:border-b-0 hover:bg-gray-50/60`}
+                className={`grid items-center gap-4 border-b border-gray-50 px-5 ${rowPad} text-sm font-medium text-gray-800 last:border-b-0 hover:bg-gray-50/60`}
                 style={{ gridTemplateColumns: gridCols }}
               >
                 {renderColumns.map((col) => (
@@ -344,11 +346,10 @@ function DataTable<T>({
               <button
                 key={p}
                 onClick={() => setPage(p)}
-                className={`flex h-8 min-w-8 items-center justify-center rounded-md border px-2 ${
-                  p === safePage
-                    ? "border-primary bg-primary text-white"
-                    : "border-gray-200 text-gray-600 hover:bg-gray-50"
-                }`}
+                className={`flex h-8 min-w-8 items-center justify-center rounded-md border px-2 ${p === safePage
+                  ? "border-primary bg-primary text-white"
+                  : "border-gray-200 text-gray-600 hover:bg-gray-50"
+                  }`}
               >
                 {p}
               </button>
@@ -554,9 +555,8 @@ export default function RecognitionAdminDashboard() {
           <button
             key={t.key}
             onClick={() => changeTab(t.key)}
-            className={`relative py-3 text-xs font-semibold uppercase tracking-wide transition-colors ${
-              tab === t.key ? "text-primary" : "text-gray-500 hover:text-gray-700"
-            }`}
+            className={`relative py-3 text-xs font-semibold uppercase tracking-wide transition-colors ${tab === t.key ? "text-primary" : "text-gray-500 hover:text-gray-700"
+              }`}
           >
             {t.label}
             {tab === t.key && (
@@ -584,11 +584,11 @@ export default function RecognitionAdminDashboard() {
                 header: "Program Code",
                 sortable: true,
                 className: "1.3fr",
-                render: (r) => <span className="font-medium text-gray-900">{r.code}</span>,
+                render: (r) => <Typography variant="bodyMedium" color="body1">{r.code}</Typography>,
               },
-              { key: "name", header: "Program Name", sortable: true, className: "1.5fr", render: (r) => r.name },
-              { key: "start", header: "Program Start Date", sortable: true, className: "1fr", render: (r) => r.startDate },
-              { key: "end", header: "Program End Date", sortable: true, className: "1fr", render: (r) => r.endDate },
+              { key: "name", header: "Program Name", sortable: true, className: "1.5fr", render: (r) => <Typography variant="bodyMedium" color="body1">{r.name}</Typography> },
+              { key: "start", header: "Program Start Date", sortable: true, className: "1fr", render: (r) => <Typography variant="bodyMedium" color="body1">{formatToIndianDate(r.startDate)}</Typography> },
+              { key: "end", header: "Program End Date", sortable: true, className: "1fr", render: (r) => <Typography variant="bodyMedium" color="body1">{formatToIndianDate(r.endDate)}</Typography> },
               { key: "status", header: "Status", className: "0.8fr", render: (r) => <StatusPill status={r.status} /> },
               {
                 key: "actions",
@@ -623,12 +623,12 @@ export default function RecognitionAdminDashboard() {
                 header: "Program Code",
                 sortable: true,
                 className: "1.2fr",
-                render: (r) => <span className="font-medium text-gray-900">{r.code}</span>,
+                render: (r) => <Typography variant="bodyMedium" color="body1">{r.code}</Typography>,
               },
-              { key: "name", header: "Program Name", sortable: true, className: "1.8fr", render: (r) => r.name },
-              { key: "awardType", header: "Award Type", sortable: true, className: "0.9fr", render: (r) => r.awardType },
-              { key: "start", header: "Award Start Date", sortable: true, className: "1fr", render: (r) => r.startDate },
-              { key: "end", header: "Award End Date", sortable: true, className: "1fr", render: (r) => r.endDate },
+              { key: "name", header: "Program Name", sortable: true, className: "1.8fr", render: (r) => <Typography variant="bodyMedium" color="body1">{r.name}</Typography> },
+              { key: "awardType", header: "Award Type", sortable: true, className: "0.9fr", render: (r) => <Typography variant="bodyMedium" color="body1">{r.awardType}</Typography> },
+              { key: "start", header: "Award Start Date", sortable: true, className: "1fr", render: (r) => <Typography variant="bodyMedium" color="body1">{formatToIndianDate(r.startDate)}</Typography> },
+              { key: "end", header: "Award End Date", sortable: true, className: "1fr", render: (r) => <Typography variant="bodyMedium" color="body1">{formatToIndianDate(r.endDate)}</Typography> },
               { key: "status", header: "Status", className: "0.7fr", render: (r) => <StatusPill status={r.status} /> },
               {
                 key: "actions",
@@ -666,12 +666,12 @@ export default function RecognitionAdminDashboard() {
               loading={isLoading}
               onQueryChange={onQueryChange}
               columns={[
-                { key: "teamName", header: "Team Name", sortable: true, className: "1.2fr", render: (r) => r.teamName },
-                { key: "teamType", header: "Team type", sortable: true, className: "1fr", render: (r) => r.teamType },
-                { key: "members", header: "Number of Team Members", className: "1.2fr", render: (r) => r.members },
-                { key: "programName", header: "Program Name", sortable: true, className: "1.2fr", render: (r) => r.programName },
-                { key: "createdBy", header: "Created by", className: "1fr", render: (r) => r.createdBy },
-                { key: "createdOn", header: "Created On", sortable: true, className: "1fr", render: (r) => r.createdOn },
+                { key: "teamName", header: "Team Name", sortable: true, className: "1.2fr", render: (r) => <Typography variant="bodyMedium" color="body1">{r.teamName}</Typography> },
+                { key: "teamType", header: "Team type", sortable: true, className: "1fr", render: (r) => <Typography variant="bodyMedium" color="body1">{r.teamType}</Typography> },
+                { key: "members", header: "Number of Team Members", className: "1.2fr", render: (r) => <Typography variant="bodyMedium" color="body1">{r.members}</Typography> },
+                { key: "programName", header: "Program Name", sortable: true, className: "1.2fr", render: (r) => <Typography variant="bodyMedium" color="body1">{r.programName}</Typography> },
+                { key: "createdBy", header: "Created by", className: "1fr", render: (r) => <Typography variant="bodyMedium" color="body1">{r.createdBy}</Typography> },
+                { key: "createdOn", header: "Created On", sortable: true, className: "1fr", render: (r) => <Typography variant="bodyMedium" color="body1">{r.createdOn}</Typography> },
                 { key: "status", header: "Status", className: "0.8fr", render: (r) => <StatusPill status={r.status} /> },
                 {
                   key: "actions",

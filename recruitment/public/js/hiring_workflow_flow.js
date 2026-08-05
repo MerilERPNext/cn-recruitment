@@ -29,7 +29,7 @@
     function keepTabVisible(frm) {
         try {
             (frm.layout && frm.layout.tabs || []).forEach((t) => {
-                if (t.df && t.df.fieldname === TAB) t.toggle(true);
+                if (t.df && t.df.fieldname === TAB) { t.df.hidden = 0; t.toggle(true); }
             });
             // Frappe marks our HTML field's section `empty-section` (CSS-collapses
             // it to 0 height) during the initial refresh, before our content lands
@@ -47,6 +47,46 @@
         } catch (e) { /* non-fatal */ }
     }
 
+    // Hiring Workflow is the FIRST tab, so it is what the form opens on. A brand
+    // new applicant has no workflow yet — hide the tab while unsaved so Frappe
+    // falls through to Application Details instead of opening an empty stepper.
+    function hideTab(frm) {
+        try {
+            (frm.layout && frm.layout.tabs || []).forEach((t) => {
+                if (t.df && t.df.fieldname === TAB) { t.df.hidden = 1; t.toggle(false); }
+            });
+        } catch (e) { /* non-fatal */ }
+    }
+
+    // Frappe hoists any custom field with a blank `insert_after` to position 0 of
+    // the doctype (Meta.sort_fields), which lands it in front of our Tab Break and
+    // makes Frappe synthesise an auto "Details" tab ahead of the workflow. Move our
+    // tab link back to the front so the workflow is always the first thing on the
+    // form, whatever stray fields a site has.
+    function ensureTabFirst(frm) {
+        try {
+            const tab = (frm.layout && frm.layout.tabs || []).find(
+                (t) => t.df && t.df.fieldname === TAB
+            );
+            if (!tab || !tab.tab_link || !tab.tab_link.length) return;
+            const $list = tab.tab_link.parent();
+            if (!$list.children().first().is(tab.tab_link)) tab.tab_link.prependTo($list);
+
+            // Land on the workflow when a candidate is opened. Frappe picks the
+            // default tab from `layout.tabs` order (meta order, not the DOM order
+            // we just fixed), so it lands on the synthesised "Details" tab — and by
+            // the time this runs it has already recorded that as the active tab,
+            // so `frm.get_active_tab()` can't tell us whether the USER chose it.
+            // Track the landing ourselves: force it once per applicant, then leave
+            // the user's tab alone for the rest of the visit (form reloads after a
+            // stage action must not yank them back here).
+            if (frm._hwf_landed_on !== frm.doc.name) {
+                frm._hwf_landed_on = frm.doc.name;
+                tab.set_active();
+            }
+        } catch (e) { /* non-fatal */ }
+    }
+
     const STATE = {
         done:     { icon: "✓", cls: "hwf-done" },
         current:  { icon: "●", cls: "hwf-current" },
@@ -58,35 +98,57 @@
         if (document.getElementById("hwf-styles")) return;
         const css = `
         .hwf-wrap{padding:6px 2px 2px;}
-        .hwf-strip{display:flex;align-items:stretch;gap:0;overflow-x:auto;padding:6px 2px 12px;}
-        .hwf-node{display:flex;align-items:center;flex:0 0 auto;}
-        .hwf-chip{position:relative;display:flex;flex-direction:column;gap:2px;min-width:118px;
-            padding:9px 12px;border-radius:8px;border:1px solid var(--border-color);
-            background:var(--fg-color,var(--card-bg));cursor:default;transition:box-shadow .15s,transform .15s;}
-        .hwf-chip.clickable{cursor:pointer;}
-        .hwf-chip.clickable:hover{box-shadow:0 2px 8px rgba(0,0,0,.12);transform:translateY(-1px);}
-        .hwf-chip .hwf-top{display:flex;align-items:center;gap:7px;}
-        .hwf-badge{width:20px;height:20px;border-radius:50%;display:inline-flex;align-items:center;
-            justify-content:center;font-size:12px;font-weight:700;color:#fff;flex:0 0 auto;}
-        .hwf-name{font-weight:600;font-size:.83rem;line-height:1.15;color:var(--text-color);}
+
+        /* Vertical stepper: a rail of badges joined by a connector line, with one
+           full-width expandable card per stage. */
+        .hwf-flow{display:flex;flex-direction:column;}
+        .hwf-row{display:grid;grid-template-columns:26px 1fr;gap:14px;padding-bottom:10px;}
+        .hwf-row:last-child{padding-bottom:0;}
+        .hwf-rail{position:relative;display:flex;justify-content:center;padding-top:11px;}
+        .hwf-row:not(:last-child) .hwf-rail::after{content:"";position:absolute;
+            top:37px;bottom:-10px;left:50%;transform:translateX(-50%);
+            width:2px;background:var(--border-color,#e2e6e9);}
+        .hwf-row.hwf-done .hwf-rail::after{background:var(--green-300,#9ad5a8);}
+        .hwf-badge{width:24px;height:24px;border-radius:50%;display:inline-flex;align-items:center;
+            justify-content:center;font-size:12px;font-weight:700;color:#fff;flex:0 0 auto;z-index:1;}
+        .hwf-name{font-weight:600;font-size:.88rem;line-height:1.2;color:var(--text-color);}
         .hwf-type{font-size:.68rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.03em;}
+
+        /* No overflow:hidden — the "⋮" dropdown inside a card body would be clipped. */
+        .hwf-card{border:1px solid var(--border-color);border-radius:8px;
+            background:var(--fg-color,var(--card-bg));}
+        .hwf-card-head{display:flex;align-items:center;gap:10px;padding:11px 14px;
+            cursor:pointer;border-radius:7px;}
+        .hwf-row.is-open .hwf-card-head{border-radius:7px 7px 0 0;}
+        .hwf-card-head:hover{background:var(--control-bg-on-gray,var(--bg-color));}
+        .hwf-chevron{margin-left:auto;color:var(--text-muted);font-size:.9rem;
+            transition:transform .15s;flex:0 0 auto;}
+        .hwf-row.is-open .hwf-chevron{transform:rotate(180deg);}
+        .hwf-card-body{padding:12px 14px 13px;border-top:1px solid var(--border-color);}
+        .hwf-row:not(.is-open) .hwf-card-body{display:none;}
+
+        .hwf-sbadge{padding:2px 9px;border-radius:999px;font-size:11px;font-weight:600;white-space:nowrap;}
+        .hwf-sb-done{background:var(--green-100,#d3efd9);color:var(--green-700,#1e7a34);}
+        .hwf-sb-current{background:var(--blue-100,#cfe6fb);color:var(--blue-600,#1479d6);}
+        .hwf-sb-upcoming,.hwf-sb-muted{background:var(--gray-200,#e6e9ec);color:var(--gray-700,#4a5157);}
+        .hwf-sb-rejected{background:var(--red-100,#fbd8d8);color:var(--red-700,#b02a2a);}
+
         .hwf-done  .hwf-badge{background:var(--green-500,#28a745);}
-        .hwf-done  .hwf-chip,.hwf-node.hwf-done .hwf-chip{border-color:var(--green-300,#9ad5a8);}
+        .hwf-done  .hwf-card{border-color:var(--green-300,#9ad5a8);}
         .hwf-current .hwf-badge{background:var(--blue-500,#2490ef);animation:hwf-pulse 1.6s infinite;}
-        .hwf-current .hwf-chip{border-color:var(--blue-500,#2490ef);border-width:2px;
+        .hwf-current .hwf-card{border-color:var(--blue-500,#2490ef);
             box-shadow:0 0 0 3px var(--blue-100,rgba(36,144,239,.18));}
         .hwf-upcoming .hwf-badge{background:var(--gray-400,#b9c0c9);}
-        .hwf-upcoming .hwf-chip{opacity:.75;}
+        .hwf-upcoming .hwf-card{opacity:.8;}
         .hwf-rejected .hwf-badge{background:var(--red-500,#e24c4c);}
-        .hwf-rejected .hwf-chip{border-color:var(--red-500,#e24c4c);}
+        .hwf-rejected .hwf-card{border-color:var(--red-500,#e24c4c);}
         @keyframes hwf-pulse{0%{box-shadow:0 0 0 0 rgba(36,144,239,.45);}70%{box-shadow:0 0 0 6px rgba(36,144,239,0);}100%{box-shadow:0 0 0 0 rgba(36,144,239,0);}}
-        .hwf-arrow{flex:0 0 auto;color:var(--text-muted);font-size:1.2rem;padding:0 6px;align-self:center;}
-        .hwf-plus{position:absolute;top:-8px;right:-8px;width:22px;height:22px;border-radius:50%;
-            border:none;background:var(--blue-500,#2490ef);color:#fff;font-size:15px;font-weight:700;
-            line-height:1;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.25);}
-        .hwf-plus:hover{background:var(--blue-600,#1479d6);}
+
+        /* The action panel is embedded in the current stage's card, so it drops its
+           own frame — the card already provides one. */
         .hwf-panel{margin-top:4px;border:1px solid var(--border-color);border-radius:8px;
             padding:12px 14px;background:var(--subtle-fg,var(--control-bg));}
+        .hwf-card-body .hwf-panel{margin:0;border:0;padding:0;background:transparent;}
         .hwf-panel-head{display:flex;align-items:center;gap:8px;margin-bottom:10px;}
         .hwf-panel-title{font-weight:600;font-size:.92rem;color:var(--text-color);}
         .hwf-actions{display:flex;flex-wrap:wrap;gap:8px;}
@@ -162,7 +224,14 @@
         d.show();
     }
 
+    // The Pre Offer Approval tab is hidden until the pre-offer is actually in
+    // play. This is one of the two things that puts it in play (the other is the
+    // pre-offer being sent) — pre_offer_field_approval.js owns that gate.
     function gotoPreOfferApprovalTab(frm) {
+        if (typeof window.poa_reveal_pre_offer_tab === "function") {
+            window.poa_reveal_pre_offer_tab(frm);
+            return;
+        }
         const tabs = (frm.layout && frm.layout.tabs) || [];
         const tab = tabs.find((t) => t.df && t.df.fieldname === "custom_pre_offer_approval_tab");
         if (tab && tab.tab_link) tab.tab_link.find("a, button").first().trigger("click");
@@ -265,6 +334,31 @@
     }
 
     function createJobOffer(frm) {
+        // Ask the server whether this candidate may be offered at all before we
+        // open a blank form — an active offer, a missing requisition or exhausted
+        // headcount should be said up front, not after the recruiter has filled
+        // in salary and terms. Job Offer.validate re-checks on save regardless.
+        frappe.call({
+            method: "recruitment.api.offer_validation.can_create_job_offer",
+            args: { job_applicant: frm.doc.name },
+            freeze: true,
+            freeze_message: __("Checking offer eligibility..."),
+            callback: (r) => {
+                const res = (r && r.message) || {};
+                if (res.allowed === false) {
+                    frappe.msgprint({
+                        title: __("Cannot Create Job Offer"),
+                        indicator: "red",
+                        message: res.message,
+                    });
+                    return;
+                }
+                openNewJobOffer(frm);
+            },
+        });
+    }
+
+    function openNewJobOffer(frm) {
         // Open a prefilled Job Offer form for review (don't create it silently) —
         // HR fills salary/terms and saves it themselves.
         frappe.model.with_doctype("Job Offer", () => {
@@ -291,23 +385,56 @@
         return `<span class="hwf-pill ${cls}">${esc(text)}</span>`;
     }
 
-    function renderPanel(frm, view) {
-        const cur = (view.stages || [])[view.current_stage_index];
+    // Badge text for a stage. The stage's own recorded `result` wins ("Not Required",
+    // "Cleared", …) — it says more than the derived state does.
+    function stageStatusLabel(s) {
+        if (s.result) return s.result;
+        if (s.state === "done") return __("Completed");
+        if (s.state === "current") return __("In Progress");
+        if (s.state === "rejected") return __("Rejected");
+        return __("Pending");
+    }
+
+    function stageStatusCls(s) {
+        if (/not required/i.test(s.result || "")) return "hwf-sb-muted";
+        if (s.state === "done") return "hwf-sb-done";
+        if (s.state === "current") return "hwf-sb-current";
+        if (s.state === "rejected") return "hwf-sb-rejected";
+        return "hwf-sb-upcoming";
+    }
+
+    function interviewsHtml(stage) {
+        const list = stage.interviews || [];
+        if (!list.length) return "";
+        return `<div class="hwf-ivlist">` + list.map((iv) =>
+            `<div class="hwf-ivrow">
+                <a class="hwf-link" data-open-iv="${esc(iv.name)}">${esc(iv.name)}</a>
+                ${pill(iv.status || "Pending")}
+                <span>${ratingStars(iv.average_rating)}</span>
+                <span class="text-muted">${iv.scheduled_on ? esc(frappe.datetime.str_to_user(iv.scheduled_on)) : ""}</span>
+            </div>`).join("") + `</div>`;
+    }
+
+    // Banner shown above the flow when there is no current stage to act on.
+    function renderBanner(view) {
         if (view.is_closed) {
             const ok = view.status === "Accepted";
             return `<div class="hwf-panel"><div class="hwf-banner ${ok ? "ok" : "bad"}">
                 ${ok ? "✓ " + __("Candidate has cleared the pipeline (Accepted).") : "✕ " + __("Candidate was rejected.")}
                 </div></div>`;
         }
-        if (!cur) {
-            const first = (view.stages || [])[0];
-            const startBtn = first
-                ? `<div class="hwf-actions" style="justify-content:center;margin-top:8px;">
-                     <button class="hwf-btn primary" data-start="${esc(first.stage_name)}">${__("Place on first stage")}: ${esc(first.stage_name)}</button>
-                   </div>` : "";
-            return `<div class="hwf-panel"><div class="hwf-empty" style="padding-bottom:4px;">${__("Candidate is not on any stage yet.")}</div>${startBtn}</div>`;
-        }
+        if ((view.stages || [])[view.current_stage_index]) return "";
+        const first = (view.stages || [])[0];
+        const startBtn = first
+            ? `<div class="hwf-actions" style="justify-content:center;margin-top:8px;">
+                 <button class="hwf-btn primary" data-start="${esc(first.stage_name)}">${__("Place on first stage")}: ${esc(first.stage_name)}</button>
+               </div>` : "";
+        return `<div class="hwf-panel"><div class="hwf-empty" style="padding-bottom:4px;">${__("Candidate is not on any stage yet.")}</div>${startBtn}</div>`;
+    }
 
+    // Actions + context for the stage the candidate is standing on. Rendered inside
+    // that stage's card in the vertical flow, so it carries no frame of its own.
+    function renderStageActions(frm, view, cur) {
         const type = cur.stage_type || "";
         let actions = "";
         if (type === "Screening") {
@@ -348,14 +475,8 @@
 
         // context detail for the current stage
         let detail = "";
-        if (type === "Interview" && (cur.interviews || []).length) {
-            detail = `<div class="hwf-ivlist">` + cur.interviews.map((iv) =>
-                `<div class="hwf-ivrow">
-                    <a class="hwf-link" data-open-iv="${esc(iv.name)}">${esc(iv.name)}</a>
-                    ${pill(iv.status || "Pending")}
-                    <span>${ratingStars(iv.average_rating)}</span>
-                    <span class="text-muted">${iv.scheduled_on ? esc(frappe.datetime.str_to_user(iv.scheduled_on)) : ""}</span>
-                </div>`).join("") + `</div>`;
+        if (type === "Interview") {
+            detail = interviewsHtml(cur);
         }
         if (type === "Pre Offer") {
             const po = view.pre_offer || {};
@@ -374,14 +495,28 @@
             detail = `<div class="hwf-sub">${bit}</div>`;
         }
 
-        return `<div class="hwf-panel">
-            <div class="hwf-panel-head">
-                <span class="hwf-panel-title">${__("Current stage")}: ${esc(cur.stage_name || "")}</span>
-                <span class="hwf-type">${esc(type)}</span>
-            </div>
-            <div class="hwf-actions">${actions}</div>
-            ${detail}
-        </div>`;
+        return `<div class="hwf-actions">${actions}</div>${detail}`;
+    }
+
+    // What a stage shows when expanded: live actions for the current stage, the
+    // recorded outcome for anything already passed, a "move here" for what's ahead.
+    function stageBody(frm, view, s) {
+        if (s.state === "current" && !view.is_closed) return renderStageActions(frm, view, s);
+
+        const bits = [];
+        if (s.entered_on) bits.push(`${__("Entered")}: ${esc(frappe.datetime.str_to_user(s.entered_on))}`);
+        if (s.result) bits.push(`${__("Result")}: ${esc(s.result)}`);
+
+        let html = bits.length ? `<div class="hwf-sub" style="margin-top:0;">${bits.join(" &nbsp;·&nbsp; ")}</div>` : "";
+        html += interviewsHtml(s);
+        // Forward-only: a completed or current stage can't be revisited, so the jump
+        // is offered on upcoming stages only.
+        if (s.state === "upcoming" && !view.is_closed) {
+            html += `<div class="hwf-actions" style="margin-top:10px;">
+                <button class="hwf-btn" data-jump="${esc(s.stage_name)}">${__("Move candidate to this stage")}</button>
+            </div>`;
+        }
+        return html || `<div class="hwf-sub" style="margin-top:0;">${__("Nothing recorded for this stage yet.")}</div>`;
     }
 
     function render(frm, view, attempt) {
@@ -408,35 +543,33 @@
         }
 
         const closed = view.is_closed;
-        const strip = stages.map((s, i) => {
+        // Vertical flow: one row per stage, expanded on the stage in play.
+        const rows = stages.map((s, i) => {
             const st = STATE[s.state] || STATE.upcoming;
-            const isCurrent = s.state === "current";
-            // Forward-only: only upcoming stages are jump targets — a completed
-            // or the current stage can't be revisited.
-            const clickable = !closed && s.state === "upcoming";
-            // "+" appears on the current stage for actionable types
-            let plus = "";
-            if (isCurrent && !closed) {
-                if (s.stage_type === "Interview") plus = `<button class="hwf-plus" data-plus="interview" data-stage="${esc(s.stage_name)}" title="${__("Schedule Interview")}">+</button>`;
-                else if (s.stage_type === "Screening" || s.stage_type === "Shortlist") plus = `<button class="hwf-plus" data-plus="review" data-mode="${esc(s.stage_type)}" title="${esc(s.stage_type)}">+</button>`;
-                else if (s.stage_type === "Pre Offer") plus = `<button class="hwf-plus" data-plus="preoffer" title="${__("Send Pre Offer Form")}">+</button>`;
-                else if (s.stage_type === "Offer") plus = `<button class="hwf-plus" data-plus="offer" title="${__("Create Job Offer")}">+</button>`;
-            }
-            const arrow = i < stages.length - 1 ? `<span class="hwf-arrow">▸</span>` : "";
-            return `<div class="hwf-node ${st.cls}">
-                <div class="hwf-chip ${clickable ? "clickable" : ""}" ${clickable ? `data-jump="${esc(s.stage_name)}"` : ""}>
-                    ${plus}
-                    <div class="hwf-top">
-                        <span class="hwf-badge">${st.icon}</span>
+            const open = s.state === "current" && !closed;
+            // The stage in play shows its step number; the rest show their outcome.
+            const icon = open ? String(i + 1) : st.icon;
+            return `<div class="hwf-row ${st.cls}${open ? " is-open" : ""}">
+                <div class="hwf-rail"><span class="hwf-badge">${icon}</span></div>
+                <div class="hwf-card">
+                    <div class="hwf-card-head">
                         <span class="hwf-name">${esc(s.stage_name || "")}</span>
+                        <span class="hwf-sbadge ${stageStatusCls(s)}">${esc(stageStatusLabel(s))}</span>
+                        <span class="hwf-type">${esc(s.stage_type || "")}</span>
+                        <span class="hwf-chevron">⌄</span>
                     </div>
-                    <span class="hwf-type">${esc(s.stage_type || "")}</span>
+                    <div class="hwf-card-body">${stageBody(frm, view, s)}</div>
                 </div>
-                ${arrow}
             </div>`;
         }).join("");
 
-        $w.html(`<div class="hwf-wrap"><div class="hwf-strip">${strip}</div>${renderPanel(frm, view)}</div>`);
+        $w.html(`<div class="hwf-wrap">${renderBanner(view)}<div class="hwf-flow">${rows}</div></div>`);
+
+        // Expand / collapse a stage. Actions live in the body, so they never
+        // collide with this.
+        $w.find(".hwf-card-head").on("click", function () {
+            $(this).closest(".hwf-row").toggleClass("is-open");
+        });
 
         // ── event wiring ──
         $w.find("[data-start]").on("click", function () {
@@ -449,20 +582,6 @@
             });
         });
         $w.find("[data-jump]").on("click", function () { jumpTo(frm, $(this).data("jump")); });
-        $w.find('[data-plus="interview"]').on("click", function (e) {
-            e.stopPropagation(); scheduleInterview(frm, $(this).data("stage"));
-        });
-        $w.find('[data-plus="review"]').on("click", function (e) {
-            e.stopPropagation(); openReviewDialog(frm, $(this).data("mode"));
-        });
-        $w.find('[data-plus="preoffer"]').on("click", function (e) {
-            e.stopPropagation(); sendPreOffer(frm);
-        });
-        $w.find('[data-plus="offer"]').on("click", function (e) {
-            e.stopPropagation();
-            if (view.job_offer) frappe.set_route("Form", "Job Offer", view.job_offer.name);
-            else createJobOffer(frm);
-        });
         $w.find("[data-open-iv]").on("click", function () {
             frappe.set_route("Form", "Interview", $(this).data("open-iv"));
         });
@@ -641,8 +760,9 @@
     frappe.ui.form.on("Job Applicant", {
         refresh(frm) {
             injectStyles();
-            if (frm.is_new()) return;
+            if (frm.is_new()) { hideTab(frm); return; }
             keepTabVisible(frm);   // show immediately, before the data round-trip
+            ensureTabFirst(frm);
             bindTabClick(frm);
             frappe.call({
                 method: API + ".get_workflow_view",

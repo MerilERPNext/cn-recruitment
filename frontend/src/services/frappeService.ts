@@ -198,4 +198,18 @@ export const frappeService = {
       throw error;
     }
   },
+
+  attachFileToDocument: async (
+    file_url: string,
+    doctype: string,
+    docname: string
+  ): Promise<unknown> => {
+    try {
+      const result = await FrappeAPI.attachFileToDocument(file_url, doctype, docname);
+      return result;
+    } catch (error) {
+      console.error(`❌ Failed to attach file to ${doctype} ${docname}:`, error);
+      throw error;
+    }
+  },
 };

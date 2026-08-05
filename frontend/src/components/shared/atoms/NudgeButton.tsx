@@ -2,7 +2,7 @@ import { BellRing } from "lucide-react";
 import { useNudge } from "../../../hooks/useNudge";
 import { useGetUiPermission } from "../../../hooks/userUiPermission";
 import { isActionEnabled } from "../../../utils/uiPermission";
-import Button from "./Button";
+import Button, { ButtonVariant } from "./Button";
 
 interface NudgeButtonProps {
   /** The todo ID(s) to nudge */
@@ -12,6 +12,8 @@ interface NudgeButtonProps {
   /** The page name for uiPermission check (e.g. "Separation", "Confirmation") */
   page: string;
   isPending?: boolean;
+  variant?: ButtonVariant;
+  size?: "sm" | "md" | "lg";
 }
 
 /**
@@ -20,7 +22,7 @@ interface NudgeButtonProps {
  * - Gated behind uiPermission (app + page + "nudge" action)
  * - Returns null when permission is denied or no todoId
  */
-const NudgeButton = ({ todoId, app, page, isPending }: NudgeButtonProps) => {
+const NudgeButton = ({ todoId, app, page, isPending, variant, size }: NudgeButtonProps) => {
   const { mutate: sendNudge, isPending: nudging } = useNudge();
   const { data: userUiPermission } = useGetUiPermission(app);
   const canNudge = isActionEnabled(userUiPermission, "nudge", page);
@@ -29,8 +31,8 @@ const NudgeButton = ({ todoId, app, page, isPending }: NudgeButtonProps) => {
 
   return (
     <Button
-      variant="subtle"
-      size="md"
+      variant={variant}
+      size={size}
       onClick={(e) => {
         e.preventDefault();
         e.stopPropagation();

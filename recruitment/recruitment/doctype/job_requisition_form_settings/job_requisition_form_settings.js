@@ -169,10 +169,20 @@ class FormBuilder {
 		const tabIdx = {};
 		const secIdx = {};
 
+		// One slot per field. Rows are sorted by `order`, so the first row seen
+		// for a field is its lowest-ordered one — the same row the API resolves
+		// to (see _load_form_overrides). Without this a duplicate row would draw
+		// the field in two tabs, and the tab HR happened to look at would not be
+		// the one the form actually serves.
+		const placed = {};
+
 		rows.forEach((row) => {
 			if (!row.fieldname) return;
 			const applies_to = row.applies_to || "Parent";
-			const meta = this.lookup[`${applies_to}::${row.fieldname}`] || {};
+			const key = `${applies_to}::${row.fieldname}`;
+			if (placed[key]) return;
+			placed[key] = true;
+			const meta = this.lookup[key] || {};
 			const tabTitle = row.tab_override || meta.tab_label || "Details";
 			const secTitle = row.section_override || meta.section_label || "";
 
@@ -211,9 +221,15 @@ class FormBuilder {
 		const frm = this.frm;
 		frm.clear_table("field_overrides");
 		let order = 0;
+		// Belt and braces: never emit the same field twice, so saving from the
+		// builder also heals a table that already carried duplicates.
+		const written = {};
 		this.state.tabs.forEach((tab) => {
 			tab.sections.forEach((sec) => {
 				sec.fields.forEach((f) => {
+					const key = `${f.applies_to}::${f.fieldname}`;
+					if (written[key]) return;
+					written[key] = true;
 					order += 10;
 					frm.add_child("field_overrides", {
 						applies_to: f.applies_to,
@@ -341,6 +357,117 @@ class FormBuilder {
 
 	delete_section(tab, sec) {
 		tab.sections = tab.sections.filter((s) => s.id !== sec.id);
+		this.commit();
+	}
+
+	// --- placement --------------------------------------------------------
+	// Tabs, sections and fields are all serialised by sync_to_table() into a
+	// single ascending `order` walked tab -> section -> field. That number is the
+	// ONLY sequence the API sorts by (_sequence_key gives a tab/section the
+	// position of its earliest-ordered field), so moving anything here is what
+	// makes get_job_requisition_form_config emit it in the new position.
+
+	move_in_list(list, id, where) {
+		const i = list.findIndex((x) => x.id === id);
+		if (i < 0) return false;
+		const target = {
+			top: 0,
+			bottom: list.length - 1,
+			up: i - 1,
+			down: i + 1,
+			left: i - 1,
+			right: i + 1,
+		}[where];
+		if (target === undefined || target < 0 || target >= list.length || target === i) {
+			return false;
+		}
+		const [item] = list.splice(i, 1);
+		list.splice(target, 0, item);
+		return true;
+	}
+
+	move_section(tab, sec, where) {
+		if (this.move_in_list(tab.sections, sec.id, where)) this.commit();
+	}
+
+	move_tab(tab, where) {
+		if (this.move_in_list(this.state.tabs, tab.id, where)) this.commit();
+	}
+
+	move_section_to_tab(tab, sec) {
+		const others = this.state.tabs.filter((t) => t.id !== tab.id);
+		if (!others.length) {
+			frappe.msgprint({
+				message: __("Add another tab first — there is nowhere to move this section."),
+				indicator: "orange",
+			});
+			return;
+		}
+		frappe.prompt(
+			[
+				{
+					fieldname: "tab",
+					label: __("Move to tab"),
+					fieldtype: "Select",
+					reqd: 1,
+					options: others.map((t) => ({ label: t.title || __("—"), value: t.id })),
+					default: others[0].id,
+				},
+				{
+					fieldname: "position",
+					label: __("Place at"),
+					fieldtype: "Select",
+					options: ["Bottom", "Top"],
+					default: "Bottom",
+				},
+			],
+			(v) => {
+				const target = this.state.tabs.find((t) => t.id === v.tab);
+				if (!target) return;
+				// The section keeps its id and its fields — only its parent changes.
+				tab.sections = tab.sections.filter((s) => s.id !== sec.id);
+				if (v.position === "Top") target.sections.unshift(sec);
+				else target.sections.push(sec);
+				this.state.activeTab = target.id;
+				this.commit();
+				frappe.show_alert({
+					message: __("Section moved to {0}", [target.title || __("tab")]),
+					indicator: "green",
+				});
+			},
+			__("Move section"),
+			__("Move")
+		);
+	}
+
+	// Reorder state to match what the user dragged into place.
+	sync_sections_from_dom() {
+		const tab = this.active();
+		if (!tab) return;
+		const ordered = [];
+		this.$wrapper.find(`[data-tab="${tab.id}"] > [data-secid]`).each((_, el) => {
+			const sec = tab.sections.find((s) => s.id === el.getAttribute("data-secid"));
+			if (sec && !ordered.includes(sec)) ordered.push(sec);
+		});
+		// Anything the DOM didn't report (shouldn't happen) keeps its old place
+		// rather than being dropped.
+		tab.sections.forEach((s) => {
+			if (!ordered.includes(s)) ordered.push(s);
+		});
+		tab.sections = ordered;
+		this.commit();
+	}
+
+	sync_tabs_from_dom() {
+		const ordered = [];
+		this.$wrapper.find(".jrfb-tabs > [data-tabid]").each((_, el) => {
+			const tab = this.state.tabs.find((t) => t.id === el.getAttribute("data-tabid"));
+			if (tab && !ordered.includes(tab)) ordered.push(tab);
+		});
+		this.state.tabs.forEach((t) => {
+			if (!ordered.includes(t)) ordered.push(t);
+		});
+		this.state.tabs = ordered;
 		this.commit();
 	}
 
@@ -700,11 +827,11 @@ class FormBuilder {
 		const $c = $('<div class="jrfb-canvas"></div>');
 
 		const $tabs = $('<div class="jrfb-tabs"></div>');
-		this.state.tabs.forEach((tab) => {
+		this.state.tabs.forEach((tab, tabIdx) => {
 			const n = tab.sections.reduce((a, s) => a + s.fields.length, 0);
 			const $pill = $(
 				'<div class="jrfb-pill ' + (tab.id === this.state.activeTab ? "active" : "") + '"></div>'
-			);
+			).attr("data-tabid", tab.id);
 			$pill.append(
 				'<span class="jrfb-pill-label">' +
 					frappe.utils.escape_html(tab.title || "—") +
@@ -716,6 +843,24 @@ class FormBuilder {
 				this.state.activeTab = tab.id;
 				this.render();
 			});
+			// Tab sequence drives the order the API emits its tabs in, so it needs
+			// to be settable here and not only by dragging.
+			this.move_btn(
+				$pill,
+				"‹",
+				__("Move tab left"),
+				tabIdx === 0,
+				() => this.move_tab(tab, "left"),
+				true
+			);
+			this.move_btn(
+				$pill,
+				"›",
+				__("Move tab right"),
+				tabIdx === this.state.tabs.length - 1,
+				() => this.move_tab(tab, "right"),
+				true
+			);
 			$('<span class="jrfb-mini" title="Rename">✎</span>')
 				.appendTo($pill)
 				.on("click", (e) => {
@@ -759,16 +904,41 @@ class FormBuilder {
 	}
 
 	render_section(tab, sec) {
-		const $s = $('<div class="jrfb-section"></div>');
+		const $s = $('<div class="jrfb-section"></div>').attr("data-secid", sec.id);
 		const $head = $('<div class="jrfb-sec-head"></div>');
 		$head.append(
-			'<span class="jrfb-sec-dot"></span><span class="jrfb-sec-title">' +
+			'<span class="jrfb-sec-grip" title="' +
+				__("Drag to reorder section") +
+				'">⠿</span><span class="jrfb-sec-title">' +
 				frappe.utils.escape_html(sec.title || __("Untitled section")) +
 				'</span><span class="jrfb-sec-count">' +
 				sec.fields.length +
 				"</span>"
 		);
+
+		// Section placement. The whole section moves with its fields, and the
+		// order written to `field_overrides` is what the API sorts by — see
+		// sync_to_table / _sequence_key. Arrows are disabled at the ends so the
+		// control never lies about what it will do.
+		const idx = tab.sections.findIndex((s) => s.id === sec.id);
+		const first = idx <= 0;
+		const last = idx >= tab.sections.length - 1;
 		const $ht = $('<span class="jrfb-sec-tools"></span>');
+		this.move_btn($ht, "⤒", __("Move section to top"), first, () =>
+			this.move_section(tab, sec, "top")
+		);
+		this.move_btn($ht, "↑", __("Move section up"), first, () =>
+			this.move_section(tab, sec, "up")
+		);
+		this.move_btn($ht, "↓", __("Move section down"), last, () =>
+			this.move_section(tab, sec, "down")
+		);
+		this.move_btn($ht, "⤓", __("Move section to bottom"), last, () =>
+			this.move_section(tab, sec, "bottom")
+		);
+		this.move_btn($ht, "⇄", __("Move section to another tab"), false, () =>
+			this.move_section_to_tab(tab, sec)
+		);
 		$('<span class="jrfb-mini" title="Rename">✎</span>')
 			.appendTo($ht)
 			.on("click", () => this.rename(sec, __("Section name")));
@@ -873,6 +1043,23 @@ class FormBuilder {
 		return $sel;
 	}
 
+	// Placement button. `disabled` renders it inert rather than hiding it, so the
+	// control set doesn't reflow as a section moves between the ends of a tab.
+	move_btn($parent, glyph, title, disabled, handler, stop) {
+		const $b = $(
+			'<span class="jrfb-mini jrfb-move' + (disabled ? " is-disabled" : "") + '"></span>'
+		)
+			.attr("title", title)
+			.text(glyph)
+			.appendTo($parent);
+		if (disabled) return $b;
+		$b.on("click", (e) => {
+			if (stop) e.stopPropagation();
+			handler();
+		});
+		return $b;
+	}
+
 	toggle_btn($parent, text, on, title, handler) {
 		$('<span class="jrfb-tg ' + (on ? "on" : "") + '" title="' + title + '">' + text + "</span>")
 			.appendTo($parent)
@@ -894,6 +1081,38 @@ class FormBuilder {
 		});
 
 		const self = this;
+
+		// Sections reorder by dragging their grip. `handle` keeps this from
+		// competing with the chip sortable nested inside each section, and
+		// `draggable` keeps the "+ Add Section" button out of the drag set.
+		this.$wrapper.find(".jrfb-sections").each((_, el) => {
+			Sortable.create(el, {
+				group: "jrfb-sections",
+				draggable: ".jrfb-section",
+				handle: ".jrfb-sec-grip",
+				animation: 150,
+				ghostClass: "jrfb-ghost",
+				onUpdate() {
+					self.sync_sections_from_dom();
+				},
+			});
+		});
+
+		// Tabs reorder by dragging the pill; the mini buttons stay clickable.
+		this.$wrapper.find(".jrfb-tabs").each((_, el) => {
+			Sortable.create(el, {
+				group: "jrfb-tabs",
+				draggable: ".jrfb-pill",
+				filter: ".jrfb-mini",
+				preventOnFilter: false,
+				animation: 150,
+				ghostClass: "jrfb-ghost",
+				onUpdate() {
+					self.sync_tabs_from_dom();
+				},
+			});
+		});
+
 		this.$wrapper.find(".jrfb-droplist").each((_, el) => {
 			Sortable.create(el, {
 				group: { name: "jrfb", pull: true, put: true },
@@ -977,6 +1196,11 @@ function inject_styles() {
 .jrfb-section { border:1px solid var(--border-color); border-radius:10px; margin-bottom:12px; background:var(--card-bg,#fff); box-shadow:0 1px 2px rgba(0,0,0,.04); }
 .jrfb-sec-head { display:flex; align-items:center; gap:8px; padding:9px 12px; border-bottom:1px solid var(--border-color); background:var(--subtle-fg,#fafbfc); border-radius:10px 10px 0 0; }
 .jrfb-sec-dot { width:7px; height:7px; border-radius:50%; background:#2490ef; }
+.jrfb-sec-grip { cursor:grab; opacity:.45; font-size:12px; letter-spacing:-1px; user-select:none; }
+.jrfb-sec-grip:active { cursor:grabbing; }
+.jrfb-sec-head:hover .jrfb-sec-grip { opacity:.9; }
+.jrfb-move { font-size:12px; line-height:1; }
+.jrfb-mini.is-disabled { opacity:.18; cursor:default; pointer-events:none; }
 .jrfb-sec-title { font-weight:600; font-size:13.5px; flex:1; }
 .jrfb-sec-count { background:var(--border-color); color:var(--text-muted); border-radius:10px; padding:0 7px; font-size:10px; font-weight:700; }
 .jrfb-sec-tools { display:flex; gap:4px; }

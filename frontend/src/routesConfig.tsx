@@ -48,6 +48,7 @@ import SearchMembers from "./components/SearchMembers";
 import OnboardingFieldApproval from "./components/Onboarding/component/fieldLabelApproval.tsx";
 import BoxGrid from "./components/Performance/Calibrator/BoxGrid.tsx";
 import CalibratorSession from "./components/Performance/Calibrator/Calibrator.tsx";
+import BulkImportGoals from "./components/Performance/GoalCreation/BulkImportGoals.tsx";
 
 const TeamApprovalListExemptionTable = lazyWithRetry(
   () =>
@@ -112,6 +113,10 @@ const TeamOverview = lazyWithRetry(
   () => import("./components/Performance/MyTeam/TeamOverview"),
   "TeamOverview",
 );
+const MyTeamLayout = lazyWithRetry(
+  () => import("./components/Performance/MyTeam/MyTeamLayout"),
+  "MyTeamLayout",
+);
 const TeamGoals = lazyWithRetry(
   () => import("./components/Performance/MyTeam/TeamGoals"),
   "TeamGoals",
@@ -159,7 +164,7 @@ const Feedback = lazyWithRetry(
   "Feedback",
 );
 const NewGoal = lazyWithRetry(
-  () => import("./components/Performance/GoalCreation/NewGaol"),
+  () => import("./components/Performance/GoalCreation/NewGoal"),
   "NewGoal",
 );
 const SkillsAndProficiency = lazyWithRetry(
@@ -494,6 +499,11 @@ const Overview = lazyWithRetry(
   "Overview",
 );
 
+const OverviewDashboard = lazyWithRetry(
+  () => import("./components/Performance/Overview/component/OverviewDashboard"),
+  "OverviewDashboard",
+);
+
 const PerformanceReviewApp = lazyWithRetry(
   () =>
     import("./components/Performance/PerformanceReview/PerformanceReviewApp"),
@@ -590,10 +600,6 @@ const RecognitionAdminDashboard = lazyWithRetry(
   () => import("./components/Recognition/Vibe/RecognitionAdminDashboard"),
   "RecognitionAdminDashboard",
 );
-const MyAppreciationsHistory = lazyWithRetry(
-  () => import("./components/Recognition/MyAppreciationsHistory"),
-  "MyAppreciationsHistory",
-);
 const VibeApp = lazyWithRetry(
   () => import("./components/Recognition/Vibe/VibeApp"),
   "VibeApp",
@@ -614,9 +620,9 @@ const AwardsLivePrograms = lazyWithRetry(
   () => import("./components/Recognition/Vibe/AwardsLivePrograms"),
   "AwardsLivePrograms",
 );
-const AwardsHistory = lazyWithRetry(
-  () => import("./components/Recognition/Vibe/AwardsHistory"),
-  "AwardsHistory",
+const RecognitionHistory = lazyWithRetry(
+  () => import("./components/Recognition/RecognitionHistory"),
+  "RecognitionHistory",
 );
 const AwardsNominationWorkflows = lazyWithRetry(
   () => import("./components/Recognition/Vibe/AwardsNominationWorkflows"),
@@ -640,6 +646,17 @@ const EmployeeDocumentsPage = lazyWithRetry(
   () => import("./components/EmployeeDocuments/EmployeeDocumentsPage"),
   "EmployeeDocumentsPage",
 );
+
+const TimesheetApp = lazyWithRetry(
+  () => import("./components/Timesheet/TimesheetApp"),
+  "TimesheetApp",
+);
+
+// const TimesheetCreate = lazyWithRetry(
+//   () => import("./components/Timesheet/TimesheetCreate/TimesheetCreate"),
+//   "TimesheetCreate",
+// );
+
 
 // eslint-disable-next-line react-refresh/only-export-components
 const AddExpensePage = () => {
@@ -759,7 +776,9 @@ export interface AppRoute {
   // Usually a single Modular Ui page name. An array is allowed when a route
   // aggregates several pages (e.g. Awards-Live covers individual + team award
   // pages): the route guard grants access if ANY of the listed pages is enabled.
-  permissionKey: string | string[];
+  // Optional: routes without a key are not gated by the generic route guard
+  // (e.g. your own Employee Profile, which is gated inside the component).
+  permissionKey?: string | string[];
 }
 
 // eslint-disable-next-line react-refresh/only-export-components
@@ -791,6 +810,11 @@ export const routesConfig: AppRoute[] = [
     path: "/webapp/requests",
     element: <Requests />,
     permissionKey: "Dashboard",
+  },
+  {
+    path: "/webapp/timesheet/timesheet-create",
+    element: <TimesheetApp />,
+    permissionKey: "Timesheet",
   },
   {
     path: "/webapp/id-card",
@@ -1071,7 +1095,10 @@ export const routesConfig: AppRoute[] = [
   {
     path: "/webapp/employee-profile",
     element: <EmployeeProfile />,
-    permissionKey: "Employee Profile",
+    // No route-level permissionKey: your OWN profile is always accessible
+    // ("Employee Self"). Access to ANOTHER employee's profile is gated inside
+    // EmployeeProfile, which is target-aware (own vs other) in a way the generic
+    // route gate can't express.
   },
   {
     path: "/webapp/mobile-profile",
@@ -1455,81 +1482,103 @@ export const routesConfig: AppRoute[] = [
     element: <PerformanceApp />,
     permissionKey: "Performance",
     children: [
-      { path: "overview", element: <Overview />, permissionKey: "Overview" },
       {
-        path: "my-goals",
-        element: <MyGoals />,
-        permissionKey: "My Goals",
+        path: "",
+        element: <Overview />,
+        permissionKey: "Overview",
+        children: [
+          { path: "overview", element: <OverviewDashboard />, permissionKey: "Overview" },
+          {
+            path: "my-goals",
+            element: <MyGoals />,
+            permissionKey: "My Goals",
+          },
+          {
+            path: "my-goals/new-goal",
+            element: <NewGoal />,
+            permissionKey: "Goal Creation",
+          },
+         
+          {
+            path: "my-goals/bulk-import",
+            element: <BulkImportGoals />,
+            permissionKey: "Goal Creation",
+          },
+          {
+            path: "my-goals/:id",
+            element: <GoalDetails />,
+            permissionKey: "My Goals",
+          },
+          {
+            path: "review",
+            element: <Review />,
+            permissionKey: "Review",
+          },
+          {
+            path: "review/peer-nomination",
+            element: <PeerNominationPage />,
+            permissionKey: "Review",
+          },
+          {
+            path: "feedback",
+            element: <Feedback />,
+            permissionKey: "Feedback",
+          },
+         
+          {
+            path: "skills",
+            element: <SkillsAndProficiency />,
+            permissionKey: "Skills And Proficiency",
+          },
+          {
+            path: "review/performance-review",
+            element: <PerformanceReviewApp />,
+            permissionKey: "Performance Review",
+          },
+         
+        ]
       },
       {
-        path: "team-overview",
-        element: <TeamOverview />,
+        path: "",
+        element: <MyTeamLayout />,
         permissionKey: "Team Overview",
-      },
-      {
-        path: "team-goals",
-        element: <TeamGoals />,
-        permissionKey: "Team Goals",
-      },
-      {
-        path: "team-goals/assign-goal",
-        element: <AssignGoal />,
-        permissionKey: "Team Goals",
-      },
-      {
-        path: "team-reviews",
-        element: <TeamReviews />,
-        permissionKey: "Team Reviews",
-      },
-      {
-        path: "team-pre-release-preview",
-        element: <PreReleasePreview />,
-        permissionKey: "Team Reviews",
-      },
-      {
-        path: "team-calibration",
-        element: <TeamCalibration />,
-        permissionKey: "Team Calibration",
-      },
-      {
-        path: "team-check-ins",
-        element: <TeamCheckIns />,
-        permissionKey: "Team Check-Ins",
-      },
-      {
-        path: "my-goals/:id",
-        element: <GoalDetails />,
-        permissionKey: "My Goals",
-      },
-      {
-        path: "review",
-        element: <Review />,
-        permissionKey: "Review",
-      },
-      {
-        path: "review/peer-nomination",
-        element: <PeerNominationPage />,
-        permissionKey: "Review",
-      },
-      {
-        path: "feedback",
-        element: <Feedback />,
-        permissionKey: "Feedback",
-      },
-      {
-        path: "my-goals/new-goal",
-        element: <NewGoal />,
-        permissionKey: "New Goal Plan",
-      },
-      {
-        path: "skills",
-        element: <SkillsAndProficiency />,
-        permissionKey: "Skills And Proficiency",
-      },
-      {
-        path: "performance-review",
-        element: <PerformanceReviewApp />,
-        permissionKey: "Performance Review",
+        children: [
+          {
+            path: "team-overview",
+            element: <TeamOverview />,
+            permissionKey: "Team Overview",
+          },
+          {
+            path: "team-goals",
+            element: <TeamGoals />,
+            permissionKey: "Team Goals",
+          },
+          {
+            path: "team-goals/assign-goal",
+            element: <AssignGoal />,
+            permissionKey: "Team Goals",
+          },
+          {
+            path: "team-reviews",
+            element: <TeamReviews />,
+            permissionKey: "Team Reviews",
+          },
+          {
+            path: "team-reviews/team-pre-release-preview",
+            element: <PreReleasePreview />,
+            permissionKey: "Team Reviews",
+          },
+          {
+            path: "team-calibration",
+            element: <TeamCalibration />,
+            permissionKey: "Team Calibration",
+          },
+          {
+            path: "team-check-ins",
+            element: <TeamCheckIns />,
+            permissionKey: "Team Check-Ins",
+          },
+        ]
       },
       {
         path: "appraisal-cycle-wizard",
@@ -1702,8 +1751,20 @@ export const routesConfig: AppRoute[] = [
         permissionKey: "Dashboard",
       },
       {
+        // Single History page: All / Award / Appreciation. Access is granted if
+        // ANY of the two source history pages is enabled.
+        path: "history",
+        element: <RecognitionHistory />,
+        permissionKey: [
+          "Appreciations History",
+          "Individual Awards History",
+          "Team Awards history",
+        ],
+      },
+      {
+        // Legacy path - kept so existing links and bookmarks still resolve.
         path: "my-appreciations-history",
-        element: <MyAppreciationsHistory />,
+        element: <Navigate to="../history" replace />,
         permissionKey: "My Appreciations History",
       },
       {
@@ -1731,8 +1792,9 @@ export const routesConfig: AppRoute[] = [
         ],
       },
       {
+        // Legacy path - kept so existing links and bookmarks still resolve.
         path: "awards-history",
-        element: <AwardsHistory />,
+        element: <Navigate to="../history" replace />,
         permissionKey: "Awards History",
       },
       {

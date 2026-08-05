@@ -28,11 +28,16 @@ const HistoryCardList = ({ items, relationLabel }: HistoryCardListProps) => (
             </Typography>
             <div className="mt-0.5 flex items-center gap-2">
               <PersonAvatar name={item.person} imageUrl={item.personImage} size={22} />
-              <WrapperHoverCard employeeId={item.personId}>
-                <Typography variant="mobileCardSubtitle" className="truncate cursor-pointer">
-                  {item.person} · {item.date}
+              <div className="flex items-center gap-1 min-w-0">
+                <WrapperHoverCard employeeId={item.personId}>
+                  <Typography variant="mobileCardSubtitle" className="truncate cursor-pointer hover:text-gray-800">
+                    {item.person}
+                  </Typography>
+                </WrapperHoverCard>
+                <Typography variant="mobileCardSubtitle" className="truncate whitespace-pre">
+                  · {item.date}
                 </Typography>
-              </WrapperHoverCard>
+              </div>
             </div>
           </div>
         </div>

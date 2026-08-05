@@ -22,7 +22,6 @@ interface EmployeePreviousJoiningCardProps {
     date_of_joining: string | null;
     relieving_date: string | null;
     image?: string | null;
-    current_employee_joining_date: string | null;
 }
 
 const EmployeePreviousJoiningCard: React.FC<EmployeePreviousJoiningCardProps> = ({
@@ -34,7 +33,6 @@ const EmployeePreviousJoiningCard: React.FC<EmployeePreviousJoiningCardProps> = 
     location_name,
     date_of_joining,
     relieving_date,
-    current_employee_joining_date,
 }) => {
     const [imageError, setImageError] = useState(false);
 
@@ -144,9 +142,7 @@ const EmployeePreviousJoiningCard: React.FC<EmployeePreviousJoiningCardProps> = 
                     >
                         {relieving_date
                             ? formatToIndianDate(relieving_date)
-                            : current_employee_joining_date
-                                ? formatToIndianDate(current_employee_joining_date)
-                                : "-"}
+                            : "-"}
                     </span>
                 </div>
             </div>

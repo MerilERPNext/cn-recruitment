@@ -5,7 +5,28 @@ from frappe.utils import now_datetime
 
 class JobApplicantDPDPConsentLog(Document):
     def validate(self):
+        self.set_applicant_full_name()
         self.evaluate_consent()
+
+    def set_applicant_full_name(self):
+        """Store the applicant's FULL name (first + last).
+
+        Job Applicant keeps the first name in ``applicant_name`` and the surname in
+        ``custom_applicant_last_name``; fetch_from can only pull one field, so we
+        combine them here. Falls back to whatever is present."""
+        if not self.job_applicant:
+            return
+        row = frappe.db.get_value(
+            "Job Applicant",
+            self.job_applicant,
+            ["applicant_name", "custom_applicant_last_name"],
+            as_dict=True,
+        ) or {}
+        full = " ".join(
+            p for p in [row.get("applicant_name"), row.get("custom_applicant_last_name")] if p
+        ).strip()
+        if full:
+            self.applicant_name = full
 
     def evaluate_consent(self):
         """Derive consent_given / status from the individual statement responses.

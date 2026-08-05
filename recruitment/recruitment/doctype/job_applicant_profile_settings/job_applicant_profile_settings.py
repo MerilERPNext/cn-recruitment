@@ -60,6 +60,126 @@ def _init_child_field_config(child_doctype):
 		return ""
 
 
+def iter_profile_fields(meta):
+	"""Yield ``(docfield, section_label, tab_label)`` for every Job Applicant field
+	eligible for the applicant-profile config, in meta order.
+
+	This is the single source of truth for how fields group into sections
+	(section-break label → tab label → "General"). Both the settings-table build
+	(`_auto_sync`) and section-based field placement (field_flow_sync) read from
+	it, so "which section a field belongs to" can never be computed two ways.
+
+	Skips exactly what the config never lists: layout fieldtypes, hidden/read-only
+	fields, and everything inside a hidden section.
+	"""
+	current_tab = ""
+	current_section = ""
+	section_skipped = False
+	for f in meta.fields:
+		if f.fieldtype == "Tab Break":
+			# New tab: its label is the grouping fallback for fields sitting
+			# directly under it or under unlabelled sections.
+			current_tab = (f.label or "").strip()
+			current_section = ""
+			section_skipped = False
+			continue
+		if f.fieldtype == "Section Break":
+			if f.hidden:
+				# Hidden section: drop it and everything inside.
+				current_section = ""
+				section_skipped = True
+			elif f.label and f.label.strip():
+				current_section = f.label.strip()
+				section_skipped = False
+			else:
+				# Visible but unlabelled (e.g. a mirrored layout section): keep the
+				# previous labelled section rather than discarding its fields.
+				section_skipped = False
+			continue
+
+		if section_skipped:
+			continue
+		if f.fieldtype in NON_DATA_FIELDTYPES:
+			continue
+		if not f.fieldname or f.hidden or f.read_only:
+			continue
+
+		yield f, (current_section or current_tab or "General"), current_tab
+
+
+def build_default_row(reference_name, display_name, fieldtype, section, child_field_config=""):
+	"""A default application-field row: surfaced but with every channel View OFF,
+	so it is available to enable yet stays invisible to candidates until an admin
+	turns it on. Shared by the meta reconcile (`_auto_sync`) and explicit
+	section placement (`ensure_fields_in_section`) so both build rows identically.
+	"""
+	return {
+		"section": section or "General",
+		"reference_name": reference_name,
+		"display_name": display_name or reference_name,
+		"fieldtype": fieldtype or "",
+		"child_field_config": child_field_config or "",
+		"view_careers": 0, "mandatory_careers": 0,
+		"view_ijp": 0, "mandatory_ijp": 0,
+		"view_refer": 0, "mandatory_refer": 0,
+		"view_campus": 0, "mandatory_campus": 0,
+		"view_preoffer": 0, "mandatory_preoffer": 0,
+		"ctq_flag": 0,
+		"visibility": "All",
+		"editability": "Editable",
+		"preoffer_visibility": "Same as visibility",
+		"preoffer_edit_approve": "Editable",
+	}
+
+
+def ensure_fields_in_section(fieldnames, section):
+	"""Ensure each Job Applicant field sits under ``section`` in the settings table.
+
+	The settings sections are a *curated* layer: ``_auto_sync`` groups newly
+	discovered fields by the live doctype layout but never re-groups existing
+	rows, so an admin's sections (and their labels) can legitimately differ from
+	the current meta. When a field is added through the dialog with a chosen
+	section, that choice is honoured directly here — assigning the row's section
+	rather than recomputing it from meta (which may not even contain that label).
+
+	Fields are also recorded in ``synced_field_refs`` so ``_auto_sync`` treats
+	them as already handled and never adds a second, meta-grouped row.
+	"""
+	section = (section or "").strip() or "General"
+	fieldnames = [fn for fn in fieldnames if fn]
+	if not fieldnames:
+		return
+
+	settings = frappe.get_single("Job Applicant Profile Settings")
+	meta = frappe.get_meta("Job Applicant")
+	by_ref = {r.reference_name: r for r in settings.default_application_fields if r.reference_name}
+
+	for fn in fieldnames:
+		df = meta.get_field(fn)
+		if not df:
+			continue
+		child_cfg = _init_child_field_config(df.options) if df.fieldtype in TABLE_FIELDTYPES else ""
+		row = by_ref.get(fn)
+		if row:
+			row.section = section
+			if not row.display_name:
+				row.display_name = df.label or fn
+			if not row.fieldtype:
+				row.fieldtype = df.fieldtype
+			if not row.child_field_config and child_cfg:
+				row.child_field_config = child_cfg
+		else:
+			settings.append(
+				"default_application_fields",
+				build_default_row(fn, df.label or fn, df.fieldtype, section, child_cfg),
+			)
+
+	synced = {r.strip() for r in (settings.synced_field_refs or "").split("\n") if r.strip()}
+	synced |= set(fieldnames)
+	settings.synced_field_refs = "\n".join(sorted(synced))
+	settings.save(ignore_permissions=True)
+
+
 class JobApplicantProfileSettings(Document):
 	"""Singleton holding default applicant-profile rows.
 
@@ -92,6 +212,13 @@ class JobApplicantProfileSettings(Document):
 		durable: after the first reconcile each subsequent load is a no-op (no
 		fragile save-on-every-open) and the Settings form and Job Opening form
 		always render the exact same set.
+
+		Reconciliation runs BOTH ways: a field that no longer exists on Job
+		Applicant (a custom field the admin deleted) is dropped from the table and
+		from synced_field_refs, so it disappears from this form and the Job
+		Opening's Application Fields — and re-creating a field of the same name
+		surfaces it again as a fresh row rather than being suppressed as an old
+		"already seen" ref.
 		"""
 		existing_refs = {row.reference_name for row in self.default_application_fields if row.reference_name}
 		synced_refs = {
@@ -103,80 +230,71 @@ class JobApplicantProfileSettings(Document):
 
 		meta = frappe.get_meta("Job Applicant")
 
-		current_tab = ""
-		current_section = ""
-		current_section_skipped = False
 		added_refs = []     # newly imported into the table (channels off by default)
 		recorded_refs = []  # kept out (excluded tab), but snapshotted so it sticks
-		for f in meta.fields:
-			if f.fieldtype == "Tab Break":
-				# New tab: its label is the grouping fallback for any fields that
-				# sit directly under it / under unlabelled sections.
-				current_tab = (f.label or "").strip()
-				current_section = ""
-				current_section_skipped = False
-				continue
-			if f.fieldtype == "Section Break":
-				if f.hidden:
-					# Hidden section: drop it and everything inside.
-					current_section = ""
-					current_section_skipped = True
-				elif f.label and f.label.strip():
-					current_section = f.label.strip()
-					current_section_skipped = False
-				else:
-					# Visible but unlabelled (e.g. a mirrored layout section):
-					# keep its fields under the previous labelled section rather
-					# than discarding them.
-					current_section_skipped = False
-				continue
+		for f, section_label, tab_label in iter_profile_fields(meta):
+			is_custom = bool(f.get("is_custom_field"))
+			in_excluded_tab = tab_label in EXCLUDED_TABS
 
-			if current_section_skipped:
-				continue
-			if f.fieldtype in NON_DATA_FIELDTYPES:
-				continue
-			if not f.fieldname or f.hidden or f.read_only:
-				continue
 			if f.fieldname in seen:
-				continue
+				# Re-surface a user-added custom field we previously kept out only
+				# because of its tab: it never reached the table, so this is our own
+				# exclusion to undo — not a deliberate delete to respect. (A field
+				# already in the table, or a built-in one, stays as-is.)
+				resurface = is_custom and in_excluded_tab and f.fieldname not in existing_refs
+				if not resurface:
+					continue
 
-			# Internal-process tabs are never application fields: keep them out
-			# of the table entirely, but record them so they stay out.
-			if current_tab in EXCLUDED_TABS:
+			# Built-in fields under an internal-process tab are never application
+			# fields — keep them out (recorded so it sticks). A user-added custom
+			# field is a deliberate addition, so surface it wherever it lives.
+			if in_excluded_tab and not is_custom:
 				recorded_refs.append(f.fieldname)
 				continue
 
 			# Eligible and never seen: surface it with every channel View OFF, so
 			# it's available to enable but invisible to candidates until then.
-			# (The child doctype defaults view_careers/view_ijp to 1, so the zeros
-			# below must be explicit.)
-			self.append("default_application_fields", {
-				"section": current_section or current_tab or "General",
-				"reference_name": f.fieldname,
-				"display_name": f.label or f.fieldname,
-				"fieldtype": f.fieldtype,
-				"child_field_config": (
-					_init_child_field_config(f.options) if f.fieldtype in TABLE_FIELDTYPES else ""
-				),
-				"view_careers": 0, "mandatory_careers": 0,
-				"view_ijp": 0, "mandatory_ijp": 0,
-				"view_refer": 0, "mandatory_refer": 0,
-				"view_campus": 0, "mandatory_campus": 0,
-				"view_preoffer": 0, "mandatory_preoffer": 0,
-				"ctq_flag": 0,
-				"visibility": "All",
-				"editability": "Editable",
-				"preoffer_visibility": "Same as visibility",
-				"preoffer_edit_approve": "Editable",
-			})
+			self.append("default_application_fields", build_default_row(
+				f.fieldname,
+				f.label or f.fieldname,
+				f.fieldtype,
+				section_label,
+				_init_child_field_config(f.options) if f.fieldtype in TABLE_FIELDTYPES else "",
+			))
 			added_refs.append(f.fieldname)
+
+		meta_lookup = {f.fieldname: f for f in meta.fields if f.fieldname}
+
+		# Drop rows for fields that no longer exist on Job Applicant. A deleted
+		# custom field leaves its config row behind, and every consumer keys off
+		# `reference_name` — so without this the field keeps rendering here and on
+		# the Job Opening's Application Fields long after the field itself is gone.
+		dead_refs = {
+			row.reference_name
+			for row in self.default_application_fields
+			if row.reference_name and row.reference_name not in meta_lookup
+		}
+		if dead_refs:
+			self.default_application_fields = [
+				row for row in self.default_application_fields
+				if row.reference_name not in dead_refs
+			]
+			for idx, row in enumerate(self.default_application_fields, start=1):
+				row.idx = idx
+
+		# Forget every snapshotted ref whose field is gone — including ones that
+		# never made it into the table. synced_field_refs is what suppresses a
+		# re-import, so a ref left behind here would keep a re-created field of the
+		# same name permanently invisible. Refs that still exist in meta stay put:
+		# that's what makes a manual delete (or a Feedback-tab skip) stick.
+		stale_synced_refs = {ref for ref in synced_refs if ref not in meta_lookup}
+		synced_refs -= dead_refs | stale_synced_refs
 
 		# Backfill fieldtype / child_field_config on existing rows that predate this feature.
 		# Use frappe.db.set_value with update_modified=False so this NEVER touches the
 		# document's `modified` timestamp. Calling self.save() here (even once) bumps
 		# `modified` in the DB while the client holds the old value, causing a version
 		# conflict the next time the user tries to save their own changes.
-		meta_lookup = {f.fieldname: f for f in meta.fields if f.fieldname}
 		for row in self.default_application_fields:
 			ref = row.reference_name
 			if not ref or ref not in meta_lookup:
@@ -198,9 +316,9 @@ class JobApplicantProfileSettings(Document):
 				except Exception:
 					pass  # Column may not exist yet if bench migrate hasn't run
 
-		if added_refs or recorded_refs:
-			# Persist imports AND deliberate skips so the next load is a no-op and
-			# every exclusion (deletes, Feedback) sticks.
+		if added_refs or recorded_refs or dead_refs or stale_synced_refs:
+			# Persist imports, deliberate skips AND removals so the next load is a
+			# no-op and every decision (deletes, Feedback) sticks.
 			all_refs = sorted(synced_refs | set(added_refs) | set(recorded_refs))
 			self.synced_field_refs = "\n".join(all_refs)
 			self.save(ignore_permissions=True)
@@ -213,18 +331,44 @@ def get_job_applicant_profile_template(opening=None):
 	For each Job Applicant field, we use:
 	  - the opening's own row in custom_application_fields if present
 	  - otherwise the matching row from Job Applicant Profile Settings
+
+	Rows whose field no longer exists on Job Applicant are dropped. _auto_sync
+	prunes them for good, but only when an admin opens the Settings form — until
+	then a just-deleted custom field would still render on every Job Opening.
 	"""
 	settings = frappe.get_single("Job Applicant Profile Settings")
 	# _auto_sync() is intentionally NOT called here. It saves the document,
 	# which updates `modified` in the DB while the Settings form client still
 	# holds the old timestamp — causing a version conflict on the user's next
 	# Save. Sync runs in onload() when the admin opens the Settings form.
-	defaults = {row.reference_name: row for row in settings.default_application_fields if row.reference_name}
+	live_fields = {df.fieldname for df in frappe.get_meta("Job Applicant").fields if df.fieldname}
+	defaults = {
+		row.reference_name: row
+		for row in settings.default_application_fields
+		if row.reference_name and row.reference_name in live_fields
+	}
 
 	overrides = {}
 	if opening:
-		op = frappe.get_doc("Job Opening", opening)
-		overrides = {row.reference_name: row for row in op.custom_application_fields if row.reference_name}
+		# Read ONLY the override rows. frappe.get_doc("Job Opening", ...) would pull
+		# the parent plus every one of its child tables (candidate list, hiring
+		# stages, screener questions, posting channels, …) — 13 extra queries for a
+		# table we don't touch, on a call that runs on every Job Opening form load
+		# AND behind every candidate-facing channel form.
+		overrides = {
+			row.reference_name: row
+			for row in frappe.get_all(
+				"Job Opening Application Field",
+				filters={
+					"parent": opening,
+					"parenttype": "Job Opening",
+					"parentfield": "custom_application_fields",
+				},
+				fields=["*"],
+				order_by="idx asc",
+			)
+			if row.reference_name
+		}
 
 	def pick(ref, attr, fallback=0):
 		row = overrides.get(ref) or defaults.get(ref)

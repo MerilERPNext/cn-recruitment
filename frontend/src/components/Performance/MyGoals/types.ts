@@ -19,5 +19,9 @@ export interface Goal {
   status: GoalStatus;
   state: string;
   barColor: string;
+  startDate?: string;
+  endDate?: string;
+  owner?: string;
+  alignedTo?: string;
   krs?: GoalKeyResult[];
 }

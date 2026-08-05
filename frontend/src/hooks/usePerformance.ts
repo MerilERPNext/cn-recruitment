@@ -1,0 +1,214 @@
+import { useMutation, useQuery, useQueryClient, type UseQueryResult } from "@tanstack/react-query";
+import type { DeleteGoalsPayload, GoalActionResponse, GoalFormConfig, GoalPlanId, GoalPlanResponse, GoalsRequest, GoalSubmitResponse, Message, MyGoalsResponse, ReferenceGoalsParams, ReferenceGoalsResponse, GoalRepositoryResponse, SaveGoalsPayload, SubmitSelectedGoalsPayload, CascadeGoalsParams, CascadeGoalsResponse, GoalDetailResponse, GoalCheckInsResponse, SubmitGoalCheckInPayload, SubmitGoalCheckInResponse, PerformanceOverviewResponse } from "../types/goal";
+import { performanceService } from "../services/performanceService";
+interface PerformanceQueryKey {
+
+  goalPlans: (employeeId: string) => ["performance", "goal-plans", string];
+  goalPlan: (goalId: string) => ["performance", "goal-plan", string];
+  goalFormConfig: ["performance", "goal-form-config"];
+  myGoals: ["performance", "my-goals"];
+  mandatoryGoals: ["performance", "mandatory-goals"];
+  referenceGoals: (params?: ReferenceGoalsParams) => ["performance", "reference-goals", ReferenceGoalsParams | undefined];
+  goalRepository: (params?: ReferenceGoalsParams) => ["performance", "goal-repository", ReferenceGoalsParams | undefined];
+  cascadeGoalManager: (params?: CascadeGoalsParams) => ["performance", "cascade-manager-goals", CascadeGoalsParams | undefined];
+  goalDetail: (goalId: string) => ["performance", "goal-detail", string];
+  goalCheckIns: (goalId: string) => ["performance", "goal-check-ins", string];
+  overview: ["performance", "overview"];
+
+}
+export const PERFORMANCE_QUERY_KEYS: PerformanceQueryKey = {
+  goalPlans: (employeeId: string) => ["performance", "goal-plans", employeeId] as const,
+  goalPlan: (goalId: string) => ["performance", "goal-plan", goalId] as const,
+  goalFormConfig: ["performance", "goal-form-config"] as const,
+  myGoals: ["performance", "my-goals"] as const,
+  mandatoryGoals: ["performance", "mandatory-goals"] as const,
+  referenceGoals: (params?: ReferenceGoalsParams) => ["performance", "reference-goals", params],
+  goalRepository: (params?: ReferenceGoalsParams) => ["performance", "goal-repository", params],
+  cascadeGoalManager: (params?: CascadeGoalsParams) => ["performance", "cascade-manager-goals", params],
+  goalDetail: (goalId: string) => ["performance", "goal-detail", goalId] as const,
+  goalCheckIns: (goalId: string) => ["performance", "goal-check-ins", goalId] as const,
+  overview: ["performance", "overview"] as const,
+};
+
+export const useGoalPlans = (employeeId: string): UseQueryResult<GoalPlanId[], Error> =>
+  useQuery<GoalPlanId[], Error>({
+    queryKey: PERFORMANCE_QUERY_KEYS.goalPlans(employeeId),
+    queryFn: () => performanceService.getAllGoalPlans(employeeId),
+    refetchOnWindowFocus: true,
+  });
+
+export const useGoalFormConfig = (): UseQueryResult<GoalFormConfig, Error> =>
+  useQuery<GoalFormConfig, Error>({
+    queryKey: PERFORMANCE_QUERY_KEYS.goalFormConfig,
+    queryFn: performanceService.getGoalFormConfig,
+    staleTime: 5 * 60 * 1000,
+  });
+
+export const useAddGoals = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload: Record<string, unknown>) => performanceService.addGoals(payload),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["performance", "goal-plans"] }),
+  });
+};
+
+export const useUpdateGoals = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload: Record<string, unknown>) => performanceService.updateGoals(payload),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["performance", "goal-plans"] }),
+  });
+};
+
+export const useSaveGoals = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload: SaveGoalsPayload) => performanceService.saveGoals(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["performance", "goal-plans"] });
+      queryClient.invalidateQueries({ queryKey: PERFORMANCE_QUERY_KEYS.myGoals });
+    },
+  });
+};
+
+export const useGoalPlanDetails = (goalId: string): UseQueryResult<GoalPlanResponse, Error> =>
+  useQuery<GoalPlanResponse, Error>({
+    queryKey: PERFORMANCE_QUERY_KEYS.goalPlan(goalId),
+    queryFn: () => performanceService.getGoalPlanDetails(goalId),
+    refetchOnWindowFocus: true,
+  });
+
+export const useMyGoals = (): UseQueryResult<MyGoalsResponse, Error> =>
+  useQuery<MyGoalsResponse, Error>({
+    queryKey: PERFORMANCE_QUERY_KEYS.myGoals,
+    queryFn: () => performanceService.getMyGoals(),
+    refetchOnWindowFocus: true,
+    staleTime: 1 * 60 * 1000,
+  });
+
+export const useSubmitSelectedGoals = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation<GoalActionResponse, Error, SubmitSelectedGoalsPayload>({
+    mutationFn: (payload) => performanceService.submitSelectedGoals(payload),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: PERFORMANCE_QUERY_KEYS.myGoals }),
+  });
+};
+
+export const useDeleteGoals = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation<GoalActionResponse, Error, DeleteGoalsPayload>({
+    mutationFn: (payload) => performanceService.deleteGoals(payload),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: PERFORMANCE_QUERY_KEYS.myGoals }),
+  });
+};
+
+export const useGetMandotaryGoals = (): UseQueryResult<Message, Error> =>
+  useQuery<Message, Error>({
+    queryKey: PERFORMANCE_QUERY_KEYS.mandatoryGoals,
+    queryFn: () => performanceService.getMandotaryGoals(),
+    refetchOnWindowFocus: false,
+    staleTime: 30 * 1000,
+  });
+export const useSubmitMandatoryGoals = () =>
+  useMutation<GoalSubmitResponse, Error, GoalsRequest>({
+    mutationFn: (payload) => performanceService.submitMandatoryGoals(payload),
+  });
+
+export const fetchDepartmentOptions = (company?: string) => {
+  return async (search: string, skip: number) => {
+    try {
+      return await performanceService.getDepartmentOptions({
+        search_text: search,
+        skip,
+        company,
+      });
+    } catch (e) {
+      console.error("Failed to fetch department options", e);
+      return [];
+    }
+  };
+};
+
+export const fetchDesignationOptions = (department?: string) => {
+  return async (search: string, skip: number) => {
+    try {
+      return await performanceService.getDesignationOptions({
+        search_text: search,
+        skip,
+        department,
+      });
+    } catch (e) {
+      console.error("Failed to fetch designation options", e);
+      return [];
+    }
+  };
+};
+
+export const useReferanceGoals = (params?:ReferenceGoalsParams , options?:{enabled?:boolean}):UseQueryResult<ReferenceGoalsResponse , Error> => {
+  return useQuery<ReferenceGoalsResponse , Error>({
+    queryKey:PERFORMANCE_QUERY_KEYS.referenceGoals(params),
+    queryFn:()=>performanceService.getReferanceGoals(params),
+    enabled:options?.enabled ?? true,
+    staleTime:2 * 60 * 1000
+  })
+};
+
+export const useGoalRepository = (params?: ReferenceGoalsParams, options?: { enabled?: boolean }): UseQueryResult<GoalRepositoryResponse, Error> => {
+  return useQuery<GoalRepositoryResponse, Error>({
+    queryKey: PERFORMANCE_QUERY_KEYS.goalRepository(params),
+    queryFn: () => performanceService.getGoalRepository(params),
+    enabled: options?.enabled ?? true,
+    staleTime: 2 * 60 * 1000,
+  });
+};
+
+export const useCascadeMangerGoals = (params?: CascadeGoalsParams, options?: { enabled?: boolean }): UseQueryResult<CascadeGoalsResponse, Error> =>{
+  return useQuery<CascadeGoalsResponse , Error>({
+    queryKey:PERFORMANCE_QUERY_KEYS.cascadeGoalManager(params),
+    queryFn:() => performanceService.getCascadeGoals(params),
+    enabled: options?.enabled ?? true,
+    staleTime: 2 * 60 * 1000,
+  })
+}
+
+export const useGoalDetail = (goalId: string, options?: { enabled?: boolean }): UseQueryResult<GoalDetailResponse, Error> =>
+  useQuery<GoalDetailResponse, Error>({
+    queryKey: PERFORMANCE_QUERY_KEYS.goalDetail(goalId),
+    queryFn: () => performanceService.getGoalDetail(goalId),
+    enabled: (options?.enabled ?? true) && !!goalId,
+    refetchOnWindowFocus: true,
+    staleTime: 1 * 60 * 1000,
+  });
+
+export const useGoalCheckIns = (goalId: string): UseQueryResult<GoalCheckInsResponse, Error> =>
+  useQuery<GoalCheckInsResponse, Error>({
+    queryKey: PERFORMANCE_QUERY_KEYS.goalCheckIns(goalId),
+    queryFn: () => performanceService.getGoalCheckIns(goalId),
+    enabled: !!goalId,
+    staleTime: 30 * 1000,
+  });
+
+export const useSubmitGoalCheckIn = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation<SubmitGoalCheckInResponse, Error, SubmitGoalCheckInPayload>({
+    mutationFn: (payload) => performanceService.submitGoalCheckIn(payload),
+    onSuccess: (_response, payload) => {
+      queryClient.invalidateQueries({ queryKey: PERFORMANCE_QUERY_KEYS.goalCheckIns(payload.goal) });
+      queryClient.invalidateQueries({ queryKey: PERFORMANCE_QUERY_KEYS.goalDetail(payload.goal) });
+      queryClient.invalidateQueries({ queryKey: PERFORMANCE_QUERY_KEYS.myGoals });
+    },
+  });
+};
+
+export const usePerformanceOverview = (): UseQueryResult<PerformanceOverviewResponse, Error> =>
+  useQuery<PerformanceOverviewResponse, Error>({
+    queryKey: PERFORMANCE_QUERY_KEYS.overview,
+    queryFn: performanceService.getOverview,
+    staleTime: 5 * 60 * 1000,
+  });

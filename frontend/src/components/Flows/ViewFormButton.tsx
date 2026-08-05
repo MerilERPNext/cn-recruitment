@@ -1,21 +1,23 @@
 import React from 'react';
-import Button from '../shared/atoms/Button';
+import Button, { ButtonVariant } from '../shared/atoms/Button';
 import { Eye } from 'lucide-react';
 
-interface ViewFormButtonProps{
-    onClick: ()=> void;
+interface ViewFormButtonProps {
+  onClick: () => void;
+  variant?: ButtonVariant;
+  size?: "sm" | "md" | "lg";
 }
 
-const ViewFormButton: React.FC<ViewFormButtonProps> = ({ onClick }) => {
+const ViewFormButton: React.FC<ViewFormButtonProps> = ({ onClick, variant = "subtle", size = "md" }) => {
   return (
-       <Button
-              variant="subtle"
-              size="md"
-              onClick={onClick}
-            >
-              <Eye className="w-4 h-4" />
-              View Form
-            </Button>
+    <Button
+      variant={variant}
+      size={size}
+      onClick={onClick}
+    >
+      <Eye className="w-4 h-4" />
+      View Form
+    </Button>
   );
 };
 

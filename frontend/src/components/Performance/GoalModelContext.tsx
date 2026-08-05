@@ -1,29 +1,12 @@
-import React, { createContext, useContext, useState } from "react";
-type RequestLeaveDefaults = {
-  fromDate?: string;
-  toDate?: string;
-  leaveType?: string;
-  halfDay?: boolean;
-  halfDayOption?: "First Half" | "Second Half";
-  half_day_date?: string;
-  custom_second_half_day_date?: string;
-  description?: string;
-  custom_reason?: string;
-  custom_attachment?: { url: string }[];
-  source?: "holiday" | "other";
-  hideHalfDayToggle?: boolean;
-  isEdit?: boolean;
-  leave_application?: string;
-};
+import React, { createContext, useContext, useState, useCallback } from "react";
+import { GoalTemplate, getGoalKey } from "./GoalCreation/component/goal-model/types";
+import {
+  DraftGoalItem,
+  RequestLeaveDefaults,
+  GoalModelContextType,
+  CascadeGoal,
+} from "../../types/goal";
 
-type GoalModelContextType = {
-  selectedGoalPlanId: string;
-  setGoalPlanId: (id: string)=> void;
-  showModal: boolean;
-  openModal: (defaults?: RequestLeaveDefaults) => void;
-  closeModal: () => void;
-  defaults: RequestLeaveDefaults | null;
-};
 
 const GoalModelContext = createContext<
   GoalModelContextType | undefined
@@ -40,18 +23,61 @@ export const GoalModelProvider: React.FC<{
   };
   const closeModal = () => setShowModal(false);
   const [selectedGoalPlanId, setSelectedGoalPlanId] = useState("");
-  const setGoalPlanId = (id: string)=>{
+  const setGoalPlanId = (id: string) => {
     setSelectedGoalPlanId(id);
-  }
+  };
+
+  // Draft goals state initialized from localStorage
+  const [draftGoals, setDraftGoals] = useState<(DraftGoalItem | CascadeGoal)[]>([]);
+
+
+  const addDraftGoals = useCallback((goals: GoalTemplate | CascadeGoal | (GoalTemplate | CascadeGoal)[]) => {
+    const goalArray = Array.isArray(goals) ? goals : [goals];
+    setDraftGoals((prev) => {
+      const existingKeys = new Set(prev.map((g) => getGoalKey(g)));
+      const newItems = goalArray
+        .filter((g) => !existingKeys.has(getGoalKey(g)))
+        .map((g) => ({ ...g, weightage: (g as DraftGoalItem).weightage || 10 }));
+      return [...prev, ...newItems];
+    });
+  }, []);
+
+  const removeDraftGoal = useCallback((id: string) => {
+    setDraftGoals((prev) => prev.filter((g) => getGoalKey(g) !== id));
+  }, []);
+
+  const updateDraftGoalWeightage = useCallback((id: string, weightage: number) => {
+    setDraftGoals((prev) =>
+      prev.map((g) => (getGoalKey(g) === id ? { ...g, weightage } : g))
+    );
+  }, []);
+
+  const clearDraftGoals = useCallback(() => {
+    setDraftGoals([]);
+  }, []);
 
   return (
     <GoalModelContext.Provider
-      value={{ selectedGoalPlanId, setGoalPlanId, showModal, openModal, closeModal, defaults }}
+      value={{
+        selectedGoalPlanId,
+        setGoalPlanId,
+        showModal,
+        openModal,
+        closeModal,
+        defaults,
+        draftGoals,
+        setDraftGoals,
+        addDraftGoals,
+        removeDraftGoal,
+        updateDraftGoalWeightage,
+        clearDraftGoals,
+      }}
     >
       {children}
     </GoalModelContext.Provider>
   );
 };
+
 // eslint-disable-next-line react-refresh/only-export-components
 export const useGoalModel = (): GoalModelContextType => {
   const context = useContext(GoalModelContext);
@@ -62,3 +88,4 @@ export const useGoalModel = (): GoalModelContextType => {
   }
   return context;
 };
+
