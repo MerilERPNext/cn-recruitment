@@ -68,6 +68,23 @@ export interface AttendanceRequest {
   custom__request_reason: string;
 }
 
+export interface ApprovalFlowStage {
+  stage_name: string;
+  status: string;
+  user: string;
+  employee_id: string;
+  designation: string;
+  approval_date: string | null;
+  approval_time: string | null;
+  comment: string | null;
+}
+
+export interface ApprovalFlowResponse {
+  has_approval_flow: boolean;
+  status_text: string;
+  stages: ApprovalFlowStage[];
+}
+
 export interface MyAttendanceRequest {
   due_date: string;
   approval_stages_status: {

@@ -7,7 +7,7 @@ interface PeerNominationHeaderProps {
   maxCount?: number;
 }
 
-export const PeerNominationHeader: React.FC<PeerNominationHeaderProps> = ({ selectedCount, maxCount = 4 }) => {
+export const PeerNominationHeader: React.FC<PeerNominationHeaderProps> = ({ selectedCount, maxCount = 7 }) => {
   return (
     <div className="flex min-w-0 flex-col gap-5 border-b border-gray-100 p-4 sm:p-6 md:flex-row md:items-center md:justify-between">
       <div className="min-w-0">

@@ -11,7 +11,6 @@ import {
   useBenefitClaimPDF,
   useDownloadSalarySlipPDF,
   useOffCyclePaySlipPDF,
-  usePrintFormatMenuOptions,
   usePayrollAdminRoles,
   useReleaseSalarySlip,
   useTDSPRintViewPDF,
@@ -52,6 +51,8 @@ type SalarySlipRecord = {
   net_pay: number;
   status: string;
   posting_date: string;
+  custom_month?: string;
+  salary_slip_type?: string;
   [key: string]: any;
 };
 
@@ -69,6 +70,18 @@ const SALARY_SLIP_SEARCH_FIELDS = ["employee", "status", "posting_date"];
 const SALARY_SORT_CONFIG: ColumnSortConfig[] = [
   {
     sortable: false,
+  },
+  {
+    sortable: true,
+    type: "string",
+    field: "custom_month",
+    getValue: (item: any) => item.custom_month ?? "",
+  },
+  {
+    sortable: true,
+    type: "string",
+    field: "salary_slip_type",
+    getValue: (item: any) => item.salary_slip_type ?? "",
   },
   {
     sortable: true,
@@ -228,10 +241,10 @@ const SalarySlipsList = () => {
     },
   });
 
-  const handleReleaseSalarySlip = (e: React.MouseEvent, salary_slip_id: string) => {
+  const handleReleaseSalarySlip = (e: React.MouseEvent, salary_slip_id: string, salary_slip_type: string) => {
     e.stopPropagation();
     if (toast.success("Release this salary slip?")) {
-      releaseSlip(salary_slip_id);
+      releaseSlip({ salarySlipName: salary_slip_id, salary_slip_type });
     }
   };
 
@@ -275,14 +288,21 @@ const SalarySlipsList = () => {
     }
   };
 
-  const handleDownloadType1 = (e: React.MouseEvent, salary_slip_id
-    : string) => {
+  const handleDownloadType1 = (e: React.MouseEvent, salary_slip_id: string) => {
     e.stopPropagation();
     handleViewPDF("regular", salary_slip_id);
   };
   const handleDownloadType2 = (e: React.MouseEvent, salary_slip_id: string) => {
     e.stopPropagation();
     handleViewPDF("tds", salary_slip_id);
+  };
+  const handleDownloadType3 = (e: React.MouseEvent, salary_slip_id: string) => {
+    e.stopPropagation();
+    handleViewPDF("benefit", salary_slip_id);
+  };
+  const handleDownloadType4 = (e: React.MouseEvent, salary_slip_id: string) => {
+    e.stopPropagation();
+    handleViewPDF("offcycle", salary_slip_id);
   };
 
 
@@ -350,6 +370,8 @@ const SalarySlipsList = () => {
         <CardTable
           titles={[
             "Employee",
+            "Salary Month",
+            "Type",
             "Start Date",
             "End Date",
             "Gross Pay",
@@ -357,7 +379,7 @@ const SalarySlipsList = () => {
             "Status",
             "Actions",
           ]}
-          columnWidths={["1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]}
+          columnWidths={["1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]}
           columnSortConfig={SALARY_SORT_CONFIG}
         >
 
@@ -366,54 +388,56 @@ const SalarySlipsList = () => {
               Select a payroll period to view salary slips.
             </div>
           ) : (
-          <DataListView<SalarySlipRecord>
-            key={filtersKey}
-            queryKey={[
-              "salary-slips",
-              selectedPeriod,
-              targetEmployeeId || user?.employee || "",
-              effectiveCompany || "",
-              String(filtersKey),
-            ]}
-            customAPI={{
-              method: "cn_indian_payroll.cn_indian_payroll.overrides.webapp_api.salary_slip_list.salary_slip_list_admin_view",
-              params: {
-                doctype: "Salary Slip",
-                employee: targetEmployeeId || user?.employee,
-                company: effectiveCompany,
-                payroll_period: selectedPeriod,
-              },
-            }}
-            defaultFilters={{
-              status: "Submitted",
-            }}
+            <DataListView<SalarySlipRecord>
+              key={filtersKey}
+              queryKey={[
+                "salary-slips",
+                selectedPeriod,
+                targetEmployeeId || user?.employee || "",
+                effectiveCompany || "",
+                String(filtersKey),
+              ]}
+              customAPI={{
+                method: "cn_indian_payroll.cn_indian_payroll.overrides.webapp_api.salary_slip_list.salary_slip_list_admin_view",
+                params: {
+                  doctype: "Salary Slip",
+                  employee: targetEmployeeId || user?.employee,
+                  company: effectiveCompany,
+                  payroll_period: selectedPeriod,
+                },
+              }}
+              defaultFilters={{
+                status: "Submitted",
+              }}
 
-            ItemComponent={({ item }) => {
-              // Employees only see released slips; payroll admins see both
-              // Pending (draft) and Released slips.
-              if (!isPayrollAdmin && item.status !== "Released") return null;
-              return (
-                <SalarySlipItem
-                  item={item}
-                  maskSalary={maskSalary}
-                  onDownloadType1={handleDownloadType1}
-                  onDownloadType2={handleDownloadType2}
-                  onViewPDF={handleGoToSalarySlip}
-                  isDownloading={isDownloading}
-                  isPayrollAdmin={isPayrollAdmin}
-                  onRelease={handleReleaseSalarySlip}
-                  isReleasing={isReleasing}
-                />
-              );
-            }}
-            isSearch={true}
-            pageSize={10}
-            searchFields={SALARY_SLIP_SEARCH_FIELDS}
-            infiniteScroll={false}
-            showPagination={true}
-            SkeletonComponent={CardSkeleton}
-            isFilter={false}
-          />
+              ItemComponent={({ item }) => {
+                // Employees only see released slips; payroll admins see both
+                // Pending (draft) and Released slips.
+                if (!isPayrollAdmin && item.status !== "Released") return null;
+                return (
+                  <SalarySlipItem
+                    item={item}
+                    maskSalary={maskSalary}
+                    onDownloadType1={handleDownloadType1}
+                    onDownloadType2={handleDownloadType2}
+                    onDownloadType3={handleDownloadType3}
+                    onDownloadType4={handleDownloadType4}
+                    onViewPDF={handleGoToSalarySlip}
+                    isDownloading={isDownloading}
+                    isPayrollAdmin={isPayrollAdmin}
+                    onRelease={handleReleaseSalarySlip}
+                    isReleasing={isReleasing}
+                  />
+                );
+              }}
+              isSearch={true}
+              pageSize={10}
+              searchFields={SALARY_SLIP_SEARCH_FIELDS}
+              infiniteScroll={false}
+              showPagination={true}
+              SkeletonComponent={CardSkeleton}
+              isFilter={false}
+            />
           )}
         </CardTable>
       </div>
@@ -439,16 +463,15 @@ const SalarySlipsList = () => {
 // ---------------- DOWNLOAD MENU ----------------
 const DownloadMenu = ({
   itemName,
+  item,
   isDownloading,
   onType1,
   onType2,
   onType3,
   onType4,
-  onShowPrintFormatMenu,
 }: any) => {
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLButtonElement | null>(null);
-  const printFormatMenuRef = onShowPrintFormatMenu?.data;
 
   return (
     <div className="relative">
@@ -486,20 +509,20 @@ const DownloadMenu = ({
             key: "off_payslip_exists",
           },
         ].map(
-          (item, i) =>
-            printFormatMenuRef?.[item.key] === 1 && (
+          (menuItem, i) =>
+            item?.[menuItem.key] === 1 && (
               <div key={i} className="flex justify-between items-center">
                 <button
                   onClick={(e) => {
                     setOpen(false);
-                    item.fn(e, itemName);
+                    menuItem.fn(e, itemName);
                   }}
                   className="flex items-center gap-2 text-sm hover:bg-blue-100 px-2 py-1 rounded-md w-full text-left"
                 >
                   <Button className="p-2 border rounded" bgColor="none">
                     <FaRegEye className="w-4 h-4 text-primary" />
                   </Button>
-                  {item.label}
+                  {menuItem.label}
                 </button>
               </div>
             ),
@@ -535,15 +558,11 @@ const SalarySlipItemDesktop = ({
     ).padStart(2, "0")}-${date.getFullYear()}`;
   };
 
-  const printFormatMenuRef = usePrintFormatMenuOptions(
-    item.salary_slip_id,
-    item.employee,
-  );
 
   return (
     <div
       className="grid max-w-screen items-center gap-4 px-6 h-16 border-b border-gray-50 transition-colors cursor-pointer hover:bg-primary/10"
-      style={{ gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr 1fr 1fr" }}
+      style={{ gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr" }}
     >
       <Link
         to={`/webapp/employee-profile?target_user=${item.employee}`}
@@ -558,6 +577,14 @@ const SalarySlipItemDesktop = ({
           </WrapperHoverCard>
         </Typography>
       </Link>
+
+      <Typography variant="bodySmall" className="font-medium text-center">
+        {item.custom_month || "-"}
+      </Typography>
+
+      <Typography variant="bodySmall" className="font-medium text-center">
+        {item.salary_slip_type || "-"}
+      </Typography>
 
       <Typography variant="bodySmall" className="font-medium text-center">
         {formatToIndianDate(item.start_date)}
@@ -589,10 +616,10 @@ const SalarySlipItemDesktop = ({
         <StatusBadge status={getDisplayStatus(item.status)} />
       </div>
 
-      <div className="flex items-center justify-end gap-2">
+      <div className="flex items-center justify-center gap-2">
         {isPayrollAdmin && item.status === "Pending" && (
           <Button
-            onClick={(e: React.MouseEvent) => onRelease(e, item.salary_slip_id)}
+            onClick={(e: React.MouseEvent) => onRelease(e, item.salary_slip_id, item.salary_slip_type)}
             disabled={isReleasing}
             className="px-3 py-1 text-xs rounded disabled:cursor-not-allowed disabled:opacity-60"
           >
@@ -601,12 +628,12 @@ const SalarySlipItemDesktop = ({
         )}
         <DownloadMenu
           itemName={item.salary_slip_id}
+          item={item}
           isDownloading={isDownloading}
           onType1={onDownloadType1}
           onType2={onDownloadType2}
           onType3={onDownloadType3}
           onType4={onDownloadType4}
-          onShowPrintFormatMenu={printFormatMenuRef}
         />
       </div>
     </div>
@@ -638,10 +665,6 @@ const SalarySlipItemMobile = ({
     ).padStart(2, "0")}-${date.getFullYear()}`;
   };
 
-  const printFormatMenuRef = usePrintFormatMenuOptions(
-    item.salary_slip_id,
-    item.employee,
-  );
 
   return (
     <div
@@ -673,13 +696,29 @@ const SalarySlipItemMobile = ({
             )}
             <DownloadMenu
               itemName={item.salary_slip_id}
+              item={item}
               isDownloading={isDownloading}
               onType1={onDownloadType1}
               onType2={onDownloadType2}
               onType3={onDownloadType3}
               onType4={onDownloadType4}
-              onShowPrintFormatMenu={printFormatMenuRef}
             />
+          </div>
+        </div>
+
+        {/* Extra Info Row */}
+        <div className="flex items-start justify-between">
+          <div className="flex flex-col gap-1">
+            <Typography variant="mobileCardLabel">Salary Month</Typography>
+            <Typography variant="mobileCardValue">
+              {item.custom_month || "-"}
+            </Typography>
+          </div>
+          <div className="flex flex-col gap-1 text-right">
+            <Typography variant="mobileCardLabel">Type</Typography>
+            <Typography variant="mobileCardValue">
+              {item.salary_slip_type || "-"}
+            </Typography>
           </div>
         </div>
 

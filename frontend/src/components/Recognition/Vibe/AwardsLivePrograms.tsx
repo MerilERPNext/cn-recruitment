@@ -283,9 +283,7 @@ const MyAwardCard: React.FC<{ award: AwardProgramItem }> = ({ award }) => (
     {award.person && (
       <div className="mt-1 text-center text-xs text-gray-400">
         {award.direction === "received" ? "From" : "To"}{" "}
-        <WrapperHoverCard employeeId={award.person_id}>
-          <span className="font-medium text-gray-600 cursor-pointer">{award.person}</span>
-        </WrapperHoverCard>
+        <span className="font-medium text-gray-600">{award.person}</span>
       </div>
     )}
     {award.message && (

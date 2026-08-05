@@ -191,3 +191,79 @@ def make_salary_slip(
 class CustomJobOffer(JobOffer):
     def on_change(self):
         pass
+
+
+# --- Job Requisition behind the offer ---------------------------------------
+# An offer always draws its headcount from a requisition (offer_validation refuses
+# to create one otherwise), but until now the offer never recorded WHICH. Storing
+# it makes the link reportable and lets the requisition's agreed pay bands flow
+# straight onto the offer instead of being re-keyed.
+#
+# Source field on Job Requisition -> target field on Job Offer.
+REQUISITION_PAY_MAP = {
+	"fixed_pay": "custom_total_fixed_pay",
+	"variable_pay": "custom_variable_incentive",
+}
+
+
+def _requisition_for_applicant(job_applicant):
+	"""Job Applicant -> Job Opening -> Job Requisition, or None if not resolvable.
+
+	The opening is the only thing that knows the requisition; the offer has no
+	direct link of its own.
+	"""
+	if not job_applicant:
+		return None
+	opening = frappe.db.get_value("Job Applicant", job_applicant, "job_title")
+	if not opening:
+		return None
+	return frappe.db.get_value("Job Opening", opening, "job_requisition") or None
+
+
+def _requisition_pay(requisition):
+	"""``{target_field: value}`` for whichever pay fields this site actually has.
+
+	Guarded by ``has_column``, not ``meta.get_field``: a field can be present in the
+	meta and still have no database column — which is exactly how `fixed_pay` and
+	`variable_pay` shipped originally, as virtual fields. Reading one of those
+	raises "Unknown column", so the meta alone is not a safe check.
+	"""
+	if not requisition:
+		return {}
+	available = [src for src in REQUISITION_PAY_MAP
+	             if frappe.db.has_column("Job Requisition", src)]
+	if not available:
+		return {}
+	values = frappe.db.get_value("Job Requisition", requisition, available, as_dict=True) or {}
+	return {REQUISITION_PAY_MAP[src]: values.get(src) for src in available if values.get(src)}
+
+
+def set_requisition_and_pay(doc, method=None):
+	"""Stamp the requisition on the offer and pull its pay bands across.
+
+	Only fills fields that are still empty, so an amount HR has deliberately
+	negotiated is never overwritten on a later save.
+	"""
+	if not doc.meta.get_field("custom_job_requisition"):
+		return
+
+	if not doc.get("custom_job_requisition"):
+		doc.custom_job_requisition = _requisition_for_applicant(doc.get("job_applicant"))
+	if not doc.get("custom_job_requisition"):
+		return
+
+	for target, value in _requisition_pay(doc.custom_job_requisition).items():
+		if doc.meta.get_field(target) and not flt(doc.get(target)):
+			doc.set(target, value)
+
+
+@frappe.whitelist()
+def get_requisition_defaults(job_applicant):
+	"""What the Job Offer form should prefill once a candidate is chosen.
+
+	Lets the form show the agreed pay the moment the applicant is picked, rather
+	than only after the first save.
+	"""
+	frappe.has_permission("Job Offer", "create", throw=True)
+	requisition = _requisition_for_applicant(job_applicant)
+	return {"job_requisition": requisition, "pay": _requisition_pay(requisition)}

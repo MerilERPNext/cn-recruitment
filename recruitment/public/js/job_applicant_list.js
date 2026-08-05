@@ -133,8 +133,11 @@
 			.ja-header-eyebrow { font-size: 11px; letter-spacing: 0.08em; color: #6B7280; text-transform: uppercase; font-weight: 500; }
 			.ja-header-title { font-size: 20px; font-weight: 700; color: #111827; margin-top: 4px; }
 			.ja-header-meta { display: flex; align-items: center; gap: 10px; margin-top: 4px; color: #6B7280; font-size: 13px; }
-			.ja-header-meta a { color: #2563EB; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; }
+			.ja-header-meta a { color: #2563EB; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; cursor: pointer; }
 			.ja-header-meta a:hover { text-decoration: underline; }
+			/* No requisition behind this opening — still clickable, but it explains
+			   itself rather than pretending to be a link somewhere. */
+			.ja-header-meta a.ja-no-requisition { color: #9CA3AF; }
 
 			.ja-pipeline-top { padding: 8px 0; }
 			.ja-pipeline-top-bar { display: flex; height: 8px; border-radius: 4px; overflow: hidden; background: #F3F4F6; }
@@ -222,6 +225,23 @@
 			   the selection bar. Native paging / no-result / Actions menu stay intact. */
 			.ja-custom-active .frappe-list .result .list-row-head { display: none !important; }
 			.ja-custom-active.ja-has-selection .frappe-list .result .list-row-head { display: flex !important; }
+			/* --- Frappe v16 ------------------------------------------------------
+			   v16 wraps .result in a new .result-container and fits the list to
+			   the viewport: set_result_height() measures the main section and sets
+			   an inline pixel height on that container, so rows scroll INSIDE it and
+			   the paging bar is pinned below. Our table is a single tall block, not
+			   Frappe's row list, so trapping it in that box leaves the paging bar
+			   sitting across the middle of our rows.
+
+			   Undo the fitted box for our lists only — it flows naturally again, the
+			   way v15 does, and the paging area lands under the table. The heights
+			   are inline styles set from JS, hence !important. On v15 there is no
+			   .result-container, so none of this matches. */
+			.ja-custom-active .frappe-list .result-container,
+			.ja-custom-active .frappe-list .result-container .result {
+				height: auto !important; max-height: none !important; overflow: visible !important;
+			}
+
 		`;
 		document.head.appendChild(style);
 	}
@@ -257,6 +277,15 @@
 		if (!state.opening) { container.innerHTML = ""; return; }
 		const op = state.opening;
 		const meta = [op.designation, op.department, op.location].filter(Boolean).map(escapeHtml).join(" · ");
+
+		// The requisition this opening was raised against. Filtered by `name` — a
+		// standard field, so Frappe resolves it straight into the list's filters.
+		// Openings raised without one get a click that explains why, rather than a
+		// dead link or a silently missing action.
+		const requisition = op.job_requisition
+			? `<a href="/app/job-requisition/view/list?name=${encodeURIComponent(op.job_requisition)}">↗ ${__("Job Requisition")}</a>`
+			: `<a class="ja-no-requisition">↗ ${__("Job Requisition")}</a>`;
+
 		container.innerHTML = `
 			<div class="ja-header">
 				<div class="ja-header-eyebrow">Applicants for</div>
@@ -265,9 +294,22 @@
 					<span>${escapeHtml(op.name)}</span>
 					${meta ? `<span>·</span><span>${meta}</span>` : ""}
 					<span>·</span>
-					<a href="/app/job-opening/${encodeURIComponent(op.name)}">↗ Open job opening</a>
+					<a href="/app/job-opening/${encodeURIComponent(op.name)}">↗ ${__("Edit job opening")}</a>
+					<span>·</span>
+					${requisition}
 				</div>
 			</div>`;
+
+		const none = container.querySelector(".ja-no-requisition");
+		if (none) {
+			none.addEventListener("click", () => {
+				frappe.msgprint({
+					title: __("No Job Requisition"),
+					indicator: "orange",
+					message: __("Job Opening {0} was created without a linked Job Requisition, so there is no requisition to open.", [op.name]),
+				});
+			});
+		}
 	}
 
 	function renderPipelineTop() {
@@ -541,7 +583,11 @@
 		const headerHost = $('<div id="ja-header-container"></div>');
 		const pipelineHost = $('<div id="ja-pipeline-container"></div>');
 		const tabsHost = $('<div id="ja-tabs-container"></div>');
-		const resultEl = layoutMain.find(".frappe-list .result");
+		// v16 nests `.result` inside `.result-container`; anchor to the outermost
+		// of the two so our header/tabs sit ABOVE the whole result block rather
+		// than inside v16's fitted, inner-scrolling box.
+		const container = layoutMain.find(".frappe-list .result-container");
+		const resultEl = container.length ? container : layoutMain.find(".frappe-list .result");
 		if (resultEl.length) {
 			resultEl.before(headerHost);
 			resultEl.before(pipelineHost);

@@ -648,3 +648,125 @@ frappe.realtime.on("screening_done", (data) => {
         },
     });
 })();
+
+// --- Interview region: HR decides where a candidate is interviewed -----------
+// A panel can suggest another region while giving feedback, but it never moves the
+// candidate — it raises a Pending flag. Everything that actually changes the region
+// goes through recruitment.api.candidate_region so each change carries a reason.
+(function () {
+    const API = "recruitment.api.candidate_region";
+
+    // Region routing only exists for campus hiring — it picks a Campus Drive Round
+    // panel. Showing these controls on a lateral or referral candidate would offer
+    // an action that can never do anything, so gate the whole block.
+    //
+    // Checked by campus linkage AND source, not source alone: campus candidates
+    // created outside the portal flow (drive imports, seeding) carry the invite but
+    // may have no source stamped.
+    function isCampusCandidate(doc) {
+        return Boolean(doc.custom_campus_invite || doc.custom_campus_drive ||
+                       doc.custom_institute || doc.source === "Campus Hiring");
+    }
+
+    // "Rajasthan (REGION_16)" — the bare ID means nothing to a recruiter, but the
+    // ID still has to be there because that is what reports and filters key on.
+    function regionLabel(region) {
+        if (!region) return Promise.resolve("");
+        return frappe.db.get_value("Region", region, "location_region").then((r) => {
+            const name = (r && r.message && r.message.location_region) || "";
+            return name ? `${name} (${region})` : region;
+        });
+    }
+
+    function reasonDialog({ title, primary, withRegion, currentRegion, onSubmit }) {
+        const fields = [];
+        if (withRegion) {
+            fields.push({
+                fieldname: "region", label: __("Interview Region"), fieldtype: "Link",
+                options: "Region", default: currentRegion || "",
+                description: __("Leave blank to send the candidate back to the region they applied under."),
+            });
+        }
+        fields.push({
+            fieldname: "reason", label: __("Reason"), fieldtype: "Small Text",
+            description: __("Recorded on the candidate's timeline."),
+        });
+        const d = new frappe.ui.Dialog({
+            title, fields, primary_action_label: primary,
+            primary_action(v) { d.hide(); onSubmit(v); },
+        });
+        d.show();
+    }
+
+    function call(method, args, frm, message) {
+        frappe.call({
+            method: `${API}.${method}`, args, freeze: true,
+            freeze_message: __("Updating…"),
+            callback: () => {
+                frappe.show_alert({ message, indicator: "green" });
+                frm.reload_doc();
+            },
+        });
+    }
+
+    frappe.ui.form.on("Job Applicant", {
+        refresh(frm) {
+            if (frm.is_new()) return;
+            const doc = frm.doc;
+            if (!isCampusCandidate(doc)) return;
+
+            // A pending suggestion is the one thing HR must not miss, so it gets a
+            // dashboard banner rather than only a button tucked under a menu.
+            if (doc.custom_region_suggestion_status === "Pending" && doc.custom_suggested_region) {
+                const who = doc.custom_region_suggested_by || __("an interviewer");
+                const why = doc.custom_region_suggestion_reason
+                    ? `<br><i>${frappe.utils.escape_html(doc.custom_region_suggestion_reason)}</i>`
+                    : "";
+                regionLabel(doc.custom_suggested_region).then((label) => {
+                    frm.dashboard.clear_headline();
+                    frm.dashboard.set_headline(
+                        __("Interview panel suggested region <b>{0}</b> ({1}). The candidate has not been moved.", [
+                            frappe.utils.escape_html(label), frappe.utils.escape_html(who),
+                        ]) + why,
+                        "orange"
+                    );
+                });
+
+                frm.add_custom_button(__("Accept Region Suggestion"), () => {
+                    reasonDialog({
+                        title: __("Accept region suggestion"),
+                        primary: __("Accept & Move"),
+                        onSubmit: (v) => call("accept_region_suggestion",
+                            { job_applicant: doc.name, reason: v.reason }, frm,
+                            __("Interview region updated.")),
+                    });
+                }, __("Region"));
+
+                frm.add_custom_button(__("Dismiss Suggestion"), () => {
+                    reasonDialog({
+                        title: __("Dismiss region suggestion"),
+                        primary: __("Dismiss"),
+                        onSubmit: (v) => call("dismiss_region_suggestion",
+                            { job_applicant: doc.name, reason: v.reason }, frm,
+                            __("Suggestion dismissed — candidate unchanged.")),
+                    });
+                }, __("Region"));
+            }
+
+            // Always available on a campus candidate: their own request for another
+            // region, or HR overriding an earlier decision.
+            frm.add_custom_button(__("Change Interview Region"), () => {
+                reasonDialog({
+                    title: __("Change interview region"),
+                    primary: __("Update"),
+                    withRegion: true,
+                    currentRegion: doc.custom_interview_region,
+                    onSubmit: (v) => call("set_interview_region",
+                        { job_applicant: doc.name, region: v.region, reason: v.reason }, frm,
+                        v.region ? __("Interview region updated.")
+                                 : __("Interview region cleared.")),
+                });
+            }, __("Region"));
+        },
+    });
+})();

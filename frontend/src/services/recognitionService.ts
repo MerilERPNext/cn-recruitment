@@ -373,7 +373,8 @@ export type AppreciationApiItem = {
   message: string;
   logo?: string;
   person: string;
-  person_id?: string;   // Employee id of the shown person (for the hover card)
+  /** Employee id of `person` (the counterparty) — drives the hover card. */
+  person_id?: string;
   person_image: string;
   date: string;
   direction: "received" | "given";
@@ -949,9 +950,7 @@ export type AppreciationDetail = {
   title: string;
   logo: string;
   recognized_by: string;
-  recognized_by_id?: string;   // giver Employee id
   receiver_name: string;
-  receiver_id?: string;        // receiver Employee id
   date: string;
   points: number;
   note: string;

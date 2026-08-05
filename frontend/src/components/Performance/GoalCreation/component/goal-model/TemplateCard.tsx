@@ -142,7 +142,7 @@ const TemplateCard = memo(({
                             type="button"
                             variant={isSelected ? 'contain' : 'outline'}
                             bgColor="primary"
-                            className={`h-8 shrink-0 justify-center rounded-lg px-3 text-xs font-semibold transition-all ${
+                            className={`h-8 min-w-[120px] shrink-0 justify-center rounded-lg px-3 text-xs font-semibold transition-all ${
                                 isSelected
                                     ? 'bg-blue-600 text-white shadow-xs hover:bg-blue-700'
                                     : 'border-blue-200 bg-white text-blue-600 hover:bg-blue-50'

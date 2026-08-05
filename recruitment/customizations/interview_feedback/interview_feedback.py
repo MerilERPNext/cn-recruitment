@@ -38,6 +38,69 @@ def on_submit_feedback(doc, method):
     check_feedback_and_update_result(doc)
 
 
+def record_region_suggestion(doc, method=None):
+	"""Interviewer suggested this candidate for a different region — flag it for HR.
+
+	The panel does NOT move the candidate. It records what it thinks and raises a
+	Pending flag; the candidate's region, campus, drive, role, stage and status are
+	all left exactly as they were. Only HR accepting the suggestion (or setting the
+	region directly) changes who interviews them next — see
+	``recruitment.api.candidate_region``.
+
+	That split is deliberate: a candidate's region should only ever move by a
+	decision someone owns, and it keeps the reason auditable when a report later
+	asks why this person was interviewed by another region's panel.
+
+	Runs on submit, so the suggestion is immutable once the feedback is in.
+	"""
+	if not doc.get("custom_recommend_other_region"):
+		return
+
+	region = doc.get("custom_recommended_region")
+	if not (region and doc.job_applicant):
+		return
+
+	# Backstop for the client-side gate in interview_feedback.js: region routing only
+	# selects a Campus Drive Round panel, so flagging a non-campus candidate would
+	# leave HR a Pending item they cannot accept.
+	from recruitment.api.candidate_region import CAMPUS_FIELDS, _is_campus
+
+	applicant = frappe.db.get_value("Job Applicant", doc.job_applicant,
+	                                ["name", "source", *CAMPUS_FIELDS], as_dict=True)
+	if not (applicant and _is_campus(applicant)):
+		return
+
+	reason = (doc.get("custom_region_recommendation_reason") or "").strip()
+	interviewer = doc.interviewer or frappe.session.user
+
+	# Mirrored onto the candidate so the suggestion is reportable straight off Job
+	# Applicant — a list view, report or filter can use it without joining back to
+	# Interview Feedback. The feedback records stay the full history when more than
+	# one panel weighs in; these fields carry the latest.
+	#
+	# db.set_value rather than a save: these are derived fields, and saving the
+	# applicant would re-run every Job Applicant validate hook from inside a feedback
+	# submission.
+	frappe.db.set_value("Job Applicant", doc.job_applicant, {
+		"custom_suggested_region": region,
+		"custom_region_suggested_by": interviewer,
+		"custom_region_suggestion_reason": reason or None,
+		"custom_region_suggestion_status": "Pending",
+	})
+
+	region_name = frappe.db.get_value("Region", region, "location_region") or region
+	frappe.get_doc("Job Applicant", doc.job_applicant).add_comment(
+		"Info",
+		_("Interview panel suggested region <b>{0}</b> ({1}) on feedback {2} — "
+		  "awaiting HR.{3}").format(
+			region_name,
+			interviewer,
+			get_link_to_form("Interview Feedback", doc.name),
+			_("<br>Reason: {0}").format(frappe.utils.escape_html(reason)) if reason else "",
+		),
+	)
+
+
 def auto_advance_stage(doc, method):
     """After feedback updates the Interview's verdict, let the Hiring Workflow
     auto-advance / reject the candidate (only for stages flagged ``auto``)."""
@@ -79,6 +142,17 @@ def create_interview_feedback(data, interview_name, interviewer, job_applicant):
 
     interview_feedback.feedback = feedback_content
     interview_feedback.result = data.result
+
+    # Region recommendation, when the interviewer ticked it. Carried explicitly
+    # because this API builds the doc field by field rather than from the payload.
+    if data.get("recommend_other_region"):
+        if not data.get("recommended_region"):
+            frappe.throw(_("Select the region you are recommending this candidate for."))
+        interview_feedback.custom_recommend_other_region = 1
+        interview_feedback.custom_recommended_region = data.get("recommended_region")
+        interview_feedback.custom_region_recommendation_reason = data.get(
+            "region_recommendation_reason"
+        )
 
     # Save and submit the document
     interview_feedback.save()

@@ -105,9 +105,9 @@ export const categoryFilters: CategoryFilter[] = [
 
 export const metricCards: MetricCard[] = [
   { label: "Avg current proficiency", value: "3.1", helper: "of 5.0 · Intermediate", tone: "info" },
-  { label: "Avg target proficiency", value: "4.1", helper: "gap of 0.9 levels", tone: "primary" },
-  { label: "Focus skills (FY26)", value: "3", helper: "marked as growth priority", tone: "warning" },
-  { label: "Critical gaps", value: "4", helper: "skills with gap ≥ 2 levels", tone: "error" },
+  { label: "Avg target proficiency", value: "4.1", helper: "gap of 0.9 levels", tone: "info" },
+  { label: "Focus skills (FY26)", value: "3", helper: "marked as growth priority", tone: "info" },
+  { label: "Critical gaps", value: "4", helper: "skills with gap ≥ 2 levels", tone: "info" },
 ];
 
 export const focusAreas = ["User Research", "Accessibility (WCAG 2.2)", "ProtoPie"];

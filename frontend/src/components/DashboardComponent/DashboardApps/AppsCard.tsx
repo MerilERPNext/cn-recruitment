@@ -86,34 +86,13 @@ const MyMicroApp: React.FC<MyMicroAppProps> = ({
 
   const color = COLOR_ROTATION[index % COLOR_ROTATION.length];
 
-  const isSvg =
-    item.icon?.toLowerCase().endsWith(".svg") ||
-    item.icon?.toLowerCase().includes(".svg?");
-
   const iconNode = item.icon && !iconLoadError ? (
-    isSvg ? (
-      <div
-        className="w-8 h-8"
-        style={{
-          backgroundColor: "currentColor",
-          maskImage: `url(${item.icon})`,
-          maskSize: "contain",
-          maskRepeat: "no-repeat",
-          maskPosition: "center",
-          WebkitMaskImage: `url(${item.icon})`,
-          WebkitMaskSize: "contain",
-          WebkitMaskRepeat: "no-repeat",
-          WebkitMaskPosition: "center",
-        }}
-      />
-    ) : (
-      <img
-        src={item.icon}
-        alt={item.title}
-        className="w-8 h-8 rounded-md"
-        onError={() => setIconLoadError(true)}
-      />
-    )
+    <img
+      src={item.icon}
+      alt={item.title}
+      className="w-8 h-8 rounded-md"
+      onError={() => setIconLoadError(true)}
+    />
   ) : (
     <span className="font-bold text-lg">
       {item.title ? item.title.charAt(0).toUpperCase() : "A"}

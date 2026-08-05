@@ -2,13 +2,11 @@ import React, { useMemo } from 'react';
 import { CheckSquare, Square, Search } from 'lucide-react';
 import TemplateCard from './TemplateCard';
 import { GoalTemplate, TemplateListProps, getGoalKey } from './types';
-import Button from '../../../../shared/atoms/Button';
 import { Typography } from '../../../../shared/atoms/Typography';
 
 export const departmentTemplatesData: GoalTemplate[] = [];
 
 const DepartmentTemplates = ({
-    onUseTemplate,
     searchQuery = '',
     selectedTemplates = [],
     onToggleSelect,
@@ -87,19 +85,7 @@ const DepartmentTemplates = ({
                     </button>
                 </div>
 
-                {selectedTemplates.length > 0 && (
-                    <div className="flex items-center gap-2">
-                        <Button
-                            type="button"
-                            variant="contain"
-                            bgColor="primary"
-                            className="h-8 text-xs bg-blue-600 text-white hover:bg-blue-700"
-                            onClick={() => onUseTemplate?.(selectedTemplates)}
-                        >
-                            Add {selectedTemplates.length} Selected Goal{selectedTemplates.length > 1 ? 's' : ''}
-                        </Button>
-                    </div>
-                )}
+              
             </div>
 
             <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 xl:grid-cols-3">

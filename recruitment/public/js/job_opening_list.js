@@ -243,6 +243,23 @@
 			   the selection bar. Native paging / no-result / Actions menu stay intact. */
 			.jo-custom-active .frappe-list .result .list-row-head { display: none !important; }
 			.jo-custom-active.jo-has-selection .frappe-list .result .list-row-head { display: flex !important; }
+			/* --- Frappe v16 ------------------------------------------------------
+			   v16 wraps .result in a new .result-container and fits the list to
+			   the viewport: set_result_height() measures the main section and sets
+			   an inline pixel height on that container, so rows scroll INSIDE it and
+			   the paging bar is pinned below. Our table is a single tall block, not
+			   Frappe's row list, so trapping it in that box leaves the paging bar
+			   sitting across the middle of our rows.
+
+			   Undo the fitted box for our lists only — it flows naturally again, the
+			   way v15 does, and the paging area lands under the table. The heights
+			   are inline styles set from JS, hence !important. On v15 there is no
+			   .result-container, so none of this matches. */
+			.jo-custom-active .frappe-list .result-container,
+			.jo-custom-active .frappe-list .result-container .result {
+				height: auto !important; max-height: none !important; overflow: visible !important;
+			}
+
 		`;
 		document.head.appendChild(style);
 	}
@@ -552,7 +569,11 @@
 		layoutMain.addClass("jo-custom-active");
 		if (layoutMain.find("#jo-tabs-container").length) return;
 		const tabsHost = $('<div id="jo-tabs-container"></div>');
-		const resultEl = layoutMain.find(".frappe-list .result");
+		// v16 nests `.result` inside `.result-container`; anchor to the outermost
+		// of the two so our header/tabs sit ABOVE the whole result block rather
+		// than inside v16's fitted, inner-scrolling box.
+		const container = layoutMain.find(".frappe-list .result-container");
+		const resultEl = container.length ? container : layoutMain.find(".frappe-list .result");
 		if (resultEl.length) resultEl.before(tabsHost);
 		else layoutMain.prepend(tabsHost);
 	}

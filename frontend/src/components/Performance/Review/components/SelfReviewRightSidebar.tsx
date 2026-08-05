@@ -1,4 +1,3 @@
-import { Sparkles } from "lucide-react";
 import { Typography } from "../../../shared/atoms/Typography";
 import Badge from "../../../shared/Badge";
 
@@ -7,9 +6,7 @@ export const SelfReviewRightSidebar = () => {
     <div className="w-full xl:w-80 shrink-0 grid gap-4 md:grid-cols-2 xl:flex xl:flex-col">
       {/* AI Highlight */}
       <div className="bg-purple-50/50 rounded-xl border border-purple-100 p-4 sm:p-5 md:col-span-2 xl:col-span-1">
-        <div className="flex items-center gap-2 mb-3 text-purple-700 font-semibold text-sm tracking-wide">
-          <Sparkles className="w-4 h-4" /> AI HIGHLIGHT
-        </div>
+        
         <Typography
           variant="bodyMedium"
           className="text-gray-700 leading-relaxed"

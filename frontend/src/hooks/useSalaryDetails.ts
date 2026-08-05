@@ -3,17 +3,16 @@
 import { useMutation, useQuery } from "@tanstack/react-query"
 
 import { PermissionError } from "../types/interview"
-import { 
-        getTDSPayslipHTML,
-        getBenefitPayslipHTML,
-        getOffCyclePayslipHTML,
-        getSalarySlipHTML,
-        PrintFormatMenuOptionsService,
-        getSalarySlipName,
-        updateSalarySlip,
-        releaseSalarySlip,
-        getPayrollAdminRoles
-     } from "../services/salaryDetailsService"
+import {
+  getTDSPayslipHTML,
+  getBenefitPayslipHTML,
+  getOffCyclePayslipHTML,
+  getSalarySlipHTML,
+  getSalarySlipName,
+  updateSalarySlip,
+  releaseSalarySlip,
+  getPayrollAdminRoles
+} from "../services/salaryDetailsService"
 
 const isPermissionError = (error: unknown): error is PermissionError => {
   if (error instanceof PermissionError) return true
@@ -69,14 +68,6 @@ export const useDownloadSalarySlipPDF = (options: { onSuccess?: (data: any) => v
 
 export { isPermissionError }
 
-export const usePrintFormatMenuOptions = (employee_name: string, name: string) => {
-  return useQuery({
-    queryKey: ["print-format-menu-options", name, employee_name],
-    queryFn: () => PrintFormatMenuOptionsService(employee_name, name),
-    enabled: !!employee_name && !!name, // skip call when slip id / employee missing
-    placeholderData: [], // prevents undefined
-  });
-};
 
 // Roles allowed to release salary slips — fetched from Payroll Settings via API
 export const usePayrollAdminRoles = (employee?: string) => {
@@ -115,7 +106,7 @@ export const useReleaseSalarySlip = (
   options: { onSuccess?: (data: any) => void; onError?: (error: any) => void } = {}
 ) => {
   return useMutation({
-    mutationFn: (salarySlipName: string) => releaseSalarySlip(salarySlipName),
+    mutationFn: ({ salarySlipName, salary_slip_type }: { salarySlipName: string, salary_slip_type: string }) => releaseSalarySlip(salarySlipName, salary_slip_type),
     ...options,
   });
 };

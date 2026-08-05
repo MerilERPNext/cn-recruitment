@@ -667,10 +667,13 @@ def sync_no_of_positions(doc, method=None):
 
     Only acts when the table has rows — leaves fields untouched for legacy /
     HRMS-standard flows where `custom_position_details` is empty (those use the
-    standard `vacancies` table, which we don't want to override).
+    standard `vacancies` table, which we don't want to override). Campus/Fresher
+    requisitions are the other shape with no position rows: they budget headcount
+    per region, so `_sync_positions_from_regions` keeps the parent in step there.
     """
     position_rows = doc.get("custom_position_details") or []
     if not position_rows:
+        _sync_positions_from_regions(doc)
         return
 
     doc.no_of_positions = len(position_rows)
@@ -688,6 +691,28 @@ def sync_no_of_positions(doc, method=None):
     allowed = (df.options or "").split("\n") if df else []
     if vtype in allowed:
         doc.custom_type_of_position = vtype
+
+
+def _sync_positions_from_regions(doc):
+    """`no_of_positions` for the Fresher / campus shape, which has no position rows.
+
+    Those requisitions budget headcount per region (`custom_regions`), so the
+    parent total is the sum of `no_of_openings`. It was only ever written once, at
+    creation (`_build_region_requisition_doc`), which left it stale the moment a
+    region's openings were edited — the total on the requisition no longer matched
+    its own table.
+
+    Does nothing when there are no region rows either: that is the legacy /
+    HRMS-standard shape, where `no_of_positions` belongs to the standard
+    `vacancies` table and must not be overwritten.
+    """
+    region_rows = doc.get("custom_regions") or []
+    if not region_rows:
+        return
+
+    doc.no_of_positions = sum(
+        frappe.utils.cint(row.get("no_of_openings")) for row in region_rows
+    )
 
 
 def _resolve_jd_html(designation, department):

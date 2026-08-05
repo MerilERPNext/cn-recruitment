@@ -9,6 +9,7 @@ import { Typography } from "../../shared/atoms/Typography";
 import { NoDataFound } from "../../shared/atoms/NoDataFound";
 import { Card } from "../../shared/atoms/Card";
 import { useTaxSheetPayrollPriodsData } from "../../../hooks/useTaxSheet";
+import { useTargetEmployeeCompany } from "../../../hooks/useTargetEmployeeCompany";
 import SalaryAssignmentHeader from "./PayPackageHeader";
 import StatusBadge from "../../shared/atoms/statusBadge";
 import { formatCurrency } from "../../../utils/currency";
@@ -190,6 +191,8 @@ export default function SalaryAssignmentList() {
   const { targetEmployeeId } = useTargetUser();
   // When an admin/HR is viewing another user, target their employee id.
   const effectiveEmployee = targetEmployeeId || user?.employee;
+  const { targetCompany } = useTargetEmployeeCompany();
+  const effectiveCompany = targetEmployeeId ? targetCompany : user?.company;
 
   const [selected, setSelected] = useState<SalaryItem | null>(null);
   const [selectedVersionItem, setSelectedVersionItem] =
@@ -200,7 +203,7 @@ export default function SalaryAssignmentList() {
   const [filtersKey, setFiltersKey] = useState(0);
 
   const { data: payrollPeriods } = useTaxSheetPayrollPriodsData(
-    user?.company ?? null,
+    effectiveCompany ?? null,
   ) as {
     data: PayrollPeriod[] | undefined;
   };
@@ -240,7 +243,7 @@ export default function SalaryAssignmentList() {
   // ---- customAPI config ----
   // DataListView will call this endpoint; params are merged in at request time.
   const customAPI = useMemo(() => {
-    if (!effectiveEmployee || !selectedPeriod || !user?.company) return null;
+    if (!effectiveEmployee || !selectedPeriod || !effectiveCompany) return null;
 
     return {
       method:
@@ -248,10 +251,10 @@ export default function SalaryAssignmentList() {
       params: {
         employee: effectiveEmployee,
         payroll_period: selectedPeriod,
-        company: user.company,
+        company: effectiveCompany,
       },
     };
-  }, [effectiveEmployee, selectedPeriod, user?.company]);
+  }, [effectiveEmployee, selectedPeriod, effectiveCompany]);
 
   // ---- Sort config (identical to original) ----
   const SALARY_SORT_CONFIG: ColumnSortConfig[] = [

@@ -23,6 +23,7 @@ interface ActiveProgramsProps {
   isLoading?: boolean;
 }
 
+
 export const ActivePrograms: React.FC<ActiveProgramsProps> = ({
   programs,
   isLoading,
