@@ -17,6 +17,7 @@ import {
 } from "../services/attendanceService";
 import type {
   AllEventsAndAttendanceT,
+  ApprovalFlowResponse,
   Attendance,
   AttendanceRecord,
   AttendanceRequest,
@@ -146,6 +147,19 @@ export const useGetEmployeeShift = (
     queryKey: ["employee-shift", userId, filters],
     queryFn: () => attendanceService.getEmployeeShift(userId, filters),
     enabled: !!userId,
+    refetchOnWindowFocus: true,
+    ...defaultQueryOptions,
+  });
+};
+
+export const useGetApprovalFlow = (
+  doctype: string,
+  docname: string
+): UseQueryResult<ApprovalFlowResponse, Error> => {
+  return useQuery<ApprovalFlowResponse, Error>({
+    queryKey: ["approval-flow", doctype, docname],
+    queryFn: () => attendanceService.getApprovalFlow(doctype, docname),
+    enabled: !!doctype && !!docname,
     refetchOnWindowFocus: true,
     ...defaultQueryOptions,
   });

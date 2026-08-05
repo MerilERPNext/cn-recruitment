@@ -1,12 +1,10 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { CheckSquare, Square, Search } from 'lucide-react';
 import TemplateCard from './TemplateCard';
 import { GoalTemplate, TemplateListProps, getGoalKey } from './types';
-import Button from '../../../../shared/atoms/Button';
 import { Typography } from '../../../../shared/atoms/Typography';
 
 const AllOrgTemplates = ({
-    onUseTemplate,
     selectedTemplates = [],
     onToggleSelect,
     onSelectAll,
@@ -15,16 +13,23 @@ const AllOrgTemplates = ({
     allOrgTemplatesData = []
 }: TemplateListProps) => {
 
-    const selectedIds = selectedTemplates.map((t) => getGoalKey(t));
+    const selectedSet = useMemo(() => {
+        return new Set(selectedTemplates.map((t) => getGoalKey(t)));
+    }, [selectedTemplates]);
 
-    const isAllSelected =
-        allOrgTemplatesData.length > 0 &&
-        allOrgTemplatesData.every((t) => selectedIds.includes(getGoalKey(t)));
+    const isAllSelected = useMemo(() => {
+        return (
+            allOrgTemplatesData.length > 0 &&
+            allOrgTemplatesData.every((t) => selectedSet.has(getGoalKey(t)))
+        );
+    }, [allOrgTemplatesData, selectedSet]);
 
-    const totalSelectedWeightage = selectedTemplates.reduce(
-        (acc, item) => acc + (weightages[getGoalKey(item)] ?? 10),
-        0
-    );
+    const totalSelectedWeightage = useMemo(() => {
+        return selectedTemplates.reduce(
+            (acc, item) => acc + (weightages[getGoalKey(item)] ?? 10),
+            0
+        );
+    }, [selectedTemplates, weightages]);
 
     if (allOrgTemplatesData.length === 0) {
         return (
@@ -62,19 +67,6 @@ const AllOrgTemplates = ({
                     </button>
                 </div>
 
-                {selectedTemplates.length > 0 && (
-                    <div className="flex items-center gap-2">
-                        <Button
-                            type="button"
-                            variant="contain"
-                            bgColor="primary"
-                            className="h-8 text-xs bg-blue-600 text-white hover:bg-blue-700"
-                            onClick={() => onUseTemplate?.(selectedTemplates)}
-                        >
-                            Add {selectedTemplates.length} Selected Goal{selectedTemplates.length > 1 ? 's' : ''}
-                        </Button>
-                    </div>
-                )}
             </div>
 
             <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 xl:grid-cols-3">
@@ -83,7 +75,7 @@ const AllOrgTemplates = ({
                         key={getGoalKey(template)}
                         template={template}
                         hideUseTemplate={true}
-                        isSelected={selectedIds.includes(getGoalKey(template))}
+                        isSelected={selectedSet.has(getGoalKey(template))}
                         onToggleSelect={onToggleSelect}
                         weightage={weightages[getGoalKey(template)] ?? 10}
                         onWeightageChange={onWeightageChange}

@@ -2,12 +2,14 @@ import React from "react";
 import { FolderSearch } from "lucide-react";
 import { Typography } from "./Typography";
 import { BeatLoader } from "react-spinners";
+import Button from "./Button";
 
 interface NoDataFoundProps {
     title?: string;
     subtitle?: string;
     className?: string;
     loading?: boolean;
+    onClick?: () => void;
 }
 
 export const NoDataFound: React.FC<NoDataFoundProps> = ({
@@ -15,6 +17,7 @@ export const NoDataFound: React.FC<NoDataFoundProps> = ({
     subtitle = "There's nothing to show here right now.",
     className = "",
     loading = false,
+    onClick,
 }) => {
     if (loading) {
         return (
@@ -56,7 +59,17 @@ export const NoDataFound: React.FC<NoDataFoundProps> = ({
                 {title}
             </Typography>
             <Typography variant="bodySmall" color="body2" className="text-center max-w-xs">
-                {subtitle}
+                {onClick ? (
+                    <Button
+                        variant="soft"
+                        size="md"
+                        onClick={onClick}
+                    >
+                        {subtitle}
+                    </Button>
+                ) : (
+                    subtitle
+                )}
             </Typography>
         </div>
     );

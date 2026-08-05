@@ -1,8 +1,7 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { CheckSquare, Square, Search } from 'lucide-react';
 import TemplateCard from './TemplateCard';
-import { GoalTemplate, TemplateListProps, filterTemplates, getGoalKey } from './types';
-import Button from '../../../../shared/atoms/Button';
+import { GoalTemplate, TemplateListProps, getGoalKey } from './types';
 import { Typography } from '../../../../shared/atoms/Typography';
 
 export const roleBasedTemplatesData: GoalTemplate[] = [
@@ -10,33 +9,43 @@ export const roleBasedTemplatesData: GoalTemplate[] = [
 ];
 
 const RoleBasedTemplates = ({
-    onUseTemplate,
-    searchQuery = '',
-    selectedDepartment = 'All',
-    selectedDesignation = 'All',
     selectedTemplates = [],
     onToggleSelect,
     onSelectAll,
     weightages = {},
     onWeightageChange,
+    allOrgTemplatesData=[]
 }: TemplateListProps) => {
-    const filteredTemplates = filterTemplates(
-        roleBasedTemplatesData,
-        searchQuery,
-        selectedDepartment,
-        selectedDesignation
-    );
+      const filteredTemplates = useMemo(() => {
+            return (allOrgTemplatesData || []).filter((t) => {
+                return Boolean(
+                    t?.role ||
+                    t?.role_title ||
+                    t?.role_name ||
+                    t?.job_role ||
+                    t?.role_based 
+                );
+            });
+        }, [allOrgTemplatesData]);
+   
 
-    const selectedIds = selectedTemplates.map((t) => getGoalKey(t));
+    const selectedSet = useMemo(() => {
+        return new Set(selectedTemplates.map((t) => getGoalKey(t)));
+    }, [selectedTemplates]);
 
-    const isAllSelected =
-        filteredTemplates.length > 0 &&
-        filteredTemplates.every((t) => selectedIds.includes(getGoalKey(t)));
+    const isAllSelected = useMemo(() => {
+        return (
+            filteredTemplates.length > 0 &&
+            filteredTemplates.every((t) => selectedSet.has(getGoalKey(t)))
+        );
+    }, [filteredTemplates, selectedSet]);
 
-    const totalSelectedWeightage = selectedTemplates.reduce(
-        (acc, item) => acc + (weightages[getGoalKey(item)] ?? 10),
-        0
-    );
+    const totalSelectedWeightage = useMemo(() => {
+        return selectedTemplates.reduce(
+            (acc, item) => acc + (weightages[getGoalKey(item)] ?? 10),
+            0
+        );
+    }, [selectedTemplates, weightages]);
 
     if (filteredTemplates.length === 0) {
         return (
@@ -73,20 +82,6 @@ const RoleBasedTemplates = ({
                         </span>
                     </button>
                 </div>
-
-                {selectedTemplates.length > 0 && (
-                    <div className="flex items-center gap-2">
-                        <Button
-                            type="button"
-                            variant="contain"
-                            bgColor="primary"
-                            className="h-8 text-xs bg-blue-600 text-white hover:bg-blue-700"
-                            onClick={() => onUseTemplate?.(selectedTemplates)}
-                        >
-                            Add {selectedTemplates.length} Selected Goal{selectedTemplates.length > 1 ? 's' : ''}
-                        </Button>
-                    </div>
-                )}
             </div>
 
             <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 xl:grid-cols-3">
@@ -95,7 +90,7 @@ const RoleBasedTemplates = ({
                         key={getGoalKey(template)}
                         template={template}
                         hideUseTemplate={true}
-                        isSelected={selectedIds.includes(getGoalKey(template))}
+                        isSelected={selectedSet.has(getGoalKey(template))}
                         onToggleSelect={onToggleSelect}
                         weightage={weightages[getGoalKey(template)] ?? 10}
                         onWeightageChange={onWeightageChange}

@@ -21,6 +21,7 @@ interface CustomDropdownProps {
   variant?: "contain" | "outline" | "subtle" | "soft";
   emptyMessage?: string;
   menuClassName?: string;
+  customTrigger?: React.ReactNode;
 }
 
 const CustomDropdown: React.FC<CustomDropdownProps> = ({
@@ -33,6 +34,7 @@ const CustomDropdown: React.FC<CustomDropdownProps> = ({
   contentAlign = "center",
   emptyMessage = "No options available",
   menuClassName,
+  customTrigger,
 }) => {
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const [menuStyle, setMenuStyle] = useState<React.CSSProperties>({});
@@ -149,28 +151,34 @@ const CustomDropdown: React.FC<CustomDropdownProps> = ({
       ref={triggerRef}
       className={`relative inline-block ${className || ""}`}
     >
-      <Button
-        variant="outline"
-        bgColor="white"
-        size="md"
-        onClick={() => setIsOpen((prev) => !prev)}
-        className="flex items-center gap-2 border border-primary/20 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-colors"
-      >
-        <span>{selectedLabel}</span>
-        <svg
-          className={`w-4 h-4 transition-transform ${isOpen ? "rotate-180" : ""}`}
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
+      {customTrigger ? (
+        <div onClick={() => setIsOpen((prev) => !prev)} className="cursor-pointer inline-flex items-center justify-center h-full">
+          {customTrigger}
+        </div>
+      ) : (
+        <Button
+          variant="outline"
+          bgColor="white"
+          size="md"
+          onClick={() => setIsOpen((prev) => !prev)}
+          className="flex items-center gap-2 border border-primary/20 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-colors"
         >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M19 9l-7 7-7-7"
-          />
-        </svg>
-      </Button>
+          <span>{selectedLabel}</span>
+          <svg
+            className={`w-4 h-4 transition-transform ${isOpen ? "rotate-180" : ""}`}
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M19 9l-7 7-7-7"
+            />
+          </svg>
+        </Button>
+      )}
 
       {menu}
     </div>

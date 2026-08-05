@@ -49,7 +49,8 @@ const PodiumColumn: React.FC<{
   height: string;
   size: number;
   score: number;
-}> = ({ person, height, size, score }) => (
+  employeeId: string;
+}> = ({ person, height, size, score, employeeId }) => (
   <div className={`flex flex-col items-center ${height}`}>
     <div className="relative mb-3">
       <StarBadge rank={person.rank} />
@@ -61,7 +62,7 @@ const PodiumColumn: React.FC<{
       />
     </div>
     <Card radius="xl" className="border border-gray-100 shadow-sm px-4 py-4 w-full text-center bg-white">
-      <WrapperHoverCard employeeId={person.employee}>
+      <WrapperHoverCard employeeId={employeeId}>
         <Typography variant="bodyMedium" className="font-semibold cursor-pointer">
           {person.employee_name}
         </Typography>
@@ -85,7 +86,7 @@ const AppreciationNoteCard: React.FC<{ item: AppreciationApiItem }> = ({ item })
     <div className="flex items-center gap-3 mb-2">
       <Avatar name={item.person} photo={resolveImage(item.person_image)} size={36} />
       <div className="min-w-0">
-        <WrapperHoverCard employeeId={item.person_id}>
+        <WrapperHoverCard employeeId={item.employee_id ?? undefined}>
           <Typography variant="bodyMedium" className="font-semibold truncate cursor-pointer">
             {item.person}
           </Typography>
@@ -253,6 +254,7 @@ const AppreciationsLeaderboard: React.FC = () => {
                           height={col.height}
                           size={col.size}
                           score={scoreOf(col.person!)}
+                          employeeId={col.person!.employee}
                         />
                       ))}
                     </div>

@@ -29,6 +29,7 @@ import CircularLoader from "../../shared/atoms/CircularLoader";
 import { useRequestLeaveModal } from "../../Leaves/RequestLeaveModalContext";
 import { LeaveDetailsCard } from "./LeaveDetailsCard";
 import AttendanceRequestFormV2 from "../AttendanceRequest/AttendanceRequestFormV2";
+import ApprovalFlow from "./ApprovalFlow";
 import Badge from "../../shared/Badge";
 import { getBadgePropsByStatus } from "../../../utils/helperUtils";
 import { useTargetUser } from "../../../context/ViewedUserContext";
@@ -218,10 +219,10 @@ const EmployeeAttendanceDetails = ({
         leave_application: data.leave_application_name,
         ...(replaceBoth
           ? {
-              first_half_leave_type: formData.firstHalfType,
-              second_half_leave_type: formData.secondHalfType,
-              replaceBoth: true,
-            }
+            first_half_leave_type: formData.firstHalfType,
+            second_half_leave_type: formData.secondHalfType,
+            replaceBoth: true,
+          }
           : { new_leave_type: formData.newLeaveType }),
         reason: formData.custom_reason,
         description: formData.description,
@@ -414,6 +415,9 @@ const EmployeeAttendanceDetails = ({
           ? renderLeaveDetailsActions()
           : null}
         {/* <div className="border-t-1 border-gray-100 mt-6"></div> */}
+        {leaveDetails.name && (
+          <ApprovalFlow doctype="Leave Application" docname={leaveDetails.name} />
+        )}
       </div>
     );
   };
@@ -696,18 +700,20 @@ const AttendanceCard = ({ record }: { record: EmployeeCheckInLog }) => {
 
 export const AttendanceRequestInfo = ({
   data,
-  propStatus
+  propStatus,
+  doctype = "Attendance Request",
 }: {
   data: AttendanceRequest;
   propStatus?: string;
+  doctype?: string;
 }) => {
 
-  
+
 
   const status = getBadgePropsByStatus(data.custom_status);
 
   return (
-    <div className="mt-2 p-2 pt-4 border-t border-gray-100">
+    <div className="mt-2 p-2 pt-4 pb-20 border-t border-gray-100">
       {/* Header */}
       <div className="flex items-start justify-between mb-4">
         <div className="flex gap-2">
@@ -904,6 +910,10 @@ export const AttendanceRequestInfo = ({
             {data.explanation.trim()}
           </Typography>
         </div>
+      )}
+
+      {data.name && (
+        <ApprovalFlow doctype={doctype} docname={data.name} />
       )}
     </div>
   );

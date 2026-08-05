@@ -1,19 +1,6 @@
 import type React from "react";
 import { useState, useEffect, useMemo, useCallback } from "react";
 import {
-  ChevronLeft,
-  ChevronRight,
-  Calendar,
-  Copy,
-  Plus,
-  Check,
-  Save,
-  Upload,
-  Info,
-  X,
-  FileText
-} from "lucide-react";
-import {
   startOfWeek,
   addDays,
   subDays,
@@ -32,9 +19,9 @@ import { isActionEnabled } from "../../../utils/uiPermission";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import { useFileUploader } from "../../../hooks/useFileUploader";
 
-
-import Button from "../../shared/atoms/Button";
 import { Typography } from "../../shared/atoms/Typography";
+import TableSkeleton from "../../shared/molecules/Skeletons/TableSkeleton";
+import { NoDataFound } from "../../shared/atoms/NoDataFound";
 
 import { addTimeEntrySchema } from "./addTimeEntrySchema";
 import { errorResponseFormater } from "../../../utils/errorResponseFormater";
@@ -62,20 +49,11 @@ interface RowItemType {
   hrs: number;
 }
 
-const AddTimeEntryButton = ({ onClick, variant }: { onClick: () => void; variant: "desktop" | "mobile" }) => {
-  if (variant === "desktop") {
-    return (
-      <Button variant="soft" onClick={onClick} size="md">
-        <Plus className="w-4 h-4" /> Add Time Entry
-      </Button>
-    )
-  }
-  return (
-    <button onClick={onClick} className="inline-flex items-center gap-2 text-primary hover:text-primary-600 font-semibold text-sm transition-colors focus:outline-none py-2 px-4 bg-primary/10 rounded-lg">
-      <Plus className="w-4 h-4" /> Add Time Entry
-    </button>
-  )
-}
+import { TimesheetHeader } from "./components/TimesheetHeader";
+import { TimesheetTopBar } from "./components/TimesheetTopBar";
+import { TimesheetMetrics } from "./components/TimesheetMetrics";
+import { TimesheetActionFooter } from "./components/TimesheetActionFooter";
+import { AddTimeEntryButton } from "./components/AddTimeEntryButton";
 
 const TimesheetCreate: React.FC = () => {
   const loadingOverlay = useLoadingOverlay();
@@ -89,7 +67,6 @@ const TimesheetCreate: React.FC = () => {
 
   const realToday = useMemo(() => new Date(), []);
   const realCurrentWeekStart = useMemo(() => startOfWeek(realToday, { weekStartsOn: 0 }), [realToday]);
-  const realCurrentWeekEnd = useMemo(() => addDays(realCurrentWeekStart, 6), [realCurrentWeekStart]);
 
   const disableNextWeek = currentWeekStart.getTime() >= realCurrentWeekStart.getTime();
 
@@ -381,16 +358,31 @@ const TimesheetCreate: React.FC = () => {
     if (!disableNextWeek) {
       setCurrentDate(prev => addDays(prev, 7));
     } else {
-      toast.error("You cannot select dates in the future.");
+      toast.error("You can not select uncoming Weeks.");
     }
   };
 
-  const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+
+
+  const handleWeekChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.value) {
-      const selected = new Date(e.target.value);
+      // value is "yyyy-Www" e.g. "2026-W32"
+      const [yearStr, weekStr] = e.target.value.split("-W");
+      const year = parseInt(yearStr, 10);
+      const week = parseInt(weekStr, 10);
+      // Calculate date from ISO week number
+      // Jan 4 is always in ISO week 1
+      const jan4 = new Date(year, 0, 4);
+      const jan4Day = jan4.getDay() || 7; // Convert Sunday(0) to 7 for ISO
+      const isoWeek1Start = new Date(jan4);
+      isoWeek1Start.setDate(jan4.getDate() - jan4Day + 1); // Monday of ISO week 1
+      const targetMonday = new Date(isoWeek1Start);
+      targetMonday.setDate(isoWeek1Start.getDate() + (week - 1) * 7);
+      // Convert ISO Monday-start to Sunday-start for our week
+      const selected = subDays(targetMonday, 1);
       const selectedStart = startOfWeek(selected, { weekStartsOn: 0 });
       if (selectedStart.getTime() > realCurrentWeekStart.getTime()) {
-        toast.error("You cannot select dates in the future.");
+        toast.error("You can not select uncoming Weeks.");
         return;
       }
       setCurrentDate(selected);
@@ -420,6 +412,10 @@ const TimesheetCreate: React.FC = () => {
         // Shift date to current week
         const logDayIndex = parseISO(logDate).getDay(); // Sun-0, Mon-1...
         const shiftedDateStr = format(addDays(currentWeekStart, logDayIndex), "yyyy-MM-dd");
+
+        if (weekOffDates.includes(shiftedDateStr)) {
+          return;
+        }
 
         (day.timesheet_records || []).forEach(record => {
           (record.time_logs || []).forEach((log, logIndex) => {
@@ -574,34 +570,47 @@ const TimesheetCreate: React.FC = () => {
     const newErrors: Record<string, string> = {};
     let hasValidationError = false;
 
-    for (const row of projectsData) {
+    projectsData.forEach((row, index) => {
+      const rowIndex = index + 1;
       if (!row.project || !row.task) {
         hasValidationError = true;
-        newErrors[`${row.id}_project_task`] = "Required";
+        newErrors[`${row.id}_project_task`] = `Row ${rowIndex}: Project and Task are required.`;
       }
+
+      let hasAtLeastOneCellInRow = false;
 
       for (const day of daysOfWeek) {
         const dateKey = format(day, "yyyy-MM-dd");
         const cell = row.days[dateKey];
 
         if (cell && cell.hours > 0) {
+          hasAtLeastOneCellInRow = true;
           if (!cell.description || !cell.description.trim()) {
             hasValidationError = true;
-            newErrors[`${row.id}_${dateKey}_comment`] = "Required";
+            newErrors[`${row.id}_${dateKey}_comment`] = `Row ${rowIndex} (${format(day, 'EEE')}): Comment is required.`;
           }
         }
       }
-    }
+
+      if (!hasAtLeastOneCellInRow) {
+        hasValidationError = true;
+        if (!newErrors[`${row.id}_project_task`]) {
+          newErrors[`${row.id}_empty_row`] = `Row ${rowIndex}: Must have at least one logged hour.`;
+        }
+      }
+    });
 
     setValidationErrors(newErrors);
 
     if (hasValidationError) {
-      toast.error("Please fill comments for all days where hours are logged, and ensure project/task are selected.");
+      Object.values(newErrors).forEach(err => toast.error(err));
       return;
     }
 
     const statusValue = isSubmit ? "Submit" : "Draft";
     const payload: Record<string, { status: string; rows?: RowItemType[] }> = {};
+
+    let hasAtLeastOneHourEntry = false;
 
     daysOfWeek.forEach(day => {
       const dateKey = format(day, "yyyy-MM-dd");
@@ -620,14 +629,28 @@ const TimesheetCreate: React.FC = () => {
       });
 
       if (rowsForDay.length > 0) {
+        hasAtLeastOneHourEntry = true;
         payload[dateKey] = {
           status: statusValue,
           rows: rowsForDay
         };
+      } else {
+        // Check if this day originally had data from the backend that was cleared
+        const hadBackendData = initialProjectsData.some(row => {
+          const initialCell = row.days[dateKey];
+          return initialCell && initialCell.hours > 0;
+        });
+
+        if (hadBackendData) {
+          // Day had backend data but user cleared hours/comment — send Delete
+          payload[dateKey] = {
+            status: "Delete"
+          };
+        }
       }
     });
 
-    if (Object.keys(payload).length === 0) {
+    if (!hasAtLeastOneHourEntry && !Object.values(payload).some(entry => entry.status === "Delete")) {
       toast.error("Please log at least one hour on any project day.");
       return;
     }
@@ -657,6 +680,7 @@ const TimesheetCreate: React.FC = () => {
               loadingOverlay.show("Uploading attached file...");
               await uploadFiles([{ file: attachedFile }], "Timesheet", timesheetIds);
               setIsFileModified(false);
+              setAttachedFile(null);
               toast.success("File uploaded and attached successfully.");
             } catch (err) {
               console.error("Failed to upload/attach file", err);
@@ -724,135 +748,32 @@ const TimesheetCreate: React.FC = () => {
   return (
     <div className="flex flex-col h-full bg-app project-theme-wrapper pb-24">
       {/* Header Info */}
-      <div className="flex-shrink-0 bg-white border-b px-6 py-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <Typography variant="h4" className="text-gray-900 flex items-center gap-3">
-            <span>Weekly Timesheet Entry</span>
-          </Typography>
-          <Typography variant="bodySmall" color="body2" className="mt-1">
-            Log your daily project and task timesheets.
-          </Typography>
-        </div>
-
-        <div className="flex items-center gap-3">
-          {isReadOnly && (
-            <span className="flex items-center gap-1 bg-blue-50 text-blue-700 px-3 py-1.5 rounded-xl text-xs font-semibold border border-blue-200">
-              <Check className="w-3.5 h-3.5" /> Checked / Locked
-            </span>
-          )}
-        </div>
-      </div>
-
+      {isDesktop &&
+        <TimesheetHeader isReadOnly={isReadOnly} />
+      }
       {/* Navigation and Summary stats */}
-      <div className="p-6 space-y-6 max-w-[1600px] mx-auto w-full pb-24">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-          {/* Week Date Picker */}
-          <div className="flex items-center gap-3 bg-white p-2 rounded-xl border border-gray-100 shadow-sm">
-            <button
-              onClick={handlePrevWeek}
-              className="p-2 hover:bg-gray-50 rounded-lg transition-colors border border-gray-100"
-            >
-              <ChevronLeft className="w-5 h-5 text-gray-600" />
-            </button>
-            <div className="flex items-center gap-2 px-3 font-semibold text-gray-900 text-sm md:text-base">
-              <span>{format(currentWeekStart, "dd MMM")}</span>
-              <span>-</span>
-              <span>{format(currentWeekEnd, "dd MMM yyyy")}</span>
-            </div>
-            <button
-              onClick={handleNextWeek}
-              className="p-2 hover:bg-gray-50 rounded-lg transition-colors border border-gray-100"
-            >
-              <ChevronRight className="w-5 h-5 text-gray-600" />
-            </button>
-
-            {/* Custom Calendar date pick */}
-            <div className="relative">
-              <label className="p-2 hover:bg-gray-50 rounded-lg transition-colors border border-gray-100 flex items-center justify-center cursor-pointer">
-                <Calendar className="w-4 h-4 text-gray-600" />
-                <input
-                  type="date"
-                  onChange={handleDateChange}
-                  value={format(currentDate, "yyyy-MM-dd")}
-                  max={format(realCurrentWeekEnd, "yyyy-MM-dd")}
-                  className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                />
-              </label>
-            </div>
-          </div>
-
-          {/* Center Actions */}
-          <div className="flex items-center gap-3">
-            {(!isReadOnly && isGridEditable) && (
-              <Button
-                variant="outline"
-                bgColor="primary"
-                size="md"
-                icon={<Copy className="w-4 h-4" />}
-                onClick={handleCopyLastWeek}
-              >
-                Copy last week hours
-              </Button>
-            )}
-          </div>
-
-          {/* Right Status / Submit toggle */}
-          <div className="flex items-center gap-4 bg-white px-4 py-2.5 rounded-xl border border-gray-100 shadow-sm text-sm">
-            <div className="flex items-center gap-2">
-              <span className="font-semibold text-gray-700">Timesheet Status:</span>
-              <span className={`px-2.5 py-1 rounded-xl text-xs font-semibold ${timesheetStatus === "Submitted" ? "bg-blue-50 text-blue-700 border border-blue-100" :
-                timesheetStatus === "Billed" ? "bg-green-50 text-green-700 border border-green-100" :
-                  "bg-yellow-50 text-yellow-700 border border-yellow-100"
-                }`}>
-                {timesheetStatus}
-              </span>
-            </div>
-          </div>
-        </div>
+      <div className="max-sm:p-0 p-6 max-sm:pb-2 space-y-6 max-w-[1600px] mx-auto w-full pb-24">
+        <TimesheetTopBar
+          currentWeekStart={currentWeekStart}
+          currentWeekEnd={currentWeekEnd}
+          handlePrevWeek={handlePrevWeek}
+          handleNextWeek={handleNextWeek}
+          handleWeekChange={handleWeekChange}
+          isReadOnly={isReadOnly}
+          isGridEditable={isGridEditable}
+          handleCopyLastWeek={handleCopyLastWeek}
+          timesheetStatus={timesheetStatus}
+        />
 
         {/* Progress Bar & Details */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
-          {/* Total logged hours progress bar */}
-          <div className="md:col-span-2 space-y-3">
-            <div className="flex justify-between items-center text-sm font-semibold">
-              <span className="text-gray-700 flex items-center gap-1.5">
-                Total Logs <Info className="w-4 h-4 text-gray-400" />
-              </span>
-              <span className="text-gray-900 text-base">
-                {formatCellOnBlur(totals.totalWeeklyHours) || "0:00"} / 40:00 hrs
-              </span>
-            </div>
-            <div className="w-full bg-gray-100 h-3.5 rounded-xl overflow-hidden">
-              <div
-                className="bg-primary h-full rounded-xl transition-all duration-300"
-                style={{ width: `${Math.min((totals.totalWeeklyHours / 40) * 100, 100)}%` }}
-              />
-            </div>
-            <div className="flex gap-4 text-xs font-medium text-gray-500 pt-1">
-              <span className="flex items-center gap-1.5">
-                <span className="w-2.5 h-2.5 rounded-full bg-primary" />
-                Billable: <strong className="text-gray-700">{formatCellOnBlur(totals.billableHours) || "0:00"}</strong>
-              </span>
-              <span className="flex items-center gap-1.5">
-                <span className="w-2.5 h-2.5 rounded-full bg-gray-300" />
-                Non-Billable: <strong className="text-gray-700">{formatCellOnBlur(totals.nonBillableHours) || "0:00"}</strong>
-              </span>
-            </div>
-          </div>
-
-          {/* Quick Metrics */}
-          <div className="flex flex-col justify-center border-t md:border-t-0 md:border-l border-gray-100 md:pl-6 space-y-2">
-            <div className="text-sm font-medium text-gray-500">
-              Employee: <strong className="text-gray-800">{employeeDetails?.employee_name || user?.full_name || "-"}</strong>
-            </div>
-            <div className="text-sm font-medium text-gray-500">
-              Department: <strong className="text-gray-800">{employeeDetails?.department_name || "-"}</strong>
-            </div>
-            <div className="text-sm font-medium text-gray-500">
-              Company: <strong className="text-gray-800">{company || "-"}</strong>
-            </div>
-          </div>
-        </div>
+        <TimesheetMetrics
+          totals={totals}
+          formatCellOnBlur={formatCellOnBlur}
+          employeeDetails={employeeDetails}
+          user={user}
+          company={company}
+          timesheetStatus={timesheetStatus}
+        />
 
         {!isDetailLoading && attachedFilesList.length > 0 && (
           <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex flex-col gap-3">
@@ -872,9 +793,8 @@ const TimesheetCreate: React.FC = () => {
         {/* Weekly Grid Sheet Table */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
           {isDetailLoading ? (
-            <div className="p-12 text-center text-gray-500 flex flex-col items-center justify-center gap-4">
-              <div className="animate-spin rounded-full h-10 w-10 border-2 border-primary border-t-transparent" />
-              <span>Fetching timesheet logs...</span>
+            <div className="p-6">
+              <TableSkeleton columns={8} rows={4} />
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -920,7 +840,7 @@ const TimesheetCreate: React.FC = () => {
                   {weeklyData?.days && (
                     isDesktop ? (
                       <tr className="bg-gray-50/40 text-gray-600 font-medium">
-                        <td className="px-6 py-3 font-semibold text-gray-700">
+                        <td className="px-6 py-3  font-semibold text-gray-700">
                           Attendance Hours
                         </td>
                         {daysOfWeek.map(day => {
@@ -944,8 +864,8 @@ const TimesheetCreate: React.FC = () => {
                         <td className="border-l border-gray-50"></td>
                       </tr>
                     ) : (
-                      <tr className="block border-b border-gray-100 px-2 py-3 sm:p-4">
-                        <td className="block w-full">
+                      <tr className="block  border-none  px-2 py-3 sm:p-4">
+                        <td className="block border-none w-full">
                           <div className="bg-gray-50 rounded-xl p-3 shadow-sm space-y-4">
                             <div className="flex justify-between items-center font-semibold text-gray-700">
                               <span className="text-sm">Attendance Hours</span>
@@ -973,31 +893,15 @@ const TimesheetCreate: React.FC = () => {
 
                   {/* Project Rows */}
                   {projectsData.length === 0 ? (
-                    isDesktop ? (
-                      <tr>
-                        <td colSpan={10} className="px-6 py-12 text-center text-gray-400">
-                          <div className="flex flex-col items-center justify-center gap-2">
-                            <FileText className="w-8 h-8 text-gray-300" />
-                            <span>No time logs added. Click "+ Add Time Entry" to add project rows.</span>
-                            {!isReadOnly && isGridEditable && (
-                              <AddTimeEntryButton onClick={handleAddBlankRow} variant="desktop" />
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    ) : (
-                      <tr className="block p-8 text-center text-gray-400">
-                        <td className="block w-full">
-                          <div className="flex flex-col items-center justify-center gap-2">
-                            <FileText className="w-8 h-8 text-gray-300" />
-                            <span className="text-sm">No time logs added. Click "+ Add Time Entry" to add project rows.</span>
-                            {!isReadOnly && isGridEditable && (
-                              <AddTimeEntryButton onClick={handleAddBlankRow} variant="mobile" />
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    )
+                    <tr className={isDesktop ? "" : "block"}>
+                      <td colSpan={10} className={isDesktop ? "px-6 py-12" : "block p-8 w-full"}>
+                        <NoDataFound
+                          title="No time logs added"
+                          subtitle={(!isReadOnly && isGridEditable) ? "+ Add Time Entry" : "No project rows found."}
+                          onClick={(!isReadOnly && isGridEditable) ? handleAddBlankRow : undefined}
+                        />
+                      </td>
+                    </tr>
                   ) : (
                     projectsData.map(row => {
                       const projName = row.projectName || row.project || "[No Project]";
@@ -1095,11 +999,6 @@ const TimesheetCreate: React.FC = () => {
         </div>
       </div>
 
-
-
-
-
-
       {/* Edit Cell Comment Modal */}
       {commentModalConfig?.isOpen &&
         <CommentModal
@@ -1120,76 +1019,20 @@ const TimesheetCreate: React.FC = () => {
       }
 
       {/* Action Footer Bar */}
-      <div className="fixed bottom-4 left-4 right-4 sm:bottom-6 sm:left-6 sm:right-6 z-30 pointer-events-none">
-        <div className="max-w-[1600px] mx-auto flex flex-col md:flex-row md:items-end justify-between gap-3 md:gap-4">
-          <div className="flex items-center gap-6 pointer-events-auto">
-
-
-            {lastSavedTime && (
-              <span className="text-gray-500 text-xs font-semibold bg-white/90 backdrop-blur px-4 py-2 rounded-xl shadow-lg border border-gray-100 hidden sm:inline-block">
-                Saved at {lastSavedTime}
-              </span>
-            )}
-          </div>
-
-          <div className="flex flex-wrap justify-center sm:justify-end items-center gap-2 sm:gap-4 pointer-events-auto bg-white/90 backdrop-blur-md p-3 sm:px-4 sm:py-3 rounded-2xl shadow-2xl border border-gray-200">
-
-            {isGridEditable ? (
-              <>
-                {/* File Attachment Upload */}
-                <div className="relative">
-                  <label className="flex items-center gap-2 cursor-pointer text-gray-600 hover:text-gray-800 text-sm font-semibold border border-gray-200 rounded-xl px-3 py-2 sm:px-4 sm:py-2.5 hover:bg-gray-50 transition-colors bg-white">
-                    <Upload className="w-4 h-4 flex-shrink-0" />
-                    <span className="truncate max-w-[80px] sm:max-w-[200px]">{attachedFile ? attachedFile.name : "Attach"}</span>
-                    <input
-                      type="file"
-                      onChange={handleFileChange}
-                      className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                    />
-                  </label>
-                </div>
-                {hasSavePermission && (
-                  <Button
-                    variant="outline"
-                    bgColor="primary"
-                    size="md"
-                    disabled={isSaving || !hasChanges}
-                    icon={<Save className="w-4 h-4" />}
-                    onClick={() => handleSaveOrSubmit(false)}
-                  >
-                    {isSaving ? "Saving..." : "Save Draft"}
-                  </Button>
-                )}
-                {hasSubmitPermission && (
-                  <Button
-                    variant="contain"
-                    bgColor="primary"
-                    size="md"
-                    disabled={isSaving}
-                    icon={<Check className="w-4 h-4" />}
-                    onClick={() => handleSaveOrSubmit(true)}
-                  >
-                    {isSaving ? "Submitting..." : "Submit"}
-                  </Button>
-                )}
-              </>
-            ) : (
-              timesheetStatus !== "Cancelled" && hasCancelPermission && (
-                <Button
-                  variant="outline"
-                  bgColor="error"
-                  size="md"
-                  disabled={isSaving}
-                  icon={<X className="w-4 h-4" />}
-                  onClick={handleCancelTimesheet}
-                >
-                  Cancel
-                </Button>
-              )
-            )}
-          </div>
-        </div>
-      </div>
+      <TimesheetActionFooter
+        lastSavedTime={lastSavedTime}
+        isGridEditable={isGridEditable}
+        hasSavePermission={hasSavePermission}
+        hasSubmitPermission={hasSubmitPermission}
+        hasCancelPermission={hasCancelPermission}
+        timesheetStatus={timesheetStatus}
+        isSaving={isSaving}
+        hasChanges={hasChanges}
+        attachedFile={attachedFile}
+        handleFileChange={handleFileChange}
+        handleSaveOrSubmit={handleSaveOrSubmit}
+        handleCancelTimesheet={handleCancelTimesheet}
+      />
     </div>
   );
 };

@@ -2,7 +2,6 @@
 import React, { useState } from "react";
 import { Download, Trophy, X } from "lucide-react";
 import { useAppreciationDetails } from "../../../services/recognitionService";
-import WrapperHoverCard from "../../shared/WrapperHoverCard";
 import type { RecognitionActionItem } from "./RecognitionRowActions";
 
 const API_HOST =
@@ -81,8 +80,6 @@ const AppreciationDetailDrawer: React.FC<Props> = ({
     item.direction === "given"
       ? detail?.receiver_name || item.person
       : detail?.recognized_by || item.person;
-  const personId =
-    item.direction === "given" ? detail?.receiver_id : detail?.recognized_by_id;
   const date = detail?.date || item.date;
   const points = detail?.points ?? item.points;
   const note = detail?.note || item.message;
@@ -134,11 +131,7 @@ const AppreciationDetailDrawer: React.FC<Props> = ({
 
               {personName && (
                 <Section label={personLabel}>
-                  <WrapperHoverCard employeeId={personId}>
-                    <p className="text-sm font-medium text-blue-600 cursor-pointer inline-block">
-                      {personName}
-                    </p>
-                  </WrapperHoverCard>
+                  <p className="text-sm font-medium text-blue-600">{personName}</p>
                 </Section>
               )}
 
