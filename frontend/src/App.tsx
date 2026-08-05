@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   Navigate,
   Route,
@@ -314,9 +314,6 @@ export default App;
 const SESSION_POLICY_SHOWN_KEY = "policy_page_shown";
 const SESSION_POLICY_REDIRECT_TO_KEY = "policy_redirect_to";
 const SESSION_POLICY_AUTO_OPENED_KEY = "policy_is_auto_opened";
-const SESSION_NON_MANDATORY_POLICY_REDIRECTED_KEY =
-  "non_mandatory_policy_redirected";
-
 
 const MandatoryPoliciesHandler = () => {
   const { data: currentEmployee, isFetching: isCurrentEmployeeFetching } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
@@ -350,23 +347,7 @@ const MandatoryPoliciesHandler = () => {
     }
   );
 
-  const {
-    data: NonMandatoryPoliciesCount,
-    isFetching: isNonMandatoryPoliciesCountFetching,
-  } = useFrappeDocumentCount(
-    {
-      doctype: "Policy Details",
-      filters: [
-        ["status", "=", "Pending"],
-        ["employee_id", "=", currentEmployee?.name || ""],
-        ["triggered_from_flow", "!=", 1],
-        ["due_date", ">=", new Date().toLocaleDateString('en-CA')],
-      ],
-    },
-    {
-      enabled: !!currentEmployee,
-    }
-  );
+
 
   useEffect(() => {
     if (
@@ -420,62 +401,6 @@ const MandatoryPoliciesHandler = () => {
     isViewingOtherUser,
   ]);
 
-  // One-time redirect per page reload for non-mandatory policies
-  const hasRedirectedForNonMandatory = useRef(false);
-
-  // If a different employee logs in without a full reload, ensure we don't
-  // suppress their redirect due to a previous user's in-memory ref state.
-  useEffect(() => {
-    hasRedirectedForNonMandatory.current = false;
-  }, [currentEmployee?.name]);
-
-  useEffect(() => {
-    if (
-      isCurrentEmployeeFetching ||
-      isMandatoryPoliciesCountFetching ||
-      isNonMandatoryPoliciesCountFetching ||
-      mandatoryPoliciesCount === undefined ||
-      NonMandatoryPoliciesCount === undefined ||
-      isViewingOtherUser
-    ) {
-      return;
-    }
-
-    // Skip if mandatory policies are present (mandatory flow takes priority)
-    if (mandatoryPoliciesCount > 0) {
-      return;
-    }
-
-    const sessionRedirectKey = currentEmployee?.name
-      ? `${SESSION_NON_MANDATORY_POLICY_REDIRECTED_KEY}_${currentEmployee.name}`
-      : SESSION_NON_MANDATORY_POLICY_REDIRECTED_KEY;
-
-    // Skip if already redirected once in this session (or since last reload)
-    if (
-      hasRedirectedForNonMandatory.current ||
-      sessionStorage.getItem(sessionRedirectKey) === "true"
-    ) {
-      return;
-    }
-
-    const onPolicyPage = window.location.pathname.includes("/webapp/policies-enforced");
-
-    if (NonMandatoryPoliciesCount > 0 && !onPolicyPage) {
-      hasRedirectedForNonMandatory.current = true;
-      sessionStorage.setItem(sessionRedirectKey, "true");
-      navigate("/webapp/policies-enforced");
-    }
-  }, [
-    NonMandatoryPoliciesCount,
-    isNonMandatoryPoliciesCountFetching,
-    mandatoryPoliciesCount,
-    isCurrentEmployeeFetching,
-    isMandatoryPoliciesCountFetching,
-    navigate,
-    location.pathname,
-    isViewingOtherUser,
-    currentEmployee?.name,
-  ]);
 
   return null;
 };
