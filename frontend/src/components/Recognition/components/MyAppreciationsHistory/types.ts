@@ -6,7 +6,8 @@ export type AppreciationHistoryItem = {
   value: string;
   person: string;
   personImage?: string;
-  employeeId?: string;
+  /** Employee id of `person`, for the hover card. */
+  personId?: string;
   date: string;
   imageUrl?: string;
   tab: AppreciationHistoryTab;

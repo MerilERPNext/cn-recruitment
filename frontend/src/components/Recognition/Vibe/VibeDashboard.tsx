@@ -16,7 +16,7 @@ const VibeDashboard: React.FC = () => {
       <div className="max-w-7xl mx-auto space-y-6">
         <div>
           <Typography variant="h2" className="text-xl md:text-2xl font-bold mb-1">
-            Active Program
+            All Programs
           </Typography>
           <Typography variant="bodyMedium" color="body2">
             Recognise your colleagues' achievements and track your team's success.
