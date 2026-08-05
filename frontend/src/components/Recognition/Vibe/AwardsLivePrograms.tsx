@@ -5,8 +5,6 @@ import { Typography } from "../../shared/atoms/Typography";
 import { Card } from "../../shared/atoms/Card";
 import { Check, ChevronDown, Search, Trophy } from "lucide-react";
 import Avatar from "./Avatar";
-import WrapperHoverCard from "../../shared/WrapperHoverCard";
-import ProgramWinnersModal from "./ProgramWinnersModal";
 import { useCurrentEmployeeDetails } from "../../../hooks/useEmployee";
 import { useTargetUser } from "../../../context/ViewedUserContext";
 import {
@@ -51,8 +49,6 @@ interface ProgramVM {
   award: string;
   title: string;
   totalPoints: number;
-  /** Program end date; drives the "Closed on <date>" chip when present. */
-  closedOn: string | null;
   lastDate: string | null;
   /** Lower-cased names of every employee in this award, for client-side search. */
   searchNames: string;
@@ -80,13 +76,11 @@ const toProgramVM = (a: AwardPointsAward): ProgramVM => {
     award: a.award,
     title: a.award_name || a.award,
     totalPoints: a.total_points || 0,
-    closedOn: a.end_date || null,
     lastDate,
     searchNames: employees
       .map((e) => (e.full_name || e.employee_name || "").toLowerCase())
       .join(" "),
-    // Every winner is kept so "View All" can reveal the ones the card truncates.
-    winners: employees.map((e) => ({
+    winners: visible.map((e) => ({
       employee: e.employee,
       name: e.full_name || e.employee_name || e.employee,
       designation: e.designation || "",
@@ -116,13 +110,7 @@ const TrophyArt: React.FC = () => (
 const ProgramCard: React.FC<{ program: ProgramVM; showWinners: boolean }> = ({
   program,
   showWinners,
-}) => {
-  // The card shows the first few winners; "View All" opens the full list.
-  const [winnersOpen, setWinnersOpen] = useState(false);
-  const visibleWinners = program.winners.slice(0, MAX_VISIBLE_WINNERS);
-
-  return (
-  <>
+}) => (
   <Card radius="xl" className="relative border border-gray-100 shadow-sm overflow-hidden">
     {showWinners && <WinnersRibbon />}
     <div className="grid grid-cols-1 md:grid-cols-[180px_1fr] gap-5 p-5">
@@ -132,34 +120,30 @@ const ProgramCard: React.FC<{ program: ProgramVM; showWinners: boolean }> = ({
           <Typography variant="h4" className="font-bold">
             {program.title}
           </Typography>
-          <button
-            type="button"
-            onClick={() => setWinnersOpen(true)}
-            className="shrink-0 text-sm font-medium text-primary hover:underline"
-          >
-            View All
-          </button>
+          <button className="text-sm font-medium text-primary shrink-0">View All</button>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <span className="inline-block rounded-xl bg-gray-100 px-3 py-1 text-xs font-medium text-gray-500">
-            {program.closedOn
-              ? `Closed on ${formatDate(program.closedOn)}`
-              : `Last nomination ${formatDate(program.lastDate)}`}
+            Last nomination {formatDate(program.lastDate)}
+          </span>
+          <span className="inline-block rounded-xl bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-600">
+            {program.totalPoints} pts
           </span>
         </div>
 
         {showWinners && program.winners.length > 0 && (
           <div className="mt-5 flex flex-wrap items-start gap-4 sm:gap-5">
-            {visibleWinners.map((w) => (
+            {program.winners.map((w) => (
               <div key={w.employee} className="flex flex-col items-center text-center w-20 sm:w-24">
                 <Avatar name={w.name} initials={w.initials} photo={w.photo} size={56} />
-                <WrapperHoverCard employeeId={w.employee}>
-                  <Typography variant="bodySmall" className="mt-2 font-bold leading-tight cursor-pointer">
-                    {w.name}
-                  </Typography>
-                </WrapperHoverCard>
+                <Typography variant="bodySmall" className="mt-2 font-semibold leading-tight">
+                  {w.name}
+                </Typography>
                 <Typography variant="caption" color="body2" className="leading-tight">
                   {w.designation}
+                </Typography>
+                <Typography variant="caption" className="mt-0.5 font-semibold text-amber-600">
+                  {w.points} pts
                 </Typography>
               </div>
             ))}
@@ -178,16 +162,7 @@ const ProgramCard: React.FC<{ program: ProgramVM; showWinners: boolean }> = ({
       </div>
     </div>
   </Card>
-
-  <ProgramWinnersModal
-    open={winnersOpen}
-    program={program.award}
-    title={program.title}
-    onClose={() => setWinnersOpen(false)}
-  />
-  </>
-  );
-};
+);
 
 // Inline labelled single-select dropdown (Filters / Sort) used in the toolbar.
 // Values map directly to the get_award_employee_points API params.
@@ -283,9 +258,7 @@ const MyAwardCard: React.FC<{ award: AwardProgramItem }> = ({ award }) => (
     {award.person && (
       <div className="mt-1 text-center text-xs text-gray-400">
         {award.direction === "received" ? "From" : "To"}{" "}
-        <WrapperHoverCard employeeId={award.person_id}>
-          <span className="font-medium text-gray-600 cursor-pointer">{award.person}</span>
-        </WrapperHoverCard>
+        <span className="font-medium text-gray-600">{award.person}</span>
       </div>
     )}
     {award.message && (
@@ -452,7 +425,7 @@ const AwardsLivePrograms: React.FC = () => {
                 My Awards
               </Typography>
               <button
-                onClick={() => navigate("/webapp/recognition/vibe/history")}
+                onClick={() => navigate("/webapp/recognition/vibe/awards-history")}
                 className="text-sm font-medium text-primary"
               >
                 View All
@@ -501,7 +474,7 @@ const AwardsLivePrograms: React.FC = () => {
                 ))}
                 {hiddenCount > 0 && (
                   <button
-                    onClick={() => navigate("/webapp/recognition/vibe/history")}
+                    onClick={() => navigate("/webapp/recognition/vibe/awards-history")}
                     className="w-full rounded-lg border border-gray-200 py-2 text-sm font-medium text-primary hover:bg-gray-50"
                   >
                     View all {activeAwards.length} {awardTab.toLowerCase()} awards

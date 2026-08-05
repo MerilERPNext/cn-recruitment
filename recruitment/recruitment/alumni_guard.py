@@ -74,21 +74,9 @@ def is_alumni_user(user: str | None = None) -> bool:
         if user in cache:
             return cache[user]
 
-        # Authoritative gate is the User flag; also honour the Employee side
-        # (status == 'Left' OR the editable Employee alumni flag) in case the two
-        # ever drift before sync_alumni_flag mirrors them.
-        result = bool(frappe.db.get_value("User", user, "custom_is_alumni_employee"))
-        if not result:
-            emp_fields = ["status"]
-            if frappe.db.has_column("Employee", "custom_is_alumni_employee"):
-                emp_fields.append("custom_is_alumni_employee")
-            emp = frappe.db.get_value(
-                "Employee", {"user_id": user}, emp_fields, as_dict=True
-            )
-            if emp:
-                result = emp.get("status") == "Left" or bool(
-                    emp.get("custom_is_alumni_employee")
-                )
+        result = bool(frappe.db.get_value("User", user, "custom_is_alumni_employee")) or (
+            frappe.db.get_value("Employee", {"user_id": user}, "status") == "Left"
+        )
         cache[user] = result
         return result
     except Exception:
@@ -126,21 +114,6 @@ def _is_allowed_for_alumni(kind: str, command: str) -> bool:
     return command in _ALUMNI_GLOBAL_ALLOWLIST
 
 
-# Login/auth entry points that establish an ESS session. When an alumnus hits any
-# of these, we block AND destroy the freshly-created session so no usable ESS
-# session can linger (defeats cookie/session reuse across a login attempt).
-_LOGIN_COMMANDS = {"login"}
-
-
-def _is_login_attempt(kind: str, command: str, path: str) -> bool:
-    if kind == "method" and (command in _LOGIN_COMMANDS or command.endswith(".login")):
-        return True
-    # Website login form POST (served outside /api/method/).
-    if (path or "").rstrip("/") == "/login":
-        return True
-    return False
-
-
 # ── The hook ──────────────────────────────────────────────────────────────────
 def enforce_alumni_isolation() -> None:
     """auth_hook: confine alumni sessions to the Alumni Portal namespace."""
@@ -155,11 +128,9 @@ def enforce_alumni_isolation() -> None:
     if _is_allowed_for_alumni(kind, command):
         return
 
-    # Blocked. If the alumnus just authenticated through ANY ESS login entry point,
-    # kill the session that init_request() created so no usable ESS session lingers.
-    req = getattr(frappe.local, "request", None)
-    path = (getattr(req, "path", "") if req else "") or ""
-    is_login = _is_login_attempt(kind, command, path)
+    # Blocked. If the alumnus just authenticated through the ESS login, kill the
+    # session that init_request() created so no usable ESS session lingers.
+    is_login = kind == "method" and command == "login"
     if is_login:
         _kill_current_session()
 

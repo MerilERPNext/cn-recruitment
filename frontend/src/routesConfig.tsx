@@ -600,6 +600,10 @@ const RecognitionAdminDashboard = lazyWithRetry(
   () => import("./components/Recognition/Vibe/RecognitionAdminDashboard"),
   "RecognitionAdminDashboard",
 );
+const MyAppreciationsHistory = lazyWithRetry(
+  () => import("./components/Recognition/MyAppreciationsHistory"),
+  "MyAppreciationsHistory",
+);
 const VibeApp = lazyWithRetry(
   () => import("./components/Recognition/Vibe/VibeApp"),
   "VibeApp",
@@ -620,9 +624,9 @@ const AwardsLivePrograms = lazyWithRetry(
   () => import("./components/Recognition/Vibe/AwardsLivePrograms"),
   "AwardsLivePrograms",
 );
-const RecognitionHistory = lazyWithRetry(
-  () => import("./components/Recognition/RecognitionHistory"),
-  "RecognitionHistory",
+const AwardsHistory = lazyWithRetry(
+  () => import("./components/Recognition/Vibe/AwardsHistory"),
+  "AwardsHistory",
 );
 const AwardsNominationWorkflows = lazyWithRetry(
   () => import("./components/Recognition/Vibe/AwardsNominationWorkflows"),
@@ -1751,20 +1755,8 @@ export const routesConfig: AppRoute[] = [
         permissionKey: "Dashboard",
       },
       {
-        // Single History page: All / Award / Appreciation. Access is granted if
-        // ANY of the two source history pages is enabled.
-        path: "history",
-        element: <RecognitionHistory />,
-        permissionKey: [
-          "Appreciations History",
-          "Individual Awards History",
-          "Team Awards history",
-        ],
-      },
-      {
-        // Legacy path - kept so existing links and bookmarks still resolve.
         path: "my-appreciations-history",
-        element: <Navigate to="../history" replace />,
+        element: <MyAppreciationsHistory />,
         permissionKey: "My Appreciations History",
       },
       {
@@ -1792,9 +1784,8 @@ export const routesConfig: AppRoute[] = [
         ],
       },
       {
-        // Legacy path - kept so existing links and bookmarks still resolve.
         path: "awards-history",
-        element: <Navigate to="../history" replace />,
+        element: <AwardsHistory />,
         permissionKey: "Awards History",
       },
       {

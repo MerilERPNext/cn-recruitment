@@ -111,9 +111,7 @@ const RecognitionCcFields: React.FC<RecognitionCcFieldsProps> = ({
     <div className="space-y-3">
       {showEmployees && (
         <div>
-          <label className="text-xs text-gray-500 mb-1 block">
-            Recognition notification CC users
-          </label>
+          <label className="text-xs text-gray-500 mb-1 block">CC Employees</label>
           <SearchableSelect
             options={employeeOptions}
             value=""

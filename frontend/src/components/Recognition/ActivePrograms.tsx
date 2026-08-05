@@ -11,17 +11,20 @@ import {
   useRecognitionFlags,
 } from "../../services/recognitionService";
 import formatToIndianDate from "../../utils/formatToIndianDate";
-import {
-  daysLeftUntil,
-  getProgramPill,
-  isProgramActive,
-  sortPrograms,
-} from "./programStatus";
 
 interface ActiveProgramsProps {
   programs?: RecognitionProgram[];
   isLoading?: boolean;
 }
+
+// Days between today and the program end date (clamped at 0).
+const daysLeftUntil = (end?: string): number => {
+  if (!end) return 0;
+  const parsed = new Date(end).getTime();
+  if (Number.isNaN(parsed)) return 0;
+  const diff = Math.ceil((parsed - Date.now()) / 86400000);
+  return Math.max(0, diff);
+};
 
 export const ActivePrograms: React.FC<ActiveProgramsProps> = ({
   programs,
@@ -46,31 +49,24 @@ export const ActivePrograms: React.FC<ActiveProgramsProps> = ({
   // Map the API response → the RecognitionProgram shape this card renders.
   const apiPrograms: RecognitionProgram[] = (
     eligibleData?.eligible_programs ?? []
-  ).map((p) => {
-    const program: RecognitionProgram = {
-      id: p.program_name,
-      name: p.program_title,
-      code: p.program_name,
-      description: p.program_description || "",
-      start_date: p.start_date,
-      end_date: p.end_date,
-      participant_count: 0,
-      status: "Active",
-      days_left: daysLeftUntil(p.end_date),
-      category: p.reward_type,
-      nominate_upto: p.nominate_upto,
-    };
-    // The API only returns eligible programs, so derive the real state locally.
-    return {
-      ...program,
-      status: isProgramActive(program) ? "Active" : "Inactive",
-    };
-  });
+  ).map((p) => ({
+    id: p.program_name,
+    name: p.program_title,
+    code: p.program_name,
+    description: p.program_description || "",
+    start_date: p.start_date,
+    end_date: p.end_date,
+    participant_count: 0,
+    status: "Active",
+    days_left: daysLeftUntil(p.end_date),
+    category: p.reward_type,
+    nominate_upto: p.nominate_upto,
+  }));
 
   // Prefer API data; fall back to the prop (e.g. while the query is loading).
-  const list: RecognitionProgram[] = sortPrograms(
-    eligibleData ? apiPrograms : programs ?? []
-  );
+  const list: RecognitionProgram[] = eligibleData
+    ? apiPrograms
+    : programs ?? [];
   const loading = isLoading || eligibleLoading;
 
   if (loading) {
@@ -88,6 +84,12 @@ export const ActivePrograms: React.FC<ActiveProgramsProps> = ({
     );
   }
 
+  const formatDaysLeft = (days: number) => {
+    if (days === 0) return "Ends today";
+    if (days === 1) return "1 day left";
+    return `${days} days left`;
+  };
+
   const handleCardClick = (programId: string) => {
     setExpandedProgramId((prev) => (prev === programId ? null : programId));
   };
@@ -95,15 +97,13 @@ export const ActivePrograms: React.FC<ActiveProgramsProps> = ({
   return (
     <Card radius="xl" className="border p-4 md:p-6">
       <Typography variant="subheading" className="font-semibold mb-4">
-        All Programs
+        Active Programs
       </Typography>
 
       <div className="space-y-3">
         {list.length > 0 ? (
           list.map((program) => {
             const isExpanded = expandedProgramId === program.id;
-            const pill = getProgramPill(program);
-            const active = isProgramActive(program);
             return (
               <div key={program.id}>
                 <div
@@ -166,12 +166,10 @@ export const ActivePrograms: React.FC<ActiveProgramsProps> = ({
 
                     {/* Footer info */}
                     <div className="flex items-center gap-4 text-sm text-gray-600">
-                      <span
-                        className={`inline-flex items-center gap-1 px-2 py-[3px] rounded-md text-xs font-medium ${pill.bgClass} ${pill.textClass}`}
-                      >
-                        {pill.showTimer && <Clock className="size-3.5" />}
-                        {pill.label}
-                      </span>
+                      <div className="flex items-center gap-1">
+                        <Clock className="size-4" />
+                        <span>{formatDaysLeft(program.days_left || 0)}</span>
+                      </div>
                       <div className="flex items-center gap-1">
                         <Users className="size-4" />
                         <span>{program.participant_count} joined</span>
@@ -187,16 +185,16 @@ export const ActivePrograms: React.FC<ActiveProgramsProps> = ({
 
                   {/* CTA */}
                   <div className="shrink-0">
-                    {isExpanded ? (
-                      <ArrowRight className="size-5 text-gray-400 rotate-90 transition-all" />
-                    ) : program.current_phase?.toLowerCase() === "voting open" ? (
+                    {!isExpanded && program.current_phase?.toLowerCase() === "nomination open" ? (
+                      <span className="text-xs font-medium text-emerald-700">Nominate →</span>
+                    ) : !isExpanded && program.current_phase?.toLowerCase() === "voting open" ? (
                       <span className="text-xs font-medium text-blue-700">Vote Now →</span>
-                    ) : active ? (
-                      <span className="text-xs font-medium text-emerald-700 group-hover:underline">
-                        Nominate →
-                      </span>
                     ) : (
-                      <span className="text-xs font-medium text-gray-400">View →</span>
+                      <ArrowRight
+                        className={`size-5 text-gray-400 group-hover:text-primary transition-all ${
+                          isExpanded ? "rotate-90" : ""
+                        }`}
+                      />
                     )}
                   </div>
                 </div>
@@ -213,7 +211,7 @@ export const ActivePrograms: React.FC<ActiveProgramsProps> = ({
           })
         ) : (
           <div className="text-center py-8 text-gray-500">
-            <Typography variant="bodyMedium">No programs</Typography>
+            <Typography variant="bodyMedium">No active programs</Typography>
           </div>
         )}
       </div>

@@ -2,7 +2,6 @@
 import React, { useState } from "react";
 import { Download, Trophy, X } from "lucide-react";
 import { useAppreciationDetails } from "../../../services/recognitionService";
-import WrapperHoverCard from "../../shared/WrapperHoverCard";
 import type { RecognitionActionItem } from "./RecognitionRowActions";
 
 const API_HOST =
@@ -81,8 +80,6 @@ const AppreciationDetailDrawer: React.FC<Props> = ({
     item.direction === "given"
       ? detail?.receiver_name || item.person
       : detail?.recognized_by || item.person;
-  const personId =
-    item.direction === "given" ? detail?.receiver_id : detail?.recognized_by_id;
   const date = detail?.date || item.date;
   const points = detail?.points ?? item.points;
   const note = detail?.note || item.message;
@@ -94,15 +91,7 @@ const AppreciationDetailDrawer: React.FC<Props> = ({
     : item.direction === "given"
       ? "Given To"
       : "Recognized by";
-  // On the "Given" side the viewer is the recogniser, so the date and points
-  // read from their perspective ("awarded") rather than the recipient's.
-  const dateLabel = isNomination
-    ? "Nomination Date"
-    : item.direction === "given"
-      ? "Appreciation Date"
-      : "Received Date";
-  const pointsLabel =
-    item.direction === "given" ? "Points Awarded" : "Points Received";
+  const dateLabel = isNomination ? "Nomination Date" : "Received Date";
   const noteLabel = isNomination ? "Nomination Note" : "Nomination Note";
 
   return (
@@ -134,11 +123,7 @@ const AppreciationDetailDrawer: React.FC<Props> = ({
 
               {personName && (
                 <Section label={personLabel}>
-                  <WrapperHoverCard employeeId={personId}>
-                    <p className="text-sm font-medium text-blue-600 cursor-pointer inline-block">
-                      {personName}
-                    </p>
-                  </WrapperHoverCard>
+                  <p className="text-sm font-medium text-blue-600">{personName}</p>
                 </Section>
               )}
 
@@ -155,7 +140,7 @@ const AppreciationDetailDrawer: React.FC<Props> = ({
               )}
 
               {typeof points === "number" && points > 0 && (
-                <Section label={pointsLabel}>
+                <Section label="Points Received">
                   <p className="text-sm text-gray-700">{points}</p>
                 </Section>
               )}
