@@ -48,7 +48,7 @@ const HistoryTable = ({ items, relationLabel }: HistoryTableProps) => (
 
             <div className="flex min-w-0 items-center justify-center gap-2">
               <PersonAvatar name={item.person} imageUrl={item.personImage} />
-              <WrapperHoverCard employeeId={item.employeeId}>
+              <WrapperHoverCard employeeId={item.personId}>
                 <Typography
                   variant="bodySmall"
                   className="truncate font-bold text-blue-600 cursor-pointer"

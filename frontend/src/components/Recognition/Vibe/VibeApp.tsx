@@ -13,13 +13,12 @@ export const VIBE_BASE = "/webapp/recognition/vibe";
 
 export const VIBE_TABS: Tab[] = [
   { key: "dashboard", label: "Dashboard" },
-  { key: "my-appreciations-history", label: "My Appreciations History" },
+  { key: "history", label: "History" },
   { key: "feed", label: "Feed" },
-  { key: "appreciations-leaderboard", label: "Appreciations-Leaderboard" },
-  { key: "awards-live", label: "Awards-Live Programs & Winners" },
-  { key: "awards-history", label: "Awards-History" },
+  { key: "appreciations-leaderboard", label: "Leaderboard" },
+  { key: "awards-live", label: "All Awards" },
   { key: "nomination-workflows", label: "Awards-Nomination Workflows" },
-  { key: "earned-points", label: "Earned Points Summary" },
+  { key: "earned-points", label: "Points Summary" },
   { key: "admin-dashboard", label: "Admin Dashboard" },
 ];
 
