@@ -113,6 +113,9 @@ export const recognitionPageVisible = (
   flags: RecognitionFlags,
 ): boolean => {
   switch (key) {
+    // Merged Award + Appreciation history: visible if either side is on.
+    case "history":
+      return flags.enableAppreciations || flags.enableAwards;
     case "my-appreciations-history":
     case "appreciations-leaderboard":
       return flags.enableAppreciations;
@@ -1058,6 +1061,45 @@ export type AwardProgramsResponse = Omit<AppreciationProgramsResponse, "data"> &
   data: AwardProgramItem[];
 };
 
+// ─── Merged recognition history (get_recognition_history) ────────────────────
+// One endpoint behind the single History page. `history_type` selects the view
+// and every row carries its own type, which drives the badge.
+export type RecognitionHistoryType = "all" | "award" | "appreciation";
+
+export type RecognitionHistoryItem = AwardProgramItem & {
+  history_type: "Award" | "Appreciation";
+};
+
+export type RecognitionHistoryParams = AppreciationHistoryParams & {
+  history_type?: RecognitionHistoryType;
+};
+
+export type RecognitionHistoryResponse = {
+  success: boolean;
+  employee: string;
+  history_type: RecognitionHistoryType;
+  data: RecognitionHistoryItem[];
+  total_count: number;
+  filter_options: {
+    programs: { value: string; label: string }[];
+    employees: { value: string; label: string }[];
+  };
+};
+
+export const useRecognitionHistory = (params: RecognitionHistoryParams) => {
+  return useQuery<RecognitionHistoryResponse>({
+    queryKey: ["recognition", "history", params],
+    queryFn: async () => {
+      const response = await FrappeAPI.callMethod(
+        "chatnext_work_connect.chatnext_work_connect.api.recognition_points.get_recognition_history",
+        params,
+      );
+      return response as RecognitionHistoryResponse;
+    },
+    enabled: !!params.employee,
+  });
+};
+
 export const useAwardPrograms = (params: AwardProgramsParams) => {
   return useQuery<AwardProgramsResponse>({
     queryKey: ["recognition", "award-programs", params],
@@ -1069,6 +1111,44 @@ export const useAwardPrograms = (params: AwardProgramsParams) => {
       return response as AwardProgramsResponse;
     },
     enabled: !!params.employee,
+  });
+};
+
+// ─── All winners of one programme (get_program_winners) ──────────────────────
+// Backs the "View All" modal on the All Awards cards. Unlike get_top_winners
+// this covers live programmes too and is not capped by default.
+export type ProgramWinnerRow = {
+  rank: number;
+  employee: string;
+  employee_name: string | null;
+  department?: string | null;
+  points: number;
+  recognitions: number;
+  award_date?: string | null;
+  program?: string | null;
+  image?: string | null;
+};
+
+export type ProgramWinnersResponse = {
+  success: boolean;
+  program: string;
+  program_name: string;
+  end_date?: string | null;
+  winners: ProgramWinnerRow[];
+  total_count: number;
+};
+
+export const useProgramWinners = (program?: string, enabled = true) => {
+  return useQuery<ProgramWinnersResponse>({
+    queryKey: ["recognition", "program-winners", program],
+    queryFn: async () => {
+      const response = await FrappeAPI.callMethod(
+        "chatnext_work_connect.chatnext_work_connect.api.recognition_points.get_program_winners",
+        { program, status: "Approved" },
+      );
+      return response as ProgramWinnersResponse;
+    },
+    enabled: !!program && enabled,
   });
 };
 
