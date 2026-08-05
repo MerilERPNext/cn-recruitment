@@ -16,6 +16,7 @@
   "enable_pre_onboarding_form",
   "enable_offer_letter_button",
   "enable_preview_offer_letter_button",
+  "enable_send_job_offer_button",
   "job_offer_rules_section",
   "allow_multiple_job_offers",
   "section_break_xbvj",
@@ -146,6 +147,13 @@
    "fieldname": "enable_preview_offer_letter_button",
    "fieldtype": "Check",
    "label": "Enable Preview Offer Letter Button"
+  },
+  {
+   "default": "1",
+   "description": "Show the 'Send Job Offer' button on a submitted Job Offer. Separate from 'Allow Bulk Job Offer Email', so switching off mass sending does not also stop a recruiter emailing one offer from its own form.",
+   "fieldname": "enable_send_job_offer_button",
+   "fieldtype": "Check",
+   "label": "Enable Send Job Offer Button"
   },
   {
    "fieldname": "job_offer_rules_section",

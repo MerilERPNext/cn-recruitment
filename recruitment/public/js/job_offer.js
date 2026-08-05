@@ -528,7 +528,11 @@ function recruitment_render_offer_letter_tab(frm) {
 	if (isShowing) {
 		paint(active);
 	} else {
-		tab.tab_link.find("a").one("click", () => paint(active));
+		// Namespaced, and cleared first: this function re-runs on every form
+		// refresh, so binding without removing would leave one handler per refresh
+		// — and the first click would then fire them all at once, each issuing its
+		// own server call before any of them had populated the cache.
+		tab.tab_link.find("a").off("click.ol").on("click.ol", () => paint(active));
 	}
 }
 
@@ -550,3 +554,88 @@ function recruitment_offer_letter_styles() {
 	`;
 	document.head.appendChild(style);
 }
+
+// --- Job Requisition behind the offer + sending from the form ----------------
+(function () {
+    // Prefill the requisition and its agreed pay as soon as a candidate is picked,
+    // so HR sees the numbers while building the offer rather than after saving.
+    // The same resolution runs server-side on validate, so a scripted or imported
+    // offer is stamped too — this is convenience, not the source of truth.
+    function fillFromRequisition(frm) {
+        if (!frm.doc.job_applicant) return;
+        frappe.call({
+            method: "recruitment.customizations.job_offer.get_requisition_defaults",
+            args: { job_applicant: frm.doc.job_applicant },
+            callback: (r) => {
+                const d = (r && r.message) || {};
+                if (!d.job_requisition) return;
+                frm.set_value("custom_job_requisition", d.job_requisition);
+                // Never clobber an amount already on the offer — HR may have
+                // negotiated away from the requisition's band.
+                Object.entries(d.pay || {}).forEach(([field, value]) => {
+                    if (frm.fields_dict[field] && !frm.doc[field]) frm.set_value(field, value);
+                });
+            },
+        });
+    }
+
+    frappe.ui.form.on("Job Offer", {
+        job_applicant(frm) {
+            fillFromRequisition(frm);
+        },
+
+        refresh(frm) {
+            // "Send Job Offer" existed only as a list-view bulk action, so sending a
+            // single offer meant going back to the list. Same action, same server
+            // call (send_bulk_job_offer with one name) so the template, PDF
+            // attachment and status handling cannot drift between the two paths.
+            //
+            // Gated on its own toggle, following enable_offer_letter_button and
+            // friends — NOT on allow_bulk_job_offer_email. Turning off mass emailing
+            // should not also remove a recruiter's ability to send one offer.
+            if (frm.doc.docstatus !== 1) return;
+
+            frappe.db.get_single_value("Recruitment Settings", "enable_send_job_offer_button")
+                .then((enabled) => {
+                    if (!enabled) return;
+                    frm.add_custom_button(__("Send Job Offer"), () => {
+                        frappe.confirm(
+                            __("Send the offer email to {0}?", [
+                                frappe.utils.escape_html(frm.doc.applicant_name || frm.doc.job_applicant),
+                            ]),
+                            () => {
+                                frappe.call({
+                                    method: "recruitment.api.bulk_job_offer.send_bulk_job_offer",
+                                    args: { job_offers: JSON.stringify([frm.doc.name]) },
+                                    freeze: true,
+                                    freeze_message: __("Sending offer…"),
+                                    callback: (r) => {
+                                        const m = (r && r.message) || {};
+                                        if (m.sent) {
+                                            frappe.show_alert({
+                                                message: __("Offer email sent."), indicator: "green",
+                                            });
+                                        } else if (m.skipped) {
+                                            // Skipped means the candidate has already
+                                            // accepted/rejected — say so rather than
+                                            // reporting a silent success.
+                                            frappe.msgprint({
+                                                title: __("Not sent"), indicator: "orange",
+                                                message: __("Skipped — this candidate has already responded to an offer."),
+                                            });
+                                        } else {
+                                            frappe.msgprint({
+                                                title: __("Not sent"), indicator: "red",
+                                                message: __("Sending failed. Check Email Status on this offer for the reason."),
+                                            });
+                                        }
+                                        frm.reload_doc();
+                                    },
+                                });
+                            }
+                        );
+                    });
+                });
+        },
+    });
+})();

@@ -879,7 +879,7 @@ _DRIVE_LITE_TABLES = {
 	"rounds": ("Campus Drive Round", ["round_code", "round_name", "round_type", "hiring_stage",
 	                                  "round_status", "scheduled_at", "requires_gd_grouping"]),
 	"round_panelists": ("Campus Drive Round Panelist", ["round_code", "panelist", "panel_name",
-	                                                    "job_opening"]),
+	                                                    "job_opening", "region"]),
 	"linked_job_openings": ("Campus Drive Job Opening", ["job_opening", "job_title"]),
 }
 
@@ -913,10 +913,15 @@ def _employee_user_map(doc):
 
 
 def _panels_for_round(doc, round_code, emp_users=None):
-	"""Group this round's panelists into panels: {panel_name: {"users":[...], "role":opening}}.
+	"""Group this round's panelists into panels:
+	``{panel_name: {"users":[...], "role":opening, "region":region}}``.
 
 	Interview Detail.interviewer is a User, while panelists are Employees — so we map
 	through Employee.user_id and skip anyone without a login.
+
+	``role`` and ``region`` are both optional tags taken off the panelist rows: blank
+	means "covers everything". A drive that sets neither behaves exactly as it always
+	has, which is why existing drives need no migration.
 	"""
 	rows = [p for p in (doc.round_panelists or []) if p.round_code == round_code and p.panelist]
 	if not rows:
@@ -932,13 +937,67 @@ def _panels_for_round(doc, round_code, emp_users=None):
 			continue
 		key = r.panel_name or "Panel 1"
 		if key not in panels:
-			panels[key] = {"users": [], "role": r.job_opening or None}
+			panels[key] = {"users": [], "role": r.job_opening or None,
+			               "region": r.get("region") or None}
 			order.append(key)
 		if user not in panels[key]["users"]:
 			panels[key]["users"].append(user)
 		if r.job_opening and not panels[key]["role"]:
 			panels[key]["role"] = r.job_opening
+		if r.get("region") and not panels[key]["region"]:
+			panels[key]["region"] = r.get("region")
 	return {k: panels[k] for k in order}, missing
+
+
+# Job Applicant columns the region resolver reads, in the order it prefers them.
+_REGION_FIELDS = ["custom_interview_region", "custom_region", "custom_campus_invite"]
+
+
+def _invite_region_map(invites):
+	"""``{Campus Invite: region}`` in one query, for the legacy fallback below."""
+	if not invites:
+		return {}
+	return {
+		r.name: r.region
+		for r in frappe.get_all("Campus Invite", filters={"name": ["in", list(invites)]},
+		                        fields=["name", "region"])
+	}
+
+
+def _region_names(regions):
+	"""``{Region: location_region}`` — the human label ("Karnataka") for a Region ID."""
+	regions = {r for r in regions if r}
+	if not regions:
+		return {}
+	return {
+		r.name: r.location_region
+		for r in frappe.get_all("Region", filters={"name": ["in", list(regions)]},
+		                        fields=["name", "location_region"])
+	}
+
+
+def _effective_region(cand, invite_regions):
+	"""The region whose panel should interview this candidate.
+
+	An approved transfer sets ``custom_interview_region``; everyone else is
+	interviewed by the region they applied under. ``custom_region`` is fetched from
+	the Campus Invite on save, so candidates last saved before that field shipped
+	fall back to reading the invite directly — no backfill needed.
+	"""
+	return (cand.get("custom_interview_region")
+	        or cand.get("custom_region")
+	        or invite_regions.get(cand.get("custom_campus_invite")))
+
+
+def _panels_serving_region(panels, region):
+	"""Panels that may interview a candidate of `region`.
+
+	Region is a HARD filter, unlike role: the point of a transfer is that the target
+	region's panel conducts the interview, so falling back to some other region's
+	panel would quietly defeat it. Untagged panels still cover everyone, which is
+	what keeps drives that never set a region working unchanged.
+	"""
+	return {k: v for k, v in panels.items() if not v["region"] or v["region"] == region}
 
 
 def _round_kind(row, stage_type):
@@ -1085,11 +1144,21 @@ def get_round_pool(campus_drive, round_code):
 		"Job Applicant",
 		filters={"custom_campus_invite": ["in", invites], "custom_current_stage": stage},
 		fields=["name", "applicant_name", "custom_applicant_last_name",
-		        "custom_institute as institute", "job_title as job_opening", "designation"],
+		        "custom_institute as institute", "job_title as job_opening", "designation",
+		        *_REGION_FIELDS],
 		order_by="job_title asc, name asc",
 	)
+	invite_regions = _invite_region_map({c.get("custom_campus_invite") for c in pool})
 	for c in pool:  # show full name in the schedule picker
 		c["applicant_name"] = _full_name(c.applicant_name, c.get("custom_applicant_last_name"))
+		# Surfaced so the schedule picker can show who is being interviewed by a
+		# region other than their own before anyone clicks Schedule.
+		c["region"] = _effective_region(c, invite_regions)
+		c["transferred"] = bool(c.get("custom_interview_region"))
+	# Region IDs read as REGION_15; the picker wants "Karnataka".
+	region_names = _region_names({c["region"] for c in pool})
+	for c in pool:
+		c["region_name"] = region_names.get(c["region"]) or c["region"]
 	already = set(frappe.get_all(
 		"Interview",
 		filters={"custom_campus_drive": campus_drive, "custom_campus_round_code": round_code,
@@ -1149,22 +1218,45 @@ def schedule_round_interviews(campus_drive, round_code, scheduled_on=None,
 
 	interview_round = _ensure_interview_round(stage)
 	autofill = _interview_autofill_defaults()  # computed ONCE, reused for every row
-	# Panels that name a role serve only that role; the rest are general-purpose.
-	by_role = {}
-	general = [k for k, v in panels.items() if not v["role"]]
-	for k, v in panels.items():
-		if v["role"]:
-			by_role.setdefault(v["role"], []).append(k)
+	created, skipped, cursor, bucket_cache = [], [], {}, {}
 
-	created, skipped, cursor = [], [], {}
+	def _buckets_for(region):
+		"""(by_role, general) for the panels serving `region`. Cached per region —
+		a drive has a handful of regions but can have hundreds of candidates."""
+		if region not in bucket_cache:
+			serving = _panels_serving_region(panels, region)
+			# Panels that name a role serve only that role; the rest are general-purpose.
+			by_role = {}
+			for k, v in serving.items():
+				if v["role"]:
+					by_role.setdefault(v["role"], []).append(k)
+			bucket_cache[region] = (by_role, [k for k, v in serving.items() if not v["role"]])
+		return bucket_cache[region]
+
 	for cand in pool:
+		# Region narrows the panel set first, then the existing role preference picks
+		# within it — so a candidate transferred into another region is dealt only to
+		# that region's panels, and never silently to their original region's.
+		# `region` is resolved once by get_round_pool, which built this pool.
+		region = cand.get("region")
+		by_role, general = _buckets_for(region)
+		if not by_role and not general:
+			skipped.append({"applicant": cand.name,
+			                "reason": f"no panel for region {region or '(unset)'}"})
+			continue
+
 		choices = by_role.get(cand.job_opening) or general
 		if not choices:
 			skipped.append({"applicant": cand.name, "reason": "no panel for this role"})
 			continue
-		i = cursor.get(cand.job_opening or "", 0)
+		# Round-robin per distinct panel SET, not per (role, region): candidates who
+		# can go to the same panels share one cursor and so are dealt evenly across
+		# them. Keying on role/region instead would restart every group at the first
+		# panel and pile everyone onto it whenever panels are untagged.
+		bucket = tuple(choices)
+		i = cursor.get(bucket, 0)
 		panel_name = choices[i % len(choices)]
-		cursor[cand.job_opening or ""] = i + 1
+		cursor[bucket] = i + 1
 
 		try:
 			iv = frappe.new_doc("Interview")
@@ -1715,7 +1807,7 @@ def add_candidate_interview(campus_drive, job_applicant, stage_name, scheduled_o
 		frappe.throw(_("Candidate, stage and date are all required."))
 
 	ja = frappe.db.get_value("Job Applicant", job_applicant,
-	                         ["name", "job_title", "designation"], as_dict=True)
+	                         ["name", "job_title", "designation", *_REGION_FIELDS], as_dict=True)
 	if not ja:
 		frappe.throw(_("Job Applicant {0} not found.").format(job_applicant))
 
@@ -1726,7 +1818,15 @@ def add_candidate_interview(campus_drive, job_applicant, stage_name, scheduled_o
 		if panel and panel in panels:
 			users = panels[panel]["users"]
 		elif panels:
-			users = list(panels.values())[0]["users"]
+			# No panel named — fall back to the first one that serves this candidate's
+			# region rather than the first one outright, so a transferred candidate is
+			# never handed to the region they transferred away from.
+			region = _effective_region(ja, _invite_region_map({ja.get("custom_campus_invite")}))
+			serving = _panels_serving_region(panels, region)
+			if not serving:
+				frappe.throw(_("No panel on round {0} covers region {1}.").format(
+					round_code, frappe.bold(region or _("(unset)"))))
+			users = list(serving.values())[0]["users"]
 
 	iv = frappe.new_doc("Interview")
 	iv.job_applicant = ja.name

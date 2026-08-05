@@ -95,6 +95,7 @@ doctype_js = {
     "Job Requisition": ["public/js/job_requisition.js"],
     "Campus Drive": ["public/js/campus_drive.js"],
     "Interview": ["public/js/interview.js"],
+    "Interview Feedback": ["public/js/interview_feedback.js"],
     "User": ["public/js/user.js"],
     "Employee Onboarding": [
         "public/js/employee_onboarding.js",
@@ -253,6 +254,9 @@ doc_events = {
     "Interview Feedback": {
         "on_submit": [
             "recruitment.customizations.interview_feedback.interview_feedback.on_submit_feedback",
+            # An interviewer may suggest the candidate suits another region. This only
+            # records it and flags HR — the candidate is not moved until HR accepts.
+            "recruitment.customizations.interview_feedback.interview_feedback.record_region_suggestion",
             # After the verdict is set on the Interview, advance/reject the
             # candidate's hiring stage (only for stages flagged "auto").
             "recruitment.customizations.interview_feedback.interview_feedback.auto_advance_stage",
@@ -267,6 +271,9 @@ doc_events = {
             # insert only, so every creation path is gated, not just the
             # hiring workflow button.
             "recruitment.api.offer_validation.validate_job_offer",
+            # Record the requisition this offer draws on and pull its agreed
+            # Fixed / Variable Pay across. Only fills empty fields.
+            "recruitment.customizations.job_offer.set_requisition_and_pay",
         ],
         "before_save": "recruitment.customizations.job_offer.calculate_salary_structure",
         "after_insert": "recruitment.api.action_center.sync_job_offer_action_item",

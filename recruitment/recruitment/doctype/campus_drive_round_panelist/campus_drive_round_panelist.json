@@ -10,6 +10,7 @@
   "panelist",
   "panel_name",
   "job_opening",
+  "region",
   "panel_type",
   "slots"
  ],
@@ -47,6 +48,15 @@
    "in_list_view": 1,
    "columns": 2,
    "description": "Leave blank to let this panel cover every role"
+  },
+  {
+   "fieldname": "region",
+   "fieldtype": "Link",
+   "label": "Region",
+   "options": "Region",
+   "in_list_view": 1,
+   "columns": 2,
+   "description": "Leave blank to let this panel cover every region. Set it to interview only candidates whose region matches — including those transferred in from another region."
   },
   {
    "columns": 1,

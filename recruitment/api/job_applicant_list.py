@@ -94,10 +94,12 @@ def get_job_applicants_with_stats(job_opening=None, owners=None, filters=None):
 	# --- Opening header (when scoped) ---
 	opening_info = None
 	if job_opening:
+		# `job_requisition` rides along in the same row read — the header links to it,
+		# and an opening without one drives the "no requisition" message.
 		op = frappe.db.get_value(
 			"Job Opening",
 			job_opening,
-			["name", "job_title", "designation", "department", "location", "status"],
+			["name", "job_title", "designation", "department", "location", "status", "job_requisition"],
 			as_dict=True,
 		)
 		if op:

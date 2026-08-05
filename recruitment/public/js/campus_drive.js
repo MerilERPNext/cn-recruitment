@@ -273,6 +273,11 @@ function cdScheduleDialog(frm, roundCode, poolData, done) {
 			<td class="cd-pick-name">${esc(c.applicant_name || c.name)}</td>
 			<td class="text-muted">${esc(c.institute || "—")}</td>
 			<td class="text-muted">${esc(roleTitle(c.job_opening))}</td>
+			<td class="text-muted">${esc(c.region_name || c.region || "—")}${
+				// Flag candidates being interviewed by a region other than their own,
+				// so it is visible BEFORE scheduling rather than discovered after.
+				c.transferred ? ` <span class="cd-xfer" title="${__("Transferred from another region")}">⇄</span>` : ""
+			}</td>
 		</tr>`
 		)
 		.join("");
@@ -303,7 +308,8 @@ function cdScheduleDialog(frm, roundCode, poolData, done) {
 					</div>
 					<div class="cd-picker-scroll"><table class="cd-table cd-picker-table">
 						<thead><tr><th></th><th class="cd-inst-col">${__("Candidate")}</th>
-						<th class="cd-inst-col">${__("Institute")}</th><th class="cd-inst-col">${__("Role")}</th></tr></thead>
+						<th class="cd-inst-col">${__("Institute")}</th><th class="cd-inst-col">${__("Role")}</th>
+						<th class="cd-inst-col">${__("Region")}</th></tr></thead>
 						<tbody>${rows}</tbody>
 					</table></div>
 				</div>`,
@@ -329,14 +335,15 @@ function cdScheduleDialog(frm, roundCode, poolData, done) {
 					frappe.dom.unfreeze();
 					const m = r.message;
 					if (!m) return;
-					// A skip means those candidates have NO panel for their role — surface
-					// it loudly, otherwise HR assumes everyone got scheduled.
+					// A skip means those candidates have NO panel for their role or their
+					// region — surface it loudly, otherwise HR assumes everyone got
+					// scheduled. The per-candidate reason below says which of the two.
 					if (m.skipped_count) {
 						frappe.msgprint({
 							title: __("{0} scheduled, {1} skipped", [m.created, m.skipped_count]),
 							indicator: "orange",
 							message:
-								__("These candidates have no panel covering their role. Add a panel for their position (or one panel with no role, which covers everyone) and schedule again.") +
+								__("These candidates have no panel covering their role or their region. Add a panel for their position/region — or leave a panel's Role and Region blank, which covers everyone — and schedule again.") +
 								"<ul>" + (m.skipped || []).map((s) => `<li>${frappe.utils.escape_html(s.applicant)} — ${frappe.utils.escape_html(s.reason)}</li>`).join("") + "</ul>",
 						});
 					} else {
