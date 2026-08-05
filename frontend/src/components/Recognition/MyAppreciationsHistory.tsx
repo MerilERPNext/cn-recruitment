@@ -138,7 +138,6 @@ const MyAppreciationsHistory: React.FC = () => {
       person: it.person,
       personId: it.person_id,
       personImage: it.person_image,
-      employeeId: it.employee_id || undefined,
       imageUrl: it.logo || undefined,
       date: it.date,
       tab: it.direction,

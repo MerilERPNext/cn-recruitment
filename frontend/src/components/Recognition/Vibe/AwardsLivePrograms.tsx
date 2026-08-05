@@ -50,6 +50,8 @@ interface ProgramVM {
   award: string;
   title: string;
   totalPoints: number;
+  /** Program end date; drives the "Closed on <date>" chip when present. */
+  closedOn: string | null;
   lastDate: string | null;
   /** Lower-cased names of every employee in this award, for client-side search. */
   searchNames: string;
@@ -77,6 +79,7 @@ const toProgramVM = (a: AwardPointsAward): ProgramVM => {
     award: a.award,
     title: a.award_name || a.award,
     totalPoints: a.total_points || 0,
+    closedOn: a.end_date || null,
     lastDate,
     searchNames: employees
       .map((e) => (e.full_name || e.employee_name || "").toLowerCase())
@@ -125,10 +128,9 @@ const ProgramCard: React.FC<{ program: ProgramVM; showWinners: boolean }> = ({
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <span className="inline-block rounded-xl bg-gray-100 px-3 py-1 text-xs font-medium text-gray-500">
-            Last nomination {formatDate(program.lastDate)}
-          </span>
-          <span className="inline-block rounded-xl bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-600">
-            {program.totalPoints} pts
+            {program.closedOn
+              ? `Closed on ${formatDate(program.closedOn)}`
+              : `Last nomination ${formatDate(program.lastDate)}`}
           </span>
         </div>
 
@@ -138,15 +140,12 @@ const ProgramCard: React.FC<{ program: ProgramVM; showWinners: boolean }> = ({
               <div key={w.employee} className="flex flex-col items-center text-center w-20 sm:w-24">
                 <Avatar name={w.name} initials={w.initials} photo={w.photo} size={56} />
                 <WrapperHoverCard employeeId={w.employee}>
-                  <Typography variant="bodySmall" className="mt-2 font-semibold leading-tight cursor-pointer">
+                  <Typography variant="bodySmall" className="mt-2 font-bold leading-tight cursor-pointer">
                     {w.name}
                   </Typography>
                 </WrapperHoverCard>
                 <Typography variant="caption" color="body2" className="leading-tight">
                   {w.designation}
-                </Typography>
-                <Typography variant="caption" className="mt-0.5 font-semibold text-amber-600">
-                  {w.points} pts
                 </Typography>
               </div>
             ))}

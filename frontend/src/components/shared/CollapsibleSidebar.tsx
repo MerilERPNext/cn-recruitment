@@ -588,13 +588,13 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
           permissionKey: "My Appreciations History",
         },
         {
-          name: "Appreciations-Leaderboard",
+          name: "Leaderboard",
           icon: ChartNoAxesCombined,
           href: "/webapp/recognition/vibe/appreciations-leaderboard",
           permissionKey: "Appreciations Leaderboard",
         },
         {
-          name: "Awards-Live Programs & Winners",
+          name: "All Awards",
           icon: Award,
           href: "/webapp/recognition/vibe/awards-live",
           permissionKey: "Awards Live",
@@ -612,7 +612,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
           permissionKey: "Nomination Workflows",
         },
         {
-          name: "Earned Points Summary",
+          name: "Points Summary",
           icon: Coins,
           href: "/webapp/recognition/vibe/earned-points",
           // Recognition resolves visibility by route via RECOGNITION_ROUTE_PAGES;

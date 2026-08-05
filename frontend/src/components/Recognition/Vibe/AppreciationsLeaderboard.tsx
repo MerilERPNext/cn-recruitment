@@ -5,7 +5,6 @@ import { Card } from "../../shared/atoms/Card";
 import { Search, Star } from "lucide-react";
 import Avatar from "./Avatar";
 import WrapperHoverCard from "../../shared/WrapperHoverCard";
-import WrapperHoverCard from "../../shared/WrapperHoverCard";
 import { useCurrentEmployeeDetails } from "../../../hooks/useEmployee";
 import { useTargetUser } from "../../../context/ViewedUserContext";
 import {
@@ -29,6 +28,11 @@ const resolveImage = (image?: string | null): string | undefined => {
   return image;
 };
 
+// Leaderboard rows read department; designation is the fallback for employees
+// with no department set so the line never renders empty.
+const subtitleOf = (p: LeaderboardPersonEntry): string =>
+  p.department || p.designation || "";
+
 const StarBadge: React.FC<{ rank: number }> = ({ rank }) => (
   <div className="absolute -top-4 left-1/2 -translate-x-1/2">
     <div className="relative">
@@ -45,8 +49,7 @@ const PodiumColumn: React.FC<{
   height: string;
   size: number;
   score: number;
-  employeeId: string;
-}> = ({ person, height, size, score, employeeId }) => (
+}> = ({ person, height, size, score }) => (
   <div className={`flex flex-col items-center ${height}`}>
     <div className="relative mb-3">
       <StarBadge rank={person.rank} />
@@ -64,12 +67,14 @@ const PodiumColumn: React.FC<{
         </Typography>
       </WrapperHoverCard>
       <Typography variant="bodySmall" color="body2" className="block truncate">
-        {person.designation}
+        {subtitleOf(person)}
       </Typography>
-      <div className="flex items-center justify-center gap-1.5 mt-2 text-gray-700">
-        <Star className="size-4 text-gray-400" />
-        <span className="font-semibold">{score}</span>
-      </div>
+      {score > 0 && (
+        <div className="flex items-center justify-center gap-1.5 mt-2 text-gray-700">
+          <Star className="size-4 text-gray-400" />
+          <span className="font-semibold">{score}</span>
+        </div>
+      )}
     </Card>
   </div>
 );
@@ -139,7 +144,7 @@ const AppreciationsLeaderboard: React.FC = () => {
     ? rest.filter(
         (p) =>
           p.employee_name.toLowerCase().includes(q) ||
-          p.designation.toLowerCase().includes(q),
+          subtitleOf(p).toLowerCase().includes(q),
       )
     : rest;
 
@@ -248,7 +253,6 @@ const AppreciationsLeaderboard: React.FC = () => {
                           height={col.height}
                           size={col.size}
                           score={scoreOf(col.person!)}
-                          employeeId={col.person!.employee}
                         />
                       ))}
                     </div>
@@ -282,13 +286,15 @@ const AppreciationsLeaderboard: React.FC = () => {
                             </Typography>
                           </WrapperHoverCard>
                           <Typography variant="bodySmall" color="body2" className="block truncate">
-                            {person.designation}
+                            {subtitleOf(person)}
                           </Typography>
                         </div>
-                        <div className="flex items-center gap-1.5 text-gray-700 shrink-0">
-                          <Star className="size-4 text-gray-400" />
-                          <span className="font-semibold">{scoreOf(person)}</span>
-                        </div>
+                        {scoreOf(person) > 0 && (
+                          <div className="flex items-center gap-1.5 text-gray-700 shrink-0">
+                            <Star className="size-4 text-gray-400" />
+                            <span className="font-semibold">{scoreOf(person)}</span>
+                          </div>
+                        )}
                       </div>
                     ))
                   )}

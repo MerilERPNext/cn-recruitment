@@ -619,6 +619,12 @@ export type RedemptionEntry = {
   points: number;
   date: string;
   program?: string;
+  /** Human-readable programme title for `program` (Source column). */
+  program_title?: string;
+  /** Originating appreciation / recognition / award (Transaction ID column). */
+  transaction_id?: string;
+  employee_appreciation?: string;
+  employee_recognition?: string;
   award?: string;
   recognition_type?: string;
   remarks?: string;
@@ -683,6 +689,8 @@ export type AwardPointsEmployee = {
 export type AwardPointsAward = {
   award: string;
   award_name: string | null;
+  /** Program end date — shown as "Closed on <date>" on the award card. */
+  end_date?: string | null;
   total_points: number;
   employees: AwardPointsEmployee[];
 };
@@ -715,6 +723,8 @@ export type LeaderboardPersonEntry = {
   employee: string;
   employee_name: string;
   designation: string;
+  /** Shown under the name on the leaderboard (falls back to designation). */
+  department?: string;
   image: string;
   count: number;
   points: number;
