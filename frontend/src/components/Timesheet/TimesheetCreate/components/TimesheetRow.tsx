@@ -31,14 +31,15 @@ const InlineFormRow = memo(({ row, handleConfigureRow, formSchema }: InlineFormR
       submission={submission}
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       onChange={(sub: any) => {
-        const data = sub.data;
-
-        if (!data.project || !data.task) return;
+        const data = sub.data || {};
+        const projectVal = data.project || "";
+        const taskVal = data.task || "";
+        const isBillableVal = data.is_billable !== undefined ? !!data.is_billable : true;
 
         if (
-          data.project === row.project &&
-          data.task === row.task &&
-          (data.is_billable ?? true) === row.isBillable
+          projectVal === (row.project || "") &&
+          taskVal === (row.task || "") &&
+          isBillableVal === row.isBillable
         ) {
           return;
         }
