@@ -3,16 +3,16 @@
 import { useMutation, useQuery } from "@tanstack/react-query"
 
 import { PermissionError } from "../types/interview"
-import { 
-        getTDSPayslipHTML,
-        getBenefitPayslipHTML,
-        getOffCyclePayslipHTML,
-        getSalarySlipHTML,
-        getSalarySlipName,
-        updateSalarySlip,
-        releaseSalarySlip,
-        getPayrollAdminRoles
-     } from "../services/salaryDetailsService"
+import {
+  getTDSPayslipHTML,
+  getBenefitPayslipHTML,
+  getOffCyclePayslipHTML,
+  getSalarySlipHTML,
+  getSalarySlipName,
+  updateSalarySlip,
+  releaseSalarySlip,
+  getPayrollAdminRoles
+} from "../services/salaryDetailsService"
 
 const isPermissionError = (error: unknown): error is PermissionError => {
   if (error instanceof PermissionError) return true
@@ -106,7 +106,7 @@ export const useReleaseSalarySlip = (
   options: { onSuccess?: (data: any) => void; onError?: (error: any) => void } = {}
 ) => {
   return useMutation({
-    mutationFn: (salarySlipName: string) => releaseSalarySlip(salarySlipName),
+    mutationFn: ({ salarySlipName, salary_slip_type }: { salarySlipName: string, salary_slip_type: string }) => releaseSalarySlip(salarySlipName, salary_slip_type),
     ...options,
   });
 };

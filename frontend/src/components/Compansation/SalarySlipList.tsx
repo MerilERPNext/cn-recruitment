@@ -241,10 +241,10 @@ const SalarySlipsList = () => {
     },
   });
 
-  const handleReleaseSalarySlip = (e: React.MouseEvent, salary_slip_id: string) => {
+  const handleReleaseSalarySlip = (e: React.MouseEvent, salary_slip_id: string, salary_slip_type: string) => {
     e.stopPropagation();
     if (toast.success("Release this salary slip?")) {
-      releaseSlip(salary_slip_id);
+      releaseSlip({ salarySlipName: salary_slip_id, salary_slip_type });
     }
   };
 
@@ -619,7 +619,7 @@ const SalarySlipItemDesktop = ({
       <div className="flex items-center justify-center gap-2">
         {isPayrollAdmin && item.status === "Pending" && (
           <Button
-            onClick={(e: React.MouseEvent) => onRelease(e, item.salary_slip_id)}
+            onClick={(e: React.MouseEvent) => onRelease(e, item.salary_slip_id, item.salary_slip_type)}
             disabled={isReleasing}
             className="px-3 py-1 text-xs rounded disabled:cursor-not-allowed disabled:opacity-60"
           >

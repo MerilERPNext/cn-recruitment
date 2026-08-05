@@ -112,10 +112,10 @@ export const getPayrollAdminRoles = async (
 };
 
 /** Release (submit) a single draft Salary Slip */
-export const releaseSalarySlip = async (salarySlipName: string) => {
+export const releaseSalarySlip = async (salarySlipName: string, salary_slip_type: string) => {
   const response = await FrappeAPI.callMethod(
     "cn_indian_payroll.cn_indian_payroll.overrides.webapp_api.salary_slip_list.release_salary_slip",
-    { salary_slip_id: salarySlipName }
+    { salary_slip_id: salarySlipName, salary_slip_type }
   );
   return response;
 };
