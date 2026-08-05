@@ -98,16 +98,6 @@ export const getOffCyclePayslipHTML = async (salarySlipName: string) => {
   )
 }
 
- export const PrintFormatMenuOptionsService = async (employee_name: string, name: string) => {
-    const response = await FrappeAPI.callMethod(
-      "cn_indian_payroll.cn_indian_payroll.overrides.api.get_eligible_payslips",
-      { employee: name,
-        salary_slip_id: employee_name,
-      }
-    ) ;
-  
-    return response; // always return array
-  };
 
 
 /** Roles allowed to release salary slips (configured in Payroll Settings). */
