@@ -27,7 +27,7 @@ export type GoalTemplate = Partial<Goal> & {
 
 export const getGoalKey = (template: GoalTemplate | CascadeGoal | DraftGoalItem): string => {
     if (!template) return '';
-    return  (template as any)._id || template.goal || template.title || '';
+    return   template.goal || template.title || '';
 };
 
 export interface TemplateListProps {
