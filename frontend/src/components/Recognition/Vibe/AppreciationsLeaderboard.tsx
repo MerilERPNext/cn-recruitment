@@ -86,7 +86,7 @@ const AppreciationNoteCard: React.FC<{ item: AppreciationApiItem }> = ({ item })
     <div className="flex items-center gap-3 mb-2">
       <Avatar name={item.person} photo={resolveImage(item.person_image)} size={36} />
       <div className="min-w-0">
-        <WrapperHoverCard employeeId={item.employee_id ?? undefined}>
+        <WrapperHoverCard employeeId={item.person_id}>
           <Typography variant="bodyMedium" className="font-semibold truncate cursor-pointer">
             {item.person}
           </Typography>

@@ -38,7 +38,6 @@ const HistoryCardList = ({ items, relationLabel }: HistoryCardListProps) => (
                   · {item.date}
                 </Typography>
               </div>
-              </div>
             </div>
           </div>
         </div>

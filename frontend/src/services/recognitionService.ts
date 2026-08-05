@@ -373,7 +373,8 @@ export type AppreciationApiItem = {
   message: string;
   logo?: string;
   person: string;
-  employee_id?: string | null;
+  /** Employee id of `person` (the counterparty) — drives the hover card. */
+  person_id?: string;
   person_image: string;
   date: string;
   direction: "received" | "given";
