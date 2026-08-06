@@ -58,13 +58,20 @@ export default function FlexiDeclaration() {
   );
   const { data: currentEmployee, isLoading: isEmployeeLoading } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
   const { targetEmployeeId } = useTargetUser();
+  
+  const { data: targetEmployeeDetails, isLoading: isTargetEmployeeLoading } = useCurrentEmployeeDetails({
+    employeeId: targetEmployeeId || undefined,
+  });
+
   // When an admin/HR is viewing another user, target their employee id.
   const effectiveEmployee = targetEmployeeId || currentEmployee?.name;
+  const effectiveCompany = targetEmployeeId ? targetEmployeeDetails?.company : currentEmployee?.company;
+  
   // Payroll Period dropdown — same Payroll Period resource API used across the
   // Compensation module (company-scoped, and target-aware: when viewing another
   // employee via switch-user it sends the TARGET user's company).
   const { data: yearOptions, isLoading: isYearOptionsLoading } =
-    useTaxSheetPayrollPriodsData(currentEmployee?.company || null) as {
+    useTaxSheetPayrollPriodsData(effectiveCompany || null) as {
       data?: { name: string; start_date?: string; end_date?: string, company?: string }[];
       isLoading: boolean;
     };
@@ -82,7 +89,7 @@ export default function FlexiDeclaration() {
   const { data: flexiData, isLoading: isFlexiLoading } = useFlexiComponents(
     effectiveEmployee || "",
     selectedPeriod || "",
-    currentEmployee?.company || ""
+    effectiveCompany || ""
   );
 
   const { data: lockingPeriodData, isLoading: isLockingLoading, refetch: refetchLockingPeriod } = useIndividualEmployeeFlexiLockingPeriod(
@@ -112,6 +119,7 @@ export default function FlexiDeclaration() {
 
   const isLoading =
     isEmployeeLoading ||
+    isTargetEmployeeLoading ||
     isYearOptionsLoading ||
     isFlexiLoading ||
     isLockingLoading ||
