@@ -11,6 +11,7 @@ import { lazyWithRetry } from "./utils/lazyWithRetry";
 // Keep critical components as static imports for better UX
 import TeamAdvanceRequest from "./components/Compansation/Advances/ApprovalAdvanceRquest";
 import ExtraPayment from "./components/Compansation/Extrapayment/ExtraPayment";
+import ExtraDeduction from "./components/Compansation/ExtraDeduction/ExtraDeduction";
 import Invoice from "./components/Compansation/Invoice/Invoice";
 import ITDeclarationForm from "./components/Compansation/IT Declaration/ITDeclaration";
 import TeamProofSubmissionList from "./components/Compansation/IT Declaration/TeamApproval/TeamProofSubmissionList";
@@ -989,6 +990,11 @@ export const routesConfig: AppRoute[] = [
         path: "extra-payment",
         element: <ExtraPayment />,
         permissionKey: "Extra Payment",
+      },
+      {
+        path: "extra-deduction",
+        element: <ExtraDeduction />,
+        permissionKey: "Extra Deduction",
       },
       {
         path: "perquisite-list",
