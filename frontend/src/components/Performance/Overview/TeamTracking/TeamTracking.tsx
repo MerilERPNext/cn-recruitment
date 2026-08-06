@@ -5,7 +5,7 @@ import { ChevronRight, ArrowLeft, AlertCircle, RefreshCw } from "lucide-react";
 import Badge from "../../../shared/Badge";
 import Button from "../../../shared/atoms/Button";
 import { useLinkFieldOptions } from "../../../../hooks/useLinkFieldOptions";
-import { useMyGoals } from "../../../../hooks/usePerformance";
+import { useEmployeeGoalsCheckIn, useMyGoals } from "../../../../hooks/usePerformance";
 import type { MyGoalsGoal } from "../../../../types/goal";
 
 type ViewState = "employees" | "goals";
@@ -106,6 +106,8 @@ const EmployeeGoalsList = ({
   onRetry?: () => void;
   onSelectGoal?: (id: string) => void;
 }) => {
+  const { mutate:employeCheckIn  , isPending } = useEmployeeGoalsCheckIn()
+
   if (isLoading) {
     return <EmployeeGoalsSkeleton />;
   }

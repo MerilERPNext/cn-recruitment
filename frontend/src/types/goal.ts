@@ -80,6 +80,16 @@ export interface GoalFormConfigDesignation {
   designation_name?: string;
 }
 
+export interface RequestCheckInPayload {
+  employee: string;
+  goal: string;
+  due_date?: string;
+  message?: string;
+}
+
+export interface RequestCheckInRequest {
+  payload: RequestCheckInPayload;
+}
 export interface GoalFormConfigCycle {
   name: string;
   cycle_name: string;
