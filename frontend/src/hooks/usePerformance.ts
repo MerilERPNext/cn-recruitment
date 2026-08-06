@@ -214,12 +214,9 @@ export const usePerformanceOverview = (): UseQueryResult<PerformanceOverviewResp
   });
 
 export const useEmployeeGoalsCheckIn = () => {
-  const queryClient = useQueryClient();
 
   return useMutation<RequestCheckInResponse, Error, RequestCheckInPayload>({
     mutationFn: (payload) => performanceService.employeeGoalCheckIn(payload),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: PERFORMANCE_QUERY_KEYS.myGoals });
-    },
+   
   });
 };

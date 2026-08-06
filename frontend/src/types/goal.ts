@@ -220,6 +220,7 @@ export interface MyGoalsGoal {
   goal_status?: string;
   submission_status?: string;
   start_date?: string;
+  last_checkin_date?:string;
   end_date?: string;
   key_results: MyGoalsKeyResult[];
 }

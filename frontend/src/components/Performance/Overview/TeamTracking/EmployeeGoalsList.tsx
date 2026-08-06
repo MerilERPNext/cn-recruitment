@@ -110,7 +110,7 @@ export const EmployeeGoalsList = ({
                   />
                   {goal?.weightage && (
                     <Badge
-                      label={`${goal.weightage}%`}
+                      label={`${goal.weightage ?? "-"}%`}
                       variant="info"
                       size="sm"
                     />
@@ -132,7 +132,7 @@ export const EmployeeGoalsList = ({
                     </Typography>
                   )}
                   <span className="text-xs text-gray-500 font-medium whitespace-nowrap">
-                    Last check in {goal?.checkin_due ?? "--"}
+                    Last check in - {goal?.last_checkin_date ?? "--"}
                   </span>
                 </div>
               </div>
