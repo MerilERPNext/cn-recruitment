@@ -87,7 +87,9 @@ export const EmployeeGoalsList = ({
       {goalsList?.map((goal) => {
         const goalId = goal.goal_key || goal.name || goal.title;
         const isGoalPending = isPending && loadingGoalKey === goal.goal_key;
-        const currentStatus = goal?.goal_status || goal?.status 
+        const currentStatus = goal?.goal_status || goal?.status;
+        const statusLower = (currentStatus || "").toLowerCase();
+        const isPendingStatus = statusLower === "pending" || statusLower === "draft";
 
         return (
           <Card
@@ -140,9 +142,17 @@ export const EmployeeGoalsList = ({
                 <Button
                   variant="outline"
                   disabled={isGoalPending}
-                  className="border-blue-200 text-blue-600 hover:bg-blue-50 hover:border-blue-300 font-medium text-xs px-3.5 py-1.5 rounded-lg transition-all shadow-xs flex items-center gap-1.5 disabled:opacity-60 disabled:cursor-not-allowed"
+                  className={`font-medium text-xs px-3.5 py-1.5 rounded-lg transition-all shadow-xs flex items-center gap-1.5 ${
+                    isPendingStatus
+                      ? "border-gray-200 text-gray-400 bg-gray-50 opacity-60 cursor-not-allowed"
+                      : "border-blue-200 text-blue-600 hover:bg-blue-50 hover:border-blue-300 disabled:opacity-60 disabled:cursor-not-allowed"
+                  }`}
                   onClick={(e) => {
                     e.stopPropagation();
+                    if (isPendingStatus) {
+                      toast.error("Check-ins can be requested only on approved goals.");
+                      return;
+                    }
                     submitCheckIns(goal.goal_key);
                   }}
                 >
