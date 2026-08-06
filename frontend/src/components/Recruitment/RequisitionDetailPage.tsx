@@ -2,20 +2,24 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useMemo, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Info, Eye, FileText, ChevronLeft } from "lucide-react";
+import { Info, Eye, EyeOff, ChevronDown, ChevronLeft, Loader2 } from "lucide-react";
 import { Typography } from "../shared/atoms/Typography";
 import Badge from "../shared/Badge";
+import AllocatedToTooltip from "../shared/AllocatedToTooltip";
 import WrapperHoverCard from "../shared/WrapperHoverCard";
 import { formatToIndianDateWithTime } from "../../utils/formatToIndianDate";
 import { useScreenSize } from "../../hooks/useScreenSize";
+import { useRequisitionDetails } from "../../hooks/useRequisition";
+import type { RequisitionApprovalFlow } from "../../types/requisition";
 
-type TabKey = "position_details" | "custom_approval";
+type TabKey = "overview" | "position_details" | "custom_approval";
 
 const RequisitionDetailPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { isDesktop } = useScreenSize();
-  const [activeTab, setActiveTab] = useState<TabKey>("position_details");
+  const [activeTab, setActiveTab] = useState<TabKey>("overview");
+  const [showMaxPositions, setShowMaxPositions] = useState(false);
 
   // Get requisition data from navigation state
   const requisition = location.state?.requisition;
@@ -29,9 +33,16 @@ const RequisitionDetailPage = () => {
     return requisition?.custom_position_details || [];
   }, [requisition?.custom_position_details]);
 
-  const approvalFlow = useMemo(() => {
-    return requisition?.custom_approval_flow || [];
-  }, [requisition?.custom_approval_flow]);
+  const {
+    data: requisitionDetails,
+    isLoading: isApprovalFlowLoading,
+    isError: isApprovalFlowError,
+  } = useRequisitionDetails(
+    { requisition_name: requisition?.name || "" },
+    { enabled: !!requisition?.name },
+  );
+
+  const approvalFlow = requisitionDetails?.approval_flow;
 
   const vacancyBreakdown = useMemo(() => {
     return requisition?.custom_vacancy_breakdown || null;
@@ -66,84 +77,6 @@ const RequisitionDetailPage = () => {
     totalPositions,
   ]);
 
-  const getStatusIcon = useCallback((status: string) => {
-    const s = status?.toLowerCase() || "";
-    if (s === "completed" || s === "approved") {
-      return (
-        <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-green-500">
-          <svg
-            className="w-3.5 h-3.5 text-white"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={3}
-              d="M5 13l4 4L19 7"
-            />
-          </svg>
-        </span>
-      );
-    }
-    if (s === "pending" || s === "in progress") {
-      return (
-        <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-yellow-400">
-          <svg
-            className="w-3.5 h-3.5 text-white"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={3}
-              d="M12 8v4l3 3"
-            />
-          </svg>
-        </span>
-      );
-    }
-    if (s === "rejected") {
-      return (
-        <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-red-500">
-          <svg
-            className="w-3.5 h-3.5 text-white"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={3}
-              d="M6 18L18 6M6 6l12 12"
-            />
-          </svg>
-        </span>
-      );
-    }
-    return (
-      <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-gray-300">
-        <svg
-          className="w-3.5 h-3.5 text-white"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={3}
-            d="M12 8v4m0 4h.01"
-          />
-        </svg>
-      </span>
-    );
-  }, []);
-
   // No data fallback
   if (!requisition) {
     return (
@@ -165,6 +98,7 @@ const RequisitionDetailPage = () => {
   }
 
   const tabs: { key: TabKey; label: string; showInfo?: boolean }[] = [
+    { key: "overview", label: "Overview" },
     { key: "position_details", label: "Position Details" },
     { key: "custom_approval", label: "Custom Approval Flow", showInfo: true },
   ];
@@ -258,18 +192,22 @@ const RequisitionDetailPage = () => {
             <div>
               <Typography
                 variant="bodySmall"
-                className="text-gray-500 text-xs mb-0.5"
+                className="text-gray-500 text-xs mb-0.5 flex items-center gap-1.5"
               >
                 Max Position(s) Allowed
+                <button 
+                  onClick={() => setShowMaxPositions(!showMaxPositions)}
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                  title={showMaxPositions ? "Hide max positions" : "Show max positions"}
+                >
+                  {showMaxPositions ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                </button>
               </Typography>
               <Typography
                 variant="bodySmall"
-                className="font-semibold text-gray-500 flex items-center gap-1"
+                className="font-semibold text-gray-500"
               >
-                : {maxPositionsAllowed}
-                <button className="text-gray-400 hover:text-gray-600 transition-colors">
-                  <Eye className="w-4 h-4" />
-                </button>
+                : {showMaxPositions ? maxPositionsAllowed : "***"}
               </Typography>
             </div>
           </div>
@@ -314,6 +252,7 @@ const RequisitionDetailPage = () => {
 
         {/* Tab Content */}
         <div className="mt-4">
+          {activeTab === "overview" && <OverviewTab requisition={requisition} isDesktop={isDesktop} />}
           {activeTab === "position_details" && (
             <PositionDetailsTab
               positionDetails={positionDetails}
@@ -324,11 +263,136 @@ const RequisitionDetailPage = () => {
             <CustomApprovalTab
               approvalFlow={approvalFlow}
               isDesktop={isDesktop}
-              getStatusIcon={getStatusIcon}
+              isLoading={isApprovalFlowLoading}
+              isError={isApprovalFlowError}
             />
           )}
         </div>
       </div>
+    </div>
+  );
+};
+
+// ─── Overview Tab ────────────────────────────────────────────────────────
+
+interface OverviewTabProps {
+  requisition: Record<string, any>;
+  isDesktop: boolean;
+}
+
+const hasOverviewValue = (value: unknown) => {
+  if (value === null || value === undefined) return false;
+  if (typeof value === "string") return value.trim().length > 0;
+  if (Array.isArray(value)) return value.length > 0;
+  return true;
+};
+
+const OverviewField = ({ label, value }: { label: string; value: unknown }) => (
+  <div className="min-w-0 py-3">
+    <Typography variant="bodySmall" className="text-xs text-gray-500">
+      {label}
+    </Typography>
+    <Typography variant="bodySmall" className="mt-1 break-words font-medium text-gray-900">
+      {String(value)}
+    </Typography>
+  </div>
+);
+
+const OverviewSection = ({
+  title,
+  fields,
+  isDesktop,
+}: {
+  title: string;
+  fields: { label: string; value: unknown }[];
+  isDesktop: boolean;
+}) => {
+  const visibleFields = fields.filter(({ value }) => hasOverviewValue(value));
+
+  if (visibleFields.length === 0) return null;
+
+  return (
+    <section className="border-b border-gray-200 pb-2 last:border-b-0">
+      <Typography variant="subheading" className="pt-1 font-semibold text-gray-900">
+        {title}
+      </Typography>
+      <div className={`mt-2 grid gap-x-6 divide-y divide-gray-100 ${isDesktop ? "grid-cols-3" : "grid-cols-1"}`}>
+        {visibleFields.map((field) => <OverviewField key={field.label} {...field} />)}
+      </div>
+    </section>
+  );
+};
+
+const OverviewTab = ({ requisition, isDesktop }: OverviewTabProps) => {
+  const experience = [
+    requisition.custom_experience_range_from,
+    requisition.custom_experience_range_to,
+  ].filter((value) => value !== undefined && value !== null && value !== "").join(" - ");
+  const experienceLabel = experience
+    ? `${experience} ${requisition.custom_experience_unit || "years"}`
+    : requisition.custom_work_experience || requisition.custom_work_experience_range;
+  const salaryRange = requisition.custom_salary_range_min || requisition.custom_salary_range_max
+    ? `${requisition.custom_salary_range_currency || "INR"} ${requisition.custom_salary_range_min || 0} - ${requisition.custom_salary_range_max || 0}${requisition.custom_salary_timeframe ? ` / ${requisition.custom_salary_timeframe}` : ""}`
+    : requisition.custom_salary_range_display;
+  const skills = Array.isArray(requisition.custom_skills)
+    ? requisition.custom_skills.join(", ")
+    : requisition.custom_skills || requisition.custom_additional_skills;
+  const qualifications = Array.isArray(requisition.custom_qualifications)
+    ? requisition.custom_qualifications.map((item: any) => item.qualification_title || item.qualification || item.degree_title || item.degree).filter(Boolean).join(", ")
+    : requisition.custom_qualifications;
+
+  return (
+    <div className="space-y-6">
+      <OverviewSection
+        title="Requisition Details"
+        isDesktop={isDesktop}
+        fields={[
+          { label: "Requisition Code", value: requisition.name },
+          { label: "Status", value: requisition.status },
+          { label: "Company", value: requisition.company_title || requisition.company },
+          { label: "Designation", value: requisition.designation_title || requisition.designation },
+          { label: "Department", value: requisition.department_title || requisition.department },
+          { label: "Location", value: requisition.custom_location_title || requisition.custom_location },
+          { label: "Employment Type", value: requisition.custom_employment_type_link_title || requisition.custom_employment_type_link },
+          { label: "Hiring Type", value: requisition.custom_hiring_type },
+          { label: "Functional Area", value: requisition.custom_functional_area_title || requisition.custom_functional_area },
+          { label: "Division", value: requisition.custom_division_title || requisition.custom_division },
+          { label: "Number of Positions", value: requisition.no_of_positions },
+          { label: "Vacancy Type", value: requisition.custom_type_of_position || requisition.custom_vacancy_breakdown?.type },
+        ]}
+      />
+      <OverviewSection
+        title="Request & Assignment"
+        isDesktop={isDesktop}
+        fields={[
+          { label: "Requested By", value: requisition.requested_by_title || requisition.requested_by_name || requisition.requested_by },
+          { label: "Requester Department", value: requisition.requested_by_dept_title || requisition.requested_by_dept },
+          { label: "Requester Designation", value: requisition.requested_by_designation_title || requisition.requested_by_designation },
+          { label: "Hiring Lead", value: requisition.custom_hiring_lead_title || requisition.custom_hiring_lead },
+          { label: "Assigned Recruiter", value: requisition.custom_assign_to_recruiter_title || requisition.custom_assign_to_recruiter },
+          { label: "Expected Compensation", value: requisition.expected_compensation ? `INR ${Number(requisition.expected_compensation).toLocaleString("en-IN")}` : null },
+          { label: "Experience", value: experienceLabel },
+          { label: "Salary Range", value: salaryRange },
+          { label: "Preferred Notice Period", value: requisition.custom_preferred_notice_period },
+          { label: "Preferred Company", value: requisition.custom_preferred_company },
+          { label: "Posting Date", value: requisition.posting_date ? formatToIndianDateWithTime(requisition.posting_date) : null },
+          { label: "Expected By", value: requisition.expected_by ? formatToIndianDateWithTime(requisition.expected_by) : null },
+          { label: "Created On", value: requisition.creation ? formatToIndianDateWithTime(requisition.creation) : null },
+          { label: "Last Updated", value: requisition.modified ? formatToIndianDateWithTime(requisition.modified) : null },
+        ]}
+      />
+      <OverviewSection
+        title="Requirements"
+        isDesktop={isDesktop}
+        fields={[
+          { label: "Qualifications", value: qualifications },
+          { label: "Skills", value: skills },
+          { label: "Reason for Request", value: requisition.reason_for_requesting },
+          { label: "Additional Roles & Responsibilities", value: requisition.custom_additional_roles__responsibilities },
+          { label: "Comments / Instructions", value: requisition.custom_comments__instructions },
+          { label: "Cost Centre", value: requisition.custom_cost_centre },
+        ]}
+      />
     </div>
   );
 };
@@ -402,7 +466,15 @@ const PositionDetailsTab = ({
                   <div>
                     <span className="text-gray-500">Replacement for</span>
                     <p className="font-medium text-gray-900 mt-0.5">
-                      {pos.replacement_for_title || pos.replacement_for || "—"}
+                      {pos.replacement_for ? (
+                        <WrapperHoverCard employeeId={String(pos.replacement_for)}>
+                          <span className="cursor-help underline decoration-dotted decoration-gray-300 underline-offset-2">
+                            {pos.replacement_for_title || pos.replacement_for}
+                          </span>
+                        </WrapperHoverCard>
+                      ) : (
+                        "—"
+                      )}
                     </p>
                   </div>
                 )}
@@ -425,7 +497,7 @@ const PositionDetailsTab = ({
                 <div>
                   <span className="text-gray-500">Employee Type</span>
                   <p className="font-medium text-gray-900 mt-0.5">
-                    {pos.employee_type || "—"}
+                    {pos.employee_type_title || pos.employee_type || "—"}
                   </p>
                 </div>
               </div>
@@ -497,16 +569,13 @@ const PositionDetailsTab = ({
                 {/* Replacement for */}
                 <td className="px-5 py-4 text-sm text-gray-700">
                   {pos.replacement_for ? (
-                    <div>
-                      <span>
+                    <WrapperHoverCard employeeId={String(pos.replacement_for)}>
+                      <span className="cursor-help underline decoration-dotted decoration-gray-300 underline-offset-2">
                         {pos.replacement_for_title
                           ? `${pos.replacement_for_title} (${pos.replacement_for})`
                           : pos.replacement_for}
                       </span>
-                      <button className="block text-xs text-blue-600 hover:underline mt-1">
-                        View employee
-                      </button>
-                    </div>
+                    </WrapperHoverCard>
                   ) : (
                     "—"
                   )}
@@ -531,7 +600,7 @@ const PositionDetailsTab = ({
 
                 {/* Employee Type */}
                 <td className="px-5 py-4 text-sm text-gray-700">
-                  {pos.employee_type || "—"}
+                  {pos.employee_type_title || pos.employee_type || "—"}
                 </td>
               </tr>
             );
@@ -545,17 +614,47 @@ const PositionDetailsTab = ({
 // ─── Custom Approval Tab ─────────────────────────────────────────────────
 
 interface CustomApprovalTabProps {
-  approvalFlow: any[];
+  approvalFlow?: RequisitionApprovalFlow;
   isDesktop: boolean;
-  getStatusIcon: (status: string) => React.ReactNode;
+  isLoading: boolean;
+  isError: boolean;
 }
 
 const CustomApprovalTab = ({
   approvalFlow,
   isDesktop,
-  getStatusIcon,
+  isLoading,
+  isError,
 }: CustomApprovalTabProps) => {
-  if (!approvalFlow || approvalFlow.length === 0) {
+  const [expandedStages, setExpandedStages] = useState<number[]>([]);
+  const stages = approvalFlow?.stages || [];
+
+  const toggleStage = (stageIndex: number) => {
+    setExpandedStages((current) =>
+      current.includes(stageIndex)
+        ? current.filter((index) => index !== stageIndex)
+        : [...current, stageIndex],
+    );
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center gap-2 py-12 text-gray-500">
+        <Loader2 className="h-5 w-5 animate-spin" />
+        <Typography variant="bodySmall">Loading approval flow...</Typography>
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="text-center py-12 text-red-600">
+        <Typography variant="bodySmall">Unable to load the approval flow.</Typography>
+      </div>
+    );
+  }
+
+  if (!approvalFlow?.has_approval || stages.length === 0) {
     return (
       <div className="text-center py-12 text-gray-500">
         <Typography variant="bodySmall">
@@ -565,207 +664,83 @@ const CustomApprovalTab = ({
     );
   }
 
-  if (!isDesktop) {
-    // Mobile card view
-    return (
-      <div className="space-y-3">
-        {approvalFlow.map((entry: any, idx: number) => (
-          <div
-            key={idx}
-            className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm"
-          >
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <Badge
-                  label={
-                    entry.approver_role ||
-                    entry.role ||
-                    `Level ${entry.level || idx + 1}`
-                  }
-                  size="sm"
-                  backgroundColor="bg-gray-100 text-gray-700"
-                />
-                {entry.level && (
-                  <span className="text-xs text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">
-                    {entry.level}
-                  </span>
-                )}
+  return (
+    <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
+      <div className="border-b border-gray-100 bg-gray-50 px-4 py-3 text-xs text-gray-600">
+        {approvalFlow.mode} approval flow {approvalFlow.tracker ? `· ${approvalFlow.tracker}` : ""}
+      </div>
+      {stages.map((stage) => {
+        const isExpanded = expandedStages.includes(stage.stage_index);
+        const rowApprovals = stage.row_approvals || [];
+
+        return (
+          <div key={stage.stage_index} className="border-b border-gray-100 last:border-b-0">
+            <div
+              className="grid w-full cursor-pointer grid-cols-[minmax(0,1fr)_auto] gap-x-4 px-4 py-4 hover:bg-primary/10"
+              onClick={() => toggleStage(stage.stage_index)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  toggleStage(stage.stage_index);
+                }
+              }}
+              role="button"
+              tabIndex={0}
+              aria-expanded={isExpanded}
+            >
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <Typography variant="bodySmall" className="font-semibold text-gray-900">
+                    {stage.stage_name}
+                  </Typography>
+                  <AllocatedToTooltip users={stage.approvers} title="Approvers" position="bottom">
+                    <Badge label={stage.status || "Not started"} size="sm" backgroundColor={getStatusColor(stage.status || "")} />
+                  </AllocatedToTooltip>
+                </div>
+                <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-gray-500">
+                  <span>Triggered: {stage.trigger_date ? formatToIndianDateWithTime(stage.trigger_date) : "—"}</span>
+                  {stage.rows && <span>{stage.rows.actioned} of {stage.rows.total} positions actioned</span>}
+                </div>
               </div>
-              {getStatusIcon(entry.status || "")}
+              <ChevronDown className={`mt-1 h-5 w-5 shrink-0 text-gray-400 transition-transform duration-200 ease-out ${isExpanded ? "rotate-180" : ""}`} />
             </div>
-            <div className="grid grid-cols-2 gap-3 text-xs">
-              <div>
-                <span className="text-gray-500">Action Taken by</span>
-                <p className="font-medium text-gray-900 mt-0.5">
-                  {entry.action_taken_by_name || entry.action_taken_by || "—"}
-                  {entry.on_behalf_of && (
-                    <span className="block text-gray-500 text-[11px]">
-                      (On Behalf of{" "}
-                      {entry.on_behalf_of_name || entry.on_behalf_of})
-                    </span>
-                  )}
-                </p>
-              </div>
-              <div>
-                <span className="text-gray-500">Action</span>
-                <p className="font-medium text-gray-900 mt-0.5">
-                  {entry.action || "—"}
-                </p>
-              </div>
-              <div>
-                <span className="text-gray-500">Trigger Date</span>
-                <p className="font-medium text-gray-900 mt-0.5">
-                  {entry.trigger_date
-                    ? formatToIndianDateWithTime(entry.trigger_date)
-                    : "—"}
-                </p>
-              </div>
-              <div>
-                <span className="text-gray-500">Completed Date</span>
-                <p className="font-medium text-gray-900 mt-0.5">
-                  {entry.completed_date
-                    ? formatToIndianDateWithTime(entry.completed_date)
-                    : "—"}
-                </p>
+
+            <div
+              className={`grid transition-[grid-template-rows] duration-200 ease-out ${
+                isExpanded ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
+              }`}
+            >
+              <div className="min-h-0 overflow-hidden">
+                <div className={`border-t border-gray-100 bg-gray-50/70 px-4 py-4 transition-opacity duration-150 ${isExpanded ? "opacity-100" : "opacity-0"}`}>
+                {rowApprovals.length ? (
+                  <div className={isDesktop ? "overflow-x-auto" : "space-y-3"}>
+                    {isDesktop ? (
+                      <table className="min-w-full text-sm">
+                        <thead className="text-left text-xs text-gray-500">
+                          <tr><th className="pb-2 font-medium">Position</th><th className="pb-2 font-medium">Approver(s)</th><th className="pb-2 font-medium">Status</th><th className="pb-2 font-medium">Action Taken By</th><th className="pb-2 font-medium">Completed</th></tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-200 bg-white">
+                          {rowApprovals.map((row) => <tr key={row.row_docnames?.join("-") || row.label}><td className="px-3 py-3 font-medium text-gray-900">{row.label}</td><td className="px-3 py-3 text-gray-700">{row.approvers?.join(", ") || "—"}</td><td className="px-3 py-3"><Badge label={row.status || "Not started"} size="sm" backgroundColor={getStatusColor(row.status || "")} /></td><td className="px-3 py-3 text-gray-700">{row.action_taken_by?.join(", ") || "—"}</td><td className="px-3 py-3 text-gray-700">{row.completed_date ? formatToIndianDateWithTime(row.completed_date) : "—"}</td></tr>)}
+                        </tbody>
+                      </table>
+                    ) : rowApprovals.map((row) => (
+                      <div key={row.row_docnames?.join("-") || row.label} className="rounded-md border border-gray-200 bg-white p-3 text-xs">
+                        <div className="mb-2 flex items-start justify-between gap-2"><span className="font-semibold text-gray-900">{row.label}</span><Badge label={row.status || "Not started"} size="sm" backgroundColor={getStatusColor(row.status || "")} /></div>
+                        <p className="text-gray-500">Approver(s): <span className="text-gray-800">{row.approvers?.join(", ") || "—"}</span></p>
+                        <p className="mt-1 text-gray-500">Action taken by: <span className="text-gray-800">{row.action_taken_by?.join(", ") || "—"}</span></p>
+                        <p className="mt-1 text-gray-500">Completed: <span className="text-gray-800">{row.completed_date ? formatToIndianDateWithTime(row.completed_date) : "—"}</span></p>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <Typography variant="bodySmall" className="text-gray-500">No position-level approvals for this stage.</Typography>
+                )}
+                </div>
               </div>
             </div>
           </div>
-        ))}
-      </div>
-    );
-  }
-
-  // Desktop table view
-  return (
-    <div className="border border-gray-200 rounded-xl overflow-hidden">
-      <table className="min-w-full divide-y divide-gray-200">
-        <thead>
-          <tr className="bg-gray-50">
-            <th className="px-5 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-              Approver(s)
-            </th>
-            <th className="px-5 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-              Action Taken by
-            </th>
-            <th className="px-5 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">
-              Action
-            </th>
-            <th className="px-5 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">
-              Status
-            </th>
-            <th className="px-5 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">
-              Approver Form
-            </th>
-            <th className="px-5 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-              Trigger Date
-            </th>
-            <th className="px-5 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-              Completed Date
-            </th>
-            <th className="px-5 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">
-              Documents
-            </th>
-          </tr>
-        </thead>
-        <tbody className="bg-white divide-y divide-gray-100">
-          {approvalFlow.map((entry: any, idx: number) => (
-            <tr key={idx} className="hover:bg-gray-50/50 transition-colors">
-              {/* Approver(s) */}
-              <td className="px-5 py-4 text-sm">
-                <Badge
-                  label={
-                    entry.approver_role ||
-                    entry.role ||
-                    `Level ${entry.level || idx + 1}`
-                  }
-                  size="sm"
-                  backgroundColor="bg-gray-100 text-gray-700"
-                  icon={
-                    entry.level ? (
-                      <span className="text-[10px] bg-primary-50 text-primary-700 px-1.5 py-0.5 rounded-md font-bold">
-                        {entry.level}
-                      </span>
-                    ) : undefined
-                  }
-                />
-              </td>
-
-              {/* Action Taken by */}
-              <td className="px-5 py-4 text-sm text-gray-700">
-                <div>
-                  {entry.action_taken_by_name || entry.action_taken_by || "—"}
-                  {entry.on_behalf_of && (
-                    <span className="block text-gray-500 text-xs mt-0.5">
-                      (On Behalf of{" "}
-                      {entry.on_behalf_of_name || entry.on_behalf_of})
-                    </span>
-                  )}
-                </div>
-              </td>
-
-              {/* Action */}
-              <td className="px-5 py-4 text-sm text-gray-700 text-center">
-                {entry.action || "—"}
-              </td>
-
-              {/* Status */}
-              <td className="px-5 py-4 text-center">
-                {getStatusIcon(entry.status || "")}
-              </td>
-
-              {/* Approver Form */}
-              <td className="px-5 py-4 text-center">
-                {entry.approver_form ? (
-                  <button
-                    className="text-gray-500 hover:text-primary transition-colors"
-                    onClick={() => {
-                      if (entry.approver_form) {
-                        window.open(entry.approver_form, "_blank");
-                      }
-                    }}
-                  >
-                    <Eye className="w-5 h-5 mx-auto" />
-                  </button>
-                ) : (
-                  <Eye className="w-5 h-5 mx-auto text-gray-300" />
-                )}
-              </td>
-
-              {/* Trigger Date */}
-              <td className="px-5 py-4 text-sm text-gray-700">
-                {entry.trigger_date
-                  ? formatToIndianDateWithTime(entry.trigger_date)
-                  : "—"}
-              </td>
-
-              {/* Completed Date */}
-              <td className="px-5 py-4 text-sm text-gray-700">
-                {entry.completed_date
-                  ? formatToIndianDateWithTime(entry.completed_date)
-                  : "—"}
-              </td>
-
-              {/* Documents */}
-              <td className="px-5 py-4 text-center">
-                {entry.documents ? (
-                  <button
-                    className="text-gray-500 hover:text-primary transition-colors"
-                    onClick={() => {
-                      if (typeof entry.documents === "string") {
-                        window.open(entry.documents, "_blank");
-                      }
-                    }}
-                  >
-                    <FileText className="w-5 h-5 mx-auto" />
-                  </button>
-                ) : (
-                  <span className="text-gray-300">—</span>
-                )}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+        );
+      })}
     </div>
   );
 };
@@ -776,6 +751,7 @@ const getStatusColor = (status: string) => {
   switch (status?.toLowerCase()) {
     case "approved":
     case "approved active":
+    case "completed":
     case "open":
     case "open & approved":
       return "bg-green-100 text-green-700";

@@ -21,12 +21,48 @@ export interface JobRequisition {
     status?: string;
   }
   
-  export interface RequisitionDetailsResponse {
+export interface RequisitionDetailsResponse {
     job_requisition: JobRequisition;
     interviews: Interview[]; // Replace any[] with Interview[]
     review_count: number;
     job_applicant_count: number;
     interview_count: number;
+    approval_flow?: RequisitionApprovalFlow;
+  }
+
+  export interface RequisitionRowApproval {
+    label: string;
+    row_docnames: string[];
+    status: string;
+    approvers: string[];
+    action_taken_by: string[];
+    completed_date: string | null;
+  }
+
+  export interface RequisitionApprovalStage {
+    stage_index: number;
+    stage_name: string;
+    approvers: string[];
+    roles: string[];
+    action_taken_by: string[];
+    action: string;
+    status: string;
+    trigger_date: string | null;
+    completed_date: string | null;
+    is_row_stage?: boolean;
+    rows?: { actioned: number; total: number };
+    row_approvals?: RequisitionRowApproval[];
+  }
+
+  export interface RequisitionApprovalFlow {
+    requisition: string;
+    has_approval: boolean;
+    tracker: string;
+    status: string;
+    mode: string;
+    current_step: number;
+    started_on: string | null;
+    stages: RequisitionApprovalStage[];
   }
   
   export interface GetRequisitionParams {
