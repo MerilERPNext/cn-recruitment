@@ -2820,9 +2820,11 @@ def _build_preview_payload(jd_name, source, filled_data=None):
 #
 # `coercion` normalises the JD value into the shape the requisition field
 # expects:
-#   "num"    → Float rendered for a Data field ("3.0" → "3", 2.5 → "2.5").
-#   "rows:X" → child rows flattened to the plain values under child key X.
-#   None     → passed through untouched.
+#   "num"     → Float rendered for a Data field ("3.0" → "3", 2.5 → "2.5").
+#   "rows:X"  → child rows flattened to the plain values under child key X.
+#   "quals:X" → child rows turned into {qualification, mandatory} objects, the
+#               shape `custom_qualifications` accepts (a flat list is skipped).
+#   None      → passed through untouched.
 #
 # To surface another JD field on the requisition, add one line here — nothing
 # else in the flow needs to change.
@@ -2835,6 +2837,8 @@ JD_TO_REQUISITION_PREFILL = {
     "functional_area": ("custom_functional_area", "rows:functional_area"),
     # Skills — same child doctype on both sides (Job Requisition Skill).
     "skills": ("custom_skills", "rows:skill"),
+    # Education — the JD's degrees become the requisition's qualifications.
+    "degree": ("custom_qualifications", "quals:degree"),
 }
 
 
@@ -2870,6 +2874,20 @@ def _prefill_rows(value, child_key):
     return out
 
 
+def _prefill_qualifications(value, child_key):
+    """JD degree rows → the objects `custom_qualifications` accepts.
+
+    That table stores {qualification, mandatory} rows, so a flat list of degree
+    names would be discarded by _apply_qualifications, which skips anything that
+    is not an object. `mandatory` defaults to "Required", matching what that
+    function assumes when the caller omits it.
+    """
+    return [
+        {"qualification": item, "mandatory": "Required"}
+        for item in _prefill_rows(value, child_key)
+    ]
+
+
 def _jd_prefill_values(doc):
     """Return the matched JD's values keyed by JOB REQUISITION fieldnames, so
     the frontend can drop the dict straight onto the requisition form once
@@ -2887,6 +2905,8 @@ def _jd_prefill_values(doc):
                 value = _prefill_number(raw)
             elif coercion and coercion.startswith("rows:"):
                 value = _prefill_rows(raw, coercion.split(":", 1)[1]) or None
+            elif coercion and coercion.startswith("quals:"):
+                value = _prefill_qualifications(raw, coercion.split(":", 1)[1]) or None
             else:
                 value = raw or None
             if value is not None:
