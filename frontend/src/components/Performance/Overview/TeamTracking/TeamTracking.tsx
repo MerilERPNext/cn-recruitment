@@ -210,6 +210,9 @@ const TeamTracking = () => {
 
   const {
     data: employeeData,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
     isLoading: isEmployeesLoading,
     isError: isEmployeesError,
     error: employeesError,
@@ -227,7 +230,10 @@ const TeamTracking = () => {
     refetch: refetchGoals,
   } = useMyGoals();
 
-  const employeeList = employeeData?.pages?.[0]?.results || [];
+  // Combine results from all fetched pages for infinite scrolling/pagination
+  const employeeList =
+    employeeData?.pages?.flatMap((page) => page?.results || []) || [];
+
   const selectedEmployee = employeeList.find(
     (e: { id: string; label?: string }) => e.id === selectedEmployeeId,
   );
@@ -300,6 +306,27 @@ const TeamTracking = () => {
                   <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-blue-500 transition-colors" />
                 </Card>
               ))}
+
+              {/* Load More Pagination Button */}
+              {hasNextPage && (
+                <div className="flex justify-center pt-4 pb-2">
+                  <Button
+                    onClick={() => fetchNextPage()}
+                    disabled={isFetchingNextPage}
+                    variant="outline"
+                    className="text-sm font-medium border-blue-200 text-blue-600 hover:bg-blue-50 hover:border-blue-300 flex items-center gap-2 px-6 py-2 rounded-lg"
+                  >
+                    {isFetchingNextPage ? (
+                      <>
+                        <span className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                        Loading more employees...
+                      </>
+                    ) : (
+                      "Load More Employees"
+                    )}
+                  </Button>
+                </div>
+              )}
             </div>
           )
         ) : (
