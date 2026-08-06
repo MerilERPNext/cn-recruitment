@@ -2053,6 +2053,15 @@ def _serialise_requisition(doc):
             "cost_center_allocations": _serialise_cost_center_allocations(
                 row.get("cost_center_allocations")
             ),
+            # Outcome of this position's own approval, stamped by a row-level
+            # approval stage. Blank on requisitions whose matrix approves the
+            # document as a whole rather than per position.
+            "approval_status": row.get("approval_status"),
+            "approved_by": row.get("approved_by"),
+            "approved_on": row.get("approved_on"),
+            # Child row name — the key the approval flow's row_approvals use, so
+            # a per-position approval can be matched back to its row.
+            "row_name": row.get("name"),
         }
         for row in doc.get("custom_position_details") or []
     ]
@@ -2082,6 +2091,16 @@ def _serialise_requisition(doc):
         }
         for row in doc.get("custom_position_summary") or []
     ]
+
+    # Which detail tables actually carry rows. A Lateral requisition fills
+    # `custom_position_details` and a Fresher one fills `custom_regions`, so a
+    # caller can render only the table that has data instead of guessing from
+    # the hiring type or counting the arrays itself.
+    out["available_tables"] = {
+        "position_details": bool(out["custom_position_details"]),
+        "regions": bool(out["custom_regions"]),
+        "position_summary": bool(out["custom_position_summary"]),
+    }
 
     out["custom_qualifications"] = [
         {"qualification": row.get("qualification"), "mandatory": row.get("mandatory")}
@@ -3454,3 +3473,272 @@ def activate_job_requisition(job_requisition, job_opening):
         frappe.db.set_value("Job Requisition", job_requisition, "status", "Open & Approved")
 
     return {"job_requisition": job_requisition, "job_opening": job_opening, "status": "Open & Approved"}
+
+
+# ---------------------------------------------------------------------------
+# Approval flow — what the requisition's approval has done so far.
+#
+# Backs the "Approval Flow" tab in the requisition drawer. The data lives on the
+# Nextai Approval Tracker created when an approval matrix applies; a requisition
+# with no tracker simply reports has_approval = False so the UI hides the tab.
+#
+# A row-level stage (one approval task per position) contributes SEVERAL logs
+# under a single stage index, so each stage is returned with an aggregate status
+# plus a per-position breakdown.
+# ---------------------------------------------------------------------------
+
+def _aggregate_stage_logs(logs):
+    """Stage-level status for logs that share a stage. Delegates to nextai so the
+    tab and the approval engine can never disagree about when a stage is done."""
+    try:
+        from nextai.funnel.doctype.funnel_task.utils.row_approval import (
+            aggregate_row_log_status,
+        )
+
+        return aggregate_row_log_status(logs)
+    except Exception:
+        statuses = [(l.get("status") or "Pending") for l in logs if (l.get("status") or "") != "Cancelled"]
+        total = len(statuses)
+        actioned = sum(1 for s in statuses if s != "Pending")
+        if not statuses or actioned < total:
+            status = "Pending"
+        elif "Rejected" in statuses:
+            status = "Rejected"
+        else:
+            status = "Approved"
+        return {"status": status, "actioned": actioned, "total": total}
+
+
+def _split_users(*values):
+    """User ids out of the comma-separated columns an approval log uses."""
+    out = []
+    for value in values:
+        for uid in str(value or "").split(","):
+            uid = uid.strip()
+            if uid and uid not in out:
+                out.append(uid)
+    return out
+
+
+def _approval_display_names(user_ids):
+    """{user_id: display name} for a whole flow in one query.
+
+    Prefers the Employee name (what an HR user recognises) and falls back to the
+    User's full name, then the id itself.
+    """
+    user_ids = [u for u in dict.fromkeys(user_ids) if u]
+    if not user_ids:
+        return {}
+
+    names = {
+        row["name"]: row.get("full_name") or row["name"]
+        for row in frappe.get_all(
+            "User", filters={"name": ["in", user_ids]}, fields=["name", "full_name"]
+        )
+    }
+    for row in frappe.get_all(
+        "Employee",
+        filters={"user_id": ["in", user_ids]},
+        fields=["user_id", "employee_name"],
+    ):
+        if row.get("employee_name"):
+            names[row["user_id"]] = row["employee_name"]
+    return {uid: names.get(uid, uid) for uid in user_ids}
+
+
+@frappe.whitelist()
+def get_requisition_approval_flow(requisition_name):
+    """Approval flow for one Job Requisition, shaped for the UI tab.
+
+    Returns one entry per approval stage — who it is with, who acted, the
+    outcome, and when it started/finished — plus, for a stage that fans out over
+    positions, a row-by-row breakdown.
+
+    Cost is four queries regardless of how many stages or positions there are:
+    tracker, stages, logs, and one name lookup for every user in the flow.
+    """
+    if not requisition_name:
+        frappe.throw(frappe._("Requisition is required."))
+
+    frappe.has_permission(JOB_REQUISITION, "read", doc=requisition_name, throw=True)
+
+    empty = {
+        "requisition": requisition_name,
+        "has_approval": False,
+        "tracker": None,
+        "status": None,
+        "stages": [],
+    }
+
+    tracker = frappe.db.get_value(
+        "Approval Tracker",
+        {"doc_type": JOB_REQUISITION, "doc_name": requisition_name},
+        ["name", "status", "approval_mode", "current_approval_step", "creation"],
+        as_dict=True,
+        order_by="creation desc",
+    )
+    if not tracker:
+        return empty
+
+    stages = frappe.get_all(
+        "Approval Stages",
+        filters={"parent": tracker.name, "parenttype": "Approval Tracker"},
+        fields=["idx", "approval_name", "approval_label", "rejection_label",
+                "enable_row_level_approval"],
+        order_by="idx asc",
+    )
+    logs = frappe.get_all(
+        "Approval Log Entry",
+        filters={"parent": tracker.name, "parenttype": "Approval Tracker"},
+        fields=["name", "stage_index", "stage_name", "status", "user",
+                "custom_allocated_to_users", "custom_assigned_to_roles", "role",
+                "approval_time", "creation", "is_row_log", "row_label", "row_idx",
+                "row_docnames", "approval_label", "rejection_label"],
+        order_by="stage_index asc, row_idx asc, idx asc",
+    )
+
+    # One name lookup for every user mentioned anywhere in the flow.
+    everyone = []
+    for log in logs:
+        everyone.extend(_split_users(log.get("user"), log.get("custom_allocated_to_users")))
+    names = _approval_display_names(everyone)
+
+    logs_by_stage = {}
+    for log in logs:
+        logs_by_stage.setdefault(log.get("stage_index") or 0, []).append(log)
+
+    def action_word(stage_status, stage_logs):
+        """The action label for the stage as a whole.
+
+        Derived from the aggregate status, not from any one log — a row-level
+        stage has several logs and the last one is not necessarily the outcome.
+        """
+        sample = stage_logs[0] if stage_logs else {}
+        if stage_status == "Approved":
+            return sample.get("approval_label") or "Approve"
+        if stage_status == "Rejected":
+            return sample.get("rejection_label") or "Reject"
+        return stage_status
+
+    out_stages = []
+    for stage in stages:
+        index = stage.idx - 1
+        stage_logs = logs_by_stage.get(index, [])
+        aggregate = _aggregate_stage_logs(stage_logs) if stage_logs else {
+            "status": "Not started", "actioned": 0, "total": 0
+        }
+
+        approvers, acted_by, completed = [], [], []
+        for log in stage_logs:
+            for uid in _split_users(log.get("custom_allocated_to_users"), log.get("user")):
+                if names.get(uid) not in approvers:
+                    approvers.append(names.get(uid, uid))
+            if log.get("status") in ("Approved", "Rejected") and log.get("user"):
+                for uid in _split_users(log.get("user")):
+                    if names.get(uid) not in acted_by:
+                        acted_by.append(names.get(uid, uid))
+            if log.get("approval_time"):
+                completed.append(log["approval_time"])
+
+        roles = []
+        for log in stage_logs:
+            for role in str(log.get("custom_assigned_to_roles") or log.get("role") or "").split(","):
+                role = role.strip()
+                if role and role not in roles:
+                    roles.append(role)
+
+        entry = {
+            "stage_index": index,
+            "stage_name": (
+                stage.approval_name
+                or (stage_logs[0].get("stage_name") if stage_logs else None)
+                or frappe._("Stage {0}").format(stage.idx)
+            ),
+            "approvers": approvers,
+            "roles": roles,
+            "action_taken_by": acted_by,
+            "action": action_word(aggregate["status"], stage_logs) if stage_logs else "—",
+            "status": aggregate["status"],
+            "trigger_date": stage_logs[0].get("creation") if stage_logs else None,
+            # A stage is only "completed" once nothing in it is still pending.
+            "completed_date": max(completed) if completed and aggregate["status"] != "Pending" else None,
+        }
+
+        # Per-position detail for a stage that fanned out.
+        if len(stage_logs) > 1 or any(l.get("is_row_log") for l in stage_logs):
+            entry["is_row_stage"] = True
+            entry["rows"] = {"actioned": aggregate["actioned"], "total": aggregate["total"]}
+            entry["row_approvals"] = [
+                {
+                    "label": log.get("row_label"),
+                    # Child row name(s) this approval covers — matches the
+                    # `row_name` on custom_position_details, so the UI can line a
+                    # position up with its approval without parsing the label.
+                    "row_docnames": [
+                        r.strip() for r in str(log.get("row_docnames") or "").split(",") if r.strip()
+                    ],
+                    "status": log.get("status") or "Pending",
+                    "approvers": [
+                        names.get(u, u)
+                        for u in _split_users(log.get("custom_allocated_to_users"), log.get("user"))
+                    ],
+                    "action_taken_by": (
+                        [names.get(u, u) for u in _split_users(log.get("user"))]
+                        if log.get("status") in ("Approved", "Rejected") else []
+                    ),
+                    "completed_date": log.get("approval_time"),
+                }
+                for log in stage_logs
+            ]
+        out_stages.append(entry)
+
+    return {
+        "requisition": requisition_name,
+        "has_approval": True,
+        "tracker": tracker.name,
+        "status": tracker.status,
+        "mode": tracker.approval_mode,
+        "current_step": tracker.current_approval_step,
+        "started_on": tracker.creation,
+        "stages": out_stages,
+    }
+
+
+@frappe.whitelist()
+def get_job_requisition_details(requisition_name=None, name=None):
+    """Everything the requisition detail view needs, in ONE call.
+
+    The list view already has its own endpoint; this is the per-item view opened
+    when a row is clicked. It returns both tabs' data together so the drawer
+    makes a single request:
+
+      * ``requisition``   — the flat requisition, including
+        ``custom_position_details`` (with each position's own approval outcome),
+        ``custom_regions`` and ``available_tables`` for the Position Details tab.
+      * ``approval_flow`` — the per-stage approval trail for the Approval Flow
+        tab, with a per-position breakdown for row-level stages. Its
+        ``has_approval`` flag is False when the requisition never went through an
+        approval, which is the signal to hide that tab.
+
+    ``requisition_name`` is the parameter; ``name`` is accepted as an alias so
+    either convention works from the client.
+    """
+    requisition_name = requisition_name or name
+    if not requisition_name:
+        frappe.throw(frappe._("Requisition is required."))
+
+    if not frappe.db.exists(JOB_REQUISITION, requisition_name):
+        frappe.throw(
+            frappe._("Job Requisition {0} not found.").format(requisition_name),
+            frappe.DoesNotExistError,
+        )
+
+    frappe.has_permission(JOB_REQUISITION, "read", doc=requisition_name, throw=True)
+
+    doc = frappe.get_doc(JOB_REQUISITION, requisition_name)
+
+    return {
+        "requisition": _serialise_requisition(doc),
+        # Permission was checked above; the flow helper re-checks harmlessly.
+        "approval_flow": get_requisition_approval_flow(requisition_name),
+    }
