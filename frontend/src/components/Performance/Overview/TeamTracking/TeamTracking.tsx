@@ -56,20 +56,20 @@ const TeamTracking = () => {
   );
   return (
     <div className="flex flex-col h-full bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-      <div className="flex items-center px-6 py-4 border-b border-gray-100 bg-gray-50/50 shrink-0">
+      <div className="flex items-center px-3.5 sm:px-6 py-3 sm:py-4 border-b border-gray-100 bg-gray-50/50 shrink-0">
         {viewState !== "employees" && (
           <button
             onClick={() => {
               setViewState("employees");
               setSelectedEmployeeId(null);
             }}
-            className="mr-3 p-1.5 rounded-lg hover:bg-gray-200 text-gray-600 transition-colors flex items-center justify-center"
+            className="mr-2 sm:mr-3 p-1.5 rounded-lg hover:bg-gray-200 text-gray-600 transition-colors flex items-center justify-center"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
         )}
         <div>
-          <Typography variant="h4" className="font-semibold text-gray-900">
+          <Typography variant="h4" className="font-semibold text-gray-900 text-base sm:text-lg">
             {viewState === "employees"
               ? "Team Tracking"
               : `Goals for ${selectedEmployee?.label || "Employee"}`}
@@ -78,7 +78,7 @@ const TeamTracking = () => {
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-6 bg-[#f8fafc]">
+      <div className="flex-1 overflow-y-auto p-3 sm:p-6 bg-[#f8fafc]">
         {viewState === "employees" ? (
           isEmployeesLoading ? (
             <EmployeeListSkeleton />

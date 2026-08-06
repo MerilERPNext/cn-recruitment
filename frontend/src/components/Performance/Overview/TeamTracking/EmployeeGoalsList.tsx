@@ -94,12 +94,12 @@ export const EmployeeGoalsList = ({
         return (
           <Card
             key={goalId}
-            className="p-5 border border-gray-100 hover:border-blue-300 hover:shadow-md  transition-all bg-white group"
+            className="p-3.5 sm:p-5 border border-gray-100 hover:border-blue-300 hover:shadow-md transition-all bg-white group"
             onClick={() => onSelectGoal?.(goalId)}
           >
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-6">
-              <div className="min-w-0 space-y-2 flex-1">
-                <div className="flex flex-wrap items-center gap-2">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-6">
+              <div className="min-w-0 space-y-2 flex-1 w-full">
+                <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
                   <Badge
                     label={goal?.goal_type || "-"}
                     variant="purple"
@@ -118,27 +118,27 @@ export const EmployeeGoalsList = ({
                     />
                   )}
                 </div>
-                <div>
+                <div className="min-w-0">
                   <Typography
                     variant="body"
-                    className="font-semibold text-gray-900 group-hover:text-blue-700 transition-colors mb-1 truncate"
+                    className="font-semibold text-gray-900 group-hover:text-blue-700 transition-colors mb-1 text-sm sm:text-base break-words leading-snug"
                   >
                     {goal?.title}
                   </Typography>
                   {goal.description && (
                     <Typography
                       variant="bodySmall"
-                      className="text-gray-500 truncate"
+                      className="text-gray-500 text-xs sm:text-sm break-words leading-relaxed mt-0.5"
                     >
                       {goal.description}
                     </Typography>
                   )}
-                  <span className="text-xs text-gray-500 font-medium whitespace-nowrap">
+                  <span className="text-xs text-gray-500 font-medium inline-block mt-1">
                     Last check in - {goal?.last_checkin_date ?? "--"}
                   </span>
                 </div>
               </div>
-              <div className="flex items-center gap-4 sm:gap-5 shrink-0 self-end sm:self-center">
+              <div className="flex items-center justify-end sm:justify-center shrink-0 w-full sm:w-auto pt-1 sm:pt-0">
                 <Button
                   variant="outline"
                   disabled={isGoalPending}
