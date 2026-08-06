@@ -325,9 +325,12 @@ const AssignmentDetailDrawer = ({
   // Only Draft (docstatus 0) assignments can be edited in Frappe.
   const isDraft = (doc?.docstatus ?? row.docstatus) === 0;
 
-  const components = slip?.component_part_of_ctc ?? [];
-  const earnings = components.filter((c) => c.type !== "Deduction");
-  const deductions = components.filter((c) => c.type === "Deduction");
+  const components: SalaryComponent[] = [
+    ...(slip?.earning_part_of_ctc ?? []),
+    ...(slip?.deduction_part_of_ctc ?? []),
+  ];
+  const earnings = components.filter((c: SalaryComponent) => c.type !== "Deduction");
+  const deductions = components.filter((c: SalaryComponent) => c.type === "Deduction");
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-end bg-black/40">

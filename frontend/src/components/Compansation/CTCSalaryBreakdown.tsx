@@ -1,11 +1,13 @@
-import { PieChart, TrendingUp, Wallet } from "lucide-react";
-import { useState } from "react";
+import { PieChart, TrendingUp, Wallet, AlertCircle, RefreshCw } from "lucide-react";
+import { useState, useEffect } from "react";
 import { useGenerateSalarySlip } from "../../hooks/useCTC";
 import { useTargetUser } from "../../context/ViewedUserContext";
 import { useCurrentEmployeeDetails } from "../../hooks/useEmployee";
 import { useScreenSize } from "../../hooks/useScreenSize";
+import { useTaxSheetPayrollPriodsData } from "../../hooks/useTaxSheet";
+import { SalaryComponent, AmountComponent } from "../../types/ctc";
 import { NoDataFound } from "../shared/atoms/NoDataFound";
-
+import CustomDropdown from "../shared/CustomDropdown";
 import ShowHideButton from "./ui/ShowHideButton";
 
 const CTCSalaryUI = () => {
@@ -15,14 +17,39 @@ const CTCSalaryUI = () => {
   const employeeId = targetEmployeeId || employee?.name;
   const { isDesktop } = useScreenSize();
 
+  const [selectedPeriod, setSelectedPeriod] = useState<string>("");
+
+  const { data: payrollPeriods } = useTaxSheetPayrollPriodsData(
+    employee?.company || null,
+  ) as { data: { name: string; start_date: string; end_date: string }[] | undefined };
+
+  useEffect(() => {
+    if (!payrollPeriods?.length || selectedPeriod) return;
+
+    const today = new Date();
+    const matchedPeriod = payrollPeriods.find((p) => {
+      const start = new Date(p.start_date);
+      const end = new Date(p.end_date);
+      return today >= start && today <= end;
+    });
+
+    setSelectedPeriod(matchedPeriod?.name || payrollPeriods[0].name);
+  }, [payrollPeriods, selectedPeriod]);
+
   const {
     data: salarySlip,
     isLoading: isSalaryLoading,
     isError,
-  } = useGenerateSalarySlip(employeeId);
+    error,
+    refetch,
+  } = useGenerateSalarySlip(employeeId, selectedPeriod);
 
-  const annual_reimbursement_amount =
-    (salarySlip?.total_reimbursement_amount || 0) * 12;
+  // New API returns arrays for these, we need to extract the annual_amount of the first item
+  const getAmount = (arr: AmountComponent[]) => arr?.[0]?.annual_amount || 0;
+  
+  const annual_ctc = getAmount(salarySlip?.total_final_ctc || []);
+  const fixed_gross = getAmount(salarySlip?.fixed_gross || []);
+  const fixed_ctc = getAmount(salarySlip?.fixed_ctc || []);
 
   const [isMoneyMasked, setIsMoneyMasked] = useState(true);
 
@@ -62,6 +89,21 @@ const CTCSalaryUI = () => {
               showAmount={isMoneyMasked}
               onToggleAmount={toggleMoneyMask}
             />
+            <div className="flex items-center gap-1.5">
+              <span className="text-[13px] text-text-body2">Payroll Period</span>
+              <CustomDropdown
+                value={selectedPeriod}
+                onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+                  setSelectedPeriod(e.target.value)
+                }
+                options={
+                  payrollPeriods?.map((p) => ({
+                    value: p.name,
+                    label: p.name,
+                  })) || []
+                }
+              />
+            </div>
           </div>
         </div>
       )}
@@ -76,6 +118,18 @@ const CTCSalaryUI = () => {
                 showAmount={isMoneyMasked}
                 onToggleAmount={toggleMoneyMask}
               />
+              <CustomDropdown
+                value={selectedPeriod}
+                onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+                  setSelectedPeriod(e.target.value)
+                }
+                options={
+                  payrollPeriods?.map((p) => ({
+                    value: p.name,
+                    label: p.name,
+                  })) || []
+                }
+              />
             </div>
           </div>
         </div>
@@ -83,18 +137,54 @@ const CTCSalaryUI = () => {
     </div>
   );
 
-  if (isLoading) {
-    const skeletonCards = [
-      { cardBg: "bg-blue-50", iconBg: "bg-blue-100" },
-      { cardBg: "bg-purple-50", iconBg: "bg-purple-100" },
-      { cardBg: "bg-orange-50", iconBg: "bg-orange-100" },
-    ];
+  const skeletonCards = [
+    { cardBg: "bg-blue-50", iconBg: "bg-blue-100" },
+    { cardBg: "bg-purple-50", iconBg: "bg-purple-100" },
+    { cardBg: "bg-orange-50", iconBg: "bg-orange-100" },
+  ];
 
-    return (
-      <div className="min-h-screen rounded-lg sm:px-4">
-        <div className="w-full py-4">
-          <Header />
+  const StatCard = ({
+    label,
+    value,
+    subLabel,
+    icon: Icon,
+    iconColor = "text-gray-400",
+    iconBg = "bg-gray-50",
+    cardBg = "bg-white",
+  }: {
+    label: string;
+    value: number;
+    subLabel?: string;
+    icon?: React.ElementType;
+    iconColor?: string;
+    iconBg?: string;
+    cardBg?: string;
+  }) => (
+    <div
+      className={`${cardBg} p-6 rounded-lg border border-gray-100 shadow-sm hover-lift`}
+    >
+      <div className="flex justify-between items-start mb-4">
+        <p className="card-subtitle  text-gray-600 uppercase tracking-wide">
+          {label}
+        </p>
+        {Icon && (
+          <div className={`p-2.5 rounded-lg ${iconBg}`}>
+            <Icon className={`w-5 h-5 ${iconColor}`} />
+          </div>
+        )}
+      </div>
+      <div className={`text-2xl font-bold mb-1 ${iconColor}`}>
+        {formatCurrency(value)}
+      </div>
+      {subLabel && <p className="text-xs text-gray-500">{subLabel}</p>}
+    </div>
+  );
 
+  return (
+    <div className="min-h-screen bg-app font-brand flex flex-col">
+      <Header />
+      <div className="w-full sm:px-4 py-4 flex-1">
+        {isLoading ? (
           <div className="space-y-8 animate-in fade-in duration-500">
             <div className="grid grid-cols-1 md:grid-cols-3 sm:gap-6 gap-3 mt-4">
               {skeletonCards.map((card, i) => (
@@ -104,9 +194,7 @@ const CTCSalaryUI = () => {
                 >
                   <div className="flex justify-between items-start mb-4">
                     <div className="h-4 w-32 bg-white/60 rounded"></div>
-                    <div
-                      className={`w-10 h-10 rounded-lg ${card.iconBg}`}
-                    ></div>
+                    <div className={`w-10 h-10 rounded-lg ${card.iconBg}`}></div>
                   </div>
                   <div className="h-8 w-40 bg-white/60 rounded mb-2 mt-2"></div>
                   <div className="h-3 w-48 bg-white/60 rounded"></div>
@@ -157,65 +245,27 @@ const CTCSalaryUI = () => {
               </div>
             </div>
           </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (isError || (!isLoading && !salarySlip)) {
-    return (
-      <div className="flex justify-center items-center h-64 text-error">
-        Unable to load salary information.
-      </div>
-    );
-  }
-
-  const StatCard = ({
-    label,
-    value,
-    subLabel,
-    icon: Icon,
-    iconColor = "text-gray-400",
-    iconBg = "bg-gray-50",
-    cardBg = "bg-white",
-  }: {
-    label: string;
-    value: number;
-    subLabel?: string;
-    icon?: React.ElementType;
-    iconColor?: string;
-    iconBg?: string;
-    cardBg?: string;
-  }) => (
-    <div
-      className={`${cardBg} p-6 rounded-lg border border-gray-100 shadow-sm hover-lift`}
-    >
-      <div className="flex justify-between items-start mb-4">
-        <p className="card-subtitle  text-gray-600 uppercase tracking-wide">
-          {label}
-        </p>
-        {Icon && (
-          <div className={`p-2.5 rounded-lg ${iconBg}`}>
-            <Icon className={`w-5 h-5 ${iconColor}`} />
+        ) : isError || !salarySlip ? (
+          <div className="flex flex-col justify-center items-center h-64 bg-white rounded-xl border border-red-100 p-8 shadow-sm">
+            <AlertCircle className="w-12 h-12 text-red-500 mb-4" />
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Unable to load salary information</h3>
+            <p className="text-gray-500 text-center mb-6 max-w-md">
+              {error instanceof Error ? error.message : "An unexpected error occurred while fetching your compensation details."}
+            </p>
+            <button 
+              onClick={() => refetch()} 
+              className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+            >
+              <RefreshCw className="w-4 h-4" />
+              Try Again
+            </button>
           </div>
-        )}
-      </div>
-      <div className={`text-2xl font-bold mb-1 ${iconColor}`}>
-        {formatCurrency(value)}
-      </div>
-      {subLabel && <p className="text-xs text-gray-500">{subLabel}</p>}
-    </div>
-  );
-
-  return (
-    <div className="min-h-screen bg-app font-brand flex flex-col">
-      <Header />
-      <div className="w-full sm:px-4 py-4 flex-1">
-        <div className="space-y-8 animate-in fade-in duration-500">
+        ) : (
+          <div className="space-y-8 animate-in fade-in duration-500">
           <div className="grid grid-cols-1 md:grid-cols-3 sm:gap-6 gap-3">
             <StatCard
-              label="Annual CTC"
-              value={salarySlip?.annual_ctc || 0}
+              label="Total CTC"
+              value={annual_ctc}
               subLabel="Total Cost to Company"
               icon={TrendingUp}
               iconColor="text-blue-600"
@@ -223,18 +273,18 @@ const CTCSalaryUI = () => {
               cardBg="bg-blue-50"
             />
             <StatCard
-              label="Fixed Gross"
-              value={salarySlip?.fixed_gross || 0}
-              subLabel="Annual Fixed Component"
+              label="Fixed GROSS"
+              value={fixed_gross}
+              subLabel="Annual Fixed Gross"
               icon={Wallet}
               iconColor="text-purple-600"
               iconBg="bg-purple-100"
               cardBg="bg-purple-50"
             />
             <StatCard
-              label="Reimbursements"
-              value={annual_reimbursement_amount}
-              subLabel="Annual Reimbursement Limit"
+              label="Fixed CTC"
+              value={fixed_ctc}
+              subLabel="Annual Fixed CTC"
               icon={PieChart}
               iconColor="text-orange-600"
               iconBg="bg-orange-100"
@@ -267,8 +317,8 @@ const CTCSalaryUI = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {salarySlip?.component_part_of_ctc?.map(
-                        (component, index) => (
+                      {salarySlip?.earning_part_of_ctc?.map(
+                        (component: SalaryComponent, index: number) => (
                           <tr key={`${component.component}-${index}`}>
                             <td className="py-4 px-4 border-none card-subtitle">
                               <div className="flex items-center gap-2">
@@ -304,8 +354,8 @@ const CTCSalaryUI = () => {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {salarySlip?.component_part_of_ctc?.map(
-                    (component, index) => (
+                  {salarySlip?.earning_part_of_ctc?.map(
+                    (component: SalaryComponent, index: number) => (
                       <div
                         key={`${component.component}-mobile-${index}`}
                         className="bg-gradient-to-br from-gray-50 to-white p-4 rounded-lg border border-gray-200"
@@ -352,8 +402,8 @@ const CTCSalaryUI = () => {
                 </div>
               )}
 
-              {(!salarySlip?.component_part_of_ctc ||
-                salarySlip.component_part_of_ctc.length === 0) && (
+              {(!salarySlip?.earning_part_of_ctc ||
+                salarySlip.earning_part_of_ctc.length === 0) && (
                   <NoDataFound
                     title="No Breakdown Available"
                     subtitle="No component breakdown available."
@@ -362,6 +412,7 @@ const CTCSalaryUI = () => {
             </div>
           </div>
         </div>
+        )}
       </div>
     </div>
   );
