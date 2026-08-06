@@ -19,7 +19,7 @@ export const useLinkFieldOptions = ({ doctype, searchText = "", filters, enabled
                 skip: pageParam,
                 ...(filters || {})
             });
-            return res?.data?.message || res?.data || [];
+            return  res;
         },
         initialPageParam: 0,
         getNextPageParam: (lastPage, allPages) => {

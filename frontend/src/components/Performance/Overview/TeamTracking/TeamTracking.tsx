@@ -4,6 +4,7 @@ import { Card } from "../../../shared/atoms/Card";
 import { employees, goals, checkIns } from "./mockData";
 import { ChevronRight, ArrowLeft, ClipboardList } from "lucide-react";
 import Badge from "../../../shared/Badge";
+import { useLinkFieldOptions } from "../../../../hooks/useLinkFieldOptions";
 
 type ViewState = "employees" | "goals" | "checkIns";
 
@@ -81,8 +82,9 @@ const TeamTracking = () => {
     null,
   );
   const [selectedGoalId, setSelectedGoalId] = useState<string | null>(null);
-
-  const handleEmployeeClick = (employeeId: string) => {
+const {data:employeeData ,fetchNextPage , hasNextPage , isLoading} = useLinkFieldOptions({doctype:"Employee" , filters:{status:"Active"}})
+  const employeeList = employeeData?.pages?.[0]?.results || [];
+  console.log(employeeList, '==================== employees array');  const handleEmployeeClick = (employeeId: string) => {
     setSelectedEmployeeId(employeeId);
     setViewState("goals");
   };
