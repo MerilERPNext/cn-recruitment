@@ -25,7 +25,7 @@ import type {
   SubmitGoalCheckInPayload,
   SubmitGoalCheckInResponse,
   PerformanceOverviewResponse,
-  RequestCheckInRequest,
+  RequestCheckInPayload,
 } from "../types/goal";
 import FrappeAPI from "../utils/frappeAPI";
 
@@ -155,10 +155,10 @@ export const performanceService = {
 
     return throwIfUnsuccessful(response as GoalSubmitResponse);
   },
-  employeeGoalCheckIn: async (payload: RequestCheckInRequest): Promise<GoalSubmitResponse> => {
+  employeeGoalCheckIn: async (payload: RequestCheckInPayload): Promise<GoalSubmitResponse> => {
     const response = await FrappeAPI.callMethod(
-      "/api/method/cn_pms.cn_performance_management.api.goal_api.request_check_in",
-      { payload },
+      "cn_pms.cn_performance_management.api.goal_api.request_check_in",
+      { payload } as Record<string, unknown>,
     );
 
     return throwIfUnsuccessful(response as GoalSubmitResponse);

@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient, type UseQueryResult } from "@tanstack/react-query";
-import type { DeleteGoalsPayload, GoalActionResponse, GoalFormConfig, GoalPlanId, GoalPlanResponse, GoalsRequest, GoalSubmitResponse, Message, MyGoalsResponse, ReferenceGoalsParams, ReferenceGoalsResponse, GoalRepositoryResponse, SaveGoalsPayload, SubmitSelectedGoalsPayload, CascadeGoalsParams, CascadeGoalsResponse, GoalDetailResponse, GoalCheckInsResponse, SubmitGoalCheckInPayload, SubmitGoalCheckInResponse, PerformanceOverviewResponse, RequestCheckInRequest } from "../types/goal";
+import type { DeleteGoalsPayload, GoalActionResponse, GoalFormConfig, GoalPlanId, GoalPlanResponse, GoalsRequest, GoalSubmitResponse, Message, MyGoalsResponse, ReferenceGoalsParams, ReferenceGoalsResponse, GoalRepositoryResponse, SaveGoalsPayload, SubmitSelectedGoalsPayload, CascadeGoalsParams, CascadeGoalsResponse, GoalDetailResponse, GoalCheckInsResponse, SubmitGoalCheckInPayload, SubmitGoalCheckInResponse, PerformanceOverviewResponse, RequestCheckInPayload } from "../types/goal";
 import { performanceService } from "../services/performanceService";
 interface PerformanceQueryKey {
 
@@ -216,7 +216,7 @@ export const usePerformanceOverview = (): UseQueryResult<PerformanceOverviewResp
 export const useEmployeeGoalsCheckIn = () => {
   const queryClient = useQueryClient();
 
-  return useMutation<GoalSubmitResponse, Error, RequestCheckInRequest>({
+  return useMutation<GoalSubmitResponse, Error, RequestCheckInPayload>({
     mutationFn: (payload) => performanceService.employeeGoalCheckIn(payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: PERFORMANCE_QUERY_KEYS.myGoals });
