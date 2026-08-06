@@ -7,7 +7,7 @@ const Overview: React.FC = () => {
   const topRef = React.useRef<HTMLDivElement>(null);
 
   // Extract active tab from the URL path
-  let activeTab: 'overview' | 'my-goals' | 'skills' | 'review' | 'feedback' = 'overview';
+  let activeTab: 'overview' | 'my-goals' | 'skills' | 'review' | 'feedback' | 'team-tracking' = 'overview';
   if (location.pathname.includes('/my-goals')) {
     activeTab = 'my-goals';
   } else if (location.pathname.includes('/skills')) {
@@ -16,6 +16,8 @@ const Overview: React.FC = () => {
     activeTab = 'review';
   } else if (location.pathname.includes('/feedback')) {
     activeTab = 'feedback';
+  } else if (location.pathname.includes('/team-tracking')) {
+    activeTab = 'team-tracking';
   }
 
   // Extract active review sub-tab from the URL path
@@ -62,6 +64,7 @@ const Overview: React.FC = () => {
               { id: 'skills', name: 'Skills', path: '/webapp/performance-app/skills' },
               { id: 'review', name: 'Review', path: '/webapp/performance-app/review' },
               { id: 'feedback', name: 'Feedback', path: '/webapp/performance-app/feedback' },
+              { id: 'team-tracking', name: 'Team Tracking', path: '/webapp/performance-app/team-tracking' },
             ].map((tab) => {
               const isActive = activeTab === tab.id;
               return (

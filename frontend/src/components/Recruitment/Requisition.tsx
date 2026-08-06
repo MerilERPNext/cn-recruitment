@@ -53,6 +53,7 @@ const EditButton = ({ requisition, onClose }: { requisition: any; onClose: () =>
 
 const Requisition = () => {
   const { isDesktop } = useScreenSize();
+  const navigate = useNavigate();
   const { data: currentEmployee } = useCurrentEmployee();
   const currentEmployeeName = currentEmployee?.employee_name;
   // Persist the 4-card summary across navigations (e.g. edit → back) so the
@@ -608,12 +609,18 @@ const Requisition = () => {
 
   const [selectedRequisition, setSelectedRequisition] = useState<any | null>(null);
 
+  const navigateToDetail = useCallback((item: any) => {
+    navigate(`/webapp/recruitment/requisition/${item.name}`, {
+      state: { requisition: item },
+    });
+  }, [navigate]);
+
   const ItemComponent = useMemo(
     () =>
       ({ item }: { item: any }) => (
-        <RequisitionItem item={item} onView={setSelectedRequisition} />
+        <RequisitionItem item={item} onView={navigateToDetail} />
       ),
-    [apiColumns]
+    [apiColumns, navigateToDetail]
   );
 
   const statCards = [

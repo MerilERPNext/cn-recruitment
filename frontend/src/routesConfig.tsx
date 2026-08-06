@@ -163,6 +163,11 @@ const Feedback = lazyWithRetry(
   () => import("./components/Performance/Feedback/Feedback"),
   "Feedback",
 );
+
+const TeamTracking = lazyWithRetry(
+  () => import("./components/Performance/Overview/TeamTracking/TeamTracking"),
+  "TeamTracking",
+);
 const NewGoal = lazyWithRetry(
   () => import("./components/Performance/GoalCreation/NewGoal"),
   "NewGoal",
@@ -575,6 +580,10 @@ const Requisition = lazyWithRetry(
 const RequisitionForm = lazyWithRetry(
   () => import("./components/Recruitment/RequisitionForm"),
   "RequisitionForm",
+);
+const RequisitionDetailPage = lazyWithRetry(
+  () => import("./components/Recruitment/RequisitionDetailPage"),
+  "RequisitionDetailPage",
 );
 const IJPOpenings = lazyWithRetry(
   () => import("./components/Recruitment/IJPOpenings"),
@@ -1351,6 +1360,11 @@ export const routesConfig: AppRoute[] = [
         permissionKey: "Requisitions",
       },
       {
+        path: "requisition/:requisitionId",
+        element: <RequisitionDetailPage />,
+        permissionKey: "Requisitions",
+      },
+      {
         path: "interviews",
         element: <InterviewList />,
         permissionKey: "Interviews",
@@ -1524,7 +1538,11 @@ export const routesConfig: AppRoute[] = [
             element: <Feedback />,
             permissionKey: "Feedback",
           },
-         
+          {
+            path: "team-tracking",
+            element: <TeamTracking />,
+            permissionKey: "Overview",
+          },
           {
             path: "skills",
             element: <SkillsAndProficiency />,
