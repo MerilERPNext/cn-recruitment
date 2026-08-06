@@ -54,8 +54,7 @@ const EmployeeGoalsList = ({
         const dueDate = goal.end_date
           ? new Date(goal.end_date).toLocaleDateString()
           : "-";
-        const statusText =
-          goal.status || goal.submission_status || goal.goal_status || "-";
+     
 
         return (
           <Card
@@ -67,16 +66,16 @@ const EmployeeGoalsList = ({
               <div className="min-w-0 space-y-3 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
                   <Badge
-                    label={goal.goal_type || "OKR"}
+                    label={goal?.goal_type || "-"}
                     variant="purple"
                     size="sm"
                   />
                   <Badge
-                    label={statusText}
-                    variant={getStatusVariant(statusText)}
+                    label={goal?.status ?? "-"}
+                    variant={getStatusVariant(goal.status)}
                     size="sm"
                   />
-                  {goal.weightage !== undefined && (
+                  {goal?.weightage && (
                     <Badge
                       label={`${goal.weightage}%`}
                       variant="info"
