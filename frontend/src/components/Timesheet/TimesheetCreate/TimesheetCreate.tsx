@@ -54,6 +54,7 @@ import { TimesheetTopBar } from "./components/TimesheetTopBar";
 import { TimesheetMetrics } from "./components/TimesheetMetrics";
 import { TimesheetActionFooter } from "./components/TimesheetActionFooter";
 import { AddTimeEntryButton } from "./components/AddTimeEntryButton";
+import Badge from "../../shared/Badge";
 
 const TimesheetCreate: React.FC = () => {
   const loadingOverlay = useLoadingOverlay();
@@ -62,11 +63,11 @@ const TimesheetCreate: React.FC = () => {
   // Date states
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
   const [isSavingLocally, setIsSavingLocally] = useState<boolean>(false);
-  const currentWeekStart = useMemo(() => startOfWeek(currentDate, { weekStartsOn: 0 }), [currentDate]);
+  const currentWeekStart = useMemo(() => startOfWeek(currentDate, { weekStartsOn: 1 }), [currentDate]);
   const currentWeekEnd = useMemo(() => addDays(currentWeekStart, 6), [currentWeekStart]);
 
   const realToday = useMemo(() => new Date(), []);
-  const realCurrentWeekStart = useMemo(() => startOfWeek(realToday, { weekStartsOn: 0 }), [realToday]);
+  const realCurrentWeekStart = useMemo(() => startOfWeek(realToday, { weekStartsOn: 1 }), [realToday]);
 
   const disableNextWeek = currentWeekStart.getTime() >= realCurrentWeekStart.getTime();
 
@@ -210,7 +211,7 @@ const TimesheetCreate: React.FC = () => {
 
     (weeklyData.days || []).forEach(day => {
       const dateStr = day.date; // "yyyy-MM-dd"
-      
+
       let isDaySubmitted = false;
 
       (day.timesheet_records || []).forEach(record => {
@@ -223,7 +224,7 @@ const TimesheetCreate: React.FC = () => {
           record.docstatus === 1 ||
           record.docstatus === 2
         ) {
-           isDaySubmitted = true;
+          isDaySubmitted = true;
         }
 
         (record.time_logs || []).forEach((log, logIndex) => {
@@ -405,9 +406,9 @@ const TimesheetCreate: React.FC = () => {
       isoWeek1Start.setDate(jan4.getDate() - jan4Day + 1); // Monday of ISO week 1
       const targetMonday = new Date(isoWeek1Start);
       targetMonday.setDate(isoWeek1Start.getDate() + (week - 1) * 7);
-      // Convert ISO Monday-start to Sunday-start for our week
-      const selected = subDays(targetMonday, 1);
-      const selectedStart = startOfWeek(selected, { weekStartsOn: 0 });
+      // ISO week already starts on Monday, matching our weekStartsOn: 1
+      const selected = targetMonday;
+      const selectedStart = startOfWeek(selected, { weekStartsOn: 1 });
       if (selectedStart.getTime() > realCurrentWeekStart.getTime()) {
         toast.error("You can not select uncoming Weeks.");
         return;
@@ -439,14 +440,14 @@ const TimesheetCreate: React.FC = () => {
       projectsData.forEach(row => {
         const preservedDays: Record<string, { hours: number; description: string }> = {};
         let hasSubmittedDays = false;
-        
+
         Object.keys(row.days).forEach(dateKey => {
           if (submittedDatesList.includes(dateKey)) {
             preservedDays[dateKey] = { ...row.days[dateKey] };
             hasSubmittedDays = true;
           }
         });
-        
+
         if (hasSubmittedDays) {
           rowsMap[row.id] = { ...row, days: preservedDays };
         }
@@ -456,7 +457,8 @@ const TimesheetCreate: React.FC = () => {
         const logDate = day.date; // "yyyy-MM-dd"
         // Shift date to current week
         const logDayIndex = parseISO(logDate).getDay(); // Sun-0, Mon-1...
-        const shiftedDateStr = format(addDays(currentWeekStart, logDayIndex), "yyyy-MM-dd");
+        const mappedIndex = (logDayIndex + 6) % 7; // Mon-0, Tue-1... Sun-6
+        const shiftedDateStr = format(addDays(currentWeekStart, mappedIndex), "yyyy-MM-dd");
 
         const dayHasLogs = (day.timesheet_records || []).some(record => (record.time_logs || []).length > 0);
 
@@ -675,7 +677,7 @@ const TimesheetCreate: React.FC = () => {
 
     daysOfWeek.forEach(day => {
       const dateKey = format(day, "yyyy-MM-dd");
-      
+
       if (submittedDatesList.includes(dateKey)) {
         return; // Skip already submitted days
       }
@@ -734,13 +736,13 @@ const TimesheetCreate: React.FC = () => {
         if (isSubmit) {
           const newSubmitted = Object.keys(payload).filter(date => payload[date].status === "Submit");
           setSubmittedDatesList(prev => {
-             const updated = Array.from(new Set([...prev, ...newSubmitted]));
-             if (updated.length >= 7) {
-                 setTimesheetStatus("Submitted");
-             } else {
-                 setTimesheetStatus("Partially Submitted");
-             }
-             return updated;
+            const updated = Array.from(new Set([...prev, ...newSubmitted]));
+            if (updated.length >= 7) {
+              setTimesheetStatus("Submitted");
+            } else {
+              setTimesheetStatus("Partially Submitted");
+            }
+            return updated;
           });
         } else {
           setTimesheetStatus(prev => (prev === "Partially Submitted" ? "Partially Submitted" : "Draft"));
@@ -897,11 +899,6 @@ const TimesheetCreate: React.FC = () => {
                             <div className="text-gray-500 text-xs font-semibold mt-0.5">
                               {format(day, "EEE").toUpperCase()}
                             </div>
-                            {attendanceHoursMap[dateKey] && (
-                              <div className="text-[10px] text-gray-400 font-normal mt-1 bg-gray-100/50 py-0.5 rounded">
-                                {attendanceHoursMap[dateKey]}
-                              </div>
-                            )}
                           </th>
                         );
                       })}
@@ -926,7 +923,11 @@ const TimesheetCreate: React.FC = () => {
                           const dateKey = format(day, "yyyy-MM-dd");
                           return (
                             <td key={dateKey} className="px-3 py-3 text-center border-l border-gray-50">
-                              {attendanceHoursMap[dateKey] || "0h 0m"}
+                              {weekOffDates.includes(dateKey) ? (
+                                <div className="flex w-full  justify-center"><Badge variant="danger" label="Week Off" size="sm" /></div>
+                              ) : (
+                                attendanceHoursMap[dateKey] || "0h 0m"
+                              )}
                             </td>
                           );
                         })}
@@ -959,7 +960,11 @@ const TimesheetCreate: React.FC = () => {
                                   <div key={dateKey} className="flex flex-col items-center">
                                     <span className="text-[10px] font-bold text-gray-600 leading-tight">{format(day, "d")}</span>
                                     <span className="text-[9px] text-gray-400 mb-1 leading-tight">{format(day, "EEE")}</span>
-                                    <span className="text-[10px] font-bold text-gray-700 bg-gray-200/50 w-full text-center py-1 rounded">{attendanceHoursMap[dateKey] || "0h"}</span>
+                                    {weekOffDates.includes(dateKey) ? (
+                                      <div className="w-full flex justify-center pt-0.5"><Badge variant="danger" label="Off" size="sm" /></div>
+                                    ) : (
+                                      <span className="text-[10px] font-bold text-gray-700 bg-gray-200/50 w-full text-center py-1 rounded">{attendanceHoursMap[dateKey] || "0h"}</span>
+                                    )}
                                   </div>
                                 );
                               })}
