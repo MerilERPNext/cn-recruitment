@@ -9,6 +9,7 @@ import {
   CheckCircle,
   ChevronRight,
   CircleCheckBig,
+  CircleMinus,
   Clock,
   Coins,
   CreditCard,
@@ -307,7 +308,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
         },
         {
           name: "Extra Deduction",
-          icon: HandCoins,
+          icon: CircleMinus,
           href: "/webapp/salary-slip-app/extra-deduction",
           permissionKey: "Extra Deduction",
         },
