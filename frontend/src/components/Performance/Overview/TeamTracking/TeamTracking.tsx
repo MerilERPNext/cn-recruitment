@@ -50,8 +50,10 @@ const TeamTracking = () => {
     setSelectedEmployeeId(id);
     setViewState("goals");
   }, []);
-  const realGoals: MyGoalsGoal[] = myGoalsResponse?.data?.goals ?? [];
-
+  const realGoals: MyGoalsGoal[] = useMemo(
+    () => myGoalsResponse?.data?.goals ?? [],
+    [myGoalsResponse]
+  );
   return (
     <div className="flex flex-col h-full bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
       <div className="flex items-center px-6 py-4 border-b border-gray-100 bg-gray-50/50 shrink-0">
