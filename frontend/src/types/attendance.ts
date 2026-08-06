@@ -238,6 +238,7 @@ export type EmployeeShift = {
   shift_name: string;
   end_time: string;
   start_time: string;
+  custom_standard_working_hrs?: number;
 };
 
 export type EmployeeShiftSummary = {
