@@ -45,9 +45,7 @@ export function useTaxSheetPayrollPriodsData(company: string | null) {
 
   const effectiveCompany = targetEmployeeId
     ? targetCompanyResolved ?? null
-    : payrollAdmin
-      ? null
-      : company;
+    : company;
 
   return useQuery({
     queryKey: [

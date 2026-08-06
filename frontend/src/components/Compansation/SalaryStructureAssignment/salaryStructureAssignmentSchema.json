@@ -202,7 +202,7 @@
                   "input": true,
                   "dataSrc": "url",
                   "data": {
-                    "url": "/api/resource/Payroll Period?fields=[\"name\"]&limit_page_length=0",
+                    "url": "/api/resource/Payroll Period?fields=[\"name\"]&filters=[[\"company\",\"=\",\"{{ data.company }}\"]]&limit_page_length=0",
                     "headers": [{ "key": "Accept", "value": "application/json" }]
                   },
                   "selectValues": "data",

@@ -22,7 +22,7 @@
           "input": true,
           "dataSrc": "url",
           "data": {
-            "url": "/api/resource/Loan Product?fields=[\"name\",\"product_name\",\"rate_of_interest\"]&company={{ data.company }}"
+            "url": "/api/resource/Loan Product?fields=[\"name\",\"product_name\",\"rate_of_interest\"]&filters=[[\"company\",\"=\",\"{{ data.company }}\"]]"
           },
           "valueProperty": "name",
           "template": "<span>{{item.product_name}}</span>",
