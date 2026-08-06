@@ -26,6 +26,7 @@ import {
 import type { MyGoalsGoal, MyGoalsKeyResult } from "../../../types/goal";
 import { getPerformanceErrorMessage } from "../../../services/performanceService";
 import CustomDropdown from "../../shared/CustomDropdown";
+import MandatoryGoalsBanner from "../GoalCreation/component/MandatoryGoalsBanner";
 
 const getStatusVariant = (status?: string): BadgeVariant => {
   const s = (status ?? "").toLowerCase();
@@ -246,6 +247,8 @@ const MyGoals: React.FC<MyGoalsProps> = ({ onCreateGoal, onSelectGoal }) => {
         selectedGoals.length > 0 ? "pb-48 sm:pb-28" : ""
       }`}
     >
+      <MandatoryGoalsBanner />
+
       <div className="mx-auto w-full  min-w-0 space-y-4 sm:space-y-5">
         <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
           <div className="flex min-w-0 flex-col gap-4 border-b border-slate-100 p-4 sm:p-5 lg:flex-row lg:items-center lg:justify-between">
