@@ -7,6 +7,9 @@ import { Check, ChevronDown, Search, Trophy } from "lucide-react";
 import Avatar from "./Avatar";
 import WrapperHoverCard from "../../shared/WrapperHoverCard";
 import ProgramWinnersModal from "./ProgramWinnersModal";
+import { SimpleNominationPanel } from "../SimpleNominationPanel";
+import { useQueryClient } from "@tanstack/react-query";
+import { X } from "lucide-react";
 import { useCurrentEmployeeDetails } from "../../../hooks/useEmployee";
 import { useTargetUser } from "../../../context/ViewedUserContext";
 import {
@@ -36,6 +39,15 @@ const formatDate = (iso?: string | null): string => {
   const [y, m, d] = iso.split(" ")[0].split("-");
   if (!y || !m || !d) return iso;
   return `${d}-${m}-${y}`;
+};
+
+// A programme accepts nominations through the whole of its end date.
+const isOpenOn = (isoEnd?: string | null): boolean => {
+  if (!isoEnd) return false;
+  const end = new Date(isoEnd);
+  if (Number.isNaN(end.getTime())) return false;
+  end.setHours(23, 59, 59, 999);
+  return end.getTime() >= Date.now();
 };
 
 const initialsOf = (name?: string | null): string =>
@@ -118,8 +130,12 @@ const ProgramCard: React.FC<{ program: ProgramVM; showWinners: boolean }> = ({
   showWinners,
 }) => {
   // The card shows the first few winners; "View All" opens the full list.
+  const queryClient = useQueryClient();
   const [winnersOpen, setWinnersOpen] = useState(false);
+  const [nominateOpen, setNominateOpen] = useState(false);
   const visibleWinners = program.winners.slice(0, MAX_VISIBLE_WINNERS);
+  // Still-running programmes can take nominations; closed ones only show winners.
+  const isOpen = isOpenOn(program.closedOn);
 
   return (
   <>
@@ -140,12 +156,30 @@ const ProgramCard: React.FC<{ program: ProgramVM; showWinners: boolean }> = ({
             View All
           </button>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="inline-block rounded-xl bg-gray-100 px-3 py-1 text-xs font-medium text-gray-500">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <span
+            className={`inline-block rounded-xl px-3 py-1 text-xs font-medium ${
+              isOpen
+                ? "bg-amber-400 text-white"
+                : "bg-gray-100 text-gray-500"
+            }`}
+          >
             {program.closedOn
-              ? `Closed on ${formatDate(program.closedOn)}`
+              ? isOpen
+                ? `Open Till ${formatDate(program.closedOn)}`
+                : `Closed on ${formatDate(program.closedOn)}`
               : `Last nomination ${formatDate(program.lastDate)}`}
           </span>
+
+          {isOpen && (
+            <button
+              type="button"
+              onClick={() => setNominateOpen(true)}
+              className="shrink-0 rounded-lg border border-primary px-4 py-2 text-sm font-medium text-primary transition hover:bg-primary/5"
+            >
+              Nominate Individual
+            </button>
+          )}
         </div>
 
         {showWinners && program.winners.length > 0 && (
@@ -185,6 +219,40 @@ const ProgramCard: React.FC<{ program: ProgramVM; showWinners: boolean }> = ({
     title={program.title}
     onClose={() => setWinnersOpen(false)}
   />
+
+  {/* Nominate another employee to this same programme. Reuses the dashboard's
+      nomination panel so eligibility, limits and the attached form all behave
+      identically to Active Programs. */}
+  {nominateOpen && (
+    <div className="fixed inset-0 z-[1000]" role="dialog" aria-modal="true">
+      <div className="absolute inset-0 bg-black/40" onClick={() => setNominateOpen(false)} />
+      <div className="absolute left-1/2 top-1/2 flex max-h-[88vh] w-[calc(100%-2rem)] max-w-2xl -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
+        <div className="flex items-start justify-between gap-3 border-b border-gray-100 px-6 py-4">
+          <div className="min-w-0">
+            <h2 className="truncate text-base font-bold text-gray-900">Nominate Individual</h2>
+            <p className="mt-0.5 truncate text-sm text-gray-500">{program.title}</p>
+          </div>
+          <button
+            onClick={() => setNominateOpen(false)}
+            aria-label="Close"
+            className="shrink-0 text-gray-400 hover:text-gray-700"
+          >
+            <X className="size-5" />
+          </button>
+        </div>
+        <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
+          <SimpleNominationPanel
+            awardName={program.award}
+            onSuccess={() => {
+              // Refresh the winners strip and counts without a page reload.
+              queryClient.invalidateQueries({ queryKey: ["recognition"] });
+              setNominateOpen(false);
+            }}
+          />
+        </div>
+      </div>
+    </div>
+  )}
   </>
   );
 };
