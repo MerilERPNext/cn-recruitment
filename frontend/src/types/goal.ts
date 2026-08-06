@@ -90,6 +90,24 @@ export interface RequestCheckInPayload {
 export interface RequestCheckInRequest {
   payload: RequestCheckInPayload;
 }
+
+export interface RequestCheckInData {
+  employee: string;
+  goal: string;
+  goal_key: string;
+  title: string;
+  checkin_requested: boolean;
+  checkin_due: string | null;
+  requested_by: string;
+}
+
+export interface RequestCheckInResponse {
+  message: {
+    success: boolean;
+    message: string;
+    data: RequestCheckInData;
+  };
+}
 export interface GoalFormConfigCycle {
   name: string;
   cycle_name: string;

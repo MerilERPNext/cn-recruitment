@@ -52,7 +52,7 @@ export const EmployeeGoalsList = ({
       },
       {
         onSuccess: (res) => {
-          toast.success(res?.message || "Check-in requested successfully!");
+          toast.success(res?.message?.message || "Check-in requested successfully!");
         },
         onError: (err) => {
           toast.error(getPerformanceErrorMessage(err, "Failed to request check-in."));
