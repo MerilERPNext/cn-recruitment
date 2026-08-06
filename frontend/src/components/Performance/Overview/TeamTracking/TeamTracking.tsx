@@ -74,11 +74,7 @@ const TeamTracking = () => {
               ? "Team Tracking"
               : `Goals for ${selectedEmployee?.label || "Employee"}`}
           </Typography>
-          <Typography variant="bodySmall" className="text-gray-500 mt-0.5">
-            {viewState === "employees"
-              ? "Select an employee to view their goals."
-              : "Software Engineer • Engineering"}
-          </Typography>
+          
         </div>
       </div>
 
