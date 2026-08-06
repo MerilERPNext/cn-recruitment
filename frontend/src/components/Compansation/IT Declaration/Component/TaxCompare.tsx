@@ -2,6 +2,7 @@
 "use client";
 
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import SalarySlipPDFModal from "../../SalarySlipPDFModal";
 import { useCompareTaxSheetViewPDF } from "../../../../hooks/payroll/useITDeclaration";
 import Button from "../../../shared/atoms/Button";
@@ -45,29 +46,27 @@ const CompareTaxSheetHandler = ({ declarationId, disabled = false }: Props) => {
   return (
     <>
       <Button
-        variant="soft"
+        variant="contain"
         onClick={handleView}
-        disabled={disabled || isPending}
-        className={`px-4 py-1 text-sm border rounded-xl
-          ${
-            disabled || isPending
-              ? "bg-gray-300 text-primary cursor-not-allowed"
-              : "bg-primary text-white hover:bg-primary-600"
-          }
-        `}
+        disabled={disabled}
+        loading={isPending}
+        className="px-4 py-1 text-sm rounded-xl"
       >
-        {isPending ? "Loading..." : "Compare Tax"}
+        Compare Tax
       </Button>
 
-      <SalarySlipPDFModal
-        isOpen={open}
-        onClose={() => {
-          setOpen(false);
-          setHtml("");
-        }}
-        salarySlipName={declarationId}
-        htmlContent={html}
-      />
+      {open && typeof document !== "undefined" && createPortal(
+        <SalarySlipPDFModal
+          isOpen={open}
+          onClose={() => {
+            setOpen(false);
+            setHtml("");
+          }}
+          salarySlipName={declarationId}
+          htmlContent={html}
+        />,
+        document.body
+      )}
     </>
   );
 };
