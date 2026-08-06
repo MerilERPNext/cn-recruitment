@@ -154,6 +154,7 @@ const TimesheetCreate: React.FC = () => {
   const [lastSavedTime, setLastSavedTime] = useState<string>("");
   const [attachedFile, setAttachedFile] = useState<File | null>(null);
   const [isFileModified, setIsFileModified] = useState<boolean>(false);
+  const [submittedDatesList, setSubmittedDatesList] = useState<string[]>([]);
 
   const { uploadFiles } = useFileUploader();
 
@@ -167,7 +168,7 @@ const TimesheetCreate: React.FC = () => {
   const hasCancelPermission = isActionEnabled(uiPermission, "cancel", "Timesheet");
 
   const [isBackendEditable, setIsBackendEditable] = useState<boolean>(true);
-  const isGridEditable = isBackendEditable && (hasSavePermission || hasSubmitPermission);
+  const isGridEditable = isBackendEditable && timesheetStatus !== "Submitted" && timesheetStatus !== "Cancelled" && (hasSavePermission || hasSubmitPermission);
 
   // Modal States
   const [commentModalConfig, setCommentModalConfig] = useState<{
@@ -205,14 +206,24 @@ const TimesheetCreate: React.FC = () => {
     // Collect unique time_log entries across all days by index order
     // Each time_log (project+task combo) gets its own row
     const rowsMap: Record<string, TimesheetRow> = {};
+    const submittedDays: string[] = [];
 
     (weeklyData.days || []).forEach(day => {
       const dateStr = day.date; // "yyyy-MM-dd"
+      
+      let isDaySubmitted = false;
 
       (day.timesheet_records || []).forEach(record => {
         if (!foundName && record.name) {
           foundName = record.name;
-          foundStatus = record.status || "Draft";
+        }
+
+        if (
+          ["Submitted", "Billed", "Cancelled"].includes(record.status || "") ||
+          record.docstatus === 1 ||
+          record.docstatus === 2
+        ) {
+           isDaySubmitted = true;
         }
 
         (record.time_logs || []).forEach((log, logIndex) => {
@@ -239,10 +250,26 @@ const TimesheetCreate: React.FC = () => {
           };
         });
       });
+
+      if (isDaySubmitted) {
+        submittedDays.push(dateStr);
+      }
     });
 
-    // Use is_editable from the response
-    setIsBackendEditable(weeklyData.is_editable !== false);
+    setSubmittedDatesList(submittedDays);
+
+    if (submittedDays.length >= 7) {
+      foundStatus = "Submitted";
+    } else if (submittedDays.length > 0) {
+      foundStatus = "Partially Submitted";
+    } else if (foundName) {
+      foundStatus = "Draft";
+    } else {
+      foundStatus = "Not Submitted";
+    }
+
+    // Ignore is_editable from backend as per requirements
+    setIsBackendEditable(true);
     setTimesheetStatus(foundStatus);
 
     const parsedData = Object.values(rowsMap);
@@ -405,7 +432,25 @@ const TimesheetCreate: React.FC = () => {
       loadingOverlay.hide();
 
       let hasLogs = false;
+      let hasConflicts = false;
       const rowsMap: Record<string, TimesheetRow> = {};
+
+      // Preserve already submitted days from current projectsData
+      projectsData.forEach(row => {
+        const preservedDays: Record<string, { hours: number; description: string }> = {};
+        let hasSubmittedDays = false;
+        
+        Object.keys(row.days).forEach(dateKey => {
+          if (submittedDatesList.includes(dateKey)) {
+            preservedDays[dateKey] = { ...row.days[dateKey] };
+            hasSubmittedDays = true;
+          }
+        });
+        
+        if (hasSubmittedDays) {
+          rowsMap[row.id] = { ...row, days: preservedDays };
+        }
+      });
 
       (prevData.days || []).forEach(day => {
         const logDate = day.date; // "yyyy-MM-dd"
@@ -413,6 +458,14 @@ const TimesheetCreate: React.FC = () => {
         const logDayIndex = parseISO(logDate).getDay(); // Sun-0, Mon-1...
         const shiftedDateStr = format(addDays(currentWeekStart, logDayIndex), "yyyy-MM-dd");
 
+        const dayHasLogs = (day.timesheet_records || []).some(record => (record.time_logs || []).length > 0);
+
+        if (submittedDatesList.includes(shiftedDateStr) && dayHasLogs) {
+          hasConflicts = true;
+          return;
+        }
+
+        // Do not overwrite week off dates
         if (weekOffDates.includes(shiftedDateStr)) {
           return;
         }
@@ -447,9 +500,17 @@ const TimesheetCreate: React.FC = () => {
 
       if (hasLogs) {
         setProjectsData(Object.values(rowsMap));
-        toast.success("Copied last week hours successfully!");
+        if (hasConflicts) {
+          toast.error("Some records were skipped as they conflict with already submitted days.");
+        } else {
+          toast.success("Copied last week hours successfully!");
+        }
       } else {
-        toast.error("No entries found in last week's timesheet");
+        if (hasConflicts) {
+          toast.error("Could not copy last week hours because those days are already submitted.");
+        } else {
+          toast.error("No entries found in last week's timesheet");
+        }
       }
     } catch (err) {
       loadingOverlay.hide();
@@ -614,6 +675,11 @@ const TimesheetCreate: React.FC = () => {
 
     daysOfWeek.forEach(day => {
       const dateKey = format(day, "yyyy-MM-dd");
+      
+      if (submittedDatesList.includes(dateKey)) {
+        return; // Skip already submitted days
+      }
+
       const rowsForDay: RowItemType[] = [];
 
       projectsData.forEach(row => {
@@ -666,9 +732,18 @@ const TimesheetCreate: React.FC = () => {
         toast.success(isSubmit ? "Timesheet submitted successfully" : "Timesheet saved successfully");
         setLastSavedTime(format(new Date(), "hh:mm a"));
         if (isSubmit) {
-          setTimesheetStatus("Submitted");
+          const newSubmitted = Object.keys(payload).filter(date => payload[date].status === "Submit");
+          setSubmittedDatesList(prev => {
+             const updated = Array.from(new Set([...prev, ...newSubmitted]));
+             if (updated.length >= 7) {
+                 setTimesheetStatus("Submitted");
+             } else {
+                 setTimesheetStatus("Partially Submitted");
+             }
+             return updated;
+          });
         } else {
-          setTimesheetStatus("Draft");
+          setTimesheetStatus(prev => (prev === "Partially Submitted" ? "Partially Submitted" : "Draft"));
         }
 
         setInitialProjectsData(projectsData);
@@ -735,6 +810,10 @@ const TimesheetCreate: React.FC = () => {
 
   // Check if timesheet is read-only (Submitted or Billed or Cancelled)
   const isReadOnly = timesheetStatus === "Submitted" || timesheetStatus === "Billed" || timesheetStatus === "Cancelled";
+
+  const allDisabledDays = useMemo(() => {
+    return Array.from(new Set([...weekOffDates, ...submittedDatesList]));
+  }, [weekOffDates, submittedDatesList]);
 
   // Attachment upload simulation
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -924,7 +1003,8 @@ const TimesheetCreate: React.FC = () => {
                           handleOpenComment={handleOpenComment}
                           getRowTotal={getRowTotal}
                           handleDeleteRow={handleDeleteRow}
-                          disabledDays={weekOffDates}
+                          disabledDays={allDisabledDays}
+                          submittedDays={submittedDatesList}
                         />
                       );
                     })
