@@ -1,5 +1,7 @@
 import React from "react";
 import { SimpleNominationPanel } from "./SimpleNominationPanel";
+import AssignedEmployeesList from "./AssignedEmployeesList";
+import { useCurrentEmployeeDetails } from "../../hooks/useEmployee";
 import { useQueryClient } from "@tanstack/react-query";
 
 interface ProgramExpansionPanelProps {
@@ -17,8 +19,13 @@ export const ProgramExpansionPanel: React.FC<ProgramExpansionPanelProps> = ({
   awardName,
 }) => {
   const queryClient = useQueryClient();
+  const { data: currentUser } = useCurrentEmployeeDetails({
+    logged_in_employee_details: true,
+  });
 
   const handleNominationSuccess = () => {
+    // Every recognition query key starts with "recognition", so this also
+    // refreshes the assigned-employees list below without a page reload.
     queryClient.invalidateQueries({ queryKey: ["recognition"] });
   };
 
@@ -27,6 +34,11 @@ export const ProgramExpansionPanel: React.FC<ProgramExpansionPanelProps> = ({
       <SimpleNominationPanel
         awardName={awardName}
         onSuccess={handleNominationSuccess}
+      />
+
+      <AssignedEmployeesList
+        program={awardName}
+        employee={currentUser?.employee}
       />
     </div>
   );

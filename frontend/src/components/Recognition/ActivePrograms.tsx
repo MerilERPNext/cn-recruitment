@@ -18,16 +18,8 @@ import {
   sortPrograms,
 } from "./programStatus";
 
-interface ActiveProgramsProps {
-  programs?: RecognitionProgram[];
-  isLoading?: boolean;
-}
 
-
-export const ActivePrograms: React.FC<ActiveProgramsProps> = ({
-  programs,
-  isLoading,
-}) => {
+export const ActivePrograms: React.FC = () => {
   const [expandedProgramId, setExpandedProgramId] = useState<string | null>(
     null
   );
@@ -68,11 +60,8 @@ export const ActivePrograms: React.FC<ActiveProgramsProps> = ({
     };
   });
 
-  // Prefer API data; fall back to the prop (e.g. while the query is loading).
-  const list: RecognitionProgram[] = sortPrograms(
-    eligibleData ? apiPrograms : programs ?? []
-  );
-  const loading = isLoading || eligibleLoading;
+  const list: RecognitionProgram[] = sortPrograms(apiPrograms);
+  const loading = eligibleLoading;
 
   if (loading) {
     return (

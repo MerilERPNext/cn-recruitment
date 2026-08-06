@@ -1,9 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import FrappeAPI from "../utils/frappeAPI";
-import type { RecognitionProgram } from "../types/recognition";
 
-const API_BASE = "chatnext_work_connect.chatnext_work_connect.api.recognition";
 const BADGE_API_BASE = "chatnext_work_connect.chatnext_work_connect.api.badge";
 const NOMINATION_API_BASE = "chatnext_work_connect.chatnext_work_connect.api.nomination";
 const WC_SETTINGS_API_BASE = "chatnext_work_connect.chatnext_work_connect.api.work_connect_settings";
@@ -210,27 +208,6 @@ export const useGetBadgeTypes = () => {
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
-  });
-};
-
-// Get recognition programs (active and ongoing)
-export const useGetRecognitionPrograms = () => {
-  return useQuery<{
-    success: boolean;
-    active_programs: RecognitionProgram[];
-    ongoing_programs: RecognitionProgram[];
-  }>({
-    queryKey: ["recognition", "programs"],
-    queryFn: async () => {
-      const response = await FrappeAPI.callMethod(`${API_BASE}.get_recognition_programs`);
-      return response as {
-        success: boolean;
-        active_programs: RecognitionProgram[];
-        ongoing_programs: RecognitionProgram[];
-      };
-    },
-    staleTime: 2 * 60 * 1000, // 2 minutes
-    gcTime: 5 * 60 * 1000, // 5 minutes
   });
 };
 
@@ -638,6 +615,10 @@ export type EmployeePointsResponse = {
   success: boolean;
   employee: string;
   total_earned_points: number;
+  /** Earned points that came from Appreciation-type programmes. */
+  appreciation_points: number;
+  /** Earned points that came from Award-type programmes. */
+  award_points: number;
   used_points: number;
   available_points: number;
   redemptions: RedemptionEntry[];
@@ -1135,6 +1116,205 @@ export type ProgramWinnersResponse = {
   end_date?: string | null;
   winners: ProgramWinnerRow[];
   total_count: number;
+};
+
+// ─── Award programme detail (get_award_program_detail) ───────────────────────
+// Backs the admin "View Details" page: programme header, nomination stats and
+// the paginated nomination list.
+export type AwardProgramDetailParams = {
+  program?: string;
+  search?: string;
+  status?: string;
+  sort_order?: "asc" | "desc";
+  start?: number;
+  page_length?: number;
+};
+
+/** Row actions the admin list may offer, decided server-side by badge state. */
+export type NominationAction = "view" | "shortlist" | "unshortlist" | "publish";
+
+export type NominationRow = {
+  nomination_id: string;
+  nominee: string;
+  nominee_id?: string;
+  nomination_date: string;
+  status: string;
+  initiated_by: string;
+  initiated_by_id?: string;
+  note: string;
+  last_action_date: string;
+  panel_selected: number;
+  points: number;
+  is_published: number;
+  is_shortlisted: number;
+  actions: NominationAction[];
+};
+
+export type AwardProgramDetailResponse = {
+  success: boolean;
+  program: {
+    name: string;
+    title: string;
+    code: string;
+    program_type?: string;
+    award_type?: string;
+    start_date?: string | null;
+    end_date?: string | null;
+    reward_type: string;
+    description: string;
+    status: string;
+    recognizer_roles: string[];
+  };
+  stats: {
+    max_nominations: number;
+    nominations_initiated: number;
+    shortlisted: number;
+    max_shortlisted: number;
+    max_recipients: number;
+    initiators_submitted: number;
+    initiators_yet_to_nominate: number;
+  };
+  data: NominationRow[];
+  total_count: number;
+  filter_options: { statuses: string[] };
+};
+
+export const useAwardProgramDetail = (params: AwardProgramDetailParams) => {
+  return useQuery<AwardProgramDetailResponse>({
+    queryKey: ["recognition", "award-program-detail", params],
+    queryFn: async () => {
+      const response = await FrappeAPI.callMethod(
+        "chatnext_work_connect.chatnext_work_connect.api.recognition_points.get_award_program_detail",
+        params,
+      );
+      return response as AwardProgramDetailResponse;
+    },
+    enabled: !!params.program,
+  });
+};
+
+// Shortlist / unshortlist / publish a single nomination. Each invalidates the
+// programme detail query so the badge and row actions refresh together.
+const RECOGNITION_API = "chatnext_work_connect.chatnext_work_connect.api.recognition_points";
+
+// ─── Single nomination detail (get_nomination_detail) ────────────────────────
+export type NominationCustomField = { key: string; label: string; value: string };
+
+export type NominationApprovalStage = {
+  stage_name: string;
+  assigned_to: string;
+  action_taken_by: string;
+  status: string;
+  actual_trigger_date: string;
+  due_date: string;
+  completed_date: string;
+};
+
+export type NominationDetailResponse = {
+  success: boolean;
+  nomination: {
+    name: string;
+    nominee: string;
+    nominee_id?: string;
+    nominator: string;
+    nominator_id?: string;
+    program: string;
+    program_title: string;
+    program_code: string;
+    initiated_on: string;
+    last_action_date: string;
+    status: string;
+    points: number;
+    note: string;
+    values: string[];
+  };
+  custom_form: NominationCustomField[];
+  custom_form_name: string;
+  approval_stages: NominationApprovalStage[];
+};
+
+// ─── Already-assigned employees for a programme ──────────────────────────────
+export type AssignedEmployee = {
+  employee: string;
+  employee_name: string;
+  department: string;
+  designation: string;
+  image: string;
+  date_assigned: string;
+  assigned_by: string;
+  assigned_by_id: string;
+  status: string;
+  times_assigned: number;
+  times_assigned_by_me: number;
+  can_assign_again: boolean;
+  remaining_for_me: number | null;
+};
+
+export type AssignedEmployeesResponse = {
+  success: boolean;
+  program: string;
+  program_title: string;
+  /** Per (recogniser, receiver) cap; 0 means unlimited. */
+  per_receiver_limit: number;
+  data: AssignedEmployee[];
+  total_count: number;
+};
+
+export const useProgramAssignedEmployees = (program?: string, employee?: string) => {
+  return useQuery<AssignedEmployeesResponse>({
+    queryKey: ["recognition", "assigned-employees", program, employee],
+    queryFn: async () => {
+      const response = await FrappeAPI.callMethod(
+        "chatnext_work_connect.chatnext_work_connect.api.recognition_points.get_program_assigned_employees",
+        { program, employee },
+      );
+      return response as AssignedEmployeesResponse;
+    },
+    enabled: !!program,
+  });
+};
+
+export const useNominationDetail = (name?: string) => {
+  return useQuery<NominationDetailResponse>({
+    queryKey: ["recognition", "nomination-detail", name],
+    queryFn: async () => {
+      const response = await FrappeAPI.callMethod(
+        "chatnext_work_connect.chatnext_work_connect.api.recognition_points.get_nomination_detail",
+        { name },
+      );
+      return response as NominationDetailResponse;
+    },
+    enabled: !!name,
+  });
+};
+
+export const useNominationActions = () => {
+  const queryClient = useQueryClient();
+  const refresh = () =>
+    queryClient.invalidateQueries({ queryKey: ["recognition", "award-program-detail"] });
+
+  const shortlist = useMutation({
+    mutationFn: async (name: string) =>
+      FrappeAPI.callMethod(`${RECOGNITION_API}.shortlist_nomination`, { name }),
+    onSuccess: refresh,
+  });
+
+  const unshortlist = useMutation({
+    mutationFn: async (name: string) =>
+      FrappeAPI.callMethod(`${RECOGNITION_API}.unshortlist_nomination`, { name }),
+    onSuccess: refresh,
+  });
+
+  const publish = useMutation({
+    mutationFn: async (name: string) =>
+      FrappeAPI.callMethod(`${RECOGNITION_API}.set_nomination_published_status`, {
+        names: name,
+        published: 1,
+      }),
+    onSuccess: refresh,
+  });
+
+  return { shortlist, unshortlist, publish };
 };
 
 export const useProgramWinners = (program?: string, enabled = true) => {

@@ -1,6 +1,5 @@
 import React from "react";
 import { Typography } from "../../shared/atoms/Typography";
-import { useGetRecognitionPrograms } from "../../../services/recognitionService";
 import { ActivePrograms } from "../ActivePrograms";
 
 /**
@@ -9,8 +8,6 @@ import { ActivePrograms } from "../ActivePrograms";
  * without the page-level layout wrapper, so it can live inside a Vibe tab.
  */
 const VibeDashboard: React.FC = () => {
-  const { data: programsData, isLoading: programsLoading } = useGetRecognitionPrograms();
-
   return (
     <div className="p-4 md:p-6">
       <div className="max-w-7xl mx-auto space-y-6">
@@ -23,10 +20,7 @@ const VibeDashboard: React.FC = () => {
           </Typography>
         </div>
 
-        <ActivePrograms
-          programs={programsData?.active_programs || []}
-          isLoading={programsLoading}
-        />
+        <ActivePrograms />
       </div>
     </div>
   );

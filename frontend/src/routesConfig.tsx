@@ -620,6 +620,14 @@ const AwardsLivePrograms = lazyWithRetry(
   () => import("./components/Recognition/Vibe/AwardsLivePrograms"),
   "AwardsLivePrograms",
 );
+const NominationDetail = lazyWithRetry(
+  () => import("./components/Recognition/Vibe/NominationDetail"),
+  "NominationDetail",
+);
+const AwardProgramDetail = lazyWithRetry(
+  () => import("./components/Recognition/Vibe/AwardProgramDetail"),
+  "AwardProgramDetail",
+);
 const RecognitionHistory = lazyWithRetry(
   () => import("./components/Recognition/RecognitionHistory"),
   "RecognitionHistory",
@@ -1809,6 +1817,18 @@ export const routesConfig: AppRoute[] = [
         // resolver ("Earned Points Summary page"); the old "Earned Points" key
         // matched no page, so the route guard always denied access.
         permissionKey: "Earned Points Summary page",
+      },
+      {
+        // Drill-down from a nomination row: header, custom form, approval stages.
+        path: "admin-dashboard/award/:program/nomination/:name",
+        element: <NominationDetail />,
+        permissionKey: "Admin Dashboard",
+      },
+      {
+        // Admin "View Details" for one award programme (header + nominations).
+        path: "admin-dashboard/award/:program",
+        element: <AwardProgramDetail />,
+        permissionKey: "Admin Dashboard",
       },
       {
         path: "admin-dashboard",

@@ -8,6 +8,7 @@ import {
   useCreateEmployeeAppreciation,
   useEligibleReceivers,
   usePanelForm,
+  useProgramAssignedEmployees,
   useProgramBudget,
   useProgramValues,
   useRecognitionFlags,
@@ -110,20 +111,57 @@ export const SimpleNominationPanel: React.FC<SimpleNominationPanelProps> = ({
   const { data: receiversData, isLoading: receiversLoading } =
     useEligibleReceivers(currentUser?.employee, awardName);
 
+  // Who has already been recognised under this program (drives the list below
+  // and the duplicate guard on this selector).
+  const { data: assignedData } = useProgramAssignedEmployees(
+    awardName,
+    currentUser?.employee,
+  );
+
+  // employee -> assignment summary, for O(1) lookups while building options.
+  const assignedByEmployee = useMemo(() => {
+    const map = new Map<string, { times: number; canAssignAgain: boolean }>();
+    for (const a of assignedData?.data ?? []) {
+      map.set(a.employee, {
+        times: a.times_assigned_by_me,
+        canAssignAgain: a.can_assign_again,
+      });
+    }
+    return map;
+  }, [assignedData]);
+
   const receiverOptions = useMemo(
     () =>
-      (receiversData?.eligible_receivers ?? []).map((r) => ({
-        value: r.employee,
-        label: r.designation
+      (receiversData?.eligible_receivers ?? []).map((r) => {
+        const seen = assignedByEmployee.get(r.employee);
+        const base = r.designation
           ? `${r.employee_name} (${r.employee}) — ${r.designation}`
-          : `${r.employee_name} (${r.employee})`,
-      })),
-    [receiversData],
+          : `${r.employee_name} (${r.employee})`;
+        // Surface prior assignments in the label so a duplicate is obvious
+        // before it is selected.
+        const suffix = !seen
+          ? ""
+          : seen.canAssignAgain
+            ? `  • already assigned${seen.times > 0 ? ` ×${seen.times} by you` : ""}`
+            : "  • limit reached";
+        return { value: r.employee, label: `${base}${suffix}` };
+      }),
+    [receiversData, assignedByEmployee],
   );
 
   const handleSubmit = async () => {
     if (!selectedEmployee) {
       toast.error("Please select an employee to appreciate.");
+      return;
+    }
+    // Duplicate guard. The backend enforces this too
+    // (EmployeeAppreciation.validate_recognition_limits); this only avoids a
+    // round-trip and gives a clearer message.
+    const alreadyAssigned = assignedByEmployee.get(selectedEmployee);
+    if (alreadyAssigned && !alreadyAssigned.canAssignAgain) {
+      toast.error(
+        `${selectedName || selectedEmployee} has already been assigned this program the maximum number of times.`,
+      );
       return;
     }
     if (minimumNominationCharacters > 0 && reason.trim().length < minimumNominationCharacters) {

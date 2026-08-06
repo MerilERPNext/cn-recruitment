@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Typography } from "../../shared/atoms/Typography";
 import {
   ChevronLeft,
@@ -447,8 +448,16 @@ export default function RecognitionAdminDashboard() {
   const openCreate = () => {
     window.location.href = `${RECOGNITION_PROGRAM_DOCTYPE_ROUTE}/new`;
   };
+  const navigate = useNavigate();
+
   const openEdit = (code: string) => {
     window.location.href = `${RECOGNITION_PROGRAM_DOCTYPE_ROUTE}/${encodeURIComponent(code)}`;
+  };
+
+  // "View Details" opens the in-app programme page (header + nomination list);
+  // the Edit pencil still goes to the Desk form.
+  const openAwardDetail = (code: string) => {
+    navigate(`/webapp/recognition/vibe/admin-dashboard/award/${encodeURIComponent(code)}`);
   };
 
   // Admin action buttons + child-nav (tabs) gated by the "Recognition" app.
@@ -637,7 +646,7 @@ export default function RecognitionAdminDashboard() {
                 render: (r) => (
                   <div className="flex items-center gap-2">
                     {canViewDetails && (
-                      <Button variant="outline" size="sm" onClick={() => openEdit(r.code)}>
+                      <Button variant="outline" size="sm" onClick={() => openAwardDetail(r.code)}>
                         View Details
                       </Button>
                     )}
