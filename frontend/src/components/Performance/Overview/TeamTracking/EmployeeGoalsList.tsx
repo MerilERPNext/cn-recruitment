@@ -83,7 +83,7 @@ export const EmployeeGoalsList = ({
         return (
           <Card
             key={goalId}
-            className="p-5 border border-gray-100 hover:border-blue-300 hover:shadow-md cursor-pointer transition-all bg-white group"
+            className="p-5 border border-gray-100 hover:border-blue-300 hover:shadow-md  transition-all bg-white group"
             onClick={() => onSelectGoal?.(goalId)}
           >
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-6">
