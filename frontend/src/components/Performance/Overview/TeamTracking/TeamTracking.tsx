@@ -1,13 +1,13 @@
-import { useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { Typography } from "../../../shared/atoms/Typography";
-import { Card } from "../../../shared/atoms/Card";
-import { ChevronRight, ArrowLeft } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import Button from "../../../shared/atoms/Button";
 import { useLinkFieldOptions } from "../../../../hooks/useLinkFieldOptions";
 import { useMyGoals } from "../../../../hooks/usePerformance";
 import type { MyGoalsGoal } from "../../../../types/goal";
 import { ErrorState, EmployeeListSkeleton } from "./TeamTrackingStates";
 import { EmployeeGoalsList } from "./EmployeeGoalsList";
+import { EmployeeCard } from "./EmployeeCard";
 
 type ViewState = "employees" | "goals";
 
@@ -38,13 +38,18 @@ const TeamTracking = () => {
     error: goalsError,
     refetch: refetchGoals,
   } = useMyGoals();
-  const employeeList =
-    employeeData?.pages?.flatMap((page) => page?.results || []) || [];
-
-  const selectedEmployee = employeeList.find(
-    (e: { id: string; label?: string }) => e.id === selectedEmployeeId,
+  const employeeList = useMemo(
+    () => employeeData?.pages?.flatMap((page) => page?.results || []) || [],
+    [employeeData]
   );
-
+  const selectedEmployee = useMemo(
+    () => employeeList.find((e) => e.id === selectedEmployeeId),
+    [employeeList, selectedEmployeeId]
+  );
+  const handleSelectEmployee = useCallback((id: string) => {
+    setSelectedEmployeeId(id);
+    setViewState("goals");
+  }, []);
   const realGoals: MyGoalsGoal[] = myGoalsResponse?.data?.goals ?? [];
 
   return (
@@ -87,30 +92,11 @@ const TeamTracking = () => {
           ) : (
             <div className="space-y-3 max-w-3xl mx-auto">
               {employeeList.map((emp: { id: string; label: string }) => (
-                <Card
+                <EmployeeCard
                   key={emp.id}
-                  className="p-4 border border-gray-100 hover:border-blue-300 hover:shadow-md cursor-pointer transition-all flex justify-between items-center bg-white group"
-                  onClick={() => {
-                    setSelectedEmployeeId(emp.id);
-                    setViewState("goals");
-                  }}
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-sm shrink-0">
-                      {(emp.label || "")
-                        .split(" ")
-                        .map((n) => n[0])
-                        .join("")}
-                    </div>
-                    <Typography
-                      variant="body"
-                      className="font-medium text-gray-900 group-hover:text-blue-700 transition-colors"
-                    >
-                      {emp.label}
-                    </Typography>
-                  </div>
-                  <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-blue-500 transition-colors" />
-                </Card>
+                  emp={emp}
+                  onSelect={handleSelectEmployee}
+                />
               ))}
 
               {hasNextPage && (
