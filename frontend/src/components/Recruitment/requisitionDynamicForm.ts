@@ -539,6 +539,16 @@ function overrideComponent(
 
   if (field.read_only) next.disabled = true;
 
+  if (field.fieldtype === "Select" && field.options && next.type === "select") {
+    const opts = field.options.split("\n").filter(Boolean).map(opt => ({
+      label: opt.trim(),
+      value: opt.trim()
+    }));
+    if (opts.length > 0) {
+      next.data = { ...next.data, values: opts };
+    }
+  }
+
   // Toggle the required flag without dropping any sibling validation (custom,
   // min/max, etc.) the static schema defined.
   const required = Boolean(field.is_mandatory);

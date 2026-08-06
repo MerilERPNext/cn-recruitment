@@ -839,6 +839,8 @@ const RequisitionForm = () => {
   const [jdPreviewOpen, setJdPreviewOpen] = useState(false);
   const [jdContent, setJdContent] = useState<string>("");
   const [jdLoading, setJdLoading] = useState(false);
+  // Tracks the JD source returned by preview_job_description ("none" | "default" | "match" etc.)
+  const [jdSource, setJdSource] = useState<string>("");
 
   // "Preview" popup state. Sends ALL tab data to preview_job_description and
   // renders the returned Job Description (title + html) in the modal. `payload`
@@ -1269,6 +1271,9 @@ const RequisitionForm = () => {
       const noJd = jd?.source === "none" || !html;
       const prefill = jd?.prefill || {};
 
+      // Keep the banner state in sync with the latest API response
+      setJdSource(jd?.source || "");
+
       setJobDetailsPreview((prev) => ({
         ...prev,
         loading: false,
@@ -1311,7 +1316,13 @@ const RequisitionForm = () => {
           // Apply prefill only for fields the user hasn't explicitly filled
           Object.entries(prefill).forEach(([k, v]) => {
             const frontendKey = reverseMap[k] || k;
-            if (prev[frontendKey] === undefined || prev[frontendKey] === null || prev[frontendKey] === "") {
+            const prevVal = prev[frontendKey];
+            const isEmpty =
+              prevVal === undefined ||
+              prevVal === null ||
+              prevVal === "" ||
+              (Array.isArray(prevVal) && prevVal.length === 0);
+            if (isEmpty) {
                updates[frontendKey] = v;
             }
           });
@@ -1847,6 +1858,9 @@ const RequisitionForm = () => {
         const skills = Array.isArray(jd?.skills) ? jd.skills : undefined;
         const prefill = jd?.prefill || {};
         const noJd = jd?.source === "none" || !html;
+
+        // Track the JD source so the UI can show a warning banner when "none"
+        setJdSource(jd?.source || "");
         
         if (!noJd || Object.keys(prefill).length > 0) {
           setFormData((prev: any) => {
@@ -1876,7 +1890,15 @@ const RequisitionForm = () => {
             // Apply prefill only for fields the user hasn't explicitly filled
             Object.entries(prefill).forEach(([k, v]) => {
               const frontendKey = reverseMap[k] || k;
-              if (prev[frontendKey] === undefined || prev[frontendKey] === null || prev[frontendKey] === "") {
+              // For array fields (e.g. custom_qualifications), treat an empty
+              // array the same as empty so the API prefill takes effect.
+              const prevVal = prev[frontendKey];
+              const isEmpty =
+                prevVal === undefined ||
+                prevVal === null ||
+                prevVal === "" ||
+                (Array.isArray(prevVal) && prevVal.length === 0);
+              if (isEmpty) {
                  updates[frontendKey] = v;
               }
             });
@@ -2151,6 +2173,30 @@ const RequisitionForm = () => {
             </button>
           )}
         </div>
+
+          {/* Yellow warning banner when no JD is tagged to this designation */}
+          {activeKey === "jobDetails" && jdSource === "none" && (
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                padding: "12px 16px",
+                marginBottom: "16px",
+                backgroundColor: "#fefce8",
+                border: "1px solid #facc15",
+                borderRadius: "8px",
+                color: "#854d0e",
+                fontSize: "14px",
+                lineHeight: "1.5",
+              }}
+            >
+              <i className="fa fa-exclamation-triangle" style={{ color: "#ca8a04", fontSize: "16px", flexShrink: 0 }} />
+              <span>
+                There is no Job Description tagged to this designation. Please contact your HR Admin to configure the Job Description.
+              </span>
+            </div>
+          )}
 
         {steps[currentStep].key === "review" ? (
           <RequisitionReviewStep

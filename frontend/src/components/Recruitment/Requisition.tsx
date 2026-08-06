@@ -558,7 +558,7 @@ const Requisition = () => {
       fieldname: "status",
       label: "Status",
       fieldtype: "Select",
-      options: ["Pending", "Approved", "Cancelled", "Closed", "Draft"],
+      options: ["Draft", "Open & Approved", "Approved Active", "Rejected", "Filled", "Archived", "On Hold", "Cancelled"],
     },
     {
       fieldname: "department",
