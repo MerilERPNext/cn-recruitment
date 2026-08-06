@@ -1,4 +1,5 @@
 import { useState } from "react";
+import toast from "react-hot-toast";
 import { Typography } from "../../../shared/atoms/Typography";
 import { Card } from "../../../shared/atoms/Card";
 import Badge from "../../../shared/Badge";
@@ -7,6 +8,7 @@ import { useEmployeeGoalsCheckIn } from "../../../../hooks/usePerformance";
 import { useCurrentEmployeeDetails } from "../../../../hooks/useEmployee";
 import type { MyGoalsGoal } from "../../../../types/goal";
 import { ErrorState, EmployeeGoalsSkeleton } from "./TeamTrackingStates";
+import { getPerformanceErrorMessage } from "../../../../services/performanceService";
 
 const getStatusVariant = (status?: string) => {
   if (!status) return "default";
@@ -49,6 +51,12 @@ export const EmployeeGoalsList = ({
         goal: goalKey,
       },
       {
+        onSuccess: (res) => {
+          toast.success(res?.message || "Check-in requested successfully!");
+        },
+        onError: (err) => {
+          toast.error(getPerformanceErrorMessage(err, "Failed to request check-in."));
+        },
         onSettled: () => {
           setLoadingGoalKey(null);
         },
