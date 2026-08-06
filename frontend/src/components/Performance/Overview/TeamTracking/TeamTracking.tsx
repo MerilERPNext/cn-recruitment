@@ -230,7 +230,6 @@ const TeamTracking = () => {
     refetch: refetchGoals,
   } = useMyGoals();
 
-  // Combine results from all fetched pages for infinite scrolling/pagination
   const employeeList =
     employeeData?.pages?.flatMap((page) => page?.results || []) || [];
 
@@ -238,7 +237,6 @@ const TeamTracking = () => {
     (e: { id: string; label?: string }) => e.id === selectedEmployeeId,
   );
 
-  // Fetch real goals data from useMyGoals API response
   const realGoals: MyGoalsGoal[] = myGoalsResponse?.data?.goals ?? [];
 
   return (
@@ -307,7 +305,6 @@ const TeamTracking = () => {
                 </Card>
               ))}
 
-              {/* Load More Pagination Button */}
               {hasNextPage && (
                 <div className="flex justify-center pt-4 pb-2">
                   <Button
