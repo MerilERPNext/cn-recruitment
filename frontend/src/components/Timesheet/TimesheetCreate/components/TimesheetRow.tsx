@@ -181,9 +181,10 @@ export const TimesheetRow: React.FC<TimesheetRowProps> = ({
                     <button
                       onClick={() => handleOpenComment(row.id, dateKey, projName, format(day, "EEE, dd MMM"))}
                       disabled={disabledDays.includes(dateKey)}
-                      className={`mt-1 text-[9px] font-bold transition-all w-full py-0.5 rounded border disabled:opacity-50 disabled:cursor-not-allowed ${commentError ? 'border-red-500 text-red-500 bg-red-50' : (hasComment ? "text-primary hover:text-primary-600 border-transparent bg-primary/10" : "text-gray-400 hover:text-gray-600 border-transparent")}`}
+                      className={`mt-1 text-[9px] font-bold transition-all w-full py-0.5 rounded border disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-0.5 ${commentError ? 'border-red-500 text-red-500 bg-red-50' : (hasComment ? "text-primary hover:text-primary-600 border-transparent bg-primary/10" : "text-gray-400 hover:text-gray-600 border-transparent")}`}
                     >
-                      {hasComment ? "★" : "+"}
+                      <span>{hasComment ? "★" : "+"}</span>
+                      {cell.hours > 0 && <span className="text-red-500">*</span>}
                     </button>
                   </div>
                 );
@@ -311,11 +312,12 @@ export const TimesheetRow: React.FC<TimesheetRowProps> = ({
                         format(day, "EEE, dd MMM")
                       )}
                       disabled={disabledDays.includes(dateKey)}
-                      className={`text-[10px] font-bold transition-all px-2 py-0.5 rounded border disabled:opacity-50 disabled:cursor-not-allowed ${commentError ? 'border-red-500 text-red-500 bg-red-50' :
+                      className={`text-[10px] font-bold transition-all px-2 py-0.5 rounded border disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-0.5 ${commentError ? 'border-red-500 text-red-500 bg-red-50' :
                         (hasComment ? "text-primary hover:text-primary-600 border-transparent" : "text-gray-400 hover:text-gray-600 border-transparent")
                         }`}
                     >
-                      {hasComment ? "★ Comment" : "Comment"}
+                      <span>{hasComment ? "★ Comment" : "Comment"}</span>
+                      {cell.hours > 0 && <span className="text-red-500">*</span>}
                     </button>
                   </div>
                 </>
