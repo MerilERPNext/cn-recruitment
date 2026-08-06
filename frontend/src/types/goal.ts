@@ -183,6 +183,7 @@ export interface MyGoalsGoal {
   title: string;
   description: string;
   goal_type: string;
+  checkin_due:string;
   department: string;
   department_title: string;
   weightage: number;

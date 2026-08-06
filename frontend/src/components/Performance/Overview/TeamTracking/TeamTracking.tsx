@@ -128,9 +128,7 @@ const EmployeeGoalsList = ({
     <div className="space-y-4 max-w-4xl mx-auto">
       {goalsList.map((goal) => {
         const goalId = goal.goal_key || goal.name || goal.title;
-        const dueDate = goal.end_date
-          ? new Date(goal.end_date).toLocaleDateString()
-          : "-";
+
 
         return (
           <Card
@@ -138,8 +136,8 @@ const EmployeeGoalsList = ({
             className="p-5 border border-gray-100 hover:border-blue-300 hover:shadow-md cursor-pointer transition-all bg-white group"
             onClick={() => onSelectGoal?.(goalId)}
           >
-            <div className="flex flex-col lg:flex-row justify-between gap-6">
-              <div className="min-w-0 space-y-3 flex-1">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-6">
+              <div className="min-w-0 space-y-2 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
                   <Badge
                     label={goal?.goal_type || "-"}
@@ -174,24 +172,23 @@ const EmployeeGoalsList = ({
                       {goal.description}
                     </Typography>
                   )}
+                  <span className="text-xs text-gray-500 font-medium whitespace-nowrap">
+                    Last check in {goal?.checkin_due ?? "--"}
+                  </span>
                 </div>
               </div>
-              <div className="shrink-0 flex items-center justify-center gap-6">
-                <div className="text-right">
-                  <Typography
-                    variant="caption"
-                    className="text-gray-500 uppercase tracking-wider block mb-1 font-semibold"
-                  >
-                    Due
-                  </Typography>
-                  <Typography
-                    variant="bodySmall"
-                    className="font-semibold text-gray-900"
-                  >
-                    {dueDate}
-                  </Typography>
-                </div>
-                <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-blue-500 transition-colors shrink-0" />
+              <div className="flex items-center gap-4 sm:gap-5 shrink-0 self-end sm:self-center">
+               
+                <Button
+                  variant="outline"
+                  className="border-blue-200 text-blue-600 hover:bg-blue-50 hover:border-blue-300 font-medium text-xs px-3.5 py-1.5 rounded-lg transition-all shadow-xs"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onSelectGoal?.(goalId);
+                  }}
+                >
+                  Check in
+                </Button>
               </div>
             </div>
           </Card>
