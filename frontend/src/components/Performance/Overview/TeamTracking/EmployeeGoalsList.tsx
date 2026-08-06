@@ -2,7 +2,7 @@ import { useState } from "react";
 import toast from "react-hot-toast";
 import { Typography } from "../../../shared/atoms/Typography";
 import { Card } from "../../../shared/atoms/Card";
-import Badge from "../../../shared/Badge";
+import Badge, { type BadgeVariant } from "../../../shared/Badge";
 import Button from "../../../shared/atoms/Button";
 import { useEmployeeGoalsCheckIn } from "../../../../hooks/usePerformance";
 import { useCurrentEmployeeDetails } from "../../../../hooks/useEmployee";
@@ -10,12 +10,12 @@ import type { MyGoalsGoal } from "../../../../types/goal";
 import { ErrorState, EmployeeGoalsSkeleton } from "./TeamTrackingStates";
 import { getPerformanceErrorMessage } from "../../../../services/performanceService";
 
-const getStatusVariant = (status?: string) => {
+const getStatusVariant = (status?: string): BadgeVariant => {
   if (!status) return "default";
   const s = status.toLowerCase();
-  if (s === "completed" || s === "on track" || s === "approved") return "success";
-  if (s === "at risk" || s === "pending" || s === "draft") return "warning";
-  if (s === "off-track" || s === "rejected") return "danger";
+  if (s === "approved" || s === "completed" || s === "on track") return "success";
+  if (s === "pending" || s === "at risk" || s === "draft" || s === "in progress") return "warning";
+  if (s === "rejected" || s === "off-track" || s === "cancelled") return "danger";
   return "info";
 };
 
@@ -84,9 +84,10 @@ export const EmployeeGoalsList = ({
 
   return (
     <div className="space-y-4 max-w-4xl mx-auto">
-      {goalsList.map((goal) => {
+      {goalsList?.map((goal) => {
         const goalId = goal.goal_key || goal.name || goal.title;
         const isGoalPending = isPending && loadingGoalKey === goal.goal_key;
+        const currentStatus = goal?.goal_status || goal?.status 
 
         return (
           <Card
@@ -103,8 +104,8 @@ export const EmployeeGoalsList = ({
                     size="sm"
                   />
                   <Badge
-                    label={goal?.status ?? "-"}
-                    variant={getStatusVariant(goal.status)}
+                    label={currentStatus ?? "-"}
+                    variant={getStatusVariant(currentStatus)}
                     size="sm"
                   />
                   {goal?.weightage && (
@@ -120,7 +121,7 @@ export const EmployeeGoalsList = ({
                     variant="body"
                     className="font-semibold text-gray-900 group-hover:text-blue-700 transition-colors mb-1 truncate"
                   >
-                    {goal.title}
+                    {goal?.title}
                   </Typography>
                   {goal.description && (
                     <Typography

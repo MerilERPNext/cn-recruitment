@@ -132,8 +132,6 @@ const TeamTracking = () => {
             employeeId={selectedEmployeeId || ""}
           />
         ) }
-
-       
       </div>
     </div>
   );
