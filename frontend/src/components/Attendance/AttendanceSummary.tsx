@@ -35,6 +35,7 @@ import SummaryCard from "./SummaryCard";
 import QuickActionCard, { QuickActionCardData } from "./QuickActionCard";
 import AttendanceRequestFormV2 from "./AttendanceRequest/AttendanceRequestFormV2";
 import { ViewAll } from "../shared/atoms/ViewAll";
+import { NoDataFound } from "../shared/atoms/NoDataFound";
 import CreateOvertimeRequest from "./OvertimeRequests/CreateOvertimeRequest";
 import PolicyDrawer from "./PolicyDrawer";
 import { Typography } from "../shared/atoms/Typography";
@@ -47,7 +48,7 @@ import { Attendance } from "../../types/attendance";
 import AttendanceChart from "../AttendanceChart";
 import { useTargetUser } from "../../context/ViewedUserContext";
 import { useGetUiPermission } from "../../hooks/userUiPermission";
-import { isActionEnabled } from "../../utils/uiPermission";
+import { isActionEnabled, getActionsEnabled } from "../../utils/uiPermission";
 import { DRAWER_SETTINGS } from "./constants";
 import { createPortal } from "react-dom";
 
@@ -81,6 +82,18 @@ const AttendanceSummary = () => {
     userUiPermission,
     "create_attendance_request",
     "Attendance Summary",
+  );
+
+  const enabledActions = getActionsEnabled(
+    userUiPermission,
+    [
+      "show_my_attendance_card",
+      "show_team_attendance_card",
+      "show_planned_overtime_card",
+      "show_team_overtime_card",
+      "show_shifts_card"
+    ],
+    "Attendance Summary"
   );
 
   const { data: employeeShift } = useGetEmployeeShift(
@@ -182,10 +195,11 @@ const AttendanceSummary = () => {
     section: string;
     cards: QuickActionCardData[];
   } = useMemo(
-    () => ({
-      section: "Quick Actions",
-      cards: [
-        {
+    () => {
+      const cards: QuickActionCardData[] = [];
+      
+      if (enabledActions.show_my_attendance_card) {
+        cards.push({
           id: "my_requests",
           title: "My Attendance",
           subtitle: "Pending Requests",
@@ -206,8 +220,11 @@ const AttendanceSummary = () => {
               onClick: () => setShowAttendanceRequestModal(true),
             },
           ],
-        },
-        ...(teamCheckInSummary?.data?.have_team ? [{
+        });
+      }
+      
+      if (teamCheckInSummary?.data?.have_team && enabledActions.show_team_attendance_card) {
+        cards.push({
           id: "team_requests",
           title: "Team Attendance",
           subtitle: "Pending Requests",
@@ -222,8 +239,11 @@ const AttendanceSummary = () => {
               href: "/webapp/attendance/team-attendance-requests",
             },
           ],
-        }] as QuickActionCardData[] : []),
-        {
+        });
+      }
+      
+      if (enabledActions.show_planned_overtime_card) {
+        cards.push({
           id: "my_overtime",
           title: "Planned Overtime",
           subtitle: "Pending Requests",
@@ -244,8 +264,11 @@ const AttendanceSummary = () => {
               onClick: () => setShowOvertimeRequest(true),
             },
           ],
-        },
-        ...(teamCheckInSummary?.data?.have_team ? [{
+        });
+      }
+      
+      if (teamCheckInSummary?.data?.have_team && enabledActions.show_team_overtime_card) {
+        cards.push({
           id: "team_overtime",
           title: "Team Overtime",
           subtitle: "Pending Requests",
@@ -260,8 +283,11 @@ const AttendanceSummary = () => {
               href: "/webapp/attendance/team-overtime-requests",
             },
           ],
-        }] as QuickActionCardData[] : []),
-        {
+        });
+      }
+      
+      if (enabledActions.show_shifts_card) {
+        cards.push({
           id: "shifts",
           title: "Shifts",
           subtitle: "Shift schedule overview",
@@ -276,10 +302,15 @@ const AttendanceSummary = () => {
               href: "/webapp/shift-request/all-shifts-dashboard",
             },
           ],
-        },
-      ],
-    }),
-    [employeeAttendanceSummary, teamCheckInSummary?.data?.have_team, canCreateAttendanceRequest, canCreateOvertimeRequest],
+        });
+      }
+
+      return {
+        section: "Quick Actions",
+        cards,
+      };
+    },
+    [employeeAttendanceSummary, teamCheckInSummary?.data?.have_team, canCreateAttendanceRequest, canCreateOvertimeRequest, enabledActions],
   );
 
   const getAttendanceMethod = () => {
@@ -473,11 +504,18 @@ const AttendanceSummary = () => {
               </Typography>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {quickAction.cards.map((card) => (
-                <QuickActionCard key={card.id} {...card} />
-              ))}
-            </div>
+            {quickAction.cards.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {quickAction.cards.map((card) => (
+                  <QuickActionCard key={card.id} {...card} />
+                ))}
+              </div>
+            ) : (
+              <NoDataFound 
+                title="No Actions Available" 
+                subtitle="You don't have permission to view any quick actions." 
+              />
+            )}
           </Card>}
         </div>
         {/* Right Column: Settings - 30% */}

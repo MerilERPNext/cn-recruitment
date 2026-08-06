@@ -53,12 +53,14 @@ const EditButton = ({ requisition, onClose }: { requisition: any; onClose: () =>
 
 const Requisition = () => {
   const { isDesktop } = useScreenSize();
-  const { data: currentEmployee } = useCurrentEmployee();
-  const currentEmployeeName = currentEmployee?.employee_name;
+  const navigate = useNavigate();
+  const { data: currentEmployee, isLoading: isCurrentEmployeeLoading } = useCurrentEmployee();
+  const currentEmployeeId = currentEmployee?.name;
   // Persist the 4-card summary across navigations (e.g. edit → back) so the
   // cards don't blank out when React Query returns cached row data without
   // re-running the loader on remount.
   const SUMMARY_STORAGE_KEY = "requisition-summary-cache";
+  const COLUMNS_STORAGE_KEY = "requisition-columns-cache";
   type SummaryShape = {
     total_requisitions: number;
     total_positions: number;
@@ -74,9 +76,18 @@ const Requisition = () => {
       return null;
     }
   });
-  // `null` means the list response has not supplied its column configuration yet.
-  // This prevents the static columns flashing before the API columns are applied.
-  const [apiColumns, setApiColumns] = useState<RequisitionListColumn[] | null>(null);
+  // Restore the server column configuration with React Query's cached rows so
+  // returning from details keeps the same list layout.
+  const [apiColumns, setApiColumns] = useState<RequisitionListColumn[]>(() => {
+    if (typeof window === "undefined") return [];
+    try {
+      const cached = sessionStorage.getItem(COLUMNS_STORAGE_KEY);
+      const parsed = cached ? JSON.parse(cached) : [];
+      return Array.isArray(parsed) ? parsed as RequisitionListColumn[] : [];
+    } catch {
+      return [];
+    }
+  });
   const setSummary = (next: SummaryShape) => {
     _setSummary(next);
     try {
@@ -111,16 +122,12 @@ const Requisition = () => {
     "130px",
   ];
 
-  const activeTitles = apiColumns === null
-    ? []
-    : apiColumns.length
-      ? apiColumns.map((column) => column.label)
-      : titles;
-  const activeColumnWidths = apiColumns === null
-    ? []
-    : apiColumns.length
-      ? apiColumns.map((column) => getColumnWidth(column, apiColumns.length))
-      : columnWidths;
+  const activeTitles = apiColumns.length
+    ? apiColumns.map((column) => column.label)
+    : titles;
+  const activeColumnWidths = apiColumns.length
+    ? apiColumns.map((column) => getColumnWidth(column, apiColumns.length))
+    : columnWidths;
 
   const getStatusColor = (status: string) => {
     switch (status?.toLowerCase()) {
@@ -175,8 +182,6 @@ const Requisition = () => {
     const initiated = item.creation ? item.creation.split(" ")[0] : "--";
 
     const statusColor = getStatusColor(status);
-
-    if (apiColumns === null) return null;
 
     const renderApiColumnValue = (column: RequisitionListColumn) => {
       const key = column.value_key || column.fieldname;
@@ -509,7 +514,7 @@ const Requisition = () => {
         start,
         limit,
         filters: finalFilters.length > 0 ? JSON.stringify(finalFilters) : undefined,
-        employee: currentEmployee?.name,
+        employee: currentEmployeeId,
         order_by: params.orderBy || "modified desc",
       }
     ) as JobRequisitionListResponse;
@@ -526,11 +531,15 @@ const Requisition = () => {
     }
 
     if (Array.isArray(response?.data?.columns)) {
-      setApiColumns(
-        response.data.columns.filter(
-          (column: RequisitionListColumn) => column?.label && (column?.value_key || column?.fieldname),
-        ),
+      const columns = response.data.columns.filter(
+        (column: RequisitionListColumn) => column?.label && (column?.value_key || column?.fieldname),
       );
+      setApiColumns(columns);
+      try {
+        sessionStorage.setItem(COLUMNS_STORAGE_KEY, JSON.stringify(columns));
+      } catch {
+        /* sessionStorage unavailable — fall back to in-memory only */
+      }
     } else {
       setApiColumns([]);
     }
@@ -542,14 +551,14 @@ const Requisition = () => {
       nextCursor,
       pages: [Math.floor(start / limit) + 1],
     };
-  }, [currentEmployee?.name]);
+  }, [currentEmployeeId]);
 
   const filterFields: FilterField[] = [
     {
       fieldname: "status",
       label: "Status",
       fieldtype: "Select",
-      options: ["Pending", "Approved", "Cancelled", "Closed", "Draft"],
+      options: ["Draft", "Open & Approved", "Approved Active", "Rejected", "Filled", "Archived", "On Hold", "Cancelled"],
     },
     {
       fieldname: "department",
@@ -608,12 +617,18 @@ const Requisition = () => {
 
   const [selectedRequisition, setSelectedRequisition] = useState<any | null>(null);
 
+  const navigateToDetail = useCallback((item: any) => {
+    navigate(`/webapp/recruitment/requisition/${item.name}`, {
+      state: { requisition: item },
+    });
+  }, [navigate]);
+
   const ItemComponent = useMemo(
     () =>
       ({ item }: { item: any }) => (
-        <RequisitionItem item={item} onView={setSelectedRequisition} />
+        <RequisitionItem item={item} onView={navigateToDetail} />
       ),
-    [apiColumns]
+    [apiColumns, navigateToDetail]
   );
 
   const statCards = [
@@ -698,10 +713,10 @@ const Requisition = () => {
               field: key,
               getValue: (item: any) => item?.[key] ?? "",
             };
-          }) : apiColumns === null ? [] : REQUISITION_SORT_CONFIG}
+          }) : REQUISITION_SORT_CONFIG}
         >
           <DataListView
-            queryKey={["job-requisitions", currentEmployeeName || ""]}
+            queryKey={["job-requisitions", currentEmployeeId || ""]}
             fetchFunction={fetchRequisitions}
             ItemComponent={ItemComponent}
             searchFields={["name", "designation", "department"]}
@@ -709,12 +724,13 @@ const Requisition = () => {
             pageSize={10}
             isFilter={true}
             filterFields={filterFields}
+            isLoading={isCurrentEmployeeLoading || !currentEmployeeId}
           />
         </CardTable>
       ) : (
         <div className="space-y-3 px-1">
           <DataListView
-            queryKey={["job-requisitions", currentEmployeeName || ""]}
+            queryKey={["job-requisitions", currentEmployeeId || ""]}
             fetchFunction={fetchRequisitions}
             ItemComponent={ItemComponent}
             searchFields={["name", "designation", "department"]}
@@ -722,6 +738,7 @@ const Requisition = () => {
             pageSize={20}
             isFilter={true}
             filterFields={filterFields}
+            isLoading={isCurrentEmployeeLoading || !currentEmployeeId}
           />
         </div>
       )}

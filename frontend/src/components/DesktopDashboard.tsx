@@ -221,6 +221,14 @@ export default function DesktopDashboard() {
     };
   }, [showProfileDropdown]);
 
+  const targetWorkingHoursText = useMemo(() => {
+    if (!employeeShift?.custom_standard_working_hrs) return "8h 30m target";
+    const hrs = employeeShift.custom_standard_working_hrs;
+    const h = Math.floor(hrs);
+    const m = Math.round((hrs % 1) * 60);
+    return `${h}h ${m}m target`;
+  }, [employeeShift?.custom_standard_working_hrs]);
+
   const getTotalTime = () => {
     if (!homeSummary || homeSummary.length === 0) {
       return "00:00";
@@ -337,7 +345,9 @@ export default function DesktopDashboard() {
 
     const shiftStart = parseISO(firstCheckIn.shift_start.replace(" ", "T"));
     const shiftEnd = parseISO(firstCheckIn.shift_end.replace(" ", "T"));
-    const totalShiftMinutes = differenceInMinutes(shiftEnd, shiftStart);
+    const totalShiftMinutes = employeeShift?.custom_standard_working_hrs
+      ? employeeShift.custom_standard_working_hrs * 60
+      : differenceInMinutes(shiftEnd, shiftStart);
 
     if (totalShiftMinutes <= 0) {
       return 0;
@@ -900,7 +910,7 @@ export default function DesktopDashboard() {
                       color="primary"
                       className="font-semibold uppercase tracking-wider"
                     >
-                      8h 30m target
+                      {targetWorkingHoursText}
                     </Typography>
                     <div className="flex items-center gap-3">
                       <Typography variant="bodyMedium" className="font-bold">

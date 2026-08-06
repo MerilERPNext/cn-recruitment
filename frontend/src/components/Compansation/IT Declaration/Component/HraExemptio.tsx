@@ -113,6 +113,7 @@ const HRAForm: React.FC<HRAFormProps> = ({ hraData, ltaData, onChange, LATABreak
     if (mHra > 8333 && attachReqd === 0) {
       onChange("attach_reqd", 1);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hraDetails]);
 
   // ─── Form.io schema ───
@@ -120,92 +121,148 @@ const HRAForm: React.FC<HRAFormProps> = ({ hraData, ltaData, onChange, LATABreak
     display: "form",
     components: [
       {
-        type: "textfield",
-        key: "address_line1",
-        label: "Address",
-        placeholder: "Enter rental address",
-        input: true,
-        validate: { required: true },
-      },
-      {
-        type: "select",
-        key: "rented_in_metro_city",
-        label: "Is Metro",
-        placeholder: "Select city type",
-        input: true,
-        data: {
-          values: [
-            { label: "Non-Metro", value: 0 },
-            { label: "Metro",     value: 1 },
-          ],
-        },
-        validate: { required: true },
+        type: "columns",
+        columns: [
+          {
+            width: 6,
+            components: [
+              {
+                type: "textfield",
+                key: "address_line1",
+                label: "Address",
+                placeholder: "Enter rental address",
+                input: true,
+                validate: { required: true },
+              },
+            ],
+          },
+          {
+            width: 6,
+            components: [
+              {
+                type: "select",
+                key: "rented_in_metro_city",
+                label: "Is Metro",
+                placeholder: "Select city type",
+                input: true,
+                data: {
+                  values: [
+                    { label: "Non-Metro", value: 0 },
+                    { label: "Metro", value: 1 },
+                  ],
+                },
+                validate: { required: true },
+              },
+            ],
+          },
+        ],
       },
       {
         type: "panel",
         title: "Rental Period",
         key: "rental_period_panel",
+        customClass: "mt-4",
         components: [
           {
-            type: "datetime",
-            key: "start_date",
-            label: "From",
-            input: true,
-            format: "yyyy-MM-dd",
-            enableTime: false,
-            datePicker: { disableWeekends: false, disableWeekdays: false },
-            validate: { required: true },
-          },
-          {
-            type: "datetime",
-            key: "end_date",
-            label: "To",
-            input: true,
-            format: "yyyy-MM-dd",
-            enableTime: false,
-            datePicker: { disableWeekends: false, disableWeekdays: false },
-            validate: { required: true },
+            type: "columns",
+            columns: [
+              {
+                width: 6,
+                components: [
+                  {
+                    type: "datetime",
+                    key: "start_date",
+                    label: "From",
+                    input: true,
+                    format: "yyyy-MM-dd",
+                    enableTime: false,
+                    datePicker: { disableWeekends: false, disableWeekdays: false },
+                    validate: { required: true },
+                  },
+                ],
+              },
+              {
+                width: 6,
+                components: [
+                  {
+                    type: "datetime",
+                    key: "end_date",
+                    label: "To",
+                    input: true,
+                    format: "yyyy-MM-dd",
+                    enableTime: false,
+                    datePicker: { disableWeekends: false, disableWeekdays: false },
+                    validate: { required: true },
+                  },
+                ],
+              },
+            ],
           },
         ],
       },
       {
-        type: "number",
-        key: "monthly_hra",
-        label: "Monthly Rental (₹)",
-        placeholder: "Enter monthly rent amount",
-        input: true,
-        validate: { required: true, min: 0 },
-      },
-      {
-        type: "textfield",
-        key: "owner_name",
-        label: "Owner Name",
-        placeholder: "Enter owner name",
-        input: true,
-        validate: { required: true },
+        type: "columns",
+        columns: [
+          {
+            width: 6,
+            components: [
+              {
+                type: "number",
+                key: "monthly_hra",
+                label: "Monthly Rental (₹)",
+                placeholder: "Enter monthly rent amount",
+                input: true,
+                validate: { required: true, min: 0 },
+              },
+            ],
+          },
+          {
+            width: 6,
+            components: [
+              {
+                type: "textfield",
+                key: "owner_name",
+                label: "Owner Name",
+                placeholder: "Enter owner name",
+                input: true,
+                validate: { required: true },
+              },
+            ],
+          },
+        ],
       },
       {
         type: "htmlelement",
         key: "pan_warning",
         tag: "div",
-        className: "alert alert-warning",
+        className: "alert alert-warning mt-2",
         content: `⚠️ If rent is more than ${formatCurrency(8333)}/month or ${formatCurrency(100000)}/year, PAN is mandatory.`,
         customConditional: "show = data.monthly_hra > 8333;",
       },
       {
-        type: "textfield",
-        key: "pan",
-        label: isPanMandatory ? "PAN *" : "PAN",
-        placeholder: isPanMandatory ? "PAN is mandatory" : "Enter PAN",
-        input: true,
-        case: "uppercase",
-        validate: {
-          required: isPanMandatory,
-          pattern: "[A-Z]{5}[0-9]{4}[A-Z]{1}",
-          customMessage: "Enter a valid PAN (e.g. ABCDE1234F)",
-          custom: "valid = (data.monthly_hra <= 8333) || (input && input.length === 10);",
-        },
-        description: "Mandatory when monthly rent exceeds ₹8,333",
+        type: "columns",
+        columns: [
+          {
+            width: 6,
+            components: [
+              {
+                type: "textfield",
+                key: "pan",
+                label: isPanMandatory ? "PAN *" : "PAN",
+                placeholder: isPanMandatory ? "PAN is mandatory" : "Enter PAN",
+                input: true,
+                case: "uppercase",
+                validate: {
+                  required: isPanMandatory,
+                  pattern: "[A-Z]{5}[0-9]{4}[A-Z]{1}",
+                  customMessage: "Enter a valid PAN (e.g. ABCDE1234F)",
+                  custom: "valid = (data.monthly_hra <= 8333) || (input && input.length === 10);",
+                },
+                description: "Mandatory when monthly rent exceeds ₹8,333",
+              },
+            ],
+          },
+        ],
       },
     ],
   };

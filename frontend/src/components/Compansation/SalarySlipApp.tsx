@@ -20,6 +20,7 @@ type TabName =
   | "My Advances"
   | "Team Advances"
   | "Extra Payments"
+  | "Extra Deductions"
   | "Perquisite"
   | "Payroll Documents";
 
@@ -41,6 +42,7 @@ const tabRoutes: Record<TabName, string> = {
   "Team Advances": "/webapp/salary-slip-app/team-advances-list",
   "Perquisite": "/webapp/salary-slip-app/perquisite-list",
   "Extra Payments": "/webapp/salary-slip-app/extra-payment",
+  "Extra Deductions": "/webapp/salary-slip-app/extra-deduction",
   "Payroll Documents": "/webapp/salary-slip-app/hr-payroll",
 
 };

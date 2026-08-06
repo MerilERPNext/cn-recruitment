@@ -1,10 +1,14 @@
-import React, { useState } from "react";
-import { ChevronRight, Download, Plus, SquareCheck, TrendingUp } from "lucide-react";
+import React, { useMemo, useState } from "react";
+import { ChevronRight, Download, Loader2, Plus, SquareCheck, TrendingUp } from "lucide-react";
+import Chart from "react-apexcharts";
+import type { ApexOptions } from "apexcharts";
 import Badge from "../../shared/Badge";
 import { Typography } from "../../shared/atoms/Typography";
 import EditSkillPopup from "./EditSkillPopup";
-import { categories, categoryFilters, focusAreas, levelLabels, metricCards, PROJECT_TONES } from "../mockdata";
-import type { Skill } from "../types";
+import { categories, levelLabels, PROJECT_TONES } from "../mockdata";
+import type { Skill, MetricCard, ProjectTone } from "../types";
+import { useSkillsOverview } from "../../../hooks/useSkills";
+import type { SkillsOverviewData, SkillsChip, SkillsRadarItem, SkillsFocusArea } from "../../../types/skills";
 
 const getLevelTone = (level: number) => {
   if (level === 5) return PROJECT_TONES.success.bar;
@@ -21,73 +25,182 @@ const getLevelLabel = (level: number) => {
   return "Beginner";
 };
 
+/** Build the four metric cards from live API data. */
+const buildMetricCards = (data: SkillsOverviewData): MetricCard[] => [
+  {
+    label: "Avg current proficiency",
+    value: `${data.avg_current ?? 0}`,
+    helper: `of ${data.max_level ?? 5}.0 · ${data.avg_current_label ?? "N/A"}`,
+    tone: "info" as ProjectTone,
+  },
+  {
+    label: "Avg target proficiency",
+    value: `${data.avg_target ?? 0}`,
+    helper: `gap of ${data.avg_gap ?? 0} levels`,
+    tone: "info" as ProjectTone,
+  },
+  {
+    label: "Focus skills",
+    value: `${data.focus_count ?? 0}`,
+    helper: "marked as growth priority",
+    tone: "info" as ProjectTone,
+  },
+  {
+    label: "Critical gaps",
+    value: `${data.critical_gap_count ?? 0}`,
+    helper: "skills with gap ≥ 2 levels",
+    tone: "info" as ProjectTone,
+  },
+];
+
+
+
 const SkillsAndProficiency: React.FC = () => {
   const [selectedSkill, setSelectedSkill] = useState<Skill | null>(null);
-  const radarRings = [28, 48, 68, 88];
-  const radarLabels = ["Design", "Systems", "Research", "Technical", "Soft", "Tools"];
-  const radarLabelPositions = [
-    "left-[86px] top-0",
-    "right-0 top-[50px]",
-    "right-0 bottom-[50px]",
-    "left-[78px] bottom-0",
-    "left-1 bottom-[50px]",
-    "left-1 top-[50px]",
-  ];
+  const { data: overviewResponse, isLoading, isError } = useSkillsOverview();
+
+  const overview: SkillsOverviewData | undefined = overviewResponse?.data;
+  const chips: SkillsChip[] = overview?.chips ?? [];
+  const radarItems: SkillsRadarItem[] = overview?.radar ?? [];
+  const focusAreas: SkillsFocusArea[] = overview?.focus_areas ?? [];
+  const metricCards: MetricCard[] = overview ? buildMetricCards(overview) : [];
+
+  const maxLevel = overview?.max_level ?? 5;
+
+  const radarChartOptions = useMemo<ApexOptions>(() => ({
+    chart: {
+      type: "radar",
+      toolbar: { show: false },
+      dropShadow: { enabled: false },
+    },
+    colors: ["#0EA5E9", "#6172F3"],
+    stroke: { width: 2 },
+    fill: {
+      opacity: [0.25, 0.08],
+    },
+    markers: { size: 3, strokeWidth: 0 },
+    xaxis: {
+      categories: radarItems.map((r) => r.label),
+      labels: {
+        style: {
+          fontSize: "11px",
+          fontWeight: 500,
+          colors: Array(radarItems.length).fill("#374151"),
+        },
+      },
+    },
+    yaxis: {
+      show: false,
+      max: maxLevel,
+      min: 0,
+      tickAmount: maxLevel,
+    },
+    legend: {
+      show: true,
+      position: "bottom",
+      fontSize: "12px",
+      fontWeight: 500,
+      labels: { colors: "#6B7280" },
+      markers: { size: 6, shape: "circle" as const },
+      itemMargin: { horizontal: 12 },
+    },
+    tooltip: {
+      enabled: true,
+      y: { formatter: (val: number) => `Level ${val} / ${maxLevel}` },
+    },
+    plotOptions: {
+      radar: {
+        size: 80,
+        polygons: {
+          strokeColors: "#C7D7FE",
+          connectorColors: "#C7D7FE",
+          fill: { colors: ["#f8fafc", "#ffffff"] },
+        },
+      },
+    },
+  }), [radarItems, maxLevel]);
+
+  const radarChartSeries = useMemo(() => [
+    { name: "Current", data: radarItems.map((r) => r.current) },
+    { name: "Target", data: radarItems.map((r) => r.target) },
+  ], [radarItems]);
 
   return (
     <div className="min-h-full overflow-y-auto bg-surface p-3 font-brand text-text-title sm:p-2 lg:p-1">
       <div className="mx-auto max-w-screen space-y-4 lg:space-y-5">
-        <div className="rounded-lg border border-primary-100 bg-white p-4 shadow-sm sm:p-5">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-            <div>
-            
-              <Typography variant="h3" className="text-xl leading-tight text-text-title sm:text-2xl">
-                16 tracked skills across 6 categories
-              </Typography>
-              <Typography variant="bodySmall" className="mt-1 text-text-body2">
-                Last full re-assessment: Apr 2026 · Next due: Jul 2026
-              </Typography>
-            </div>
-            <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:gap-3">
-              <button className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-gray-100 bg-white px-3 text-sm font-semibold text-gray-700 shadow-sm transition-colors hover:bg-primary-50 sm:px-4" aria-label="Export skills PDF">
-                <Download className="h-4 w-4" />
-                Export PDF
-              </button>
-              <button className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-primary-500 px-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-primary-600 sm:px-4" aria-label="Add skill">
-                <Plus className="h-4 w-4" />
-                Add Skill
-              </button>
+        {/* Loading state */}
+        {isLoading && (
+          <div className="flex items-center justify-center rounded-lg border border-primary-100 bg-white p-10 shadow-sm">
+            <Loader2 className="h-6 w-6 animate-spin text-primary-500" />
+            <Typography variant="bodySmall" className="ml-3 text-text-body2">Loading skills overview…</Typography>
+          </div>
+        )}
+
+        {/* Error state */}
+        {isError && (
+          <div className="rounded-lg border border-error-200 bg-error-50 p-5 text-center shadow-sm">
+            <Typography variant="bodySmall" className="text-error-700">
+              Unable to load skills overview. Please try again later.
+            </Typography>
+          </div>
+        )}
+
+        {/* Header card — driven by API data */}
+        {!isLoading && !isError && (
+          <div className="rounded-lg border border-primary-100 bg-white p-4 shadow-sm sm:p-5">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+              <div>
+                <Typography variant="h3" className="text-xl leading-tight text-text-title sm:text-2xl">
+                  {overview?.total_skills ?? 0} tracked skills across {overview?.category_count ?? 0} categories
+                </Typography>
+                <Typography variant="bodySmall" className="mt-1 text-text-body2">
+                  Last full re-assessment: {overview?.last_assessed ?? "N/A"} · Next due: {overview?.next_due ?? "N/A"}
+                </Typography>
+              </div>
+              <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:gap-3">
+                <button className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-gray-100 bg-white px-3 text-sm font-semibold text-gray-700 shadow-sm transition-colors hover:bg-primary-50 sm:px-4" aria-label="Export skills PDF">
+                  <Download className="h-4 w-4" />
+                  Export PDF
+                </button>
+                <button className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-primary-500 px-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-primary-600 sm:px-4" aria-label="Add skill">
+                  <Plus className="h-4 w-4" />
+                  Add Skill
+                </button>
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-          {metricCards.map((metric) => (
-            <div key={metric.label} className="rounded-lg border border-primary-100 bg-white p-5 shadow-sm">
-              <Typography variant="caption" className="uppercase tracking-wide text-text-body2">
-                {metric.label}
-              </Typography>
-              <div className={`mt-2 text-3xl font-bold ${PROJECT_TONES[metric.tone].badgeText}`}>{metric.value}</div>
-              <Typography variant="caption" className="mt-1 block text-text-body2">
-                {metric.helper}
-              </Typography>
-            </div>
-          ))}
-        </div>
+        {/* Metric cards — built from API response */}
+        {!isLoading && !isError && metricCards.length > 0 && (
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+            {metricCards.map((metric) => (
+              <div key={metric.label} className="rounded-lg border border-primary-100 bg-white p-5 shadow-sm">
+                <Typography variant="caption" className="uppercase tracking-wide text-text-body2">
+                  {metric.label}
+                </Typography>
+                <div className={`mt-2 text-3xl font-bold ${PROJECT_TONES[metric.tone].badgeText}`}>{metric.value}</div>
+                <Typography variant="caption" className="mt-1 block text-text-body2">
+                  {metric.helper}
+                </Typography>
+              </div>
+            ))}
+          </div>
+        )}
 
         <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1fr)_300px]">
           <div className="overflow-hidden rounded-lg border border-primary-100 bg-white shadow-sm">
-            <div className="flex flex-col gap-3 border-b border-primary-100 p-4 lg:flex-row lg:items-center lg:justify-between">
-              <Typography variant="bodyMedium" className="font-bold text-text-title">
+            <div className="flex flex-col gap-3 border-b border-primary-100 p-4 lg:flex-row lg:items-center">
+              <Typography variant="bodyMedium" className="shrink-0 whitespace-nowrap font-bold text-text-title">
                 My Skills
               </Typography>
-              <div className="flex gap-2 overflow-x-auto pb-1 lg:flex-wrap lg:overflow-visible lg:pb-0">
-                {categoryFilters.map((filter) => (
-                  <div key={filter.label} className="shrink-0">
+              <div className="ml-auto flex gap-2 overflow-x-auto pb-1 lg:flex-wrap lg:overflow-visible lg:pb-0">
+                {chips.map((chip) => (
+                  <div key={chip.key} className="shrink-0">
                     <Badge
-                      label={filter.label}
-                      backgroundColor={PROJECT_TONES[filter.tone].badgeBg}
-                      textColor={PROJECT_TONES[filter.tone].badgeText}
+                      label={`${chip.label} (${chip.count})`}
+                      backgroundColor={PROJECT_TONES.info.badgeBg}
+                      textColor={PROJECT_TONES.info.badgeText}
                       size="sm"
                     />
                   </div>
@@ -209,56 +322,46 @@ const SkillsAndProficiency: React.FC = () => {
               <Typography variant="caption" className="mt-1 block text-text-body2">
                 Current (filled) vs Target (outline)
               </Typography>
-              <div className="relative mx-auto h-44 w-44 sm:h-48 sm:w-48">
-                <svg viewBox="0 0 200 200" className="h-full w-full">
-                  {radarRings.map((size) => (
-                    <polygon
-                      key={size}
-                      points={`100,${100 - size} ${100 + size * 0.86},${100 - size / 2} ${100 + size * 0.86},${100 + size / 2} 100,${100 + size} ${100 - size * 0.86},${100 + size / 2} ${100 - size * 0.86},${100 - size / 2}`}
-                      fill="none"
-                      stroke="#C7D7FE"
-                      strokeWidth="1"
-                    />
-                  ))}
-                  <polygon points="100,16 173,58 173,142 100,184 27,142 27,58" fill="#EEF4FF" stroke="#6172F3" strokeDasharray="4 4" strokeWidth="2" />
-                  <polygon points="100,34 159,68 145,134 100,152 43,137 57,70" fill="#0EA5E9" fillOpacity="0.26" stroke="#0EA5E9" strokeWidth="4" />
-                </svg>
-                {radarLabels.map((label, index) => (
-                  <div key={label} className={`absolute text-[10px] font-medium text-gray-700 ${radarLabelPositions[index]}`}>
-                    {label}
-                  </div>
-                ))}
-              </div>
-              <div className="mt-2 flex justify-center gap-5 text-xs text-text-body2">
-                <span className="flex items-center gap-1.5">
-                  <span className="h-3 w-3 rounded-sm bg-info-50 ring-1 ring-info-200" />
-                  Current
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <span className="h-3 w-3 rounded-sm border border-dashed border-primary-500" />
-                  Target
-                </span>
-              </div>
+              {radarItems.length > 0 ? (
+                <div className="mx-auto mt-2 w-full max-w-[280px]">
+                  <Chart
+                    type="radar"
+                    height={260}
+                    options={radarChartOptions}
+                    series={radarChartSeries}
+                  />
+                </div>
+              ) : (
+                <Typography variant="caption" className="mt-4 block text-center text-text-body2">
+                  No category data available.
+                </Typography>
+              )}
             </div>
 
             <div className="rounded-lg border border-primary-100 bg-white p-4 shadow-sm sm:p-5">
               <Typography variant="bodyMedium" className="font-bold text-text-title">
-                Focus areas · FY26
+                Focus areas
               </Typography>
               <div className="mt-4 space-y-3">
-                {focusAreas.map((area) => (
-                  <div key={area} className="flex items-center gap-3 rounded-lg border border-warning-200 bg-warning-50 p-3">
-                    <SquareCheck className="h-4 w-4 shrink-0 text-warning-600" />
-                    <div>
-                      <Typography variant="bodySmall" className="font-semibold text-text-title">
-                        {area}
-                      </Typography>
-                      <Typography variant="caption" className="text-text-body2">
-                        Beginner → Advanced
-                      </Typography>
+                {focusAreas.length > 0 ? (
+                  focusAreas.map((area) => (
+                    <div key={area.skill} className="flex items-center gap-3 rounded-lg border border-warning-200 bg-warning-50 p-3">
+                      <SquareCheck className="h-4 w-4 shrink-0 text-warning-600" />
+                      <div>
+                        <Typography variant="bodySmall" className="font-semibold text-text-title">
+                          {area.skill}
+                        </Typography>
+                        <Typography variant="caption" className="text-text-body2">
+                          {area.category} · gap {area.gap ?? 0} levels
+                        </Typography>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))
+                ) : (
+                  <Typography variant="caption" className="text-text-body2">
+                    No focus areas defined yet.
+                  </Typography>
+                )}
               </div>
             </div>
 

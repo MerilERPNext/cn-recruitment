@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Typography } from "../../shared/atoms/Typography";

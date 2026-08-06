@@ -1,11 +1,23 @@
 import FrappeAPI from "../utils/frappeAPI";
 import { SalarySlip } from "../types/ctc";
 
-export const generateSalarySlip = async (employeeId: string): Promise<SalarySlip> => {
+interface FrappeApiResponse {
+  status?: string;
+  message?: string;
+  data?: unknown[];
+}
+
+export const generateSalarySlip = async (employeeId: string, payroll_period?: string): Promise<SalarySlip> => {
   if (!employeeId) throw new Error("Employee ID is required");
 
-  const result = await FrappeAPI.callMethod("recruitment.payroll_api.generate_salary_slip", {
+  const result = await FrappeAPI.callMethod("cn_indian_payroll.cn_indian_payroll.overrides.webapp_api.salary_structure_assignment.generate_salary_slip", {
     employee: employeeId,
-  });
-  return result as SalarySlip;
+    payroll_period,
+  }) as FrappeApiResponse;
+
+  if (result?.status === "failed") {
+    throw new Error(result?.message || "Failed to generate salary slip");
+  }
+
+  return (result?.data?.[0] as SalarySlip) || null;
 };

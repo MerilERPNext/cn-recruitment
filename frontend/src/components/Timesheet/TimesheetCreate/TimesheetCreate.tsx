@@ -54,6 +54,7 @@ import { TimesheetTopBar } from "./components/TimesheetTopBar";
 import { TimesheetMetrics } from "./components/TimesheetMetrics";
 import { TimesheetActionFooter } from "./components/TimesheetActionFooter";
 import { AddTimeEntryButton } from "./components/AddTimeEntryButton";
+import Badge from "../../shared/Badge";
 
 const TimesheetCreate: React.FC = () => {
   const loadingOverlay = useLoadingOverlay();
@@ -62,11 +63,11 @@ const TimesheetCreate: React.FC = () => {
   // Date states
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
   const [isSavingLocally, setIsSavingLocally] = useState<boolean>(false);
-  const currentWeekStart = useMemo(() => startOfWeek(currentDate, { weekStartsOn: 0 }), [currentDate]);
+  const currentWeekStart = useMemo(() => startOfWeek(currentDate, { weekStartsOn: 1 }), [currentDate]);
   const currentWeekEnd = useMemo(() => addDays(currentWeekStart, 6), [currentWeekStart]);
 
   const realToday = useMemo(() => new Date(), []);
-  const realCurrentWeekStart = useMemo(() => startOfWeek(realToday, { weekStartsOn: 0 }), [realToday]);
+  const realCurrentWeekStart = useMemo(() => startOfWeek(realToday, { weekStartsOn: 1 }), [realToday]);
 
   const disableNextWeek = currentWeekStart.getTime() >= realCurrentWeekStart.getTime();
 
@@ -154,6 +155,7 @@ const TimesheetCreate: React.FC = () => {
   const [lastSavedTime, setLastSavedTime] = useState<string>("");
   const [attachedFile, setAttachedFile] = useState<File | null>(null);
   const [isFileModified, setIsFileModified] = useState<boolean>(false);
+  const [submittedDatesList, setSubmittedDatesList] = useState<string[]>([]);
 
   const { uploadFiles } = useFileUploader();
 
@@ -167,7 +169,7 @@ const TimesheetCreate: React.FC = () => {
   const hasCancelPermission = isActionEnabled(uiPermission, "cancel", "Timesheet");
 
   const [isBackendEditable, setIsBackendEditable] = useState<boolean>(true);
-  const isGridEditable = isBackendEditable && (hasSavePermission || hasSubmitPermission);
+  const isGridEditable = isBackendEditable && timesheetStatus !== "Submitted" && timesheetStatus !== "Cancelled" && (hasSavePermission || hasSubmitPermission);
 
   // Modal States
   const [commentModalConfig, setCommentModalConfig] = useState<{
@@ -205,14 +207,24 @@ const TimesheetCreate: React.FC = () => {
     // Collect unique time_log entries across all days by index order
     // Each time_log (project+task combo) gets its own row
     const rowsMap: Record<string, TimesheetRow> = {};
+    const submittedDays: string[] = [];
 
     (weeklyData.days || []).forEach(day => {
       const dateStr = day.date; // "yyyy-MM-dd"
 
+      let isDaySubmitted = false;
+
       (day.timesheet_records || []).forEach(record => {
         if (!foundName && record.name) {
           foundName = record.name;
-          foundStatus = record.status || "Draft";
+        }
+
+        if (
+          ["Submitted", "Billed", "Cancelled"].includes(record.status || "") ||
+          record.docstatus === 1 ||
+          record.docstatus === 2
+        ) {
+          isDaySubmitted = true;
         }
 
         (record.time_logs || []).forEach((log, logIndex) => {
@@ -239,10 +251,26 @@ const TimesheetCreate: React.FC = () => {
           };
         });
       });
+
+      if (isDaySubmitted) {
+        submittedDays.push(dateStr);
+      }
     });
 
-    // Use is_editable from the response
-    setIsBackendEditable(weeklyData.is_editable !== false);
+    setSubmittedDatesList(submittedDays);
+
+    if (submittedDays.length >= 7) {
+      foundStatus = "Submitted";
+    } else if (submittedDays.length > 0) {
+      foundStatus = "Partially Submitted";
+    } else if (foundName) {
+      foundStatus = "Draft";
+    } else {
+      foundStatus = "Not Submitted";
+    }
+
+    // Ignore is_editable from backend as per requirements
+    setIsBackendEditable(true);
     setTimesheetStatus(foundStatus);
 
     const parsedData = Object.values(rowsMap);
@@ -378,9 +406,9 @@ const TimesheetCreate: React.FC = () => {
       isoWeek1Start.setDate(jan4.getDate() - jan4Day + 1); // Monday of ISO week 1
       const targetMonday = new Date(isoWeek1Start);
       targetMonday.setDate(isoWeek1Start.getDate() + (week - 1) * 7);
-      // Convert ISO Monday-start to Sunday-start for our week
-      const selected = subDays(targetMonday, 1);
-      const selectedStart = startOfWeek(selected, { weekStartsOn: 0 });
+      // ISO week already starts on Monday, matching our weekStartsOn: 1
+      const selected = targetMonday;
+      const selectedStart = startOfWeek(selected, { weekStartsOn: 1 });
       if (selectedStart.getTime() > realCurrentWeekStart.getTime()) {
         toast.error("You can not select uncoming Weeks.");
         return;
@@ -405,14 +433,41 @@ const TimesheetCreate: React.FC = () => {
       loadingOverlay.hide();
 
       let hasLogs = false;
+      let hasConflicts = false;
       const rowsMap: Record<string, TimesheetRow> = {};
+
+      // Preserve already submitted days from current projectsData
+      projectsData.forEach(row => {
+        const preservedDays: Record<string, { hours: number; description: string }> = {};
+        let hasSubmittedDays = false;
+
+        Object.keys(row.days).forEach(dateKey => {
+          if (submittedDatesList.includes(dateKey)) {
+            preservedDays[dateKey] = { ...row.days[dateKey] };
+            hasSubmittedDays = true;
+          }
+        });
+
+        if (hasSubmittedDays) {
+          rowsMap[row.id] = { ...row, days: preservedDays };
+        }
+      });
 
       (prevData.days || []).forEach(day => {
         const logDate = day.date; // "yyyy-MM-dd"
         // Shift date to current week
         const logDayIndex = parseISO(logDate).getDay(); // Sun-0, Mon-1...
-        const shiftedDateStr = format(addDays(currentWeekStart, logDayIndex), "yyyy-MM-dd");
+        const mappedIndex = (logDayIndex + 6) % 7; // Mon-0, Tue-1... Sun-6
+        const shiftedDateStr = format(addDays(currentWeekStart, mappedIndex), "yyyy-MM-dd");
 
+        const dayHasLogs = (day.timesheet_records || []).some(record => (record.time_logs || []).length > 0);
+
+        if (submittedDatesList.includes(shiftedDateStr) && dayHasLogs) {
+          hasConflicts = true;
+          return;
+        }
+
+        // Do not overwrite week off dates
         if (weekOffDates.includes(shiftedDateStr)) {
           return;
         }
@@ -447,9 +502,17 @@ const TimesheetCreate: React.FC = () => {
 
       if (hasLogs) {
         setProjectsData(Object.values(rowsMap));
-        toast.success("Copied last week hours successfully!");
+        if (hasConflicts) {
+          toast.error("Some records were skipped as they conflict with already submitted days.");
+        } else {
+          toast.success("Copied last week hours successfully!");
+        }
       } else {
-        toast.error("No entries found in last week's timesheet");
+        if (hasConflicts) {
+          toast.error("Could not copy last week hours because those days are already submitted.");
+        } else {
+          toast.error("No entries found in last week's timesheet");
+        }
       }
     } catch (err) {
       loadingOverlay.hide();
@@ -614,6 +677,11 @@ const TimesheetCreate: React.FC = () => {
 
     daysOfWeek.forEach(day => {
       const dateKey = format(day, "yyyy-MM-dd");
+
+      if (submittedDatesList.includes(dateKey)) {
+        return; // Skip already submitted days
+      }
+
       const rowsForDay: RowItemType[] = [];
 
       projectsData.forEach(row => {
@@ -666,9 +734,18 @@ const TimesheetCreate: React.FC = () => {
         toast.success(isSubmit ? "Timesheet submitted successfully" : "Timesheet saved successfully");
         setLastSavedTime(format(new Date(), "hh:mm a"));
         if (isSubmit) {
-          setTimesheetStatus("Submitted");
+          const newSubmitted = Object.keys(payload).filter(date => payload[date].status === "Submit");
+          setSubmittedDatesList(prev => {
+            const updated = Array.from(new Set([...prev, ...newSubmitted]));
+            if (updated.length >= 7) {
+              setTimesheetStatus("Submitted");
+            } else {
+              setTimesheetStatus("Partially Submitted");
+            }
+            return updated;
+          });
         } else {
-          setTimesheetStatus("Draft");
+          setTimesheetStatus(prev => (prev === "Partially Submitted" ? "Partially Submitted" : "Draft"));
         }
 
         setInitialProjectsData(projectsData);
@@ -735,6 +812,10 @@ const TimesheetCreate: React.FC = () => {
 
   // Check if timesheet is read-only (Submitted or Billed or Cancelled)
   const isReadOnly = timesheetStatus === "Submitted" || timesheetStatus === "Billed" || timesheetStatus === "Cancelled";
+
+  const allDisabledDays = useMemo(() => {
+    return Array.from(new Set([...weekOffDates, ...submittedDatesList]));
+  }, [weekOffDates, submittedDatesList]);
 
   // Attachment upload simulation
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -818,11 +899,6 @@ const TimesheetCreate: React.FC = () => {
                             <div className="text-gray-500 text-xs font-semibold mt-0.5">
                               {format(day, "EEE").toUpperCase()}
                             </div>
-                            {attendanceHoursMap[dateKey] && (
-                              <div className="text-[10px] text-gray-400 font-normal mt-1 bg-gray-100/50 py-0.5 rounded">
-                                {attendanceHoursMap[dateKey]}
-                              </div>
-                            )}
                           </th>
                         );
                       })}
@@ -847,7 +923,11 @@ const TimesheetCreate: React.FC = () => {
                           const dateKey = format(day, "yyyy-MM-dd");
                           return (
                             <td key={dateKey} className="px-3 py-3 text-center border-l border-gray-50">
-                              {attendanceHoursMap[dateKey] || "0h 0m"}
+                              {weekOffDates.includes(dateKey) ? (
+                                <div className="flex w-full  justify-center"><Badge variant="danger" label="Week Off" size="sm" /></div>
+                              ) : (
+                                attendanceHoursMap[dateKey] || "0h 0m"
+                              )}
                             </td>
                           );
                         })}
@@ -880,7 +960,11 @@ const TimesheetCreate: React.FC = () => {
                                   <div key={dateKey} className="flex flex-col items-center">
                                     <span className="text-[10px] font-bold text-gray-600 leading-tight">{format(day, "d")}</span>
                                     <span className="text-[9px] text-gray-400 mb-1 leading-tight">{format(day, "EEE")}</span>
-                                    <span className="text-[10px] font-bold text-gray-700 bg-gray-200/50 w-full text-center py-1 rounded">{attendanceHoursMap[dateKey] || "0h"}</span>
+                                    {weekOffDates.includes(dateKey) ? (
+                                      <div className="w-full flex justify-center pt-0.5"><Badge variant="danger" label="Off" size="sm" /></div>
+                                    ) : (
+                                      <span className="text-[10px] font-bold text-gray-700 bg-gray-200/50 w-full text-center py-1 rounded">{attendanceHoursMap[dateKey] || "0h"}</span>
+                                    )}
                                   </div>
                                 );
                               })}
@@ -924,7 +1008,8 @@ const TimesheetCreate: React.FC = () => {
                           handleOpenComment={handleOpenComment}
                           getRowTotal={getRowTotal}
                           handleDeleteRow={handleDeleteRow}
-                          disabledDays={weekOffDates}
+                          disabledDays={allDisabledDays}
+                          submittedDays={submittedDatesList}
                         />
                       );
                     })

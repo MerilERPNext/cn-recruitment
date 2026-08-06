@@ -69,8 +69,8 @@ export default function CreateLoanDialog({
     const fetchLoanProducts = async () => {
       try {
         const res = await fetch(
-          `/api/resource/Loan Product?fields=["name","product_name","rate_of_interest"]&company=${encodeURIComponent(
-            currentEmployee.company
+          `/api/resource/Loan Product?fields=["name","product_name","rate_of_interest"]&filters=${encodeURIComponent(
+            JSON.stringify([["company", "=", currentEmployee.company]])
           )}`
         );
         if (!res.ok) return;
@@ -313,7 +313,19 @@ export default function CreateLoanDialog({
   const attemptSetSubmission = (instanceParam?: any) => {
     if (hasSetInitialData.current) return;
     const instance = instanceParam ?? formRef.current;
-    if (!loan || loanLoading) return;
+    if (loanLoading) return;
+
+    if (!loan) {
+      if (instance) {
+        try {
+          instance.setSubmission({ data: { company: currentEmployee?.company } });
+          hasSetInitialData.current = true;
+        } catch (e) {
+          console.warn("Could not set initial company for new loan:", e);
+        }
+      }
+      return;
+    }
 
     let attempts = 0;
     const maxAttempts = 20;

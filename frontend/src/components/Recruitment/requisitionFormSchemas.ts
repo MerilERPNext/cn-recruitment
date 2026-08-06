@@ -21,7 +21,7 @@ export const requisitionFormSchemas = {
         placeholder: "Select Hiring Manager",
         dataSrc: "url",
         data: {
-          url: '/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=Employee',
+          url: '/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=Employee&status=Active',
           headers: [{ key: "Accept", value: "application/json" }],
         },
         selectValues: "message.results",
@@ -50,6 +50,7 @@ export const requisitionFormSchemas = {
         selectValues: "message.results",
         valueProperty: "id",
         template: "<span>{{ item.label }}</span>",
+        validateOn: "blur",
         validate: { required: true },
         limit: 20,
 
@@ -682,7 +683,7 @@ export const requisitionFormSchemas = {
                 validateOn: "blur",
                 dataSrc: "url",
                 data: {
-                  url: '/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=Employee',
+                  url: '/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=Employee&status=Active',
                   headers: [{ key: "Accept", value: "application/json" }],
                 },
                 limit: 20,

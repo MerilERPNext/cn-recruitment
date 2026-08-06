@@ -80,6 +80,7 @@ export interface TimesheetRowProps {
   getRowTotal: (row: TimesheetRowType) => number;
   handleDeleteRow: (rowId: string) => void;
   disabledDays?: string[];
+  submittedDays?: string[];
 }
 
 export const TimesheetRow: React.FC<TimesheetRowProps> = ({
@@ -97,9 +98,18 @@ export const TimesheetRow: React.FC<TimesheetRowProps> = ({
   handleOpenComment,
   getRowTotal,
   handleDeleteRow,
-  disabledDays = []
+  disabledDays = [],
+  submittedDays = []
 }) => {
   const { isDesktop } = useScreenSize();
+
+  const hasSubmittedRecord = useMemo(() => {
+    if (!submittedDays || submittedDays.length === 0) return false;
+    return daysOfWeek.some(day => {
+      const dateKey = format(day, "yyyy-MM-dd");
+      return submittedDays.includes(dateKey) && (row.days[dateKey]?.hours || 0) > 0;
+    });
+  }, [submittedDays, daysOfWeek, row.days]);
 
   if (!isDesktop) {
     return (
@@ -107,7 +117,7 @@ export const TimesheetRow: React.FC<TimesheetRowProps> = ({
         <td className="block border-none w-full">
           <div className="bg-white border border-t-[3px] border-t-primary rounded-xl p-3 shadow-sm space-y-4">
             <div className="flex justify-between items-start">
-              {isGridEditable ? (
+              {isGridEditable && !hasSubmittedRecord ? (
                 <div className={`flex-1 w-full add-time-entry-form-inline p-2 rounded-lg border ${validationErrors[`${row.id}_project_task`] ? 'border-red-500 bg-red-50/50' : 'bg-gray-50/50 border-gray-150'}`}>
                   <InlineFormRow
                     row={row}
@@ -171,9 +181,10 @@ export const TimesheetRow: React.FC<TimesheetRowProps> = ({
                     <button
                       onClick={() => handleOpenComment(row.id, dateKey, projName, format(day, "EEE, dd MMM"))}
                       disabled={disabledDays.includes(dateKey)}
-                      className={`mt-1 text-[9px] font-bold transition-all w-full py-0.5 rounded border disabled:opacity-50 disabled:cursor-not-allowed ${commentError ? 'border-red-500 text-red-500 bg-red-50' : (hasComment ? "text-primary hover:text-primary-600 border-transparent bg-primary/10" : "text-gray-400 hover:text-gray-600 border-transparent")}`}
+                      className={`mt-1 text-[9px] font-bold transition-all w-full py-0.5 rounded border disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-0.5 ${commentError ? 'border-red-500 text-red-500 bg-red-50' : (hasComment ? "text-primary hover:text-primary-600 border-transparent bg-primary/10" : "text-gray-400 hover:text-gray-600 border-transparent")}`}
                     >
-                      {hasComment ? "★" : "+"}
+                      <span>{hasComment ? "★" : "+"}</span>
+                      {cell.hours > 0 && <span className="text-red-500">*</span>}
                     </button>
                   </div>
                 );
@@ -191,7 +202,7 @@ export const TimesheetRow: React.FC<TimesheetRowProps> = ({
               <span className="font-bold text-primary">{formatCellOnBlur(getRowTotal(row)) || "0:00"}</span>
             </div>
 
-            {isGridEditable && (
+            {isGridEditable && !hasSubmittedRecord && (
               <div className="pt-2">
                 <button
                   type="button"
@@ -214,7 +225,7 @@ export const TimesheetRow: React.FC<TimesheetRowProps> = ({
     <tr className={`hover:bg-gray-50/50 ${validationErrors[`${row.id}_empty_row`] ? 'bg-red-50/30' : ''}`}>
       {/* Row Projects info */}
       <td className="px-6 py-4 align-middle">
-        {isGridEditable ? (
+        {isGridEditable && !hasSubmittedRecord ? (
           <div className="flex items-start gap-2">
             <div className={`add-time-entry-form-inline flex-1 min-w-[340px] max-w-[360px] p-2 rounded-lg border ${validationErrors[`${row.id}_project_task`] ? 'border-red-500 bg-red-50/50' : 'bg-gray-50/50 border-gray-150'}`}>
               <InlineFormRow
@@ -301,11 +312,12 @@ export const TimesheetRow: React.FC<TimesheetRowProps> = ({
                         format(day, "EEE, dd MMM")
                       )}
                       disabled={disabledDays.includes(dateKey)}
-                      className={`text-[10px] font-bold transition-all px-2 py-0.5 rounded border disabled:opacity-50 disabled:cursor-not-allowed ${commentError ? 'border-red-500 text-red-500 bg-red-50' :
+                      className={`text-[10px] font-bold transition-all px-2 py-0.5 rounded border disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-0.5 ${commentError ? 'border-red-500 text-red-500 bg-red-50' :
                         (hasComment ? "text-primary hover:text-primary-600 border-transparent" : "text-gray-400 hover:text-gray-600 border-transparent")
                         }`}
                     >
-                      {hasComment ? "★ Comment" : "Comment"}
+                      <span>{hasComment ? "★ Comment" : "Comment"}</span>
+                      {cell.hours > 0 && <span className="text-red-500">*</span>}
                     </button>
                   </div>
                 </>
@@ -321,7 +333,7 @@ export const TimesheetRow: React.FC<TimesheetRowProps> = ({
       </td>
       {/* Delete Action */}
       <td className="px-4 py-3 text-center border-l border-gray-50 align-middle">
-        {isGridEditable && (
+        {isGridEditable && !hasSubmittedRecord && (
           <div className="h-8 flex items-center justify-center gap-1 px-3 py-1 rounded-3xl bg-gray-10 w-fit mx-auto">
             <Tooltip content="Delete row" position="top">
               <button

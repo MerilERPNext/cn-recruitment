@@ -11,6 +11,7 @@ import { lazyWithRetry } from "./utils/lazyWithRetry";
 // Keep critical components as static imports for better UX
 import TeamAdvanceRequest from "./components/Compansation/Advances/ApprovalAdvanceRquest";
 import ExtraPayment from "./components/Compansation/Extrapayment/ExtraPayment";
+import ExtraDeduction from "./components/Compansation/ExtraDeduction/ExtraDeduction";
 import Invoice from "./components/Compansation/Invoice/Invoice";
 import ITDeclarationForm from "./components/Compansation/IT Declaration/ITDeclaration";
 import TeamProofSubmissionList from "./components/Compansation/IT Declaration/TeamApproval/TeamProofSubmissionList";
@@ -162,6 +163,11 @@ const PeerNominationPage = lazyWithRetry(
 const Feedback = lazyWithRetry(
   () => import("./components/Performance/Feedback/Feedback"),
   "Feedback",
+);
+
+const TeamTracking = lazyWithRetry(
+  () => import("./components/Performance/Overview/TeamTracking/TeamTracking"),
+  "TeamTracking",
 );
 const NewGoal = lazyWithRetry(
   () => import("./components/Performance/GoalCreation/NewGoal"),
@@ -576,6 +582,10 @@ const RequisitionForm = lazyWithRetry(
   () => import("./components/Recruitment/RequisitionForm"),
   "RequisitionForm",
 );
+const RequisitionDetailPage = lazyWithRetry(
+  () => import("./components/Recruitment/RequisitionDetailPage"),
+  "RequisitionDetailPage",
+);
 const IJPOpenings = lazyWithRetry(
   () => import("./components/Recruitment/IJPOpenings"),
   "IJPOpenings",
@@ -619,6 +629,14 @@ const AppreciationsLeaderboard = lazyWithRetry(
 const AwardsLivePrograms = lazyWithRetry(
   () => import("./components/Recognition/Vibe/AwardsLivePrograms"),
   "AwardsLivePrograms",
+);
+const NominationDetail = lazyWithRetry(
+  () => import("./components/Recognition/Vibe/NominationDetail"),
+  "NominationDetail",
+);
+const AwardProgramDetail = lazyWithRetry(
+  () => import("./components/Recognition/Vibe/AwardProgramDetail"),
+  "AwardProgramDetail",
 );
 const RecognitionHistory = lazyWithRetry(
   () => import("./components/Recognition/RecognitionHistory"),
@@ -980,6 +998,11 @@ export const routesConfig: AppRoute[] = [
         path: "extra-payment",
         element: <ExtraPayment />,
         permissionKey: "Extra Payment",
+      },
+      {
+        path: "extra-deduction",
+        element: <ExtraDeduction />,
+        permissionKey: "Extra Deduction",
       },
       {
         path: "perquisite-list",
@@ -1351,6 +1374,11 @@ export const routesConfig: AppRoute[] = [
         permissionKey: "Requisitions",
       },
       {
+        path: "requisition/:requisitionId",
+        element: <RequisitionDetailPage />,
+        permissionKey: "Requisitions",
+      },
+      {
         path: "interviews",
         element: <InterviewList />,
         permissionKey: "Interviews",
@@ -1524,7 +1552,11 @@ export const routesConfig: AppRoute[] = [
             element: <Feedback />,
             permissionKey: "Feedback",
           },
-         
+          {
+            path: "team-tracking",
+            element: <TeamTracking />,
+            permissionKey: "Overview",
+          },
           {
             path: "skills",
             element: <SkillsAndProficiency />,
@@ -1809,6 +1841,18 @@ export const routesConfig: AppRoute[] = [
         // resolver ("Earned Points Summary page"); the old "Earned Points" key
         // matched no page, so the route guard always denied access.
         permissionKey: "Earned Points Summary page",
+      },
+      {
+        // Drill-down from a nomination row: header, custom form, approval stages.
+        path: "admin-dashboard/award/:program/nomination/:name",
+        element: <NominationDetail />,
+        permissionKey: "Admin Dashboard",
+      },
+      {
+        // Admin "View Details" for one award programme (header + nominations).
+        path: "admin-dashboard/award/:program",
+        element: <AwardProgramDetail />,
+        permissionKey: "Admin Dashboard",
       },
       {
         path: "admin-dashboard",

@@ -539,6 +539,16 @@ function overrideComponent(
 
   if (field.read_only) next.disabled = true;
 
+  if (field.fieldtype === "Select" && field.options && next.type === "select") {
+    const opts = field.options.split("\n").filter(Boolean).map(opt => ({
+      label: opt.trim(),
+      value: opt.trim()
+    }));
+    if (opts.length > 0) {
+      next.data = { ...next.data, values: opts };
+    }
+  }
+
   // Toggle the required flag without dropping any sibling validation (custom,
   // min/max, etc.) the static schema defined.
   const required = Boolean(field.is_mandatory);
@@ -672,6 +682,8 @@ function generateComponent(field: BackendField): any {
   // Employment Type & Work Location filter by company, Functional Area by
   // designation. Mirrors the static schema so the behaviour is identical.
   const dependency = LINK_FIELD_DEPENDENCIES[field.fieldname];
+  const linkDoctype = dependency?.doctype || field.options || "";
+  const activeEmployeeFilter = linkDoctype === "Employee" ? "&status=Active" : "";
 
   switch (field.fieldtype) {
     case "Link":
@@ -681,7 +693,7 @@ function generateComponent(field: BackendField): any {
         placeholder: `Select ${field.label}`,
         dataSrc: "url",
         data: {
-          url: `/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=${dependency?.doctype || field.options || ""}${dependency?.filter || ""}`,
+          url: `/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=${linkDoctype}${dependency?.filter || ""}${activeEmployeeFilter}`,
           headers: [{ key: "Accept", value: "application/json" }],
         },
         selectValues: "message.results",

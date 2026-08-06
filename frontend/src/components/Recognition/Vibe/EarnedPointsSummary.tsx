@@ -76,9 +76,11 @@ const EarnedPointsSummary: React.FC = () => {
     max_redeemed_points: pointsRange.max || undefined,
   });
 
-  const totalEarned = pointsData?.total_earned_points ?? 0;
+  const appreciationPoints = pointsData?.appreciation_points ?? 0;
+  const awardPoints = pointsData?.award_points ?? 0;
   const usedPoints = pointsData?.used_points ?? 0;
-  const availablePoints = pointsData?.available_points ?? 0;
+  // Net = everything earned across both programme types, less what was redeemed.
+  const netPoints = appreciationPoints + awardPoints - usedPoints;
 
   const q = query.trim().toLowerCase();
   const filteredHistory = useMemo(() => {
@@ -123,27 +125,20 @@ const EarnedPointsSummary: React.FC = () => {
       <Card radius="xl" className="border border-gray-100 shadow-sm p-5 mb-6">
         <div className="flex flex-col md:flex-row items-stretch gap-4">
           <div className="flex flex-1 items-center justify-between gap-4">
-            <Stat value={fmt(totalEarned)} label="Total Earned" />
+            <Stat value={fmt(appreciationPoints)} label="Appreciation Points" />
             <div className="h-12 w-px bg-gray-100" />
-            <Stat value={fmt(totalEarned - usedPoints)} label="Net Points" />
+            <Stat value={fmt(awardPoints)} label="Award Points" />
+            <div className="h-12 w-px bg-gray-100" />
+            <Stat value={fmt(netPoints)} label="Net Points" />
           </div>
 
-          <div className="flex flex-1 items-center justify-around rounded-2xl bg-gradient-to-r from-blue-600 to-cyan-500 px-6 py-5 text-white">
+          <div className="flex flex-1 items-center justify-center rounded-2xl bg-gradient-to-r from-blue-600 to-cyan-500 px-6 py-5 text-white">
             <div className="text-center">
               <Typography variant="h2" className="text-2xl font-bold text-white">
                 {fmt(usedPoints)}
               </Typography>
               <Typography variant="bodySmall" className="text-blue-50">
                 Redeemed
-              </Typography>
-            </div>
-            <div className="h-12 w-px bg-white/30" />
-            <div className="text-center">
-              <Typography variant="h2" className="text-2xl font-bold text-white">
-                {fmt(availablePoints)}
-              </Typography>
-              <Typography variant="bodySmall" className="text-blue-50">
-                Available Points
               </Typography>
             </div>
           </div>
