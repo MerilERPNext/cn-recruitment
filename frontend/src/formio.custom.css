@@ -222,22 +222,40 @@ chatnext-app.field-required::after {
   min-width: 150px;
 }
 
-/* Keep the Cost Center allocation child table small — never let the outer
-   table's wide min-width leak into it, and cap its column widths. */
+/* Give the Cost Center allocation child table enough fixed space for its two
+   inputs and row action. The outer positions grid scrolls horizontally, so
+   this prevents the nested table from spilling into the next position column. */
 [data-testid="formioContainer"] .formio-component-positions .formio-component-cost_center_allocations {
-  min-width: 240px;
-  max-width: 280px;
+  min-width: 480px;
+  max-width: 480px;
 }
 [data-testid="formioContainer"] .formio-component-cost_center_allocations table {
-  min-width: 0 !important;
-  width: 100% !important;
+  min-width: 480px !important;
+  width: 480px !important;
+  table-layout: fixed;
 }
 [data-testid="formioContainer"] .formio-component-cost_center_allocations .formio-component-cost_center {
-  min-width: 110px;
+  min-width: 0;
 }
 [data-testid="formioContainer"] .formio-component-cost_center_allocations .formio-component-percentage {
-  min-width: 70px;
-  max-width: 90px;
+  min-width: 0;
+}
+[data-testid="formioContainer"] .formio-component-cost_center_allocations th:nth-child(1),
+[data-testid="formioContainer"] .formio-component-cost_center_allocations td:nth-child(1) {
+  width: 55%;
+}
+[data-testid="formioContainer"] .formio-component-cost_center_allocations th:nth-child(2),
+[data-testid="formioContainer"] .formio-component-cost_center_allocations td:nth-child(2) {
+  width: 30%;
+}
+[data-testid="formioContainer"] .formio-component-cost_center_allocations th:nth-child(3),
+[data-testid="formioContainer"] .formio-component-cost_center_allocations td:nth-child(3) {
+  width: 15%;
+}
+[data-testid="formioContainer"] .formio-component-cost_center_allocations .form-control,
+[data-testid="formioContainer"] .formio-component-cost_center_allocations .choices {
+  min-width: 0;
+  width: 100%;
 }
 /* Cost Center child table must NOT scroll — only the outer positions table is
    scrollable. Kill the horizontal scroll on the child's responsive wrapper

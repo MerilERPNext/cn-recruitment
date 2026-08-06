@@ -672,6 +672,8 @@ function generateComponent(field: BackendField): any {
   // Employment Type & Work Location filter by company, Functional Area by
   // designation. Mirrors the static schema so the behaviour is identical.
   const dependency = LINK_FIELD_DEPENDENCIES[field.fieldname];
+  const linkDoctype = dependency?.doctype || field.options || "";
+  const activeEmployeeFilter = linkDoctype === "Employee" ? "&status=Active" : "";
 
   switch (field.fieldtype) {
     case "Link":
@@ -681,7 +683,7 @@ function generateComponent(field: BackendField): any {
         placeholder: `Select ${field.label}`,
         dataSrc: "url",
         data: {
-          url: `/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=${dependency?.doctype || field.options || ""}${dependency?.filter || ""}`,
+          url: `/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=${linkDoctype}${dependency?.filter || ""}${activeEmployeeFilter}`,
           headers: [{ key: "Accept", value: "application/json" }],
         },
         selectValues: "message.results",
