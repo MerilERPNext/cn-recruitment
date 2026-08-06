@@ -129,4 +129,4 @@ export const MandatoryGoalsBanner: React.FC<MandatoryGoalsBannerProps> = ({
   );
 };
 
-export default MandatoryGoalsBanner;
+export default React.memo(MandatoryGoalsBanner);
