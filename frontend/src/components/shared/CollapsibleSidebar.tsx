@@ -306,6 +306,12 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
           permissionKey: "Extra Payment",
         },
         {
+          name: "Extra Deduction",
+          icon: HandCoins,
+          href: "/webapp/salary-slip-app/extra-deduction",
+          permissionKey: "Extra Deduction",
+        },
+        {
           name: "My Loan Requests",
           icon: BadgeIndianRupee,
           href: "/webapp/salary-slip-app/my-loan-requests",
