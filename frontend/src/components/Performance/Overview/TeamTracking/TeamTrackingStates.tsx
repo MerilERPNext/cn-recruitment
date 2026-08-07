@@ -1,6 +1,7 @@
 import { Typography } from "../../../shared/atoms/Typography";
 import Button from "../../../shared/atoms/Button";
 import { AlertCircle, RefreshCw } from "lucide-react";
+import { JSX } from "react";
 
 export const ErrorState = ({
   message,
@@ -8,7 +9,7 @@ export const ErrorState = ({
 }: {
   message?: string;
   onRetry?: () => void;
-}) => (
+}): JSX.Element => (
   <div className="flex min-h-[300px] items-center justify-center p-6">
     <div className="flex flex-col items-center gap-3 rounded-xl border border-red-200 bg-red-50 p-6 text-center max-w-md">
       <AlertCircle className="h-8 w-8 text-red-500" />
@@ -30,7 +31,7 @@ export const ErrorState = ({
 );
 
 // Skeleton Loader Component for Employee Cards List
-export const EmployeeListSkeleton = () => (
+export const EmployeeListSkeleton = (): JSX.Element => (
   <div className="space-y-3 max-w-3xl mx-auto">
     {[1, 2, 3, 4, 5].map((i) => (
       <div
@@ -48,7 +49,7 @@ export const EmployeeListSkeleton = () => (
 );
 
 // Skeleton Loader Component for Goals Cards List
-export const EmployeeGoalsSkeleton = () => (
+export const EmployeeGoalsSkeleton = (): JSX.Element => (
   <div className="space-y-4 max-w-4xl mx-auto">
     {[1, 2, 3].map((i) => (
       <div

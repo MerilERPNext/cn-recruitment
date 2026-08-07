@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { JSX, useCallback, useMemo, useState } from "react";
 import { Typography } from "../../../shared/atoms/Typography";
 import { ArrowLeft } from "lucide-react";
 import Button from "../../../shared/atoms/Button";
@@ -11,7 +11,7 @@ import { EmployeeCard } from "./EmployeeCard";
 
 type ViewState = "employees" | "goals";
 
-const TeamTracking = () => {
+const TeamTracking = (): JSX.Element => {
   const [viewState, setViewState] = useState<ViewState>("employees");
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(
     null,
@@ -43,7 +43,7 @@ const TeamTracking = () => {
     [employeeData]
   );
   const selectedEmployee = useMemo(
-    () => employeeList.find((e) => e.id === selectedEmployeeId),
+    () => employeeList.find((e:{id:string}) => e.id === selectedEmployeeId),
     [employeeList, selectedEmployeeId]
   );
   const handleSelectEmployee = useCallback((id: string) => {
@@ -89,7 +89,7 @@ const TeamTracking = () => {
             />
           ) : (
             <div className="space-y-3 max-w-3xl mx-auto">
-              {employeeList.map((emp: { id: string; label: string }) => (
+              {employeeList.map((emp) => (
                 <EmployeeCard
                   key={emp.id}
                   emp={emp}

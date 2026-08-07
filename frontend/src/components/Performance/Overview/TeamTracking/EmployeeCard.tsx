@@ -1,4 +1,4 @@
-import { memo } from "react";
+import { memo, ReactElement } from "react";
 import { Typography } from "../../../shared/atoms/Typography";
 import { Card } from "../../../shared/atoms/Card";
 import { ChevronRight } from "lucide-react";
@@ -7,8 +7,12 @@ interface EmployeeCardProps {
   emp: { id: string; label: string };
   onSelect: (id: string) => void;
 }
+export interface EmployeeOption {
+  id: string;
+  label: string;
+}
 
-export const EmployeeCard = memo(({ emp, onSelect }: EmployeeCardProps) => (
+export const EmployeeCard = memo(({ emp, onSelect }: EmployeeCardProps): ReactElement => (
   <Card
     className="p-4 border border-gray-100 hover:border-blue-300 hover:shadow-md cursor-pointer transition-all flex justify-between items-center bg-white group"
     onClick={() => onSelect(emp.id)}
@@ -16,9 +20,7 @@ export const EmployeeCard = memo(({ emp, onSelect }: EmployeeCardProps) => (
     <div className="flex items-center gap-4">
       <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-sm shrink-0">
         {(emp.label || "")
-          .split(" ")
-          .map((n) => n[0])
-          .join("")}
+          .split(" ").filter(Boolean).map((n) => n.charAt(0)).join("")}
       </div>
       <Typography
         variant="body"
