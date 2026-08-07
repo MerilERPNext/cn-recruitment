@@ -71,7 +71,7 @@ export const LivePreviewCard = ({
 
             <Typography
               variant="bodyMedium"
-              className="text-sm font-semibold text-gray-900"
+              className="text-sm break-words font-semibold text-gray-900"
             >
               {goalTitle.trim() ? goalTitle : "Untitled Objective"}
             </Typography>

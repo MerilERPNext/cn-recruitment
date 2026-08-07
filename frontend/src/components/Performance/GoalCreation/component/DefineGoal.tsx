@@ -6,7 +6,6 @@ import { ObjectiveCard } from './define-goal/ObjectiveCard';
 import { LivePreviewCard } from './define-goal/LivePreviewCard';
 import type { GoalFormConfig, GoalSaveItem, MyGoalsGoal } from '../../../../types/goal';
 import { useGoalModel } from '../../GoalModelContext';
-
 export type MetricType = '%' | 'Number' | 'Count' | 'Currency' | 'Boolean' | 'Milestone';
 export type DepartmentType = string;
 export type DesignationType = string;
@@ -36,6 +35,7 @@ export interface GoalItem {
     selectedDesignation: DesignationSelectOption;
     startDate: string;
     endDate: string;
+    locked?:boolean
     keyResults: KeyResult[];
     isCollapsed: boolean;
 }
@@ -61,13 +61,11 @@ const DefineGoal = ({ goalType, formConfig, onGoalsChange }: DefineGoalProps) =>
    
     const defaultDepartment = { label: 'Select', value: '' };
     const defaultDesignation = { label: 'Select', value: '' };
-
     const { data: currentEmployee } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
     const currentCompany = currentEmployee?.company;
 
-    const minimumKeyResults = formConfig.limits?.min_krs ?? 1;
+    const minimumKeyResults = formConfig.limits?.min_krs ?? 0;
     const maximumKeyResults = formConfig.limits?.max_krs ?? null;
-
     const [goals, setGoals] = useState<GoalItem[]>(() => {
         if (draftGoals && draftGoals.length > 0) {
             return draftGoals.map((draft, idx) => ({
@@ -82,6 +80,7 @@ const DefineGoal = ({ goalType, formConfig, onGoalsChange }: DefineGoalProps) =>
                     ? { label: draft.designation, value: draft.designation }
                     : defaultDesignation,
                 startDate: formConfig.start_date,
+                locked: Boolean(draft?.locked || (draft as any)?.is_mandatory),
                 endDate: formConfig.end_date,
                 keyResults: draft.key_results && draft.key_results.length > 0
                     ? draft.key_results.map((kr, kIdx) => ({
@@ -89,7 +88,7 @@ const DefineGoal = ({ goalType, formConfig, onGoalsChange }: DefineGoalProps) =>
                         title: kr.title || '',
                         weight: String(kr.weightage || ''),
                     }))
-                    : createInitialKeyResults(minimumKeyResults),
+                    : (minimumKeyResults > 0 ? createInitialKeyResults(minimumKeyResults) : []),
                 isCollapsed: idx !== 0, //only first goal will open other will collapsed
             }));
         }
@@ -103,11 +102,10 @@ const DefineGoal = ({ goalType, formConfig, onGoalsChange }: DefineGoalProps) =>
             selectedDesignation: defaultDesignation,
             startDate: formConfig.start_date,
             endDate: formConfig.end_date,
-            keyResults: createInitialKeyResults(minimumKeyResults),
+            keyResults: minimumKeyResults > 0 ? createInitialKeyResults(minimumKeyResults) : [],
             isCollapsed: false,
         }];
     });
-
     const handleAddGoal = () => {
         const hasEmptyKr = goals.some((goal) =>
             goal.keyResults.some((kr) => !kr.title.trim() || !kr.weight)
@@ -129,7 +127,7 @@ const DefineGoal = ({ goalType, formConfig, onGoalsChange }: DefineGoalProps) =>
                 selectedDesignation: defaultDesignation,
                 startDate: formConfig.start_date,
                 endDate: formConfig.end_date,
-                keyResults: createInitialKeyResults(minimumKeyResults),
+                keyResults: minimumKeyResults > 0 ? createInitialKeyResults(minimumKeyResults) : [],
                 isCollapsed: false,
             };
             return [...collapsedGoals, newGoal];
@@ -262,6 +260,7 @@ const DefineGoal = ({ goalType, formConfig, onGoalsChange }: DefineGoalProps) =>
                         key={goal.id}
                         goalNumber={goals.length > 1 ? index + 1 : undefined}
                         title={goal.title}
+                        locked={goal.locked}
                         setTitle={(val) => handleUpdateGoalField(goal.id, 'title', val)}
                         description={goal.description}
                         setDescription={(val) => handleUpdateGoalField(goal.id, 'description', val)}

@@ -15,6 +15,7 @@ export type GoalTemplate = Partial<Goal> & {
     role?: string | null;
     role_title?: string | null;
     role_name?: string | null;
+    locked?:boolean;
     job_role?: string | null;
     role_based?: boolean | number | string | null;
     total_weightage?: number;

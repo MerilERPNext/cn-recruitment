@@ -115,9 +115,11 @@ export const performanceService = {
     return throwIfUnsuccessful(response as SaveGoalsResponse);
   },
 
-  getMyGoals: async (): Promise<MyGoalsResponse> => {
+  getMyGoals: async (params?: { employee?: string }): Promise<MyGoalsResponse> => {
+    const queryParams = params?.employee ? { employee: params.employee } : undefined;
     const response = await FrappeAPI.getMethod(
       "cn_pms.cn_performance_management.api.goal_api.get_my_goals",
+      queryParams
     );
 
     return response as MyGoalsResponse;

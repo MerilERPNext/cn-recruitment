@@ -405,6 +405,7 @@ export interface GoalRepositoryGoal {
   department:string;
   designation:string;
   category: string;
+  locked:boolean;
   scorecard_pillar: string | null;
   weightage: number;
   key_results: KeyResult[];
@@ -455,7 +456,8 @@ export interface CascadeGoal {
   owner_designation?: string | null;
   used_by_count?: number;
   key_results?: KeyResult[];
-  designation?:string
+  designation?:string;
+  locked?: boolean;
 }
 
 export interface CascadeGoalsData {
