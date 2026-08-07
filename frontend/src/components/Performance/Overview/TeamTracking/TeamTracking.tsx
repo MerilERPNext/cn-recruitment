@@ -97,7 +97,6 @@ const TeamTracking = (): JSX.Element => {
       <div className="flex-1 overflow-y-auto p-3 sm:p-6 bg-[#f8fafc]">
         {viewState === "employees" ? (
           <div className="space-y-4 max-w-3xl mx-auto">
-            {/* Search Input Bar */}
             <div className="relative">
               <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
               <input
