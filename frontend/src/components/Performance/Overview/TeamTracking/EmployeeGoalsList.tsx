@@ -131,7 +131,7 @@ export const EmployeeGoalsList = ({
                     </Typography>
                   )}
                   <span className="text-xs text-gray-500 font-medium inline-block mt-1">
-                    Last check in - {goal?.last_checkin_date ?? "--"}
+                    Last check in - {goal?.last_checkin_date ?? "No date found!"}
                   </span>
                 </div>
               </div>
