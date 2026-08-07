@@ -312,28 +312,28 @@ export const ObjectiveCard = ({
           <input
             className={`mb-3 h-12 w-full rounded-lg border px-4 text-base font-semibold outline-none transition placeholder:text-gray-400 ${
               locked
-                ? "border-gray-200 bg-gray-50/80 text-gray-700 cursor-not-allowed select-none pointer-events-none"
+                ? "border-gray-200 bg-gray-50/80 text-gray-700 cursor-not-allowed select-none"
                 : "border-violet-200 bg-white text-gray-900 focus:border-violet-400 focus:ring-2 focus:ring-violet-100"
             }`}
             value={title}
             onChange={(e) => !locked && setTitle?.(e.target.value)}
+            onFocus={(e) => locked && e.target.blur()}
             placeholder="Enter your objective title"
             aria-label="Goal objective title"
-            disabled={locked}
             readOnly={locked}
           />
 
           <textarea
             className={`mb-5 min-h-[76px] w-full resize-none rounded-lg border px-4 py-3 text-sm leading-5 outline-none transition placeholder:text-gray-400 ${
               locked
-                ? "border-gray-200 bg-gray-50/80 text-gray-700 cursor-not-allowed select-none pointer-events-none"
+                ? "border-gray-200 bg-gray-50/80 text-gray-700 cursor-not-allowed select-none"
                 : "border-gray-200 bg-white text-gray-600 focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
             }`}
             value={description}
             onChange={(e) => !locked && setDescription?.(e.target.value)}
+            onFocus={(e) => locked && e.target.blur()}
             placeholder="Describe your objective in detail"
             aria-label="Goal objective description"
-            disabled={locked}
             readOnly={locked}
           />
 
@@ -346,10 +346,11 @@ export const ObjectiveCard = ({
                   aria-label="Goal weightage"
                   className={`h-10 w-full rounded-lg border px-3 text-sm font-medium outline-none transition placeholder:text-gray-400 ${
                     locked
-                      ? "border-gray-200 bg-gray-50/80 text-gray-700 cursor-not-allowed select-none pointer-events-none"
+                      ? "border-gray-200 bg-gray-50/80 text-gray-700 cursor-not-allowed select-none"
                       : "border-gray-200 bg-white text-gray-900 focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
                   }`}
                   value={weightage === 0 ? "" : weightage}
+                  onFocus={(e) => locked && e.target.blur()}
                   onChange={(e: ChangeEvent<HTMLInputElement>) => {
                     if (locked) return;
                     const rawVal = e.target.value;
@@ -366,7 +367,6 @@ export const ObjectiveCard = ({
                     }
                   }}
                   placeholder="Weight %"
-                  disabled={locked}
                   readOnly={locked}
                 />
               </div>
@@ -374,7 +374,7 @@ export const ObjectiveCard = ({
 
             <div>
               <label className={labelClass}>Department</label>
-              <div className={locked ? "pointer-events-none opacity-80 cursor-not-allowed bg-gray-50/80 rounded-lg" : ""}>
+              <div className={locked ? "cursor-not-allowed bg-gray-50/80 rounded-lg [&_*]:!cursor-not-allowed" : ""}>
                 <AsyncSelect
                   fetchOptions={fetchDepartmentOptions}
                   value={selectedDepartment}
@@ -388,7 +388,7 @@ export const ObjectiveCard = ({
 
             <div>
               <label className={labelClass}>Designation</label>
-              <div className={locked ? "pointer-events-none opacity-80 cursor-not-allowed bg-gray-50/80 rounded-lg" : ""}>
+              <div className={locked ? "cursor-not-allowed bg-gray-50/80 rounded-lg [&_*]:!cursor-not-allowed" : ""}>
                 <AsyncSelect
                   fetchOptions={fetchDesignationOptions}
                   value={selectedDesignation || { label: 'Select', value: '' }}
@@ -400,7 +400,7 @@ export const ObjectiveCard = ({
               </div>
             </div>
 
-            <div className={`lg:col-span-2 ${locked ? "pointer-events-none opacity-80 cursor-not-allowed bg-gray-50/80 rounded-lg" : ""} [&_.formio-component]:!mb-0 [&_.formio-component-datetime_input]:!mb-0 [&_label]:!mt-0 [&_label]:!pt-0 [&_label]:!pb-0 [&_label]:!mb-1.5 [&_label]:!text-xs [&_label]:!font-medium [&_label]:!text-gray-600 [&_label]:!h-auto [&_label]:!block [&_.form-group]:!mt-0 [&_.form-group]:!mb-0 [&_.formio-form]:!mt-0 [&_.form-control]:h-[40px] [&_.form-control]:w-full [&_.form-control]:rounded-lg [&_.form-control]:border [&_.form-control]:border-gray-200 [&_.form-control]:bg-white [&_.form-control]:px-4 [&_.form-control]:text-sm [&_.form-control]:text-gray-900 [&_.form-control]:shadow-sm [&_.form-control]:outline-none [&_.row]:-mx-2 [&_.row>div]:px-2`}>
+            <div className={`lg:col-span-2 ${locked ? "cursor-not-allowed bg-gray-50/80 rounded-lg [&_*]:!cursor-not-allowed" : ""} [&_.formio-component]:!mb-0 [&_.formio-component-datetime_input]:!mb-0 [&_label]:!mt-0 [&_label]:!pt-0 [&_label]:!pb-0 [&_label]:!mb-1.5 [&_label]:!text-xs [&_label]:!font-medium [&_label]:!text-gray-600 [&_label]:!h-auto [&_label]:!block [&_.form-group]:!mt-0 [&_.form-group]:!mb-0 [&_.formio-form]:!mt-0 [&_.form-control]:h-[40px] [&_.form-control]:w-full [&_.form-control]:rounded-lg [&_.form-control]:border [&_.form-control]:border-gray-200 [&_.form-control]:bg-white [&_.form-control]:px-4 [&_.form-control]:text-sm [&_.form-control]:text-gray-900 [&_.form-control]:shadow-sm [&_.form-control]:outline-none [&_.row]:-mx-2 [&_.row>div]:px-2`}>
               <Form
                 form={buildGoalPeriodFormSchema(formatGoalDateForForm(startDate), formatGoalDateForForm(endDate))}
                 submission={submissionData}
