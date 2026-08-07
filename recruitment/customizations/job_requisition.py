@@ -1,5 +1,6 @@
 import frappe
 from frappe.model.mapper import get_mapped_doc
+from frappe.utils import format_duration, time_diff_in_seconds
 
 from hrms.hr.doctype.job_requisition.job_requisition import JobRequisition
 
@@ -202,3 +203,34 @@ class CustomJobRequisition(JobRequisition):
         # Intentional no-op: location-level requisitions legitimately share the
         # (designation, department, requested_by) triple. See class docstring.
         pass
+
+    def set_time_to_fill(self):
+        """HRMS keys this off status == "Filled"; our completion status is named
+        "Auto Archived", so the inherited check would never fire."""
+        from recruitment.api.requisition_status import AUTO_ARCHIVED_STATUS
+
+        if self.status == AUTO_ARCHIVED_STATUS and self.completed_on:
+            self.time_to_fill = time_diff_in_seconds(self.completed_on, self.posting_date)
+
+
+@frappe.whitelist()
+def get_avg_time_to_fill(company=None, department=None, designation=None):
+    """Average time-to-fill, for the stock "Time to Fill" number card.
+
+    Replaces HRMS's version (via ``override_whitelisted_methods``), which filters
+    on the retired status "Filled" and would always report 0. Same signature.
+    """
+    from recruitment.api.requisition_status import AUTO_ARCHIVED_STATUS
+
+    filters = {"status": AUTO_ARCHIVED_STATUS}
+    if company:
+        filters["company"] = company
+    if department:
+        filters["department"] = department
+    if designation:
+        filters["designation"] = designation
+
+    avg = frappe.db.get_list(
+        "Job Requisition", filters=filters, fields=["avg(time_to_fill) as average_time"]
+    )[0].average_time
+    return format_duration(avg) if avg else 0

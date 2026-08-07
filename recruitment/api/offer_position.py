@@ -16,6 +16,8 @@ from frappe.utils import cint
 
 from recruitment.api.requisition_status import (
     APPROVED_ACTIVE_STATUS,
+    APPROVED_DRAFT_STATUS,
+    AUTO_ARCHIVED_STATUS,
     JOB_REQUISITION,
     JOB_REQUISITION_POSITION,
     POSITION_ARCHIVED,
@@ -31,7 +33,9 @@ POSITION_LABEL_FIELD = "custom_position_label"
 REQUISITION_FIELD = "custom_job_requisition"
 
 RELEASING_STATUSES = ("Rejected", "Withdrawn")
-CLAIMABLE_REQUISITION_STATUSES = (APPROVED_ACTIVE_STATUS, "Open & Approved", "Filled")
+CLAIMABLE_REQUISITION_STATUSES = (
+    APPROVED_ACTIVE_STATUS, APPROVED_DRAFT_STATUS, AUTO_ARCHIVED_STATUS,
+)
 
 
 def _offer_holds_position(doc):
@@ -215,7 +219,7 @@ def _rollup_requisition(requisition, statuses=None, current=None):
 
     if current is None:
         current = frappe.db.get_value(JOB_REQUISITION, requisition, "status")
-    if current not in (APPROVED_ACTIVE_STATUS, "Filled"):
+    if current not in (APPROVED_ACTIVE_STATUS, AUTO_ARCHIVED_STATUS):
         return None
 
     if statuses is None:
@@ -230,9 +234,9 @@ def _rollup_requisition(requisition, statuses=None, current=None):
 
     all_filled = all(s == POSITION_FILLED for s in live)
     if all_filled and current == APPROVED_ACTIVE_STATUS:
-        frappe.db.set_value(JOB_REQUISITION, requisition, "status", "Filled")
-        return "Filled"
-    if not all_filled and current == "Filled":
+        frappe.db.set_value(JOB_REQUISITION, requisition, "status", AUTO_ARCHIVED_STATUS)
+        return AUTO_ARCHIVED_STATUS
+    if not all_filled and current == AUTO_ARCHIVED_STATUS:
         frappe.db.set_value(JOB_REQUISITION, requisition, "status", APPROVED_ACTIVE_STATUS)
         return APPROVED_ACTIVE_STATUS
     return None

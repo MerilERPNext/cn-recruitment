@@ -13,17 +13,17 @@ interface APIRequisition {
 
 const getStatusColor = (status: string): string => {
   switch (status.toLowerCase()) {
-    case "pending":
+    case "approval pending":
       return "bg-yellow-100 text-yellow-800";
-    case "open & approved":
-    case "job opening created":
+    case "approved draft":
+    case "approved active":
       return "bg-green-100 text-green-800";
-    case "in-progress":
+    case "approval pending":
       return "bg-blue-100 text-blue-800";
     case "rejected":
     case "cancelled":
       return "bg-red-100 text-red-800";
-    case "filled":
+    case "auto archived":
       return "bg-gray-200 text-gray-700";
     case "on hold":
       return "bg-orange-100 text-orange-800";
@@ -34,13 +34,13 @@ const getStatusColor = (status: string): string => {
 
 const getPriorityInfo = (status: string): { label: string; color: string } => {
   switch (status.toLowerCase()) {
-    case "pending":
-    case "open & approved":
-    case "job opening created":
+    case "approval pending":
+    case "approved draft":
+    case "approved active":
       return { label: "Urgent", color: "text-red-500" };
-    case "in-progress":
+    case "approval pending":
     case "on hold":
-    case "filled":
+    case "auto archived":
       return { label: "Normal Priority", color: "text-yellow-600" };
     case "rejected":
     case "cancelled":

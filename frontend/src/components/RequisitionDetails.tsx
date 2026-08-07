@@ -72,27 +72,33 @@ const RequisitionDetails: React.FC = () => {
   const getStatusDisplay = useCallback((status: string): StatusDisplay => {
     const lowerStatus = status?.toLowerCase?.() || "";
     switch (lowerStatus) {
-      case "pending":
+      case "approval pending":
         return {
           icon: <Clock className="w-6 h-6 text-yellow-600" />,
           bgColor: "bg-yellow-100",
           textColor: "text-yellow-600",
-          label: "Pending",
+          label: "Approval Pending",
         };
-      case "open & approved":
-      case "job opening created":
+      case "draft":
+        return {
+          icon: <Clock className="w-6 h-6 text-orange-600" />,
+          bgColor: "bg-orange-100",
+          textColor: "text-orange-600",
+          label: "Draft",
+        };
+      case "approved draft":
         return {
           icon: <CheckCircle className="w-6 h-6 text-green-600" />,
           bgColor: "bg-green-100",
           textColor: "text-green-600",
-          label: "Open & Approved",
+          label: "Approved Draft",
         };
-      case "in-progress":
+      case "approved active":
         return {
-          icon: <Clock className="w-6 h-6 text-blue-600" />,
-          bgColor: "bg-blue-100",
-          textColor: "text-blue-600",
-          label: "In-Progress",
+          icon: <CheckCircle className="w-6 h-6 text-emerald-700" />,
+          bgColor: "bg-emerald-100",
+          textColor: "text-emerald-700",
+          label: "Approved Active",
         };
       case "rejected":
         return {
@@ -101,12 +107,12 @@ const RequisitionDetails: React.FC = () => {
           textColor: "text-red-600",
           label: "Rejected",
         };
-      case "filled":
+      case "auto archived":
         return {
           icon: <CheckCircle className="w-6 h-6 text-gray-700" />,
           bgColor: "bg-gray-200",
           textColor: "text-gray-700",
-          label: "Filled",
+          label: "Auto Archived",
         };
       case "on hold":
         return {
@@ -138,13 +144,13 @@ const RequisitionDetails: React.FC = () => {
         return { label: "Normal Priority", color: "text-yellow-600" };
       }
       switch (status.toLowerCase()) {
-        case "pending":
-        case "open & approved":
-        case "job opening created":
+        case "approval pending":
+        case "approved draft":
+        case "approved active":
           return { label: "Urgent", color: "text-red-500" };
-        case "in-progress":
+        case "approval pending":
         case "on hold":
-        case "filled":
+        case "auto archived":
           return { label: "Normal Priority", color: "text-yellow-600" };
         case "rejected":
         case "cancelled":
@@ -214,9 +220,10 @@ const RequisitionDetails: React.FC = () => {
   const canCreateJobOpening = useMemo(() => {
     if (!job) return false;
 
-    // Allow creation if status is "Open & Approved" or "Pending"
+    // Approved requisitions may have a Job Opening created against them —
+    // both before activation (Approved Draft) and after it (Approved Active).
     const status = job.status?.toLowerCase() || "";
-    return status === "open & approved" || status === "pending";
+    return status === "approved draft" || status === "approved active";
   }, [job?.status]);
 
   // Loading state

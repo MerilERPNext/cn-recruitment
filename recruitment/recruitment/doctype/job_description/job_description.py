@@ -127,27 +127,26 @@ def _jd_context_with_titles(doc):
 	rather than 'PRF_ACD_DEF_OFF_TEACHING'). Falls back to the id when the target
 	has no distinct title field. Never raises."""
 	d = doc.as_dict()
-
-	def _title_of(link_doctype, value):
-		if not value or not isinstance(value, str):
-			return value
-		try:
-			tmeta = frappe.get_meta(link_doctype)
-			tf = tmeta.get("title_field")
-			if tf and tf != "name":
-				return frappe.db.get_value(link_doctype, value, tf) or value
-		except Exception:
-			pass
-		return value
-
 	try:
 		meta = frappe.get_meta(doc.doctype)
 	except Exception:
 		return d
 
+	# Collect every (target doctype, id) first, then resolve titles in ONE query
+	# per doctype. Resolving inline cost a query per value, and a JD carries ten
+	# link-bearing child tables — that alone was ~140 queries per fetch.
+	targets = {}          # link doctype -> set of ids
+	slots = []            # (container, key, link doctype)
+
+	def _collect(container, key, link_doctype):
+		value = container.get(key)
+		if value and isinstance(value, str):
+			targets.setdefault(link_doctype, set()).add(value)
+			slots.append((container, key, link_doctype))
+
 	for df in meta.fields:
 		if df.fieldtype == "Link" and df.options:
-			d[df.fieldname] = _title_of(df.options, d.get(df.fieldname))
+			_collect(d, df.fieldname, df.options)
 		elif df.fieldtype in ("Table", "Table MultiSelect") and df.options:
 			try:
 				cmeta = frappe.get_meta(df.options)
@@ -155,11 +154,26 @@ def _jd_context_with_titles(doc):
 				continue
 			link_fields = [(f.fieldname, f.options) for f in cmeta.fields
 						   if f.fieldtype == "Link" and f.options]
-			if not link_fields:
-				continue
 			for row in (d.get(df.fieldname) or []):
 				for fn, opt in link_fields:
-					row[fn] = _title_of(opt, row.get(fn))
+					_collect(row, fn, opt)
+
+	titles = {}
+	for link_doctype, ids in targets.items():
+		try:
+			tf = frappe.get_meta(link_doctype).get("title_field")
+			if not tf or tf == "name":
+				continue
+			for row in frappe.get_all(
+				link_doctype, filters={"name": ["in", list(ids)]}, fields=["name", tf]
+			):
+				if row.get(tf):
+					titles[(link_doctype, row["name"])] = row[tf]
+		except Exception:
+			continue
+
+	for container, key, link_doctype in slots:
+		container[key] = titles.get((link_doctype, container[key]), container[key])
 	return d
 
 

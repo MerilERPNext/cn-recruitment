@@ -1,7 +1,7 @@
 {
  "attach_print": 0,
  "channel": "Email",
- "condition": "doc.status ==\"Open & Approved\"",
+ "condition": "doc.status in (\"Approved Draft\", \"Approved Active\")",
  "creation": "2024-06-21 11:31:40.654653",
  "days_in_advance": 0,
  "docstatus": 0,

@@ -753,9 +753,9 @@ const getStatusColor = (status: string) => {
     case "approved active":
     case "completed":
     case "open":
-    case "open & approved":
+    case "approved draft":
       return "bg-green-100 text-green-700";
-    case "pending":
+    case "approval pending":
     case "approval pending":
       return "bg-yellow-100 text-yellow-700";
     case "draft":
@@ -764,7 +764,7 @@ const getStatusColor = (status: string) => {
     case "rejected":
     case "cancelled":
       return "bg-red-100 text-red-700";
-    case "filled":
+    case "auto archived":
     case "closed":
       return "bg-gray-100 text-gray-700";
     default:

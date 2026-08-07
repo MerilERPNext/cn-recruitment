@@ -25,3 +25,4 @@ recruitment.patches.backfill_campus_drive_on_applicants
 recruitment.patches.anchor_orphan_job_applicant_fields
 recruitment.patches.merge_job_offer_ctc_tab
 recruitment.patches.enable_send_job_offer_button_default
+recruitment.patches.rename_job_requisition_statuses
