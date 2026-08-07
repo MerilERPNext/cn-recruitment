@@ -49,7 +49,7 @@ export const EmployeeGoalsList = ({
     setLoadingGoalKey(goalKey);
     employeCheckIn(
       {
-        employee: currentEmployee?.name ?? "",
+        employee: employeeId ?? currentEmployee?.name ??"",
         goal: goalKey,
       },
       {
@@ -152,7 +152,7 @@ export const EmployeeGoalsList = ({
                       toast.error("Check-ins can be requested only on approved goals.");
                       return;
                     }
-                    submitCheckIns(goal.goal_key);
+                    submitCheckIns(goal.goal_key ?? goal.goal) ;
                   }}
                 >
                   {isGoalPending ? (
