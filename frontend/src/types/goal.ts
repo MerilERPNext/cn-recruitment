@@ -456,7 +456,8 @@ export interface CascadeGoal {
   owner_designation?: string | null;
   used_by_count?: number;
   key_results?: KeyResult[];
-  designation?:string
+  designation?:string;
+  locked?: boolean;
 }
 
 export interface CascadeGoalsData {

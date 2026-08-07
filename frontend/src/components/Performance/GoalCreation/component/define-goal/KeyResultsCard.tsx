@@ -14,6 +14,7 @@ interface KeyResultsCardProps {
   ) => void;
   minimumKeyResults: number;
   maximumKeyResults: number | null;
+  locked?: boolean;
 }
 
 export const KeyResultsCard = ({
@@ -22,6 +23,7 @@ export const KeyResultsCard = ({
   onAddKeyResult,
   onUpdateKeyResult,
   maximumKeyResults,
+  locked,
 }: KeyResultsCardProps) => {
   const totalWeight = keyResults.reduce(
     (sum, kr) => sum + (parseFloat(kr.weight) || 0),
@@ -62,21 +64,32 @@ export const KeyResultsCard = ({
             </div>
 
             <input
-              className="h-10 flex-1 min-w-[200px] rounded-lg border border-gray-200 bg-white px-3.5 text-sm text-gray-900 outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100 placeholder:text-gray-400"
+              className={`h-10 flex-1 min-w-[200px] rounded-lg border px-3.5 text-sm outline-none transition placeholder:text-gray-400 ${
+                locked
+                  ? "border-gray-200 bg-gray-50/80 text-gray-700 cursor-not-allowed select-none pointer-events-none"
+                  : "border-gray-200 bg-white text-gray-900 focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+              }`}
               value={result.title}
               onChange={(e) =>
-                onUpdateKeyResult(result.id, "title", e.target.value)
+                !locked && onUpdateKeyResult(result.id, "title", e.target.value)
               }
               placeholder="Enter Key Result title"
               aria-label={`${result.id} title`}
+              disabled={locked}
+              readOnly={locked}
             />
 
             <div className="w-24 shrink-0">
               <input
                 type="text"
-                className="h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm font-medium text-gray-900 outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100 placeholder:text-gray-400"
+                className={`h-10 w-full rounded-lg border px-3 text-sm font-medium outline-none transition placeholder:text-gray-400 ${
+                  locked
+                    ? "border-gray-200 bg-gray-50/80 text-gray-700 cursor-not-allowed select-none pointer-events-none"
+                    : "border-gray-200 bg-white text-gray-900 focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+                }`}
                 value={result.weight}
                 onChange={(e) => {
+                  if (locked) return;
                   const rawVal = e.target.value;
                   if (rawVal === "") {
                     onUpdateKeyResult(result.id, "weight", "");
@@ -99,22 +112,26 @@ export const KeyResultsCard = ({
                 }}
                 placeholder="Weight %"
                 aria-label={`${result.id} weight`}
+                disabled={locked}
+                readOnly={locked}
               />
             </div>
 
-            <button
-              type="button"
-              onClick={() => onDeleteKeyResult(result.id)}
-              className="shrink-0 rounded-lg p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-500 transition-colors"
-              aria-label={`Delete ${result.id}`}
-            >
-              <X className="h-4 w-4" />
-            </button>
+            {!locked && (
+              <button
+                type="button"
+                onClick={() => onDeleteKeyResult(result.id)}
+                className="shrink-0 rounded-lg p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-500 transition-colors"
+                aria-label={`Delete ${result.id}`}
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
           </div>
         ))}
       </div>
 
-      {(maximumKeyResults === null || keyResults.length < maximumKeyResults) && (
+      {!locked && (maximumKeyResults === null || keyResults.length < maximumKeyResults) && (
         <button
           type="button"
           onClick={onAddKeyResult}

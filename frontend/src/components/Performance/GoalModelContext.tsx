@@ -28,7 +28,7 @@ export const GoalModelProvider: React.FC<{
   };
 
   // Draft goals state initialized from localStorage
-  const [draftGoals, setDraftGoals] = useState<(DraftGoalItem | CascadeGoal)[]>([]);
+  const [draftGoals, setDraftGoals] = useState<(DraftGoalItem | CascadeGoal | GoalTemplate)[]>([]);
 
 
   const addDraftGoals = useCallback((goals: GoalTemplate | CascadeGoal | (GoalTemplate | CascadeGoal)[]) => {
