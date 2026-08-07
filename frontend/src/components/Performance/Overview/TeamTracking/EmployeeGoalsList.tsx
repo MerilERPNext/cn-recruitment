@@ -156,10 +156,10 @@ export const EmployeeGoalsList = ({
                   {isGoalPending ? (
                     <>
                       <span className="w-3.5 h-3.5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin shrink-0" />
-                      Checking in...
+                     Requesting Check in...
                     </>
                   ) : (
-                    "Check in"
+                    "Request Check in"
                   )}
                 </Button>
               </div>
