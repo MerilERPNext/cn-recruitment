@@ -84,7 +84,6 @@ export const EmployeeGoalsList = ({
   return (
     <div className="space-y-4 max-w-4xl mx-auto">
       {goalsList?.map((goal) => {
-        const goalId = goal?.goal_key || goal.name ;
         const isGoalPending = isPending && loadingGoalKey === goal.goal_key;
         const currentStatus = goal?.goal_status || goal?.status;
         const statusLower = (currentStatus || "").toLowerCase();
@@ -92,7 +91,7 @@ export const EmployeeGoalsList = ({
 
         return (
           <Card
-            key={goalId}
+            key={goal?.goal_key || goal.name}
             className="p-3.5 sm:p-5 border border-gray-100 hover:border-blue-300 hover:shadow-md transition-all bg-white group"
           >
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-6">
