@@ -1,10 +1,10 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import { Typography } from "../../../shared/atoms/Typography";
 import { Card } from "../../../shared/atoms/Card";
 import Badge, { type BadgeVariant } from "../../../shared/Badge";
 import Button from "../../../shared/atoms/Button";
-import { useEmployeeGoalsCheckIn } from "../../../../hooks/usePerformance";
+import { useEmployeeGoalsCheckIn, useMyGoals } from "../../../../hooks/usePerformance";
 import { useCurrentEmployeeDetails } from "../../../../hooks/useEmployee";
 import type { MyGoalsGoal } from "../../../../types/goal";
 import { ErrorState, EmployeeGoalsSkeleton } from "./TeamTrackingStates";
@@ -19,23 +19,26 @@ const getStatusVariant = (status?: string): BadgeVariant => {
   return "info";
 };
 
-interface EmployeeGoalsListProps {
-  goalsList: MyGoalsGoal[];
-  isLoading?: boolean;
-  isError?: boolean;
-  error?: Error | null;
-  onRetry?: () => void;
+interface EmployeeGoalsListProps {  
   employeeId?: string;
-  onSelectGoal?: (id: string) => void;
 }
 
 export const EmployeeGoalsList = ({
-  goalsList,
-  isLoading,
-  isError,
-  error,
-  onRetry,
+  employeeId,
 }: EmployeeGoalsListProps) => {
+  const {
+    data: myGoalsResponse,
+    isLoading: isGoalsLoading,
+    isError: isGoalsError,
+    error: goalsError,
+    refetch: refetchGoals,
+  } = useMyGoals(employeeId ? { employee: employeeId } : undefined);
+
+  const effectiveGoals: MyGoalsGoal[] = useMemo(
+    () =>  myGoalsResponse?.data?.goals ?? [],
+    [myGoalsResponse]
+  );
+
   const { data: currentEmployee } = useCurrentEmployeeDetails({
     logged_in_employee_details: true,
   });
@@ -63,15 +66,15 @@ export const EmployeeGoalsList = ({
     );
   };
 
-  if (isLoading) {
+  if (isGoalsLoading) {
     return <EmployeeGoalsSkeleton />;
   }
 
-  if (isError) {
-    return <ErrorState message={error?.message} onRetry={onRetry} />;
+  if (isGoalsError) {
+    return <ErrorState message={goalsError?.message} onRetry={refetchGoals} />;
   }
 
-  if (!goalsList || goalsList.length === 0) {
+  if (!effectiveGoals || effectiveGoals.length === 0) {
     return (
       <div className="text-center py-12">
         <Typography variant="body" className="text-gray-500">
@@ -83,7 +86,7 @@ export const EmployeeGoalsList = ({
 
   return (
     <div className="space-y-4 max-w-4xl mx-auto">
-      {goalsList?.map((goal) => {
+      {effectiveGoals.map((goal) => {
         const isGoalPending = isPending && loadingGoalKey === goal.goal_key;
         const currentStatus = goal?.goal_status || goal?.status;
         const statusLower = (currentStatus || "").toLowerCase();
@@ -91,7 +94,7 @@ export const EmployeeGoalsList = ({
 
         return (
           <Card
-            key={goal?.goal_key || goal.name}
+            key={goal?.goal_key || goal.goal || goal.name}
             className="p-3.5 sm:p-5 border border-gray-100 hover:border-blue-300 hover:shadow-md transition-all bg-white group"
           >
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-6">
@@ -107,9 +110,9 @@ export const EmployeeGoalsList = ({
                     variant={getStatusVariant(currentStatus)}
                     size="sm"
                   />
-                  {goal?.weightage && (
+                  {goal?.weightage !== undefined && (
                     <Badge
-                      label={`${goal.weightage ?? "-"}%`}
+                      label={`${goal.weightage}%`}
                       variant="info"
                       size="sm"
                     />
@@ -139,11 +142,10 @@ export const EmployeeGoalsList = ({
                 <Button
                   variant="outline"
                   disabled={isGoalPending}
-                  className={`font-medium text-xs px-3.5 py-1.5 rounded-lg transition-all shadow-xs flex items-center gap-1.5 ${
-                    isPendingStatus
+                  className={`font-medium text-xs px-3.5 py-1.5 rounded-lg transition-all shadow-xs flex items-center gap-1.5 ${isPendingStatus
                       ? "border-gray-200 text-gray-400 bg-gray-50 opacity-60 cursor-not-allowed"
                       : "border-blue-200 text-blue-600 hover:bg-blue-50 hover:border-blue-300 disabled:opacity-60 disabled:cursor-not-allowed"
-                  }`}
+                    }`}
                   onClick={(e) => {
                     e.stopPropagation();
                     if (isPendingStatus) {
@@ -156,7 +158,7 @@ export const EmployeeGoalsList = ({
                   {isGoalPending ? (
                     <>
                       <span className="w-3.5 h-3.5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin shrink-0" />
-                     Requesting Check in...
+                      Requesting Check in...
                     </>
                   ) : (
                     "Request Check in"

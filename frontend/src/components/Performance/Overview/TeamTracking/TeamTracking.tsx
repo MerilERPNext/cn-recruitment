@@ -3,9 +3,7 @@ import { Typography } from "../../../shared/atoms/Typography";
 import { ArrowLeft, Search, X, UserX } from "lucide-react";
 import Button from "../../../shared/atoms/Button";
 import { useLinkFieldOptions } from "../../../../hooks/useLinkFieldOptions";
-import { useMyGoals } from "../../../../hooks/usePerformance";
 import useDebounce from "../../../../hooks/useDebounce";
-import type { MyGoalsGoal } from "../../../../types/goal";
 import { ErrorState, EmployeeListSkeleton } from "./TeamTrackingStates";
 import { EmployeeGoalsList } from "./EmployeeGoalsList";
 import { EmployeeCard } from "./EmployeeCard";
@@ -35,14 +33,7 @@ const TeamTracking = (): JSX.Element => {
     filters: { status: "Active" },
   });
 
-  const {
-    data: myGoalsResponse,
-    isLoading: isGoalsLoading,
-    isError: isGoalsError,
-    error: goalsError,
-    refetch: refetchGoals,
-  } = useMyGoals();
-
+ 
   const employeeList = useMemo(
     () => employeeData?.pages?.flatMap((page) => page?.results || []) || [],
     [employeeData]
@@ -68,10 +59,7 @@ const TeamTracking = (): JSX.Element => {
     setViewState("goals");
   }, []);
 
-  const realGoals: MyGoalsGoal[] = useMemo(
-    () => myGoalsResponse?.data?.goals ?? [],
-    [myGoalsResponse]
-  );
+
 
   return (
     <div className="flex flex-col h-full bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
@@ -177,11 +165,7 @@ const TeamTracking = (): JSX.Element => {
           </div>
         ) : (
           <EmployeeGoalsList
-            goalsList={realGoals}
-            isLoading={isGoalsLoading}
-            isError={isGoalsError}
-            error={goalsError}
-            onRetry={refetchGoals}
+           
             employeeId={selectedEmployeeId || ""}
           />
         )}
