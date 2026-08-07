@@ -40,6 +40,17 @@ frappe.ui.form.on("Job Requisition", {
         });
     },
 
+    onload(frm) {
+        // Only the Active version of a JD may be attached to a requisition.
+        // Superseded versions stay readable by name but must not be selectable —
+        // otherwise a recruiter could pick an outdated JD by hand, which is
+        // exactly what the server-side matchers already refuse to do.
+        // Legacy JDs have status "" rather than "Active", so both are allowed.
+        frm.set_query("custom_job_description_template", () => ({
+            filters: { status: ["in", ["Active", ""]] },
+        }));
+    },
+
     refresh(frm) {
         render_description_preview(frm);
     },

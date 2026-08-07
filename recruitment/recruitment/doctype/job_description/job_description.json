@@ -9,6 +9,9 @@
   "applicability_section",
   "job_description_title",
   "is_default",
+  "version",
+  "status",
+  "supersedes",
   "company",
   "column_break_ueon",
   "department",
@@ -51,6 +54,34 @@
    "fieldtype": "Check",
    "in_list_view": 1,
    "label": "Use as Default Job Description"
+  },
+  {
+   "fieldname": "version",
+   "fieldtype": "Int",
+   "label": "Version",
+   "default": "1",
+   "read_only": 1,
+   "in_list_view": 1,
+   "description": "Incremented by 'Create New Version'. Older versions stay readable as Superseded."
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "Active\nSuperseded",
+   "default": "Active",
+   "read_only": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "description": "Only the Active version of a department + designation is used when matching a JD."
+  },
+  {
+   "fieldname": "supersedes",
+   "fieldtype": "Link",
+   "options": "Job Description",
+   "label": "Supersedes",
+   "read_only": 1,
+   "description": "The version this one replaced."
   },
   {
    "fieldname": "company",

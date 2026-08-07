@@ -715,6 +715,20 @@ def _sync_positions_from_regions(doc):
     )
 
 
+def _default_jd_name():
+    """The configured default Job Description, Active versions only.
+
+    `status` is empty on JDs created before versioning, so it is coalesced
+    rather than compared directly — otherwise every legacy default would be
+    treated as superseded and silently stop being served.
+    """
+    return frappe.db.get_value(
+        JOB_DESCRIPTION,
+        {"is_default": 1, "status": ["in", ("Active", "", None)]},
+        "name",
+    )
+
+
 def _resolve_jd_html(designation, department):
     """Rendered Job Description HTML for (designation, department), or "".
 
@@ -742,6 +756,7 @@ def _resolve_jd_html(designation, department):
              AND jdp.parentfield = 'department'
             WHERE jdg.designation = %s
               AND jdp.department = %s
+              AND COALESCE(NULLIF(jd.status, ''), 'Active') = 'Active'
             ORDER BY jd.modified DESC
             LIMIT 1
             """,
@@ -749,7 +764,7 @@ def _resolve_jd_html(designation, department):
         )
         jd_name = rows[0][0] if rows else None
         if not jd_name and frappe.get_meta(JOB_DESCRIPTION).get_field("is_default"):
-            jd_name = frappe.db.get_value(JOB_DESCRIPTION, {"is_default": 1}, "name")
+            jd_name = _default_jd_name()
         if not jd_name:
             return ""
         return _build_preview_payload(jd_name, "match").get("description_html") or ""
@@ -2426,6 +2441,9 @@ def _match_jd_name(designation, department, functional_area=None):
     Tiered: prefer a JD whose applicability matches designation + department +
     functional area; fall back to designation + department. Most recently
     modified JD wins within a tier. Returns the JD name or None.
+
+    Only Active versions are considered — a superseded JD stays readable as a
+    record but must never be matched into a new requisition.
     """
     if functional_area:
         rows = frappe.db.sql(
@@ -2439,6 +2457,7 @@ def _match_jd_name(designation, department, functional_area=None):
             JOIN `tabJD Functional Area` jdf
               ON jdf.parent = jd.name AND jdf.parenttype = 'Job Description' AND jdf.parentfield = 'functional_area'
             WHERE jdg.designation = %s AND jdp.department = %s AND jdf.functional_area = %s
+              AND COALESCE(NULLIF(jd.status, ''), 'Active') = 'Active'
             ORDER BY jd.modified DESC
             LIMIT 1
             """,
@@ -2456,6 +2475,7 @@ def _match_jd_name(designation, department, functional_area=None):
         JOIN `tabJD Department` jdp
           ON jdp.parent = jd.name AND jdp.parenttype = 'Job Description' AND jdp.parentfield = 'department'
         WHERE jdg.designation = %s AND jdp.department = %s
+          AND COALESCE(NULLIF(jd.status, ''), 'Active') = 'Active'
         ORDER BY jd.modified DESC
         LIMIT 1
         """,
@@ -2614,9 +2634,7 @@ def preview_job_description(designation=None, department=None, data=None, functi
             )
 
         # 2) Fallback to the default Job Description, if one is configured.
-        default_name = frappe.db.get_value(
-            JOB_DESCRIPTION, {"is_default": 1}, "name"
-        )
+        default_name = _default_jd_name()
         if default_name:
             return _ok(
                 message=_("No exact match — showing the default Job Description."),
