@@ -36,7 +36,7 @@ export const EmployeeGoalsList = ({
   const hasEmpGoals = (myGoalsResponse?.data?.goals?.length ?? 0) > 0;
 
   const goalsList: MyGoalsGoal[] = useMemo(
-    () => (hasEmpGoals ? myGoalsResponse!.data.goals : sessionUserGoals?.data?.goals ?? []),
+    () => (hasEmpGoals ? (myGoalsResponse?.data?.goals ?? []) : sessionUserGoals?.data?.goals ?? []),
     [hasEmpGoals, myGoalsResponse, sessionUserGoals]
   );
 
