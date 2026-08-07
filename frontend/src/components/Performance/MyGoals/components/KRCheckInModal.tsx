@@ -1,9 +1,13 @@
 import React, { useRef, useState, useEffect } from "react";
-import { Paperclip, X } from "lucide-react";
+import { Paperclip, X, Loader2 } from "lucide-react";
+import toast from "react-hot-toast";
 import { Typography } from "../../../shared/atoms/Typography";
 import Badge from "../../../shared/Badge";
 import Button from "../../../shared/atoms/Button";
 import type { GoalCheckInSentiment, GoalDetailKeyResult } from "../../../../types/goal";
+import { useCurrentEmployeeDetails } from "../../../../hooks/useEmployee";
+import { useEmployeeGoalsCheckIn } from "../../../../hooks/usePerformance";
+import { getPerformanceErrorMessage } from "../../../../services/performanceService";
 
 const sentimentStyles: Record<GoalCheckInSentiment, { active: string; dot: string }> = {
   "On Track": { active: "border-green-300 bg-green-50 text-green-700 ring-1 ring-green-200", dot: "bg-green-500" },
@@ -36,6 +40,11 @@ export const KRCheckInModal: React.FC<KRCheckInModalProps> = ({
   const [newValue, setNewValue] = useState("");
   const [sentiment, setSentiment] = useState<GoalCheckInSentiment>("On Track");
   const [attachment, setAttachment] = useState<File | null>(null);
+  const { data: currentEmployee } = useCurrentEmployeeDetails({
+    logged_in_employee_details: true,
+  });
+
+  const { mutate: employeCheckIn, isPending } = useEmployeeGoalsCheckIn();
 
   useEffect(() => {
     if (kr && isOpen) {
@@ -51,6 +60,21 @@ export const KRCheckInModal: React.FC<KRCheckInModalProps> = ({
   if (!isOpen || !kr) return null;
 
   const handleSubmit = () => {
+    employeCheckIn(
+      {
+        employee: currentEmployee?.name ?? "",
+        goal: kr?.goal_key || "",
+      },
+      {
+        onSuccess: (res) => {
+          toast.success(res?.message?.message || "Check-in request submitted successfully!");
+          onClose();
+        },
+        onError: (err) => {
+          toast.error(getPerformanceErrorMessage(err, "Failed to submit check-in request."));
+        },
+      }
+    );
   };
 
   return (
@@ -165,7 +189,7 @@ export const KRCheckInModal: React.FC<KRCheckInModalProps> = ({
           </div>
 
           <div className="flex items-center gap-2.5 shrink-0">
-            <Button variant="outline" bgColor="text" size="sm" onClick={onClose}>
+            <Button variant="outline" bgColor="text" size="sm" onClick={onClose} disabled={isPending}>
               Cancel
             </Button>
             <Button
@@ -173,9 +197,10 @@ export const KRCheckInModal: React.FC<KRCheckInModalProps> = ({
               bgColor="primary"
               size="sm"
               onClick={handleSubmit}
-              disabled
+              disabled={isPending}
+              icon={isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : undefined}
             >
-        Submit Check-in
+              {isPending ? "Submitting…" : "Submit Check-in"}
             </Button>
           </div>
         </div>
