@@ -16,6 +16,8 @@ import { formatCurrency } from "../../../utils/currency";
 import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 import DataListView from "../../DataListView";
+import html2pdf from "html2pdf.js";
+import { Download } from "lucide-react";
 
 type SalaryItem = any;
 
@@ -60,6 +62,25 @@ const getDisplayValues = (item: SalaryItem) => {
   return { fixedGrossMonthly, fixedGrossAnnual, monthlyCTC, annualCTC, ctcCategory };
 };
 
+const renderRemark = (remark: string | undefined) => {
+  if (!remark) return "—";
+  
+  if (remark.includes("↑") || remark.includes("↓")) {
+    const parts = remark.split(/(↑|↓)/g);
+    return (
+      <span>
+        {parts.map((part, idx) => {
+          if (part === "↑") return <span key={idx} className="text-success font-bold text-base">↑</span>;
+          if (part === "↓") return <span key={idx} className="text-error font-bold text-base">↓</span>;
+          return part;
+        })}
+      </span>
+    );
+  }
+  
+  return remark;
+};
+
 const DesktopRow = ({ item, showAmount, onView, onVersions }: RowProps) => {
   const columnWidths = ["1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"];
   const { fixedGrossMonthly, fixedGrossAnnual, monthlyCTC, annualCTC, ctcCategory } = getDisplayValues(item);
@@ -93,7 +114,7 @@ const DesktopRow = ({ item, showAmount, onView, onVersions }: RowProps) => {
       </Typography>
 
       <Typography variant="bodySmall" className="font-medium text-center">
-        {ctcCategory || "—"}
+        {renderRemark(ctcCategory)}
       </Typography>
 
       <div className="flex items-center justify-center gap-2">
@@ -174,7 +195,7 @@ const MobileRow = ({ item, showAmount, onView, onVersions }: RowProps) => {
           <div className="flex flex-col gap-1">
             <Typography variant="mobileCardLabel">Remark</Typography>
             <Typography variant="mobileCardValue">
-              {ctcCategory || "—"}
+              {renderRemark(ctcCategory)}
             </Typography>
           </div>
         </div>
@@ -426,6 +447,7 @@ export default function SalaryAssignmentList() {
       {selected && (
         <div className="fixed inset-0 z-50 flex items-center justify-end bg-black/40">
           <div
+            id="ctc-modal-content"
             className={`bg-white flex flex-col w-full ${isDesktop ? "max-w-[700px]" : ""
               } shadow-lg relative h-screen`}
           >
@@ -439,8 +461,26 @@ export default function SalaryAssignmentList() {
                 </Typography>
               </div>
               <div className="flex flex-col items-end gap-2">
-                <div className="flex items-center gap-4">
-
+                <div className="flex items-center gap-4" data-html2canvas-ignore="true">
+                  <button
+                    onClick={() => {
+                      const element = document.getElementById("ctc-modal-content");
+                      if (!element) return;
+                      html2pdf()
+                        .set({
+                          margin: 10,
+                          filename: `CTC_Proration_${selected.from_date || "date"}.pdf`,
+                          html2canvas: { scale: 2 },
+                          jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+                        })
+                        .from(element)
+                        .save();
+                    }}
+                    className="text-primary border border-primary/40 px-3 py-1.5 rounded-lg hover:bg-primary/10 text-sm font-medium transition-colors flex items-center gap-1.5"
+                    title="Download PDF"
+                  >
+                    <Download className="w-4 h-4" /> Download
+                  </button>
                   <button
                     onClick={() => setSelected(null)}
                     className="text-gray-500 hover:text-black"
