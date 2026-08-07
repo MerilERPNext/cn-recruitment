@@ -358,9 +358,67 @@
         });
     }
 
+    // A lateral requisition itemises its headcount, so the recruiter must say
+    // which position the offer consumes BEFORE the offer form opens — picking it
+    // afterwards means the form is already half-filled against an unknown
+    // position. Campus requisitions budget a lump of openings per region and have
+    // nothing to pick, so they go straight through.
     function openNewJobOffer(frm) {
-        // Open a prefilled Job Offer form for review (don't create it silently) —
-        // HR fills salary/terms and saves it themselves.
+        frappe.call({
+            method: "recruitment.api.offer_position.get_offer_position_context",
+            args: { job_applicant: frm.doc.name },
+            freeze: true,
+            freeze_message: __("Checking available positions..."),
+            callback: (r) => {
+                const ctx = (r && r.message) || {};
+
+                if (!ctx.requires_position) {
+                    routeToNewJobOffer(frm, null);
+                    return;
+                }
+
+                const positions = ctx.positions || [];
+                if (!positions.length) {
+                    frappe.msgprint({
+                        title: __("No Position Available"),
+                        indicator: "red",
+                        message:
+                            ctx.reason ||
+                            __("No position is free on this requisition to offer against."),
+                    });
+                    return;
+                }
+
+                const dialog = new frappe.ui.Dialog({
+                    title: __("Select Position"),
+                    fields: [
+                        {
+                            fieldname: "position",
+                            label: __("Position"),
+                            fieldtype: "Select",
+                            reqd: 1,
+                            options: positions.map((p) => ({ label: p.label, value: p.name })),
+                            default: positions[0].name,
+                            description: __(
+                                "The offer will be raised against this position. It moves to Filled while the offer is live, and back to Open if the offer is withdrawn."
+                            ),
+                        },
+                    ],
+                    primary_action_label: __("Continue"),
+                    primary_action(values) {
+                        const chosen = positions.find((p) => p.name === values.position);
+                        dialog.hide();
+                        routeToNewJobOffer(frm, chosen);
+                    },
+                });
+                dialog.show();
+            },
+        });
+    }
+
+    // Open a prefilled Job Offer form for review (don't create it silently) —
+    // HR fills salary/terms and saves it themselves.
+    function routeToNewJobOffer(frm, position) {
         frappe.model.with_doctype("Job Offer", () => {
             const d = frappe.model.get_new_doc("Job Offer");
             d.job_applicant = frm.doc.name;
@@ -370,6 +428,10 @@
             if (frm.doc.custom_expected_doj) d.custom_expected_doj = frm.doc.custom_expected_doj;
             if (frm.doc.phone_number) d.custom_phone_number = frm.doc.phone_number;
             d.offer_date = frappe.datetime.get_today();
+            if (position) {
+                d.custom_requisition_position = position.name;
+                d.custom_position_label = position.label;
+            }
             frappe.set_route("Form", "Job Offer", d.name);
         });
     }

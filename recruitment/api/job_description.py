@@ -30,6 +30,8 @@ def find_matching_job_description(designation=None, department=None):
     - A JD matches when its `designation` child table contains the
       designation AND its `department` child table contains the
       department.
+    - Only Active versions qualify; a Superseded JD stays readable by name but
+      is never auto-matched into a requisition.
     - When several JDs qualify, the most recently modified one wins.
     """
     if not designation or not department:
@@ -49,6 +51,7 @@ def find_matching_job_description(designation=None, department=None):
          AND jdp.parentfield = 'department'
         WHERE jdg.designation = %s
           AND jdp.department = %s
+          AND COALESCE(NULLIF(jd.status, ''), 'Active') = 'Active'
         ORDER BY jd.modified DESC
         LIMIT 1
         """,

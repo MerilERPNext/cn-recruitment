@@ -619,7 +619,56 @@ class JobDescription(Document):
 	def validate(self):
 		self.filter_competencies()
 		self.enforce_single_default()
+		self.set_version_defaults()
+		self.prevent_duplicate_applicability()
 		_render_preview(self)
+
+	def set_version_defaults(self):
+		"""Fill version / status on any JD that predates versioning.
+
+		Self-healing on save rather than a bulk patch: a record created before
+		these fields existed has them NULL, and gets stamped the first time
+		anyone touches it. Everything else reads the pair null-safely, so an
+		untouched legacy record still behaves as version 1 / Active.
+		"""
+		if not self.get("version"):
+			self.version = 1
+		if not self.get("status"):
+			self.status = "Active"
+
+	def prevent_duplicate_applicability(self):
+		"""No two *Active* JDs may cover the same department + designation.
+
+		Applicability is a cross-product: a JD listing 2 designations and 3
+		departments covers 6 pairs. A clash on any single pair is a duplicate,
+		because `_match_jd_name` looks a JD up by exactly one (designation,
+		department) and could otherwise get either record.
+
+		Superseded versions are ignored — that is the whole point of versioning,
+		and it lets the old record stay readable without blocking its successor.
+		"""
+		if (self.get("status") or "Active") != "Active":
+			return
+
+		pairs = _applicability_pairs(self)
+		if not pairs:
+			return
+
+		clash = _find_conflicting_jd(pairs, company=self.get("company"), exclude=self.name)
+		if not clash:
+			return
+
+		frappe.throw(
+			frappe._(
+				"A Job Description already covers {0} / {1}: {2}. Open it and use "
+				"<b>Create New Version</b> instead of adding another one."
+			).format(
+				frappe.bold(clash["designation"]),
+				frappe.bold(clash["department"]),
+				frappe.utils.get_link_to_form("Job Description", clash["name"]),
+			),
+			title=frappe._("Duplicate Job Description"),
+		)
 
 	def filter_competencies(self):
 		"""Remove competencies where add_to_jd is unchecked before saving."""
@@ -756,3 +805,218 @@ def get_competencies_for_designations(designations):
 		})
 
 	return result
+
+
+@frappe.whitelist()
+@frappe.validate_and_sanitize_search_inputs
+def functional_area_query(doctype, txt, searchfield, start, page_len, filters):
+	"""Link query for Job Description -> Functional Area, scoped to the chosen designations.
+
+	A Designation already names the Functional Area it belongs to
+	(`Designation.custom_functional_area`, from cn_hrms_core), so the JD's
+	functional areas are derivable rather than free choice. This completes the
+	form's existing Company -> Department -> Designation cascade.
+
+	With no designation picked yet the full list is returned instead of an empty
+	one — the field is optional and blocking it would only strand the user.
+	"""
+	designations = (filters or {}).get("designations") or []
+	if isinstance(designations, str):
+		designations = json.loads(designations)
+	designations = [d for d in designations if d]
+
+	area_filters = {"disabled": 0} if frappe.get_meta("Functional Area").has_field("disabled") else {}
+	if txt:
+		area_filters["name"] = ["like", f"%{txt}%"]
+
+	if designations:
+		areas = frappe.get_all(
+			"Designation",
+			filters={"name": ["in", designations], "custom_functional_area": ["is", "set"]},
+			pluck="custom_functional_area",
+		)
+		if not areas:
+			return []
+		area_filters["name"] = (
+			["in", [a for a in set(areas) if txt.lower() in a.lower()]] if txt
+			else ["in", list(set(areas))]
+		)
+
+	return frappe.get_all(
+		"Functional Area",
+		filters=area_filters,
+		fields=["name", "functional_area_name"],
+		order_by="name asc",
+		start=start,
+		page_length=page_len,
+		as_list=True,
+	)
+
+
+# ---------------------------------------------------------------------------
+# Applicability / versioning
+# ---------------------------------------------------------------------------
+
+def _applicability_pairs(doc):
+	"""Every (designation, department) this JD claims, as a list of tuples.
+
+	A JD's applicability is the cross-product of its two multi-select tables, so
+	2 designations x 3 departments is 6 pairs. A JD with no department rows is
+	treated as covering (designation, None) — still worth guarding, since
+	`_match_jd_name` can reach it.
+	"""
+	designations = [r.designation for r in (doc.get("designation") or []) if r.designation]
+	departments = [r.department for r in (doc.get("department") or []) if r.department]
+	if not designations:
+		return []
+	if not departments:
+		return [(d, None) for d in designations]
+	return [(d, p) for d in designations for p in departments]
+
+
+def _find_conflicting_jd(pairs, company=None, exclude=None):
+	"""First Active JD already covering one of `pairs`, or None.
+
+	One query for all pairs rather than one per pair — a JD with 4 designations
+	across 5 departments would otherwise cost 20 round trips on every save.
+	"""
+	designations = list({d for d, _ in pairs})
+	departments = list({p for _, p in pairs if p})
+	if not designations:
+		return None
+
+	conditions = [
+		"COALESCE(NULLIF(jd.status, ''), 'Active') = 'Active'",
+		"jdg.designation IN %(designations)s",
+	]
+	values = {"designations": designations}
+	if exclude:
+		conditions.append("jd.name != %(exclude)s")
+		values["exclude"] = exclude
+	if company:
+		conditions.append("(jd.company IS NULL OR jd.company = %(company)s)")
+		values["company"] = company
+
+	join = ""
+	if departments:
+		join = """
+			JOIN `tabJD Department` jdp
+			  ON jdp.parent = jd.name AND jdp.parenttype = 'Job Description'
+			 AND jdp.parentfield = 'department'
+		"""
+		conditions.append("jdp.department IN %(departments)s")
+		values["departments"] = departments
+
+	rows = frappe.db.sql(
+		"""
+		SELECT jd.name, jdg.designation{dept_col}
+		FROM `tabJob Description` jd
+		JOIN `tabJD Designations` jdg
+		  ON jdg.parent = jd.name AND jdg.parenttype = 'Job Description'
+		 AND jdg.parentfield = 'designation'
+		{join}
+		WHERE {where}
+		LIMIT 50
+		""".format(
+			dept_col=", jdp.department" if departments else ", NULL AS department",
+			join=join,
+			where=" AND ".join(conditions),
+		),
+		values,
+		as_dict=True,
+	)
+
+	# The SQL narrows to candidates; the exact pair match is confirmed here so a
+	# JD that merely shares a designation with a different department is allowed.
+	wanted = set(pairs)
+	for row in rows:
+		if (row.designation, row.department) in wanted:
+			return row
+	return None
+
+
+@frappe.whitelist()
+def create_new_version(job_description):
+	"""Copy an Active JD as the next version and supersede the original.
+
+	The predecessor is marked Superseded *before* the copy is inserted, so the
+	duplicate guard sees no clash. Both writes share the request's transaction —
+	if the insert fails, the supersede is rolled back with it.
+	"""
+	if not job_description:
+		frappe.throw(frappe._("Job Description is required."))
+	frappe.has_permission("Job Description", "create", throw=True)
+	frappe.has_permission("Job Description", "write", doc=job_description, throw=True)
+
+	source = frappe.get_doc("Job Description", job_description)
+	if (source.status or "Active") != "Active":
+		frappe.throw(
+			frappe._("{0} is already superseded. Create the new version from the Active one.").format(
+				frappe.bold(job_description)
+			)
+		)
+
+	frappe.db.savepoint("jd_new_version")
+	try:
+		frappe.db.set_value("Job Description", source.name, "status", "Superseded")
+
+		copy = frappe.copy_doc(source)
+		copy.version = (source.version or 1) + 1
+		copy.status = "Active"
+		copy.supersedes = source.name
+		# `name` is the title (autoname field:job_description_title), so the title
+		# has to change or the insert collides with the record being replaced.
+		copy.job_description_title = _next_version_title(source.job_description_title, copy.version)
+		copy.insert()
+	except Exception:
+		frappe.db.rollback(save_point="jd_new_version")
+		raise
+
+	copy.add_comment(
+		"Comment",
+		frappe._("Version {0}, superseding {1}.").format(copy.version, source.name),
+	)
+	return {"job_description": copy.name, "version": copy.version, "supersedes": source.name}
+
+
+def _next_version_title(title, version):
+	"""'Sr SWE JD' -> 'Sr SWE JD (v2)'; an existing '(vN)' suffix is replaced."""
+	base = _re.sub(r"\s*\(v\d+\)\s*$", "", title or "").strip()
+	return "{0} (v{1})".format(base, version)
+
+
+@frappe.whitelist()
+def get_version_history(job_description):
+	"""Every version in this JD's chain, newest first — drives the form's
+	version panel. Walks `supersedes` backwards from the given record and
+	forwards from whatever points at it."""
+	if not job_description:
+		return []
+	frappe.has_permission("Job Description", "read", doc=job_description, throw=True)
+
+	chain, seen = [], set()
+	current = job_description
+	while current and current not in seen:
+		seen.add(current)
+		row = frappe.db.get_value(
+			"Job Description", current,
+			["name", "version", "status", "supersedes", "modified"], as_dict=True,
+		)
+		if not row:
+			break
+		chain.append(row)
+		current = row.supersedes
+
+	successor = frappe.db.get_value("Job Description", {"supersedes": job_description}, "name")
+	while successor and successor not in seen:
+		seen.add(successor)
+		row = frappe.db.get_value(
+			"Job Description", successor,
+			["name", "version", "status", "supersedes", "modified"], as_dict=True,
+		)
+		if not row:
+			break
+		chain.insert(0, row)
+		successor = frappe.db.get_value("Job Description", {"supersedes": successor}, "name")
+
+	return sorted(chain, key=lambda r: r.get("version") or 0, reverse=True)

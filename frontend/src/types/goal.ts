@@ -80,6 +80,44 @@ export interface GoalFormConfigDesignation {
   designation_name?: string;
 }
 
+export interface RequestCheckInPayload {
+  employee: string;
+  goal: string;
+  due_date?: string;
+  message?: string;
+}
+export interface LinkFieldOption {
+  id: string;
+  label: string;
+}
+export interface LinkFieldOptionsData {
+  status?: string;
+  doctype?: string;
+  title_field?: string;
+  total?: number;
+  results: LinkFieldOption[];
+}
+export interface RequestCheckInRequest {
+  payload: RequestCheckInPayload;
+}
+
+export interface RequestCheckInData {
+  employee: string;
+  goal: string;
+  goal_key: string;
+  title: string;
+  checkin_requested: boolean;
+  checkin_due: string | null;
+  requested_by: string;
+}
+
+export interface RequestCheckInResponse {
+  message: {
+    success: boolean;
+    message: string;
+    data: RequestCheckInData;
+  };
+}
 export interface GoalFormConfigCycle {
   name: string;
   cycle_name: string;
@@ -183,6 +221,7 @@ export interface MyGoalsGoal {
   title: string;
   description: string;
   goal_type: string;
+  checkin_due:string;
   department: string;
   department_title: string;
   weightage: number;
@@ -191,6 +230,7 @@ export interface MyGoalsGoal {
   goal_status?: string;
   submission_status?: string;
   start_date?: string;
+  last_checkin_date?:string;
   end_date?: string;
   key_results: MyGoalsKeyResult[];
 }
@@ -331,6 +371,7 @@ export interface Goal {
   owner_employee: string;
   owner_employee_name: string;
   key_results: KeyResult[];
+  locked:boolean
   designation:string
 }
 

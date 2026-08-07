@@ -274,16 +274,35 @@ doc_events = {
             # Record the requisition this offer draws on and pull its agreed
             # Fixed / Variable Pay across. Only fills empty fields.
             "recruitment.customizations.job_offer.set_requisition_and_pay",
+            # The position this offer consumes must belong to the offer's
+            # requisition and still be free. Runs before save so a stale pick is
+            # rejected rather than silently claiming the wrong row.
+            "recruitment.api.offer_position.validate_position_choice",
         ],
         "before_save": "recruitment.customizations.job_offer.calculate_salary_structure",
-        "after_insert": "recruitment.api.action_center.sync_job_offer_action_item",
-        "on_submit": "recruitment.api.action_center.sync_job_offer_action_item",
+        "after_insert": [
+            "recruitment.api.action_center.sync_job_offer_action_item",
+            # Claim the position (Filled + candidate) while the offer is live,
+            # release it the moment it is withdrawn / rejected / cancelled, then
+            # roll the result up to the requisition. Wired to every lifecycle
+            # event so no path can leave offer and position disagreeing.
+            "recruitment.api.offer_position.sync_offer_position",
+        ],
+        "on_submit": [
+            "recruitment.api.action_center.sync_job_offer_action_item",
+            "recruitment.api.offer_position.sync_offer_position",
+        ],
         # Reflect Accepted/Rejected offer outcome on the candidate's hiring stage.
-        "on_update": "recruitment.api.hiring_stage.advance_on_job_offer_outcome",
+        "on_update": [
+            "recruitment.api.hiring_stage.advance_on_job_offer_outcome",
+            "recruitment.api.offer_position.sync_offer_position",
+        ],
         "on_update_after_submit": [
             "recruitment.api.action_center.sync_job_offer_action_item",
             "recruitment.api.hiring_stage.advance_on_job_offer_outcome",
+            "recruitment.api.offer_position.sync_offer_position",
         ],
+        "on_cancel": "recruitment.api.offer_position.sync_offer_position",
     },
     "Job Requisition": {
         "before_insert": [
@@ -305,6 +324,11 @@ doc_events = {
             # (max positions, replacement-employee restriction & uniqueness).
             "recruitment.api.job_requisition.validate_requisition_settings",
         ],
+        # Once a requisition is approved its positions "start appearing in the
+        # position master": materialise the per-position tracking rows
+        # (custom_position_summary) from the headcount rows
+        # (custom_position_details). Idempotent, so it is safe on every update.
+        "on_update": "recruitment.api.requisition_status.materialise_positions_on_approval",
     },
     "Job Opening": {
         "validate": [

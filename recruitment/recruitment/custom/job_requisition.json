@@ -4260,7 +4260,30 @@
    "property": "options",
    "property_type": "Text",
    "row_name": null,
-   "value": "Pending\nOpen & Approved\nJob Opening Created\nIn-Progress\nRejected\nFilled\nOn Hold\nCancelled"
+   "value": "Pending\nDraft\nOpen & Approved\nApproved Active\nRejected\nFilled\nArchived\nOn Hold\nCancelled"
+  },
+  {
+   "_assign": null,
+   "_comments": null,
+   "_liked_by": null,
+   "_user_tags": null,
+   "creation": "2026-08-06 00:00:00.000000",
+   "default_value": null,
+   "doc_type": "Job Requisition",
+   "docstatus": 0,
+   "doctype_or_field": "DocField",
+   "field_name": "status",
+   "idx": 0,
+   "is_system_generated": 0,
+   "modified": "2026-08-06 00:00:00.000000",
+   "modified_by": "Administrator",
+   "module": "Recruitment",
+   "name": "Job Requisition-status-default",
+   "owner": "Administrator",
+   "property": "default",
+   "property_type": "Text",
+   "row_name": null,
+   "value": "Pending"
   },
   {
    "_assign": null,

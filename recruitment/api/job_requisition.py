@@ -715,6 +715,20 @@ def _sync_positions_from_regions(doc):
     )
 
 
+def _default_jd_name():
+    """The configured default Job Description, Active versions only.
+
+    `status` is empty on JDs created before versioning, so it is coalesced
+    rather than compared directly — otherwise every legacy default would be
+    treated as superseded and silently stop being served.
+    """
+    return frappe.db.get_value(
+        JOB_DESCRIPTION,
+        {"is_default": 1, "status": ["in", ("Active", "", None)]},
+        "name",
+    )
+
+
 def _resolve_jd_html(designation, department):
     """Rendered Job Description HTML for (designation, department), or "".
 
@@ -742,6 +756,7 @@ def _resolve_jd_html(designation, department):
              AND jdp.parentfield = 'department'
             WHERE jdg.designation = %s
               AND jdp.department = %s
+              AND COALESCE(NULLIF(jd.status, ''), 'Active') = 'Active'
             ORDER BY jd.modified DESC
             LIMIT 1
             """,
@@ -749,7 +764,7 @@ def _resolve_jd_html(designation, department):
         )
         jd_name = rows[0][0] if rows else None
         if not jd_name and frappe.get_meta(JOB_DESCRIPTION).get_field("is_default"):
-            jd_name = frappe.db.get_value(JOB_DESCRIPTION, {"is_default": 1}, "name")
+            jd_name = _default_jd_name()
         if not jd_name:
             return ""
         return _build_preview_payload(jd_name, "match").get("description_html") or ""
@@ -1761,8 +1776,8 @@ def create_job_requisition(payload=None):
 
 # Status buckets used by the list-view summary cards.
 # Edit here if the workflow ever introduces new states.
-ACTIVE_STATUSES = ("Open & Approved", "In-Progress", "Job Opening Created")
-CLOSED_STATUSES = ("Filled", "Cancelled", "Rejected")
+ACTIVE_STATUSES = ("Open & Approved", "Approved Active")
+CLOSED_STATUSES = ("Filled", "Archived", "Cancelled", "Rejected")
 
 
 def _compute_global_summary(employee=None, requested_by_override=None):
@@ -2426,6 +2441,9 @@ def _match_jd_name(designation, department, functional_area=None):
     Tiered: prefer a JD whose applicability matches designation + department +
     functional area; fall back to designation + department. Most recently
     modified JD wins within a tier. Returns the JD name or None.
+
+    Only Active versions are considered — a superseded JD stays readable as a
+    record but must never be matched into a new requisition.
     """
     if functional_area:
         rows = frappe.db.sql(
@@ -2439,6 +2457,7 @@ def _match_jd_name(designation, department, functional_area=None):
             JOIN `tabJD Functional Area` jdf
               ON jdf.parent = jd.name AND jdf.parenttype = 'Job Description' AND jdf.parentfield = 'functional_area'
             WHERE jdg.designation = %s AND jdp.department = %s AND jdf.functional_area = %s
+              AND COALESCE(NULLIF(jd.status, ''), 'Active') = 'Active'
             ORDER BY jd.modified DESC
             LIMIT 1
             """,
@@ -2456,6 +2475,7 @@ def _match_jd_name(designation, department, functional_area=None):
         JOIN `tabJD Department` jdp
           ON jdp.parent = jd.name AND jdp.parenttype = 'Job Description' AND jdp.parentfield = 'department'
         WHERE jdg.designation = %s AND jdp.department = %s
+          AND COALESCE(NULLIF(jd.status, ''), 'Active') = 'Active'
         ORDER BY jd.modified DESC
         LIMIT 1
         """,
@@ -2614,9 +2634,7 @@ def preview_job_description(designation=None, department=None, data=None, functi
             )
 
         # 2) Fallback to the default Job Description, if one is configured.
-        default_name = frappe.db.get_value(
-            JOB_DESCRIPTION, {"is_default": 1}, "name"
-        )
+        default_name = _default_jd_name()
         if default_name:
             return _ok(
                 message=_("No exact match — showing the default Job Description."),
@@ -3453,14 +3471,27 @@ def get_replacement_employee_options(
 
 @frappe.whitelist()
 def activate_job_requisition(job_requisition, job_opening):
-    """List-view "Activate Job Requisition" action — associate an existing Job
-    Opening with the requisition (mirrors HRMS's "Associate Job Opening": stamps
-    job_requisition + vacancies onto the chosen Job Opening) AND marks the
-    requisition itself as "Open & Approved"."""
+    """"Activate Job Requisition" — associate an existing Job Opening with the
+    requisition (mirrors HRMS's "Associate Job Opening": stamps job_requisition +
+    vacancies onto the chosen Job Opening) and move it to "Approved Active".
+
+    Activation is the Approved Draft -> Approved Active step in the requisition
+    status matrix: approval is already done, and linking the opening is what makes
+    the positions available to link to a candidate when raising an offer. Each
+    position row moves from Draft to Open at the same time, so the position status
+    tracks the requisition rather than sitting at its creation default."""
     if not job_requisition or not job_opening:
         frappe.throw(frappe._("Both Job Requisition and Job Opening are required."))
     frappe.has_permission("Job Requisition", "write", doc=job_requisition, throw=True)
     frappe.has_permission("Job Opening", "write", doc=job_opening, throw=True)
+
+    # Same gate the form buttons read, so the list-view action and any direct API
+    # call are held to the requisition/position status matrix too. Imported here
+    # rather than at module scope: requisition_status is a sibling API module and
+    # a top-level import would couple the two files' load order.
+    from recruitment.api.requisition_status import ACTIVATE, _require_action
+
+    _require_action(job_requisition, ACTIVATE)
 
     # Strict one opening <-> one requisition:
     # (a) the opening must not already belong to a *different* requisition.
@@ -3488,11 +3519,22 @@ def activate_job_requisition(job_requisition, job_opening):
     # associate_job_opening is inherited from the HRMS JobRequisition class.
     doc.associate_job_opening(job_opening)
 
-    # Activating a requisition opens it up.
-    if doc.status != "Open & Approved":
-        frappe.db.set_value("Job Requisition", job_requisition, "status", "Open & Approved")
+    # Activating a requisition opens it up: the requisition becomes Approved
+    # Active and every position that was still Draft becomes Open. Positions
+    # already Filled / On Hold / Archived are left as they are.
+    if doc.status != "Approved Active":
+        frappe.db.set_value("Job Requisition", job_requisition, "status", "Approved Active")
+    for row in doc.get("custom_position_summary") or []:
+        if (row.status or "Draft") == "Draft":
+            frappe.db.set_value(
+                "Job Requisition Position", row.name, "status", "Open", update_modified=False
+            )
 
-    return {"job_requisition": job_requisition, "job_opening": job_opening, "status": "Open & Approved"}
+    return {
+        "job_requisition": job_requisition,
+        "job_opening": job_opening,
+        "status": "Approved Active",
+    }
 
 
 # ---------------------------------------------------------------------------

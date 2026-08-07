@@ -56,12 +56,13 @@ const getDisplayValues = (item: SalaryItem) => {
   const fixedGrossAnnual = item.fixed_gross?.[0]?.annual_amount;
   const monthlyCTC = item.fixed_ctc?.[0]?.monthly_amount;
   const annualCTC = item.total_final_ctc?.[0]?.annual_amount;
-  return { fixedGrossMonthly, fixedGrossAnnual, monthlyCTC, annualCTC };
+  const ctcCategory = item.custom_ctc_category;
+  return { fixedGrossMonthly, fixedGrossAnnual, monthlyCTC, annualCTC, ctcCategory };
 };
 
 const DesktopRow = ({ item, showAmount, onView, onVersions }: RowProps) => {
-  const columnWidths = ["1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"];
-  const { fixedGrossMonthly, fixedGrossAnnual, monthlyCTC, annualCTC } = getDisplayValues(item);
+  const columnWidths = ["1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"];
+  const { fixedGrossMonthly, fixedGrossAnnual, monthlyCTC, annualCTC, ctcCategory } = getDisplayValues(item);
   return (
     <div
       className="grid max-w-screen items-center gap-4 px-6 h-16 border-b border-gray-50 transition-colors cursor-pointer hover:bg-primary/10"
@@ -91,6 +92,10 @@ const DesktopRow = ({ item, showAmount, onView, onVersions }: RowProps) => {
         {renderAmount(annualCTC, showAmount)}
       </Typography>
 
+      <Typography variant="bodySmall" className="font-medium text-center">
+        {ctcCategory || "—"}
+      </Typography>
+
       <div className="flex items-center justify-center gap-2">
         <button
           onClick={() => onView(item)}
@@ -110,7 +115,7 @@ const DesktopRow = ({ item, showAmount, onView, onVersions }: RowProps) => {
 };
 
 const MobileRow = ({ item, showAmount, onView, onVersions }: RowProps) => {
-  const { fixedGrossMonthly, fixedGrossAnnual, monthlyCTC, annualCTC } = getDisplayValues(item);
+  const { fixedGrossMonthly, fixedGrossAnnual, monthlyCTC, annualCTC, ctcCategory } = getDisplayValues(item);
   return (
     <div
       className="cursor-pointer border-t-4 border-x border-b 
@@ -160,6 +165,16 @@ const MobileRow = ({ item, showAmount, onView, onVersions }: RowProps) => {
             <Typography variant="mobileCardLabel">Annual CTC</Typography>
             <Typography variant="mobileCardValue">
               {renderAmount(annualCTC, showAmount)}
+            </Typography>
+          </div>
+        </div>
+
+        {/* Row 4: Remark */}
+        <div className="flex items-start justify-between">
+          <div className="flex flex-col gap-1">
+            <Typography variant="mobileCardLabel">Remark</Typography>
+            <Typography variant="mobileCardValue">
+              {ctcCategory || "—"}
             </Typography>
           </div>
         </div>
@@ -286,6 +301,12 @@ export default function SalaryAssignmentList() {
       getValue: (item: any) => item.annual_ctc ?? 0,
     },
     {
+      sortable: true,
+      type: "string",
+      field: "custom_ctc_category",
+      getValue: (item: any) => item.custom_ctc_category ?? "",
+    },
+    {
       sortable: false, // Action column
     },
   ];
@@ -297,10 +318,11 @@ export default function SalaryAssignmentList() {
     "Monthly CTC",
     "Fixed Gross Annual",
     "Annual CTC",
+    "Remark",
     "Action",
   ];
 
-  const columnWidths = ["1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"];
+  const columnWidths = ["1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"];
 
   // ---- ItemComponent factory — closes over showAmount + modal setters ----
   const ItemComponent = useMemo(

@@ -3,7 +3,7 @@
 
 frappe.ui.form.on("Job Description", {
     onload(frm) {
-        // Set cascading filters: Company → Department → Designation
+        // Cascading filters: Company → Department → Designation → Functional Area
         frm.set_query("department", function (doc) {
             return {
                 filters: {
@@ -17,6 +17,21 @@ frappe.ui.form.on("Job Description", {
             return {
                 filters: {
                     custom_department: ["in", departments],
+                },
+            };
+        });
+
+        // A Designation names the Functional Area it belongs to
+        // (Designation.custom_functional_area), so the JD's functional areas are
+        // derivable from the designations picked above. Server-side query rather
+        // than a plain filter because it needs that hop through Designation.
+        frm.set_query("functional_area", function (doc) {
+            return {
+                query: "recruitment.recruitment.doctype.job_description.job_description.functional_area_query",
+                filters: {
+                    designations: (doc.designation || [])
+                        .map((row) => row.designation)
+                        .filter(Boolean),
                 },
             };
         });
@@ -188,5 +203,72 @@ function populate_competencies(frm, competencies) {
             competencies.length,
         ]),
         indicator: "green",
+    });
+}
+
+// ---------------------------------------------------------------------------
+// Versioning — one Active JD per department + designation.
+//
+// Duplicates are refused on save (prevent_duplicate_applicability); the way to
+// change an in-use JD is to create the next version, which supersedes this one.
+// A superseded JD stays readable but is never matched into a new requisition.
+// ---------------------------------------------------------------------------
+frappe.ui.form.on("Job Description", {
+    refresh(frm) {
+        if (frm.is_new()) return;
+
+        if (frm.doc.status === "Superseded") {
+            frm.set_intro(
+                __("Version {0} — superseded. This JD is kept for reference and is no longer matched to new requisitions.",
+                   [frm.doc.version || 1]),
+                "orange"
+            );
+        } else {
+            frm.add_custom_button(__("Create New Version"), () => {
+                frappe.confirm(
+                    __("Create version {0}? This JD becomes Superseded and the new version takes over for its department and designation.",
+                       [(frm.doc.version || 1) + 1]),
+                    () => {
+                        frappe.call({
+                            method: "recruitment.recruitment.doctype.job_description.job_description.create_new_version",
+                            args: { job_description: frm.doc.name },
+                            freeze: true,
+                            freeze_message: __("Creating new version…"),
+                            callback: (r) => {
+                                const res = (r && r.message) || {};
+                                if (!res.job_description) return;
+                                frappe.show_alert({
+                                    message: __("Version {0} created", [res.version]),
+                                    indicator: "green",
+                                });
+                                frappe.set_route("Form", "Job Description", res.job_description);
+                            },
+                        });
+                    }
+                );
+            });
+        }
+
+        render_version_history(frm);
+    },
+});
+
+function render_version_history(frm) {
+    frappe.call({
+        method: "recruitment.recruitment.doctype.job_description.job_description.get_version_history",
+        args: { job_description: frm.doc.name },
+        callback: (r) => {
+            const rows = (r && r.message) || [];
+            if (rows.length < 2) return;   // nothing to show for a lone v1
+            const links = rows
+                .map((v) => {
+                    const label = __("v{0} — {1}", [v.version || 1, v.status || "Active"]);
+                    return v.name === frm.doc.name
+                        ? `<b>${frappe.utils.escape_html(label)} (${__("this one")})</b>`
+                        : `<a href="/app/job-description/${encodeURIComponent(v.name)}">${frappe.utils.escape_html(label)}</a>`;
+                })
+                .join(" &nbsp;·&nbsp; ");
+            frm.dashboard.add_comment(__("Versions: ") + links, "blue", true);
+        },
     });
 }
