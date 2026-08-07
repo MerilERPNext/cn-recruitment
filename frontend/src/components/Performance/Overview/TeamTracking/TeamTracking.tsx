@@ -4,6 +4,7 @@ import { ArrowLeft, Search, X, UserX } from "lucide-react";
 import Button from "../../../shared/atoms/Button";
 import { useLinkFieldOptions } from "../../../../hooks/useLinkFieldOptions";
 import { useMyGoals } from "../../../../hooks/usePerformance";
+import useDebounce from "../../../../hooks/useDebounce";
 import type { MyGoalsGoal } from "../../../../types/goal";
 import { ErrorState, EmployeeListSkeleton } from "./TeamTrackingStates";
 import { EmployeeGoalsList } from "./EmployeeGoalsList";
@@ -17,6 +18,7 @@ const TeamTracking = (): JSX.Element => {
     null,
   );
   const [searchQuery, setSearchQuery] = useState("");
+  const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
   const {
     data: employeeData,
@@ -29,7 +31,7 @@ const TeamTracking = (): JSX.Element => {
     refetch: refetchEmployees,
   } = useLinkFieldOptions({
     doctype: "Employee",
-    searchText: searchQuery,
+    searchText: debouncedSearchQuery,
     filters: { status: "Active" },
   });
 
