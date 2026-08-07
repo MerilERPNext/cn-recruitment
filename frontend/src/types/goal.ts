@@ -371,6 +371,7 @@ export interface Goal {
   owner_employee: string;
   owner_employee_name: string;
   key_results: KeyResult[];
+  locked:boolean
   designation:string
 }
 
