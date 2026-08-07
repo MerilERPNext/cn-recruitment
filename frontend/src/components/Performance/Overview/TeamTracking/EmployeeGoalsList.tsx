@@ -32,31 +32,36 @@ export const EmployeeGoalsList = ({
   const { data: currentEmployee } = useCurrentEmployeeDetails({
     logged_in_employee_details: true,
   });
+
   const {
     data: myGoalsResponse,
     isLoading,
     isError,
     error,
     refetch,
-  } = useMyGoals(
-    employeeId
-      ? { employee: employeeId }
-      : currentEmployee?.name
-      ? { employee: currentEmployee.name }
-      : undefined
-  );
-  const { mutate: employeCheckIn, isPending } = useEmployeeGoalsCheckIn();
+  } = useMyGoals(employeeId ? { employee: employeeId } : undefined);
+
+  const { data: sessionUserGoals } = useMyGoals();
+
+  const hasEmpGoals = (myGoalsResponse?.data?.goals?.length ?? 0) > 0;
+
   const goalsList: MyGoalsGoal[] = useMemo(
-    () => myGoalsResponse?.data?.goals ?? [],
-    [myGoalsResponse]
+    () => (hasEmpGoals ? myGoalsResponse!.data.goals : sessionUserGoals?.data?.goals ?? []),
+    [hasEmpGoals, myGoalsResponse, sessionUserGoals]
   );
+
+  const { mutate: employeCheckIn, isPending } = useEmployeeGoalsCheckIn();
   const [loadingGoalKey, setLoadingGoalKey] = useState<string | null>(null);
 
   const submitCheckIns = (goalKey: string) => {
     setLoadingGoalKey(goalKey);
+    const targetEmployeeId = hasEmpGoals
+      ? (employeeId ?? currentEmployee?.name ?? "")
+      : (currentEmployee?.name ?? "");
+
     employeCheckIn(
       {
-        employee: employeeId ?? currentEmployee?.name ?? "",
+        employee: targetEmployeeId,
         goal: goalKey,
       },
       {
