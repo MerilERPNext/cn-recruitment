@@ -301,9 +301,9 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, onBack }) => {
               </div>
               
               {/* Title */}
-              <div>
-                <Typography variant="h3" className="mb-2 text-xl leading-tight sm:text-2xl">{goal.title || '-'}</Typography>
-                <Typography variant="bodySmall" className="text-gray-500">{goal.description || '-'}</Typography>
+              <div className="min-w-0">
+                <Typography variant="h3" className="mb-2 text-xl leading-tight sm:text-2xl break-words [word-break:break-word]">{goal.title || '-'}</Typography>
+                <Typography variant="bodySmall" className="text-gray-500 break-words [word-break:break-word]">{goal.description || '-'}</Typography>
               </div>
 
               {/* Meta grid: Owner, Start, End, Weightage */}
@@ -436,9 +436,11 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, onBack }) => {
                   goal.key_results.map((kr: GoalDetailKeyResult, idx: number) => (
                     <div key={kr.goal_key || idx} className="relative">
                       <div className="flex flex-col gap-2 mb-2 sm:flex-row sm:items-center sm:justify-between">
-                        <div className="flex min-w-0 items-start gap-3 sm:items-center">
-                          <Badge label={`KR ${idx + 1}`} variant="purple" size="sm" />
-                          <Typography variant="bodyMedium" className="font-medium leading-snug text-gray-900">{kr.title || '-'}</Typography>
+                        <div className="flex min-w-0 flex-1 items-start gap-3 sm:items-center">
+                          <div className="shrink-0">
+                            <Badge label={`KR ${idx + 1}`} variant="purple" size="sm" />
+                          </div>
+                          <Typography variant="bodyMedium" className="font-medium leading-snug text-gray-900 break-words [word-break:break-word]">{kr.title || '-'}</Typography>
                         </div>
                         <div className="flex items-center gap-3 text-left sm:text-right">
                           <div>
@@ -585,7 +587,7 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, onBack }) => {
                           <span className={`h-1.5 w-1.5 rounded-full ${sentimentStyles[checkIn.sentiment]?.dot ?? 'bg-gray-400'}`} />{checkIn.sentiment}
                         </span>
                       </div>
-                      {checkIn.note && <Typography variant="caption" className="mt-2 block whitespace-pre-wrap text-gray-600">{checkIn.note}</Typography>}
+                      {checkIn.note && <Typography variant="caption" className="mt-2 block whitespace-pre-wrap break-words [word-break:break-word] text-gray-600">{checkIn.note}</Typography>}
                       {checkIn.attachment && (
                         <a href={checkIn.attachment} target="_blank" rel="noreferrer" className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-blue-600 hover:text-blue-800">
                           <Paperclip className="h-3.5 w-3.5" />View attachment<ExternalLink className="h-3 w-3" />
