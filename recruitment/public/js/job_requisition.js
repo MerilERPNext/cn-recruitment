@@ -95,6 +95,190 @@ frappe.ui.form.on("Job Requisition", {
     },
 });
 
+// Requisition actions — Duplicate / Archive / Move to Draft / Activate.
+//
+// Which of the four are available depends on the requisition status AND the
+// status of its positions. That rule lives server-side in
+// recruitment.api.requisition_status.ACTION_MATRIX; get_requisition_actions
+// returns the verdict per action plus, when refused, the reason. We draw an
+// enabled button for every allowed action and a disabled one carrying the reason
+// as a tooltip for the rest — so the sheet is legible from the form itself rather
+// than the user guessing why nothing happens.
+//
+// "Send for Approval" is not one of the four; it is how a Draft re-enters the
+// approval flow, and it only appears on a Draft.
+frappe.ui.form.on("Job Requisition", {
+    refresh(frm) {
+        add_requisition_action_buttons(frm);
+    },
+});
+
+const REQUISITION_ACTIONS = [
+    { key: "activate", label: __("Activate"), primary: true },
+    { key: "move_to_draft", label: __("Move to Draft") },
+    { key: "duplicate", label: __("Duplicate") },
+    { key: "archive", label: __("Archive") },
+];
+
+function add_requisition_action_buttons(frm) {
+    if (frm.is_new()) {
+        return;
+    }
+    frappe.call({
+        method: "recruitment.api.requisition_status.get_requisition_actions",
+        args: { job_requisition: frm.doc.name },
+        callback(r) {
+            const res = (r && r.message) || {};
+            const verdicts = res.actions || {};
+            const group = __("Actions");
+
+            REQUISITION_ACTIONS.forEach((action) => {
+                const verdict = verdicts[action.key] || {};
+                const $btn = frm.add_custom_button(
+                    action.label,
+                    () => run_requisition_action(frm, action.key),
+                    group
+                );
+                if (verdict.allowed) {
+                    $btn.prop("disabled", false).attr("title", "");
+                } else {
+                    // Kept visible but inert: the matrix is easier to understand
+                    // when you can see the action you *can't* take and why.
+                    $btn.prop("disabled", true).attr("title", verdict.reason || "");
+                }
+            });
+
+            if (verdicts.activate && verdicts.activate.allowed) {
+                frm.page.set_inner_btn_group_as_primary(group);
+            }
+
+            if (res.can_send_for_approval) {
+                frm.add_custom_button(__("Send for Approval"), () => {
+                    frappe.call({
+                        method: "recruitment.api.requisition_status.send_for_approval",
+                        args: { job_requisition: frm.doc.name },
+                        freeze: true,
+                        freeze_message: __("Sending for approval…"),
+                        callback: () => {
+                            frappe.show_alert({
+                                message: __("Sent for approval"),
+                                indicator: "green",
+                            });
+                            frm.reload_doc();
+                        },
+                    });
+                }).addClass("btn-primary");
+            }
+        },
+    });
+}
+
+function run_requisition_action(frm, key) {
+    if (key === "move_to_draft") {
+        prompt_with_reason(
+            frm,
+            "recruitment.api.requisition_status.move_to_draft",
+            __("Move to Draft"),
+            __("Moving to Draft…"),
+            __("Any approval currently in progress will be revoked. Positions return to Draft.")
+        );
+    } else if (key === "archive") {
+        prompt_with_reason(
+            frm,
+            "recruitment.api.requisition_status.archive_requisition",
+            __("Archive Requisition"),
+            __("Archiving…"),
+            __("The requisition and all its positions move to Archived. Any approval in progress will be revoked.")
+        );
+    } else if (key === "duplicate") {
+        frappe.call({
+            method: "recruitment.api.requisition_status.duplicate_requisition",
+            args: { job_requisition: frm.doc.name },
+            freeze: true,
+            freeze_message: __("Duplicating…"),
+            callback: (r) => {
+                const res = (r && r.message) || {};
+                if (res.job_requisition) {
+                    frappe.show_alert({
+                        message: __("Created {0}", [res.job_requisition]),
+                        indicator: "green",
+                    });
+                    frappe.set_route("Form", "Job Requisition", res.job_requisition);
+                }
+            },
+        });
+    } else if (key === "activate") {
+        prompt_activate(frm);
+    }
+}
+
+// Activate = link a Job Opening and move the requisition to Approved Active.
+// Same shape as the list view's "Activate Job Requisition" action.
+function prompt_activate(frm) {
+    frappe.prompt(
+        [
+            {
+                fieldname: "job_opening",
+                label: __("Job Opening"),
+                fieldtype: "Link",
+                options: "Job Opening",
+                reqd: 1,
+                get_query: () => {
+                    const filters = { status: "Open" };
+                    if (frm.doc.company) filters.company = frm.doc.company;
+                    if (frm.doc.designation) filters.designation = frm.doc.designation;
+                    if (frm.doc.department) filters.department = frm.doc.department;
+                    return { filters };
+                },
+            },
+        ],
+        (values) => {
+            frappe.call({
+                method: "recruitment.api.job_requisition.activate_job_requisition",
+                args: { job_requisition: frm.doc.name, job_opening: values.job_opening },
+                freeze: true,
+                freeze_message: __("Activating…"),
+                callback: () => {
+                    frappe.show_alert({
+                        message: __("Requisition activated"),
+                        indicator: "green",
+                    });
+                    frm.reload_doc();
+                },
+            });
+        },
+        __("Activate Requisition"),
+        __("Activate")
+    );
+}
+
+function prompt_with_reason(frm, method, title, freeze_message, description) {
+    frappe.prompt(
+        [
+            {
+                fieldname: "reason",
+                label: __("Reason"),
+                fieldtype: "Small Text",
+                description: __("Recorded on the requisition's timeline.") + " " + description,
+            },
+        ],
+        (values) => {
+            frappe.call({
+                method: method,
+                args: { job_requisition: frm.doc.name, reason: values.reason },
+                freeze: true,
+                freeze_message: freeze_message,
+                callback: () => {
+                    frappe.show_alert({ message: title, indicator: "orange" });
+                    frm.reload_doc();
+                },
+            });
+        },
+        title,
+        title
+    );
+}
+
 function apply_requisition_edit_locks(frm) {
     if (frm.is_new()) {
         return; // a brand-new requisition is always fully editable

@@ -1761,8 +1761,8 @@ def create_job_requisition(payload=None):
 
 # Status buckets used by the list-view summary cards.
 # Edit here if the workflow ever introduces new states.
-ACTIVE_STATUSES = ("Open & Approved", "In-Progress", "Job Opening Created")
-CLOSED_STATUSES = ("Filled", "Cancelled", "Rejected")
+ACTIVE_STATUSES = ("Open & Approved", "Approved Active")
+CLOSED_STATUSES = ("Filled", "Archived", "Cancelled", "Rejected")
 
 
 def _compute_global_summary(employee=None, requested_by_override=None):
@@ -3453,14 +3453,27 @@ def get_replacement_employee_options(
 
 @frappe.whitelist()
 def activate_job_requisition(job_requisition, job_opening):
-    """List-view "Activate Job Requisition" action — associate an existing Job
-    Opening with the requisition (mirrors HRMS's "Associate Job Opening": stamps
-    job_requisition + vacancies onto the chosen Job Opening) AND marks the
-    requisition itself as "Open & Approved"."""
+    """"Activate Job Requisition" — associate an existing Job Opening with the
+    requisition (mirrors HRMS's "Associate Job Opening": stamps job_requisition +
+    vacancies onto the chosen Job Opening) and move it to "Approved Active".
+
+    Activation is the Approved Draft -> Approved Active step in the requisition
+    status matrix: approval is already done, and linking the opening is what makes
+    the positions available to link to a candidate when raising an offer. Each
+    position row moves from Draft to Open at the same time, so the position status
+    tracks the requisition rather than sitting at its creation default."""
     if not job_requisition or not job_opening:
         frappe.throw(frappe._("Both Job Requisition and Job Opening are required."))
     frappe.has_permission("Job Requisition", "write", doc=job_requisition, throw=True)
     frappe.has_permission("Job Opening", "write", doc=job_opening, throw=True)
+
+    # Same gate the form buttons read, so the list-view action and any direct API
+    # call are held to the requisition/position status matrix too. Imported here
+    # rather than at module scope: requisition_status is a sibling API module and
+    # a top-level import would couple the two files' load order.
+    from recruitment.api.requisition_status import ACTIVATE, _require_action
+
+    _require_action(job_requisition, ACTIVATE)
 
     # Strict one opening <-> one requisition:
     # (a) the opening must not already belong to a *different* requisition.
@@ -3488,11 +3501,22 @@ def activate_job_requisition(job_requisition, job_opening):
     # associate_job_opening is inherited from the HRMS JobRequisition class.
     doc.associate_job_opening(job_opening)
 
-    # Activating a requisition opens it up.
-    if doc.status != "Open & Approved":
-        frappe.db.set_value("Job Requisition", job_requisition, "status", "Open & Approved")
+    # Activating a requisition opens it up: the requisition becomes Approved
+    # Active and every position that was still Draft becomes Open. Positions
+    # already Filled / On Hold / Archived are left as they are.
+    if doc.status != "Approved Active":
+        frappe.db.set_value("Job Requisition", job_requisition, "status", "Approved Active")
+    for row in doc.get("custom_position_summary") or []:
+        if (row.status or "Draft") == "Draft":
+            frappe.db.set_value(
+                "Job Requisition Position", row.name, "status", "Open", update_modified=False
+            )
 
-    return {"job_requisition": job_requisition, "job_opening": job_opening, "status": "Open & Approved"}
+    return {
+        "job_requisition": job_requisition,
+        "job_opening": job_opening,
+        "status": "Approved Active",
+    }
 
 
 # ---------------------------------------------------------------------------

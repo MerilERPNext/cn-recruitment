@@ -15,6 +15,9 @@
 
 	const STATUS_COLORS = {
 		"Pending": "#F59E0B",
+		// Draft is the "sent back for rework" state — orange, matching the
+		// React requisition list so the same status reads the same in both UIs.
+		"Draft": "#F97316",
 		"Open & Approved": "#10B981",
 		"Rejected": "#EF4444",
 		"Filled": "#3B82F6",
@@ -98,6 +101,34 @@
 		if (months < 12) return future ? `in ${months}mo` : `${months}mo ago`;
 		const years = Math.floor(months / 12);
 		return future ? `in ${years}y` : `${years}y ago`;
+	}
+
+	// Bulk "Move to Draft" runs each requisition in its own savepoint, so a batch
+	// can come back part-moved. Show every bucket — a silent "done" would hide the
+	// rows that were refused (Filled, Cancelled, no permission).
+	function reportBulkDraftResult(res) {
+		const moved = res.moved || [], skipped = res.skipped || [], failed = res.failed || [];
+		if (moved.length && !skipped.length && !failed.length) {
+			frappe.show_alert({
+				message: __("{0} requisition(s) moved to Draft", [moved.length]),
+				indicator: "orange",
+			});
+			return;
+		}
+		const lines = [];
+		if (moved.length) lines.push(`<p><b>${__("Moved to Draft")}:</b> ${escapeHtml(moved.join(", "))}</p>`);
+		if (skipped.length) lines.push(`<p><b>${__("Already in Draft")}:</b> ${escapeHtml(skipped.join(", "))}</p>`);
+		if (failed.length) {
+			const rows = failed
+				.map((f) => `<li><b>${escapeHtml(f.name)}</b> — ${escapeHtml(f.error)}</li>`)
+				.join("");
+			lines.push(`<p><b>${__("Not moved")}:</b></p><ul>${rows}</ul>`);
+		}
+		frappe.msgprint({
+			title: __("Move to Draft"),
+			indicator: failed.length ? "orange" : "green",
+			message: lines.join(""),
+		});
 	}
 
 	let state = { activeTab: "All", tabCounts: {}, statusOptions: [] };
@@ -547,6 +578,38 @@
 					},
 					__("Activate Job Requisition"),
 					__("Activate"),
+				);
+			});
+
+			// "Move to Draft" — pull the selected requisitions back out of a running
+			// approval so they can be reworked. Works over a mixed selection: rows
+			// already in Draft are reported as skipped rather than failing the batch.
+			listview.page.add_action_item(__("Move to Draft"), () => {
+				const selected = listview.get_checked_items();
+				if (!selected.length) {
+					frappe.msgprint(__("Select at least one Job Requisition.")); return;
+				}
+				const names = selected.map((row) => row.name);
+				frappe.prompt(
+					[{
+						fieldname: "reason", label: __("Reason"), fieldtype: "Small Text",
+						description: __("Recorded on each requisition's timeline. Any approval currently in progress will be revoked."),
+					}],
+					(values) => {
+						frappe.call({
+							method: "recruitment.api.requisition_status.bulk_move_to_draft",
+							args: { job_requisitions: names, reason: values.reason },
+							freeze: true,
+							freeze_message: __("Moving to Draft…"),
+							callback: (r) => {
+								const res = (r && r.message) || {};
+								reportBulkDraftResult(res);
+								listview.refresh();
+							},
+						});
+					},
+					__("Move {0} Requisition(s) to Draft", [names.length]),
+					__("Move to Draft"),
 				);
 			});
 		},

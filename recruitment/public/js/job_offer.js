@@ -584,6 +584,18 @@ function recruitment_offer_letter_styles() {
             fillFromRequisition(frm);
         },
 
+        onload(frm) {
+            // "Create Job Offer" on the Job Applicant hiring workflow routes to a
+            // NEW Job Offer with job_applicant already set on the local doc. Frappe
+            // fires no change event for a value present before the form renders, so
+            // job_applicant() above never runs and the requisition (and therefore
+            // the position picker) never appears. Resolve it here for exactly that
+            // case: a fresh doc that has a candidate but no requisition yet.
+            if (frm.is_new() && frm.doc.job_applicant && !frm.doc.custom_job_requisition) {
+                fillFromRequisition(frm);
+            }
+        },
+
         refresh(frm) {
             // "Send Job Offer" existed only as a list-view bulk action, so sending a
             // single offer meant going back to the list. Same action, same server
@@ -639,3 +651,160 @@ function recruitment_offer_letter_styles() {
         },
     });
 })();
+
+// ---------------------------------------------------------------------------
+// Position picker — which position on the requisition this offer consumes.
+//
+// An offer is always made against one specific position, not just against the
+// requisition. The recruiter picks it here; the server then holds that position
+// at Filled for as long as the offer is live and hands it back to Open when the
+// offer is withdrawn, rejected or cancelled
+// (recruitment.api.offer_position.sync_offer_position).
+//
+// The dialog opens by itself on a new offer once the requisition is known, so
+// picking is part of raising the offer rather than something to remember later.
+// Requisitions with no position rows (campus / fresher, which budget headcount by
+// region instead) simply have nothing to pick and the button stays hidden.
+// ---------------------------------------------------------------------------
+frappe.ui.form.on("Job Offer", {
+    refresh(frm) {
+        maybe_offer_position_ui(frm);
+    },
+
+    custom_job_requisition(frm) {
+        maybe_offer_position_ui(frm);
+    },
+});
+
+// The button and the automatic prompt both only make sense on a requisition that
+// itemises its positions. Campus / fresher requisitions budget openings per
+// region and have nothing to pick, so neither appears for them — the server says
+// which kind this is (requires_position).
+function maybe_offer_position_ui(frm) {
+    if (!frm.doc.custom_job_requisition) return;
+    if (frm.__position_ui_done === frm.doc.custom_job_requisition) return;
+    frm.__position_ui_done = frm.doc.custom_job_requisition;
+
+    frappe.call({
+        method: "recruitment.api.offer_position.requires_position",
+        args: { requisition: frm.doc.custom_job_requisition },
+        callback: (r) => {
+            if (!r || !r.message) return;
+            frm.add_custom_button(__("Select Position"), () => choose_offer_position(frm));
+            // Coming from the hiring workflow the position is already chosen, so
+            // this only fires for an offer started straight from the Job Offer
+            // list — where nothing has asked yet.
+            if (frm.doc.docstatus === 0 && !frm.doc.custom_requisition_position) {
+                choose_offer_position(frm, { silent_if_none: true });
+            }
+        },
+    });
+}
+
+function choose_offer_position(frm, opts) {
+    opts = opts || {};
+    frappe.call({
+        method: "recruitment.api.offer_position.get_available_positions",
+        args: {
+            job_requisition: frm.doc.custom_job_requisition,
+            job_offer: frm.is_new() ? null : frm.doc.name,
+            // Campus requisitions budget headcount per region; the candidate's
+            // opening decides which region's positions may be offered.
+            job_applicant: frm.doc.job_applicant,
+        },
+        callback: (r) => {
+            const res = (r && r.message) || {};
+            const positions = res.positions || [];
+
+            if (!positions.length) {
+                // Never fail silently. The server always says why the list is
+                // empty; on the automatic open that goes in a toast so it does
+                // not block the form, and on an explicit click it gets a modal.
+                const reason = res.reason || __("No position is available on this requisition.");
+                if (opts.silent_if_none) {
+                    frappe.show_alert({ message: reason, indicator: "orange" }, 10);
+                } else {
+                    frappe.msgprint({
+                        title: __("No Position Available"),
+                        indicator: "orange",
+                        message: reason,
+                    });
+                }
+                return;
+            }
+
+            const dialog = new frappe.ui.Dialog({
+                title: __("Select Position"),
+                fields: [
+                    {
+                        fieldname: "position",
+                        label: __("Position"),
+                        fieldtype: "Select",
+                        reqd: 1,
+                        options: positions.map((p) => ({ label: p.label, value: p.name })),
+                        default: (positions.find((p) => p.current) || positions[0]).name,
+                        description: __(
+                            "This position moves to Filled while the offer is live, and back to Open if the offer is withdrawn."
+                        ),
+                    },
+                ],
+                primary_action_label: __("Select"),
+                primary_action(values) {
+                    const chosen = positions.find((p) => p.name === values.position);
+                    frm.set_value("custom_requisition_position", values.position);
+                    frm.set_value("custom_position_label", chosen ? chosen.label : "");
+                    dialog.hide();
+                    frappe.show_alert({
+                        message: __("Position set to {0}", [chosen ? chosen.label : values.position]),
+                        indicator: "green",
+                    });
+                },
+            });
+            dialog.show();
+        },
+    });
+}
+
+// ---------------------------------------------------------------------------
+// Withdraw — pulls the offer back and releases its position to Open, which is
+// what lets a Filled requisition be archived again. Distinct from Rejected,
+// which means the candidate refused.
+// ---------------------------------------------------------------------------
+frappe.ui.form.on("Job Offer", {
+    refresh(frm) {
+        if (frm.is_new() || frm.doc.docstatus === 2) return;
+        if (["Withdrawn", "Accepted"].includes(frm.doc.status)) return;
+
+        frm.add_custom_button(__("Withdraw Offer"), () => {
+            frappe.prompt(
+                [
+                    {
+                        fieldname: "reason",
+                        label: __("Reason"),
+                        fieldtype: "Small Text",
+                        description: __(
+                            "Recorded on the offer's timeline. The position returns to Open and frees up the requisition's headcount."
+                        ),
+                    },
+                ],
+                (values) => {
+                    frappe.call({
+                        method: "recruitment.api.offer_position.withdraw_offer",
+                        args: { job_offer: frm.doc.name, reason: values.reason },
+                        freeze: true,
+                        freeze_message: __("Withdrawing…"),
+                        callback: () => {
+                            frappe.show_alert({
+                                message: __("Offer withdrawn"),
+                                indicator: "orange",
+                            });
+                            frm.reload_doc();
+                        },
+                    });
+                },
+                __("Withdraw Offer"),
+                __("Withdraw")
+            );
+        });
+    },
+});

@@ -31,8 +31,8 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Position Status",
-   "options": "Pending\nIn Progress\nFilled\nOn Hold\nCancelled",
-   "default": "Pending"
+   "options": "Draft\nOpen\nOn Hold\nFilled\nArchived",
+   "default": "Draft"
   },
   {
    "fieldname": "job_id",

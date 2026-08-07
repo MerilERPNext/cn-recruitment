@@ -287,13 +287,19 @@ def _doj_not_joined(doc):
     if doc.get("job_offer"):
         frappe.db.set_value("Job Offer", doc.job_offer, "docstatus", 2)
 
-    # Reopen the Job Requisition via Job Opening.
-    if doc.get("job_applicant"):
-        opening = frappe.db.get_value("Job Applicant", doc.job_applicant, "job_title")
-        if opening:
-            req_name = frappe.db.get_value("Job Opening", opening, "job_requisition")
-            if req_name:
-                frappe.db.set_value("Job Requisition", req_name, "status", "Open Requisition")
+        # A candidate who never joined is the same event as a withdrawn offer:
+        # the position they were holding has to go back to Open so the headcount
+        # is available again and the requisition can be worked (or archived).
+        # Cancelling via db.set_value above deliberately skips on_cancel, so the
+        # release is invoked directly rather than left to the doc_event.
+        try:
+            from recruitment.api.offer_position import sync_offer_position
+
+            sync_offer_position(frappe.get_doc("Job Offer", doc.job_offer))
+        except Exception:
+            frappe.log_error(
+                frappe.get_traceback(), "Not Joined: releasing the offer's position failed"
+            )
 
     # Cancel the Onboarding (docstatus=2). boarding_status doesn't have a
     # "Cancelled" option in standard HRMS, so docstatus is the right place to

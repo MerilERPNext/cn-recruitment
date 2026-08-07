@@ -35,8 +35,11 @@ JOB_OFFER = "Job Offer"
 JOB_OPENING = "Job Opening"
 JOB_REQUISITION = "Job Requisition"
 
-# An offer stops counting against headcount only once it is cancelled or refused.
+# An offer stops counting against headcount only once it is cancelled, refused by
+# the candidate (Rejected) or pulled by the company (Withdrawn). Withdrawing is
+# also what releases the position it held — see recruitment.api.offer_position.
 REJECTED_STATUS = "Rejected"
+INACTIVE_STATUSES = (REJECTED_STATUS, "Withdrawn")
 
 
 def _allow_multiple_offers() -> bool:
@@ -61,7 +64,7 @@ def _active_offer_for_applicant(job_applicant: str, exclude_offer: str | None = 
 	filters = {
 		"job_applicant": job_applicant,
 		"docstatus": ["!=", 2],
-		"status": ["!=", REJECTED_STATUS],
+		"status": ["not in", INACTIVE_STATUSES],
 	}
 	if exclude_offer:
 		filters["name"] = ["!=", exclude_offer]
@@ -93,9 +96,9 @@ def _offers_against(requisition: str, region: str | None, exclude_offer: str | N
 		.select(Count("*"))
 		.where(Opening.job_requisition == requisition)
 		.where(Offer.docstatus != 2)
-		# Coalesce, not `!=`: in SQL a NULL status would fail a plain inequality
-		# and quietly stop counting against headcount.
-		.where(Coalesce(Offer.status, "") != REJECTED_STATUS)
+		# Coalesce, not a plain NOT IN: in SQL a NULL status would fail the
+		# comparison and quietly stop counting against headcount.
+		.where(Coalesce(Offer.status, "").notin(INACTIVE_STATUSES))
 	)
 	if region:
 		query = query.where(Opening.custom_region == region)
