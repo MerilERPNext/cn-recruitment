@@ -19,37 +19,44 @@ const getStatusVariant = (status?: string): BadgeVariant => {
   return "info";
 };
 
-interface EmployeeGoalsListProps {  
+interface EmployeeGoalsListProps {
   employeeId?: string;
+  onSelectGoal?: (id: string) => void;
 }
 
 export const EmployeeGoalsList = ({
   employeeId,
 }: EmployeeGoalsListProps) => {
-  const {
-    data: myGoalsResponse,
-    isLoading: isGoalsLoading,
-    isError: isGoalsError,
-    error: goalsError,
-    refetch: refetchGoals,
-  } = useMyGoals(employeeId ? { employee: employeeId } : undefined);
 
-  const effectiveGoals: MyGoalsGoal[] = useMemo(
-    () =>  myGoalsResponse?.data?.goals ?? [],
-    [myGoalsResponse]
-  );
 
   const { data: currentEmployee } = useCurrentEmployeeDetails({
     logged_in_employee_details: true,
   });
+  const {
+    data: myGoalsResponse,
+    isLoading,
+    isError,
+    error,
+    refetch,
+  } = useMyGoals(
+    employeeId
+      ? { employee: employeeId }
+      : currentEmployee?.name
+      ? { employee: currentEmployee.name }
+      : undefined
+  );
   const { mutate: employeCheckIn, isPending } = useEmployeeGoalsCheckIn();
+  const goalsList: MyGoalsGoal[] = useMemo(
+    () => myGoalsResponse?.data?.goals ?? [],
+    [myGoalsResponse]
+  );
   const [loadingGoalKey, setLoadingGoalKey] = useState<string | null>(null);
 
   const submitCheckIns = (goalKey: string) => {
     setLoadingGoalKey(goalKey);
     employeCheckIn(
       {
-        employee: employeeId ?? currentEmployee?.name ??"",
+        employee: employeeId ?? currentEmployee?.name ?? "",
         goal: goalKey,
       },
       {
@@ -66,15 +73,15 @@ export const EmployeeGoalsList = ({
     );
   };
 
-  if (isGoalsLoading) {
+  if (isLoading) {
     return <EmployeeGoalsSkeleton />;
   }
 
-  if (isGoalsError) {
-    return <ErrorState message={goalsError?.message} onRetry={refetchGoals} />;
+  if (isError) {
+    return <ErrorState message={error?.message} onRetry={refetch} />;
   }
 
-  if (!effectiveGoals || effectiveGoals.length === 0) {
+  if (!goalsList || goalsList.length === 0) {
     return (
       <div className="text-center py-12">
         <Typography variant="body" className="text-gray-500">
@@ -86,15 +93,16 @@ export const EmployeeGoalsList = ({
 
   return (
     <div className="space-y-4 max-w-4xl mx-auto">
-      {effectiveGoals.map((goal) => {
-        const isGoalPending = isPending && loadingGoalKey === goal.goal_key;
+      {goalsList.map((goal) => {
+        const goalIdentifier = goal?.goal_key || goal?.goal || goal?.name || "";
+        const isGoalPending = isPending && loadingGoalKey === goalIdentifier;
         const currentStatus = goal?.goal_status || goal?.status;
         const statusLower = (currentStatus || "").toLowerCase();
         const isPendingStatus = statusLower === "pending" || statusLower === "draft";
 
         return (
           <Card
-            key={goal?.goal_key || goal.goal || goal.name}
+            key={goalIdentifier}
             className="p-3.5 sm:p-5 border border-gray-100 hover:border-blue-300 hover:shadow-md transition-all bg-white group"
           >
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-6">
@@ -152,7 +160,7 @@ export const EmployeeGoalsList = ({
                       toast.error("Check-ins can be requested only on approved goals.");
                       return;
                     }
-                    submitCheckIns(goal.goal_key ?? goal.goal) ;
+                    submitCheckIns(goalIdentifier);
                   }}
                 >
                   {isGoalPending ? (
