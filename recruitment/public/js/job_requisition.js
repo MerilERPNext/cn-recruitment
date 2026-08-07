@@ -159,6 +159,21 @@ function add_requisition_action_buttons(frm) {
                 }
             });
 
+            // Standard HRMS adds "Create Job Opening" / "Associate Job Opening"
+            // only when status === "Open & Approved". That value no longer
+            // exists (the client's wording is "Approved Draft"), so core's
+            // buttons never appear — re-add them here against the real status.
+            // "Create Job Opening" still routes through HRMS's mapper, which
+            // hooks.py already redirects to our own make_job_opening.
+            if (res.requisition_status === "Approved Draft") {
+                frm.add_custom_button(__("Create Job Opening"), () => {
+                    frappe.model.open_mapped_doc({
+                        method: "hrms.hr.doctype.job_requisition.job_requisition.make_job_opening",
+                        frm: frm,
+                    });
+                }, group);
+            }
+
             if (verdicts.activate && verdicts.activate.allowed) {
                 frm.page.set_inner_btn_group_as_primary(group);
             }

@@ -134,9 +134,9 @@ const Requisition = () => {
       case "approved":
       case "approved active":
       case "open":
-      case "open & approved":
+      case "approved draft":
         return "bg-green-100 text-green-700";
-      case "pending":
+      case "approval pending":
       case "approval pending":
         return "bg-yellow-100 text-yellow-700";
       case "draft":
@@ -145,7 +145,7 @@ const Requisition = () => {
       case "rejected":
       case "cancelled":
         return "bg-red-100 text-red-700";
-      case "filled":
+      case "auto archived":
       case "closed":
         return "bg-gray-100 text-gray-700";
       default:
@@ -558,7 +558,7 @@ const Requisition = () => {
       fieldname: "status",
       label: "Status",
       fieldtype: "Select",
-      options: ["Draft", "Open & Approved", "Approved Active", "Rejected", "Filled", "Archived", "On Hold", "Cancelled"],
+      options: ["Draft", "Approval Pending", "Approved Draft", "Approved Active", "Rejected", "Auto Archived", "Archived", "On Hold", "Cancelled"],
     },
     {
       fieldname: "department",

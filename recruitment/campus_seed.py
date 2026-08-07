@@ -240,7 +240,7 @@ def run(regions_to_use=4, total_institutes=10, candidates_per_institute=50, appl
                     req.department = department
                 req.no_of_positions = 10
                 req.expected_compensation = 400000
-                req.status = "Open & Approved"
+                req.status = "Approved Draft"
                 req.requested_by = employee
                 req.posting_date = today()
                 req.expected_by = add_days(today(), 45)

@@ -5,10 +5,15 @@ ACTION_MATRIX is the single source of truth: the form asks it which buttons to
 draw, and every endpoint re-checks it, so an API call cannot bypass a hidden
 button.
 
-Three status values are kept because standard HRMS keys off them:
-    Approval Pending -> "Pending"          (hrms staffing_plan.js)
-    Approved draft   -> "Open & Approved"  (hrms Create/Associate Job Opening)
-    Auto Archived    -> "Filled"           (hrms set_time_to_fill, time-to-fill card)
+Status values are the client's exact wording. Standard HRMS hard-codes three of
+its own ("Pending", "Open & Approved", "Filled"), so the couplings to those are
+re-pointed rather than left to break:
+
+    set_time_to_fill      -> overridden in customizations.job_requisition
+    get_avg_time_to_fill  -> overridden via hooks.override_whitelisted_methods
+    Create / Associate Job Opening buttons -> re-added in public/js/job_requisition.js
+    validate_duplicates, list-view indicator -> already fully overridden by us
+    staffing_plan.js requisition picker -> unused (no Staffing Plan records)
 
 Moving to Draft writes status with db.set_value (no doc_events) so it can never
 start an approval, and revokes whatever approval is in flight first. Re-running
@@ -23,10 +28,11 @@ JOB_REQUISITION_POSITION = "Job Requisition Position"
 POSITION_SUMMARY_FIELD = "custom_position_summary"
 
 DRAFT_STATUS = "Draft"
-APPROVAL_PENDING_STATUS = "Pending"
-APPROVED_DRAFT_STATUS = "Open & Approved"
+APPROVAL_PENDING_STATUS = "Approval Pending"
+APPROVED_DRAFT_STATUS = "Approved Draft"
 APPROVED_ACTIVE_STATUS = "Approved Active"
 ARCHIVED_STATUS = "Archived"
+AUTO_ARCHIVED_STATUS = "Auto Archived"
 
 POSITION_DRAFT = "Draft"
 POSITION_OPEN = "Open"
@@ -38,22 +44,22 @@ STATUS_ACTION_ROLES = ("System Manager", "HR Manager", "HR User", "Recruiter Adm
 LIVE_TRACKER_STATUSES = ("Pending", "Send Back")
 
 # Statuses at which positions exist and are worth materialising / tracking.
-POSITIONED_STATUSES = (APPROVED_DRAFT_STATUS, APPROVED_ACTIVE_STATUS, "Filled")
+POSITIONED_STATUSES = (APPROVED_DRAFT_STATUS, APPROVED_ACTIVE_STATUS, AUTO_ARCHIVED_STATUS)
 
 
 # ---------------------------------------------------------------------------
 # The action matrix
 # ---------------------------------------------------------------------------
-#   Requisition status       Position   Dup  Arch  Draft  Activate
-#   Draft                    -           Y    Y     N      N
-#   Pending (Appr. Pending)  -           Y    Y     Y      N
-#   Rejected                 -           Y    N     N      N
-#   Open & Approved          Draft       Y    Y     Y      Y
-#   Approved Active          Open        Y    Y     Y      N
-#   Approved Active          On Hold     Y    Y     Y      N
-#   Approved Active          Filled      Y    N     N      N
-#   Filled (Auto Archived)   Filled      Y    N     N      N
-#   Archived                 Archived    Y    N     N      N
+#   Requisition status   Position   Dup  Arch  Draft  Activate
+#   Draft                -           Y    Y     N      N
+#   Approval Pending     -           Y    Y     Y      N
+#   Rejected             -           Y    N     N      N
+#   Approved Draft       Draft       Y    Y     Y      Y
+#   Approved Active      Open        Y    Y     Y      N
+#   Approved Active      On Hold     Y    Y     Y      N
+#   Approved Active      Filled      Y    N     N      N
+#   Auto Archived        Filled      Y    N     N      N
+#   Archived             Archived    Y    N     N      N
 
 DUPLICATE = "duplicate"
 ARCHIVE = "archive"
@@ -84,7 +90,7 @@ ACTION_MATRIX = {
         None: _allow(duplicate=True, archive=True, move_to_draft=True),
         POSITION_FILLED: _allow(duplicate=True),
     },
-    "Filled": {None: _allow(duplicate=True)},
+    AUTO_ARCHIVED_STATUS: {None: _allow(duplicate=True)},
     ARCHIVED_STATUS: {None: _allow(duplicate=True)},
     # Not in the sheet but still valid Select options; treated as terminal.
     "On Hold": {None: _allow(duplicate=True)},

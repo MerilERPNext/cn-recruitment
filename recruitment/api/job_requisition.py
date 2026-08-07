@@ -1776,8 +1776,8 @@ def create_job_requisition(payload=None):
 
 # Status buckets used by the list-view summary cards.
 # Edit here if the workflow ever introduces new states.
-ACTIVE_STATUSES = ("Open & Approved", "Approved Active")
-CLOSED_STATUSES = ("Filled", "Archived", "Cancelled", "Rejected")
+ACTIVE_STATUSES = ("Approved Draft", "Approved Active")
+CLOSED_STATUSES = ("Auto Archived", "Archived", "Cancelled", "Rejected")
 
 
 def _compute_global_summary(employee=None, requested_by_override=None):
@@ -3302,8 +3302,10 @@ def _enforce_position_vacancy_type(doc, settings):
     )
 
 
-# Status at which a requisition counts as "approved" for the edit-after-approval gate.
-_REQUISITION_APPROVED_STATUS = "Open & Approved"
+# Edit-after-approval gate. A tuple, not one value: the old "Open & Approved"
+# meant both approved-and-awaiting-activation AND activated, so omitting either
+# here would silently unlock an activated requisition for editing.
+_REQUISITION_APPROVED_STATUSES = ("Approved Draft", "Approved Active")
 
 # Fields ignored when checking "did the user edit an approved requisition" — these
 # are workflow/derived/framework fields, not user business edits.
@@ -3355,13 +3357,13 @@ def _enforce_edit_after_approval(doc, settings):
     if settings.get("allow_editing_requisition_after_approval"):
         return
     before = doc.get_doc_before_save()
-    if not before or before.get("status") != _REQUISITION_APPROVED_STATUS:
+    if not before or before.get("status") not in _REQUISITION_APPROVED_STATUSES:
         return
     if _has_business_changes(doc, before):
         frappe.throw(
             _("This requisition is approved ({0}) and editing it is disabled. Enable "
               "'Allow Editing of Requisition & Job Positions after Approval' in Recruitment Settings.")
-            .format(_REQUISITION_APPROVED_STATUS)
+            .format(before.get("status"))
         )
 
 

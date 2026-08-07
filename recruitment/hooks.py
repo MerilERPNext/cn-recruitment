@@ -478,6 +478,8 @@ override_whitelisted_methods = {
     # HRMS's misplaced field_map. No JS/HRMS change — the existing button routes
     # through frappe.override_whitelisted_method during make_mapped_doc.
     "hrms.hr.doctype.job_requisition.job_requisition.make_job_opening": "recruitment.customizations.job_requisition.make_job_opening",
+    # HRMS's version filters on the retired status "Filled" -> card always 0.
+    "hrms.hr.doctype.job_requisition.job_requisition.get_avg_time_to_fill": "recruitment.customizations.job_requisition.get_avg_time_to_fill",
 }
 override_doctype_class = {
     "Employee Onboarding": "recruitment.customizations.employee_onboarding.overide_class.CustomEmployeeOnboarding",

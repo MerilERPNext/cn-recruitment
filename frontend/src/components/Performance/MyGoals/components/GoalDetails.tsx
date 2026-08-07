@@ -11,6 +11,7 @@ import useCurrentUser from '../../../../hooks/useCurrentUser';
 import type { GoalCheckInSentiment, GoalDetailKeyResult } from '../../../../types/goal';
 import FrappeAPI from '../../../../utils/frappeAPI';
 import { getPerformanceErrorMessage } from '../../../../services/performanceService';
+import { KRCheckInModal } from './KRCheckInModal';
 
 const CircularProgress = ({ score }: { score: number }) => {
   const radius = 36;
@@ -104,6 +105,16 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, onBack }) => {
 
   const [isEditingKRs, setIsEditingKRs] = React.useState(false);
   const [editingKRs, setEditingKRs] = React.useState<{ id: string; title: string; weightage: string; goal_key?: string }[]>([]);
+
+  const [selectedKRForCheckIn, setSelectedKRForCheckIn] = React.useState<{ kr: GoalDetailKeyResult; index: number } | null>(null);
+  const [isCheckInModalOpen, setIsCheckInModalOpen] = React.useState(false);
+
+  const handleOpenKRCheckInModal = (kr: GoalDetailKeyResult, index: number) => {
+    setSelectedKRForCheckIn({ kr, index });
+    setIsCheckInModalOpen(true);
+  };
+
+  
 
   React.useEffect(() => {
     if (goalResponse?.data) {
@@ -290,9 +301,9 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, onBack }) => {
               </div>
               
               {/* Title */}
-              <div>
-                <Typography variant="h3" className="mb-2 text-xl leading-tight sm:text-2xl">{goal.title || '-'}</Typography>
-                <Typography variant="bodySmall" className="text-gray-500">{goal.description || '-'}</Typography>
+              <div className="min-w-0">
+                <Typography variant="h3" className="mb-2 text-xl leading-tight sm:text-2xl break-words [word-break:break-word]">{goal.title || '-'}</Typography>
+                <Typography variant="bodySmall" className="text-gray-500 break-words [word-break:break-word]">{goal.description || '-'}</Typography>
               </div>
 
               {/* Meta grid: Owner, Start, End, Weightage */}
@@ -425,13 +436,26 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, onBack }) => {
                   goal.key_results.map((kr: GoalDetailKeyResult, idx: number) => (
                     <div key={kr.goal_key || idx} className="relative">
                       <div className="flex flex-col gap-2 mb-2 sm:flex-row sm:items-center sm:justify-between">
-                        <div className="flex min-w-0 items-start gap-3 sm:items-center">
-                          <Badge label={`KR ${idx + 1}`} variant="purple" size="sm" />
-                          <Typography variant="bodyMedium" className="font-medium leading-snug text-gray-900">{kr.title || '-'}</Typography>
+                        <div className="flex min-w-0 flex-1 items-start gap-3 sm:items-center">
+                          <div className="shrink-0">
+                            <Badge label={`KR ${idx + 1}`} variant="purple" size="sm" />
+                          </div>
+                          <Typography variant="bodyMedium" className="font-medium leading-snug text-gray-900 break-words [word-break:break-word]">{kr.title || '-'}</Typography>
                         </div>
-                        <div className="text-left sm:text-right">
-                          <Typography variant="bodyMedium" className="font-bold text-gray-900">{kr.achievement ?? 0}% Achieved</Typography>
-                          <Typography variant="caption" className="text-gray-500">Weightage: {kr.weightage ?? 0}%</Typography>
+                        <div className="flex items-center gap-3 text-left sm:text-right">
+                          <div>
+                            <Typography variant="bodyMedium" className="font-bold text-gray-900">{kr.achievement ?? 0}% Achieved</Typography>
+                            <Typography variant="caption" className="text-gray-500">Weightage: {kr.weightage ?? 0}%</Typography>
+                          </div>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            bgColor="text"
+                            className="text-xs border-blue-200 text-blue-600 hover:bg-blue-50 hover:border-blue-300 transition-colors shrink-0"
+                            onClick={() => handleOpenKRCheckInModal(kr, idx)}
+                          >
+                            Check in
+                          </Button>
                         </div>
                       </div>
                       <div className="w-full bg-gray-100 rounded-md h-2 overflow-hidden">
@@ -563,7 +587,7 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, onBack }) => {
                           <span className={`h-1.5 w-1.5 rounded-full ${sentimentStyles[checkIn.sentiment]?.dot ?? 'bg-gray-400'}`} />{checkIn.sentiment}
                         </span>
                       </div>
-                      {checkIn.note && <Typography variant="caption" className="mt-2 block whitespace-pre-wrap text-gray-600">{checkIn.note}</Typography>}
+                      {checkIn.note && <Typography variant="caption" className="mt-2 block whitespace-pre-wrap break-words [word-break:break-word] text-gray-600">{checkIn.note}</Typography>}
                       {checkIn.attachment && (
                         <a href={checkIn.attachment} target="_blank" rel="noreferrer" className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-blue-600 hover:text-blue-800">
                           <Paperclip className="h-3.5 w-3.5" />View attachment<ExternalLink className="h-3 w-3" />
@@ -584,6 +608,15 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, onBack }) => {
 
         </div>
       </div>
+
+      {/* KR Check-in Modal Popup */}
+      <KRCheckInModal
+        isOpen={isCheckInModalOpen}
+        onClose={() => setIsCheckInModalOpen(false)}
+        kr={selectedKRForCheckIn?.kr ?? null}
+        krIndex={selectedKRForCheckIn?.index}
+        initialStatus={goal.status || goal.goal_status}
+      />
     </div>
   );
 };

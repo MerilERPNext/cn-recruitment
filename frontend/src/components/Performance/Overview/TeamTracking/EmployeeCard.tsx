@@ -22,12 +22,21 @@ export const EmployeeCard = memo(({ emp, onSelect }: EmployeeCardProps): ReactEl
         {(emp.label || "")
           .split(" ").filter(Boolean).map((n) => n.charAt(0)).join("")}
       </div>
-      <Typography
-        variant="body"
-        className="font-medium text-gray-900 group-hover:text-blue-700 transition-colors"
-      >
-        {emp.label}
-      </Typography>
+    <div className="flex gap-3 items-center">
+        <Typography
+          variant="body"
+          className="font-medium text-gray-900 group-hover:text-blue-700 transition-colors"
+        >
+          {emp.label}
+          
+        </Typography>
+        {emp.id && (
+          <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-mono font-medium bg-slate-100 text-slate-600 border border-slate-200/80 group-hover:bg-blue-50 group-hover:text-blue-700 group-hover:border-blue-200/80 transition-colors">
+            {emp.id}
+          </span>
+        )}
+    </div>
+
     </div>
     <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-blue-500 transition-colors" />
   </Card>

@@ -14,13 +14,14 @@
 	const DOCTYPE = "Job Requisition";
 
 	const STATUS_COLORS = {
-		"Pending": "#F59E0B",
+		"Approval Pending": "#F59E0B",
 		// Draft is the "sent back for rework" state — orange, matching the
 		// React requisition list so the same status reads the same in both UIs.
 		"Draft": "#F97316",
-		"Open & Approved": "#10B981",
+		"Approved Draft": "#10B981",
+		"Approved Active": "#059669",
 		"Rejected": "#EF4444",
-		"Filled": "#3B82F6",
+		"Auto Archived": "#3B82F6",
 		"On Hold": "#9CA3AF",
 		"Cancelled": "#EF4444",
 	};

@@ -80,14 +80,16 @@ export const jobOpeningService = {
       
             console.log(`✅ Job opening created:`, createdJobOpening)
 
-      // Update requisition status to "Job Opening Created" only if we have a valid job opening
+      // Creating the opening IS activation: the requisition moves to Approved
+      // Active. ("Job Opening Created" was retired when statuses were renamed to
+      // the client's wording — writing it would store an invalid value.)
       if (createdJobOpening && createdJobOpening.name) {
         try {
           await FrappeAPI.callMethod("frappe.client.set_value", {
             doctype: "Job Requisition",
             name: params.job_requisition,
             fieldname: "status",
-            value: "Job Opening Created"
+            value: "Approved Active"
           });
           console.log("✅ Requisition status updated");
         } catch (statusError) {
