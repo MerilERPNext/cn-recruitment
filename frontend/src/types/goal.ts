@@ -86,7 +86,17 @@ export interface RequestCheckInPayload {
   due_date?: string;
   message?: string;
 }
-
+export interface LinkFieldOption {
+  id: string;
+  label: string;
+}
+export interface LinkFieldOptionsData {
+  status?: string;
+  doctype?: string;
+  title_field?: string;
+  total?: number;
+  results: LinkFieldOption[];
+}
 export interface RequestCheckInRequest {
   payload: RequestCheckInPayload;
 }
