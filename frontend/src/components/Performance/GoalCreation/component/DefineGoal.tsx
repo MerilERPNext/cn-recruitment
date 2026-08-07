@@ -61,7 +61,6 @@ const DefineGoal = ({ goalType, formConfig, onGoalsChange }: DefineGoalProps) =>
    
     const defaultDepartment = { label: 'Select', value: '' };
     const defaultDesignation = { label: 'Select', value: '' };
-console.log(draftGoals,"[[[[[[[[[[[[]]]]]]]]]]]]]]]]]]]")
     const { data: currentEmployee } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
     const currentCompany = currentEmployee?.company;
 
