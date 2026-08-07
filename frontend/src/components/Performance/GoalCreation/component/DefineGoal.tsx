@@ -36,6 +36,7 @@ export interface GoalItem {
     selectedDesignation: DesignationSelectOption;
     startDate: string;
     endDate: string;
+    locked?:boolean
     keyResults: KeyResult[];
     isCollapsed: boolean;
 }
@@ -67,7 +68,6 @@ const DefineGoal = ({ goalType, formConfig, onGoalsChange }: DefineGoalProps) =>
 
     const minimumKeyResults = formConfig.limits?.min_krs ?? 1;
     const maximumKeyResults = formConfig.limits?.max_krs ?? null;
-
     const [goals, setGoals] = useState<GoalItem[]>(() => {
         if (draftGoals && draftGoals.length > 0) {
             return draftGoals.map((draft, idx) => ({

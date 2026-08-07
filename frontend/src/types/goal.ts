@@ -405,6 +405,7 @@ export interface GoalRepositoryGoal {
   department:string;
   designation:string;
   category: string;
+  locked:boolean;
   scorecard_pillar: string | null;
   weightage: number;
   key_results: KeyResult[];

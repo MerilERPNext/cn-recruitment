@@ -90,6 +90,7 @@ const GoalLibraryPopup = ({ onClose, onUseTemplate }: GoalLibraryPopupProps) => 
                     category: g.category,
                     designation: g.designation,
                     department: g.department,
+                    locked:g.locked,
                     scorecard_pillar: g.scorecard_pillar,
                     weightage: g.weightage,
                     key_results: Array.isArray(g.key_results) ? g.key_results.map((kr: KeyResult) => ({
