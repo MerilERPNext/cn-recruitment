@@ -5,7 +5,7 @@ import { useTargetUser } from "../../context/ViewedUserContext";
 import { useCurrentEmployeeDetails } from "../../hooks/useEmployee";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import { useTaxSheetPayrollPriodsData } from "../../hooks/useTaxSheet";
-import { SalaryComponent, AmountComponent } from "../../types/ctc";
+import { AmountComponent } from "../../types/ctc";
 import { NoDataFound } from "../shared/atoms/NoDataFound";
 import CustomDropdown from "../shared/CustomDropdown";
 import ShowHideButton from "./ui/ShowHideButton";
@@ -205,6 +205,25 @@ const CTCSalaryUI = () => {
     </div>
   );
 
+  type CombinedComponent = {
+    component: string;
+    amount?: number;
+    annual_amount: number;
+    monthly_amount?: number;
+    type?: string;
+  };
+
+  const allComponents: CombinedComponent[] = salarySlip ? [
+    ...(salarySlip.earning_part_of_ctc || []),
+    ...(salarySlip.fixed_gross || []).map((i: AmountComponent) => ({ ...i, type: "Sub Total" })),
+    ...(salarySlip.deduction_part_of_ctc || []),
+    ...(salarySlip.reimbursements_part_of_ctc || []),
+    ...(salarySlip.fixed_ctc || []).map((i: AmountComponent) => ({ ...i, type: "Sub Total" })),
+    ...(salarySlip.variable_pay_include_ctc || []),
+    ...(salarySlip.variable_pay_exclude_ctc || []),
+    ...(salarySlip.total_final_ctc || []).map((i: AmountComponent) => ({ ...i, type: "Total" })),
+  ] : [];
+
   return (
     <div className="min-h-screen bg-app font-brand flex flex-col">
       <Header />
@@ -345,13 +364,13 @@ const CTCSalaryUI = () => {
                         </tr>
                       </thead>
                       <tbody>
-                        {salarySlip?.earning_part_of_ctc?.map(
-                          (component: SalaryComponent, index: number) => (
+                        {allComponents.map(
+                          (component: CombinedComponent, index: number) => (
                             <tr key={`${component.component}-${index}`}>
                               <td className="py-4 px-4 border-none card-subtitle">
                                 <div className="flex items-center gap-2">
-                                  <div className="w-2 h-2 rounded-full bg-blue-400"></div>
-                                  <span className="font-medium text-gray-900">
+                                  <div className={`w-2 h-2 rounded-full ${component.type === 'Total' ? 'bg-green-400' : 'bg-blue-400'}`}></div>
+                                  <span className={`font-medium ${component.type === 'Total' || component.type === 'Sub Total' ? 'text-gray-900 font-bold' : 'text-gray-900'}`}>
                                     {component.component}
                                   </span>
                                 </div>
@@ -362,17 +381,19 @@ const CTCSalaryUI = () => {
                                     ? "bg-red-50 text-red-700 border border-red-200"
                                     : component.type === "Reimbursement"
                                       ? "bg-orange-50 text-orange-700 border border-orange-200"
-                                      : "bg-blue-50 text-blue-700 border border-blue-200"
+                                      : component.type === "Total" || component.type === "Sub Total"
+                                        ? "bg-gray-50 text-gray-700 border border-gray-200"
+                                        : "bg-blue-50 text-blue-700 border border-blue-200"
                                     }`}
                                 >
-                                  {component.type}
+                                  {component.type || "Component"}
                                 </span>
                               </td>
                               <td className="py-4 px-4 text-right font-medium text-gray-900 border-none">
-                                {formatCurrency(component.amount)}
+                                {(component.amount !== undefined || component.monthly_amount !== undefined) ? formatCurrency(component.amount ?? component.monthly_amount ?? 0) : "-"}
                               </td>
-                              <td className="py-4 px-4 text-right font-bold text-blue-600 border-none">
-                                {formatCurrency(component.annual_amount)}
+                              <td className={`py-4 px-4 text-right font-bold border-none ${component.type === 'Total' ? 'text-green-600 text-lg' : 'text-blue-600'}`}>
+                                {formatCurrency(component.annual_amount || 0)}
                               </td>
                             </tr>
                           ),
@@ -382,16 +403,16 @@ const CTCSalaryUI = () => {
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    {salarySlip?.earning_part_of_ctc?.map(
-                      (component: SalaryComponent, index: number) => (
+                    {allComponents.map(
+                      (component: CombinedComponent, index: number) => (
                         <div
                           key={`${component.component}-mobile-${index}`}
                           className="bg-gradient-to-br from-gray-50 to-white p-4 rounded-lg border border-gray-200"
                         >
                           <div className="flex items-start justify-between mb-3">
                             <div className="flex items-center gap-2">
-                              <div className="w-2 h-2 rounded-full bg-blue-400"></div>
-                              <h4 className="font-semibold text-gray-900">
+                              <div className={`w-2 h-2 rounded-full ${component.type === 'Total' ? 'bg-green-400' : 'bg-blue-400'}`}></div>
+                              <h4 className={`font-semibold ${component.type === 'Total' || component.type === 'Sub Total' ? 'text-gray-900 font-bold' : 'text-gray-900'}`}>
                                 {component.component}
                               </h4>
                             </div>
@@ -400,10 +421,12 @@ const CTCSalaryUI = () => {
                                 ? "bg-red-50 text-red-700 border border-red-200"
                                 : component.type === "Reimbursement"
                                   ? "bg-orange-50 text-orange-700 border border-orange-200"
-                                  : "bg-blue-50 text-blue-700 border border-blue-200"
+                                  : component.type === "Total" || component.type === "Sub Total"
+                                    ? "bg-gray-50 text-gray-700 border border-gray-200"
+                                    : "bg-blue-50 text-blue-700 border border-blue-200"
                                 }`}
                             >
-                              {component.type}
+                              {component.type || "Component"}
                             </span>
                           </div>
                           <div className="space-y-2">
@@ -412,15 +435,15 @@ const CTCSalaryUI = () => {
                                 Monthly
                               </span>
                               <span className="text-sm font-semibold text-gray-900">
-                                {formatCurrency(component.amount)}
+                                {(component.amount !== undefined || component.monthly_amount !== undefined) ? formatCurrency(component.amount ?? component.monthly_amount ?? 0) : "-"}
                               </span>
                             </div>
                             <div className="flex justify-between items-center pt-2 border-t border-gray-100">
                               <span className="text-xs text-gray-500">
                                 Annual
                               </span>
-                              <span className="text-base font-bold text-blue-600">
-                                {formatCurrency(component.annual_amount)}
+                              <span className={`text-base font-bold ${component.type === 'Total' ? 'text-green-600 text-lg' : 'text-blue-600'}`}>
+                                {formatCurrency(component.annual_amount || 0)}
                               </span>
                             </div>
                           </div>
@@ -430,8 +453,7 @@ const CTCSalaryUI = () => {
                   </div>
                 )}
 
-                {(!salarySlip?.earning_part_of_ctc ||
-                  salarySlip.earning_part_of_ctc.length === 0) && (
+                {(!allComponents || allComponents.length === 0) && (
                     <NoDataFound
                       title="No Breakdown Available"
                       subtitle="No component breakdown available."
