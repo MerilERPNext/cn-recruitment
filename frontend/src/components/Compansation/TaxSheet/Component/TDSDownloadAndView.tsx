@@ -9,6 +9,7 @@ import {
 import { useCurrentEmployeeDetails } from "../../../../hooks/useEmployee";
 import { useTargetUser } from "../../../../context/ViewedUserContext";
 import Button from "../../../shared/atoms/Button";
+import { createPortal } from "react-dom";
 
 type Props = {
   disabled?: boolean;
@@ -50,17 +51,17 @@ const TDSSlipHandler = ({ disabled, selectedPeriod }: Props) => {
           {isPending ? "Loading..." : "Preview TDS"}
         </Button>
       </div>
-
-      <SalarySlipPDFModal
-        isOpen={open}
-        onClose={() => {
-          setOpen(false);
-          setHtml("");
-        }}
-        salarySlipName={effectiveEmployee || ""}
-        salarySlipDate=""
-        htmlContent={html}
-      />
+      {createPortal(
+        <SalarySlipPDFModal
+          isOpen={open}
+          onClose={() => {
+            setOpen(false);
+            setHtml("");
+          }}
+          salarySlipName={effectiveEmployee || ""}
+          salarySlipDate=""
+          htmlContent={html}
+        />, document.body)}
     </>
   );
 };

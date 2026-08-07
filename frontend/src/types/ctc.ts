@@ -9,6 +9,7 @@ export interface AmountComponent {
   component: string;
   monthly_amount?: number;
   annual_amount: number;
+  amount?: number;
 }
 
 export interface SalarySlip {
