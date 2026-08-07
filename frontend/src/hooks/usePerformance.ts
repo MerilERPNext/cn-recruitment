@@ -81,12 +81,16 @@ export const useGoalPlanDetails = (goalId: string): UseQueryResult<GoalPlanRespo
     refetchOnWindowFocus: true,
   });
 
-export const useMyGoals = (params?: { employee?: string }): UseQueryResult<MyGoalsResponse, Error> =>
+export const useMyGoals = (
+  params?: { employee?: string },
+  options?: { enabled?: boolean }
+): UseQueryResult<MyGoalsResponse, Error> =>
   useQuery<MyGoalsResponse, Error>({
     queryKey: params?.employee ? [...PERFORMANCE_QUERY_KEYS.myGoals, params.employee] : PERFORMANCE_QUERY_KEYS.myGoals,
     queryFn: () => performanceService.getMyGoals(params),
     refetchOnWindowFocus: true,
     staleTime: 1 * 60 * 1000,
+    ...options,
   });
 
 export const useSubmitSelectedGoals = () => {

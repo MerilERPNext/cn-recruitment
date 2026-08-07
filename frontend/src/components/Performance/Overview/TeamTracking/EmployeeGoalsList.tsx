@@ -36,12 +36,15 @@ export const EmployeeGoalsList = ({
   const {
     data: myGoalsResponse,
     isLoading,
+    isFetched: isEmpGoalsFetched,
     isError,
     error,
     refetch,
   } = useMyGoals(employeeId ? { employee: employeeId } : undefined);
 
-  const { data: sessionUserGoals } = useMyGoals();
+  const { data: sessionUserGoals } = useMyGoals(undefined, {
+    enabled: isEmpGoalsFetched && (!myGoalsResponse?.data?.goals || myGoalsResponse.data.goals.length === 0),
+  });
 
   const hasEmpGoals = (myGoalsResponse?.data?.goals?.length ?? 0) > 0;
 
