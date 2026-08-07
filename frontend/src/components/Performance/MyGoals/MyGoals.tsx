@@ -112,7 +112,7 @@ const MyGoals: React.FC<MyGoalsProps> = ({ onCreateGoal, onSelectGoal }) => {
         (g.goal_type || "").toLowerCase().includes(q)
 
         return matchStatus && matchSearch
-      })
+      }).reverse()
   }, [allGoals, searchQuery, statusFilter]);
 
   const handleDeleteDraftGoal = (e: React.MouseEvent, goal: MyGoalsGoal) => {
