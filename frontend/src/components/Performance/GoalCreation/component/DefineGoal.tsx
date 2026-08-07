@@ -65,7 +65,7 @@ console.log(draftGoals,"[[[[[[[[[[[[]]]]]]]]]]]]]]]]]]]")
     const { data: currentEmployee } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
     const currentCompany = currentEmployee?.company;
 
-    const minimumKeyResults = formConfig.limits?.min_krs ?? 1;
+    const minimumKeyResults = formConfig.limits?.min_krs ?? 0;
     const maximumKeyResults = formConfig.limits?.max_krs ?? null;
     const [goals, setGoals] = useState<GoalItem[]>(() => {
         if (draftGoals && draftGoals.length > 0) {
@@ -89,7 +89,7 @@ console.log(draftGoals,"[[[[[[[[[[[[]]]]]]]]]]]]]]]]]]]")
                         title: kr.title || '',
                         weight: String(kr.weightage || ''),
                     }))
-                    : createInitialKeyResults(minimumKeyResults),
+                    : (minimumKeyResults > 0 ? createInitialKeyResults(minimumKeyResults) : []),
                 isCollapsed: idx !== 0, //only first goal will open other will collapsed
             }));
         }
@@ -103,7 +103,7 @@ console.log(draftGoals,"[[[[[[[[[[[[]]]]]]]]]]]]]]]]]]]")
             selectedDesignation: defaultDesignation,
             startDate: formConfig.start_date,
             endDate: formConfig.end_date,
-            keyResults: createInitialKeyResults(minimumKeyResults),
+            keyResults: minimumKeyResults > 0 ? createInitialKeyResults(minimumKeyResults) : [],
             isCollapsed: false,
         }];
     });
@@ -128,7 +128,7 @@ console.log(draftGoals,"[[[[[[[[[[[[]]]]]]]]]]]]]]]]]]]")
                 selectedDesignation: defaultDesignation,
                 startDate: formConfig.start_date,
                 endDate: formConfig.end_date,
-                keyResults: createInitialKeyResults(minimumKeyResults),
+                keyResults: minimumKeyResults > 0 ? createInitialKeyResults(minimumKeyResults) : [],
                 isCollapsed: false,
             };
             return [...collapsedGoals, newGoal];
