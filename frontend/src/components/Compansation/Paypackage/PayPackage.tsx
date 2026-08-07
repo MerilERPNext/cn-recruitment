@@ -169,10 +169,10 @@ const MobileRow = ({ item, showAmount, onView, onVersions }: RowProps) => {
           </div>
         </div>
 
-        {/* Row 4: CTC Category */}
+        {/* Row 4: Remark */}
         <div className="flex items-start justify-between">
           <div className="flex flex-col gap-1">
-            <Typography variant="mobileCardLabel">CTC Category</Typography>
+            <Typography variant="mobileCardLabel">Remark</Typography>
             <Typography variant="mobileCardValue">
               {ctcCategory || "—"}
             </Typography>
@@ -318,7 +318,7 @@ export default function SalaryAssignmentList() {
     "Monthly CTC",
     "Fixed Gross Annual",
     "Annual CTC",
-    "CTC Category",
+    "Remark",
     "Action",
   ];
 
