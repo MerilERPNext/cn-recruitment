@@ -120,7 +120,6 @@ export const KRCheckInModal: React.FC<KRCheckInModalProps> = ({
           </button>
         </div>
 
-        {/* Modal Form Content */}
         <div className="space-y-4 pt-1">
           <div>
             <Typography variant="caption" className="text-gray-700 font-medium block mb-1.5">
@@ -169,7 +168,6 @@ export const KRCheckInModal: React.FC<KRCheckInModalProps> = ({
           </div>
         </div>
 
-        {/* Modal Footer Actions */}
         <div className="flex items-center justify-between gap-3 pt-3 border-t border-gray-100 mt-2">
           <div className="flex items-center gap-2 min-w-0">
             <input
