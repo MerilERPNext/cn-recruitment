@@ -95,7 +95,6 @@ export const KRCheckInModal: React.FC<KRCheckInModalProps> = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs animate-in fade-in duration-200">
       <div className="bg-white rounded-2xl shadow-xl border border-gray-100 max-w-lg w-full p-5 sm:p-6 relative flex flex-col gap-4 overflow-hidden animate-in zoom-in-95 duration-200">
-        {/* Modal Header */}
         <div className="flex items-start justify-between pb-3 border-b border-gray-100">
           <div className="flex items-center gap-2.5 min-w-0 flex-1">
             <div className="shrink-0">
