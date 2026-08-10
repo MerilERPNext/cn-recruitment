@@ -114,7 +114,6 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, onBack }) => {
   };
 
   
-
   React.useEffect(() => {
     if (goalResponse?.data) {
       setNewValue(String(goalResponse.data.achievement ?? 0));
