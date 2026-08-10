@@ -29,6 +29,7 @@ import {
   formatTimeSafe,
   formatTo24HourTime,
   getDeviceLocation,
+  getDeviceLocationWeb,
 } from "../../utils/helperUtils";
 import TasksAwaiting from "../../components/DashboardComponent/TasksAwaiting";
 import EmployeeFallback from "../../components/EmployeeFallback";
@@ -61,7 +62,9 @@ const MobileDashboard: React.FC = () => {
     setIsLocationLoading(true);
     setLocationError(null);
     try {
-      const coords = await getDeviceLocation();
+      const coords = window.isApp
+        ? await getDeviceLocation()
+        : await getDeviceLocationWeb();
       setLocation(coords);
       return coords;
     } catch (err) {

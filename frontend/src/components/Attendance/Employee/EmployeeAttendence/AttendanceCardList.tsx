@@ -23,7 +23,7 @@ import Button from "../../../shared/atoms/Button";
 import { Typography } from "../../../shared/atoms/Typography";
 import { useTargetUser } from "../../../../context/ViewedUserContext";
 import GeoLocationModal from "../../../MobileDashboard/GeoLocationModal";
-import { Coordinates, getDeviceLocation } from "../../../../utils/helperUtils";
+import { Coordinates, getDeviceLocation, getDeviceLocationWeb } from "../../../../utils/helperUtils";
 
 const formatTimeSafe = (timeStr?: string) => {
   if (!timeStr) return "--:--";
@@ -122,7 +122,9 @@ const AttendanceCardList = ({
   const fetchLocation = async () => {
     setIsLocationLoading(true);
     try {
-      const coords = await getDeviceLocation();
+      const coords = window.isApp
+        ? await getDeviceLocation()
+        : await getDeviceLocationWeb();
       setLocation(coords);
       return coords;
     } catch {
