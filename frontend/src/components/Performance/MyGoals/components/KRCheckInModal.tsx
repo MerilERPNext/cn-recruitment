@@ -86,7 +86,7 @@ export const KRCheckInModal: React.FC<KRCheckInModalProps> = ({
 
       toast.success(response?.message || "Check-in submitted successfully!");
       onClose();
-    } catch (err: any) {
+    } catch (err) {
       console.error("Failed to submit KR check-in:", err);
       toast.error(getPerformanceErrorMessage(err, "Failed to submit check-in."));
     }
