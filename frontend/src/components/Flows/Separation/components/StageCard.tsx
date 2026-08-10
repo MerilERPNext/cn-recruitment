@@ -158,6 +158,8 @@ const CardStages = ({
             ? "Rejected by"
             : "Pending input from ";
 
+  const approverInfoAvailable = isActive || ["Rejected", "Approved"].includes(stage.status);
+
   return (
     <div className="grid w-full lg:hover:bg-primary/20 cursor-pointer  items-center text-sm  lg:px-6">
       <StatusTimelineRow
@@ -170,7 +172,7 @@ const CardStages = ({
           <div className="ml-4 flex flex-col">
             <Typography variant="bodyMedium">{stage?.stage_name}</Typography>
             <Typography variant="bodySmall">
-              {approverPerfix} {stage.status === "Pending" ? "" : stage?.role || stage?.user}
+              {approverPerfix} {approverInfoAvailable ? stage?.role || stage?.user : ""}
             </Typography>
           </div>
 
