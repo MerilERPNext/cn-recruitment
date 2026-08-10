@@ -94,7 +94,6 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, onBack }) => {
   const { mutateAsync: submitCheckIn, isPending: isSubmittingCheckIn } = useSubmitGoalCheckIn();
   const { mutateAsync: saveGoals, isPending: isSavingGoals } = useSaveGoals();
   const { data: currentUser } = useCurrentUser();
-  console.log(goalResponse,"goooooooooooooooall")
   const topRef = React.useRef<HTMLDivElement>(null);
   const attachmentInputRef = React.useRef<HTMLInputElement>(null);
   const [newValue, setNewValue] = React.useState('');
