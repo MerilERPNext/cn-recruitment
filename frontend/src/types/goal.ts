@@ -514,6 +514,7 @@ export interface GoalDetailData {
   status: string;
   goal_status: string;
   is_mandatory: number;
+  is_locked?: boolean | number;
   source_template: string | null;
   achievement: number;
   score: number;

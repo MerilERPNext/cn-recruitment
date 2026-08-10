@@ -8,14 +8,20 @@
 // The actions appear in the list "Actions" menu (shown only when rows are
 // checked) and only when `Onboarding Settings.enable_statutory_forms_button`
 // is on — the same global gate as the on-form buttons. In addition, only
-// onboardings with custom_onboarding_review_status = "Approved" (form approved
-// by SPOC) are processed; any other selected rows are skipped with a clear
-// message. The list menu items can't be shown/hidden per selection, so this is
-// enforced on click.
+// onboardings whose form is approved by the SPOC are processed; any other
+// selected rows are skipped with a clear message. The list menu items can't be
+// shown/hidden per selection, so this is enforced on click.
+//
+// "Approved by SPOC" is the doc-level rollup in `boarding_status`, which
+// field_level_approval._derive_boarding_status sets to "Completed" exactly when
+// every visible portal field has been approved.
 
 frappe.listview_settings["Employee Onboarding"] = {
-    // Make sure the review status is available on each checked row so we can gate on it.
-    add_fields: ["custom_onboarding_review_status"],
+    // Make sure the approval rollup is available on each checked row so we can
+    // gate on it. Every fieldname here goes into the list's reportview query, so
+    // it must be a real field — an unknown one makes the whole list fail to load
+    // with "Field not permitted in query".
+    add_fields: ["boarding_status"],
 
     onload(listview) {
         frappe.db
@@ -43,8 +49,8 @@ function runBulkStatutory(listview, mode) {
         return;
     }
 
-    // Only SPOC-approved onboardings (custom_onboarding_review_status = Approved) qualify; skip the rest.
-    const approved = selected.filter((d) => d.custom_onboarding_review_status === "Approved");
+    // Only SPOC-approved onboardings (boarding_status = Completed) qualify; skip the rest.
+    const approved = selected.filter((d) => d.boarding_status === "Completed");
     const skipped_not_approved = selected.length - approved.length;
 
     if (!approved.length) {

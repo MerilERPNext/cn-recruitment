@@ -74,8 +74,11 @@ def get_context(context):
 
             # Fetch Job Offer fields for sidebar (only fields that exist)
             jo_meta = frappe.get_meta('Job Offer')
+            # custom_ctc_per_annum used to be read here for a CTC line, but no
+            # template ever rendered it and the field went with the Salary
+            # Breakup section (recruitment.patches.delete_job_offer_salary_breakup).
             jo_wanted = ['designation', 'company', 'applicant_name', 'offer_date',
-                         'custom_jo_expiry_date', 'custom_ctc_per_annum', 'job_applicant']
+                         'custom_jo_expiry_date', 'job_applicant']
             jo_existing = [f for f in jo_wanted if jo_meta.has_field(f)]
             jo_fields = frappe.db.get_value('Job Offer', context.doc, jo_existing, as_dict=True) or {}
 
@@ -84,13 +87,6 @@ def get_context(context):
             context.company = jo_fields.get('company') or ''
             context.applicant_name = jo_fields.get('applicant_name') or ''
             context.offer_date = jo_fields.get('offer_date')
-            context.ctc_per_annum = jo_fields.get('custom_ctc_per_annum')
-
-            # Format CTC for display
-            if context.ctc_per_annum:
-                context.ctc_display = fmt_money(context.ctc_per_annum, currency='INR')
-            else:
-                context.ctc_display = ''
 
             # Company logo — try Company doctype first, fall back to Website Settings
             context.company_logo = ''

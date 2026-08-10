@@ -42,18 +42,20 @@ def _basis_amounts(self):
     """Resolve the Basic and CTC base values for percentage computation, honoring
     the offer's 'Salary Component Period' (Monthly / Annual; default Monthly).
 
-      Monthly: Basic = Base,       CTC = annual CTC / 12
-      Annual:  Basic = Base * 12,  CTC = annual CTC
+      Monthly: Basic = Base
+      Annual:  Basic = Base * 12
+
+    The CTC basis is always 0: it came from custom_ctc_per_annum /
+    custom_ctc_per_month, which were removed with the Salary Breakup section
+    (recruitment.patches.delete_job_offer_salary_breakup). Rows on the "% of CTC"
+    basis therefore compute 0 until it is re-pointed at a surviving CTC field.
 
     Returns (basic_basis, ctc_basis)."""
     base = flt(self.get("custom_base_salary"))
-    ctc_annum = flt(self.get("custom_ctc_per_annum"))
-    if not ctc_annum and self.get("custom_ctc_per_month"):
-        ctc_annum = flt(self.custom_ctc_per_month) * 12.0
 
     if (self.get("custom_salary_period") or "Monthly") == "Annual":
-        return base * 12.0, ctc_annum
-    return base, (ctc_annum / 12.0 if ctc_annum else 0.0)
+        return base * 12.0, 0.0
+    return base, 0.0
 
 
 def apply_percentage_components(self):
@@ -267,3 +269,83 @@ def get_requisition_defaults(job_applicant):
 	frappe.has_permission("Job Offer", "create", throw=True)
 	requisition = _requisition_for_applicant(job_applicant)
 	return {"job_requisition": requisition, "pay": _requisition_pay(requisition)}
+
+
+def _requisition_scope(job_applicant=None, company=None, designation=None):
+	"""Filters that scope the Job Requisition picker on a Job Offer.
+
+	The field is editable (auto-resolution silently yields nothing whenever the
+	candidate's opening carries no requisition), but an unfiltered picker would
+	offer every requisition on the site — including other companies' and other
+	roles' — which is how an offer ends up consuming the wrong headcount.
+
+	Narrowed by the candidate's own opening, in decreasing order of certainty:
+
+	  1. The opening names a requisition -> only that one. The offer belongs to
+	     that requisition; there is nothing to choose.
+	  2. The opening resolves but names no requisition -> the opening's company
+	     and designation. This is the case the editable field exists for.
+	  3. No opening (no candidate yet, or a candidate applying outside an
+	     opening) -> the offer's own company and designation.
+
+	Deliberately no ``status`` filter: a requisition is commonly already
+	"Filled" or "On Hold" by the time the offer is raised, so filtering on it
+	would swap a too-long list for an empty one. Returns ``{}`` when nothing is
+	known — an unfiltered picker beats one that can never match.
+	"""
+	opening = frappe.db.get_value("Job Applicant", job_applicant, "job_title") if job_applicant else None
+	if opening:
+		row = (
+			frappe.db.get_value(
+				"Job Opening", opening, ["job_requisition", "company", "designation"], as_dict=True
+			)
+			or {}
+		)
+		if row.get("job_requisition"):
+			return {"name": row["job_requisition"]}
+		company = row.get("company") or company
+		designation = row.get("designation") or designation
+
+	scope = {}
+	if company:
+		scope["company"] = company
+	if designation:
+		scope["designation"] = designation
+
+	# Designation is the narrowest part and the one most likely to match nothing:
+	# requisitions are commonly raised against a broader role than the opening's
+	# own designation. Widening to company-only beats handing the recruiter an
+	# empty picker on the very case this field exists for. Checked up front, not
+	# after searching, so the scope does not shift as they type.
+	if scope.get("designation") and not frappe.db.exists("Job Requisition", scope):
+		scope.pop("designation")
+
+	return scope
+
+
+@frappe.whitelist()
+@frappe.validate_and_sanitize_search_inputs
+def job_requisition_query(doctype, txt, searchfield, start, page_len, filters):
+	"""Link query behind the Job Requisition picker — see :func:`_requisition_scope`.
+
+	A link *query* rather than a set_query ``filters`` dict on purpose: the scope
+	depends on the candidate's opening, which only the server can resolve, and
+	resolving it here means it costs nothing until the picker is actually opened.
+	Computing it up front instead would put an extra round trip on every Job
+	Offer form load, for a field most saves never touch.
+	"""
+	filters = filters or {}
+	scope = _requisition_scope(
+		filters.get("job_applicant"), filters.get("company"), filters.get("designation")
+	)
+
+	return frappe.get_list(
+		doctype,
+		filters=scope,
+		or_filters=[[searchfield, "like", f"%{txt}%"], ["designation", "like", f"%{txt}%"]] if txt else None,
+		fields=["name", "designation", "status"],
+		start=start,
+		page_length=page_len,
+		order_by="modified desc",
+		as_list=True,
+	)

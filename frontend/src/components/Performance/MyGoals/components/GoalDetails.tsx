@@ -94,7 +94,6 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, onBack }) => {
   const { mutateAsync: submitCheckIn, isPending: isSubmittingCheckIn } = useSubmitGoalCheckIn();
   const { mutateAsync: saveGoals, isPending: isSavingGoals } = useSaveGoals();
   const { data: currentUser } = useCurrentUser();
-
   const topRef = React.useRef<HTMLDivElement>(null);
   const attachmentInputRef = React.useRef<HTMLInputElement>(null);
   const [newValue, setNewValue] = React.useState('');
@@ -260,6 +259,7 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, onBack }) => {
   }
 
   const goal = goalResponse.data;
+  const isLocked = Boolean(goal.is_locked);
   const ownerName = currentUser?.full_name || currentUser?.first_name || currentUser?.email || '-';
   const checkIns = checkInsResponse?.data?.check_ins ?? [];
   const displayedProgress = latestProgress ?? goal.achievement ?? 0;
@@ -283,9 +283,12 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, onBack }) => {
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6">
           <div className="flex flex-col lg:flex-row justify-between gap-6">
             <div className="min-w-0 space-y-4 flex-1">
-              {/* Badges Row: OKR → Department → Designation → Status */}
+              {/* Badges Row: OKR → Locked → Department → Designation → Status */}
               <div className="flex flex-wrap items-center gap-2">
                 <Badge label={goal.goal_type || 'OKR'} variant="purple" size="sm" />
+                {isLocked && (
+                  <Badge label="Locked" variant="default" size="sm" />
+                )}
                 {goal.department_title && (
                   <Badge label={goal.department_title} variant="default" size="sm" />
                 )}
@@ -347,7 +350,7 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, onBack }) => {
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6">
               <div className="flex items-center justify-between mb-4 sm:mb-6">
                 <Typography variant="h4">Key Results</Typography>
-                {!isEditingKRs && isPendingGoal && (
+                {!isEditingKRs && isPendingGoal && !isLocked && (
                   <Button 
                     variant="outline" 
                     bgColor="text"
@@ -370,8 +373,15 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, onBack }) => {
                           <input 
                             type="text"
                             value={kr.title}
-                            onChange={(e) => updateKRField(kr.id, 'title', e.target.value)}
-                            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                            onChange={(e) => !isLocked && updateKRField(kr.id, 'title', e.target.value)}
+                            onFocus={(e) => isLocked && e.target.blur()}
+                            disabled={isLocked}
+                            readOnly={isLocked}
+                            className={`w-full border rounded-lg px-3 py-2 text-sm focus:outline-none transition ${
+                              isLocked
+                                ? "border-gray-200 bg-gray-50/80 text-gray-700 cursor-not-allowed select-none"
+                                : "border-gray-300 focus:ring-1 focus:ring-blue-500"
+                            }`}
                             placeholder="Enter key result"
                           />
                         </div>
@@ -380,32 +390,43 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, onBack }) => {
                           <input 
                             type="number"
                             value={kr.weightage}
-                            onChange={(e) => updateKRField(kr.id, 'weightage', e.target.value)}
-                            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                            onChange={(e) => !isLocked && updateKRField(kr.id, 'weightage', e.target.value)}
+                            onFocus={(e) => isLocked && e.target.blur()}
+                            disabled={isLocked}
+                            readOnly={isLocked}
+                            className={`w-full border rounded-lg px-3 py-2 text-sm focus:outline-none transition ${
+                              isLocked
+                                ? "border-gray-200 bg-gray-50/80 text-gray-700 cursor-not-allowed select-none"
+                                : "border-gray-300 focus:ring-1 focus:ring-blue-500"
+                            }`}
                             placeholder="%"
                           />
                         </div>
-                        <div className="pt-0 sm:pt-5">
-                          <button
-                            type="button"
-                            onClick={() => removeKRField(kr.id)}
-                            className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                            aria-label="Remove KR"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
+                        {!isLocked && (
+                          <div className="pt-0 sm:pt-5">
+                            <button
+                              type="button"
+                              onClick={() => removeKRField(kr.id)}
+                              className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                              aria-label="Remove KR"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        )}
                       </div>
                     ))}
                     
-                    <button
-                      type="button"
-                      onClick={addKRField}
-                      className="flex items-center gap-2 text-sm font-medium text-blue-600 hover:text-blue-700 mt-2"
-                    >
-                      <Plus className="w-4 h-4" />
-                      Add More
-                    </button>
+                    {!isLocked && (
+                      <button
+                        type="button"
+                        onClick={addKRField}
+                        className="flex items-center gap-2 text-sm font-medium text-blue-600 hover:text-blue-700 mt-2"
+                      >
+                        <Plus className="w-4 h-4" />
+                        Add More
+                      </button>
+                    )}
 
                     {(() => {
                       const currentTotalWeight = editingKRs.reduce((sum, kr) => sum + Number(kr.weightage || 0), 0);
@@ -422,7 +443,7 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, onBack }) => {
                             <Button variant="outline" bgColor="text" onClick={handleCancelEditKRs}>
                               Cancel
                             </Button>
-                            <Button variant="contain" bgColor="primary" onClick={handleUpdateKRs} disabled={isSavingGoals}>
+                            <Button variant="contain" bgColor="primary" onClick={handleUpdateKRs} disabled={isSavingGoals || isLocked}>
                               {isSavingGoals 
                                 ? (goal.key_results?.length ? 'Updating...' : 'Adding...') 
                                 : (goal.key_results?.length ? 'Update' : 'Add')}
@@ -451,8 +472,13 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, onBack }) => {
                             size="sm"
                             variant="outline"
                             bgColor="text"
-                            className="text-xs border-blue-200 text-blue-600 hover:bg-blue-50 hover:border-blue-300 transition-colors shrink-0"
-                            onClick={() => handleOpenKRCheckInModal(kr, idx)}
+                            className={`text-xs border-blue-200 text-blue-600 transition-colors shrink-0 ${
+                              isLocked
+                                ? 'opacity-50 cursor-not-allowed pointer-events-none bg-gray-50 text-gray-400 border-gray-200'
+                                : 'hover:bg-blue-50 hover:border-blue-300'
+                            }`}
+                            onClick={() => !isLocked && handleOpenKRCheckInModal(kr, idx)}
+                            disabled={isLocked}
                           >
                             Check in
                           </Button>
@@ -486,12 +512,19 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, onBack }) => {
                       <input 
                         type="number"
                         value={newValue}
-                        onChange={(event) => setNewValue(event.target.value)}
+                        onChange={(event) => !isLocked && setNewValue(event.target.value)}
+                        onFocus={(e) => isLocked && e.target.blur()}
                         min="0"
                         step="any"
                         inputMode="decimal"
-                        className="w-full border border-gray-300 rounded-l-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        className={`w-full border rounded-l-lg px-3 py-2 text-sm focus:outline-none transition ${
+                          isLocked
+                            ? "border-gray-200 bg-gray-50/80 text-gray-700 cursor-not-allowed select-none"
+                            : "border-gray-300 focus:ring-1 focus:ring-blue-500"
+                        }`}
                         aria-label="New goal progress value"
+                        disabled={isLocked}
+                        readOnly={isLocked}
                       />
                       <span className="bg-gray-50 border border-l-0 border-gray-300 rounded-r-lg px-3 py-2 text-sm text-gray-500 whitespace-nowrap">
                         %
@@ -515,8 +548,11 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, onBack }) => {
                           type="button"
                           role="radio"
                           aria-checked={sentiment === option}
-                          onClick={() => setSentiment(option)}
-                          className={`flex min-w-0 flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-xl border px-3 py-2 text-xs font-semibold transition-colors ${sentiment === option ? sentimentStyles[option].active : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'}`}
+                          disabled={isLocked}
+                          onClick={() => !isLocked && setSentiment(option)}
+                          className={`flex min-w-0 flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-xl border px-3 py-2 text-xs font-semibold transition-colors ${
+                            isLocked ? 'cursor-not-allowed opacity-60' : ''
+                          } ${sentiment === option ? sentimentStyles[option].active : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'}`}
                         >
                           <span className={`h-2 w-2 rounded-full ${sentimentStyles[option].dot}`} />
                           {option}
@@ -528,10 +564,17 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, onBack }) => {
 
                 <textarea
                   value={note}
-                  onChange={(event) => setNote(event.target.value)}
-                  className="w-full rounded-lg border border-gray-200 p-3 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 min-h-[100px] mb-4"
+                  onChange={(event) => !isLocked && setNote(event.target.value)}
+                  onFocus={(e) => isLocked && e.target.blur()}
+                  className={`w-full rounded-lg border p-3 text-sm focus:outline-none min-h-[100px] mb-4 transition ${
+                    isLocked
+                      ? "border-gray-200 bg-gray-50/80 text-gray-700 cursor-not-allowed select-none"
+                      : "border-gray-200 focus:ring-1 focus:ring-blue-500"
+                  }`}
                   placeholder="Add details about your progress..."
                   aria-label="Goal progress details"
+                  disabled={isLocked}
+                  readOnly={isLocked}
                 ></textarea>
 
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -540,21 +583,39 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, onBack }) => {
                       ref={attachmentInputRef}
                       type="file"
                       className="hidden"
-                      onChange={(event) => setAttachment(event.target.files?.[0] ?? null)}
+                      onChange={(event) => !isLocked && setAttachment(event.target.files?.[0] ?? null)}
+                      disabled={isLocked}
                     />
-                    <Button variant="outline" bgColor="text" size="sm" icon={<Paperclip className="w-4 h-4" />} onClick={() => attachmentInputRef.current?.click()}>
+                    <Button 
+                      variant="outline" 
+                      bgColor="text" 
+                      size="sm" 
+                      icon={<Paperclip className="w-4 h-4" />} 
+                      onClick={() => !isLocked && attachmentInputRef.current?.click()}
+                      disabled={isLocked}
+                      className={isLocked ? "cursor-not-allowed opacity-60" : ""}
+                    >
                       Attach
                     </Button>
                     {attachment && (
                       <span className="flex min-w-0 items-center gap-1 rounded-md bg-blue-50 px-2 py-1 text-xs text-blue-700">
                         <span className="truncate">{attachment.name}</span>
-                        <button type="button" aria-label="Remove attachment" onClick={() => { setAttachment(null); if (attachmentInputRef.current) attachmentInputRef.current.value = ''; }} className="shrink-0 text-blue-500 hover:text-blue-800">
-                          <X className="h-3.5 w-3.5" />
-                        </button>
+                        {!isLocked && (
+                          <button type="button" aria-label="Remove attachment" onClick={() => { setAttachment(null); if (attachmentInputRef.current) attachmentInputRef.current.value = ''; }} className="shrink-0 text-blue-500 hover:text-blue-800">
+                            <X className="h-3.5 w-3.5" />
+                          </button>
+                        )}
                       </span>
                     )}
                   </div>
-                  <Button variant="contain" bgColor="primary" size="sm" className="justify-center" onClick={handleSubmitCheckIn} disabled={isSubmittingCheckIn}>
+                  <Button 
+                    variant="contain" 
+                    bgColor="primary" 
+                    size="sm" 
+                    className={`justify-center ${isLocked ? "cursor-not-allowed opacity-60" : ""}`} 
+                    onClick={() => !isLocked && handleSubmitCheckIn()} 
+                    disabled={isSubmittingCheckIn || isLocked}
+                  >
                     {isSubmittingCheckIn ? 'Submitting…' : 'Submit Check-in'}
                   </Button>
                 </div>

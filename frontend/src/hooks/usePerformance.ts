@@ -88,7 +88,7 @@ export const useMyGoals = (
   useQuery<MyGoalsResponse, Error>({
     queryKey: params?.employee ? [...PERFORMANCE_QUERY_KEYS.myGoals, params.employee] : PERFORMANCE_QUERY_KEYS.myGoals,
     queryFn: () => performanceService.getMyGoals(params),
-    refetchOnWindowFocus: true,
+    refetchOnWindowFocus: false,
     staleTime: 1 * 60 * 1000,
     ...options,
   });

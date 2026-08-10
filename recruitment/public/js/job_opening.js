@@ -20,6 +20,118 @@
 	const escapeHtml = AFU.escapeHtml;
 	const injectStyles = AFU.injectStyles;
 
+	// An override row wins as a WHOLE over the settings default (see
+	// get_job_applicant_profile_template), so a row created to record one toggle
+	// must carry the merged value of every other column — otherwise switching
+	// CAREERS on here would silently clear the IJP and REFER defaults.
+	const OVERRIDE_CHECK_COLS = [
+		"view_careers", "mandatory_careers",
+		"view_ijp", "mandatory_ijp",
+		"view_refer", "mandatory_refer",
+		"view_campus", "mandatory_campus",
+		"view_preoffer", "mandatory_preoffer",
+		"ctq_flag",
+	];
+	const OVERRIDE_SELECT_COLS = {
+		visibility: "All",
+		editability: "Editable",
+		preoffer_visibility: "Same as visibility",
+		preoffer_edit_approve: "Editable",
+	};
+
+	/** The opening's own row for `ref`, created from the merged template if absent. */
+	function upsertOpeningRow(frm, ref, state) {
+		let docRow = (frm.doc.custom_application_fields || []).find((r) => r.reference_name === ref);
+		if (docRow) return docRow;
+
+		const tpl = (state.rows || []).find((r) => r.reference_name === ref) || {};
+		const values = {
+			section: tpl.section || "General",
+			reference_name: ref,
+			display_name: tpl.display_name || ref,
+			fieldtype: tpl.fieldtype || "",
+			child_field_config: tpl.child_field_config || "",
+		};
+		OVERRIDE_CHECK_COLS.forEach((col) => { values[col] = tpl[col] ? 1 : 0; });
+		Object.keys(OVERRIDE_SELECT_COLS).forEach((col) => {
+			values[col] = tpl[col] || OVERRIDE_SELECT_COLS[col];
+		});
+		return frm.add_child("custom_application_fields", values);
+	}
+
+	// Settings positions arrive spaced ORDER_STEP apart, so a moved field takes the
+	// midpoint of the gap and its neighbours are left untouched. Renumbering every
+	// row 1..N instead would turn all ~100 fields into overrides — and, since an
+	// override wins as a whole, cut them off from later Profile Settings changes.
+	const ORDER_STEP = 1000;
+
+	/**
+	 * Write the new positions of the just-moved rows (left as one contiguous block
+	 * by `applyMove`). Only when a gap has been halved down to nothing does the
+	 * whole list get respaced.
+	 */
+	function assignOrders(frm, state, movedRefs) {
+		const rows = state.rows || [];
+		const moved = new Set(movedRefs);
+		const num = (r) => Number(r && r.display_order) || 0;
+
+		const first = rows.findIndex((r) => moved.has(r.reference_name));
+		if (first < 0) return;
+		let last = first;
+		while (last + 1 < rows.length && moved.has(rows[last + 1].reference_name)) last += 1;
+		const count = last - first + 1;
+
+		const prev = first > 0 ? num(rows[first - 1]) : 0;
+		const next = last + 1 < rows.length
+			? num(rows[last + 1])
+			: prev + ORDER_STEP * (count + 1);
+
+		const step = Math.floor((next - prev) / (count + 1));
+		const write = (r, order) => {
+			r.display_order = order;
+			const docRow = upsertOpeningRow(frm, r.reference_name, state);
+			docRow.section = r.section || "General";
+			docRow.display_order = order;
+		};
+
+		if (step < 1) {
+			// Gap exhausted — respace everything so there is room again.
+			rows.forEach((r, i) => write(r, (i + 1) * ORDER_STEP));
+			return;
+		}
+		for (let k = 0; k < count; k++) write(rows[first + k], prev + step * (k + 1));
+	}
+
+	/**
+	 * Reposition fields for THIS opening only: drop on a row to reorder inside the
+	 * section, drop on a sidebar section (or use the grip / bulk Move) to change
+	 * section.
+	 *
+	 * Placement is per-opening data, so it can't be written to the settings table —
+	 * it is recorded on the opening's own rows as `section` + `display_order`, which
+	 * the merged template reads back in preference to the settings placement.
+	 */
+	function moveRows(host, state, frm, refs, dest) {
+		const result = AFU.applyMove(
+			state.rows || [], refs, dest,
+			(r) => r.section || "General",
+			(r, s) => { r.section = s; }
+		);
+		if (!result) return;
+
+		state.rows = result.rows;
+		assignOrders(frm, state, refs);
+		frm.refresh_field("custom_application_fields");
+		frm.dirty();
+
+		state.activeSection = result.section;
+		renderUI(host, state, frm);
+		frappe.show_alert({
+			message: __("{0} field(s) moved to {1}", [refs.length, result.section]),
+			indicator: "green",
+		});
+	}
+
 	function renderUI(host, state, frm) {
 		const rows = state.rows || [];
 
@@ -30,6 +142,15 @@
 			if (!(s in counts)) { sectionsList.push(s); counts[s] = 0; }
 			counts[s] += 1;
 		});
+
+		// Keep a just-emptied section listed so it stays a drop target and the move
+		// can be undone without reloading the form.
+		(state.knownSections || []).forEach((s, i) => {
+			if (sectionsList.includes(s)) return;
+			sectionsList.splice(Math.min(i, sectionsList.length), 0, s);
+			counts[s] = 0;
+		});
+		state.knownSections = sectionsList.slice();
 
 		if (!rows.length) {
 			host.innerHTML = AFU.emptyState(__("No fields to configure."));
@@ -46,7 +167,9 @@
 				<span>${escapeHtml(s)}</span>
 				<span class="apf-count">${counts[s]}</span>
 			</div>
-		`).join("");
+		`).join("") + `<div class="apf-side-hint">${
+			__("Drag a field's ⠿ handle onto a section to move it there, or drop it between rows to reorder. Placement applies to this opening only.")
+		}</div>`;
 
 		const sectionRows = rows.filter((r) => (r.section || "General") === active);
 		const bodyHtml = sectionRows.length
@@ -63,7 +186,7 @@
 							<div class="apf-head-title">${escapeHtml(active)}</div>
 						</div>
 					</div>
-					${AFU.toolbarHtml()}
+					${AFU.toolbarHtml(sectionsList)}
 					<div class="apf-scroll">
 						<table class="apf-table">
 							<thead>${AFU.headerRows()}</thead>
@@ -189,10 +312,11 @@
 			});
 		});
 
-		// Select-all
-		// Search, per-channel tallies and the bulk bar. `applyBulk` is the only
-		// per-page part: it upserts each change as a per-opening override.
+		// Search, per-channel tallies, the bulk bar and drag-to-move. `applyBulk`
+		// and `moveRows` are the only per-page parts: they upsert each change as a
+		// per-opening override.
 		AFU.bindToolbar(host, {
+			moveRows(refs, dest) { moveRows(host, state, frm, refs, dest); },
 			applyBulk(col, value, refs) {
 				refs.forEach((ref) => {
 					const stateRow = state.rows.find((r) => r.reference_name === ref);
@@ -205,6 +329,14 @@
 		});
 	}
 
+	// `refresh` fires on load, on every save and on any frm.refresh() — and it
+	// wipes the HTML field's wrapper, so the grid has to be rebuilt each time. The
+	// template behind it does not change in between, and fetching it costs a
+	// Singles read + a child-table read + meta on the server, so it is held for
+	// the life of the page and re-fetched only once the document itself moves on
+	// (`modified` changes on save/reload). Reloading the browser always refetches.
+	const templateCache = { key: null, rows: null };
+
 	function mountUI(frm) {
 		const wrapper = frm.fields_dict.custom_application_fields_ui;
 		if (!wrapper) return;
@@ -212,6 +344,15 @@
 		if (!host) return;
 
 		injectStyles();
+
+		const key = `${frm.doc.name}::${frm.doc.modified || "new"}`;
+		if (templateCache.key === key && templateCache.rows) {
+			// Deep-copied: render() mutates rows as the user edits, and the cache has
+			// to keep handing out the server's version, not the last edited one.
+			build(JSON.parse(JSON.stringify(templateCache.rows)));
+			return;
+		}
+
 		host.innerHTML = AFU.emptyState(__("Loading application fields…"));
 
 		frappe.call({
@@ -219,29 +360,45 @@
 			args: { opening: frm.is_new() ? null : frm.doc.name },
 			callback: (r) => {
 				const msg = (r && r.message) || { sections: [], rows: [] };
-				const state = { rows: msg.rows || [], activeSection: null };
-
-				// Overlay any unsaved edits the user already made on this opening.
-				(frm.doc.custom_application_fields || []).forEach((docRow) => {
-					const stateRow = state.rows.find((sr) => sr.reference_name === docRow.reference_name);
-					if (!stateRow) return;
-					["view_careers", "mandatory_careers", "view_ijp", "mandatory_ijp",
-					 "view_refer", "mandatory_refer", "view_campus", "mandatory_campus",
-					 "view_preoffer", "mandatory_preoffer",
-					 "ctq_flag"].forEach((col) => { stateRow[col] = docRow[col] ? 1 : 0; });
-					["visibility", "editability", "preoffer_visibility", "preoffer_edit_approve"].forEach((col) => {
-						if (docRow[col]) stateRow[col] = docRow[col];
-					});
-					if (docRow.child_field_config) stateRow.child_field_config = docRow.child_field_config;
-					if (docRow.display_name) stateRow.display_name = docRow.display_name;
-				});
-
-				renderUI(host, state, frm);
+				templateCache.key = key;
+				templateCache.rows = msg.rows || [];
+				build(JSON.parse(JSON.stringify(templateCache.rows)));
 			},
 			error: () => {
 				host.innerHTML = AFU.emptyState(__("Failed to load application fields."));
 			},
 		});
+
+		function build(rows) {
+			const state = { rows: rows, activeSection: null };
+
+			// Overlay any unsaved edits the user already made on this opening.
+			// Indexed once — the doc can hold a row per field, and a find() per
+			// row would walk the template list all over again for each of them.
+			const byRef = new Map(state.rows.map((r) => [r.reference_name, r]));
+			(frm.doc.custom_application_fields || []).forEach((docRow) => {
+				const stateRow = byRef.get(docRow.reference_name);
+				if (!stateRow) return;
+				OVERRIDE_CHECK_COLS.forEach((col) => { stateRow[col] = docRow[col] ? 1 : 0; });
+				Object.keys(OVERRIDE_SELECT_COLS).forEach((col) => {
+					if (docRow[col]) stateRow[col] = docRow[col];
+				});
+				if (docRow.child_field_config) stateRow.child_field_config = docRow.child_field_config;
+				if (docRow.display_name) stateRow.display_name = docRow.display_name;
+				if (docRow.section) stateRow.section = docRow.section;
+				if (docRow.display_order) stateRow.display_order = docRow.display_order;
+			});
+
+			// Re-sort for unsaved moves. The template already came back sorted, so
+			// this only matters when the form is refreshed with a move still
+			// unsaved — index breaks the tie, keeping the server's order otherwise.
+			state.rows = state.rows
+				.map((r, i) => ({ row: r, key: Number(r.display_order) || (i + 1) * ORDER_STEP, i: i }))
+				.sort((a, b) => (a.key - b.key) || (a.i - b.i))
+				.map((x) => x.row);
+
+			renderUI(host, state, frm);
+		}
 	}
 
 	frappe.ui.form.on("Job Opening", {
@@ -254,17 +411,27 @@
 // so positions can't be added directly here — they come from a Job Requisition.
 // The requisition → opening server flow populates positions programmatically and
 // is unaffected by this form-level control.
-frappe.ui.form.on("Job Opening", {
-	refresh(frm) {
-		if (!frm.fields_dict.custom_position_details) return;
-		frappe.db
-			.get_single_value("Recruitment Settings", "allow_position_creation_at_jobs_directly")
-			.then((allowed) => {
-				frm.set_df_property("custom_position_details", "read_only", allowed ? 0 : 1);
+(function () {
+	// Asked for once per page rather than on every refresh: refresh fires on load,
+	// on every save and on every reload, and this is one round trip for a setting
+	// that only changes in Recruitment Settings (a page load away).
+	let allowed = null;
+
+	frappe.ui.form.on("Job Opening", {
+		refresh(frm) {
+			if (!frm.fields_dict.custom_position_details) return;
+			if (!allowed) {
+				allowed = frappe.db.get_single_value(
+					"Recruitment Settings", "allow_position_creation_at_jobs_directly"
+				);
+			}
+			allowed.then((value) => {
+				frm.set_df_property("custom_position_details", "read_only", value ? 0 : 1);
 				frm.refresh_field("custom_position_details");
 			});
-	},
-});
+		},
+	});
+})();
 
 // Cascading selection: Company -> Department -> Designation -> Functional Area.
 // Department is scoped to the chosen Company (Department.company); Designation is
