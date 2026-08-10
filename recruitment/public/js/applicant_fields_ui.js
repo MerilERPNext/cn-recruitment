@@ -111,6 +111,9 @@ frappe.provide("recruitment.applicant_fields_ui");
 
 	const esc = AFU.escapeHtml;
 
+	// Sentinel option in every section picker: pick it and you're asked for a name.
+	const NEW_SECTION = "+ New section…";
+
 	// ---------------------------------------------------------------- styles --
 	AFU.injectStyles = function () {
 		if (document.getElementById("apf-styles")) return;
@@ -274,6 +277,11 @@ frappe.provide("recruitment.applicant_fields_ui");
 			.apf-bulk-btn:hover { border-color: var(--apf-accent); color: var(--apf-accent); }
 			.apf-bulk-btn.primary { background: var(--apf-accent); border-color: var(--apf-accent); color: #fff; }
 			.apf-bulk-btn.primary:hover { filter: brightness(1.08); color: #fff; }
+			.apf-bulk-sep { color: var(--apf-border); font-size: 12px; }
+			.apf-bulk-section {
+				border: 1px solid var(--apf-border); background: var(--apf-bg); color: var(--apf-text);
+				border-radius: 6px; padding: 4px 6px; font-size: 12px; max-width: 200px;
+			}
 			.apf-bulk-clear {
 				margin-left: auto; border: none; background: transparent; color: var(--apf-text-dim);
 				font-size: 12px; cursor: pointer; text-decoration: underline;
@@ -287,10 +295,10 @@ frappe.provide("recruitment.applicant_fields_ui");
 			   the headers to "MANDATO" / "EDITABILI". At the real sum the table
 			   simply overflows and .apf-scroll scrolls it, which is exactly what the
 			   frozen identity columns are there to make comfortable.
-			   34 + 38 + 208 + (11 x 92) + (4 x 148) + 38 = 1922 */
+			   34 + 56 + 208 + (11 x 92) + (4 x 148) + 38 = 1940 */
 			.apf-table {
 				width: 100%; border-collapse: separate; border-spacing: 0;
-				font-size: 12px; min-width: 1922px; table-layout: fixed;
+				font-size: 12px; min-width: 1940px; table-layout: fixed;
 			}
 			.apf-table thead .apf-group-row th {
 				padding: 9px 4px 6px; text-align: center; font-weight: 700;
@@ -335,7 +343,8 @@ frappe.provide("recruitment.applicant_fields_ui");
 			/* Wide enough that no column header has to truncate — "MANDATORY" and
 			   "EDIT/APPROVE" are the widest labels each type has to hold. */
 			.apf-col-check  { width: 34px; }
-			.apf-col-no     { width: 38px; }
+			/* Wide enough for the drag handle AND the number side by side. */
+			.apf-col-no     { width: 56px; }
 			.apf-col-field  { width: 208px; }
 			.apf-col-toggle { width: 92px; }
 			.apf-col-select { width: 148px; }
@@ -443,9 +452,9 @@ frappe.provide("recruitment.applicant_fields_ui");
 			   neighbouring cells, so a sticky cell scrolls away from the border it is
 			   drawn with. The parent table uses separate for the same reason.
 			   min-width must exceed the container so there is something to scroll:
-			   280 field + 10 channel columns x 108. */
+			   298 field + 10 channel columns x 108. */
 			.apf-child-table {
-				width: 100%; min-width: 1360px;
+				width: 100%; min-width: 1378px;
 				border-collapse: separate; border-spacing: 0;
 				font-size: 11.5px; background: var(--apf-bg);
 			}
@@ -466,11 +475,11 @@ frappe.provide("recruitment.applicant_fields_ui");
 			   in the parent table. Needs an opaque background (sticky cells are
 			   painted over otherwise) and a z-index above the scrolling cells; the
 			   header sits one level higher again so it wins where the two overlap. */
-			/* 280px = the parent's frozen block (34 check + 38 no. + 208 field), so the
+			/* 298px = the parent's frozen block (34 check + 56 no. + 208 field), so the
 			   freeze boundary is one straight line down the whole table. */
 			.apf-child-table th.apf-child-col-field,
 			.apf-child-table td.apf-child-col-field {
-				position: sticky; left: 0; width: 280px; min-width: 280px;
+				position: sticky; left: 0; width: 298px; min-width: 298px;
 				box-shadow: 1px 0 0 var(--apf-border);
 			}
 			.apf-child-table tbody td.apf-child-col-field { background: var(--apf-bg); z-index: 2; }
@@ -492,7 +501,7 @@ frappe.provide("recruitment.applicant_fields_ui");
 			.apf-table tbody tr td.apf-col-no    { position: sticky; left: 34px; }
 			.apf-table thead tr th.apf-col-field,
 			.apf-table tbody tr td.apf-col-field {
-				position: sticky; left: 72px; box-shadow: 1px 0 0 var(--apf-border);
+				position: sticky; left: 90px; box-shadow: 1px 0 0 var(--apf-border);
 			}
 			.apf-table tbody tr td.apf-col-check,
 			.apf-table tbody tr td.apf-col-no,
@@ -510,6 +519,44 @@ frappe.provide("recruitment.applicant_fields_ui");
 
 			/* A row hidden by the search box. */
 			.apf-table tbody tr.apf-filtered-out { display: none; }
+
+			/* ------------------------------------------------ drag & drop -- */
+			/* The handle sits beside the row number and is ALWAYS drawn — a control
+			   that only appears on hover is a control most people never find. It is
+			   dimmed until the row is hovered so 40 of them don't shout. */
+			.apf-no-cell { display: flex; align-items: center; justify-content: center; gap: 3px; }
+			.apf-grip {
+				cursor: grab; color: var(--apf-text-faint); opacity: .55;
+				font-size: 13px; line-height: 1; padding: 2px 2px; border-radius: 4px;
+				user-select: none; transition: opacity .12s, color .12s, background .12s;
+			}
+			.apf-table tbody tr:hover .apf-grip { opacity: 1; }
+			.apf-grip:hover { color: var(--apf-accent); background: var(--apf-accent-soft); opacity: 1; }
+			.apf-grip:active { cursor: grabbing; }
+			.apf-table tbody tr.apf-dragging td { opacity: .4; }
+
+			/* Insertion line. An inset shadow, not a border: a 2px border would shift
+			   every row below it. The frozen FIELD cell restates its own divider
+			   shadow, which the shorthand would otherwise replace. */
+			.apf-table tbody tr.apf-drop-before td { box-shadow: inset 0 2px 0 var(--apf-accent); }
+			.apf-table tbody tr.apf-drop-after  td { box-shadow: inset 0 -2px 0 var(--apf-accent); }
+			.apf-table tbody tr.apf-drop-before td.apf-col-field {
+				box-shadow: inset 0 2px 0 var(--apf-accent), 1px 0 0 var(--apf-border);
+			}
+			.apf-table tbody tr.apf-drop-after td.apf-col-field {
+				box-shadow: inset 0 -2px 0 var(--apf-accent), 1px 0 0 var(--apf-border);
+			}
+
+			/* A section in the sidebar, while a field is hovering over it. */
+			.apf-side-item.apf-drop-into {
+				background: var(--apf-accent-soft); color: var(--apf-accent);
+				outline: 2px dashed var(--apf-accent); outline-offset: -2px;
+			}
+			.apf-side-hint {
+				font-size: 10.5px; color: var(--apf-text-faint); line-height: 1.45;
+				padding: 8px 10px 2px; border-top: 1px solid var(--apf-border);
+				margin-top: 8px;
+			}
 		`;
 		document.head.appendChild(style);
 	};
@@ -686,7 +733,13 @@ frappe.provide("recruitment.applicant_fields_ui");
 				`${row.display_name || ""} ${ref}`.toLowerCase()
 			)}">
 				<td class="apf-col-check"><input type="checkbox" class="apf-row-check" data-ref="${esc(ref)}"/></td>
-				<td class="apf-col-no apf-no">${idx + 1}</td>
+				<td class="apf-col-no apf-no">
+					<div class="apf-no-cell">
+						<span class="apf-grip" draggable="true" data-ref="${esc(ref)}"
+							title="${__("Drag to reposition · click to move to another section")}">⠿</span>
+						<span class="apf-no-num">${idx + 1}</span>
+					</div>
+				</td>
 				<td class="apf-col-field apf-text">
 					<div>
 						<input class="apf-label-input" type="text"
@@ -738,11 +791,26 @@ frappe.provide("recruitment.applicant_fields_ui");
 		return groupRow + colRow;
 	};
 
-	/** Search box + per-channel tallies + the (initially hidden) bulk bar. */
-	AFU.toolbarHtml = function () {
+	/**
+	 * Search box + per-channel tallies + the (initially hidden) bulk bar.
+	 *
+	 * @param {string[]} [sections]  section names offered in the bulk "Move to"
+	 *                               picker. Omit it and the picker is left out.
+	 */
+	AFU.toolbarHtml = function (sections) {
 		const bulkOptions = AFU.TOGGLE_GROUPS.map((g) =>
 			g.cols.map((c) => `<option value="${c.col}">${g.label} · ${c.label}</option>`).join("")
 		).join("");
+
+		// Move several ticked rows at once — the drag-free path to a section change.
+		const moveHtml = (sections && sections.length)
+			? `<span class="apf-bulk-sep">|</span>
+				<select class="apf-bulk-section" title="${__("Move selected fields to section")}">
+					${sections.map((s) => `<option value="${esc(s)}">${esc(s)}</option>`).join("")}
+					<option value="${NEW_SECTION}">${NEW_SECTION}</option>
+				</select>
+				<button class="apf-bulk-btn" data-bulk-move>${__("Move")}</button>`
+			: "";
 
 		return `
 			<div class="apf-toolbar">
@@ -762,19 +830,229 @@ frappe.provide("recruitment.applicant_fields_ui");
 					<select class="apf-bulk-col">${bulkOptions}</select>
 					<button class="apf-bulk-btn primary" data-bulk="1">${__("Enable")}</button>
 					<button class="apf-bulk-btn" data-bulk="0">${__("Disable")}</button>
+					${moveHtml}
 					<button class="apf-bulk-clear" data-bulk-clear>${__("Clear selection")}</button>
 				</div>
 			</div>`;
 	};
 
-	// -------------------------------------------------------------- toolbar --
+	// ------------------------------------------------------------ move/DnD --
+	/**
+	 * The no-drag path to the same operation: pick a section (or name a new one)
+	 * for `refs`. Backs the grip click and the bulk bar's Move button, so a long
+	 * list never has to be dragged across a scrolling pane.
+	 */
+	AFU.promptMoveSection = function (host, refs, apply) {
+		const sections = Array.from(host.querySelectorAll(".apf-side-item"))
+			.map((el) => el.getAttribute("data-section"))
+			.filter(Boolean);
+		const d = new frappe.ui.Dialog({
+			title: __("Move {0} field(s)", [refs.length]),
+			fields: [
+				{
+					fieldname: "section", fieldtype: "Select", reqd: 1,
+					label: __("Move to section"),
+					options: sections.concat([NEW_SECTION]).join("\n"),
+					default: sections[0] || NEW_SECTION,
+				},
+				{
+					fieldname: "new_section", fieldtype: "Data", label: __("New section name"),
+					depends_on: `eval:doc.section=="${NEW_SECTION}"`,
+				},
+			],
+			primary_action_label: __("Move"),
+			primary_action(v) {
+				const target = v.section === NEW_SECTION ? (v.new_section || "").trim() : v.section;
+				if (!target) {
+					frappe.msgprint(__("Enter a name for the new section."));
+					return;
+				}
+				d.hide();
+				apply(target);
+			},
+		});
+		d.show();
+	};
+
+	/**
+	 * Drag a field to reposition it inside its section, or onto a sidebar section
+	 * to move it there; clicking the grip opens the same move as a dialog.
+	 *
+	 * Only the active section's rows are rendered, so a drop on a row is always a
+	 * reorder and a drop on the sidebar is always a section change. Ticked rows
+	 * move together: grabbing one of them drags the whole selection.
+	 *
+	 * Positions are reported as (targetRef, before|after) rather than as an index,
+	 * so the caller resolves them against its own model — which keeps the result
+	 * right while the search box is filtering rows out of the table.
+	 *
+	 * Every handler is delegated to the table body / sidebar rather than bound per
+	 * row: this runs again on every re-render, and the grid can hold 100+ rows.
+	 * dragover fires continuously, so the highlighted row and section are tracked
+	 * in closures — re-scanning the table 60 times a second to clear a class is
+	 * exactly the kind of work that makes a drag feel heavy.
+	 *
+	 * @param {HTMLElement} host  the mounted UI root
+	 * @param {object}      opts  {moveRows(refs, {targetRef, position, section})}
+	 */
+	AFU.bindDragDrop = function (host, opts) {
+		if (!opts || !opts.moveRows) return;
+		const tbody = host.querySelector(".apf-table tbody");
+		const sidebar = host.querySelector(".apf-side");
+		if (!tbody) return;
+
+		let dragRefs = [];
+		let dragged = null;   // the row being dragged
+		let markedRow = null; // row currently showing an insertion line
+		let markedSide = null; // sidebar section currently highlighted
+
+		// Grabbing a ticked row drags the whole tick; any other row drags alone.
+		function refsFor(ref) {
+			const checked = Array.from(host.querySelectorAll(".apf-row-check:checked"))
+				.map((cb) => cb.getAttribute("data-ref"));
+			return checked.includes(ref) ? checked : [ref];
+		}
+
+		function unmark() {
+			if (markedRow) markedRow.classList.remove("apf-drop-before", "apf-drop-after");
+			if (markedSide) markedSide.classList.remove("apf-drop-into");
+			markedRow = markedSide = null;
+		}
+
+		function endDrag() {
+			unmark();
+			if (dragged) dragged.classList.remove("apf-dragging");
+			dragged = null;
+			dragRefs = [];
+		}
+
+		function dropSide(e, tr) {
+			const rect = tr.getBoundingClientRect();
+			return (e.clientY - rect.top) > rect.height / 2 ? "after" : "before";
+		}
+
+		const gripOf = (e) => e.target.closest && e.target.closest(".apf-grip");
+		const rowOf = (e) => e.target.closest && e.target.closest("tr[data-ref]");
+
+		tbody.addEventListener("dragstart", (e) => {
+			const grip = gripOf(e);
+			if (!grip) return;
+			dragRefs = refsFor(grip.getAttribute("data-ref"));
+			dragged = grip.closest("tr");
+			if (dragged) dragged.classList.add("apf-dragging");
+			if (e.dataTransfer) {
+				e.dataTransfer.effectAllowed = "move";
+				try { e.dataTransfer.setData("text/plain", dragRefs.join(",")); } catch (err) { /* noop */ }
+			}
+		});
+		tbody.addEventListener("dragend", endDrag);
+
+		// Click, not drag — the route for anyone who'd rather not drag at all.
+		tbody.addEventListener("click", (e) => {
+			const grip = gripOf(e);
+			if (!grip) return;
+			const refs = refsFor(grip.getAttribute("data-ref"));
+			AFU.promptMoveSection(host, refs, (section) => opts.moveRows(refs, { section }));
+		});
+
+		tbody.addEventListener("dragover", (e) => {
+			if (!dragRefs.length) return;
+			const tr = rowOf(e);
+			if (!tr) return;
+			e.preventDefault();
+			if (e.dataTransfer) e.dataTransfer.dropEffect = "move";
+			if (dragRefs.includes(tr.getAttribute("data-ref"))) { unmark(); return; }
+			const cls = `apf-drop-${dropSide(e, tr)}`;
+			if (markedRow === tr && tr.classList.contains(cls)) return;
+			unmark();
+			markedRow = tr;
+			tr.classList.add(cls);
+		});
+
+		tbody.addEventListener("drop", (e) => {
+			if (!dragRefs.length) return;
+			const tr = rowOf(e);
+			if (!tr) return;
+			e.preventDefault();
+			const targetRef = tr.getAttribute("data-ref");
+			const position = dropSide(e, tr);
+			const refs = dragRefs;
+			endDrag();
+			if (!refs.includes(targetRef)) opts.moveRows(refs, { targetRef, position });
+		});
+
+		if (!sidebar) return;
+		const sectionOf = (e) => e.target.closest && e.target.closest(".apf-side-item");
+
+		sidebar.addEventListener("dragover", (e) => {
+			if (!dragRefs.length) return;
+			const item = sectionOf(e);
+			if (!item) return;
+			e.preventDefault();
+			if (e.dataTransfer) e.dataTransfer.dropEffect = "move";
+			if (markedSide === item) return;
+			unmark();
+			markedSide = item;
+			item.classList.add("apf-drop-into");
+		});
+
+		sidebar.addEventListener("drop", (e) => {
+			if (!dragRefs.length) return;
+			const item = sectionOf(e);
+			if (!item) return;
+			e.preventDefault();
+			const refs = dragRefs;
+			endDrag();
+			opts.moveRows(refs, { section: item.getAttribute("data-section") });
+		});
+	};
+
+	/**
+	 * Reposition `refs` inside `rows` and return the new array.
+	 *
+	 * Shared by both screens: Settings reorders the settings child table, the Job
+	 * Opening reorders its merged template — the arrays differ, the arithmetic
+	 * doesn't. `dest` is either {targetRef, position} (drop on a row: land beside
+	 * it, in its section) or {section} (drop on the sidebar / a dialog: land at
+	 * the end of that section).
+	 *
+	 * Returns {rows, section} — section being where the fields ended up, so the
+	 * caller can switch the view to it.
+	 */
+	AFU.applyMove = function (rows, refs, dest, getSection, setSection) {
+		const refSet = new Set(refs);
+		const moving = rows.filter((r) => refSet.has(r.reference_name));
+		if (!moving.length) return null;
+		const rest = rows.filter((r) => !refSet.has(r.reference_name));
+
+		let section;
+		let insertAt;
+		if (dest.targetRef) {
+			const ti = rest.findIndex((r) => r.reference_name === dest.targetRef);
+			if (ti < 0) return null;
+			section = getSection(rest[ti]);
+			insertAt = ti + (dest.position === "after" ? 1 : 0);
+		} else {
+			section = (dest.section || "").trim() || "General";
+			// End of the target section — or the end of the table when the section
+			// has no rows left (a brand-new one, or one just emptied).
+			let last = -1;
+			rest.forEach((r, i) => { if (getSection(r) === section) last = i; });
+			insertAt = last < 0 ? rest.length : last + 1;
+		}
+
+		moving.forEach((r) => setSection(r, section));
+		rest.splice(insertAt, 0, ...moving);
+		return { rows: rest, section: section };
+	};
+
 	/**
 	 * Wire the toolbar. Counts and filtering read the rendered DOM, so the two
 	 * callers don't have to hand over their row model — they only supply
 	 * `applyBulk`, which writes the change back to whichever document they own.
 	 *
 	 * @param {HTMLElement} host      the mounted UI root
-	 * @param {object}      opts      {applyBulk(col, value, refs)}
+	 * @param {object}      opts      {applyBulk(col, value, refs), moveRows(refs, dest)}
 	 */
 	AFU.bindToolbar = function (host, opts) {
 		AFU.dockChildPanels(host);
@@ -866,6 +1144,20 @@ frappe.provide("recruitment.applicant_fields_ui");
 					});
 				});
 			});
+			const moveBtn = bulk.querySelector("[data-bulk-move]");
+			if (moveBtn && opts && opts.moveRows) {
+				moveBtn.addEventListener("click", () => {
+					const refs = checkedRefs();
+					if (!refs.length) return;
+					const sel = bulk.querySelector(".apf-bulk-section");
+					const value = sel ? sel.value : "";
+					if (!value || value === NEW_SECTION) {
+						AFU.promptMoveSection(host, refs, (section) => opts.moveRows(refs, { section }));
+						return;
+					}
+					opts.moveRows(refs, { section: value });
+				});
+			}
 			const clear = bulk.querySelector("[data-bulk-clear]");
 			if (clear) {
 				clear.addEventListener("click", () => {
@@ -875,6 +1167,8 @@ frappe.provide("recruitment.applicant_fields_ui");
 				});
 			}
 		}
+
+		AFU.bindDragDrop(host, opts);
 
 		applyFilter();
 		AFU.refreshCounts(host);

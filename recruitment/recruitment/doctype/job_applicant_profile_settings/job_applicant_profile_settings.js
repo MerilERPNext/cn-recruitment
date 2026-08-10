@@ -359,6 +359,38 @@
 		loadFlow();
 	}
 
+	/**
+	 * Reposition fields: drop on a row to reorder inside the section, drop on a
+	 * sidebar section (or use the grip / bulk Move) to change section.
+	 *
+	 * The child table's own order IS the order every consumer renders in, so
+	 * reordering the rows and renumbering `idx` is all this has to do; Save
+	 * persists it and the channel forms follow.
+	 */
+	function moveRows(host, frm, state, refs, dest) {
+		const list = frm.doc.default_application_fields || [];
+		const result = AFU.applyMove(
+			list, refs, dest,
+			(r) => r.section || "General",
+			(r, s) => { r.section = s; }
+		);
+		if (!result) return;
+
+		result.rows.forEach((r, i) => { r.idx = i + 1; });
+		frm.doc.default_application_fields = result.rows;
+		frm.refresh_field("default_application_fields");
+		frm.dirty();
+
+		// Follow the fields to wherever they landed, and keep the section they left
+		// listed even if it is now empty (see renderUI) so the move is reversible.
+		state.activeSection = result.section;
+		renderUI(host, frm, state);
+		frappe.show_alert({
+			message: __("{0} field(s) moved to {1}", [refs.length, result.section]),
+			indicator: "green",
+		});
+	}
+
 	function renderUI(host, frm, state) {
 		const rows = frm.doc.default_application_fields || [];
 
@@ -369,6 +401,16 @@
 			if (!(s in counts)) { sectionsList.push(s); counts[s] = 0; }
 			counts[s] += 1;
 		});
+
+		// Sections are derived from the rows, so emptying one would delete the only
+		// drop target that could put its fields back. Keep every section seen this
+		// session listed, at the position it held.
+		(state.knownSections || []).forEach((s, i) => {
+			if (sectionsList.includes(s)) return;
+			sectionsList.splice(Math.min(i, sectionsList.length), 0, s);
+			counts[s] = 0;
+		});
+		state.knownSections = sectionsList.slice();
 
 		if (!rows.length) {
 			host.innerHTML = AFU.emptyState(
@@ -387,7 +429,9 @@
 				<span>${escapeHtml(s)}</span>
 				<span class="apf-count">${counts[s]}</span>
 			</div>
-		`).join("");
+		`).join("") + `<div class="apf-side-hint">${
+			__("Drag a field's ⠿ handle onto a section to move it there, or drop it between rows to reorder.")
+		}</div>`;
 
 		const sectionRows = rows.filter((r) => (r.section || "General") === active);
 		const bodyHtml = sectionRows.length
@@ -405,7 +449,7 @@
 						</div>
 						<button class="apf-add-field" data-section="${escapeHtml(active)}">+ ${__("Add Custom Field")}</button>
 					</div>
-					${AFU.toolbarHtml()}
+					${AFU.toolbarHtml(sectionsList)}
 					<div class="apf-scroll">
 						<table class="apf-table">
 							<thead>${AFU.headerRows()}</thead>
@@ -514,9 +558,11 @@
 			});
 		});
 
-		// Search, per-channel tallies and the bulk bar. `applyBulk` is the only
-		// per-page part: it writes the change into this singleton's own table.
+		// Search, per-channel tallies, the bulk bar and drag-to-move. `applyBulk`
+		// and `moveRows` are the only per-page parts: they write the change into
+		// this singleton's own table.
 		AFU.bindToolbar(host, {
+			moveRows(refs, dest) { moveRows(host, frm, state, refs, dest); },
 			applyBulk(col, value, refs) {
 				const byRef = new Map(
 					(frm.doc.default_application_fields || []).map((r) => [r.reference_name, r])

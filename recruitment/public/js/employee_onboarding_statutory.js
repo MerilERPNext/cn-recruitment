@@ -22,10 +22,12 @@ frappe.ui.form.on("Employee Onboarding", {
         );
         if (!enabled) return;
 
-        // Only once the onboarding form is approved by the SPOC
-        // (custom_onboarding_review_status = Approved) can statutory forms be
-        // generated — keep the buttons hidden until then.
-        if (frm.doc.custom_onboarding_review_status !== "Approved") return;
+        // Only once the onboarding form is approved by the SPOC can statutory
+        // forms be generated — keep the buttons hidden until then. "Approved by
+        // SPOC" is the doc-level rollup in `boarding_status`, which
+        // field_level_approval._derive_boarding_status sets to "Completed"
+        // exactly when every visible portal field has been approved.
+        if (frm.doc.boarding_status !== "Completed") return;
 
         const group = __("Statutory Forms");
 

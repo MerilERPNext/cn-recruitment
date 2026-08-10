@@ -14,33 +14,6 @@
 
 frappe.ui.form.on("Job Requisition", {
     onload(frm) {
-        // Gate: on a NEW requisition, check Raise Requisition Scope up front so a
-        // user who isn't permitted gets a clean popup and is bounced back instead
-        // of filling the form only to be blocked at save. The server-side
-        // before_insert hook remains the authoritative block.
-        if (!frm.is_new()) {
-            return;
-        }
-        frappe.call({
-            method: "recruitment.recruitment.doctype.raise_requisition_scope.raise_requisition_scope.check_can_raise_requisition",
-            callback(r) {
-                const res = r.message || {};
-                if (res.allowed) {
-                    return;
-                }
-                frappe.msgprint({
-                    title: __("Not Allowed to Raise Requisition"),
-                    indicator: "red",
-                    message: res.reason || __("You are not permitted to raise requisitions."),
-                });
-                // Send them somewhere harmless rather than leaving a form they
-                // cannot save open.
-                frappe.set_route("List", "Job Requisition");
-            },
-        });
-    },
-
-    onload(frm) {
         // Only the Active version of a JD may be attached to a requisition.
         // Superseded versions stay readable by name but must not be selectable —
         // otherwise a recruiter could pick an outdated JD by hand, which is
@@ -49,6 +22,8 @@ frappe.ui.form.on("Job Requisition", {
         frm.set_query("custom_job_description_template", () => ({
             filters: { status: ["in", ["Active", ""]] },
         }));
+
+        gate_raise_requisition(frm);
     },
 
     refresh(frm) {
@@ -75,6 +50,34 @@ frappe.ui.form.on("Job Requisition", {
         hydrate_from_job_description(frm, jd);
     },
 });
+
+// Gate: on a NEW requisition, check Raise Requisition Scope up front so a user
+// who isn't permitted gets a clean popup and is bounced back instead of filling
+// the form only to be blocked at save. Raising is deny-by-default, so this fires
+// for anyone not covered by a scope record. The server-side before_insert hook
+// remains the authoritative block.
+function gate_raise_requisition(frm) {
+    if (!frm.is_new()) {
+        return;
+    }
+    frappe.call({
+        method: "recruitment.recruitment.doctype.raise_requisition_scope.raise_requisition_scope.check_can_raise_requisition",
+        callback(r) {
+            const res = r.message || {};
+            if (res.allowed) {
+                return;
+            }
+            frappe.msgprint({
+                title: __("Not Allowed to Raise Requisition"),
+                indicator: "red",
+                message: res.reason || __("You are not permitted to raise requisitions."),
+            });
+            // Send them somewhere harmless rather than leaving a form they
+            // cannot save open.
+            frappe.set_route("List", "Job Requisition");
+        },
+    });
+}
 
 // Hiring Lead Configuration — restrict the Hiring lead (Employee) and Assign to
 // Recruiter (User) dropdowns to the configured users when a config matches:

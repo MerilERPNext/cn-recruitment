@@ -17,7 +17,12 @@ app_include_js = [
 	# Job Applicant Profile Settings and the Job Opening's Job application tab.
 	# Included globally rather than per-doctype because a doctype's own JS is
 	# evaluated BEFORE any doctype_js hook, which would be too late for it.
-	"/assets/recruitment/js/applicant_fields_ui.js",
+	#
+	# ?v= is a cache buster. This path carries no content hash (Frappe only
+	# fingerprints *.bundle.js), so browsers hold the old copy indefinitely and a
+	# change here silently doesn't reach anyone. Bump the number whenever this file
+	# changes — the new URL defeats the browser cache and any service worker.
+	"/assets/recruitment/js/applicant_fields_ui.js?v=3",
 ]
 
 add_to_apps_screen = [
@@ -88,6 +93,8 @@ doctype_js = {
         "public/js/applicant_field_picker.js",
         "public/js/job_opening_eligibility_ui.js",
     ],
+    # Same eligibility builder as the Job Opening, editing the campus defaults.
+    "Campus Eligibility Settings": ["public/js/job_opening_eligibility_ui.js"],
     "TA Interview Strategy Template": ["public/js/interview_round_link.js"],
     "TA Duplicity Check Settings": ["public/js/applicant_field_picker.js"],
     "TA Rehire Check Settings": ["public/js/applicant_field_picker.js"],
@@ -306,9 +313,10 @@ doc_events = {
     },
     "Job Requisition": {
         "before_insert": [
-            # Gate: only employees configured under Raise Requisition Scope may
-            # raise requisitions (empty config ⇒ everyone allowed). Authoritative
-            # block across Desk, React/ESS API and scripted inserts.
+            # Gate: only the roles/employees configured under Raise Requisition
+            # Scope may raise requisitions — deny by default, with the built-in
+            # "Default - System Managers" record as the always-present grant.
+            # Authoritative block across Desk, React/ESS API and scripted inserts.
             "recruitment.recruitment.doctype.raise_requisition_scope.raise_requisition_scope.enforce_can_raise",
         ],
         "validate": [
@@ -348,6 +356,9 @@ doc_events = {
             # and fail with "Route must be unique". Runs last so it de-duplicates
             # whatever route HRMS / earlier hooks settled on.
             "recruitment.customizations.job_opening_settings.ensure_unique_route",
+            # First save on which the opening is posted to Campus: copy the default
+            # eligibility conditions from Campus Eligibility Settings onto it.
+            "recruitment.recruitment.eligibility_engine.apply_default_eligibility_rules",
         ],
     },
     "Employee": {

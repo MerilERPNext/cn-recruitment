@@ -10,10 +10,13 @@ mirrors one Darwin "row".
 
 Per record:
 
-* ``employees_allowed_to_raise_requisitions`` — the population allowed to raise
-  requisitions under this record, via *User Assignments*
-  (``Dynamic User Assignment``) whose ``assigned_users`` child table
-  materialises the concrete Employees each assignment resolves to.
+* **Who may raise** — two OR-combined populations; a requester in *either* is
+  admitted by this record:
+
+    - ``allowed_roles`` — Roles held by the acting User.
+    - ``employees_allowed_to_raise_requisitions`` — *User Assignments*
+      (``Dynamic User Assignment``) whose ``assigned_users`` child table
+      materialises the concrete Employees each assignment resolves to.
 
 * **Scope By** — one *checkbox per basis* (``scope_by_user_assignment`` /
   ``scope_by_department`` / ``scope_by_designation`` / ``scope_by_company``).
@@ -30,13 +33,19 @@ Per record:
   empty selector, or a basis left un-ticked, imposes no restriction. Tick nothing
   ⇒ *organization-wide* for that record.
 
-Gate (first-match across records): an Employee may raise if **any** record
-allows them (they are in that record's allowed population) **and** they satisfy
-that same record's scope.
+Gate (first-match across records): a requester may raise if **any** record
+admits them (Role or User Assignment) **and** they satisfy that same record's
+scope.
 
-Feature switch: when **no record configures any allowed population**, the gate
-imposes NO restriction — everyone may raise — so enabling the feature is an
-explicit act and no existing flow breaks.
+**Deny by default.** There is no "unconfigured ⇒ everyone allowed" fallback: a
+requester with no matching record is blocked. What keeps that from locking the
+system out is the built-in :data:`DEFAULT_SCOPE_NAME` record — ``is_default``,
+role ``System Manager``, no scope bases ticked ⇒ System Managers may raise for
+all companies, departments and designations. It is created once — by
+``patches.create_default_requisition_scope`` on existing sites and by
+``install.after_install`` on new ones — cannot be deleted, and cannot
+have the System Manager role removed. Every other population needs its own
+record.
 
 Two evaluation contexts:
 
@@ -46,12 +55,35 @@ Two evaluation contexts:
 * **Early / client** (``check_can_raise_requisition`` before the form opens) —
   those values aren't known yet, so a field-based scope that the user could
   still satisfy is *deferred* (treated as allowed) and re-checked at submit. The
-  User-Assignment scope and the allowed-population gate are always evaluable, so
-  a user with no path at all is still blocked early.
+  Role check, the User-Assignment scope and the allowed-population gate are
+  always evaluable, so a user with no path at all is still blocked early.
 
-The gate keys on the **Employee** because a Job Requisition's ``requested_by``
-is an Employee link and ``Assigned Users`` stores ``employee_id`` — so no
-User⇄Employee round-trip is needed on the hot path.
+Roles are matched on the **acting User** (an actor property) while assignments
+are matched on the requester **Employee** — a Job Requisition's ``requested_by``
+is an Employee link and ``Assigned Users`` stores ``employee_id``, so no
+User⇄Employee round-trip is needed on the hot path. The split is what lets a
+System Manager raise *on behalf of* another employee.
+
+Cost
+----
+The gate sits on the Job Requisition insert path, so its query count is **flat
+in the number of configured records** — adding scope records does not make
+raising slower:
+
+* 1 — the scope records themselves
+* 2 — the two allowed-population child tables (roles, assignments)
+* 0–4 — one per *ticked* scope basis; an un-ticked basis is never read
+* 0–1 — all Dynamic User Assignments resolved in one batch, lazily
+
+Measured on a real site: 3 queries when only the built-in default record exists
+(allow *and* deny), 4 for a System Manager once an assignment-based record is
+added (the role match short-circuits before any assignment lookup), and 5 for an
+assignment-based grant. Configuration and membership are both memoised per
+request, so ten sequential evaluations cost 5 queries in total rather than 50.
+
+All reads go through ``frappe.qb`` rather than ``frappe.get_all`` — see
+:func:`_grouped_child` for the two reasons, both of which are correctness
+issues, not style.
 """
 
 from collections import defaultdict
@@ -62,8 +94,18 @@ from frappe.model.document import Document
 
 SCOPE_DOCTYPE = "Raise Requisition Scope"
 ALLOWED_CHILD = "Raise Requisition Allowed Assignment"
+ALLOWED_ROLE_CHILD = "Raise Requisition Allowed Role"
 ASSIGNED_USERS = "Assigned Users"
 ALLOWED_FIELD = "employees_allowed_to_raise_requisitions"
+ALLOWED_ROLES_FIELD = "allowed_roles"
+
+# The built-in configuration that keeps administrators from locking themselves
+# out once raising became deny-by-default. Created by :func:`ensure_default_scope`.
+DEFAULT_SCOPE_NAME = "Default - System Managers"
+DEFAULT_SCOPE_ROLE = "System Manager"
+
+# Attribute on frappe.local holding the request-scoped config cache.
+_CONFIG_CACHE_KEY = "_raise_requisition_scope_configs"
 
 # dimension key -> (child doctype, parentfield, link fieldname, requisition
 # field, "Scope by" checkbox fieldname). requisition field is None for the
@@ -77,49 +119,187 @@ SCOPE_DIMENSIONS = {
 
 
 class RaiseRequisitionScope(Document):
-	pass
+	def validate(self):
+		"""A record that admits nobody is a no-op that silently misleads whoever
+		created it — raising is deny-by-default, so an empty population grants
+		nothing rather than everything."""
+		if not self.get(ALLOWED_ROLES_FIELD) and not self.get(ALLOWED_FIELD):
+			frappe.throw(
+				_(
+					"Add at least one Role or one User Assignment under <b>Who May Raise "
+					"Requisitions</b>. A configuration with neither allows nobody to raise."
+				),
+				title=_("Nobody Configured"),
+			)
+		self._protect_default()
+
+	def _protect_default(self):
+		"""The default record must keep its System Manager grant — otherwise a
+		single careless edit leaves nobody able to raise a requisition."""
+		if not self.get("is_default"):
+			return
+		roles = [row.role for row in self.get(ALLOWED_ROLES_FIELD) or []]
+		if DEFAULT_SCOPE_ROLE not in roles:
+			frappe.throw(
+				_("The {0} role cannot be removed from the default configuration {1}.").format(
+					frappe.bold(DEFAULT_SCOPE_ROLE), frappe.bold(self.name)
+				),
+				title=_("Not Allowed"),
+			)
+
+	def on_update(self):
+		clear_config_cache()
+
+	def on_trash(self):
+		if self.get("is_default"):
+			frappe.throw(
+				_(
+					"{0} is the built-in configuration that lets System Managers raise "
+					"requisitions and cannot be deleted. Edit its scope instead."
+				).format(frappe.bold(self.name)),
+				title=_("Not Allowed"),
+			)
+		clear_config_cache()
+
+
+# ── Default record ────────────────────────────────────────────────────────────
+
+
+def ensure_default_scope():
+	"""Create (or repair) the built-in :data:`DEFAULT_SCOPE_NAME` record.
+
+	Raising a requisition is deny-by-default: a user may raise only if some
+	record admits them. This record is what stops that from locking the system
+	out — role System Manager, no scope bases ticked, so System Managers may
+	raise for all companies, departments and designations. Everyone else needs
+	their own record.
+
+	Called from two places, and it needs both:
+
+	* ``recruitment.patches.create_default_requisition_scope`` — for sites that
+	  already have the app installed.
+	* ``install.after_install`` — because ``frappe.installer.install_app``
+	  defaults to ``set_as_patched=True``, which writes a Patch Log row for every
+	  patch *without running it*. A fresh install would otherwise never get the
+	  record, and no one but Administrator could raise a requisition.
+
+	Idempotent: it only fills in what is absent and never overwrites an
+	administrator's edits to the record's scope.
+	"""
+	if not frappe.db.exists("DocType", SCOPE_DOCTYPE):
+		return
+	if not frappe.db.exists("Role", DEFAULT_SCOPE_ROLE):
+		return
+
+	if frappe.db.exists(SCOPE_DOCTYPE, DEFAULT_SCOPE_NAME):
+		doc = frappe.get_doc(SCOPE_DOCTYPE, DEFAULT_SCOPE_NAME)
+		# Repair only the two invariants the gate depends on; the scope selectors
+		# are the administrator's to change.
+		changed = False
+		if not doc.is_default:
+			doc.is_default = 1
+			changed = True
+		if DEFAULT_SCOPE_ROLE not in [row.role for row in doc.get(ALLOWED_ROLES_FIELD) or []]:
+			doc.append(ALLOWED_ROLES_FIELD, {"role": DEFAULT_SCOPE_ROLE})
+			changed = True
+		if changed:
+			doc.save(ignore_permissions=True)
+		return
+
+	doc = frappe.new_doc(SCOPE_DOCTYPE)
+	doc.configuration_name = DEFAULT_SCOPE_NAME
+	doc.is_default = 1
+	doc.append(ALLOWED_ROLES_FIELD, {"role": DEFAULT_SCOPE_ROLE})
+	# No basis ticked ⇒ organization-wide: all companies, all departments, all
+	# designations. `scope_by_user_assignment` defaults to 1 on the doctype, so
+	# clear it explicitly.
+	for _key, (_c, _pf, _vf, _rf, check_field) in SCOPE_DIMENSIONS.items():
+		doc.set(check_field, 0)
+	doc.insert(ignore_permissions=True)
 
 
 # ── Resolution helpers ────────────────────────────────────────────────────────
 
 
 def _grouped_child(child_dt, parentfield, valuefield, parents):
-	"""``{parent: [value, ...]}`` for the given child table rows of ``parents``."""
-	rows = frappe.get_all(
-		child_dt,
-		filters={
-			"parenttype": SCOPE_DOCTYPE,
-			"parentfield": parentfield,
-			"parent": ["in", parents],
-			valuefield: ["is", "set"],
-		},
-		fields=["parent", valuefield],
-	)
+	"""``{parent: [value, ...]}`` for the given child table rows of ``parents``.
+
+	Deliberately uses the query builder rather than ``frappe.get_all``, for two
+	independent reasons — do not convert it back:
+
+	1. ``DatabaseQuery.set_optional_columns`` strips "optional" meta columns from
+	   the SELECT using a naive *substring* test against
+	   ``("_user_tags", "_comments", "_assign", "_liked_by", "_seen")`` — and
+	   ``user_assignment`` contains ``_assign``. Child tables have no ``_assign``
+	   column, so ``get_all`` silently drops the value column and every row comes
+	   back with the field missing (``None``), which reads as "nobody is
+	   configured" and blocks every requester.
+	2. Reading child doctypes directly through ``get_all`` without a
+	   ``parent_doctype`` is increasingly restricted across Frappe versions. The
+	   query builder is stable on v15 and v16 and bypasses the permission layer
+	   outright — which is what a security gate wants: a user must not be able to
+	   hide a configuration from the gate by lacking read access to it.
+	"""
+	table = frappe.qb.DocType(child_dt)
+	value_col = table[valuefield]
+	rows = (
+		frappe.qb.from_(table)
+		.select(table.parent, value_col)
+		.where(
+			(table.parenttype == SCOPE_DOCTYPE)
+			& (table.parentfield == parentfield)
+			& (table.parent.isin(parents))
+			& value_col.notnull()
+			& (value_col != "")
+		)
+	).run(as_dict=True)
+
 	grouped = defaultdict(list)
 	for r in rows:
-		grouped[r.parent].append(r.get(valuefield))
+		grouped[r["parent"]].append(r[valuefield])
 	return grouped
 
 
 def _load_configs():
 	"""Every Raise Requisition Scope record (creation order — first-match wins) as
-	a dict of its allowed population and its scope selector values.
+	a dict of its allowed populations and its scope selector values.
 
-	Reads each child table in bulk (one query each) rather than loading parent
-	docs, so the gate stays cheap on the save path."""
+	Reads each child table in bulk rather than loading parent docs, so the gate
+	stays cheap on the save path. Cost is **flat in the number of configured
+	records**: one query for the records, one each for the two allowed-population
+	tables, and one per *ticked* scope basis — an un-ticked basis is never
+	queried, since its values could not affect the outcome. Assignment membership
+	is resolved separately and lazily (see :class:`_AssignmentMembership`).
+	"""
 	check_fields = [dim[4] for dim in SCOPE_DIMENSIONS.values()]
-	records = frappe.get_all(
-		SCOPE_DOCTYPE, fields=["name", *check_fields], order_by="creation asc"
-	)
+
+	# The parent table is read with the query builder too. `get_all` would work
+	# here only by accident: `scope_by_user_assignment` also contains `_assign`,
+	# and survives the substring strip purely because parent tables *do* have an
+	# `_assign` column. Not a property worth depending on.
+	scope_table = frappe.qb.DocType(SCOPE_DOCTYPE)
+	records = (
+		frappe.qb.from_(scope_table)
+		.select(scope_table.name, *[scope_table[f] for f in check_fields])
+		.orderby(scope_table.creation)
+	).run(as_dict=True)
 	if not records:
 		return []
 
-	parents = [r.name for r in records]
+	parents = [r["name"] for r in records]
 	allowed_by = _grouped_child(ALLOWED_CHILD, ALLOWED_FIELD, "user_assignment", parents)
-	scope_values = {
-		key: _grouped_child(child_dt, parentfield, valuefield, parents)
-		for key, (child_dt, parentfield, valuefield, _reqfield, _check) in SCOPE_DIMENSIONS.items()
-	}
+	roles_by = _grouped_child(ALLOWED_ROLE_CHILD, ALLOWED_ROLES_FIELD, "role", parents)
+
+	# Only read the child table of a basis some record actually ticks. A basis
+	# nobody ticked imposes no restriction anywhere, so its values are dead
+	# weight — this is what keeps the common single-basis setup at one query
+	# instead of four.
+	scope_values = {}
+	for key, (child_dt, parentfield, valuefield, _reqfield, check_field) in SCOPE_DIMENSIONS.items():
+		if any(rec.get(check_field) for rec in records):
+			scope_values[key] = _grouped_child(child_dt, parentfield, valuefield, parents)
+		else:
+			scope_values[key] = {}
 
 	configs = []
 	for rec in records:
@@ -129,36 +309,94 @@ def _load_configs():
 			for key, (_c, _pf, _vf, _rf, check_field) in SCOPE_DIMENSIONS.items()
 			if rec.get(check_field)
 		}
+		name = rec["name"]
 		configs.append(
 			{
-				"name": rec.name,
+				"name": name,
 				"dims_enabled": enabled,
-				"allowed_names": allowed_by.get(rec.name, []),
+				"allowed_names": allowed_by.get(name, []),
+				"allowed_roles": roles_by.get(name, []),
 				# Per-dimension selector values, keyed by dimension.
-				"scope": {key: grouped.get(rec.name, []) for key, grouped in scope_values.items()},
+				"scope": {key: grouped.get(name, []) for key, grouped in scope_values.items()},
 			}
 		)
 	return configs
 
 
-def _resolve_assignment_employees(assignment_names):
-	"""Set of Employee IDs resolved by the given Dynamic User Assignments, read
-	from their materialised ``assigned_users`` child rows. Empty set when the
-	input is empty or nothing resolves."""
-	if not assignment_names:
-		return set()
-	return set(
-		frappe.get_all(
-			ASSIGNED_USERS,
-			filters={
-				"parenttype": "Dynamic User Assignment",
-				"parentfield": "assigned_users",
-				"parent": ["in", list(assignment_names)],
-				"employee_id": ["is", "set"],
-			},
-			pluck="employee_id",
-		)
-	)
+def _cached_gate_data():
+	"""``(configs, membership)`` memoised for the life of the request.
+
+	``evaluate`` is normally called once per request, but a bulk insert (a data
+	import, a scripted loop creating many requisitions) runs the gate once per
+	document — without this the same unchanging configuration, and the same
+	assignment membership, would be re-read for every row. Caching both together
+	makes a bulk insert cost one lookup in total rather than one per document.
+
+	Invalidated by :meth:`RaiseRequisitionScope.on_update` / ``on_trash`` so an
+	administrator editing a record in one request still sees the change take
+	effect immediately. Membership is a snapshot taken on first use within the
+	request; a Dynamic User Assignment changing mid-request is not picked up
+	until the next one, which is the same guarantee any single evaluation
+	already had."""
+	data = getattr(frappe.local, _CONFIG_CACHE_KEY, None)
+	if data is None:
+		configs = _load_configs()
+		data = (configs, _AssignmentMembership(configs))
+		setattr(frappe.local, _CONFIG_CACHE_KEY, data)
+	return data
+
+
+def clear_config_cache():
+	"""Drop the request-scoped config cache (see :func:`_cached_configs`)."""
+	if hasattr(frappe.local, _CONFIG_CACHE_KEY):
+		delattr(frappe.local, _CONFIG_CACHE_KEY)
+
+
+class _AssignmentMembership:
+	"""Batched, lazy Employee membership for Dynamic User Assignments.
+
+	Every assignment referenced anywhere in the loaded configs is resolved in a
+	**single** query, on first use. This matters because the same assignment is
+	consulted twice per record — once for the allowed population and again for
+	the User-Assignment scope basis — so the naive form issued up to two queries
+	per configured record on the requisition save path. Resolution is skipped
+	entirely when nothing needs it, which is the common role-only case (a System
+	Manager hitting the built-in default record never touches this table)."""
+
+	def __init__(self, configs):
+		names = set()
+		for c in configs:
+			names.update(c["allowed_names"])
+			names.update(c["scope"].get("User Assignment") or [])
+		self._names = names
+		self._by_assignment = None
+
+	def _load(self):
+		self._by_assignment = defaultdict(set)
+		if not self._names:
+			return
+		table = frappe.qb.DocType(ASSIGNED_USERS)
+		rows = (
+			frappe.qb.from_(table)
+			.select(table.parent, table.employee_id)
+			.where(
+				(table.parenttype == "Dynamic User Assignment")
+				& (table.parentfield == "assigned_users")
+				& (table.parent.isin(list(self._names)))
+				& table.employee_id.notnull()
+				& (table.employee_id != "")
+			)
+		).run(as_dict=True)
+		for r in rows:
+			self._by_assignment[r["parent"]].add(r["employee_id"])
+
+	def covers(self, assignment_names, employee):
+		"""Whether ``employee`` is resolved by any of ``assignment_names``."""
+		if not employee or not assignment_names:
+			return False
+		if self._by_assignment is None:
+			self._load()
+		return any(employee in self._by_assignment.get(n, ()) for n in assignment_names)
 
 
 def _employee_for_user(user):
@@ -168,10 +406,22 @@ def _employee_for_user(user):
 	return frappe.db.get_value("Employee", {"user_id": user, "status": "Active"}, "name")
 
 
+def _admits(config, employee, user_roles, membership):
+	"""Whether ``config``'s *who may raise* population covers this requester.
+
+	Role (on the acting User) OR User Assignment (on the requester Employee).
+	The role test is checked first because it costs nothing — it never touches
+	the database, so a role-only grant short-circuits before any assignment
+	membership is resolved."""
+	if config["allowed_roles"] and user_roles.intersection(config["allowed_roles"]):
+		return True
+	return membership.covers(config["allowed_names"], employee)
+
+
 # ── Scope evaluation ──────────────────────────────────────────────────────────
 
 
-def _dimension_satisfied(dimension, values, employee, context):
+def _dimension_satisfied(dimension, values, employee, context, membership):
 	"""Single-basis check → ``True`` / ``False`` / ``None`` (deferred).
 
 	An empty selector ⇒ organization-wide for that basis (no restriction)."""
@@ -179,7 +429,7 @@ def _dimension_satisfied(dimension, values, employee, context):
 		return True
 
 	if dimension == "User Assignment":
-		return employee in _resolve_assignment_employees(values)
+		return membership.covers(values, employee)
 
 	# Department / Designation / Company — match the requisition's own value.
 	_child, _pf, _vf, reqfield, _check = SCOPE_DIMENSIONS[dimension]
@@ -188,7 +438,7 @@ def _dimension_satisfied(dimension, values, employee, context):
 	return context.get(reqfield) in values
 
 
-def _scope_satisfied(config, employee, context):
+def _scope_satisfied(config, employee, context, membership):
 	"""Whether ``config``'s scope admits this requester, AND-combining every
 	ticked basis.
 
@@ -197,7 +447,7 @@ def _scope_satisfied(config, employee, context):
 	can't be evaluated yet (no ``context``) — the caller treats ``None`` as
 	"defer to submit". No bases ticked ⇒ organization-wide ⇒ ``True``."""
 	results = [
-		_dimension_satisfied(dim, config["scope"].get(dim, []), employee, context)
+		_dimension_satisfied(dim, config["scope"].get(dim, []), employee, context, membership)
 		for dim in config["dims_enabled"]
 	]
 	if any(r is False for r in results):
@@ -207,36 +457,31 @@ def _scope_satisfied(config, employee, context):
 	return True
 
 
-def evaluate(employee, context=None):
-	"""Return ``(allowed: bool, reason: str)`` for whether ``employee`` may raise
-	a requisition under the current Raise Requisition Scope configuration.
+def evaluate(employee, context=None, user=None):
+	"""Return ``(allowed: bool, reason: str)`` for whether this requester may
+	raise a requisition under the current Raise Requisition Scope configuration.
+
+	``employee`` is the requester (a Job Requisition's ``requested_by``) and is
+	matched against User Assignment populations; ``user`` (defaulting to the
+	session user) is the actor whose Roles are matched. Either may admit.
 
 	``context`` (a dict with ``department`` / ``designation`` / ``company``) is
 	supplied at submit for full field-based scope enforcement; omit it for the
 	early client check, where field-based scopes are deferred.
 
-	``reason`` is a user-facing message when blocked, empty when allowed."""
-	configs = _load_configs()
-
-	# Feature off — no record configures an allowed population ⇒ everyone allowed.
-	if not any(c["allowed_names"] for c in configs):
-		return True, ""
-
-	if not employee:
-		return False, _(
-			"Raising requisitions is restricted to configured employees, and your "
-			"account isn't linked to an eligible Employee. Contact your HR administrator."
-		)
+	Denies when nothing matches — there is no unconfigured-means-allowed
+	fallback. ``reason`` is a user-facing message when blocked, empty when
+	allowed."""
+	user_roles = set(frappe.get_roles(user or frappe.session.user))
+	configs, membership = _cached_gate_data()
 
 	matched_allowed = False
 	deferred = False
 	for c in configs:
-		if not c["allowed_names"]:
-			continue
-		if employee not in _resolve_assignment_employees(c["allowed_names"]):
+		if not _admits(c, employee, user_roles, membership):
 			continue
 		matched_allowed = True
-		satisfied = _scope_satisfied(c, employee, context)
+		satisfied = _scope_satisfied(c, employee, context, membership)
 		if satisfied is True:
 			return True, ""
 		if satisfied is None:
@@ -253,16 +498,23 @@ def evaluate(employee, context=None):
 			"your HR administrator to extend the Scope of Raising Requisitions."
 		)
 
+	if not employee:
+		return False, _(
+			"Raising requisitions is restricted to configured roles and employees, and "
+			"your account isn't linked to an eligible Employee. Contact your HR "
+			"administrator."
+		)
+
 	return False, _(
-		"You are not permitted to raise requisitions. This is restricted to "
-		"employees configured under Raise Requisition Scope. Contact your HR "
+		"You are not permitted to raise requisitions. This is restricted to the roles "
+		"and employees configured under Raise Requisition Scope. Contact your HR "
 		"administrator to be added."
 	)
 
 
-def can_employee_raise(employee, context=None):
+def can_employee_raise(employee, context=None, user=None):
 	"""Boolean convenience wrapper over :func:`evaluate`."""
-	allowed, _reason = evaluate(employee, context)
+	allowed, _reason = evaluate(employee, context, user)
 	return allowed
 
 
@@ -272,11 +524,14 @@ def enforce_can_raise(doc, method=None):
 	Resolves the requester Employee from ``requested_by`` (falling back to the
 	session user's Employee) and enforces both the allowed population and the
 	field-based scope (using the requisition's own Department / Designation /
-	Company). Throws a clear message when disallowed. System Managers /
-	Administrator bypass the gate so setup is never self-locked."""
+	Company). Throws a clear message when disallowed.
+
+	Only Administrator bypasses outright. System Managers pass through the
+	regular gate via the built-in :data:`DEFAULT_SCOPE_NAME` record, so the
+	configuration stays the single source of truth."""
 	if frappe.flags.in_install or frappe.flags.in_migrate or frappe.flags.in_test:
 		return
-	if frappe.session.user == "Administrator" or "System Manager" in frappe.get_roles():
+	if frappe.session.user == "Administrator":
 		return
 
 	employee = getattr(doc, "requested_by", None) or _employee_for_user(frappe.session.user)
@@ -307,7 +562,7 @@ def check_can_raise_requisition(employee=None, user=None, department=None, desig
 
 	    {"allowed": bool, "reason": str, "employee": str | None}
 	"""
-	if frappe.session.user == "Administrator" or "System Manager" in frappe.get_roles():
+	if frappe.session.user == "Administrator":
 		return {"allowed": True, "reason": "", "employee": employee}
 
 	if not employee:

@@ -4,16 +4,16 @@
 // this just keeps the button out of the way. No matching config / not a hiring
 // lead / setting ON → button stays as normal.
 // --- Percentage-based salary components -------------------------------------
-// Each Earnings/Deduction row can carry a % of Basic (custom_base_salary) or of
-// monthly CTC; the amount is auto-computed live. Mirrors the server-side
+// Each Earnings/Deduction row can carry a % of Basic (custom_base_salary); the
+// amount is auto-computed live. Mirrors the server-side
 // recruitment.customizations.job_offer.apply_percentage_components.
+//
+// The "% of CTC" basis has no source any more: it read custom_ctc_per_annum /
+// custom_ctc_per_month, which went with the Salary Breakup section. Rows on that
+// basis compute 0 until it is re-pointed at a surviving CTC field.
 function jobOfferBasisAmount(frm, row) {
     const annual = (frm.doc.custom_salary_period === "Annual");
-    if (row.basis === "CTC") {
-        let a = frm.doc.custom_ctc_per_annum || 0;
-        if (!a && frm.doc.custom_ctc_per_month) a = frm.doc.custom_ctc_per_month * 12;
-        return annual ? a : (a ? a / 12 : 0);
-    }
+    if (row.basis === "CTC") return 0;
     const base = frm.doc.custom_base_salary || 0;
     return annual ? base * 12 : base;
 }
@@ -29,6 +29,31 @@ function recomputeSalaryComponents(frm) {
         });
         frm.refresh_field(tbl);
     });
+}
+
+// --- Salary Component link-picker filters ------------------------------------
+// The flags these pickers filter on (`custom_variable_part_of_ctc`,
+// `custom_is_extra_payment`) are custom fields owned by cn_indian_payroll, so they
+// are absent on any site where that app isn't installed — or is installed but
+// hasn't migrated since the field was added. Frappe v15 quietly dropped a filter
+// on an unknown field; v16 validates filter fields against the permitted-field set
+// and aborts the link search with
+//   PermissionError: You do not have permission to access field: Salary Component.<field>
+// which surfaced as a "Permission Error" dialog and a dead picker.
+//
+// So keep only the filters whose field actually exists in the local Salary
+// Component meta: where the flag is present the picker narrows as intended,
+// elsewhere it falls back to the unfiltered component list instead of erroring.
+const JOB_OFFER_SALARY_COMPONENT = "Salary Component";
+
+function jobOfferComponentFilters(filters) {
+    const available = {};
+    Object.keys(filters).forEach((fieldname) => {
+        if (frappe.meta.has_field(JOB_OFFER_SALARY_COMPONENT, fieldname)) {
+            available[fieldname] = filters[fieldname];
+        }
+    });
+    return available;
 }
 
 frappe.ui.form.on("Job Offer", {
@@ -80,11 +105,8 @@ frappe.ui.form.on("Job Offer", {
 		frm.set_query("component", "custom_earnings", () => ({ filters: { type: "Earning" } }));
 		frm.set_query("component", "custom_deduction", () => ({ filters: { type: "Deduction" } }));
 
-        frm.set_query("clause_type", "custom_offer_clauses", () => ({ filters: { custom_variable_part_of_ctc: 1 } }));
-		frm.set_query("salary_component", "custom_extra_payment", () => ({ filters: { custom_is_special_payment: 1 } }));
-
-
-
+		// (clause_type / salary_component pickers are set up in the handler below,
+		// which owns the Salary Component custom-field filters.)
 
 		// Offer Letter Template picker: only Document Templates whose reference
 		// doctype is Job Offer.
@@ -172,17 +194,11 @@ frappe.ui.form.on("Job Offer", {
 	custom_salary_period:function(frm){
 		recomputeSalaryComponents(frm);
 	},
-	custom_ctc_per_annum:function(frm){
-		if (frm.fields_dict.custom_ctc_per_month) {
-			if(frm.doc.custom_ctc_per_annum){
-				frm.set_value("custom_ctc_per_month", Math.round(frm.doc.custom_ctc_per_annum / 12));
-			}else{
-				frm.set_value("custom_ctc_per_month",null)
-			}
-		}
-		recomputeSalaryComponents(frm);
-	},
 	job_applicant: function(frm) {
+		// Current / Expected Salary come across declaratively (fetch_from on the
+		// custom fields), so nothing to pull for them here. This call only applies
+		// whatever Job Applicant -> Job Offer rows are configured in Recruitment
+		// Settings' mapping table.
 		if (frm.doc.job_applicant) {
 			frappe.call({
 				method: "recruitment.auto_fetch_fields.job_applicant_fields",
@@ -195,16 +211,6 @@ frappe.ui.form.on("Job Offer", {
 					}
 				}
 			});
-			if (frm.fields_dict.custom_ctc_per_annum) {
-				frappe.db.get_value("Job Applicant", frm.doc.job_applicant, "custom_ctc_finalized")
-					.then(r => {
-						if (r && r.message) {
-							frm.set_value("custom_ctc_per_annum", r.message.custom_ctc_finalized);
-						}
-					});
-			}
-		} else if (frm.fields_dict.custom_ctc_per_annum) {
-			frm.set_value("custom_ctc_per_annum", null);
 		}
 	}
 })
@@ -336,36 +342,23 @@ frappe.ui.form.on("Job Offer", {
 
 
 
-        // Clause type picker (Job Offer Clause.clause_type → Salary Component).
-        //
-        // This filtered on `custom_variable_part_of_ctc`, which exists on no
-        // doctype in any installed app. HRMS v15 silently drops an unknown filter
-        // field, but v16 validates it and aborts the link search with a
-        // "You do not have permission to access field" PermissionError — so the
-        // picker was dead on v16. Left unfiltered until the intended rule is
-        // confirmed: the closest real fields (`custom_is_part_of_ctc` +
-        // `custom_component_sub_type = "Variable"`) match NO component at all, so
-        // guessing would just swap the error for an empty list.
-        // frm.set_query("clause_type", "custom_offer_clauses", () => ({}));
+        // Salary Component pickers. Both filters go through
+        // jobOfferComponentFilters(), which drops a flag the local Salary
+        // Component meta doesn't define — see its comment for why. Prefetch the
+        // meta so has_field() has something to answer from by the time a row is
+        // clicked; if it hasn't landed yet the picker just opens unfiltered.
+        frappe.model.with_doctype(JOB_OFFER_SALARY_COMPONENT);
+
+        // Clause type picker (Job Offer Clause.clause_type → Salary Component):
+        // components that make up the variable part of CTC.
+        frm.set_query("clause_type", "custom_offer_clauses", () => ({
+            filters: jobOfferComponentFilters({ custom_variable_part_of_ctc: 1 }),
+        }));
 
         // Extra payment picker → components flagged as extra payments.
-        // Was `custom_is_special_payment`, which likewise doesn't exist; the real
-        // flag on Salary Component is `custom_is_extra_payment` ("Is Extra
-        // Payment"), matching this table's own name.
         frm.set_query("salary_component", "custom_extra_payment", () => ({
-            filters: { custom_is_extra_payment: 1 },
+            filters: jobOfferComponentFilters({ custom_is_extra_payment: 1 }),
         }));
-
-        frm.set_query("clause_type", "custom_offer_clauses", () => ({
-            filters: { custom_variable_part_of_ctc: 1 },
-        }));
-
-
-
-
-        
-
-        
 
         // Compute button only in "Auto by Grade" mode — the default/legacy
         // "Salary Structure" flow is left completely untouched.
@@ -585,6 +578,21 @@ function recruitment_offer_letter_styles() {
         },
 
         onload(frm) {
+            // Scope of the (editable) requisition picker. A server-side link
+            // query, not a filters dict: the scope depends on the candidate's
+            // opening, which only the server can resolve, and this way it is
+            // resolved inside the search request the picker already makes —
+            // no extra round trip on form load, and no window where the picker
+            // opens unscoped because the answer has not landed yet.
+            frm.set_query("custom_job_requisition", () => ({
+                query: "recruitment.customizations.job_offer.job_requisition_query",
+                filters: {
+                    job_applicant: frm.doc.job_applicant || "",
+                    company: frm.doc.company || "",
+                    designation: frm.doc.designation || "",
+                },
+            }));
+
             // "Create Job Offer" on the Job Applicant hiring workflow routes to a
             // NEW Job Offer with job_applicant already set on the local doc. Frappe
             // fires no change event for a value present before the form renders, so

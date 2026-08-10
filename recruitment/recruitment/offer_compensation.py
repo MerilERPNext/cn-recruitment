@@ -194,7 +194,7 @@ def ensure_offer_compensation_fields():
             "fieldname": "custom_clauses_section",
             "label": "Offer Clauses & Commitments",
             "fieldtype": "Section Break",
-            "insert_after": "custom_maximum",
+            "insert_after": "custom_expected_salary",
             "collapsible": 1,
             "module": "Recruitment",
         },

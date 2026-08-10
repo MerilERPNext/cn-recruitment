@@ -9,6 +9,32 @@ import frappe
 
 def after_install():
     repair_broken_fetch_from()
+    ensure_default_requisition_scope()
+
+
+def ensure_default_requisition_scope():
+    """Seed the built-in "Default - System Managers" Raise Requisition Scope.
+
+    Install-time only — the steady-state path is the one-time patch
+    `recruitment.patches.create_default_requisition_scope`, and the record is
+    protected from deletion, so it is deliberately NOT re-asserted on every
+    migrate.
+
+    This exists because `frappe.installer.install_app` defaults to
+    `set_as_patched=True`: a fresh install writes a Patch Log row for every patch
+    without running it, so the patch alone would never fire on a new site and no
+    one but Administrator could raise a requisition.
+    """
+    from recruitment.recruitment.doctype.raise_requisition_scope.raise_requisition_scope import (
+        ensure_default_scope,
+    )
+
+    try:
+        ensure_default_scope()
+    except Exception:
+        frappe.logger("recruitment").warning(
+            "ensure_default_requisition_scope: skipped", exc_info=True
+        )
 
 
 def after_migrate():
@@ -25,6 +51,19 @@ def after_migrate():
     ensure_alumni_employee_request_workflow()
     ensure_alumni_hd_category_field()
     ensure_notice_portal_fields()
+    ensure_education_presentation()
+
+
+def ensure_education_presentation():
+    """Education grid columns + the Education Stage label.
+
+    Runs here rather than in a patch because other installed apps customise
+    Employee Education too, and their customisation sync would otherwise undo it
+    on the next migrate — see recruitment.recruitment.education_presentation.
+    """
+    from recruitment.recruitment.education_presentation import apply_education_presentation
+
+    apply_education_presentation()
 
 
 def ensure_notice_portal_fields():

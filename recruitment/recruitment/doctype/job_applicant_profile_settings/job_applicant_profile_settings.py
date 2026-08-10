@@ -5,6 +5,7 @@ import json
 
 import frappe
 from frappe.model.document import Document
+from frappe.utils import cint
 
 
 # Job Applicant field types we DON'T want to expose in the applicant profile
@@ -29,6 +30,11 @@ EXCLUDED_TABS = {
 }
 
 TABLE_FIELDTYPES = {"Table", "Table MultiSelect"}
+
+# Spacing between consecutive settings positions in the merged template's
+# `display_order`. The gaps are what a Job Opening drops a repositioned field
+# into (see public/js/job_opening.js) — keep it in step with ORDER_STEP there.
+ORDER_STEP = 1000
 
 
 def _init_child_field_config(child_doctype):
@@ -374,14 +380,26 @@ def get_job_applicant_profile_template(opening=None):
 		row = overrides.get(ref) or defaults.get(ref)
 		return row.get(attr) if row else fallback
 
-	sections_order = []
 	rows = []
 	for ref, def_row in defaults.items():
-		section = def_row.section or "General"
-		if section not in sections_order:
-			sections_order.append(section)
 		override_row = overrides.get(ref)
+		# Placement is per-opening: the opening's own row carries the section it was
+		# dragged into and its position within that section. Neither is set until
+		# someone moves the field on this opening, so the settings placement is what
+		# every untouched field keeps.
+		section = (
+			(override_row.get("section") if override_row else None)
+			or def_row.section
+			or "General"
+		)
+		# Placement key. Settings positions are spaced ORDER_STEP apart so a field
+		# moved on this opening can be given a value BETWEEN two others — that is
+		# what lets an opening reposition one field without having to restate the
+		# position (and therefore the whole configuration) of every other field.
+		override_order = cint(override_row.get("display_order")) if override_row else 0
 		rows.append({
+			"display_order": override_order or (cint(def_row.idx) * ORDER_STEP),
+			"_default_order": cint(def_row.idx),
 			"section": section,
 			"reference_name": ref,
 			"display_name": pick(ref, "display_name") or ref,
@@ -407,4 +425,17 @@ def get_job_applicant_profile_template(opening=None):
 			"preoffer_visibility": pick(ref, "preoffer_visibility", "Same as visibility") or "Same as visibility",
 			"preoffer_edit_approve": pick(ref, "preoffer_edit_approve", "Editable") or "Editable",
 		})
+
+	# Row order IS the render order — the channel forms lay fields out in the order
+	# they arrive here, grouped by section. A field the opening never repositioned
+	# has no display_order of its own, so it falls back to its position in the
+	# settings table and stays exactly where the defaults put it.
+	rows.sort(key=lambda r: (r["display_order"], r["_default_order"]))
+
+	sections_order = []
+	for r in rows:
+		r.pop("_default_order", None)
+		if r["section"] not in sections_order:
+			sections_order.append(r["section"])
+
 	return {"sections": sections_order, "rows": rows}

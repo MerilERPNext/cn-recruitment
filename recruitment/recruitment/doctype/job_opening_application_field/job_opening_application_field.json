@@ -25,7 +25,8 @@
   "visibility",
   "editability",
   "preoffer_visibility",
-  "preoffer_edit_approve"
+  "preoffer_edit_approve",
+  "display_order"
  ],
  "fields": [
   {
@@ -162,12 +163,20 @@
    "fieldtype": "Select",
    "label": "Pre-offer Edit/Approve",
    "options": "Editable\nApproval Required\nRead Only"
+  },
+  {
+   "default": "0",
+   "description": "Position of this field within its section, for this opening only. 0 = inherit the order set in Job Applicant Profile Settings.",
+   "fieldname": "display_order",
+   "fieldtype": "Int",
+   "hidden": 1,
+   "label": "Display Order"
   }
  ],
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2026-05-25 10:00:00.000000",
+ "modified": "2026-08-07 10:00:00.000000",
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "Job Opening Application Field",

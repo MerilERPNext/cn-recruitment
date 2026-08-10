@@ -3,13 +3,15 @@
  "allow_rename": 1,
  "autoname": "field:configuration_name",
  "creation": "2026-07-02 10:00:00.000000",
- "description": "Specify the groups of Employees (via User Assignments) who can raise Requisitions, and optionally restrict raising Requisitions to a scope (User Assignment / Department / Designation / Company). Create one record per Employees+Scope pairing.",
+ "description": "Specify who can raise Requisitions (by Role and/or via User Assignments), and optionally restrict raising Requisitions to a scope (User Assignment / Department / Designation / Company). Nobody may raise a requisition unless a record here allows them — create one record per Who+Scope pairing.",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
   "configuration_name",
+  "is_default",
   "intro_html",
   "employees_section",
+  "allowed_roles",
   "employees_allowed_to_raise_requisitions",
   "scope_section",
   "scope_by_help",
@@ -33,17 +35,33 @@
    "unique": 1
   },
   {
+   "default": "0",
+   "description": "Set on the built-in System Manager configuration. It cannot be deleted and must keep the System Manager role, so administrators can never lock themselves out of raising requisitions.",
+   "fieldname": "is_default",
+   "fieldtype": "Check",
+   "label": "Default Configuration",
+   "no_copy": 1,
+   "read_only": 1
+  },
+  {
    "fieldname": "intro_html",
    "fieldtype": "HTML",
-   "options": "<div class=\"text-muted\" style=\"padding:8px 0\">Each record pairs a group of Employees (who may raise requisitions) with the scope within which they may raise. Add more records for different Employees+Scope combinations. When <b>no</b> record configures any Employees, every user may raise requisitions.</div>"
+   "options": "<div class=\"text-muted\" style=\"padding:8px 0\">Each record pairs a group of people (who may raise requisitions) with the scope within which they may raise. Add more records for different Who+Scope combinations. Raising is <b>denied by default</b>: a user may raise only if some record here allows them. The built-in <b>Default - System Managers</b> record lets System Managers raise for all companies, departments and designations; create a record for everyone else.</div>"
   },
   {
    "fieldname": "employees_section",
    "fieldtype": "Section Break",
-   "label": "Employees Allowed to Raise Requisitions"
+   "label": "Who May Raise Requisitions"
   },
   {
-   "description": "Configure which employees are allowed to raise requisitions using User Assignment attributes.",
+   "description": "Users holding any of these Roles may raise requisitions under this configuration. Combined with the User Assignments below using OR — either one grants access.",
+   "fieldname": "allowed_roles",
+   "fieldtype": "Table MultiSelect",
+   "label": "Roles Allowed to Raise Requisitions",
+   "options": "Raise Requisition Allowed Role"
+  },
+  {
+   "description": "Configure which employees are allowed to raise requisitions using User Assignment attributes. Combined with the Roles above using OR — either one grants access.",
    "fieldname": "employees_allowed_to_raise_requisitions",
    "fieldtype": "Table MultiSelect",
    "label": "Employees Allowed to Raise Requisitions",
@@ -124,7 +142,7 @@
  ],
  "index_web_pages_for_search": 0,
  "links": [],
- "modified": "2026-07-03 12:00:00.000000",
+ "modified": "2026-08-10 10:00:00.000000",
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "Raise Requisition Scope",
