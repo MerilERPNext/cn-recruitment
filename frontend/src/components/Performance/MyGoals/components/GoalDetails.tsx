@@ -364,11 +364,7 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, onBack }) => {
                             type="text"
                             value={kr.title}
                             onChange={(e) => updateKRField(kr.id, 'title', e.target.value)}
-                            onFocus={(e) => e.target.blur()}
-                            className={`w-full border rounded-lg px-3 py-2 text-sm focus:outline-none transition 
-                              
-                                 border-gray-300 focus:ring-1 focus:ring-blue-500
-                            `}
+                            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 transition"
                             placeholder="Enter key result"
                           />
                         </div>
@@ -377,36 +373,32 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, onBack }) => {
                           <input
                             type="number"
                             value={kr.weightage}
-                            onChange={(e) =>  updateKRField(kr.id, 'weightage', e.target.value)}
-                            onFocus={(e) => e.target.blur()}
-                            className={`w-full border rounded-lg px-3 py-2 text-sm focus:outline-none transition  border-gray-300 focus:ring-1 focus:ring-blue-500`}
+                            onChange={(e) => updateKRField(kr.id, 'weightage', e.target.value)}
+                            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 transition"
                             placeholder="%"
                           />
                         </div>
-                       
-                          <div className="pt-0 sm:pt-5">
-                            <button
-                              type="button"
-                              onClick={() => removeKRField(kr.id)}
-                              className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                              aria-label="Remove KR"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
-                       
+                        <div className="pt-0 sm:pt-5">
+                          <button
+                            type="button"
+                            onClick={() => removeKRField(kr.id)}
+                            className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                            aria-label="Remove KR"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
                       </div>
                     ))}
 
-                  
-                      <button
-                        type="button"
-                        onClick={addKRField}
-                        className="flex items-center gap-2 text-sm font-medium text-blue-600 hover:text-blue-700 mt-2"
-                      >
-                        <Plus className="w-4 h-4" />
-                        Add More
-                      </button>
+                    <button
+                      type="button"
+                      onClick={addKRField}
+                      className="flex items-center gap-2 text-sm font-medium text-blue-600 hover:text-blue-700 mt-2"
+                    >
+                      <Plus className="w-4 h-4" />
+                      Add More
+                    </button>
                
 
                     {(() => {
@@ -490,13 +482,11 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, onBack }) => {
                         type="number"
                         value={newValue}
                         onChange={(event) => setNewValue(event.target.value)}
-                        onFocus={(e) =>  e.target.blur()}
                         min="0"
                         step="any"
                         inputMode="decimal"
-                        className={`w-full border rounded-l-lg px-3 py-2 text-sm focus:outline-none transition border-gray-300 focus:ring-1 focus:ring-blue-500`}
+                        className="w-full border border-gray-300 rounded-l-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 transition"
                         aria-label="New goal progress value"
-                        
                       />
                       <span className="bg-gray-50 border border-l-0 border-gray-300 rounded-r-lg px-3 py-2 text-sm text-gray-500 whitespace-nowrap">
                         %
@@ -520,8 +510,8 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, onBack }) => {
                           type="button"
                           role="radio"
                           aria-checked={sentiment === option}
-                          onClick={() =>  setSentiment(option)}
-                          className={`flex min-w-0 flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-xl border px-3 py-2 text-xs font-semibold transition-colors  ${sentiment === option ? sentimentStyles[option].active : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'}`}
+                          onClick={() => setSentiment(option)}
+                          className={`flex min-w-0 flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-xl border px-3 py-2 text-xs font-semibold transition-colors ${sentiment === option ? sentimentStyles[option].active : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'}`}
                         >
                           <span className={`h-2 w-2 rounded-full ${sentimentStyles[option].dot}`} />
                           {option}
@@ -533,9 +523,8 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, onBack }) => {
 
                 <textarea
                   value={note}
-                  onChange={(event) =>  setNote(event.target.value)}
-                  onFocus={(e) =>  e.target.blur()}
-                  className={`w-full rounded-lg border p-3 text-sm focus:outline-none min-h-[100px] mb-4 transition border-gray-200 focus:ring-1 focus:ring-blue-500`}
+                  onChange={(event) => setNote(event.target.value)}
+                  className="w-full rounded-lg border border-gray-200 p-3 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 min-h-[100px] mb-4 transition"
                   placeholder="Add details about your progress..."
                   aria-label="Goal progress details"
                 ></textarea>
@@ -547,7 +536,6 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, onBack }) => {
                       type="file"
                       className="hidden"
                       onChange={(event) => setAttachment(event.target.files?.[0] ?? null)}
-                    
                     />
                     <Button
                       variant="outline"
@@ -555,17 +543,15 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, onBack }) => {
                       size="sm"
                       icon={<Paperclip className="w-4 h-4" />}
                       onClick={() => attachmentInputRef.current?.click()}
-                                >
+                    >
                       Attach
                     </Button>
                     {attachment && (
                       <span className="flex min-w-0 items-center gap-1 rounded-md bg-blue-50 px-2 py-1 text-xs text-blue-700">
                         <span className="truncate">{attachment.name}</span>
-                      
-                          <button type="button" aria-label="Remove attachment" onClick={() => { setAttachment(null); if (attachmentInputRef.current) attachmentInputRef.current.value = ''; }} className="shrink-0 text-blue-500 hover:text-blue-800">
-                            <X className="h-3.5 w-3.5" />
-                          </button>
-                     
+                        <button type="button" aria-label="Remove attachment" onClick={() => { setAttachment(null); if (attachmentInputRef.current) attachmentInputRef.current.value = ''; }} className="shrink-0 text-blue-500 hover:text-blue-800">
+                          <X className="h-3.5 w-3.5" />
+                        </button>
                       </span>
                     )}
                   </div>
