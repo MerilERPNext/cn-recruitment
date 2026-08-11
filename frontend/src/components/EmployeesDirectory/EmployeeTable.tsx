@@ -145,10 +145,10 @@ const EmployeeTable = ({
       {isDesktop ? (
         <div className="overflow-x-auto rounded-xl border border-gray-100 bg-white shadow-sm scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
           <table className="min-w-full border-separate border-spacing-0">
-            <thead className="bg-gray-50/80 backdrop-blur-sm">
-              <tr className="sticky top-0 z-10">
+            <thead className="bg-gray-50">
+              <tr className="sticky top-0 z-10 shadow-sm">
                 {hasCheckboxesOrChevrons && (
-                  <th className="whitespace-nowrap sticky top-0 bg-transparent border-b border-r border-gray-100 px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-gray-700 group first:rounded-tl-xl transition-colors hover:bg-gray-100/50 w-[48px]">
+                  <th className="whitespace-nowrap sticky top-0 bg-gray-50 border-b border-r border-gray-100 px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-gray-700 group first:rounded-tl-xl transition-colors hover:bg-gray-100 w-[48px]">
                     {showCheckboxColumn ? (
                       <div className="flex items-center gap-2">
                         <input
@@ -166,22 +166,22 @@ const EmployeeTable = ({
                     )}
                   </th>
                 )}
-                <th className="whitespace-nowrap sticky top-0 bg-transparent border-b border-r border-gray-100 px-5 py-3 text-left text-xs font-bold uppercase tracking-wider text-gray-700 transition-colors hover:bg-gray-100/50">
+                <th className="whitespace-nowrap sticky top-0 bg-gray-50 border-b border-r border-gray-100 px-5 py-3 text-left text-xs font-bold uppercase tracking-wider text-gray-700 transition-colors hover:bg-gray-100">
                   Employee
                 </th>
-                <th className="whitespace-nowrap sticky top-0 bg-transparent border-b border-r border-gray-100 px-5 py-3 text-left text-xs font-bold uppercase tracking-wider text-gray-700 transition-colors hover:bg-gray-100/50">
+                <th className="whitespace-nowrap sticky top-0 bg-gray-50 border-b border-r border-gray-100 px-5 py-3 text-left text-xs font-bold uppercase tracking-wider text-gray-700 transition-colors hover:bg-gray-100">
                   Employee ID
                 </th>
-                <th className="whitespace-nowrap sticky top-0 bg-transparent border-b border-r border-gray-100 px-5 py-3 text-left text-xs font-bold uppercase tracking-wider text-gray-700 transition-colors hover:bg-gray-100/50">
+                <th className="whitespace-nowrap sticky top-0 bg-gray-50 border-b border-r border-gray-100 px-5 py-3 text-left text-xs font-bold uppercase tracking-wider text-gray-700 transition-colors hover:bg-gray-100">
                   Designation
                 </th>
-                <th className="whitespace-nowrap sticky top-0 bg-transparent border-b border-r border-gray-100 px-5 py-3 text-left text-xs font-bold uppercase tracking-wider text-gray-700 transition-colors hover:bg-gray-100/50">
+                <th className="whitespace-nowrap sticky top-0 bg-gray-50 border-b border-r border-gray-100 px-5 py-3 text-left text-xs font-bold uppercase tracking-wider text-gray-700 transition-colors hover:bg-gray-100">
                   Department
                 </th>
-                <th className="whitespace-nowrap sticky top-0 bg-transparent border-b border-r border-gray-100 px-5 py-3 text-left text-xs font-bold uppercase tracking-wider text-gray-700 transition-colors hover:bg-gray-100/50">
+                <th className="whitespace-nowrap sticky top-0 bg-gray-50 border-b border-r border-gray-100 px-5 py-3 text-left text-xs font-bold uppercase tracking-wider text-gray-700 transition-colors hover:bg-gray-100">
                   Email
                 </th>
-                <th className="whitespace-nowrap sticky top-0 bg-transparent border-b border-gray-100 px-5 py-3 text-left text-xs font-bold uppercase tracking-wider text-gray-700 transition-colors hover:bg-gray-100/50">
+                <th className="whitespace-nowrap sticky top-0 bg-gray-50 border-b border-gray-100 px-5 py-3 text-left text-xs font-bold uppercase tracking-wider text-gray-700 transition-colors hover:bg-gray-100">
                   Office Location
                 </th>
               </tr>
