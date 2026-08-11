@@ -12,6 +12,7 @@ import type { GoalCheckInSentiment, GoalDetailKeyResult } from '../../../../type
 import FrappeAPI from '../../../../utils/frappeAPI';
 import { getPerformanceErrorMessage } from '../../../../services/performanceService';
 import { KRCheckInModal } from './KRCheckInModal';
+import GoalDetailSkeleton from './GoalDetailSkeleton';
 
 const CircularProgress = ({ score }: { score: number }) => {
   const radius = 36;
@@ -230,14 +231,7 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, onBack }) => {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-[400px] items-center justify-center bg-[#f8fafc]">
-        <div className="flex flex-col items-center gap-3">
-          <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
-          <Typography variant="bodySmall" className="text-slate-500">
-            Loading goal details…
-          </Typography>
-        </div>
-      </div>
+      <GoalDetailSkeleton />
     );
   }
 
