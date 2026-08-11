@@ -4,6 +4,8 @@ import Button from "../../shared/atoms/Button";
 import { Typography } from "../../shared/atoms/Typography";
 import toast from "react-hot-toast";
 
+import PeerNominationSkeleton from "./components/PeerNominationSkeleton";
+
 const PeerNominationHeader = lazy(() =>
   import("./components/PeerNominationHeader").then((m) => ({
     default: m.PeerNominationHeader,
@@ -138,13 +140,8 @@ const PeerNominationPage = () => {
   return (
     <div className="min-h-full overflow-y-scroll overflow-x-hidden bg-[#f8fafc] p-2 font-sans sm:p-6">
       <div className="mx-auto flex w-full max-w-5xl min-w-0 flex-col">
-        {/* Main Card */}
         <div className="mb-6 flex min-w-0 flex-col rounded-xl border border-gray-100 bg-white shadow-sm">
-          <Suspense
-            fallback={
-              <div className="p-6 text-center text-gray-500">Loading...</div>
-            }
-          >
+          <Suspense fallback={<PeerNominationSkeleton />}>
             <PeerNominationHeader selectedCount={selectedCount} />
 
             <PeerNominationFilterBar
