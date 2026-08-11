@@ -240,8 +240,37 @@ def _requisition_pay(requisition):
 	return {REQUISITION_PAY_MAP[src]: values.get(src) for src in available if values.get(src)}
 
 
+def _campus_drive_pay(job_applicant):
+	"""The package agreed on the candidate's Campus Drive, in offer fields.
+
+	Campus hiring negotiates one package per drive rather than per requisition, so a
+	drive that names its own Fixed / Variable Pay speaks for its candidates. The drive
+	carries the same field names as the requisition, so one map serves both — and the
+	same has_column guard applies, for a site that hasn't migrated the fields in yet.
+	"""
+	drive = frappe.db.get_value("Job Applicant", job_applicant,
+	                            "custom_campus_drive") if job_applicant else None
+	if not drive:
+		return {}
+	available = [src for src in REQUISITION_PAY_MAP
+	             if frappe.db.has_column("Campus Drive", src)]
+	if not available:
+		return {}
+	values = frappe.db.get_value("Campus Drive", drive, available, as_dict=True) or {}
+	return {REQUISITION_PAY_MAP[src]: values.get(src) for src in available if values.get(src)}
+
+
+def _agreed_pay(doc):
+	"""What this offer should start from: the candidate's Campus Drive package where
+	there is one, the requisition's band for anything it doesn't cover."""
+	pay = _campus_drive_pay(doc.get("job_applicant"))
+	for target, value in _requisition_pay(doc.get("custom_job_requisition")).items():
+		pay.setdefault(target, value)
+	return pay
+
+
 def set_requisition_and_pay(doc, method=None):
-	"""Stamp the requisition on the offer and pull its pay bands across.
+	"""Stamp the requisition on the offer and pull the agreed pay across.
 
 	Only fills fields that are still empty, so an amount HR has deliberately
 	negotiated is never overwritten on a later save.
@@ -251,10 +280,8 @@ def set_requisition_and_pay(doc, method=None):
 
 	if not doc.get("custom_job_requisition"):
 		doc.custom_job_requisition = _requisition_for_applicant(doc.get("job_applicant"))
-	if not doc.get("custom_job_requisition"):
-		return
 
-	for target, value in _requisition_pay(doc.custom_job_requisition).items():
+	for target, value in _agreed_pay(doc).items():
 		if doc.meta.get_field(target) and not flt(doc.get(target)):
 			doc.set(target, value)
 
@@ -268,7 +295,9 @@ def get_requisition_defaults(job_applicant):
 	"""
 	frappe.has_permission("Job Offer", "create", throw=True)
 	requisition = _requisition_for_applicant(job_applicant)
-	return {"job_requisition": requisition, "pay": _requisition_pay(requisition)}
+	pay = _requisition_pay(requisition)
+	pay.update(_campus_drive_pay(job_applicant))  # the drive's package wins
+	return {"job_requisition": requisition, "pay": pay}
 
 
 def _requisition_scope(job_applicant=None, company=None, designation=None):

@@ -282,6 +282,10 @@ doc_events = {
             # After the verdict is set on the Interview, advance/reject the
             # candidate's hiring stage (only for stages flagged "auto").
             "recruitment.customizations.interview_feedback.interview_feedback.auto_advance_stage",
+            # A campus additional round decides the round it was added to: cleared
+            # hands the candidate to the next round, rejected rejects them. Anchors
+            # on the round, so it completes what the generic advance above cannot.
+            "recruitment.recruitment.doctype.campus_drive.campus_drive.advance_after_extra_round",
         ]
     },
     "Job Offer": {

@@ -16,6 +16,9 @@ from frappe.core.doctype.file.utils import find_file_by_url
 from frappe.tests.utils import FrappeTestCase
 from frappe.utils import add_days, nowdate
 
+from recruitment.api.hiring_stage import (_ensure_interview_round,
+                                          get_interview_round_doctype,
+                                          get_interview_round_field)
 from recruitment.api.interview_resume import RESUME_FIELD
 
 PREFIX = "_Test Resume"
@@ -29,7 +32,8 @@ class TestInterviewResume(FrappeTestCase):
 		frappe.set_user("Administrator")
 		cls._purge()
 
-		cls.interview_type = cls._interview_type()
+		cls.round_field = get_interview_round_field()
+		cls.interview_round = cls._interview_round()
 		cls.panelist = cls._panelist()
 		frappe.db.commit()
 
@@ -63,20 +67,25 @@ class TestInterviewResume(FrappeTestCase):
 			                                         "attached_to_name": name}, pluck="name"):
 				frappe.delete_doc("File", f, force=True, ignore_permissions=True)
 			frappe.delete_doc("Job Applicant", name, force=True, ignore_permissions=True)
+
+		# Masters too: a round left behind shows up in real pickers, such as the
+		# Campus Drive's extra-interview dialog.
+		for doctype in (get_interview_round_doctype(), "Skill"):
+			for name in frappe.get_all(doctype, filters={"name": ("like", f"{PREFIX}%")},
+			                           pluck="name"):
+				frappe.delete_doc(doctype, name, force=True, ignore_permissions=True)
 		frappe.db.commit()
 
 	@classmethod
-	def _interview_type(cls):
-		name = f"{PREFIX} Type"
-		if not frappe.db.exists("Interview Type", name):
-			skill = f"{PREFIX} Skill"
-			if not frappe.db.exists("Skill", skill):
-				frappe.get_doc({"doctype": "Skill", "skill_name": skill}
-				               ).insert(ignore_permissions=True)
-			frappe.get_doc({"doctype": "Interview Type", "interview_type_name": name,
-			                "expected_skill_set": [{"skill": skill}]}
+	def _interview_round(cls):
+		"""The round master under whatever name this HRMS version uses — v15
+		"Interview Round", v16 "Interview Type". _ensure_interview_round resolves and
+		creates whichever applies, so this suite runs on both."""
+		skill = f"{PREFIX} Skill"
+		if not frappe.db.exists("Skill", skill):
+			frappe.get_doc({"doctype": "Skill", "skill_name": skill}
 			               ).insert(ignore_permissions=True)
-		return name
+		return _ensure_interview_round(f"{PREFIX} Type")
 
 	@classmethod
 	def _panelist(cls):
@@ -124,7 +133,8 @@ class TestInterviewResume(FrappeTestCase):
 	def _interview(self, applicant, docstatus=0):
 		doc = frappe.get_doc({
 			"doctype": "Interview", "job_applicant": applicant.name,
-			"interview_type": self.interview_type, "status": "Pending",
+			# Set by resolved fieldname, not a literal — see _interview_round.
+			self.round_field: self.interview_round, "status": "Pending",
 			"scheduled_on": add_days(nowdate(), -1),
 			"from_time": "10:00:00", "to_time": "11:00:00",
 			"interview_details": [{"interviewer": PANELIST}],
