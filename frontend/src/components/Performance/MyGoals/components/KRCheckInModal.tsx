@@ -87,8 +87,14 @@ export const KRCheckInModal: React.FC<KRCheckInModalProps> = ({
         attachment: attachmentUrl,
       }, {
         onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: PERFORMANCE_QUERY_KEYS.goalDetail(goalId) });
-          queryClient.invalidateQueries({ queryKey: PERFORMANCE_QUERY_KEYS.goalCheckIns(goalId) });
+          const krId = kr?.goal_key || kr?.goal || "";
+          if (krId) {
+            queryClient.invalidateQueries({ queryKey: PERFORMANCE_QUERY_KEYS.goalCheckIns(krId) });
+          }
+          if (goalId) {
+            queryClient.invalidateQueries({ queryKey: PERFORMANCE_QUERY_KEYS.goalCheckIns(goalId) });
+            queryClient.invalidateQueries({ queryKey: PERFORMANCE_QUERY_KEYS.goalDetail(goalId) });
+          }
           queryClient.invalidateQueries({ queryKey: PERFORMANCE_QUERY_KEYS.myGoals });
         }
       });
