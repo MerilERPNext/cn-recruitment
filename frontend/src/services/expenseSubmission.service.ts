@@ -33,7 +33,7 @@ export const buildExpenseRecord = (
     ...combinedData,
     expense_type: expenseTypeName,
     reimbursement_category: combinedData.expenseCategory,
-    categoryType: combinedData.category_type || "General",
+    custom_category_type: combinedData.category_type || "General",
     custom_expense_category_name: combinedData.expenseCategory,
     custom_expense_type: expenseTypeName,
     amount: combinedData.amount,

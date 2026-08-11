@@ -221,7 +221,15 @@ const ExpensesItem: React.FC<{ item: any }> = ({ item }) => {
         <div className="flex flex-col gap-1">
           <Typography variant="mobileCardLabel">Assigned To</Typography>
           <Typography variant="mobileCardValue">
-            {getAssignedUsersCell(item)}
+            {item?.send_back_user && currentUser?.name?.toLowerCase() === item?.send_back_user?.toLowerCase() ? (
+              <AllocatedToTooltip
+                title="Assigned To"
+                users={[{ name: item?.send_back_user_name || item?.send_back_user, employee: item?.send_back_user_emp_id }]}
+                position="left"
+              >
+                <Typography color="primary" className="underline">Self</Typography>
+              </AllocatedToTooltip>
+            ) : getAssignedUsersCell(item)}
           </Typography>
         </div>
 
@@ -234,13 +242,19 @@ const ExpensesItem: React.FC<{ item: any }> = ({ item }) => {
         </div>
 
         {/* Allocated To */}
-        <MobileAllocatedTo
-          users={item?.allocated_to}
-          roles={item?.allocated_roles}
-          role={item?.role}
-          username={item?.username}
-          RoleAssignedUsers={item?.role_assigned_users}
-        />
+        {item?.send_back_user && currentUser?.name?.toLowerCase() === item?.send_back_user?.toLowerCase() ? (
+          <MobileAllocatedTo
+            users={[{ name: item?.send_back_user_name || item?.send_back_user, employee: item?.send_back_user_emp_id }]}
+          />
+        ) : (
+          <MobileAllocatedTo
+            users={item?.allocated_to}
+            roles={item?.allocated_roles}
+            role={item?.role}
+            username={item?.username}
+            RoleAssignedUsers={item?.role_assigned_users}
+          />
+        )}
 
         <div className={isActed ? "pointer-events-none opacity-50" : ""}>
           <MyApprovalActionPill
@@ -425,19 +439,37 @@ const ExpensesTableRow: React.FC<{ item: any; isPaidFilter?: boolean }> = ({
         {formatToIndianDate(item?.reference_document?.creation)}
       </Typography>
       <div className="flex items-center justify-center">
-        {getAssignedUsersCell(item)}
+        {item?.send_back_user && currentUser?.name?.toLowerCase() === item?.send_back_user?.toLowerCase() ? (
+          <AllocatedToTooltip
+            title="Assigned To"
+            users={[{ name: item?.send_back_user_name || item?.send_back_user, employee: item?.send_back_user_emp_id }]}
+            position="left"
+          >
+            <Typography color="primary" className="underline">Self</Typography>
+          </AllocatedToTooltip>
+        ) : getAssignedUsersCell(item)}
       </div>
       <div className="flex items-center justify-center">
-        <AllocatedToTooltip
-          users={item?.allocated_to}
-          RoleAssignedUsers={item?.role_assigned_users}
-          roles={item?.allocated_roles}
-          allocated_to_user={item?.username}
-          role={item?.role}
-          position="left"
-        >
-          <StatusBadge status={status} />
-        </AllocatedToTooltip>
+        {item?.send_back_user && currentUser?.name?.toLowerCase() === item?.send_back_user?.toLowerCase() ? (
+          <AllocatedToTooltip
+            title="Allocated To"
+            users={[{ name: item?.send_back_user_name || item?.send_back_user, employee: item?.send_back_user_emp_id }]}
+            position="left"
+          >
+            <StatusBadge status={status} />
+          </AllocatedToTooltip>
+        ) : (
+          <AllocatedToTooltip
+            users={item?.allocated_to}
+            RoleAssignedUsers={item?.role_assigned_users}
+            roles={item?.allocated_roles}
+            allocated_to_user={item?.username}
+            role={item?.role}
+            position="left"
+          >
+            <StatusBadge status={status} />
+          </AllocatedToTooltip>
+        )}
       </div>
 
       <Tooltip
