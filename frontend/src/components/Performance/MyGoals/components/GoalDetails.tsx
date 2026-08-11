@@ -256,7 +256,7 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, onBack }) => {
   const checkIns = checkInsResponse?.data?.check_ins ?? [];
   const displayedProgress = latestProgress ?? goal.achievement ?? 0;
   const isPendingGoal = goal.goal_status?.toLowerCase() === 'pending';
-
+  const isAutoCalculate = Boolean(goal.auto_calculate);
   return (
     <div ref={topRef} id="goal-details-container" className="min-h-full bg-[#f8fafc] overflow-y-auto p-3 font-sans sm:p-6">
       <div className="mx-auto max-w-screen space-y-4 sm:space-y-6">
@@ -441,7 +441,7 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, onBack }) => {
                             <Typography variant="bodyMedium" className="font-bold text-gray-900">{kr.achievement ?? 0}% Achieved</Typography>
                             <Typography variant="caption" className="text-gray-500">Weightage: {kr.weightage ?? 0}%</Typography>
                           </div>
-                          <Button
+                         {isAutoCalculate && <Button
                             size="sm"
                             variant="outline"
                             bgColor="text"
@@ -450,7 +450,7 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, onBack }) => {
                            
                           >
                             Check in
-                          </Button>
+                          </Button>}
                         </div>
                       </div>
                       <div className="w-full bg-gray-100 rounded-md h-2 overflow-hidden">
@@ -469,7 +469,7 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, onBack }) => {
             </div>
 
             {/* Quick Check-in */}
-            <Card radius="xl" padding="none" className="overflow-hidden border border-gray-100">
+            {!isAutoCalculate && <Card radius="xl" padding="none" className="overflow-hidden border border-gray-100">
               <div className="p-4 sm:p-6">
                 <Typography variant="h4" className="mb-1">Quick Check-in</Typography>
                 <Typography variant="bodySmall" className="text-gray-500 mb-6">Update your progress</Typography>
@@ -566,7 +566,7 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, onBack }) => {
                   </Button>
                 </div>
               </div>
-            </Card>
+            </Card>}
 
           </div>
 

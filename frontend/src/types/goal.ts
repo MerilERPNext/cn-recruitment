@@ -509,6 +509,7 @@ export interface GoalDetailData {
   department: string;
   department_title: string | null;
   designation: string;
+  auto_calculate:boolean;
   designation_title: string | null;
   weightage: number;
   status: string;
