@@ -224,7 +224,7 @@ const ExpensesItem: React.FC<{ item: any }> = ({ item }) => {
             {item?.send_back_user && currentUser?.name?.toLowerCase() === item?.send_back_user?.toLowerCase() ? (
               <AllocatedToTooltip
                 title="Assigned To"
-                users={[{ name: item?.send_back_user_name || item?.send_back_user, employee: item?.send_back_user_emp_id }]}
+                users={[{ name: item?.send_back_user_name || item?.send_back_user, employee: item?.send_back_user_emp_id, designation_name: null }]}
                 position="left"
               >
                 <Typography color="primary" className="underline">Self</Typography>
@@ -244,7 +244,7 @@ const ExpensesItem: React.FC<{ item: any }> = ({ item }) => {
         {/* Allocated To */}
         {item?.send_back_user && currentUser?.name?.toLowerCase() === item?.send_back_user?.toLowerCase() ? (
           <MobileAllocatedTo
-            users={[{ name: item?.send_back_user_name || item?.send_back_user, employee: item?.send_back_user_emp_id }]}
+            users={[{ name: item?.send_back_user_name || item?.send_back_user, employee: item?.send_back_user_emp_id, designation_name: null }]}
           />
         ) : (
           <MobileAllocatedTo
@@ -442,7 +442,7 @@ const ExpensesTableRow: React.FC<{ item: any; isPaidFilter?: boolean }> = ({
         {item?.send_back_user && currentUser?.name?.toLowerCase() === item?.send_back_user?.toLowerCase() ? (
           <AllocatedToTooltip
             title="Assigned To"
-            users={[{ name: item?.send_back_user_name || item?.send_back_user, employee: item?.send_back_user_emp_id }]}
+            users={[{ name: item?.send_back_user_name || item?.send_back_user, employee: item?.send_back_user_emp_id, designation_name: null }]}
             position="left"
           >
             <Typography color="primary" className="underline">Self</Typography>
@@ -453,7 +453,7 @@ const ExpensesTableRow: React.FC<{ item: any; isPaidFilter?: boolean }> = ({
         {item?.send_back_user && currentUser?.name?.toLowerCase() === item?.send_back_user?.toLowerCase() ? (
           <AllocatedToTooltip
             title="Allocated To"
-            users={[{ name: item?.send_back_user_name || item?.send_back_user, employee: item?.send_back_user_emp_id }]}
+            users={[{ name: item?.send_back_user_name || item?.send_back_user, employee: item?.send_back_user_emp_id, designation_name: null }]}
             position="left"
           >
             <StatusBadge status={status} />
