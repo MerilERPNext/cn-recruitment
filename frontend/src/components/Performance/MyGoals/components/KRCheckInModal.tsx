@@ -88,6 +88,8 @@ export const KRCheckInModal: React.FC<KRCheckInModalProps> = ({
       }, {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: PERFORMANCE_QUERY_KEYS.goalDetail(goalId) });
+          queryClient.invalidateQueries({ queryKey: PERFORMANCE_QUERY_KEYS.goalCheckIns(goalId) });
+          queryClient.invalidateQueries({ queryKey: PERFORMANCE_QUERY_KEYS.myGoals });
         }
       });
 
