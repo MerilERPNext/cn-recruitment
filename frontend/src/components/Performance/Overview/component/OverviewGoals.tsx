@@ -120,6 +120,7 @@ const OverviewGoals: React.FC = () => {
                       variant={getStatusVariant(goal.status)}
                       size="sm"
                       pulse={{ show: true }}
+                      
                     />
                   </div>
                 </div>

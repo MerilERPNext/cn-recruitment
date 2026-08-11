@@ -1,11 +1,10 @@
 import { ArrowLeft, ArrowRight, Plus, CheckCircle } from "lucide-react";
-import { Suspense, lazy, useState } from "react";
+import { lazy, useState } from "react";
 import Button from "../../shared/atoms/Button";
 import { Typography } from "../../shared/atoms/Typography";
 import mockData from "./mockData/selfReviewMockData.json";
 import { ReviewQuestionItem } from "./components/AchievementCard";
 
-import SelfReviewSkeleton from "./components/SelfReviewSkeleton";
 
 const SelfReviewSidebar = lazy(() =>
   import("./components/SelfReviewSidebar").then((m) => ({
@@ -68,7 +67,7 @@ const Review = () => {
         />
 
         <div className="flex-1 flex flex-col gap-4 min-w-0">
-          <Suspense fallback={<SelfReviewSkeleton />}>
+         
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
               <div className="min-w-0">
                 <Typography
@@ -163,7 +162,6 @@ const Review = () => {
                 </div>
               </div>
             </div>
-          </Suspense>
         </div>
 
         <SelfReviewRightSidebar />
