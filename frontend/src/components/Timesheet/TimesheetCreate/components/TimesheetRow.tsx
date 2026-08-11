@@ -80,7 +80,6 @@ export interface TimesheetRowProps {
   getRowTotal: (row: TimesheetRowType) => number;
   handleDeleteRow: (rowId: string) => void;
   disabledDays?: string[];
-  submittedDays?: string[];
 }
 
 export const TimesheetRow: React.FC<TimesheetRowProps> = ({
@@ -98,18 +97,17 @@ export const TimesheetRow: React.FC<TimesheetRowProps> = ({
   handleOpenComment,
   getRowTotal,
   handleDeleteRow,
-  disabledDays = [],
-  submittedDays = []
+  disabledDays = []
 }) => {
   const { isDesktop } = useScreenSize();
 
-  const hasSubmittedRecord = useMemo(() => {
-    if (!submittedDays || submittedDays.length === 0) return false;
+  const hasLockedRecord = useMemo(() => {
+    if (!disabledDays || disabledDays.length === 0) return false;
     return daysOfWeek.some(day => {
       const dateKey = format(day, "yyyy-MM-dd");
-      return submittedDays.includes(dateKey) && (row.days[dateKey]?.hours || 0) > 0;
+      return disabledDays.includes(dateKey) && (row.days[dateKey]?.hours || 0) > 0;
     });
-  }, [submittedDays, daysOfWeek, row.days]);
+  }, [disabledDays, daysOfWeek, row.days]);
 
   if (!isDesktop) {
     return (
@@ -117,7 +115,7 @@ export const TimesheetRow: React.FC<TimesheetRowProps> = ({
         <td className="block border-none w-full">
           <div className="bg-white border border-t-[3px] border-t-primary rounded-xl p-3 shadow-sm space-y-4">
             <div className="flex justify-between items-start">
-              {isGridEditable && !hasSubmittedRecord ? (
+              {isGridEditable && !hasLockedRecord ? (
                 <div className={`flex-1 w-full add-time-entry-form-inline p-2 rounded-lg border ${validationErrors[`${row.id}_project_task`] ? 'border-red-500 bg-red-50/50' : 'bg-gray-50/50 border-gray-150'}`}>
                   <InlineFormRow
                     row={row}
@@ -202,7 +200,7 @@ export const TimesheetRow: React.FC<TimesheetRowProps> = ({
               <span className="font-bold text-primary">{formatCellOnBlur(getRowTotal(row)) || "0:00"}</span>
             </div>
 
-            {isGridEditable && !hasSubmittedRecord && (
+            {isGridEditable && !hasLockedRecord && (
               <div className="pt-2">
                 <button
                   type="button"
@@ -225,7 +223,7 @@ export const TimesheetRow: React.FC<TimesheetRowProps> = ({
     <tr className={`hover:bg-gray-50/50 ${validationErrors[`${row.id}_empty_row`] ? 'bg-red-50/30' : ''}`}>
       {/* Row Projects info */}
       <td className="px-6 py-4 align-middle">
-        {isGridEditable && !hasSubmittedRecord ? (
+        {isGridEditable && !hasLockedRecord ? (
           <div className="flex items-start gap-2">
             <div className={`add-time-entry-form-inline flex-1 min-w-[340px] max-w-[360px] p-2 rounded-lg border ${validationErrors[`${row.id}_project_task`] ? 'border-red-500 bg-red-50/50' : 'bg-gray-50/50 border-gray-150'}`}>
               <InlineFormRow
@@ -333,7 +331,7 @@ export const TimesheetRow: React.FC<TimesheetRowProps> = ({
       </td>
       {/* Delete Action */}
       <td className="px-4 py-3 text-center border-l border-gray-50 align-middle">
-        {isGridEditable && !hasSubmittedRecord && (
+        {isGridEditable && !hasLockedRecord && (
           <div className="h-8 flex items-center justify-center gap-1 px-3 py-1 rounded-3xl bg-gray-10 w-fit mx-auto">
             <Tooltip content="Delete row" position="top">
               <button

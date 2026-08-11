@@ -77,16 +77,18 @@ export interface WeeklyTimesheetTimeLog {
   task_id: string | null;
 }
 
+export type TimesheetApprovalStatus = "Draft" | "Pending for Approval" | "Approved" | "Rejected";
+
 export interface WeeklyTimesheetRecord {
   name: string;
   company: string;
+  custom_timesheet_status: TimesheetApprovalStatus;
   parent_project: string | null;
   project_id: string | null;
   project_name: string | null;
   status: string;
   docstatus: number;
   total_hours: number;
-  is_editable: boolean;
   file_info?: TimesheetFileInfo;
   time_logs: WeeklyTimesheetTimeLog[];
   timesheet_hours: number;
@@ -118,7 +120,6 @@ export interface WeeklyTimesheetResponse {
   week_end_date: string;
   project_id: string | null;
   project_name: string | null;
-  is_editable: boolean;
   file_info?: TimesheetFileInfo;
   days: WeeklyTimesheetDay[];
 }
