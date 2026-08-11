@@ -1,4 +1,4 @@
-import { Suspense, lazy, useState } from "react";
+import {  lazy, useState } from "react";
 import Button from "../../shared/atoms/Button";
 import { Typography } from "../../shared/atoms/Typography";
 
@@ -52,11 +52,7 @@ const Feedback = () => {
 
   return (
     <div className="min-h-full bg-[#f8fafc] overflow-y-scroll p-4 sm:p-1 font-sans">
-      <Suspense
-        fallback={
-          <div className="p-6 text-center text-gray-500">Loading...</div>
-        }
-      >
+     
         <div className="max-w-[1300px] mx-auto flex flex-col xl:flex-row gap-6">
           {/* Main Content (Left) */}
           <div className="flex-1 flex flex-col min-w-0">
@@ -174,7 +170,6 @@ const Feedback = () => {
             onSelectReview={setActiveReviewId}
           />
         </div>
-      </Suspense>
     </div>
   );
 };

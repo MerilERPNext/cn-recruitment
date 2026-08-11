@@ -1,10 +1,11 @@
 import React from 'react';
-import { ArrowRight, Loader2, AlertCircle } from 'lucide-react';
+import { ArrowRight, AlertCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Typography } from '../../../shared/atoms/Typography';
 import Badge, { type BadgeVariant } from '../../../shared/Badge';
 import { useMyGoals } from '../../../../hooks/usePerformance';
 import type { MyGoalsGoal } from '../../../../types/goal';
+import PerformanceSkeleton from '../../PerformanceSkeleton';
 
 const getStatusVariant = (status?: string): BadgeVariant => {
   const s = (status ?? '').toLowerCase();
@@ -34,20 +35,7 @@ const OverviewGoals: React.FC = () => {
   const topGoals = allGoals.slice(0, 5);
 
   if (isLoading) {
-    return (
-      <article aria-label="My Goals Container" className="min-w-0 space-y-6">
-        <section className="min-w-0 rounded-xl border border-gray-100 bg-white p-4 shadow-sm sm:p-6">
-          <div className="flex min-h-[200px] items-center justify-center">
-            <div className="flex flex-col items-center gap-3">
-              <Loader2 className="h-6 w-6 animate-spin text-blue-500" />
-              <Typography variant="bodySmall" className="text-slate-500">
-                Loading goals…
-              </Typography>
-            </div>
-          </div>
-        </section>
-      </article>
-    );
+    return <PerformanceSkeleton count={3} className="grid-cols-1" />;
   }
 
   if (isError) {
@@ -132,6 +120,7 @@ const OverviewGoals: React.FC = () => {
                       variant={getStatusVariant(goal.status)}
                       size="sm"
                       pulse={{ show: true }}
+                      
                     />
                   </div>
                 </div>
