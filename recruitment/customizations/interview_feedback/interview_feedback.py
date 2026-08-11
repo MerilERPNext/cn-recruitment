@@ -154,6 +154,13 @@ def create_interview_feedback(data, interview_name, interviewer, job_applicant):
             "region_recommendation_reason"
         )
 
+    # Work location the panel is taking this candidate for. Campus-only and checked
+    # against the region by the validate hook
+    # (recruitment.api.interview_work_location); on submit it becomes the
+    # candidate's final location.
+    if data.get("work_location"):
+        interview_feedback.custom_work_location = data.get("work_location")
+
     # Save and submit the document
     interview_feedback.save()
     interview_feedback.submit()

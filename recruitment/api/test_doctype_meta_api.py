@@ -12,7 +12,7 @@ raise ``PermissionError`` and disclose nothing about the data model.
 import frappe
 from frappe.tests.utils import FrappeTestCase
 
-from recruitment.recruitment.api.doctype_meta_api import (
+from recruitment.api.doctype_meta_api import (
 	ALLOWED_META_DOCTYPES,
 	get_doctype_with_custom_fields,
 )
