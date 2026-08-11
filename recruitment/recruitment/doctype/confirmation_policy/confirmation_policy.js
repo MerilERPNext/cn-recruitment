@@ -1,6 +1,8 @@
 // Copyright (c) 2025, Prathamesh Jadhav and contributors
 // For license information, please see license.txt
 
+const EXCLUDED_EMPLOYEE_FIELDS = ["custom_previous_emp_id"];
+
 const LETTER_EVENT_OPTIONS = [
 	"Employee's Confirmation is Approved",
 	"Employee's Probation is Extended",
@@ -285,7 +287,12 @@ frappe.ui.form.on("Confirmation Policy", {
 				frappe.model.with_doctype("Employee", () => {
 					const employee_meta = frappe.get_meta("Employee");
 					employee_meta.fields
-						.filter((field) => field.fieldtype === "Link" && field.options === "Employee")
+						.filter(
+							(field) =>
+								field.fieldtype === "Link" &&
+								field.options === "Employee" &&
+								!EXCLUDED_EMPLOYEE_FIELDS.includes(field.fieldname)
+						)
 						.forEach((field) => {
 							const dotted_fieldname = `${employee_link_fields[0].fieldname}.${field.fieldname}`;
 							recipient_employee_fields.push(dotted_fieldname);
@@ -382,7 +389,8 @@ frappe.ui.form.on("Confirmation Policy", {
 			let emp_meta = frappe.get_meta("Employee");
 			if (emp_meta) {
 				emp_fields = emp_meta.fields
-					.filter(f => f.fieldtype === "Link" && f.options === "Employee")
+					.filter(f => f.fieldtype === "Link" && f.options === "Employee"
+						&& !EXCLUDED_EMPLOYEE_FIELDS.includes(f.fieldname))
 					.map(f => ({ fieldname: f.fieldname, label: f.label }));
 			}
 			let d = new frappe.ui.Dialog({
@@ -491,7 +499,8 @@ frappe.ui.form.on("Confirmation Policy", {
 			let emp_meta = frappe.get_meta("Employee");
 			if (emp_meta) {
 				emp_fields = emp_meta.fields
-					.filter(f => f.fieldtype === "Link" && f.options === "Employee")
+					.filter(f => f.fieldtype === "Link" && f.options === "Employee"
+						&& !EXCLUDED_EMPLOYEE_FIELDS.includes(f.fieldname))
 					.map(f => ({ fieldname: f.fieldname, label: f.label }));
 			}
 			let d = new frappe.ui.Dialog({

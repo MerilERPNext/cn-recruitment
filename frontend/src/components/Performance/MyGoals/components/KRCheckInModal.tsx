@@ -5,9 +5,9 @@ import { Typography } from "../../../shared/atoms/Typography";
 import Badge from "../../../shared/Badge";
 import Button from "../../../shared/atoms/Button";
 import type { GoalCheckInSentiment, GoalDetailKeyResult } from "../../../../types/goal";
-import { useCurrentEmployeeDetails } from "../../../../hooks/useEmployee";
-import { useEmployeeGoalsCheckIn } from "../../../../hooks/usePerformance";
+import { useSubmitGoalCheckIn } from "../../../../hooks/usePerformance";
 import { getPerformanceErrorMessage } from "../../../../services/performanceService";
+import FrappeAPI from "../../../../utils/frappeAPI";
 
 const sentimentStyles: Record<GoalCheckInSentiment, { active: string; dot: string }> = {
   "On Track": { active: "border-green-300 bg-green-50 text-green-700 ring-1 ring-green-200", dot: "bg-green-500" },
@@ -40,11 +40,8 @@ export const KRCheckInModal: React.FC<KRCheckInModalProps> = ({
   const [newValue, setNewValue] = useState("");
   const [sentiment, setSentiment] = useState<GoalCheckInSentiment>("On Track");
   const [attachment, setAttachment] = useState<File | null>(null);
-  const { data: currentEmployee } = useCurrentEmployeeDetails({
-    logged_in_employee_details: true,
-  });
 
-  const { mutate: employeCheckIn, isPending } = useEmployeeGoalsCheckIn();
+  const { mutateAsync: submitCheckIn, isPending: isSubmittingCheckIn } = useSubmitGoalCheckIn();
 
   useEffect(() => {
     if (kr && isOpen) {
@@ -59,28 +56,45 @@ export const KRCheckInModal: React.FC<KRCheckInModalProps> = ({
 
   if (!isOpen || !kr) return null;
 
-  const handleSubmit = () => {
-    employeCheckIn(
-      {
-        employee: currentEmployee?.name ?? "",
-        goal: kr?.goal_key || "",
-      },
-      {
-        onSuccess: (res) => {
-          toast.success(res?.message?.message || "Check-in request submitted successfully!");
-          onClose();
-        },
-        onError: (err) => {
-          toast.error(getPerformanceErrorMessage(err, "Failed to submit check-in request."));
-        },
+  const handleSubmit = async () => {
+    const parsedValue = Number(newValue);
+    if (!Number.isFinite(parsedValue) || parsedValue < 0) {
+      toast.error("Enter a valid progress value.");
+      return;
+    }
+
+    const goalKey = kr?.goal_key || kr?.goal || "";
+    if (!goalKey) {
+      toast.error("Goal key is missing.");
+      return;
+    }
+
+    try {
+      let attachmentUrl: string | undefined;
+      if (attachment) {
+        const uploaded = await FrappeAPI.uploadFile(attachment, attachment.name);
+        attachmentUrl = uploaded.file_url;
       }
-    );
+
+      const response = await submitCheckIn({
+        goal: goalKey,
+        new_value: parsedValue,
+        sentiment,
+        note: "",
+        attachment: attachmentUrl,
+      });
+
+      toast.success(response?.message || "Check-in submitted successfully!");
+      onClose();
+    } catch (err) {
+      console.error("Failed to submit KR check-in:", err);
+      toast.error(getPerformanceErrorMessage(err, "Failed to submit check-in."));
+    }
   };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs animate-in fade-in duration-200">
       <div className="bg-white rounded-2xl shadow-xl border border-gray-100 max-w-lg w-full p-5 sm:p-6 relative flex flex-col gap-4 overflow-hidden animate-in zoom-in-95 duration-200">
-        {/* Modal Header */}
         <div className="flex items-start justify-between pb-3 border-b border-gray-100">
           <div className="flex items-center gap-2.5 min-w-0 flex-1">
             <div className="shrink-0">
@@ -105,7 +119,6 @@ export const KRCheckInModal: React.FC<KRCheckInModalProps> = ({
           </button>
         </div>
 
-        {/* Modal Form Content */}
         <div className="space-y-4 pt-1">
           <div>
             <Typography variant="caption" className="text-gray-700 font-medium block mb-1.5">
@@ -154,7 +167,6 @@ export const KRCheckInModal: React.FC<KRCheckInModalProps> = ({
           </div>
         </div>
 
-        {/* Modal Footer Actions */}
         <div className="flex items-center justify-between gap-3 pt-3 border-t border-gray-100 mt-2">
           <div className="flex items-center gap-2 min-w-0">
             <input
@@ -169,6 +181,7 @@ export const KRCheckInModal: React.FC<KRCheckInModalProps> = ({
               size="sm"
               icon={<Paperclip className="w-4 h-4" />}
               onClick={() => attachmentInputRef.current?.click()}
+              disabled={isSubmittingCheckIn}
             >
               Attach
             </Button>
@@ -183,6 +196,7 @@ export const KRCheckInModal: React.FC<KRCheckInModalProps> = ({
                     if (attachmentInputRef.current) attachmentInputRef.current.value = "";
                   }}
                   className="shrink-0 text-blue-500 hover:text-blue-800"
+                  disabled={isSubmittingCheckIn}
                 >
                   <X className="h-3.5 w-3.5" />
                 </button>
@@ -191,7 +205,7 @@ export const KRCheckInModal: React.FC<KRCheckInModalProps> = ({
           </div>
 
           <div className="flex items-center gap-2.5 shrink-0">
-            <Button variant="outline" bgColor="text" size="sm" onClick={onClose} disabled={isPending}>
+            <Button variant="outline" bgColor="text" size="sm" onClick={onClose} disabled={isSubmittingCheckIn}>
               Cancel
             </Button>
             <Button
@@ -199,10 +213,10 @@ export const KRCheckInModal: React.FC<KRCheckInModalProps> = ({
               bgColor="primary"
               size="sm"
               onClick={handleSubmit}
-              disabled={isPending}
-              icon={isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : undefined}
+              disabled={isSubmittingCheckIn}
+              icon={isSubmittingCheckIn ? <Loader2 className="w-4 h-4 animate-spin" /> : undefined}
             >
-              {isPending ? "Submitting…" : "Submit Check-in"}
+              {isSubmittingCheckIn ? "Submitting…" : "Submit Check-in"}
             </Button>
           </div>
         </div>
