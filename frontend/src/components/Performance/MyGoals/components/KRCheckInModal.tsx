@@ -5,9 +5,10 @@ import { Typography } from "../../../shared/atoms/Typography";
 import Badge from "../../../shared/Badge";
 import Button from "../../../shared/atoms/Button";
 import type { GoalCheckInSentiment, GoalDetailKeyResult } from "../../../../types/goal";
-import { useSubmitGoalCheckIn } from "../../../../hooks/usePerformance";
+import { PERFORMANCE_QUERY_KEYS, useSubmitGoalCheckIn } from "../../../../hooks/usePerformance";
 import { getPerformanceErrorMessage } from "../../../../services/performanceService";
 import FrappeAPI from "../../../../utils/frappeAPI";
+import { useQueryClient } from "@tanstack/react-query";
 
 const sentimentStyles: Record<GoalCheckInSentiment, { active: string; dot: string }> = {
   "On Track": { active: "border-green-300 bg-green-50 text-green-700 ring-1 ring-green-200", dot: "bg-green-500" },
@@ -27,11 +28,13 @@ export interface KRCheckInModalProps {
   kr: GoalDetailKeyResult | null;
   krIndex?: number;
   initialStatus?: string;
+  goalId: string
 }
 
 export const KRCheckInModal: React.FC<KRCheckInModalProps> = ({
   isOpen,
   onClose,
+  goalId,
   kr,
   krIndex = 0,
   initialStatus,
@@ -40,7 +43,7 @@ export const KRCheckInModal: React.FC<KRCheckInModalProps> = ({
   const [newValue, setNewValue] = useState("");
   const [sentiment, setSentiment] = useState<GoalCheckInSentiment>("On Track");
   const [attachment, setAttachment] = useState<File | null>(null);
-
+  const queryClient = useQueryClient()
   const { mutateAsync: submitCheckIn, isPending: isSubmittingCheckIn } = useSubmitGoalCheckIn();
 
   useEffect(() => {
@@ -82,6 +85,10 @@ export const KRCheckInModal: React.FC<KRCheckInModalProps> = ({
         sentiment,
         note: "",
         attachment: attachmentUrl,
+      }, {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: PERFORMANCE_QUERY_KEYS.goalDetail(goalId) });
+        }
       });
 
       toast.success(response?.message || "Check-in submitted successfully!");
@@ -153,11 +160,10 @@ export const KRCheckInModal: React.FC<KRCheckInModalProps> = ({
                   role="radio"
                   aria-checked={sentiment === option}
                   onClick={() => setSentiment(option)}
-                  className={`flex min-w-0 flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-xl border px-3 py-2 text-xs font-semibold transition-colors ${
-                    sentiment === option
+                  className={`flex min-w-0 flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-xl border px-3 py-2 text-xs font-semibold transition-colors ${sentiment === option
                       ? sentimentStyles[option].active
                       : "border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
-                  }`}
+                    }`}
                 >
                   <span className={`h-2 w-2 rounded-full ${sentimentStyles[option].dot}`} />
                   {option}

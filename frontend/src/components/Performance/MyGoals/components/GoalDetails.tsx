@@ -637,6 +637,7 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, onBack }) => {
         kr={selectedKRForCheckIn?.kr ?? null}
         krIndex={selectedKRForCheckIn?.index}
         initialStatus={goal.status || goal.goal_status}
+        goalId={goal.goal_key}
       />
     </div>
   );
