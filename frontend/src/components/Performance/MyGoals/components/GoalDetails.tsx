@@ -468,7 +468,6 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, onBack }) => {
               </div>
             </div>
 
-            {/* Quick Check-in or Auto-Calculate Fallback Banner */}
             {isAutoCalculate ? (
               <div className="flex items-start gap-3.5 rounded-xl border border-blue-100 bg-blue-50/70 p-4 sm:p-5 shadow-2xs">
                 <div className="min-w-0 flex-1">
