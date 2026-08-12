@@ -125,10 +125,10 @@ const Separation = () => {
 
   const { mutate: revokeSeparation, isPending: isRevoking } = useRevokeEmployeeSeparation();
 
-  const handleRevokeSubmit = (reason: string) => {
+  const handleRevokeSubmit = (reason: string | null) => {
     if (!separation_name) return;
     revokeSeparation(
-      { separation_name: separation_name, reason },
+      { separation_name: separation_name, reason: reason ?? "" },
       {
         onSuccess: () => {
           toast.success("Separation request revoked successfully");

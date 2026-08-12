@@ -67,21 +67,23 @@ const LeaveApprovalCard = ({
     onAction(action, actionData);
   };
 
-  const handleSaveComment = async (reason: string) => {
+  const handleSaveComment = async (reason: string | null) => {
     try {
       if (pendingActionData) {
-        await approvalCommentMutation.mutateAsync({
-          comment_type:
-            pendingActionData.action.toLowerCase() === "approve"
-              ? "Submitted"
-              : "Cancelled",
-          reference_doctype: "Leave Application",
-          reference_name: data?.reference_document?.name || "",
-          comment_email: user?.name || "",
-          comment_by: user?.name || "",
-          content: reason,
-          subject: pendingActionData.action.toLowerCase() === "approve" ? "Request Approved" : "Request Rejected",
-        });
+        if (reason !== null) {
+          await approvalCommentMutation.mutateAsync({
+            comment_type:
+              pendingActionData.action.toLowerCase() === "approve"
+                ? "Submitted"
+                : "Cancelled",
+            reference_doctype: "Leave Application",
+            reference_name: data?.reference_document?.name || "",
+            comment_email: user?.name || "",
+            comment_by: user?.name || "",
+            content: reason,
+            subject: pendingActionData.action.toLowerCase() === "approve" ? "Request Approved" : "Request Rejected",
+          });
+        }
 
         setShowCommentModal(false);
         onAction(pendingActionData.action, pendingActionData.data);

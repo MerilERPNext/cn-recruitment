@@ -149,23 +149,24 @@ export function LeaveDetailView({
     ],
   );
 
-  const handleSaveComment = async (reason: string) => {
-
+  const handleSaveComment = async (reason: string | null) => {
     try {
       if (pendingAction) {
-        await approvalCommentMutation.mutateAsync({
-          comment_type:
-            pendingAction.toLowerCase() === "approve"
-              ? "Submitted"
-              : "Cancelled",
-          reference_doctype: "Leave Application",
-          reference_name:
-            data?.reference_document?.name || data?.reference_name || "",
-          comment_email: user?.name || "",
-          comment_by: user?.name || "",
-          content: reason,
-          subject: pendingAction.toLowerCase() === "approve" ? "Request Approved" : "Request Rejected",
-        });
+        if (reason !== null) {
+          await approvalCommentMutation.mutateAsync({
+            comment_type:
+              pendingAction.toLowerCase() === "approve"
+                ? "Submitted"
+                : "Cancelled",
+            reference_doctype: "Leave Application",
+            reference_name:
+              data?.reference_document?.name || data?.reference_name || "",
+            comment_email: user?.name || "",
+            comment_by: user?.name || "",
+            content: reason,
+            subject: pendingAction.toLowerCase() === "approve" ? "Request Approved" : "Request Rejected",
+          });
+        }
 
         setShowCommentModal(false);
         handleAction(pendingAction);

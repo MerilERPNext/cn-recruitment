@@ -62,10 +62,10 @@ const ApprovalRejectionAdvanceList = ({
     setCommentOpen(true);
   };
 
-  const handleConfirmAction = async (reason: string) => {
+  const handleConfirmAction = async (reason: string | null) => {
     if (!selectedAction) return;
 
-    if (!reason.trim()) {
+    if (reason !== null && !reason.trim()) {
       toast.error("Comment is required");
       return;
     }
@@ -76,12 +76,14 @@ const ApprovalRejectionAdvanceList = ({
       data?.reference_document?.name || data?.reference_name;
 
     try {
-      await commentMutation.mutateAsync({
-        referenceDoctype,
-        referenceName,
-        content: reason,
-        comment_email: user?.name || "",
-      });
+      if (reason !== null) {
+        await commentMutation.mutateAsync({
+          referenceDoctype,
+          referenceName,
+          content: reason,
+          comment_email: user?.name || "",
+        });
+      }
 
       onAction(selectedAction, data);
 
