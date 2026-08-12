@@ -32,12 +32,47 @@ def _authorize_offer(appl, token, ptype="read"):
     require_token(OFFER_SCOPE, appl, token)
 
 
+def _resolve_offer_employment_type(job_offer):
+    """Employment Type (Link id) driving the offer print-format / document-template
+    / compensation logic.
+
+    Prefers the value stored on the Job Offer itself, falling back to the linked
+    Job Applicant. This makes the mapping work even when the Employment Type was
+    set directly on the Job Offer (or is missing on the Job Applicant).
+
+    Accepts a Job Offer name (str), a dict, or a doc. Returns None when neither
+    carries a value. Never raises — callers degrade to their safe default.
+    """
+    try:
+        if isinstance(job_offer, str):
+            jo_et, job_applicant = (
+                frappe.db.get_value(
+                    "Job Offer", job_offer, ["custom_employment_type", "job_applicant"]
+                )
+                or (None, None)
+            )
+        else:
+            jo_et = job_offer.get("custom_employment_type")
+            job_applicant = job_offer.get("job_applicant")
+
+        if jo_et:
+            return jo_et
+        if job_applicant:
+            return frappe.db.get_value(
+                "Job Applicant", job_applicant, "custom_employment_type"
+            )
+    except Exception:
+        pass
+    return None
+
+
 def get_job_offer_print_format(job_offer=None):
     """Resolve which Job Offer Print Format to use.
 
-    Picks the print format mapped to the applicant's Employment Type in
-    Recruitment Settings (`job_offer_print_format_mapping`). Falls back to the
-    single `job_offer_print_format` default when there is no matching row.
+    Picks the print format mapped to the offer's Employment Type in
+    Recruitment Settings (`job_offer_print_format_mapping`) — read from the Job
+    Offer, falling back to the linked Job Applicant. Falls back to the single
+    `job_offer_print_format` default when there is no matching row.
 
     Backward compatible by design: an empty mapping table resolves to the exact
     same value as before. Never raises — on any error it degrades to the default
@@ -57,17 +92,7 @@ def get_job_offer_print_format(job_offer=None):
         return default_pf
 
     try:
-        if isinstance(job_offer, str):
-            job_applicant = frappe.db.get_value("Job Offer", job_offer, "job_applicant")
-        else:
-            job_applicant = job_offer.get("job_applicant")
-
-        if not job_applicant:
-            return default_pf
-
-        employment_type = frappe.db.get_value(
-            "Job Applicant", job_applicant, "custom_employment_type"
-        )
+        employment_type = _resolve_offer_employment_type(job_offer)
         if not employment_type:
             return default_pf
 
@@ -124,17 +149,7 @@ def get_job_offer_document_template(job_offer=None):
         return default_tmpl
 
     try:
-        if isinstance(job_offer, str):
-            job_applicant = frappe.db.get_value("Job Offer", job_offer, "job_applicant")
-        else:
-            job_applicant = job_offer.get("job_applicant")
-
-        if not job_applicant:
-            return default_tmpl
-
-        employment_type = frappe.db.get_value(
-            "Job Applicant", job_applicant, "custom_employment_type"
-        )
+        employment_type = _resolve_offer_employment_type(job_offer)
         if not employment_type:
             return default_tmpl
 
@@ -438,16 +453,16 @@ def get_job_offer_summary(appl, token=None):
             designation_name = frappe.db.get_value("Designation", jo.designation, "custom_designation_title") or jo.designation
 
         # --- Compensation: dynamic by Employment Type -----------------------
-        # The Employment Type lives on the Job Applicant as a Link
-        # (custom_employment_type -> Employment Type). Resolve it to its title
-        # ("Intern", "Employee", ...). Only Intern carries a single Stipend; every
+        # Employment Type (custom_employment_type -> Employment Type Link) is read
+        # from the Job Offer, falling back to the linked Job Applicant. Resolve it
+        # to its title ("Intern", "Employee", ...). Only Intern carries a single
+        # Stipend; every
         # other type carries Fixed (Base) + Variable (Variable Incentive) + Total.
         # Raw numeric amounts are returned as-is — formatting is done on the UI.
         employment_type = None
-        if jo.get("job_applicant"):
-            et_id = frappe.db.get_value("Job Applicant", jo.job_applicant, "custom_employment_type")
-            if et_id:
-                employment_type = frappe.db.get_value("Employment Type", et_id, "employee_type_name") or et_id
+        et_id = _resolve_offer_employment_type(jo)
+        if et_id:
+            employment_type = frappe.db.get_value("Employment Type", et_id, "employee_type_name") or et_id
 
         is_intern = (employment_type or "").strip().lower() == "intern"
 
