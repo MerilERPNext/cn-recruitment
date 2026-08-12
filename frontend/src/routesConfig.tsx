@@ -1327,7 +1327,7 @@ export const routesConfig: AppRoute[] = [
       {
         path: "request",
         element: <></>, // important: render nothing
-        permissionKey: "request-leave",
+        permissionKey: "Request Leave",
       },
     ],
   },
