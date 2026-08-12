@@ -475,15 +475,15 @@ scheduler_events = {
             "recruitment.recruitment.doctype.campus_drive.campus_drive.update_drive_statuses",
         ],
         "0 7 * * *": [
-            "recruitment.recruitment.scheduled_jobs.auto_separate_employees_on_lwd",
             "recruitment.recruitment.scheduled_jobs.create_pending_confirmation_separations",
-            "recruitment.recruitment.scheduled_jobs.mark_relieved_employees_as_left",
             "recruitment.recruitment.scheduled_jobs.reassign_employee_relationships_on_relieving",
             "recruitment.recruitment.scheduled_jobs.process_separation_leave_attendance_requests",
             "recruitment.recruitment.scheduled_jobs.auto_confirm_employees_without_policy",
         ],
         "0 1 * * *": [
             "recruitment.recruitment.onboarding_extras.refresh_onboarding_task_days_to_join",
+            "recruitment.recruitment.scheduled_jobs.mark_relieved_employees_as_left",
+            "recruitment.recruitment.scheduled_jobs.auto_separate_employees_on_lwd",
         ],
         "30 1 * * *": [
             # Pay every referral reward installment that is due and still eligible.
