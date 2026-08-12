@@ -47,7 +47,7 @@ const ShiftRequestApp: React.FC = () => {
     useGetUiPermission("Attendance");
 
   const canRequestShiftChange = isActionEnabled(attendnacePermission, "request_shift_change", "All Shifts");
-  const canRequestShiftChangeMobile = isActionEnabled(attendnacePermission, "request_shift_change", "My Shift Assignment");
+  const canRequestShiftChangeMobile = isActionEnabled(attendnacePermission, "request_shift_change", "All Shifts");
 
   const showShiftChangeButton = useMemo(() => {
     const For = { Desktop: false, Mobile: false };
