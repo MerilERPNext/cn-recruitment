@@ -252,12 +252,18 @@ function prompt_activate(frm) {
                 fieldtype: "Link",
                 options: "Job Opening",
                 reqd: 1,
+                // A Job Opening belongs to at most one requisition, so the picker
+                // must exclude openings already associated with another one —
+                // otherwise they show up here and only fail on submit.
                 get_query: () => {
-                    const filters = { status: "Open" };
+                    const filters = { job_requisition: frm.doc.name };
                     if (frm.doc.company) filters.company = frm.doc.company;
                     if (frm.doc.designation) filters.designation = frm.doc.designation;
                     if (frm.doc.department) filters.department = frm.doc.department;
-                    return { filters };
+                    return {
+                        query: "recruitment.api.job_requisition.unassociated_job_opening_query",
+                        filters,
+                    };
                 },
             },
         ],
@@ -433,4 +439,142 @@ function render_description_preview(frm) {
             ${html || `<span style="color: var(--text-muted, #6c7680);">${__("Job description preview will appear here once a description is filled in.")}</span>`}
         </div>
     `);
+}
+
+// ---------------------------------------------------------------------------
+// Existing workforce vs. hiring already in flight.
+//
+// The numbers are stored on the requisition (written server-side after every
+// save, see recruitment.api.requisition_headcount), so a saved form already has
+// them. Two things are added here:
+//
+//  1. "Refresh Counts" — the masters move on after a requisition is raised, so
+//     there has to be a way to re-read them without editing the document.
+//  2. A live preview while the form is being filled in. The whole point of these
+//     numbers is to inform the ASK, so waiting for the first save to see them is
+//     too late: as soon as a designation and its regions are picked, the totals
+//     are fetched and shown.
+// ---------------------------------------------------------------------------
+
+frappe.ui.form.on("Job Requisition", {
+    refresh(frm) {
+        if (frm.is_new()) {
+            return;
+        }
+        frm.add_custom_button(__("Refresh Counts"), () => {
+            frappe.call({
+                method: "recruitment.api.requisition_headcount.refresh_requisition_headcount",
+                args: { job_requisition: frm.doc.name },
+                freeze: true,
+                freeze_message: __("Re-reading the Employee master…"),
+                callback(r) {
+                    const totals = ((r && r.message) || {}).totals || {};
+                    frappe.show_alert({
+                        message: __("{0} active employees · {1} already being hired", [
+                            totals.active_employees || 0,
+                            totals.active_openings || 0,
+                        ]),
+                        indicator: "green",
+                    });
+                    frm.reload_doc();
+                },
+            });
+        }, __("Actions"));
+    },
+
+    designation(frm) {
+        preview_headcount(frm);
+    },
+});
+
+frappe.ui.form.on("Job Requisition Region", {
+    region(frm) {
+        preview_headcount(frm);
+    },
+    custom_regions_remove(frm) {
+        preview_headcount(frm);
+    },
+});
+
+// A lateral requisition counts against its position rows' locations, not a region.
+frappe.ui.form.on("Position Details", {
+    location(frm) {
+        preview_headcount(frm);
+    },
+    custom_position_details_remove(frm) {
+        preview_headcount(frm);
+    },
+});
+
+// The two flows are counted on different axes and must not be mixed:
+//   fresher / campus -> the Regions table (headcount is budgeted per region)
+//   lateral          -> each position row's Location, narrowed by the requisition's
+//                       company + department + designation, because that is the
+//                       exact job the requisition is asking for.
+function preview_headcount(frm) {
+    const regions = (frm.doc.custom_regions || []).map((r) => r.region).filter(Boolean);
+    const locations = (frm.doc.custom_position_details || [])
+        .map((r) => r.location)
+        .filter(Boolean);
+    const axis = regions.length ? "region" : locations.length ? "location" : null;
+
+    // Nothing to count against yet — blank the totals rather than leaving a stale
+    // number from the previous designation sitting on screen.
+    if (!frm.doc.designation || !axis) {
+        set_headcount_totals(frm, {});
+        return;
+    }
+
+    frappe.call({
+        method: "recruitment.api.requisition_headcount.preview_headcount",
+        args: {
+            designation: frm.doc.designation,
+            regions: axis === "region" ? regions : [],
+            locations: axis === "location" ? locations : [],
+            company: frm.doc.company,
+            department: frm.doc.department,
+            job_requisition: frm.is_new() ? null : frm.doc.name,
+        },
+        callback(r) {
+            const res = (r && r.message) || {};
+            set_headcount_totals(frm, res.totals || {});
+
+            const byKey = {};
+            (res.rows || []).forEach((row) => {
+                byKey[row.key] = row;
+            });
+
+            if (res.axis === "region") {
+                // Each region row shows its own strength, exactly as it will read
+                // once saved.
+                (frm.doc.custom_regions || []).forEach((row) => {
+                    const c = byKey[row.region] || {};
+                    row.active_employees = c.active_employees || 0;
+                    row.active_requisitions = c.active_requisitions || 0;
+                    row.active_openings = c.active_openings || 0;
+                });
+                frm.refresh_field("custom_regions");
+            } else if (res.axis === "location") {
+                // Rows sharing a branch all show that branch's number; the totals
+                // above count each branch once.
+                (frm.doc.custom_position_details || []).forEach((row) => {
+                    const c = byKey[row.location] || {};
+                    row.active_employees = c.active_employees || 0;
+                });
+                frm.refresh_field("custom_position_details");
+            }
+        },
+    });
+}
+
+function set_headcount_totals(frm, totals) {
+    // display-only: these are recomputed and stored server-side on save, so the
+    // preview must not make the form dirty.
+    ["active_employees", "active_requisitions", "active_openings"].forEach((key) => {
+        const fieldname = "custom_" + key;
+        if (frm.fields_dict[fieldname]) {
+            frm.doc[fieldname] = totals[key] || 0;
+            frm.refresh_field(fieldname);
+        }
+    });
 }

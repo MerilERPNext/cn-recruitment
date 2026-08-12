@@ -358,11 +358,19 @@ doc_events = {
             # (max positions, replacement-employee restriction & uniqueness).
             "recruitment.api.job_requisition.validate_requisition_settings",
         ],
-        # Once a requisition is approved its positions "start appearing in the
-        # position master": materialise the per-position tracking rows
-        # (custom_position_summary) from the headcount rows
-        # (custom_position_details). Idempotent, so it is safe on every update.
-        "on_update": "recruitment.api.requisition_status.materialise_positions_on_approval",
+        "on_update": [
+            # Once a requisition is approved its positions "start appearing in the
+            # position master": materialise the per-position tracking rows
+            # (custom_position_summary) from the headcount rows
+            # (custom_position_details). Idempotent, so it is safe on every update.
+            "recruitment.api.requisition_status.materialise_positions_on_approval",
+            # Store "how many of this designation do we already have in this region"
+            # and "how much are we already hiring there". Runs here rather than in
+            # validate because these are derived columns: written during validate
+            # they would look like a business edit to the edit-after-approval guard
+            # and every save of an approved requisition would be refused.
+            "recruitment.api.requisition_headcount.store_headcount",
+        ],
     },
     "Job Opening": {
         "validate": [

@@ -66,6 +66,94 @@ def _init_child_field_config(child_doctype):
 		return ""
 
 
+def _eligible_child_fields(child_doctype):
+	"""Child docfields an admin may configure — the same rule _init_child_field_config
+	seeds from: real input fields, nothing hidden or read-only."""
+	if not child_doctype:
+		return {}
+	try:
+		cmeta = frappe.get_meta(child_doctype)
+	except Exception:
+		return {}
+	return {
+		cf.fieldname: cf
+		for cf in cmeta.fields
+		if cf.fieldname
+		and cf.fieldtype not in NON_DATA_FIELDTYPES
+		and not cf.hidden
+		and not cf.read_only
+	}
+
+
+def _sync_child_field_config(existing_raw, child_doctype):
+	"""Reconcile a stored child_field_config against the child doctype as it is NOW.
+
+	Without this the config is written once and then drifts forever: a child field
+	later hidden keeps its row in the Child Fields grid, and one added later never
+	appears at all.
+
+	Existing entries for still-eligible fields keep the admin's toggles untouched;
+	only the label is refreshed. Newly eligible fields are added with every channel
+	VIEW off, matching how _auto_sync surfaces new parent fields. Returns the JSON
+	string, or None when nothing changed (so callers can skip the write).
+	"""
+	eligible = _eligible_child_fields(child_doctype)
+	if not eligible:
+		return None
+
+	try:
+		existing = json.loads(existing_raw) if existing_raw else {}
+	except Exception:
+		existing = {}
+	if not isinstance(existing, dict):
+		existing = {}
+
+	# Steady state is "already in sync", and this runs on every template read — bail
+	# before rebuilding the dict and re-serialising it.
+	if set(existing) == set(eligible) and all(
+		(existing.get(fn) or {}).get("label") == (cf.label or fn)
+		for fn, cf in eligible.items()
+	):
+		return None
+
+	config = {}
+	for fieldname, cf in eligible.items():
+		entry = dict(existing.get(fieldname) or {})
+		if entry:
+			entry["label"] = cf.label or fieldname
+		else:
+			entry = {
+				"label": cf.label or fieldname,
+				"view_careers": 0,      "mandatory_careers": 0,
+				"view_ijp": 0,          "mandatory_ijp": 0,
+				"view_refer": 0,        "mandatory_refer": 0,
+				"view_campus": 0,       "mandatory_campus": 0,
+				"view_preoffer": 0,     "mandatory_preoffer": 0,
+			}
+		config[fieldname] = entry
+
+	updated = json.dumps(config)
+	return None if updated == (existing_raw or "") else updated
+
+
+def _reconciled_child_config(applicant_meta, reference_name, fieldtype, stored_raw):
+	"""child_field_config for the merged template, reconciled against the child
+	doctype's current fields.
+
+	Done on read as well as on write because the stored copy lives in two places —
+	Job Applicant Profile Settings and each Job Opening's own override row — and only
+	the settings copy gets healed on load. Reconciling at this single choke point
+	means every consumer (the Job Opening grid, the Settings grid, and all the
+	channel forms) sees the same live list.
+	"""
+	if fieldtype not in TABLE_FIELDTYPES:
+		return stored_raw
+	df = applicant_meta.get_field(reference_name)
+	if not df or not df.options:
+		return stored_raw
+	return _sync_child_field_config(stored_raw, df.options) or stored_raw
+
+
 def iter_profile_fields(meta):
 	"""Yield ``(docfield, section_label, tab_label)`` for every Job Applicant field
 	eligible for the applicant-profile config, in meta order.
@@ -310,10 +398,17 @@ class JobApplicantProfileSettings(Document):
 			if not row.fieldtype:
 				row.fieldtype = mf.fieldtype
 				db_patch["fieldtype"] = mf.fieldtype
-			if not row.child_field_config and mf.fieldtype in TABLE_FIELDTYPES:
-				cfg = _init_child_field_config(mf.options)
-				row.child_field_config = cfg
-				db_patch["child_field_config"] = cfg
+			if mf.fieldtype in TABLE_FIELDTYPES:
+				if not row.child_field_config:
+					cfg = _init_child_field_config(mf.options)
+				else:
+					# Re-reconcile every load, not just the first: the child doctype
+					# keeps changing under a config that was previously written once
+					# and never revisited.
+					cfg = _sync_child_field_config(row.child_field_config, mf.options)
+				if cfg:
+					row.child_field_config = cfg
+					db_patch["child_field_config"] = cfg
 			if db_patch and row.name:
 				try:
 					frappe.db.set_value(
@@ -347,7 +442,8 @@ def get_job_applicant_profile_template(opening=None):
 	# which updates `modified` in the DB while the Settings form client still
 	# holds the old timestamp — causing a version conflict on the user's next
 	# Save. Sync runs in onload() when the admin opens the Settings form.
-	live_fields = {df.fieldname for df in frappe.get_meta("Job Applicant").fields if df.fieldname}
+	applicant_meta = frappe.get_meta("Job Applicant")
+	live_fields = {df.fieldname for df in applicant_meta.fields if df.fieldname}
 	defaults = {
 		row.reference_name: row
 		for row in settings.default_application_fields
@@ -404,10 +500,13 @@ def get_job_applicant_profile_template(opening=None):
 			"reference_name": ref,
 			"display_name": pick(ref, "display_name") or ref,
 			"fieldtype": def_row.get("fieldtype") or "",
-			"child_field_config": (
+			"child_field_config": _reconciled_child_config(
+				applicant_meta,
+				ref,
+				def_row.get("fieldtype") or "",
 				(override_row.get("child_field_config") if override_row and override_row.get("child_field_config") else None)
 				or def_row.get("child_field_config")
-				or ""
+				or "",
 			),
 			"view_careers": pick(ref, "view_careers"),
 			"mandatory_careers": pick(ref, "mandatory_careers"),

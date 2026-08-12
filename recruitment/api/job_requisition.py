@@ -103,6 +103,14 @@ PARENT_READONLY_FIELDS = (
     "custom_requested_by_user_id",
     "custom_salary_range_display",
     "time_to_fill",
+    # Existing strength vs. hiring already in flight for this designation in this
+    # requisition's region(s). Counted from the masters and stored on the doc by
+    # recruitment.api.requisition_headcount — read-only here so the UI can show
+    # them but no caller can write them.
+    "custom_active_employees",
+    "custom_active_requisitions",
+    "custom_active_openings",
+    "custom_headcount_last_updated",
 )
 
 # Fields that Frappe / workflow engine controls — never written by this API.
@@ -1440,7 +1448,12 @@ def get_available_job_requisition_fields():
 # out of the box. Job Requisition fieldnames; "name" is the Requisition ID.
 _DEFAULT_REQUISITION_COLUMNS = [
     "name", "designation", "department", "company",
-    "status", "no_of_positions", "posting_date", "expected_by",
+    "status", "no_of_positions",
+    # The ask is only meaningful next to what already exists: how many of this
+    # designation are on the rolls in this region, and how many are already being
+    # hired there. Both are stored on the requisition, so this costs no extra query.
+    "custom_active_employees", "custom_active_openings",
+    "posting_date", "expected_by",
 ]
 
 # Column key already carries a friendlier label than the raw field for these.
@@ -2058,6 +2071,10 @@ def _serialise_requisition(doc):
             # mislabelled "New" still report the correct type. See _row_vacancy_type.
             "vacancy_type": _row_vacancy_type(row),
             "location": row.get("location"),
+            # Active employees already doing this designation, in this department,
+            # at this location — the lateral answer to "do we already have these
+            # people". Stored per row by recruitment.api.requisition_headcount.
+            "active_employees": row.get("active_employees") or 0,
             "sub_location": row.get("sub_location"),
             "reporting_manager": row.get("reporting_manager"),
             "replacement_for": row.get("replacement_for"),
@@ -2086,6 +2103,11 @@ def _serialise_requisition(doc):
         {
             "region": row.get("region"),
             "no_of_openings": row.get("no_of_openings"),
+            # Per-region existing strength / live demand, so the UI can show each
+            # region's "asking for N, already have M" line next to its ask.
+            "active_employees": row.get("active_employees") or 0,
+            "active_requisitions": row.get("active_requisitions") or 0,
+            "active_openings": row.get("active_openings") or 0,
         }
         for row in doc.get("custom_regions") or []
     ]
@@ -3313,6 +3335,12 @@ _EDIT_AFTER_APPROVAL_IGNORE = {
     "status", "workflow_state", "modified", "modified_by",
     "no_of_positions", "custom_type_of_position", "time_to_fill",
     "_user_tags", "_comments", "_assign", "_liked_by",
+    # Existing-strength / live-hiring roll-ups. Counted from the masters and
+    # rewritten after every save (see recruitment.api.requisition_headcount), and
+    # previewed on the client while the form is open — so they legitimately differ
+    # from the stored value without anyone having edited the requisition.
+    "custom_active_employees", "custom_active_requisitions", "custom_active_openings",
+    "custom_headcount_last_updated",
 }
 _LAYOUT_FIELDTYPES = {
     "Section Break", "Column Break", "Tab Break", "HTML", "Button", "Heading", "Fold",
@@ -3321,13 +3349,17 @@ _ROW_META_KEYS = {
     "name", "idx", "creation", "modified", "owner", "modified_by",
     "parent", "parentfield", "parenttype", "docstatus", "doctype",
 }
+# Child-row columns that are derived, not entered — same reasoning as the parent
+# entries above, for the per-region breakdown on custom_regions.
+_ROW_DERIVED_KEYS = {"active_employees", "active_requisitions", "active_openings"}
 
 
 def _row_snapshot(d, fieldname):
+    ignore = _ROW_META_KEYS | _ROW_DERIVED_KEYS
     out = []
     for r in d.get(fieldname) or []:
         rd = r.as_dict() if hasattr(r, "as_dict") else dict(r)
-        out.append({k: str(v) for k, v in rd.items() if k not in _ROW_META_KEYS})
+        out.append({k: str(v) for k, v in rd.items() if k not in ignore})
     return out
 
 
@@ -3468,6 +3500,57 @@ def get_replacement_employee_options(
     return get_link_field_options(
         "Employee", search_text=search_text, query=query, txt=txt,
         limit=limit, include=include, filters=filters,
+    )
+
+
+@frappe.whitelist()
+@frappe.validate_and_sanitize_search_inputs
+def unassociated_job_opening_query(doctype, txt, searchfield, start, page_len, filters):
+    """Link-field query for the "Activate Job Requisition" Job Opening picker.
+
+    A Job Opening belongs to at most one requisition (activate_job_requisition below
+    rejects anything else), so the picker must not offer openings that are already
+    associated — otherwise every already-linked opening shows up and the user only
+    finds out it was invalid after picking it.
+
+    Offered: openings with status Open whose `job_requisition` is unset, plus the one
+    this requisition already holds (so re-activating the same pair still works).
+    `filters` carries the requisition in `job_requisition` and its optional
+    company / designation / department scope.
+    """
+    from frappe.query_builder import Order
+
+    filters = dict(filters or {})
+    requisition = filters.get("job_requisition")
+
+    jo = frappe.qb.DocType("Job Opening")
+    query = (
+        frappe.qb.from_(jo)
+        .select(jo.name, jo.job_title, jo.designation, jo.status)
+        .where(jo.status == "Open")
+    )
+
+    for key in ("company", "designation", "department"):
+        value = filters.get(key)
+        if value:
+            query = query.where(getattr(jo, key) == value)
+
+    # Unset is stored as NULL here, but tolerate "" too — a Link cleared through some
+    # other path can land as an empty string.
+    available = jo.job_requisition.isnull() | (jo.job_requisition == "")
+    if requisition:
+        available = available | (jo.job_requisition == requisition)
+    query = query.where(available)
+
+    if txt:
+        like = f"%{txt}%"
+        query = query.where(jo.name.like(like) | jo.job_title.like(like) | jo.designation.like(like))
+
+    return (
+        query.orderby(jo.job_title, order=Order.asc)
+        .limit(page_len)
+        .offset(start)
+        .run()
     )
 
 

@@ -555,14 +555,18 @@
 						fieldname: "job_opening", label: __("Job Opening"),
 						fieldtype: "Link", options: "Job Opening", reqd: 1,
 						description: __("The Job Opening to associate with {0}.", [req]),
-						// Dynamic filter — same as HRMS Associate Job Opening: scope to
-						// the requisition's company / designation / department, status Open.
+						// Scope to the requisition's company / designation / department,
+						// status Open — and drop openings already associated with another
+						// requisition, since an opening belongs to at most one.
 						get_query: () => {
-							const filters = { status: "Open" };
+							const filters = { job_requisition: req };
 							if (row.company) filters.company = row.company;
 							if (row.designation) filters.designation = row.designation;
 							if (row.department) filters.department = row.department;
-							return { filters };
+							return {
+								query: "recruitment.api.job_requisition.unassociated_job_opening_query",
+								filters,
+							};
 						},
 					}],
 					(values) => {

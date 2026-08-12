@@ -1,0 +1,81 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2026-08-12 00:00:00",
+ "description": "One Education Stage a candidate must supply, with the channels it is required on.",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "education_stage",
+  "required_careers",
+  "required_ijp",
+  "required_refer",
+  "required_campus",
+  "required_preoffer"
+ ],
+ "fields": [
+  {
+   "columns": 4,
+   "fieldname": "education_stage",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Education Stage",
+   "options": "Education Stage",
+   "reqd": 1
+  },
+  {
+   "columns": 1,
+   "default": "0",
+   "fieldname": "required_careers",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Careers"
+  },
+  {
+   "columns": 1,
+   "default": "0",
+   "fieldname": "required_ijp",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "IJP"
+  },
+  {
+   "columns": 1,
+   "default": "0",
+   "fieldname": "required_refer",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Refer"
+  },
+  {
+   "columns": 1,
+   "default": "0",
+   "fieldname": "required_campus",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Campus"
+  },
+  {
+   "columns": 1,
+   "default": "0",
+   "fieldname": "required_preoffer",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Pre Offer"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-08-12 00:00:00",
+ "modified_by": "Administrator",
+ "module": "Recruitment",
+ "name": "Job Applicant Required Education Stage",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "sort_field": "creation",
+ "sort_order": "ASC",
+ "states": []
+}

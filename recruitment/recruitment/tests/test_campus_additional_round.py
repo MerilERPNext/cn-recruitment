@@ -127,12 +127,24 @@ class TestCampusAdditionalRound(FrappeTestCase):
 
 	@classmethod
 	def _panelists(cls, rows=None):
+		"""Roster the drive.
+
+		An additional round is staffed SEPARATELY from the round it hangs off, under
+		that round's extra code (R1 -> R1-EXTRA), so the panels these tests pick from
+		are filed there — the round's own panels judge the round, not the second look.
+		"""
 		doc = frappe.get_doc("Campus Drive", cls.drive)
 		doc.set("round_panelists", [])
 		for i, panel in enumerate(rows if rows is not None else ("Panel A", "Panel B")):
 			doc.append("round_panelists", {
-				"round_code": cls.round_1, "panel_name": panel,
+				"round_code": cd.extra_panel_round_code(cls.round_1), "panel_name": panel,
 				"panelist": cls.employees[i % len(cls.employees)]})
+		# The round's OWN panel, always present: every test that asserts the extra
+		# roster is used needs a differently-staffed round roster to be distinguishable
+		# from it.
+		doc.append("round_panelists", {
+			"round_code": cls.round_1, "panel_name": "Round Panel",
+			"panelist": cls.employees[-1]})
 		doc.save(ignore_permissions=True)
 		frappe.db.commit()
 
@@ -223,8 +235,11 @@ class TestCampusAdditionalRound(FrappeTestCase):
 		self.assertEqual(iv.custom_campus_round_code, self.round_1)
 		self.assertEqual(iv.custom_interview_panel, "Panel B")
 		self.assertEqual(iv.status, "Pending")
-		# the interviewers are that panel's, not just whoever came first
-		panels, _m = cd._panels_for_round(frappe.get_doc("Campus Drive", self.drive), self.round_1)
+		# the interviewers are that panel's, not just whoever came first — and the
+		# panel is read off the ADDITIONAL round's roster, not the round's own
+		panels, _m = cd._panels_for_round(
+			frappe.get_doc("Campus Drive", self.drive),
+			cd.extra_panel_round_code(self.round_1))
 		self.assertEqual([d.interviewer for d in iv.interview_details], panels["Panel B"]["users"])
 
 	def test_the_type_is_fixed_and_the_reason_is_recorded(self):
@@ -348,38 +363,73 @@ class TestCampusAdditionalRound(FrappeTestCase):
 		with self.assertRaises(frappe.ValidationError):
 			self._add(self.candidates[1], cleared=False)
 
-	def test_every_panel_on_the_drive_is_offered(self):
-		"""Not just this round's: the panel that judged the round is often not the one
-		HR wants for another look."""
+	def test_only_the_additional_rounds_own_panels_are_offered(self):
+		"""An additional round is judged by the panel rostered FOR it (R1-EXTRA), not by
+		the panel that judged R1, and not by some other round's panel. Offering every
+		panel on the drive quietly put a candidate in front of interviewers nobody had
+		assigned to a second look."""
+		extra_code = cd.extra_panel_round_code(self.round_1)
 		doc = frappe.get_doc("Campus Drive", self.drive)
 		doc.append("round_panelists", {"round_code": self.round_2, "panel_name": "Panel R2",
 		                               "panelist": self.employees[0]})
 		doc.save(ignore_permissions=True)
 		frappe.db.commit()
 		try:
-			offered = cd.get_extra_round_options(self.drive, self.round_1)["panels"]
+			options = cd.get_extra_round_options(self.drive, self.round_1)
+			offered = options["panels"]
 			self.assertEqual(
 				{(p["round_code"], p["panel"]) for p in offered},
-				{(self.round_1, "Panel A"), (self.round_1, "Panel B"), (self.round_2, "Panel R2")})
+				{(extra_code, "Panel A"), (extra_code, "Panel B")})
+			# neither the round's own panel nor another round's leaks in
+			self.assertNotIn("Round Panel", {p["panel"] for p in offered})
+			self.assertNotIn("Panel R2", {p["panel"] for p in offered})
 			self.assertTrue(all(p["interviewers"] for p in offered))
+			# and the dialog is told which code to add when it is empty
+			self.assertEqual(options["extra_panel_round_code"], extra_code)
 		finally:
 			self._panelists()
 
-	def test_a_panel_from_another_round_can_take_it(self):
+	def test_the_round_code_for_the_extra_roster_is_derived_and_idempotent(self):
+		self.assertEqual(cd.extra_panel_round_code("R3"), "R3" + cd.EXTRA_PANEL_SUFFIX)
+		# the dialog sends the resolved code back on submit, so re-resolving must not
+		# stack a second suffix
+		self.assertEqual(cd.extra_panel_round_code("R3" + cd.EXTRA_PANEL_SUFFIX),
+		                 "R3" + cd.EXTRA_PANEL_SUFFIX)
+		self.assertIsNone(cd.extra_panel_round_code(""))
+		self.assertIsNone(cd.extra_panel_round_code(None))
+
+	def test_a_panel_from_another_round_cannot_take_it(self):
+		"""Borrowing another round's roster is refused: `panel_round` is put through the
+		same resolver, so it can only ever name an additional-round roster."""
 		doc = frappe.get_doc("Campus Drive", self.drive)
 		doc.append("round_panelists", {"round_code": self.round_2, "panel_name": "Panel R2",
 		                               "panelist": self.employees[-1]})
 		doc.save(ignore_permissions=True)
 		frappe.db.commit()
 		try:
-			res = self._add(self.candidates[0], panel="Panel R2", panel_round=self.round_2)
-			iv = frappe.get_doc("Interview", res["interview"])
-			# recorded against the round it was added to, taken by the borrowed panel
-			self.assertEqual(iv.custom_campus_round_code, self.round_1)
-			self.assertEqual(iv.custom_interview_panel, "Panel R2")
-			self.assertEqual(
-				[d.interviewer for d in iv.interview_details],
-				[frappe.db.get_value("Employee", self.employees[-1], "user_id")])
+			with self.assertRaises(frappe.ValidationError):
+				self._add(self.candidates[0], panel="Panel R2", panel_round=self.round_2)
+		finally:
+			self._panelists()
+
+	def test_the_rounds_own_panel_cannot_take_it(self):
+		"""The panel that judged R1 is rostered on R1, not R1-EXTRA — a second look is
+		staffed deliberately."""
+		with self.assertRaises(frappe.ValidationError):
+			self._add(self.candidates[0], panel="Round Panel")
+
+	def test_a_missing_extra_roster_names_the_code_to_add(self):
+		""""Add a panel" is useless on its own: Round Code is free text on Round
+		Panelists, so the message has to say what to type."""
+		extra_code = cd.extra_panel_round_code(self.round_1)
+		self._panelists(rows=[])          # leaves only the round's OWN panel
+		try:
+			options = cd.get_extra_round_options(self.drive, self.round_1)
+			self.assertEqual(options["panels"], [])
+			self.assertEqual(options["extra_panel_round_code"], extra_code)
+			with self.assertRaises(frappe.ValidationError) as caught:
+				self._add(self.candidates[0])
+			self.assertIn(extra_code, str(caught.exception))
 		finally:
 			self._panelists()
 
