@@ -258,6 +258,13 @@ doc_events = {
     "Employee Promotion": {
         "on_submit": "recruitment.customizations.employee_promotion.employee_promotion.on_submit",
     },
+    "Institute": {
+        # Welcome the Primary TPO — on creation, and on any later edit that adds
+        # one. Sent once per contact (Institute TPO Contact.welcome_sent), and only
+        # while Campus Settings says so.
+        "after_insert": "recruitment.recruitment.tpo_mailers.send_tpo_welcome",
+        "on_update": "recruitment.recruitment.tpo_mailers.send_tpo_welcome",
+    },
     "Interview": {
         "before_save": "recruitment.customizations.interview.interview.check_feedback_of_previous_interview",
         "validate": "recruitment.customizations.job_applicant.validation_blacklist_on_doctypes",

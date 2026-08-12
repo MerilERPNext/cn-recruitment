@@ -98,6 +98,13 @@ class CampusInvite(Document):
 				"Invited",
 			)
 
+		# The drive invitation itself, to every TPO contact of the invited institutes.
+		# Separate from the set-password mail above: that one is about their login,
+		# this one is about the drive — and it is configurable (Campus Settings).
+		from recruitment.recruitment.tpo_mailers import send_campus_invite
+
+		send_campus_invite(self)
+
 		self.db_set("invite_sent", 1)
 		# Advance the drive lifecycle so it surfaces to the invited TPOs. HR later
 		# marks it 'Completed' (which hides it from TPOs) when the drive is over.

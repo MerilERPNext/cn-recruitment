@@ -311,9 +311,25 @@ def _enter_stage(doc, stage, result="Moved", interview=None, save=True,
 	return stage
 
 
+def _campus_stage_mail_allowed(doc):
+	"""Whether a CAMPUS candidate may be emailed about a stage change.
+
+	A campus drive walks a hall of students through several rounds in a day, so the
+	per-stage note that suits a lateral candidate turns into a mail after every
+	round for hundreds of people. Off by default; Campus Settings turns it back on.
+	Lateral candidates are unaffected — they keep whatever the opening's stage says.
+	"""
+	if not (doc.get("custom_campus_drive") or doc.get("custom_campus_invite")):
+		return True
+	return bool(frappe.db.get_single_value("Campus Settings",
+	                                       "notify_campus_candidates_on_stage_change"))
+
+
 def _notify_stage_entry(doc, stage):
 	"""Best-effort candidate email on stage entry. Never blocks the transition."""
 	try:
+		if not _campus_stage_mail_allowed(doc):
+			return
 		recipient = doc.get("email_id")
 		if not recipient:
 			return

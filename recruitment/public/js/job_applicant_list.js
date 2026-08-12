@@ -46,6 +46,12 @@
 			.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
 			.replace(/"/g, "&quot;").replace(/'/g, "&#039;");
 	}
+	// `applicant_name` holds only the first name (relabelled "Applicant First Name"),
+	// with the surname in the custom_applicant_last_name field.
+	function fullName(doc) {
+		return [doc.applicant_name, doc.custom_applicant_last_name]
+			.filter(Boolean).join(" ").trim() || doc.name;
+	}
 	function initialsOf(name) {
 		const parts = String(name || "").replace(/@/g, " ").split(/\s+/).filter(Boolean);
 		if (!parts.length) return "?";
@@ -76,7 +82,7 @@
 	// (so we don't draw them twice). Everything else the user adds via Frappe's List
 	// Settings is appended as a real extra column with its own value.
 	const KNOWN_FIELDS = new Set([
-		"name", "applicant_name", "email_id", "status",
+		"name", "applicant_name", "custom_applicant_last_name", "email_id", "status",
 		"source", "source_name", "applicant_rating", "custom_total_experience",
 		"owner", "creation", "modified", "_liked_by", "_comment_count",
 	]);
@@ -414,7 +420,8 @@
 		const statusColor = getStatusColor(doc.status);
 		const score = Math.max(0, Math.min(100, Math.round((Number(doc.applicant_rating) || 0) * 20)));
 		const applied = doc.creation ? frappe.datetime.global_date_format(doc.creation) : "";
-		const nameInitials = initialsOf(doc.applicant_name || doc.email_id || doc.name);
+		const candidate = fullName(doc);
+		const nameInitials = initialsOf(candidate || doc.email_id || doc.name);
 		return `
 			<tr data-name="${escapeHtml(doc.name)}">
 				<td class="ja-col-check"><input type="checkbox" class="ja-check list-row-checkbox" data-doctype="${DOCTYPE}" data-name="${escapeHtml(doc.name)}"/></td>
@@ -422,7 +429,7 @@
 					<div class="ja-candidate">
 						<span class="ja-avatar" style="background:${avatarColor(doc.name)}">${escapeHtml(nameInitials)}</span>
 						<div>
-							<div class="ja-cand-name">${escapeHtml(doc.applicant_name || doc.name)}</div>
+							<div class="ja-cand-name">${escapeHtml(candidate)}</div>
 							<div class="ja-cand-email">${escapeHtml(doc.email_id || "")}</div>
 						</div>
 					</div>
@@ -616,8 +623,11 @@
 
 	frappe.listview_settings[DOCTYPE] = {
 		hide_name_column: true,
+		// Columns are driven by Frappe's List Settings (in_list_view + the per-user
+		// "Settings" picker); anything selected there is fetched by Frappe and drawn
+		// as an extra column. These are only the fields our own cells need.
 		add_fields: [
-			"applicant_name", "email_id", "phone_number", "status",
+			"applicant_name", "custom_applicant_last_name", "email_id", "phone_number", "status",
 			"job_title", "designation", "source", "source_name",
 			"applicant_rating", "custom_total_experience",
 			"owner", "creation", "modified", "_liked_by",

@@ -1,5 +1,4 @@
-"""How the education child table presents itself: its grid columns and the name of
-the stage field.
+"""What a candidate's education row shows — the whole field set, in order.
 
 `Employee Education` is an erpnext doctype that several installed apps customise,
 and `sync_customizations` re-applies every app's version of those property setters
@@ -9,7 +8,17 @@ later app declares silently replaces it (which is exactly how "Education Stage"
 kept reverting to "Highest Qualification").
 
 So this is applied from `after_migrate`, the last thing to run, and it is the one
-place the decision lives — the patches that introduced it just call in here.
+place the decision lives.
+
+What it decides: `FIELDS` below is the education row. Every other field the doctype
+carries — erpnext's own plus the thirty-odd left behind by imports and other apps
+(three separate year-of-passing fields, two GPA fields, the "(Naukri)" copies) — is
+HIDDEN. Hidden is deliberate rather than deleted: the columns keep whatever they
+hold, other apps can go on writing to them, and nothing outside this list reaches
+HR, the candidate portal, or the eligibility rule builder (which lists a child
+table's non-hidden fields).
+
+Hiding is global to the doctype, so the Employee form shows the same clean set.
 """
 
 import frappe
@@ -17,27 +26,52 @@ import frappe
 CHILD_DOCTYPE = "Employee Education"
 STAGE_FIELD = "qualification"
 
-# `qualification` is a Link to the Education Stage master — 10th, 12th, Diploma,
-# Graduation. Every row carries one, so "Highest Qualification" described the wrong
-# thing on every row but the last.
-STAGE_LABEL = "Education Stage"
+# Course Type is a master (empty on a fresh site); these are the two the education
+# row is meant to offer. Seeded, not hardcoded, so HR can add to them.
+COURSE_TYPES = ("Full Time", "Part Time")
 
-# The grid has ten column units. Left to itself the table flags eight fields for
-# it, so the ones declared first win and the ones that matter drop off. These four,
-# at these widths, are the grid; everything else lives behind the row's pencil.
-GRID_COLUMNS = {
-	"school_univ": 3,
-	STAGE_FIELD: 3,
-	"class_per": 2,
-	"year_of_passing": 2,
-}
+# The education row, in display order.
+#   `columns`   -> also a grid column (the grid has ten units in total; the rest of
+#                  the fields open with the row's pencil).
+#   `fieldtype` -> what the field MUST be. Created with it when the doctype lacks
+#                  the field, and re-asserted when something has changed it since:
+#                  a patch's fieldtype property setter does not survive another
+#                  app's customisation sync, which is how Education Stage silently
+#                  went back to being a text box after being made a Link.
+#   no fieldtype -> an existing field kept as it is, relabelled, for its data.
+FIELDS = [
+	{"fieldname": "custom_institute", "label": "Institute", "columns": 2,
+	 "fieldtype": "Link", "options": "Institute",
+	 "description": "The college from the Institute master — campus drives run on it. "
+	                "Leave blank for a school or college that isn't one."},
+	{"fieldname": STAGE_FIELD, "label": "Education Stage", "columns": 2,
+	 "fieldtype": "Link", "options": "Education Stage"},
+	{"fieldname": "school_univ", "label": "School / College Name", "columns": 2},
+	{"fieldname": "custom_college_city", "label": "College City",
+	 "fieldtype": "Data"},
+	{"fieldname": "custom_college_state", "label": "College State",
+	 "fieldtype": "Data"},
+	{"fieldname": "custom_college_country", "label": "College Country",
+	 "fieldtype": "Link", "options": "Country"},
+	{"fieldname": "custom_graduated", "label": "Graduated",
+	 "fieldtype": "Select", "options": "\nYes\nNo"},
+	{"fieldname": "custom_course_type", "label": "Course Type"},
+	{"fieldname": "custom_course_name", "label": "Course Name",
+	 "fieldtype": "Data"},
+	{"fieldname": "custom_registration_number", "label": "Registration No / Roll No"},
+	# A real number, so an eligibility rule can compare it ("GPA / Percentage ≥ 60")
+	# instead of comparing text.
+	{"fieldname": "class_per", "label": "GPA / Percentage", "columns": 2,
+	 "fieldtype": "Float"},
+	{"fieldname": "custom_start_date", "label": "Start Date"},
+	{"fieldname": "custom_completion_date", "label": "End Date"},
+	{"fieldname": "year_of_passing", "label": "Year of Passing", "columns": 2},
+	{"fieldname": "custom_educated_overseas", "label": "Educated in Overseas",
+	 "fieldtype": "Select", "options": "\nYes\nNo"},
+	{"fieldname": "maj_opt_subj", "label": "Major / Specialization"},
+]
 
-HIDE_FROM_GRID = (
-	"level",
-	"maj_opt_subj",
-	"custom_educational_details",
-	"custom_passing_year",
-)
+ORDER = [f["fieldname"] for f in FIELDS]
 
 
 def _set(fieldname, prop, value, property_type):
@@ -50,26 +84,116 @@ def _set(fieldname, prop, value, property_type):
 	}, is_system_generated=False)
 
 
+def _ensure(df, prop, value, property_type):
+	"""Write the property setter only when the field doesn't already say this.
+
+	This runs on every migrate over ~50 fields; make_property_setter deletes and
+	re-inserts a row each time it is called, so comparing first turns a settled
+	doctype's pass into no writes at all.
+	"""
+	current = df.get(prop)
+	if isinstance(value, int) and not isinstance(value, bool):
+		same = frappe.utils.cint(current) == value
+	else:
+		same = (current or "") == (value or "")
+	if same:
+		return False
+	_set(df.fieldname, prop, value, property_type)
+	return True
+
+
+def _ensure_course_types():
+	for name in COURSE_TYPES:
+		if not frappe.db.exists("Course Type", name):
+			doc = frappe.get_doc({"doctype": "Course Type", "course_type": name})
+			doc.flags.ignore_mandatory = True
+			doc.insert(ignore_permissions=True)
+
+
+def _ensure_fields(meta):
+	"""Create the fields the doctype doesn't have yet, in FIELDS order."""
+	from frappe.custom.doctype.custom_field.custom_field import create_custom_field
+
+	created, previous = [], None
+	for spec in FIELDS:
+		name = spec["fieldname"]
+		if meta.get_field(name):
+			previous = name
+			continue
+		if not spec.get("fieldtype"):
+			# An existing field this site doesn't have (an app that ships it isn't
+			# installed) — nothing to create it from, so leave it out.
+			continue
+		create_custom_field(CHILD_DOCTYPE, {
+			"fieldname": name,
+			"label": spec["label"],
+			"fieldtype": spec["fieldtype"],
+			"options": spec.get("options"),
+			"description": spec.get("description"),
+			"insert_after": previous,
+		})
+		created.append(name)
+		previous = name
+	return created
+
+
 def apply_education_presentation():
 	"""Idempotent — safe to run on every migrate."""
 	if not frappe.db.exists("DocType", CHILD_DOCTYPE):
-		return
+		return {"created": [], "hidden": 0}
+
+	if frappe.db.exists("DocType", "Course Type"):
+		_ensure_course_types()
 
 	meta = frappe.get_meta(CHILD_DOCTYPE)
 	if not meta.get_field(STAGE_FIELD):
-		return
+		return {"created": [], "hidden": 0}
 
-	_set(STAGE_FIELD, "label", STAGE_LABEL, "Data")
+	created = _ensure_fields(meta)
+	if created:
+		frappe.clear_cache(doctype=CHILD_DOCTYPE)
+		meta = frappe.get_meta(CHILD_DOCTYPE)
 
-	for fieldname, width in GRID_COLUMNS.items():
-		if not meta.get_field(fieldname):
+	ours = {f["fieldname"]: f for f in FIELDS}
+	hidden, retyped, changed = 0, [], 0
+	for df in meta.fields:
+		spec = ours.get(df.fieldname)
+		if spec:
+			changed += _ensure(df, "hidden", 0, "Check")
+			changed += _ensure(df, "label", spec["label"], "Data")
+			changed += _ensure(df, "in_list_view", 1 if spec.get("columns") else 0, "Check")
+			if spec.get("columns"):
+				changed += _ensure(df, "columns", spec["columns"], "Int")
+			# Re-assert the type when it has drifted — another app's customisation
+			# sync wipes the property setter a patch left behind.
+			if spec.get("fieldtype") and df.fieldtype != spec["fieldtype"]:
+				_set(df.fieldname, "fieldtype", spec["fieldtype"], "Select")
+				retyped.append(f"{df.fieldname}: {df.fieldtype} -> {spec['fieldtype']}")
+				changed += 1
+			if spec.get("options"):
+				changed += _ensure(df, "options", spec["options"], "Text")
 			continue
-		_set(fieldname, "in_list_view", 1, "Check")
-		_set(fieldname, "columns", width, "Int")
+		# Everything else: out of sight, out of the grid, and out of the field lists
+		# built from this doctype (the eligibility builder skips hidden fields).
+		changed += _ensure(df, "hidden", 1, "Check")
+		changed += _ensure(df, "in_list_view", 0, "Check")
+		hidden += 1
 
-	for fieldname in HIDE_FROM_GRID:
-		if not meta.get_field(fieldname):
-			continue
-		_set(fieldname, "in_list_view", 0, "Check")
+	# Ours first and in order; the hidden remainder keeps its existing order after.
+	rest = [df.fieldname for df in meta.fields if df.fieldname not in ours]
+	present = [f for f in ORDER if meta.get_field(f)]
+	order = frappe.as_json(present + rest)
+	# field_order is a doctype-level setter, so it carries no field_name (NULL) — do
+	# not filter on one, or this never matches and rewrites the row every migrate.
+	if frappe.db.get_value("Property Setter", {"doc_type": CHILD_DOCTYPE,
+	                                           "property": "field_order"}, "value") != order:
+		frappe.make_property_setter({
+			"doctype": CHILD_DOCTYPE, "doctype_or_field": "DocType", "property": "field_order",
+			"value": order, "property_type": "Text",
+		}, is_system_generated=False)
+		changed += 1
 
-	frappe.clear_cache(doctype=CHILD_DOCTYPE)
+	if changed or created:
+		frappe.clear_cache(doctype=CHILD_DOCTYPE)
+	return {"created": created, "retyped": retyped, "hidden": hidden,
+	        "visible": present, "changed": changed}
