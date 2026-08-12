@@ -58,10 +58,6 @@ const TeamApprovalListExemptionTable = lazyWithRetry(
 );
 
 // Lazy load heavy components with retry mechanism
-const Expenses = lazyWithRetry(
-  () => import("./components/Expenses"),
-  "Expenses",
-);
 const FlexiDeclaration = lazyWithRetry(
   () => import("./components/Compansation/FlexiDeclaration/FlexiDeclaration"),
 );
@@ -845,11 +841,6 @@ export const routesConfig: AppRoute[] = [
     permissionKey: "Employee Directory",
   },
   {
-    path: "/webapp/expenses",
-    element: <Expenses />,
-    permissionKey: "Expenses",
-  },
-  {
     path: "/webapp/policies",
     element: <Policies />,
     permissionKey: "Policies",
@@ -1526,7 +1517,7 @@ export const routesConfig: AppRoute[] = [
             element: <NewGoal />,
             permissionKey: "Goal Creation",
           },
-         
+
           {
             path: "my-goals/bulk-import",
             element: <BulkImportGoals />,
@@ -1567,7 +1558,7 @@ export const routesConfig: AppRoute[] = [
             element: <PerformanceReviewApp />,
             permissionKey: "Performance Review",
           },
-         
+
         ]
       },
       {
