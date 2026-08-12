@@ -5,7 +5,7 @@ import { Typography } from "../../../shared/atoms/Typography";
 import Badge from "../../../shared/Badge";
 import Button from "../../../shared/atoms/Button";
 import type { GoalCheckInSentiment, GoalDetailKeyResult } from "../../../../types/goal";
-import { PERFORMANCE_QUERY_KEYS, useGoalCheckIns, useSubmitGoalCheckIn } from "../../../../hooks/usePerformance";
+import { PERFORMANCE_QUERY_KEYS, useSubmitGoalCheckIn } from "../../../../hooks/usePerformance";
 import { getPerformanceErrorMessage } from "../../../../services/performanceService";
 import FrappeAPI from "../../../../utils/frappeAPI";
 import { useQueryClient } from "@tanstack/react-query";
@@ -34,7 +34,6 @@ export interface KRCheckInModalProps {
 export const KRCheckInModal: React.FC<KRCheckInModalProps> = ({
   isOpen,
   onClose,
-  goalId,
   kr,
   krIndex = 0,
   initialStatus,
@@ -44,10 +43,8 @@ export const KRCheckInModal: React.FC<KRCheckInModalProps> = ({
   const [sentiment, setSentiment] = useState<GoalCheckInSentiment>("On Track");
   const [attachment, setAttachment] = useState<File | null>(null);
   const queryClient = useQueryClient();
-
+const [note , setNote]  = useState<string>("")
   const krId = kr?.goal_key || kr?.goal || "";
-  const { data: krCheckInData, refetch: refetchKRCheckIns } = useGoalCheckIns(krId);
-  console.log(krCheckInData?.data?.check_ins,'ccccccccchhhhhhhhheeeeeeck in')
   const { mutateAsync: submitCheckIn, isPending: isSubmittingCheckIn } = useSubmitGoalCheckIn();
 
   useEffect(() => {
@@ -87,20 +84,15 @@ export const KRCheckInModal: React.FC<KRCheckInModalProps> = ({
         goal: goalKey,
         new_value: parsedValue,
         sentiment,
-        note: "",
+        note: note,
         attachment: attachmentUrl,
       }, {
         onSuccess: async () => {
-          queryClient.invalidateQueries({ queryKey: ["performance", "goal-check-ins"] });
-          queryClient.invalidateQueries({ queryKey: ["performance", "goal-detail"] });
+          
           if (krId) {
-            await refetchKRCheckIns();
             queryClient.invalidateQueries({ queryKey: PERFORMANCE_QUERY_KEYS.goalCheckIns(krId) });
           }
-          if (goalId) {
-            queryClient.invalidateQueries({ queryKey: PERFORMANCE_QUERY_KEYS.goalCheckIns(goalId) });
-            queryClient.invalidateQueries({ queryKey: PERFORMANCE_QUERY_KEYS.goalDetail(goalId) });
-          }
+         
           queryClient.invalidateQueries({ queryKey: PERFORMANCE_QUERY_KEYS.myGoals });
         }
       });
@@ -186,7 +178,13 @@ export const KRCheckInModal: React.FC<KRCheckInModalProps> = ({
             </div>
           </div>
         </div>
-
+        <textarea
+          value={note}
+          onChange={(event) => setNote(event.target.value)}
+          className="w-full rounded-lg border border-gray-200 p-3 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 min-h-[100px] mb-4 transition"
+          placeholder="Add details about your progress..."
+          aria-label="Goal progress details"
+        ></textarea>
         <div className="flex items-center justify-between gap-3 pt-3 border-t border-gray-100 mt-2">
           <div className="flex items-center gap-2 min-w-0">
             <input
