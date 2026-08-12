@@ -33,6 +33,9 @@ export const buildExpenseRecord = (
     ...combinedData,
     expense_type: expenseTypeName,
     reimbursement_category: combinedData.expenseCategory,
+    // `category_type` is the key the API reads; `custom_category_type` mirrors the
+    // Expense Claim Detail fieldname. Keep both so the payload is unambiguous.
+    category_type: combinedData.category_type || "General",
     custom_category_type: combinedData.category_type || "General",
     custom_expense_category_name: combinedData.expenseCategory,
     custom_expense_type: expenseTypeName,
@@ -61,7 +64,6 @@ export const buildExpenseRecord = (
   delete record.attach_receipt;
   delete record.expenseType;
   delete record.expenseCategory;
-  delete record.category_type;
   delete record.custom_odometer_from;
   delete record.custom_odometer_to;
 

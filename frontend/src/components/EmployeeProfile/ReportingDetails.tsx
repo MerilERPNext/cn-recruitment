@@ -26,6 +26,10 @@ import toast from "react-hot-toast";
 
 // Sort a reporting category's items current-first, then newest start_date first
 // (same order the cards render in and the order computeSlideDateBounds expects).
+// Two items sharing a start_date (e.g. after a start-date edit collapsed one of
+// them onto the other) tie-break on creation, so the more recently created one
+// counts as the newer period and sorts on top — matching the backend card
+// builders in cn_hrms_core.apis.employee.
 const sortReportingItems = (items: any[]): any[] =>
   [...items].sort((a, b) => {
     const aIsCurrent = !a.end_date;
@@ -34,7 +38,8 @@ const sortReportingItems = (items: any[]): any[] =>
     if (!aIsCurrent && bIsCurrent) return 1;
     const aDate = a.start_date ? new Date(a.start_date).getTime() : 0;
     const bDate = b.start_date ? new Date(b.start_date).getTime() : 0;
-    return bDate - aDate;
+    if (aDate !== bDate) return bDate - aDate;
+    return String(b.creation || "").localeCompare(String(a.creation || ""));
   });
 
 const CATEGORY_FIELD_MAP: Record<string, string> = {
