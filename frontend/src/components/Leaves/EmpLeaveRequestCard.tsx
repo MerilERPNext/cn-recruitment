@@ -26,6 +26,7 @@ interface EmpLeaveRequestCardProps extends LeaveCardProps {
   onRevokeApproved?: () => void;
   showRejectReason?: boolean;
   onOpenReplaceModal?: () => void;
+  onClick?: () => void;
 }
 const EmpLeaveRequestCard = ({
   data,
@@ -33,6 +34,7 @@ const EmpLeaveRequestCard = ({
   onOpenReplaceModal,
   showRejectReason,
   onRevokeApproved,
+  onClick,
 }: EmpLeaveRequestCardProps) => {
   const { isDesktop } = useScreenSize();
   const [showDescriptionModal, setShowDescriptionModal] = useState(false);
@@ -47,8 +49,7 @@ const EmpLeaveRequestCard = ({
 
 
   const leaveButtonConfig = buttonStatus?.leave_applications?.find(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (app: any) => app.name === data?.reference_name,
+    (app) => app.name === data.reference_name,
   );
 
   const isPending = data?.reference_document?.status === "Open";
@@ -149,6 +150,7 @@ const EmpLeaveRequestCard = ({
               : "1fr 1.5fr 1fr 1fr 1fr 1fr 1.5fr 1fr 1fr 1fr 1.5fr 1fr",
           }}
           className="grid w-full items-center gap-4 px-6 h-16 border-b border-gray-50 transition-colors cursor-pointer hover:bg-primary/10"
+          onClick={() => onClick?.()}
         >
           <Tooltip
             content={data?.reference_document?.name || ""}
@@ -256,7 +258,7 @@ const EmpLeaveRequestCard = ({
               {data?.send_back_comment || "--"}
             </Typography>
           </Tooltip>
-          <div className={`flex items-center justify-center ${isActed ? "pointer-events-none opacity-50" : ""}`}>
+          <div className={`flex items-center justify-center ${isActed ? "pointer-events-none opacity-50" : ""}`} onClick={(e) => e.stopPropagation()}>
             <MyApprovalActionPill
               uiPermission={{
                 app: "Leaves and Holidays",
@@ -289,6 +291,7 @@ const EmpLeaveRequestCard = ({
           className="cursor-pointer border-t-4 border-x border-b 
       border-x-primary/20 border-b-primary/20 
       shadow-sm border-primary bg-white rounded-xl"
+          onClick={() => onClick?.()}
         >
           <div className="p-4 flex flex-col gap-3 w-full">
             {/* Header */}
@@ -351,7 +354,10 @@ const EmpLeaveRequestCard = ({
 
               {cleanDescription.length > 40 && (
                 <button
-                  onClick={() => setShowDescriptionModal(true)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowDescriptionModal(true);
+                  }}
                   className="absolute bottom-0 right-0 text-primary text-sm bg-white pl-1"
                 >
                   Read more
@@ -388,7 +394,7 @@ const EmpLeaveRequestCard = ({
               </Typography>
             </div>
 
-            <div className={isActed ? "pointer-events-none opacity-50" : ""}>
+            <div className={isActed ? "pointer-events-none opacity-50" : ""} onClick={(e) => e.stopPropagation()}>
               <MyApprovalActionPill
                 uiPermission={{
                   app: "Leaves and Holidays",

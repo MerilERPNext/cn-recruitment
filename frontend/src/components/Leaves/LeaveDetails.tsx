@@ -1,6 +1,6 @@
 import DOMPurify from "dompurify";
 import { X } from "lucide-react";
-import { useCallback, useState } from "react";
+import { useCallback, useState, type ReactNode } from "react";
 import toast from "react-hot-toast";
 import { useGetToDoWithReferenceDoc } from "../../hooks/useAttendance";
 import { useCreateApprovalComment } from "../../hooks/useCreateApprovalComment";
@@ -23,10 +23,56 @@ import { Typography } from "../shared/atoms/Typography";
 import StatusBadge from "../shared/atoms/statusBadge";
 import { AttachmentCard } from "../shared/molecules/AttachmentCard";
 import ActionReasonModal from "../shared/ActionReasonModal";
-import WrapperHoverCard from "../shared/WrapperHoverCard";
+import MobileAllocatedTo from "../shared/MobileAllocatedTo";
+import AllocatedToTooltip from "../shared/AllocatedToTooltip";
+import type { MyLeaveRequestType } from "../../types/leaves";
+import type { allocatedToType } from "../../types/allocatedToTooltip";
 
 type LeaveAttachment = {
   file_url: string;
+};
+
+const hasValue = (value: unknown): boolean => {
+  if (Array.isArray(value)) return value.length > 0;
+  return value !== null && value !== undefined && String(value).trim() !== "";
+};
+
+const normalizeAllocatedUsers = (value: unknown): allocatedToType[] => {
+  const values = Array.isArray(value) ? value : [value];
+
+  return values.flatMap((item): allocatedToType[] => {
+    if (typeof item === "string") {
+      const trimmed = item.trim();
+      if (!trimmed) return [];
+
+      if (trimmed.startsWith("[")) {
+        try {
+          return normalizeAllocatedUsers(JSON.parse(trimmed) as unknown);
+        } catch {
+          // Treat malformed JSON as a plain user value.
+        }
+      }
+
+      return [{ name: trimmed, designation_name: null, employee: null }];
+    }
+
+    if (item && typeof item === "object") {
+      const record = item as Record<string, unknown>;
+      const name = typeof record.name === "string" ? record.name.trim() : "";
+      if (!name) return [];
+
+      return [{
+        name,
+        designation_name:
+          typeof record.designation_name === "string"
+            ? record.designation_name
+            : null,
+        employee: typeof record.employee === "string" ? record.employee : null,
+      }];
+    }
+
+    return [];
+  });
 };
 
 export function LeaveDetailView({
@@ -39,17 +85,18 @@ export function LeaveDetailView({
   label = "Leave Request",
   reasonName,
   sendBackComment,
+  customActions,
 }: {
   actionsEnabled?: boolean;
   documentName?: string;
   referenceName?: string;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  data?: any;
+  data?: MyLeaveRequestType;
   onClose: () => void;
   onAction?: () => void;
   label?: string;
   reasonName?: string;
   sendBackComment?: string;
+  customActions?: ReactNode;
 }) {
   const mutation = useApprovalListActions();
   const approvalCommentMutation = useCreateApprovalComment();
@@ -70,6 +117,29 @@ export function LeaveDetailView({
   const cleanDescription = DOMPurify.sanitize(
     data?.reference_document?.description || "",
   );
+  const leaveReason =
+    reasonName ||
+    data?.reference_document?.reason_name ||
+    data?.reference_document?.custom_reason ||
+    data?.reference_document?.reason;
+  const leaveType =
+    data?.reference_document?.custom_leave_type_name ||
+    data?.reference_document?.leave_type;
+  const assignedUsers = normalizeAllocatedUsers(data?.allocated_to);
+  const displayStatus =
+    data?.custom_allow_revoke &&
+    data?.reference_document?.docstatus === 2 &&
+    data?.todo_status?.toLowerCase() === "cancelled"
+      ? "Revoked"
+      : data?.reference_document?.status;
+  const hasAssignedTo = [
+    assignedUsers,
+    data?.username,
+    data?.role,
+    data?.allocated_roles,
+    data?.role_assigned_users,
+  ].some(hasValue);
+  const sendbackCommentValue = sendBackComment || data?.send_back_comment;
 
   const [currentAction, setCurrentAction] = useState<string | null>(null);
   const [isActed, setIsActed] = useState(false);
@@ -103,8 +173,9 @@ export function LeaveDetailView({
         const finalAction = actionMap[action] ?? `${action}ed`;
 
         toast.success(`Request ${finalAction} Successfully!`);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const responseWithSession = response as unknown as { session?: any };
+        const responseWithSession = response as unknown as {
+          session?: string;
+        };
 
         if (
           (data?.custom_approval_type === "Approval Matrix" &&
@@ -220,80 +291,92 @@ export function LeaveDetailView({
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
-          {/* Allocated To + Status */}
-          <div className="flex gap-2 justify-between p-1">
-            <div className="flex flex-col gap-1">
-              <div className="flex flex-col gap-1">
-                <Typography variant="mobileCardLabel" className="text-gray-500">
-                  {data?.reference_document?.employee_name
-                    ? "Employee Name"
-                    : "Employee ID"}
-                </Typography>
-
-                <Typography
-                  variant="mobileCardValue"
-                  className="hover:text-primary cursor-pointer"
-                >
-                  <WrapperHoverCard
-                    employeeId={data?.reference_document?.employee}
-                  >
-                    {data?.reference_document?.employee_name ||
-                      data?.reference_document?.employee}
-                  </WrapperHoverCard>
-                </Typography>
-              </div>
-            </div>
+          {/* Status */}
+          <div className="flex justify-end p-1">
             <div>
-              <StatusBadge status={data?.reference_document?.status} />
+              <AllocatedToTooltip
+                title="Assigned To"
+                users={assignedUsers}
+                allocated_to_user={data?.username}
+                roles={data?.allocated_roles}
+                role={data?.role}
+                RoleAssignedUsers={data?.role_assigned_users}
+                position="top"
+              >
+                <span>
+                  <StatusBadge status={displayStatus} />
+                </span>
+              </AllocatedToTooltip>
             </div>
           </div>
 
           <div className="flex flex-col items-start justify-between mt-2 rounded-md p-1 gap-4">
             <div className="flex justify-between w-full">
-              <div className="flex flex-col gap-2">
+              {hasValue(leaveType) && <div className="flex flex-col gap-2">
                 <Typography variant="mobileCardLabel" className="block">
                   Leave Type
                 </Typography>
                 <Typography variant="mobileCardValue">
-                  {`${data?.reference_document?.custom_leave_type_name}`}
+                  {leaveType}
                 </Typography>
-              </div>
-              <div className="flex flex-col gap-2 text-right">
+              </div>}
+              {typeof data?.reference_document?.total_leave_days === "number" && <div className="flex flex-col gap-2 text-right">
+                <Typography variant="mobileCardLabel" className="block">
+                  Leave Days
+                </Typography>
+                <Typography variant="mobileCardValue">
+                  {data?.reference_document?.total_leave_days > 1
+                    ? `${data.reference_document.total_leave_days} Days`
+                    : `${data?.reference_document?.total_leave_days ?? 0} Day`}
+                </Typography>
+              </div>}
+            </div>
+            <div className="flex justify-between w-full">
+              {hasAssignedTo && <MobileAllocatedTo
+                users={assignedUsers}
+                allocated_to_user={data?.username}
+                roles={data?.allocated_roles}
+                role={data?.role}
+                RoleAssignedUsers={data?.role_assigned_users}
+                align="left"
+                label="Assigned To"
+              />}
+              {hasValue(leaveReason) && <div className="flex flex-col gap-2 text-right">
                 <Typography variant="mobileCardLabel" className="block">
                   Reason
                 </Typography>
                 <Typography variant="mobileCardValue">
-                  {data?.reference_document?.reason_name || reasonName || "--"}
+                  {leaveReason}
                 </Typography>
-              </div>
+              </div>}
             </div>
             <div className="flex justify-between w-full">
-              <div className="flex flex-col gap-2">
+              {hasValue(data?.reference_document?.from_date) && hasValue(data?.reference_document?.to_date) && <div className="flex flex-col gap-2">
                 <Typography variant="mobileCardLabel" className="block">
                   Duration
                 </Typography>
                 <Typography variant="mobileCardValue">
                   {`${formatToIndianDate(data?.reference_document?.from_date)} to ${formatToIndianDate(data?.reference_document?.to_date)}`}
                 </Typography>
-              </div>
-              <div className="flex flex-col gap-2 text-right">
+              </div>}
+              {hasValue(data?.reference_document?.posting_date) && <div className="flex flex-col gap-2 text-right">
                 <Typography variant="mobileCardLabel" className="block">
-                  Due Date
+                  Posting Date
                 </Typography>
                 <Typography variant="mobileCardValue">
-                  {formatToIndianDate((data?.due_date || data?.date) as string)}
+                  {formatToIndianDate(data?.reference_document?.posting_date)}
                 </Typography>
-              </div>
+              </div>}
             </div>
             <div className="flex justify-between w-full">
-              <div className="flex flex-col gap-2">
+              {hasValue(data?.reference_document?.creation) && <div className="flex flex-col gap-2">
                 <Typography variant="mobileCardLabel" className="block">
                   Initiation Date
                 </Typography>
                 <Typography variant="mobileCardValue">
                   {formatToIndianDate(data?.reference_document?.creation)}
                 </Typography>
-              </div>
+              </div>}
               {data?.reference_document?.custom_optional_holiday && (
                 <div className="flex flex-col gap-2 text-right">
                   <Typography variant="mobileCardLabel" className="block">
@@ -305,12 +388,12 @@ export function LeaveDetailView({
                 </div>
               )}
             </div>
-            <div className="flex flex-col gap-2">
+            {hasValue(cleanDescription) && <div className="flex flex-col gap-2">
               <Typography variant="mobileCardLabel">Description</Typography>
               <Typography variant="mobileCardValue">
                 {cleanDescription}
               </Typography>
-            </div>
+            </div>}
             {data?.reference_document?.status === "Rejected" &&
               data?.reference_document?.custom_rejection_reason && (
                 <div className="flex flex-col gap-2">
@@ -325,7 +408,7 @@ export function LeaveDetailView({
                   </Typography>
                 </div>
               )}
-            <div className="flex flex-col gap-2">
+            {hasValue(sendbackCommentValue) && <div className="flex flex-col gap-2">
               <Typography variant="mobileCardLabel">
                 Sendback Comment
               </Typography>
@@ -333,9 +416,9 @@ export function LeaveDetailView({
                 variant="mobileCardValue"
                 className="text-gray-700 whitespace-pre-wrap"
               >
-                {sendBackComment || data?.send_back_comment || "--"}
+                {sendbackCommentValue}
               </Typography>
-            </div>
+            </div>}
           </div>
 
           {data?.attachments && data?.attachments?.length > 0 ? (
@@ -353,7 +436,11 @@ export function LeaveDetailView({
           ) : null}
         </div>
 
-        {actionsEnabled &&
+        {customActions ? (
+          <div className="w-full bg-white border-t shadow-md p-4 z-20">
+            {customActions}
+          </div>
+        ) : actionsEnabled &&
           actions?.length > 0 &&
           data?.status === "Open" &&
           !isActed ? (

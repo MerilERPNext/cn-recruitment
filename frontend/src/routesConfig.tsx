@@ -1294,6 +1294,11 @@ export const routesConfig: AppRoute[] = [
             permissionKey: "My Requests",
           },
           {
+            path: "my/:id",
+            element: <MyLeaveRequest />,
+            permissionKey: "My Requests",
+          },
+          {
             path: "team",
             element: <TeamLeaveRequest />,
             permissionKey: "Team Requests",
