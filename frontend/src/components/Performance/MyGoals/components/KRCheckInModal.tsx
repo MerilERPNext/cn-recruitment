@@ -5,7 +5,7 @@ import { Typography } from "../../../shared/atoms/Typography";
 import Badge from "../../../shared/Badge";
 import Button from "../../../shared/atoms/Button";
 import type { GoalCheckInSentiment, GoalDetailKeyResult } from "../../../../types/goal";
-import { PERFORMANCE_QUERY_KEYS, useSubmitGoalCheckIn } from "../../../../hooks/usePerformance";
+import { PERFORMANCE_QUERY_KEYS, useGoalCheckIns, useSubmitGoalCheckIn } from "../../../../hooks/usePerformance";
 import { getPerformanceErrorMessage } from "../../../../services/performanceService";
 import FrappeAPI from "../../../../utils/frappeAPI";
 import { useQueryClient } from "@tanstack/react-query";
@@ -43,7 +43,11 @@ export const KRCheckInModal: React.FC<KRCheckInModalProps> = ({
   const [newValue, setNewValue] = useState("");
   const [sentiment, setSentiment] = useState<GoalCheckInSentiment>("On Track");
   const [attachment, setAttachment] = useState<File | null>(null);
-  const queryClient = useQueryClient()
+  const queryClient = useQueryClient();
+
+  const krId = kr?.goal_key || kr?.goal || "";
+  const { data: krCheckInData, refetch: refetchKRCheckIns } = useGoalCheckIns(krId);
+  console.log(krCheckInData?.data?.check_ins,'ccccccccchhhhhhhhheeeeeeck in')
   const { mutateAsync: submitCheckIn, isPending: isSubmittingCheckIn } = useSubmitGoalCheckIn();
 
   useEffect(() => {
@@ -86,9 +90,11 @@ export const KRCheckInModal: React.FC<KRCheckInModalProps> = ({
         note: "",
         attachment: attachmentUrl,
       }, {
-        onSuccess: () => {
-          const krId = kr?.goal_key || kr?.goal || "";
+        onSuccess: async () => {
+          queryClient.invalidateQueries({ queryKey: ["performance", "goal-check-ins"] });
+          queryClient.invalidateQueries({ queryKey: ["performance", "goal-detail"] });
           if (krId) {
+            await refetchKRCheckIns();
             queryClient.invalidateQueries({ queryKey: PERFORMANCE_QUERY_KEYS.goalCheckIns(krId) });
           }
           if (goalId) {

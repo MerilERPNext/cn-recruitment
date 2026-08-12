@@ -91,7 +91,20 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, onBack }) => {
   const id = goalId || paramId || '';
 
   const { data: goalResponse, isLoading, isError, error } = useGoalDetail(id);
-  const { data: checkInsResponse, isLoading: isCheckInsLoading } = useGoalCheckIns(id);
+  const { data: parentCheckInsResponse, isLoading: isParentCheckInsLoading } = useGoalCheckIns(id);
+
+  const [selectedKRForCheckIn, setSelectedKRForCheckIn] = React.useState<{ kr: GoalDetailKeyResult; index: number } | null>(null);
+  const [isCheckInModalOpen, setIsCheckInModalOpen] = React.useState(false);
+
+  const firstKRId = goalResponse?.data?.key_results?.[0]?.goal_key || goalResponse?.data?.key_results?.[0]?.goal || '';
+  const activeKRId = selectedKRForCheckIn?.kr?.goal_key || selectedKRForCheckIn?.kr?.goal || firstKRId;
+
+  const { data: krCheckInsResponse, isLoading: isKRCheckInsLoading } = useGoalCheckIns(activeKRId);
+
+  const parentCheckIns = parentCheckInsResponse?.data?.check_ins ?? [];
+  const krCheckIns = krCheckInsResponse?.data?.check_ins ?? [];
+  const checkIns = parentCheckIns.length > 0 ? parentCheckIns : krCheckIns;
+  const isCheckInsLoading = isParentCheckInsLoading || (parentCheckIns.length === 0 && isKRCheckInsLoading && Boolean(activeKRId));
   const { mutateAsync: submitCheckIn, isPending: isSubmittingCheckIn } = useSubmitGoalCheckIn();
   const { mutateAsync: saveGoals, isPending: isSavingGoals } = useSaveGoals();
   const { data: currentUser } = useCurrentUser();
@@ -105,9 +118,6 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, onBack }) => {
 
   const [isEditingKRs, setIsEditingKRs] = React.useState(false);
   const [editingKRs, setEditingKRs] = React.useState<{ id: string; title: string; weightage: string; goal_key?: string }[]>([]);
-
-  const [selectedKRForCheckIn, setSelectedKRForCheckIn] = React.useState<{ kr: GoalDetailKeyResult; index: number } | null>(null);
-  const [isCheckInModalOpen, setIsCheckInModalOpen] = React.useState(false);
 
   const handleOpenKRCheckInModal = (kr: GoalDetailKeyResult, index: number) => {
     setSelectedKRForCheckIn({ kr, index });
@@ -253,7 +263,6 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, onBack }) => {
 
   const goal = goalResponse.data;
   const ownerName = currentUser?.full_name || currentUser?.first_name || currentUser?.email || '-';
-  const checkIns = checkInsResponse?.data?.check_ins ?? [];
   const displayedProgress = latestProgress ?? goal.achievement ?? 0;
   const isPendingGoal = goal.goal_status?.toLowerCase() === 'pending';
   const isAutoCalculate = Boolean(goal.auto_calculate);
@@ -594,7 +603,7 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, onBack }) => {
               {isCheckInsLoading ? (
                 <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-blue-500" /></div>
               ) : checkIns.length ? (
-                <div className="space-y-3">
+                <div className="space-y-3 max-h-[300px] overflow-y-auto">
                   {checkIns.map((checkIn) => (
                     <div key={checkIn.name} className="rounded-lg border border-gray-100 p-3">
                       <div className="flex items-start justify-between gap-2">
