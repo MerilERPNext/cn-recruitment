@@ -503,7 +503,7 @@ const MyGoals: React.FC<MyGoalsProps> = ({ onCreateGoal, onSelectGoal }) => {
                           size="sm"
                         />
                       </div>
-                      <div className="flex shrink-0 items-center gap-2">
+                      <div className="flex shrink-0 justify-between items-center gap-2">
                         {isSelectableGoal(goal) && (
                           <button
                             onClick={(e) => handleDeleteDraftGoal(e, goal)}
