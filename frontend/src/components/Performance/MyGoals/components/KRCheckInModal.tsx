@@ -92,7 +92,7 @@ const [note , setNote]  = useState<string>("")
           if (krId) {
             queryClient.invalidateQueries({ queryKey: PERFORMANCE_QUERY_KEYS.goalCheckIns(krId) });
           }
-         
+          setNote("")
           queryClient.invalidateQueries({ queryKey: PERFORMANCE_QUERY_KEYS.myGoals });
         }
       });
