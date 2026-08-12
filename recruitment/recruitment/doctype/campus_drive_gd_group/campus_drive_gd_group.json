@@ -10,6 +10,8 @@
   "group_name",
   "job_opening",
   "job_title",
+  "institute",
+  "panel_name",
   "candidate_count",
   "group_status"
  ],
@@ -44,6 +46,22 @@
    "fieldtype": "Data",
    "label": "Role",
    "read_only": 1
+  },
+  {
+   "fieldname": "institute",
+   "fieldtype": "Link",
+   "label": "Institute",
+   "options": "Institute",
+   "read_only": 1,
+   "description": "Set when the groups are split per institute"
+  },
+  {
+   "columns": 1,
+   "fieldname": "panel_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Panel",
+   "description": "Panel (from Round Panelists) conducting this group's GD"
   },
   {
    "columns": 1,

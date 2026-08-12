@@ -101,10 +101,19 @@ function applyWorkLocation(frm, ctx) {
         frm.refresh_field("custom_work_location_region");
     }
 
-    // Region changed under a location that was already picked (the panel ticked a
-    // recommendation, say) — drop it rather than submit a location the new region
-    // does not run.
-    if (
+    // An earlier round already settled where this candidate goes. Carry that value
+    // and lock it, so a later panel records the same posting instead of quietly
+    // moving the candidate somewhere else. The server enforces this too — read-only
+    // on a form is only a hint.
+    const locked = Boolean(ctx.locked_to);
+    if (locked) {
+        if (frm.doc.docstatus === 0 && frm.doc.custom_work_location !== ctx.locked_to) {
+            frm.set_value("custom_work_location", ctx.locked_to);
+        }
+    } else if (
+        // Region changed under a location that was already picked (the panel ticked a
+        // recommendation, say) — drop it rather than submit a location the new region
+        // does not run.
         frm.doc.docstatus === 0 &&
         frm.doc.custom_work_location &&
         ctx.restricted &&
@@ -113,12 +122,19 @@ function applyWorkLocation(frm, ctx) {
         frm.set_value("custom_work_location", null);
     }
 
+    frm.set_df_property("custom_work_location", "read_only", locked ? 1 : 0);
     frm.set_df_property("custom_work_location", "description", describe(ctx));
 }
 
 function describe(ctx) {
+    if (ctx.locked_to) {
+        return __("Already set to {0} by {1} in an earlier round, so it cannot be changed here. HR can still change it on the candidate.", [
+            `<b>${frappe.utils.escape_html(ctx.locked_to)}</b>`,
+            frappe.utils.escape_html(ctx.locked_by || __("an earlier panel")),
+        ]);
+    }
     const base = __(
-        "On submit this becomes the candidate's final work location, and carries through to the offer and onboarding."
+        "On submit this becomes the candidate's final work location for every later round, and carries through to the offer and onboarding."
     );
     if (!ctx.region) {
         return `${__("No region could be resolved for this candidate, so every location is listed.")} ${base}`;

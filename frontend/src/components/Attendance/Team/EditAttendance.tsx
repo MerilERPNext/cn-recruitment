@@ -191,9 +191,7 @@ export const EditAttendance = ({
                 values: [
                   { label: "Present", value: "Present" },
                   { label: "Absent", value: "Absent" },
-                  { label: "On Leave", value: "On Leave" },
-                  { label: "Half Day", value: "Half Day" },
-                  { label: "Work From Home", value: "Work From Home" },
+                  { label: "Half Day", value: "Half Day" }
                 ],
               },
             },

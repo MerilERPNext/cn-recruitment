@@ -258,6 +258,13 @@ doc_events = {
     "Employee Promotion": {
         "on_submit": "recruitment.customizations.employee_promotion.employee_promotion.on_submit",
     },
+    "Institute": {
+        # Welcome the Primary TPO — on creation, and on any later edit that adds
+        # one. Sent once per contact (Institute TPO Contact.welcome_sent), and only
+        # while Campus Settings says so.
+        "after_insert": "recruitment.recruitment.tpo_mailers.send_tpo_welcome",
+        "on_update": "recruitment.recruitment.tpo_mailers.send_tpo_welcome",
+    },
     "Interview": {
         "before_save": "recruitment.customizations.interview.interview.check_feedback_of_previous_interview",
         "validate": "recruitment.customizations.job_applicant.validation_blacklist_on_doctypes",
@@ -282,6 +289,10 @@ doc_events = {
             # After the verdict is set on the Interview, advance/reject the
             # candidate's hiring stage (only for stages flagged "auto").
             "recruitment.customizations.interview_feedback.interview_feedback.auto_advance_stage",
+            # A campus additional round decides the round it was added to: cleared
+            # hands the candidate to the next round, rejected rejects them. Anchors
+            # on the round, so it completes what the generic advance above cannot.
+            "recruitment.recruitment.doctype.campus_drive.campus_drive.advance_after_extra_round",
         ]
     },
     "Job Offer": {
@@ -464,15 +475,15 @@ scheduler_events = {
             "recruitment.recruitment.doctype.campus_drive.campus_drive.update_drive_statuses",
         ],
         "0 7 * * *": [
-            "recruitment.recruitment.scheduled_jobs.auto_separate_employees_on_lwd",
             "recruitment.recruitment.scheduled_jobs.create_pending_confirmation_separations",
-            "recruitment.recruitment.scheduled_jobs.mark_relieved_employees_as_left",
             "recruitment.recruitment.scheduled_jobs.reassign_employee_relationships_on_relieving",
             "recruitment.recruitment.scheduled_jobs.process_separation_leave_attendance_requests",
             "recruitment.recruitment.scheduled_jobs.auto_confirm_employees_without_policy",
         ],
         "0 1 * * *": [
             "recruitment.recruitment.onboarding_extras.refresh_onboarding_task_days_to_join",
+            "recruitment.recruitment.scheduled_jobs.mark_relieved_employees_as_left",
+            "recruitment.recruitment.scheduled_jobs.auto_separate_employees_on_lwd",
         ],
         "30 1 * * *": [
             # Pay every referral reward installment that is due and still eligible.

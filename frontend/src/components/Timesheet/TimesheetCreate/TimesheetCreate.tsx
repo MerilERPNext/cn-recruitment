@@ -14,6 +14,7 @@ import { useCurrentEmployeeDetails } from "../../../hooks/useEmployee";
 import { useGetAllEventsAndAttendance } from "../../../hooks/useAttendance";
 import { useCreateOrUpdateTimesheetEntries, useWeeklyTimesheetData } from "../../../hooks/useTimesheet";
 import { getWeeklyTimesheetData } from "../../../services/timesheetService";
+import type { TimesheetApprovalStatus } from "../../../types/timesheet";
 import { useGetUiPermission } from "../../../hooks/userUiPermission";
 import { isActionEnabled } from "../../../utils/uiPermission";
 import { useScreenSize } from "../../../hooks/useScreenSize";
@@ -146,7 +147,8 @@ const TimesheetCreate: React.FC = () => {
   // No need for separate projectsList / tasksList fetches
 
   // Timesheet Fetching
-  const [timesheetStatus, setTimesheetStatus] = useState<string>("Not Submitted");
+  const [timesheetStatus, setTimesheetStatus] = useState<string>("Draft");
+  const [nonEditableDays, setNonEditableDays] = useState<string[]>([]);
 
   // Grid/Rows data
   const [projectsData, setProjectsData] = useState<TimesheetRow[]>([]);
@@ -168,8 +170,7 @@ const TimesheetCreate: React.FC = () => {
   const hasSubmitPermission = isActionEnabled(uiPermission, "submit", "Timesheet");
   const hasCancelPermission = isActionEnabled(uiPermission, "cancel", "Timesheet");
 
-  const [isBackendEditable, setIsBackendEditable] = useState<boolean>(true);
-  const isGridEditable = isBackendEditable && timesheetStatus !== "Submitted" && timesheetStatus !== "Cancelled" && (hasSavePermission || hasSubmitPermission);
+  const isGridEditable = timesheetStatus !== "Cancelled" && (hasSavePermission || hasSubmitPermission);
 
   // Modal States
   const [commentModalConfig, setCommentModalConfig] = useState<{
@@ -188,10 +189,11 @@ const TimesheetCreate: React.FC = () => {
   const { mutate: createOrUpdateEntries, isPending } = useCreateOrUpdateTimesheetEntries();
   const isSaving = isPending || isSavingLocally;
 
-  // Clear local attachment state when week changes
+  // Clear local state when week changes
   useEffect(() => {
     setAttachedFile(null);
     setIsFileModified(false);
+    setNonEditableDays([]);
   }, [startOfWeekStr]);
 
 
@@ -202,21 +204,36 @@ const TimesheetCreate: React.FC = () => {
     if (!weeklyData) return;
 
     let foundName = "";
-    let foundStatus = "Not Submitted";
 
     // Collect unique time_log entries across all days by index order
     // Each time_log (project+task combo) gets its own row
     const rowsMap: Record<string, TimesheetRow> = {};
     const submittedDays: string[] = [];
+    const lockedDays: string[] = []; // days with non-Draft approval status
+
+    // Track all custom_timesheet_status values to derive overall status
+    const allStatuses = new Set<TimesheetApprovalStatus>();
 
     (weeklyData.days || []).forEach(day => {
       const dateStr = day.date; // "yyyy-MM-dd"
 
       let isDaySubmitted = false;
+      let isDayLocked = false;
 
       (day.timesheet_records || []).forEach(record => {
         if (!foundName && record.name) {
           foundName = record.name;
+        }
+
+        // Track the custom_timesheet_status
+        const approvalStatus = record.custom_timesheet_status;
+        if (approvalStatus) {
+          allStatuses.add(approvalStatus);
+        }
+
+        // A day is locked (non-editable) if any record is NOT "Draft"
+        if (approvalStatus && approvalStatus !== "Draft") {
+          isDayLocked = true;
         }
 
         if (
@@ -255,23 +272,32 @@ const TimesheetCreate: React.FC = () => {
       if (isDaySubmitted) {
         submittedDays.push(dateStr);
       }
+      if (isDayLocked) {
+        lockedDays.push(dateStr);
+      }
     });
 
     setSubmittedDatesList(submittedDays);
+    setNonEditableDays(lockedDays);
 
-    if (submittedDays.length >= 7) {
-      foundStatus = "Submitted";
-    } else if (submittedDays.length > 0) {
-      foundStatus = "Partially Submitted";
-    } else if (foundName) {
-      foundStatus = "Draft";
-    } else {
-      foundStatus = "Not Submitted";
+    // Derive overall status from custom_timesheet_status values
+    // Priority: Rejected > Pending for Approval > Approved > Draft
+    let derivedStatus = "Draft";
+    if (allStatuses.size > 0) {
+      if (allStatuses.has("Rejected")) {
+        derivedStatus = "Rejected";
+      } else if (allStatuses.has("Pending for Approval")) {
+        derivedStatus = "Pending for Approval";
+      } else if (allStatuses.has("Approved")) {
+        derivedStatus = "Approved";
+      } else {
+        derivedStatus = "Draft";
+      }
+    } else if (!foundName) {
+      derivedStatus = "Draft";
     }
 
-    // Ignore is_editable from backend as per requirements
-    setIsBackendEditable(true);
-    setTimesheetStatus(foundStatus);
+    setTimesheetStatus(derivedStatus);
 
     const parsedData = Object.values(rowsMap);
     setProjectsData(parsedData);
@@ -678,8 +704,8 @@ const TimesheetCreate: React.FC = () => {
     daysOfWeek.forEach(day => {
       const dateKey = format(day, "yyyy-MM-dd");
 
-      if (submittedDatesList.includes(dateKey)) {
-        return; // Skip already submitted days
+      if (submittedDatesList.includes(dateKey) || nonEditableDays.includes(dateKey)) {
+        return; // Skip already submitted or non-editable days
       }
 
       const rowsForDay: RowItemType[] = [];
@@ -737,15 +763,12 @@ const TimesheetCreate: React.FC = () => {
           const newSubmitted = Object.keys(payload).filter(date => payload[date].status === "Submit");
           setSubmittedDatesList(prev => {
             const updated = Array.from(new Set([...prev, ...newSubmitted]));
-            if (updated.length >= 7) {
-              setTimesheetStatus("Submitted");
-            } else {
-              setTimesheetStatus("Partially Submitted");
-            }
             return updated;
           });
+          setTimesheetStatus("Pending for Approval");
+          setNonEditableDays(prev => Array.from(new Set([...prev, ...newSubmitted])));
         } else {
-          setTimesheetStatus(prev => (prev === "Partially Submitted" ? "Partially Submitted" : "Draft"));
+          setTimesheetStatus("Draft");
         }
 
         setInitialProjectsData(projectsData);
@@ -810,12 +833,19 @@ const TimesheetCreate: React.FC = () => {
     });
   };
 
-  // Check if timesheet is read-only (Submitted or Billed or Cancelled)
-  const isReadOnly = timesheetStatus === "Submitted" || timesheetStatus === "Billed" || timesheetStatus === "Cancelled";
+  // Read-only only when ALL 7 days are disabled (all approved/submitted/week-off)
+  const isReadOnly = useMemo(() => {
+    if (timesheetStatus === "Cancelled") return true;
+    const allDaysDisabled = daysOfWeek.every(day => {
+      const dateKey = format(day, "yyyy-MM-dd");
+      return weekOffDates.includes(dateKey) || submittedDatesList.includes(dateKey) || nonEditableDays.includes(dateKey);
+    });
+    return allDaysDisabled;
+  }, [timesheetStatus, daysOfWeek, weekOffDates, submittedDatesList, nonEditableDays]);
 
   const allDisabledDays = useMemo(() => {
-    return Array.from(new Set([...weekOffDates, ...submittedDatesList]));
-  }, [weekOffDates, submittedDatesList]);
+    return Array.from(new Set([...weekOffDates, ...submittedDatesList, ...nonEditableDays]));
+  }, [weekOffDates, submittedDatesList, nonEditableDays]);
 
   // Attachment upload simulation
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -1009,7 +1039,6 @@ const TimesheetCreate: React.FC = () => {
                           getRowTotal={getRowTotal}
                           handleDeleteRow={handleDeleteRow}
                           disabledDays={allDisabledDays}
-                          submittedDays={submittedDatesList}
                         />
                       );
                     })

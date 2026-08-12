@@ -60,12 +60,14 @@ const OvertimeApprovalCard = ({
     onAction(action, actionData);
   };
 
-  const handleSaveComment = async (reason: string) => {
+  const handleSaveComment = async (reason: string | null) => {
     try {
-      await updateRejectionReasonMutation.mutateAsync({
-        id: data?.reference_document?.name || "",
-        reason,
-      });
+      if (reason !== null) {
+        await updateRejectionReasonMutation.mutateAsync({
+          id: data?.reference_document?.name || "",
+          reason,
+        });
+      }
       setShowCommentModal(false);
       if (pendingActionData) {
         onAction(pendingActionData.action, pendingActionData.data);

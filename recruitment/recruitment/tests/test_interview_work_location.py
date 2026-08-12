@@ -15,6 +15,9 @@ from frappe.tests.utils import FrappeTestCase
 from frappe.utils import add_days, nowdate
 
 from recruitment.api import interview_work_location as iwl
+from recruitment.api.hiring_stage import (_ensure_interview_round,
+                                          get_interview_round_doctype,
+                                          get_interview_round_field)
 
 PREFIX = "_Test WL"
 PANELIST = "wl.panelist@test.local"
@@ -79,7 +82,8 @@ class TestInterviewWorkLocation(FrappeTestCase):
 
 		cls.institute = cls._institute()
 		cls.invite = cls._invite(cls.region_a)
-		cls.interview_type = cls._interview_type()
+		cls.round_field = get_interview_round_field()
+		cls.interview_round = cls._interview_round()
 
 		cls.panelist = _user(PANELIST)
 		cls.outsider = _user(OUTSIDER)
@@ -125,6 +129,10 @@ class TestInterviewWorkLocation(FrappeTestCase):
 			("Campus Invite", {"campus_invite_name": ("like", f"{PREFIX}%")}),
 			("Branch", {"branch": ("like", f"{PREFIX}%")}),
 			("Region", {"location_region": ("like", f"{PREFIX}%")}),
+			# Masters too: a round left behind shows up in real pickers, such as the
+			# Campus Drive's extra-interview dialog.
+			(get_interview_round_doctype(), {"name": ("like", f"{PREFIX}%")}),
+			("Skill", {"name": ("like", f"{PREFIX}%")}),
 		):
 			for name in frappe.get_all(doctype, filters=filters, pluck="name"):
 				frappe.delete_doc(doctype, name, force=True, ignore_permissions=True)
@@ -151,15 +159,15 @@ class TestInterviewWorkLocation(FrappeTestCase):
 		return doc.name
 
 	@classmethod
-	def _interview_type(cls):
-		name = f"{PREFIX} Type"
-		if not frappe.db.exists("Interview Type", name):
-			frappe.get_doc({
-				"doctype": "Interview Type",
-				"interview_type_name": name,
-				"expected_skill_set": [{"skill": cls._skill_name()}],
-			}).insert(ignore_permissions=True)
-		return name
+	def _interview_round(cls):
+		"""The round master under whatever name this HRMS version uses.
+
+		v15 calls it "Interview Round" and keys it on Interview.interview_round; v16
+		calls it "Interview Type" on Interview.interview_type. _ensure_interview_round
+		resolves and creates whichever applies, so this suite runs on both.
+		"""
+		cls._skill_name()
+		return _ensure_interview_round(f"{PREFIX} Type")
 
 	@classmethod
 	def _skill_name(cls):
@@ -190,7 +198,8 @@ class TestInterviewWorkLocation(FrappeTestCase):
 		doc = frappe.get_doc({
 			"doctype": "Interview",
 			"job_applicant": applicant,
-			"interview_type": cls.interview_type,
+			# Set by resolved fieldname, not a literal — see _interview_round.
+			cls.round_field: cls.interview_round,
 			"status": "Pending",
 			# Yesterday: feedback cannot be submitted before the interview date.
 			"scheduled_on": add_days(nowdate(), -1),
@@ -378,25 +387,25 @@ class TestInterviewWorkLocation(FrappeTestCase):
 		self.assertIsNone(
 			frappe.db.get_value("Job Applicant", self.campus_applicant, "custom_location"))
 
-	def test_a_later_feedback_overrides_and_says_what_it_replaced(self):
-		first = self._feedback(self.campus_interview, self.campus_applicant,
-		                       self.branch_via_field)
-		first.insert()
-		first.submit()
+	def test_the_deciding_round_says_what_it_replaced(self):
+		"""A candidate usually arrives with a location pre-filled from the job opening.
+		The panel's choice supersedes it, and the timeline records what it displaced so
+		the change is not silent."""
+		frappe.db.set_value("Job Applicant", self.campus_applicant, "custom_location",
+		                    self.branch_via_table)
 
-		second_interview = self._interview(self.campus_applicant)
-		second = self._feedback(second_interview, self.campus_applicant,
-		                        self.branch_via_table)
-		second.insert()
-		second.submit()
+		doc = self._feedback(self.campus_interview, self.campus_applicant,
+		                     self.branch_via_field)
+		doc.insert()
+		doc.submit()
 
 		self.assertEqual(
 			frappe.db.get_value("Job Applicant", self.campus_applicant, "custom_location"),
-			self.branch_via_table)
+			self.branch_via_field)
 		note = frappe.get_all("Comment", filters={
 			"reference_doctype": "Job Applicant", "reference_name": self.campus_applicant,
 			"comment_type": "Info"}, fields=["content"], order_by="creation desc", limit=1)
-		self.assertIn(self.branch_via_field, note[0].content)  # "Replaces: ..."
+		self.assertIn(self.branch_via_table, note[0].content)  # "Replaces: ..."
 
 	def test_the_offer_shows_where_the_panel_placed_them(self):
 		"""Job Offer mirrors the candidate's location read-only, so whoever raises the
@@ -416,6 +425,78 @@ class TestInterviewWorkLocation(FrappeTestCase):
 		offer.flags.ignore_validate = True
 		offer.insert(ignore_permissions=True)
 		self.assertEqual(offer.custom_work_location, self.branch_via_field)
+
+	# ── the first round settles it ──
+
+	def test_a_later_round_inherits_the_location_and_cannot_change_it(self):
+		"""Round 1 decides where the candidate goes; round 2 records the same posting.
+
+		Otherwise the candidate's location is whatever the last interviewer to submit
+		happened to pick.
+		"""
+		first = self._feedback(self.campus_interview, self.campus_applicant,
+		                       self.branch_via_field)
+		first.insert()
+		first.submit()
+
+		ctx = iwl.get_work_location_context(self.campus_applicant)
+		self.assertEqual(ctx["locked_to"], self.branch_via_field)
+		self.assertEqual(ctx["locked_by"], PANELIST)
+
+		# A second panel tries a different location — it is taken back to the settled one.
+		second = self._feedback(self._interview(self.campus_applicant),
+		                        self.campus_applicant, self.branch_via_table)
+		second.insert()
+		self.assertEqual(second.custom_work_location, self.branch_via_field)
+
+	def test_a_later_round_does_not_rewrite_the_candidate(self):
+		"""HR may have adjusted the location after round 1; a later panel submitting
+		feedback must not silently put it back."""
+		first = self._feedback(self.campus_interview, self.campus_applicant,
+		                       self.branch_via_field)
+		first.insert()
+		first.submit()
+
+		# HR moves them afterwards, straight on the candidate.
+		frappe.db.set_value("Job Applicant", self.campus_applicant, "custom_location",
+		                    self.branch_via_table)
+
+		second = self._feedback(self._interview(self.campus_applicant),
+		                        self.campus_applicant, self.branch_via_field)
+		second.insert()
+		second.submit()
+		self.assertEqual(
+			frappe.db.get_value("Job Applicant", self.campus_applicant, "custom_location"),
+			self.branch_via_table)
+
+	def test_the_first_round_is_not_locked(self):
+		"""Nothing has settled yet, so the first panel chooses freely — including for a
+		candidate whose location was pre-filled from the job opening."""
+		frappe.db.set_value("Job Applicant", self.campus_applicant, "custom_location",
+		                    self.branch_via_table)
+		ctx = iwl.get_work_location_context(self.campus_applicant)
+		self.assertIsNone(ctx["locked_to"])
+
+		doc = self._feedback(self.campus_interview, self.campus_applicant,
+		                     self.branch_via_field)
+		doc.insert()
+		self.assertEqual(doc.custom_work_location, self.branch_via_field)
+
+	def test_an_unsubmitted_feedback_does_not_lock(self):
+		"""A draft is not a decision — the panel may still be filling it in."""
+		draft = self._feedback(self.campus_interview, self.campus_applicant,
+		                       self.branch_via_field)
+		draft.insert()
+		self.assertIsNone(iwl.locked_location(self.campus_applicant))
+
+	def test_a_feedback_does_not_lock_against_itself(self):
+		"""Re-saving the feedback that set the location must not treat it as settled by
+		someone else, or amending it could never correct a mistake."""
+		doc = self._feedback(self.campus_interview, self.campus_applicant,
+		                     self.branch_via_field)
+		doc.insert()
+		doc.submit()
+		self.assertIsNone(iwl.locked_location(self.campus_applicant, exclude=doc.name))
 
 	def test_lateral_candidate_is_never_touched(self):
 		before = frappe.db.get_value("Job Applicant", self.lateral_applicant, "custom_location")

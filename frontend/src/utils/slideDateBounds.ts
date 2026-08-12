@@ -38,11 +38,12 @@ const maxDate = (a?: string, b?: string): string | undefined => {
  *     slide -> start_date floor is 1 May; oldest slide -> floor is joining.)
  *   - start_date <= this slide's own end date.
  *   - end_date   >= this slide's own start date.
- *   - end_date can move forward to the newer (later) slide's END date. When the
- *     newer slide is open-ended (the current "Present" slide) OR this is the
- *     latest slide, the end_date has no upper limit. (e.g. middle slide with a
- *     newer open slide -> no end limit; oldest slide 1 May–31 May with a newer
- *     1 Jun–30 Jun slide -> end_date ceiling is 30 Jun.)
+ *   - end_date can move forward to the newer (later) slide's END date, or to its
+ *     START date when that slide is open-ended (the current "Present" slide),
+ *     which has no end to consume. Only the latest slide has no upper limit.
+ *     (e.g. slides A 5 Aug–Present, B 15 Jul–4 Aug, C 1 Jul–14 Jul: editing B
+ *     gives start_date 1 Jul–4 Aug and end_date 15 Jul–5 Aug; oldest slide
+ *     1 May–31 May with a newer closed 1 Jun–30 Jun slide -> ceiling 30 Jun.)
  *   - If the previous (older) slide is a locked previous-employee tile
  *     (can_edit === false), the start_date is frozen (disableStartDate).
  */
@@ -70,11 +71,14 @@ export function computeSlideDateBounds(
   }
 
   // end_date ceiling: the newer slide's END date (moving onto it reflows the
-  // newer slide's start). No upper limit when the newer slide is open-ended
-  // ("Present") or this is already the latest slide.
+  // newer slide's start). An open-ended newer slide ("Present") has no end to
+  // consume, so it's clamped at that slide's START instead — otherwise the end
+  // could be pushed to any future date and the backend reflow would shove the
+  // current slide's start past today, leaving an older period covering today.
+  // No upper limit when this is already the latest slide.
   let endMaxDate: string | undefined;
   if (newer) {
-    endMaxDate = toDateOnly(newer.to_date);
+    endMaxDate = toDateOnly(newer.to_date) ?? toDateOnly(newer.from_date);
   }
 
   return {

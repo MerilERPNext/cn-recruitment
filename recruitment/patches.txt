@@ -33,3 +33,5 @@ recruitment.patches.rename_education_stage_label
 recruitment.patches.create_default_requisition_scope
 recruitment.patches.backfill_interview_resume
 recruitment.patches.drop_expected_doj_mandatory
+recruitment.patches.seed_extra_round_types
+recruitment.patches.campus_drive_pay_permlevel

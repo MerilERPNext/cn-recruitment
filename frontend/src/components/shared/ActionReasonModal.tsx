@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import toast from "react-hot-toast";
 import Button from "./atoms/Button";
 import { useTodoTypeApprovalConfig } from "../../hooks/useTodo";
@@ -14,7 +14,7 @@ type ActionReasonModalProps = {
   required?: boolean;
   todo_id?: string;
   onCancel: () => void;
-  onSave: (reason: string) => void;
+  onSave: (reason: string | null) => void;
   children?: React.ReactNode;
 };
 
@@ -35,11 +35,19 @@ const ActionReasonModal = ({
   const [reason, setReason] = useState("");
   const { data: config, isLoading: isConfigLoading } = useTodoTypeApprovalConfig(isOpen ? todo_id : undefined);
 
+  const onSaveRef = useRef(onSave);
   useEffect(() => {
-    if (!isOpen) setReason("");
-  }, [isOpen]);
+    onSaveRef.current = onSave;
+  }, [onSave]);
 
-  if (!isOpen) return null;
+  const autoSubmitDone = useRef(false);
+
+  useEffect(() => {
+    if (!isOpen) {
+      setReason("");
+      autoSubmitDone.current = false;
+    }
+  }, [isOpen]);
 
   let minLength = required ? 15 : 0;
   let isActuallyRequired = type === "approval" ? false : required;
@@ -60,6 +68,31 @@ const ActionReasonModal = ({
      }
   }
 
+  const isReady = isOpen && (!todo_id || (!isConfigLoading && config));
+
+  useEffect(() => {
+    if (isReady && !autoSubmitDone.current) {
+      if (!isActuallyRequired && !children) {
+        autoSubmitDone.current = true;
+        onSaveRef.current(null);
+      }
+    }
+  }, [isReady, isActuallyRequired, children]);
+
+  if (!isOpen) return null;
+
+  if (todo_id && isConfigLoading) {
+    return (
+      <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black bg-opacity-50">
+        <span className="inline-block w-8 h-8 border-4 border-white border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (!isActuallyRequired && !children) {
+    return null;
+  }
+
   const displayMinLength = isActuallyRequired && minLength === 0 ? 1 : minLength;
 
   const isValid = isActuallyRequired
@@ -67,11 +100,11 @@ const ActionReasonModal = ({
     : true;
 
   const handleSave = () => {
-    if (!isValid) {
+    if (isActuallyRequired && !isValid) {
       toast.error(`Please enter a comment of at least ${displayMinLength} characters`);
       return;
     }
-    onSave(reason);
+    onSave(isActuallyRequired ? reason : null);
   };
 
   return (
@@ -87,26 +120,29 @@ const ActionReasonModal = ({
       >
         <h3 className="text-lg font-semibold text-gray-900 mb-2">{title}</h3>
         <p className="text-sm text-gray-600 mb-4">{description}</p>
-        <div className="mb-4">
-          <label className="text-xs text-gray-500 uppercase mb-1 block">
-            {isActuallyRequired ? label : label.replace(" *", "")}
-          </label>
-          <textarea
-            value={reason}
-            onChange={(e) => setReason(e.target.value)}
-            onClick={(e) => e.stopPropagation()}
-            placeholder={placeholder}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-            rows={4}
-            autoFocus
-          />
-          {isActuallyRequired && (
+        
+        {isActuallyRequired && (
+          <div className="mb-4">
+            <label className="text-xs text-gray-500 uppercase mb-1 block">
+              {label}
+            </label>
+            <textarea
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              onClick={(e) => e.stopPropagation()}
+              placeholder={placeholder}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+              rows={4}
+              autoFocus
+            />
             <div className={`text-xs mt-1 text-right ${reason.trim().length >= displayMinLength ? 'text-green-600' : 'text-gray-500'}`}>
               {reason.trim().length}/{displayMinLength} characters minimum
             </div>
-          )}
-          {children}
-        </div>
+          </div>
+        )}
+        
+        {children && <div className={isActuallyRequired ? "" : "mb-4"}>{children}</div>}
+        
         <div className="flex gap-3 justify-end">
           <Button onClick={onCancel} size="sm" bgColor="disabled">
             Cancel

@@ -21,6 +21,10 @@
   "participating_institutes",
   "linked_openings_section",
   "linked_job_openings",
+  "offer_package_section",
+  "fixed_pay",
+  "column_break_offer_package",
+  "variable_pay",
   "registration_config_section",
   "registration_open_from",
   "total_seat_capacity",
@@ -144,6 +148,32 @@
    "fieldtype": "Table",
    "label": "Linked Job Openings",
    "options": "Campus Drive Job Opening"
+  },
+  {
+   "fieldname": "offer_package_section",
+   "fieldtype": "Section Break",
+   "label": "Offer Package",
+   "description": "The package agreed for this drive. It prefills every Job Offer raised for its candidates; a negotiated amount already on an offer is never overwritten.",
+   "permlevel": 1
+  },
+  {
+   "fieldname": "fixed_pay",
+   "fieldtype": "Currency",
+   "label": "Fixed Pay",
+   "non_negative": 1,
+   "permlevel": 1
+  },
+  {
+   "fieldname": "column_break_offer_package",
+   "fieldtype": "Column Break",
+   "permlevel": 1
+  },
+  {
+   "fieldname": "variable_pay",
+   "fieldtype": "Currency",
+   "label": "Variable Pay",
+   "non_negative": 1,
+   "permlevel": 1
   },
   {
    "fieldname": "registration_config_section",
@@ -344,6 +374,40 @@
    "report": 1,
    "role": "HR Manager",
    "share": 1,
+   "write": 1
+  },
+  {
+   "read": 1,
+   "report": 1,
+   "role": "HR User"
+  },
+  {
+   "read": 1,
+   "report": 1,
+   "role": "Hiring Lead"
+  },
+  {
+   "permlevel": 1,
+   "read": 1,
+   "role": "System Manager",
+   "write": 1
+  },
+  {
+   "permlevel": 1,
+   "read": 1,
+   "role": "HR Manager",
+   "write": 1
+  },
+  {
+   "permlevel": 1,
+   "read": 1,
+   "role": "HR User",
+   "write": 1
+  },
+  {
+   "permlevel": 1,
+   "read": 1,
+   "role": "Hiring Lead",
    "write": 1
   }
  ],

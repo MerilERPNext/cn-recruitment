@@ -10,7 +10,6 @@ import {
   Target,
   Timer,
   Weight,
-  Loader2,
   AlertCircle,
 } from "lucide-react";
 import { Typography } from "../../shared/atoms/Typography";
@@ -27,6 +26,7 @@ import type { MyGoalsGoal, MyGoalsKeyResult } from "../../../types/goal";
 import { getPerformanceErrorMessage } from "../../../services/performanceService";
 import CustomDropdown from "../../shared/CustomDropdown";
 import MandatoryGoalsBanner from "../GoalCreation/component/MandatoryGoalsBanner";
+import PerformanceSkeleton from "../PerformanceSkeleton";
 
 const getStatusVariant = (status?: string): BadgeVariant => {
   const s = (status ?? "").toLowerCase();
@@ -215,18 +215,7 @@ const MyGoals: React.FC<MyGoalsProps> = ({ onCreateGoal, onSelectGoal }) => {
     }
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex min-h-[400px] items-center justify-center bg-[#f6f8fb]">
-        <div className="flex flex-col items-center gap-3">
-          <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
-          <Typography variant="bodySmall" className="text-slate-500">
-            Loading your goals…
-          </Typography>
-        </div>
-      </div>
-    );
-  }
+ 
 
   if (isError) {
     return (
@@ -257,13 +246,13 @@ const MyGoals: React.FC<MyGoalsProps> = ({ onCreateGoal, onSelectGoal }) => {
                 variant="h3"
                 className="text-xl leading-tight text-slate-950 sm:text-2xl"
               >
-                My Goals &middot; {activeCycle}
+                My Goals &middot; {activeCycle ?? "-"}
               </Typography>
               <Typography
                 variant="bodySmall"
                 className="mt-1 block break-words text-slate-500"
               >
-                {totalGoals} goal{totalGoals !== 1 ? "s" : ""} &middot; {totalWeightage}% weightage
+                {totalGoals ?? "-"} goal{totalGoals !== 1 ? "s" : ""} &middot; {totalWeightage ?? "-"}% weightage
               </Typography>
             </div>
 
@@ -341,46 +330,50 @@ const MyGoals: React.FC<MyGoalsProps> = ({ onCreateGoal, onSelectGoal }) => {
 
         {/* Goals list */}
         <div className="relative min-w-0 rounded-xl border border-slate-200 bg-white p-3 shadow-sm sm:p-4 lg:p-5">
-          {!isCompact && (
-            <div className="absolute bottom-8 left-[38px] top-5 w-px bg-slate-200" />
-          )}
+          {isLoading ? (
+            <PerformanceSkeleton count={4} />
+          ) : (
+            <>
+              {!isCompact && (
+                <div className="absolute bottom-8 left-[38px] top-5 w-px bg-slate-200" />
+              )}
 
-          <div className="relative min-w-0 space-y-3 sm:space-y-4 md:pl-9 lg:pl-12">
-            {draftGoals.length > 0 && (
-              <div className="flex items-center px-4 lg:px-5">
-                <div className="flex shrink-0 items-center mr-2">
-                  <input
-                    type="checkbox"
-                    id="selectAllDrafts"
-                    checked={
-                      selectedGoals.length === draftGoals.length &&
-                      draftGoals.length > 0
-                    }
-                    onChange={handleToggleAll}
-                    className="h-4 w-4 cursor-pointer rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-                  />
-                </div>
-                <label
-                  htmlFor="selectAllDrafts"
-                  className="text-sm font-medium text-slate-700 cursor-pointer select-none"
-                >
-                  Select All ({selectedGoals.length}/{draftGoals.length})
-                </label>
-              </div>
-            )}
+              <div className="relative min-w-0 space-y-3 sm:space-y-4 md:pl-9 lg:pl-12">
+                {draftGoals.length > 0 && (
+                  <div className="flex items-center px-4 lg:px-5">
+                    <div className="flex shrink-0 items-center mr-2">
+                      <input
+                        type="checkbox"
+                        id="selectAllDrafts"
+                        checked={
+                          selectedGoals.length === draftGoals.length &&
+                          draftGoals.length > 0
+                        }
+                        onChange={handleToggleAll}
+                        className="h-4 w-4 cursor-pointer rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                      />
+                    </div>
+                    <label
+                      htmlFor="selectAllDrafts"
+                      className="text-sm font-medium text-slate-700 cursor-pointer select-none"
+                    >
+                      Select All ({selectedGoals.length}/{draftGoals.length})
+                    </label>
+                  </div>
+                )}
 
-            {goals.length === 0 ? (
-              <div className="flex items-center gap-2 justify-center py-8 px-4 text-center rounded-lg border border-dashed border-slate-200 bg-white shadow-sm">
-                <Info className="h-5 w-5 text-blue-500 shrink-0" />
-                <Typography
-                  variant="bodySmall"
-                  className="text-slate-500 font-medium"
-                >
-                  No goals found. Create a new goal to get started.
-                </Typography>
-              </div>
-            ) : (
-              goals.map((goal: MyGoalsGoal, index: number) => (
+                {goals.length === 0 ? (
+                  <div className="flex items-center gap-2 justify-center py-8 px-4 text-center rounded-lg border border-dashed border-slate-200 bg-white shadow-sm">
+                    <Info className="h-5 w-5 text-blue-500 shrink-0" />
+                    <Typography
+                      variant="bodySmall"
+                      className="text-slate-500 font-medium"
+                    >
+                      No goals found. Create a new goal to get started.
+                    </Typography>
+                  </div>
+                ) : (
+                  goals.map((goal: MyGoalsGoal, index: number) => (
                 <div
                   key={getGoalId(goal)}
                   onClick={() => {
@@ -607,7 +600,9 @@ const MyGoals: React.FC<MyGoalsProps> = ({ onCreateGoal, onSelectGoal }) => {
               ))
             )}
           </div>
-        </div>
+        </>
+      )}
+    </div>
 
         {/* Floating Bottom Bar for Selected Goals */}
         {selectedGoals.length > 0 && (

@@ -126,6 +126,33 @@ def get_region_branches(region):
 	return [r.name for r in rows if not any(r.get(f) for f in DISABLED_BRANCH_FIELDS)]
 
 
+def locked_location(job_applicant, exclude=None):
+	"""The work location an earlier panel already committed to, if there is one.
+
+	The first submitted feedback that carries a location settles it; every later round
+	shows that value read-only. Otherwise each panel would overwrite the one before
+	and the candidate's posting would be decided by whoever happened to submit last.
+
+	Keyed off earlier **feedback**, deliberately, not off the candidate's
+	``custom_location``: that field is pre-filled from the job opening
+	(``fetch_from: job_title.custom_location``), so keying off it would lock the field
+	before any interviewer had touched it.
+
+	Oldest first — the round that decided it, not the most recent to mention it.
+	"""
+	if not job_applicant:
+		return None
+
+	filters = {"job_applicant": job_applicant, "docstatus": 1,
+	           "custom_work_location": ("is", "set")}
+	if exclude:
+		filters["name"] = ("!=", exclude)
+	rows = frappe.get_all("Interview Feedback", filters=filters,
+	                      fields=["name", "custom_work_location", "interviewer"],
+	                      order_by="creation asc", limit=1)
+	return rows[0] if rows else None
+
+
 def _may_see(job_applicant):
 	"""Who is allowed to ask which locations a candidate can be posted to.
 
@@ -158,8 +185,9 @@ def get_work_location_context(job_applicant=None, recommended_region=None):
 	form then offers every branch rather than an empty dropdown the panel cannot get
 	past — an unmaintained location master should not block interview feedback.
 	"""
-	blank = {"is_campus": False, "region": None, "region_label": None,
-	         "branches": [], "restricted": False, "current_location": None}
+	blank = {"is_campus": False, "region": None, "region_label": None, "branches": [],
+	         "restricted": False, "current_location": None, "locked_to": None,
+	         "locked_by": None}
 	if not job_applicant or not frappe.db.exists("Job Applicant", job_applicant):
 		return blank
 
@@ -172,6 +200,7 @@ def get_work_location_context(job_applicant=None, recommended_region=None):
 
 	region = resolve_region(applicant, recommended_region)
 	branches = get_region_branches(region)
+	locked = locked_location(job_applicant)
 	return {
 		"is_campus": True,
 		"region": region,
@@ -179,6 +208,10 @@ def get_work_location_context(job_applicant=None, recommended_region=None):
 		"branches": branches,
 		"restricted": bool(branches),
 		"current_location": applicant.get("custom_location"),
+		# Set once an earlier round has settled the location: the form shows it
+		# read-only so a later panel cannot move the candidate somewhere else.
+		"locked_to": locked.custom_work_location if locked else None,
+		"locked_by": locked.interviewer if locked else None,
 	}
 
 
@@ -196,6 +229,13 @@ def validate_work_location(doc, method=None):
 		doc.custom_work_location = None
 		doc.custom_work_location_region = None
 		return
+
+	# An earlier round already settled this. The form shows the field read-only, so a
+	# different value here came from an API caller or a stale tab — take the settled
+	# one rather than reject the feedback, which is the part that actually matters.
+	locked = locked_location(doc.job_applicant, exclude=doc.name)
+	if locked:
+		doc.custom_work_location = locked.custom_work_location
 
 	recommended = (doc.get("custom_recommended_region")
 	               if doc.get("custom_recommend_other_region") else None)
@@ -219,8 +259,12 @@ def apply_work_location(doc, method=None):
 
 	Written to ``Job Applicant.custom_location`` — the field the offer and Employee
 	Onboarding read — so what the panel chose is where the candidate is finally
-	posted. Later feedback carrying a different location wins, and the timeline keeps
-	what it replaced, so a change of mind across rounds stays auditable.
+	posted.
+
+	Only the round that settles it writes. Once an earlier feedback has set a
+	location, later rounds carry the same value read-only and write nothing: the
+	decision is made, and HR may have adjusted it on the candidate since, which a
+	later panel must not silently undo.
 
 	db.set_value rather than a save: this is one field, and saving the applicant from
 	inside a feedback submission would re-run every Job Applicant validate hook,
@@ -228,6 +272,8 @@ def apply_work_location(doc, method=None):
 	"""
 	location = doc.get("custom_work_location")
 	if not (location and doc.job_applicant):
+		return
+	if locked_location(doc.job_applicant, exclude=doc.name):
 		return
 
 	previous = frappe.db.get_value("Job Applicant", doc.job_applicant, "custom_location")

@@ -247,7 +247,7 @@ const MyApprovalActionPill = ({
                 <span className="w-4 h-4 border border-white border-t-transparent rounded-full animate-spin" />
               ) : (
                 <>
-                  {action.icon}
+                  <span className="[&>svg]:!text-white">{action.icon}</span>
                   <span className="capitalize">
                     {action.key === "edit" && isResubmit
                       ? "Resubmit"

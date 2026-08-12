@@ -87,19 +87,57 @@ def _build_sql_where_clause(filters: Dict[str, Any]) -> tuple[str, Dict[str, Any
 
     return " AND ".join(where_parts), params
 
+# Identity / org fields that are safe to surface to any authenticated employee
+# -- e.g. an approver rendering a requester's ID card on an approval card. All
+# sensitive PII (Aadhaar, DOB, personal email/phone, home address, blood group,
+# emergency contacts) is deliberately excluded and only returned to callers who
+# actually have read permission on the Employee record.
+PUBLIC_EMPLOYEE_FIELDS = (
+    "name",
+    "employee_name",
+    "first_name",
+    "middle_name",
+    "last_name",
+    "employee_number",
+    "designation",
+    "designation_name",
+    "department",
+    "department_name",
+    "company",
+    "company_name",
+    "company_short_name",
+    "branch",
+    "branch_name",
+    "date_of_joining",
+    "image",
+    "status",
+    "company_email",
+    "employment_type",
+    "custom_employment_status",
+    "final_confirmation_date",
+)
+
+
 @frappe.whitelist()
 def get_employee_details(employee_id):
-    """Get employee details for ID card"""
+    """Get employee details for ID card.
+
+    Approvers/managers routinely need a requester's basic identity (name,
+    designation, department, photo) to action a request -- even when a User
+    Permission restricts them to their own Employee record. Previously this
+    raised a PermissionError, which bubbled up and broke the whole /webapp page
+    (e.g. the todo / approvals list) for Employee / Employee Self Service users.
+
+    Instead, return a limited, non-sensitive subset when the caller lacks read
+    permission, and the full record (including PII) only when they do. Callers
+    with full access are unaffected.
+    """
     try:
-        # Fetch employee data with required fields
+        # get_doc does not enforce read permission, so this loads regardless of
+        # User Permissions; we gate the *fields* returned on the check below.
         employee = frappe.get_doc("Employee", employee_id)
-        
-        # Check if user has permission to view this employee
-        if not frappe.has_permission("Employee", "read", employee_id):
-            frappe.throw(_("You don't have permission to view this employee"), frappe.PermissionError)
-        
-        # Return employee data
-        return {
+
+        details = {
             "name": employee.name,
             "employee_name": employee.employee_name,
             "first_name": employee.first_name,
@@ -133,6 +171,13 @@ def get_employee_details(employee_id):
             "custom_employment_status": employee.custom_employment_status,
             "final_confirmation_date": employee.final_confirmation_date,
         }
+
+        # Restricted callers (e.g. approvers limited by a User Permission to
+        # their own Employee record) get identity/org fields only -- never PII.
+        if not frappe.has_permission("Employee", "read", employee_id):
+            details = {key: details[key] for key in PUBLIC_EMPLOYEE_FIELDS}
+
+        return details
     except frappe.DoesNotExistError:
         frappe.throw(_("Employee not found"), frappe.DoesNotExistError)
     except Exception as e:

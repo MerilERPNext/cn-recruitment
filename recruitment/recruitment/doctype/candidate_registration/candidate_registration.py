@@ -67,13 +67,72 @@ def get_tpo_institute(user=None, campus_invite=None):
 class CandidateRegistration(Document):
 	def validate(self):
 		# Candidates are always registered against a submitted (sent) Campus Invite —
-		# that link is what later lets them apply to the invite's openings.
-		if self.campus_invite and frappe.db.get_value("Campus Invite", self.campus_invite, "docstatus") != 1:
+		# that link is what later lets them apply to the invite's openings. Read once
+		# here and passed on: the window check needs two more of the same row's fields.
+		invite = frappe.db.get_value(
+			"Campus Invite", self.campus_invite,
+			["docstatus", "campus_invite_name", "registration_expiry_date"], as_dict=True,
+		) if self.campus_invite else None
+		if invite and invite.docstatus != 1:
 			frappe.throw(_("The selected Campus Invite must be submitted before registering candidates against it."))
 
+		self._validate_registration_window(invite)
+		self._lock_invite_for_tpo()
 		self._apply_tpo_institute()
 		self._validate_institute_on_invite()
 		self._validate_candidates()
+
+	def _validate_registration_window(self, invite):
+		"""A TPO may not register candidates once the invite's deadline has passed.
+
+		Registration otherwise trickles in for weeks after a drive, against a college
+		list HR has already worked through. The date is the invite's own
+		(``registration_expiry_date``); blank means no deadline.
+
+		HR is deliberately not blocked: they are the ones who would extend the date,
+		and they need a way to add a candidate the college missed. They get a warning
+		instead, so a late entry is never silent.
+		"""
+		from frappe.utils import formatdate, getdate, nowdate
+
+		expiry = invite and invite.registration_expiry_date
+		if not expiry or getdate(nowdate()) <= getdate(expiry):
+			return
+
+		if is_tpo_only():
+			frappe.throw(
+				_("Registration for {0} closed on {1}. Candidates can no longer be added — "
+				  "please contact the recruitment team if you need the date extended.").format(
+					_safe(invite.campus_invite_name or self.campus_invite),
+					_safe(formatdate(expiry)),
+				),
+				title=_("Registration Closed"),
+			)
+		frappe.msgprint(
+			_("Registration for this invite closed on {0}. You are adding candidates after the "
+			  "deadline — TPOs cannot.").format(_safe(formatdate(expiry))),
+			title=_("Past the registration deadline"), indicator="orange",
+		)
+
+	def _lock_invite_for_tpo(self):
+		"""A TPO reads the Campus Invite on a registration; they never change it.
+
+		The drive is chosen for them — the TPO Desk's "Add Candidates" opens the form
+		with it already set. Moving a saved registration to a different invite would
+		carry a college's candidates onto another drive, so it is refused here as well
+		as being read-only on the form. HR may still re-point one.
+		"""
+		if self.is_new() or not is_tpo_only():
+			return
+		before = self.get_doc_before_save()
+		if not before or before.campus_invite == self.campus_invite:
+			return
+		frappe.throw(
+			_("The Campus Invite on a registration cannot be changed. This one belongs to "
+			  "{0} — add your candidates to the right drive from your TPO Desk.").format(
+				_safe(before.campus_invite_name or before.campus_invite)),
+			title=_("Campus Invite is fixed"),
+		)
 
 	def _apply_tpo_institute(self):
 		"""Force a TPO's Institute to the one mapped to their login.

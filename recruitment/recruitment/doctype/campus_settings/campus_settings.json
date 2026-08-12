@@ -8,7 +8,13 @@
   "candidate_portal_url",
   "email_settings_section",
   "candidate_registration_email_template",
-  "tpo_set_password_email_template"
+  "tpo_set_password_email_template",
+  "column_break_tpo_mail",
+  "send_tpo_welcome_email",
+  "tpo_welcome_email_template",
+  "send_campus_invite_email",
+  "campus_invite_email_template",
+  "notify_campus_candidates_on_stage_change"
  ],
  "fields": [
   {
@@ -41,6 +47,47 @@
    "fieldtype": "Link",
    "label": "TPO Set Password Email Template",
    "options": "Email Template"
+  },
+  {
+   "fieldname": "column_break_tpo_mail",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "1",
+   "description": "Emailed to an institute's Primary TPO when the institute is created — and to a Primary TPO added later. Once per contact. Jinja vars: tpo_name, email, role, institute, city, state, tier, login_url.",
+   "fieldname": "send_tpo_welcome_email",
+   "fieldtype": "Check",
+   "label": "Send TPO Welcome Email"
+  },
+  {
+   "default": "TPO Welcome",
+   "depends_on": "send_tpo_welcome_email",
+   "fieldname": "tpo_welcome_email_template",
+   "fieldtype": "Link",
+   "label": "TPO Welcome Email Template",
+   "options": "Email Template"
+  },
+  {
+   "default": "1",
+   "description": "Emailed to every TPO contact of the invited institutes when a Campus Invite is submitted. The Primary TPO's set-password email is separate. Jinja vars: invite, region, institute_list, opening_list, openings, login_url.",
+   "fieldname": "send_campus_invite_email",
+   "fieldtype": "Check",
+   "label": "Send Campus Invite Email"
+  },
+  {
+   "default": "Campus Invite",
+   "depends_on": "send_campus_invite_email",
+   "fieldname": "campus_invite_email_template",
+   "fieldtype": "Link",
+   "label": "Campus Invite Email Template",
+   "options": "Email Template"
+  },
+  {
+   "default": "0",
+   "description": "Off by default: a drive moves hundreds of students through several rounds in a day, and the per-stage note meant for a lateral candidate becomes an email after every round. Tick to email campus candidates on each stage change (still only for stages whose Notify box is ticked on the opening). Lateral candidates are unaffected either way.",
+   "fieldname": "notify_campus_candidates_on_stage_change",
+   "fieldtype": "Check",
+   "label": "Notify Campus Candidates on Stage Change"
   }
  ],
  "index_web_pages_for_search": 1,

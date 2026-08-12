@@ -142,21 +142,23 @@ const ExpenseApprovalCard = ({
     }
   };
 
-  const handleSaveComment = async (reason: string) => {
+  const handleSaveComment = async (reason: string | null) => {
     const referenceName =
       data?.reference_document?.name || data?.reference_name || "";
 
     try {
       if (pendingActionData) {
-        await commentMutation.mutateAsync({
-          comment_type: pendingActionData.action.toLowerCase() === "approve" ? "Submitted" : "Cancelled",
-          reference_doctype: "Expense Claim",
-          reference_name: referenceName,
-          comment_email: user?.name || "",
-          comment_by: user?.name || "",
-          content: reason,
-          subject: pendingActionData.action.toLowerCase() === "approve" ? "Request Approved" : "Request Rejected",
-        });
+        if (reason !== null) {
+          await commentMutation.mutateAsync({
+            comment_type: pendingActionData.action.toLowerCase() === "approve" ? "Submitted" : "Cancelled",
+            reference_doctype: "Expense Claim",
+            reference_name: referenceName,
+            comment_email: user?.name || "",
+            comment_by: user?.name || "",
+            content: reason,
+            subject: pendingActionData.action.toLowerCase() === "approve" ? "Request Approved" : "Request Rejected",
+          });
+        }
 
         setShowCommentModal(false);
         onAction(pendingActionData.action, pendingActionData.data);

@@ -20,7 +20,11 @@
 // does their job, so dropping it would leave them a read-only page.
 const PANEL_VISIBLE_FIELDS = [
 	"interview_details_section",
+	// Both names on purpose: HRMS v15 carries the round in `interview_round`, v16 in
+	// `interview_type`. Whichever this version lacks simply never matches, so the
+	// panel keeps seeing its round on either.
 	"interview_type",
+	"interview_round",
 	"job_applicant",
 	"designation",
 	"custom_resume_attachment",

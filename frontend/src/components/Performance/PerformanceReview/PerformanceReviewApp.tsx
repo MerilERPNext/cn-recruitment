@@ -1,4 +1,4 @@
-import { lazy, Suspense, useState } from "react";
+import { lazy, useState } from "react";
 import type { BreakdownItem } from "./component/types";
 
 const PerformanceReviewHeader = lazy(
@@ -35,11 +35,7 @@ const breakdownItems: BreakdownItem[] = [
   },
 ];
 
-const PerformanceReviewFallback = () => (
-  <div className="rounded-xl border border-gray-100 bg-white p-6 text-center text-sm font-medium text-gray-500 shadow-sm">
-    Loading...
-  </div>
-);
+
 
 const PerformanceReviewApp = () => {
   const [agreed, setAgreed] = useState(true);
@@ -48,7 +44,6 @@ const PerformanceReviewApp = () => {
   return (
     <div className="min-h-full overflow-y-auto bg-[#f8fafc] px-3 py-4 font-sans sm:p-6">
       <div className="mx-auto flex w-full  flex-col gap-4 sm:gap-6">
-        <Suspense fallback={<PerformanceReviewFallback />}>
           <PerformanceReviewHeader />
           <SectionBreakdownCard items={breakdownItems} />
           <AcknowledgeRatingCard
@@ -57,7 +52,6 @@ const PerformanceReviewApp = () => {
             onAgreedChange={setAgreed}
             onCommentChange={setComment}
           />
-        </Suspense>
       </div>
     </div>
   );

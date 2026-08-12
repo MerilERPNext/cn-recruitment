@@ -122,10 +122,10 @@ const LoanDetailsModal = ({
     setCommentOpen(true);
   };
 
-  const handleConfirmAction = async (reason: string) => {
+  const handleConfirmAction = async (reason: string | null) => {
     if (!selectedAction) return;
 
-    if (!reason.trim()) {
+    if (reason !== null && !reason.trim()) {
       toast.error("Comment is required");
       return;
     }
@@ -144,12 +144,14 @@ const LoanDetailsModal = ({
     const mappedStatus = STATUS_BY_ACTION[selectedAction] ?? selectedAction;
 
     try {
-      await commentMutation.mutateAsync({
-        referenceDoctype,
-        referenceName: refDocName,
-        content: reason,
-        comment_email: user?.name || "",
-      });
+      if (reason !== null) {
+        await commentMutation.mutateAsync({
+          referenceDoctype,
+          referenceName: refDocName,
+          content: reason,
+          comment_email: user?.name || "",
+        });
+      }
 
       const payload: LoanApplicationUpdatePayload = {
         docname: refDocName,
