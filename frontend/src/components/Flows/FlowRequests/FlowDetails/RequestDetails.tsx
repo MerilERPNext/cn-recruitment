@@ -75,10 +75,10 @@ const RequestDetails: React.FC = () => {
   const showRetriggerButton = canRetrigger && !!id && !!data?.can_reinitiate_flow;
   const showRevokeButton = !!id && !!data?.can_revoke;
 
-  const handleRevokeSubmit = (reason: string) => {
+  const handleRevokeSubmit = (reason: string | null) => {
     if (!id) return;
     revokeFlowMutation.mutate(
-      { funnel_activity: id, reason },
+      { funnel_activity: id, reason: reason ?? "" },
       {
         onSuccess: () => {
           toast.success("Flow request revoked successfully");

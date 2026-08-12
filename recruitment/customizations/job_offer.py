@@ -167,25 +167,18 @@ def make_salary_slip(
         target_doc,
         postprocess,
         ignore_child_tables=True,
-        # ignore_permissions=ignore_permissions,
         cached=True,
     )
-    total_amount = 0
-    total = 0
     if doc:
         for i in doc.earnings:
             self.append(
                 "custom_earnings", {"component": i.salary_component, "amount": i.amount}
             )
-            total_amount += i.amount
         for j in doc.deductions:
             self.append(
                 "custom_deduction",
                 {"component": j.salary_component, "amount": j.amount},
             )
-            total += j.amount
-        # self.custom_total_earnings=total_amount
-        # self.custom_total_deductions=total
         return doc
 
 

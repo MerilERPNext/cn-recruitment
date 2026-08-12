@@ -59,7 +59,10 @@ def _child_field_options(table_df):
 	for cf in child.fields:
 		if cf.fieldtype in _SKIP_FIELDTYPES or cf.fieldtype in _TABLE_FIELDTYPES:
 			continue
-		if not cf.fieldname:
+		if not cf.fieldname or cf.hidden:
+			# Hidden child fields are hidden for a reason — the education table alone
+			# carries thirty-odd left behind by imports and other apps. Offering them
+			# here put fields nobody can see or fill into rules and application forms.
 			continue
 		rows.append({
 			"value": "{0}::{1}".format(table_df.fieldname, cf.fieldname),

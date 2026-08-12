@@ -194,18 +194,20 @@ export function AttendanceDetailView({
     handleAction(action);
   };
 
-  const handleSaveComment = async (reason: string) => {
+  const handleSaveComment = async (reason: string | null) => {
     try {
       if (pendingAction) {
-        await updateRejectionReasonMutation.mutateAsync({
-          comment_type: pendingAction.toLowerCase() === "approve" ? "Submitted" : "Cancelled",
-          reference_doctype: "Attendance Request",
-          reference_name: data?.reference_document?.name || "",
-          comment_email: user?.name || "",
-          comment_by: user?.name || "",
-          content: reason,
-          subject: pendingAction.toLowerCase() === "approve" ? "Request Approved" : "Request Rejected",
-        });
+        if (reason !== null) {
+          await updateRejectionReasonMutation.mutateAsync({
+            comment_type: pendingAction.toLowerCase() === "approve" ? "Submitted" : "Cancelled",
+            reference_doctype: "Attendance Request",
+            reference_name: data?.reference_document?.name || "",
+            comment_email: user?.name || "",
+            comment_by: user?.name || "",
+            content: reason,
+            subject: pendingAction.toLowerCase() === "approve" ? "Request Approved" : "Request Rejected",
+          });
+        }
         setShowCommentModal(false);
         handleAction(pendingAction);
         setPendingAction(null);

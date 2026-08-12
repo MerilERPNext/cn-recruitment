@@ -10,7 +10,8 @@
   "role",
   "email",
   "phone",
-  "invite_status"
+  "invite_status",
+  "welcome_sent"
  ],
  "fields": [
   {
@@ -53,6 +54,14 @@
    "in_list_view": 1,
    "label": "Portal Access",
    "options": "Not Invited\nInvited\nActive"
+  },
+  {
+   "default": "0",
+   "description": "Set once the welcome email has gone to this contact, so nobody is mailed twice.",
+   "fieldname": "welcome_sent",
+   "fieldtype": "Check",
+   "label": "Welcome Sent",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,

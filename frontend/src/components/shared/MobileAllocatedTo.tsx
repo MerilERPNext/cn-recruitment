@@ -21,6 +21,7 @@ interface MobileAllocatedToProps {
     /** Text alignment — matches the card column position. Default: "left" */
     align?: "left" | "right";
     showLabel?: boolean;
+    label?: string;
     RoleAssignedUsers?: RoleAssignedUsersType[];
 }
 
@@ -33,6 +34,7 @@ const MobileAllocatedTo: React.FC<MobileAllocatedToProps> = ({
     role,
     align = "left",
     showLabel = true,
+    label = "Allocated To",
     RoleAssignedUsers
 }) => {
     /** Merge all user sources → deduped array (same logic as AllocatedToTooltip) */
@@ -105,7 +107,7 @@ const MobileAllocatedTo: React.FC<MobileAllocatedToProps> = ({
 
     const labelEl = (
         <div className={`flex flex-col gap-0.5 ${isRight ? "items-end" : "items-start"}`}>
-            {showLabel && <Typography variant="mobileCardLabel">Allocated To</Typography>}
+            {showLabel && <Typography variant="mobileCardLabel">{label}</Typography>}
 
             {totalCount === 0 ? (
                 <Typography variant="mobileCardValue" className="text-gray-400">

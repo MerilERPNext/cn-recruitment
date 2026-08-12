@@ -25,6 +25,22 @@ function apply_tpo_institute(frm) {
 	});
 }
 
+function lock_invite_for_tpo(frm) {
+	// The drive is chosen for the TPO — "Add Candidates" on the TPO Desk opens this
+	// form with the invite already set, and it stays put from then on. The server
+	// refuses a change too, so this is only what makes it obvious.
+	//
+	// Left editable while it is still empty: a TPO who opens a blank form from the
+	// workspace shortcut has to be able to pick one of their own drives (the link
+	// query only ever offers theirs) — otherwise the form is a dead end.
+	const chosen = Boolean(frm.doc.campus_invite);
+	frm.set_df_property("campus_invite", "read_only", chosen ? 1 : 0);
+	if (chosen && !frm.is_new()) {
+		frm.set_df_property("campus_invite", "description",
+			__("Set when this registration was created — contact the recruitment team to move it."));
+	}
+}
+
 frappe.ui.form.on("Candidate Registration", {
 	setup: function (frm) {
 		// HR / admins pick from the invite's institutes. (Ignored for TPOs — their
@@ -40,6 +56,7 @@ frappe.ui.form.on("Candidate Registration", {
 	refresh: function (frm) {
 		if (is_tpo_only()) {
 			apply_tpo_institute(frm);
+			lock_invite_for_tpo(frm);
 		}
 	},
 
