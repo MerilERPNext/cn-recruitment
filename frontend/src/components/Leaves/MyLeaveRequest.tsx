@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useCurrentEmployeeDetails } from "../../hooks/useEmployee";
 import { useGlobalStore } from "../../hooks/useGlobalStore";
 import {
@@ -15,7 +16,10 @@ import CardTable from "../shared/CardTable";
 import { CardSkeleton } from "../shared/molecules/Skeletons/TableSkeleton";
 import EmpLeaveRequestCard from "./EmpLeaveRequestCard";
 import ReplaceLeaveModal from "./ReplaceLeaveModal";
+import { LeaveDetailView } from "./LeaveDetails";
 import { COLUMN_SORT_CONFIG_MY_LEAVE_REQUEST } from "../../utils/tableSortConfig";
+import MyLeaveDetailActions from "./MyLeaveDetailActions";
+import type { FrappePageResponse } from "../../types/frappe";
 
 
 const MyLeaveRequests = ({
@@ -171,6 +175,41 @@ const MyLeaveRequests = ({
     );
   };
 
+  // Search params for detail modal (same pattern as TeamLeaveRequest)
+  const navigate = useNavigate();
+  const { id: routeLeaveId } = useParams<{ id: string }>();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [selectedItem, setSelectedItem] = useState<MyLeaveRequestType | null>(null);
+
+  const requestId = searchParams.get("requestId");
+  const referenceName = routeLeaveId ?? searchParams.get("reference_name");
+  const reasonName = searchParams.get("reason_name");
+  const sendBackComment = searchParams.get("send_back_comment");
+
+  const handleRequestClick = useCallback(
+    (request: MyLeaveRequestType) => {
+      if (request?.todo_id || request?.reference_document?.name) {
+        setSelectedItem(request);
+        const leaveName = request.reference_document?.name;
+        if (leaveName) {
+          navigate(
+            `/webapp/leave-app/leaves/leave-requests/my/${encodeURIComponent(leaveName)}`,
+          );
+        }
+      }
+    },
+    [navigate],
+  );
+
+  const handleCloseModal = useCallback(() => {
+    navigate(-1);
+  }, [navigate]);
+
+  const handleActionComplete = useCallback(() => {
+    setSearchParams({});
+    setRefetchAttendance(true);
+  }, [setSearchParams, setRefetchAttendance]);
+
   return (
     <div className="flex flex-col h-full">
       {isDesktop && (
@@ -246,7 +285,12 @@ const MyLeaveRequests = ({
               }
               fetchFunction={
                 !currentEmployee?.name
-                  ? async () => ({ message: [], data: [] } as any)
+                  ? async (): Promise<FrappePageResponse> => ({
+                      data: [],
+                      totalCount: 0,
+                      hasNextPage: false,
+                      pages: [],
+                    })
                   : undefined
               }
                 ItemComponent={(props: { item: MyLeaveRequestType }) => (
@@ -260,6 +304,7 @@ const MyLeaveRequests = ({
                       revokeLeave(props.item.reference_document?.name ?? "")
                     }
                     showRejectReason={activeStatus === "Rejected"}
+                    onClick={() => handleRequestClick(props.item)}
                   />
                 )}
                 onFiltersChange={(filters) => {
@@ -293,6 +338,31 @@ const MyLeaveRequests = ({
           currentLeaveDays={replaceModalData.LeaveDays}
           fromDate={replaceModalData.fromDate}
           toDate={replaceModalData.toDate}
+        />
+      )}
+      {(requestId || referenceName) && (
+        <LeaveDetailView
+          documentName={requestId || undefined}
+          referenceName={referenceName || undefined}
+          label="Leave Request"
+          onClose={handleCloseModal}
+          onAction={handleActionComplete}
+          reasonName={
+            selectedItem?.reference_document?.reason_name ||
+            reasonName ||
+            undefined
+          }
+          sendBackComment={
+            selectedItem?.send_back_comment || sendBackComment || undefined
+          }
+          customActions={
+            <MyLeaveDetailActions
+              data={selectedItem}
+              buttonStatus={buttonStatus}
+              onReplaceModalOpen={handleOpenReplaceModal}
+              onRevokeApproved={(name) => revokeLeave(name)}
+            />
+          }
         />
       )}
     </div>

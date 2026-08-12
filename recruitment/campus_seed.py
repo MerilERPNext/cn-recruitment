@@ -719,8 +719,16 @@ def demo_verify_round_features():
     ja = frappe.get_all("Job Applicant", filters={
         "email_id": ["like", f"{CAND_PREFIX}%{TPO_DOMAIN}"]}, pluck="name", limit=1)
     if ja:
-        out["extra_round"] = add_candidate_interview(
-            d, ja[0], "Technical Round 2", today(), round_code="R2")
+        # An additional round is only offered to someone who cleared the round, and its
+        # type is fixed — HR supplies the candidate, panel, date and reason.
+        panel = frappe.db.get_value("Campus Drive Round Panelist",
+                                    {"parent": d, "round_code": "R2"}, "panel_name")
+        try:
+            out["extra_round"] = add_candidate_interview(
+                d, ja[0], today(), round_code="R2", panel=panel,
+                reason="Seed check: second look after R2")
+        except Exception as e:
+            out["extra_round"] = f"{type(e).__name__}: {str(e)[:120]}"
     _log(f"demo_verify_round_features: {out}")
     return out
 
@@ -1794,6 +1802,272 @@ def create_ready_mini_drives(count=3, per=10):
     _log("  Each has: GD → Technical R1 → Technical R2 → HR Round → Offer, 3 panels per interview round.")
     _log("=" * 72)
     return {"drives": [m[0] for m in made]}
+
+
+def create_gd_test_drive(drive_name="TEST Drive - GD Grouping", colleges=3,
+                         per_college_per_role=8, gd_panels=3,
+                         fixed_pay=600000, variable_pay=100000):
+    """A drive built to exercise GD grouping, on its own invite and candidates.
+
+    The pool is spread across SEVERAL colleges AND several roles, which is what makes
+    the four grouping modes differ visibly (all drive candidates / per role / per
+    institute / per institute + role), and the GD round is staffed with panels, which
+    is what each group's interviewers are read from.
+
+    Re-runnable: the invite, its candidates and the drive are rebuilt each time; the
+    markers are the seed ones, so campus_seed.cleanup() still wipes everything.
+
+    bench --site <site> execute recruitment.campus_seed.create_gd_test_drive
+    """
+    colleges = int(colleges)
+    per_college_per_role = int(per_college_per_role)
+    gd_panels = int(gd_panels)
+    openings = frappe.get_all("Job Opening", filters={"job_title": ["like", f"{OPENING_PREFIX}%"]},
+                              fields=["name", "job_title", "designation"], limit=2)
+    if not openings:
+        return {"error": "no seed openings — run campus_seed.run first"}
+
+    institutes = []
+    for i in range(colleges):
+        label = f"GD Test College {chr(65 + i)}{SEED_SUFFIX}"
+        name = frappe.db.get_value("Institute", {"institute_name": label})
+        if not name:
+            inst = frappe.get_doc({
+                "doctype": "Institute", "institute_name": label, "tier": "Tier-1",
+                "is_active": 1, "college_short_name": f"GDT{i + 1}",
+                # An invite can only be sent to a college that has a Primary TPO with an
+                # email, so the college is created with one.
+                "tpo_contacts": [{"contact_name": f"TPO {chr(65 + i)}", "role": "Primary TPO",
+                                  "email": f"tpo.gd{i + 1}{TPO_DOMAIN}",
+                                  "phone": f"90001{i + 1:05d}", "invite_status": "Not Invited"}],
+            })
+            inst.flags.ignore_mandatory = True
+            name = inst.insert(ignore_permissions=True).name
+        institutes.append(name)
+
+    # Keyed to the drive name: two seeded drives must not share an invite, or building
+    # the second silently deletes the first (the rebuild drops the invite and
+    # everything hanging off it).
+    invite_name = f"{INVITE_PREFIX}{drive_name}"
+    _orig = frappe.sendmail
+    frappe.sendmail = lambda *a, **k: None  # never mail a TPO from a seeding run
+    try:
+        # Drop the previous run's invite with everything hanging off it, so the pool
+        # size stays exactly what was asked for instead of doubling on every run.
+        old = frappe.db.get_value("Campus Invite", {"campus_invite_name": invite_name}, "name")
+        if old:
+            for drv in frappe.get_all("Campus Drive Invite", filters={"campus_invite": old},
+                                      pluck="parent"):
+                _force_delete("Campus Drive", drv)
+            for ja in frappe.get_all("Job Applicant", filters={"custom_campus_invite": old},
+                                     pluck="name"):
+                _force_delete("Job Applicant", ja)
+            _force_delete("Campus Invite", old)
+
+        invite = frappe.new_doc("Campus Invite")
+        invite.campus_invite_name = invite_name
+        if invite.meta.has_field("region"):
+            invite.region = _pick("Region")
+        for inst in institutes:
+            invite.append("institutes", {"institute": inst})
+        for op in openings:
+            invite.append("job_openings", {"job_opening": op.name})
+        invite.insert(ignore_permissions=True)
+        invite.submit()
+
+        made = 0
+        for ci, inst in enumerate(institutes):
+            for oi, op in enumerate(openings):
+                for c in range(per_college_per_role):
+                    made += 1
+                    fn = FIRST_NAMES[made % len(FIRST_NAMES)]
+                    ln = LAST_NAMES[made % len(LAST_NAMES)]
+                    ja = frappe.new_doc("Job Applicant")
+                    ja.applicant_name = f"{fn} {ln}"
+                    if ja.meta.has_field("custom_applicant_last_name"):
+                        ja.custom_applicant_last_name = ln
+                    ja.email_id = f"{CAND_PREFIX}gd{ci}{oi}.{c + 1:03d}{TPO_DOMAIN}"
+                    ja.phone_number = f"9{made:09d}"[:10]
+                    ja.job_title = op.name
+                    ja.designation = op.designation
+                    ja.custom_campus_invite = invite.name
+                    if ja.meta.has_field("custom_institute"):
+                        ja.custom_institute = inst
+                    ja.status = "Open"
+                    ja.insert(ignore_permissions=True)
+                    # Straight to the GD starting line: Shortlisted is the pool the
+                    # grouping draws from, and the stage is what the round board counts.
+                    frappe.db.set_value("Job Applicant", ja.name, {
+                        "status": "Shortlisted", "custom_current_stage": "Group Discussion",
+                    }, update_modified=False)
+        frappe.db.commit()
+
+        drive = _build_ready_drive(drive_name, frappe._dict(
+            name=invite.name, campus_invite_name=invite.campus_invite_name))
+    finally:
+        frappe.sendmail = _orig
+
+    # _build_ready_drive staffs the interview rounds; the GD round needs panels of its
+    # own now that every GD group is conducted by one.
+    doc = frappe.get_doc("Campus Drive", drive)
+
+    # READY_ROUNDS ships its Offer round on "Pre Job Offer"; openings that only carry
+    # "Job Offer" would greet the tester with a red health banner about it, so point
+    # that round at whichever offer stage these openings actually have.
+    from recruitment.recruitment.doctype.campus_drive.campus_drive import _stage_options
+
+    stages = _stage_options(doc).get("stages") or []
+    offer = next((r for r in doc.rounds if r.round_type == "Offer"), None)
+    if offer and stages and offer.hiring_stage not in stages:
+        offer.hiring_stage = next((s for s in ("Pre Job Offer", "Job Offer") if s in stages),
+                                  offer.hiring_stage)
+
+    # The campus package, so an offer raised off this drive comes out prefilled.
+    if doc.meta.get_field("fixed_pay"):
+        doc.fixed_pay = fixed_pay
+        doc.variable_pay = variable_pay
+
+    gd = next((r for r in doc.rounds if r.requires_gd_grouping), None)
+    emps = frappe.get_all("Employee", filters={"user_id": ["!=", ""], "status": "Active"},
+                          pluck="name", limit=gd_panels)
+    for i in range(gd_panels if (gd and emps) else 0):
+        doc.append("round_panelists", {"round_code": gd.round_code, "panelist": emps[i % len(emps)],
+                                       "panel_name": f"GD Panel {i + 1}"})
+    doc.save(ignore_permissions=True)
+    frappe.db.commit()
+
+    _log("=" * 72)
+    _log(f"GD TEST DRIVE: {drive}  ({drive_name})")
+    _log(f"  invite {invite.name} · {len(institutes)} colleges x {len(openings)} roles x "
+         f"{per_college_per_role} = {made} Shortlisted, all waiting at Group Discussion")
+    for inst in institutes:
+        _log(f"      {inst}  {frappe.db.get_value('Institute', inst, 'institute_name')}")
+    for op in openings:
+        _log(f"      {op.name}  {op.job_title}")
+    _log(f"  GD round {gd.round_code if gd else '-'} · panels: "
+         f"{[p.panel_name for p in doc.round_panelists if gd and p.round_code == gd.round_code]}")
+    _log("  Open the drive → Round Tracking → Group Discussion: pick a grouping, set a")
+    _log("  size, Create Groups. Every group shows its panel; Assign Panels re-deals them.")
+    _log("=" * 72)
+    return {"drive": drive, "invite": invite.name, "institutes": institutes,
+            "openings": [op.name for op in openings], "candidates": made,
+            "gd_round": gd.round_code if gd else None}
+
+
+def _ensure_campus_requisition(openings, headcount=50):
+    """Put the drive's openings under a Job Requisition with headcount to spare.
+
+    An offer is refused outright when the candidate's opening names no requisition, or
+    when the requisition budgets no openings for that opening's REGION — so a drive
+    meant for testing offers has to satisfy both first.
+
+    Written straight to the database on purpose: raising a requisition properly means
+    walking its approval workflow, which is a different flow from the one being seeded
+    here (and one whose hooks are not always installable on a dev bench).
+    """
+    req = (frappe.db.get_value("Job Opening", openings[0], "job_requisition")
+           or _pick("Job Requisition", {"status": ["in", ("Approved Draft", "Approved")]})
+           or _pick("Job Requisition"))
+    if not req:
+        return None
+
+    for op in openings:
+        region = frappe.db.get_value("Job Opening", op, "custom_region")
+        if region:
+            row = frappe.db.get_value("Job Requisition Region", {
+                "parent": req, "parenttype": "Job Requisition", "region": region}, "name")
+            if row:
+                frappe.db.set_value("Job Requisition Region", row, "no_of_openings", headcount,
+                                    update_modified=False)
+            else:
+                child = frappe.get_doc({
+                    "doctype": "Job Requisition Region", "parent": req,
+                    "parenttype": "Job Requisition", "parentfield": "custom_regions",
+                    "region": region, "no_of_openings": headcount})
+                child.flags.ignore_mandatory = True
+                child.insert(ignore_permissions=True)
+        if not frappe.db.get_value("Job Opening", op, "job_requisition"):
+            frappe.db.set_value("Job Opening", op, "job_requisition", req, update_modified=False)
+    frappe.db.commit()
+    return req
+
+
+def create_offer_test_drive(drive_name="TEST Drive - Offer Flow", colleges=2,
+                            per_college_per_role=6, passers=8,
+                            fixed_pay=650000, variable_pay=120000):
+    """A drive already carried through to its Offer round, ready for Job Offers.
+
+    Builds the drive (colleges x roles, GD panels, its own Fixed / Variable Pay), runs
+    the GD — passers and fails — pushes the result, then walks the passers down to the
+    Offer round's stage. What's left to try by hand is the part being tested: tick the
+    candidates on the Offer round card, raise the offers, and check each one comes out
+    carrying the drive's package.
+
+    bench --site <site> execute recruitment.campus_seed.create_offer_test_drive
+    """
+    from recruitment.api.hiring_stage import _enter_stage, _find_stage, get_opening_stages
+    from recruitment.recruitment.doctype.campus_drive.campus_drive import (
+        apply_gd_results, generate_gd_groups,
+    )
+
+    built = create_gd_test_drive(drive_name=drive_name, colleges=int(colleges),
+                                 per_college_per_role=int(per_college_per_role),
+                                 fixed_pay=fixed_pay, variable_pay=variable_pay)
+    if built.get("error"):
+        return built
+    drive, gd_code = built["drive"], built["gd_round"]
+    requisition = _ensure_campus_requisition(built["openings"])
+
+    generate_gd_groups(drive, gd_code, 6, "drive")
+
+    # Mark the GD: the first `passers` clear it, everyone else fails — the push refuses
+    # to run while anyone is still unmarked, which is the point of that validation.
+    rows = frappe.get_all("Campus Drive GD Group Member",
+                          filters={"parent": drive, "round_code": gd_code},
+                          pluck="name", order_by="idx asc")
+    passers = min(int(passers), len(rows))
+    for i, row in enumerate(rows):
+        frappe.db.set_value("Campus Drive GD Group Member", row,
+                            {"attendance": "Present", "result": "Pass" if i < passers else "Fail"},
+                            update_modified=False)
+    frappe.db.commit()
+    pushed = apply_gd_results(drive, gd_code)
+
+    # Fast-forward the passers to the Offer round's stage: the interview rounds in
+    # between are a separate flow (panels, feedback), and this drive is about offers.
+    doc = frappe.get_doc("Campus Drive", drive)
+    offer_round = next((r for r in doc.rounds if r.round_type == "Offer"), None)
+    stage = offer_round.hiring_stage if offer_round else None
+    moved, stage_cache = 0, {}
+    if stage:
+        cleared = frappe.get_all("Job Applicant",
+                                 filters={"custom_campus_drive": drive, "status": ["!=", "Rejected"]},
+                                 pluck="name")
+        for name in cleared:
+            ja = frappe.get_doc("Job Applicant", name)
+            opening = ja.get("job_title")
+            if opening not in stage_cache:
+                stage_cache[opening] = get_opening_stages(opening)
+            # _enter_stage works off the opening's own stage row, not a bare name.
+            index = _find_stage(stage_cache[opening], stage)
+            if index < 0:
+                continue
+            _enter_stage(ja, stage_cache[opening][index], result="Seeded to the offer stage",
+                         ignore_permissions=True)
+            moved += 1
+    frappe.db.commit()
+
+    _log("=" * 72)
+    _log(f"OFFER TEST DRIVE: {drive}  ({drive_name})")
+    _log(f"  package: fixed {fixed_pay} · variable {variable_pay}  (Offer Package section)")
+    _log(f"  requisition {requisition} linked to {', '.join(built['openings'])}")
+    _log(f"  GD pushed: advanced={pushed['advanced']} rejected={pushed['rejected']}")
+    _log(f"  {moved} candidate(s) now waiting at the Offer round stage “{stage}”")
+    _log("  Open the drive → Round Tracking → Offer: tick candidates → Create Job Offers.")
+    _log("  Each offer should open with Total Fixed Pay / Variable Incentive prefilled.")
+    _log("=" * 72)
+    return {"drive": drive, "requisition": requisition, "offer_stage": stage,
+            "ready_for_offer": moved, "gd": pushed}
 
 
 def test_todo_prefetch_fix():

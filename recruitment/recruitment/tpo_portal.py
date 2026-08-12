@@ -16,9 +16,7 @@ from collections import Counter
 
 import frappe
 
-from recruitment.recruitment.doctype.campus_invite.campus_invite import get_invite_institutes
 from recruitment.recruitment.doctype.candidate_registration.candidate_registration import (
-	get_tpo_institute,
 	is_tpo_only,
 )
 
@@ -37,31 +35,49 @@ def get_my_campus_drives():
 	invites = frappe.get_list(
 		"Campus Invite",
 		filters={"docstatus": 1, "status": ["not in", ["Completed", "Closed"]]},
-		fields=["name", "campus_invite_name", "region", "status", "modified"],
+		fields=["name", "campus_invite_name", "region", "status", "modified",
+		        "registration_expiry_date"],
 		order_by="modified desc",
 		limit_page_length=0,
 	)
 	if not invites:
 		return []
 
+	from frappe.utils import getdate, nowdate
+
 	tpo_only = is_tpo_only()
 	names = [i.name for i in invites]
 	openings = _openings_by_invite(names)
 	registered = _registration_stats(names)
+	institutes_by_invite = _institutes_by_invite(names)
+	# The colleges this TPO is Primary at don't change per invite — resolve them once
+	# and intersect in memory, rather than asking the same question per drive.
+	my_institutes = set(_primary_institutes(frappe.session.user)) if tpo_only else set()
+	today = getdate(nowdate())
 
 	drives = []
 	for invite in invites:
 		stats = registered.get(invite.name) or {}
+		# Shown on the card so a TPO sees the deadline coming, rather than meeting it
+		# as an error when they try to save a registration.
+		expiry = invite.registration_expiry_date
+		invited = institutes_by_invite.get(invite.name) or []
+		# Which of the TPO's own colleges this drive resolves to (they can be Primary
+		# at more than one). Same answer get_tpo_institute gives, without a query
+		# per drive.
+		mine = [i for i in invited if i in my_institutes] if tpo_only else []
 		drives.append(
 			{
 				"name": invite.name,
 				"campus_invite_name": invite.campus_invite_name or invite.name,
 				"region": invite.region,
 				"status": invite.status,
+				"registration_expiry_date": str(expiry) if expiry else None,
+				"registration_closed": bool(expiry and getdate(expiry) < today),
 				# Not shown on the card, but kept so the caller can tell which
 				# college a drive resolves to for them.
-				"institute": get_tpo_institute(frappe.session.user, invite.name) if tpo_only else None,
-				"institutes": get_invite_institutes(invite.name),
+				"institute": mine[0] if mine else None,
+				"institutes": invited,
 				"openings": openings.get(invite.name) or [],
 				"candidate_count": stats.get("candidates", 0),
 				"registration_count": stats.get("registrations", 0),
@@ -69,6 +85,34 @@ def get_my_campus_drives():
 			}
 		)
 	return drives
+
+
+def _institutes_by_invite(invites):
+	"""``{invite: [institute, ...]}`` for every invite in one query."""
+	if not invites:
+		return {}
+	out = {}
+	for row in frappe.get_all(
+		"Campus Invite Institute",
+		filters={"parenttype": "Campus Invite", "parent": ["in", invites]},
+		fields=["parent", "institute"], order_by="idx asc",
+	):
+		if row.institute:
+			out.setdefault(row.parent, []).append(row.institute)
+	return out
+
+
+def _primary_institutes(user):
+	"""The colleges this user is Primary TPO at — one query, no invite involved."""
+	from recruitment.recruitment.tpo_access import PRIMARY_TPO_ROLE
+
+	if not user or user in ("Administrator", "Guest"):
+		return []
+	return list(dict.fromkeys(frappe.get_all(
+		"Institute TPO Contact",
+		filters={"parenttype": "Institute", "email": user, "role": PRIMARY_TPO_ROLE},
+		pluck="parent",
+	)))
 
 
 def _openings_by_invite(invites):

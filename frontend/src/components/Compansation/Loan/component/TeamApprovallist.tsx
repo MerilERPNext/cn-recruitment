@@ -66,10 +66,10 @@ const ApprovalRejectionLoanList = ({
     setCommentOpen(true);
   };
 
-  const handleConfirmAction = async (reason: string) => {
+  const handleConfirmAction = async (reason: string | null) => {
     if (!selectedAction) return;
 
-    if (!reason.trim()) {
+    if (reason !== null && !reason.trim()) {
       toast.error("Comment is required");
       return;
     }
@@ -91,13 +91,15 @@ const ApprovalRejectionLoanList = ({
       }
 
       // 2. Save comment
-      await FrappeAPI.callMethod("frappe.desk.form.utils.add_comment", {
-        reference_doctype: referenceDoctype,
-        reference_name: referenceName,
-        content: reason,
-        comment_email: user?.name || "",
-        comment_by: "",
-      });
+      if (reason !== null) {
+        await FrappeAPI.callMethod("frappe.desk.form.utils.add_comment", {
+          reference_doctype: referenceDoctype,
+          reference_name: referenceName,
+          content: reason,
+          comment_email: user?.name || "",
+          comment_by: "",
+        });
+      }
 
       // Trigger the parent action callback
       onAction(selectedAction, data);

@@ -106,10 +106,10 @@ const AdvanceDetailsModal = ({
   };
 
   // 🔥 Final submit
-  const handleConfirmAction = async (reason: string) => {
+  const handleConfirmAction = async (reason: string | null) => {
     if (!selectedAction) return;
 
-    if (!reason.trim()) {
+    if (reason !== null && !reason.trim()) {
       toast.error("Comment is required");
       return;
     }
@@ -125,12 +125,14 @@ const AdvanceDetailsModal = ({
       : ref?.advance_amount; 
     try {
       // 1️⃣ Save comment
-      await commentMutation.mutateAsync({
-        referenceDoctype,
-        referenceName: refName,
-        content: reason,
-        comment_email: user?.name || "",
-      });
+      if (reason !== null) {
+        await commentMutation.mutateAsync({
+          referenceDoctype,
+          referenceName: refName,
+          content: reason,
+          comment_email: user?.name || "",
+        });
+      }
 
       // 2️⃣ Update advance
       const payload: EmployeeAdvanceUpdatePayload = {

@@ -114,6 +114,9 @@ interface CostCenterFormProps {
   // Present for API symmetry with the other slide forms; cost-center periods are
   // never carried over on rehire, so this is effectively always false.
   disableStartDate?: boolean;
+  // While ADDING a slide the end date isn't editable: a new slide always becomes
+  // the open ("Present") period, so the field is rendered read-only.
+  disableEndDate?: boolean;
   initialEditData?: InitialCostCenterData;
 }
 
@@ -128,6 +131,7 @@ const CostCenterForm = ({
   endMinDate,
   endMaxDate,
   disableStartDate = false,
+  disableEndDate = false,
   initialEditData,
 }: CostCenterFormProps) => {
   const [instance, setInstance] = useState<any>(null);
@@ -199,6 +203,7 @@ const CostCenterForm = ({
     );
     s = withDateBounds(s, "start_date", { minDate: startMinDate, maxDate: startMaxDate });
     s = withDateBounds(s, "end_date", { minDate: endMinDate, maxDate: endMaxDate });
+    s = withComponentDisabled(s, "end_date", !!disableEndDate);
     s = withCostCenterSearch(s);
     return s;
   });

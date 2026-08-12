@@ -52,6 +52,22 @@ def after_migrate():
     ensure_alumni_hd_category_field()
     ensure_notice_portal_fields()
     ensure_education_presentation()
+    ensure_tpo_email_templates()
+
+
+def ensure_tpo_email_templates():
+    """Ship the TPO welcome / campus invite Email Templates.
+
+    Created once so the two mailers work out of the box; never rewritten, so the
+    wording belongs to whoever edits it afterwards. See
+    recruitment.recruitment.tpo_mailers.
+    """
+    from recruitment.recruitment.tpo_mailers import ensure_default_email_templates
+
+    try:
+        ensure_default_email_templates()
+    except Exception:
+        frappe.log_error(frappe.get_traceback(), "TPO email templates: setup failed")
 
 
 def ensure_education_presentation():

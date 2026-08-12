@@ -365,7 +365,7 @@ const ApprovalList = ({
     handleBulkAction(action);
   };
 
-  const handleSaveBulkComment = async (reason: string) => {
+  const handleSaveBulkComment = async (reason: string | null) => {
     try {
       setIsCommentSaving(true);
       const docInfos = selectedIds
@@ -380,19 +380,21 @@ const ApprovalList = ({
         .filter(Boolean) as { doctype: string; name: string }[];
 
       if (docInfos.length > 0) {
-        await Promise.all(
-          docInfos.map((docInfo) =>
-            commentService.createApprovalComment({
-              comment_type: pendingBulkAction === "Approve" ? "Submitted" : "Cancelled",
-              reference_doctype: docInfo.doctype,
-              reference_name: docInfo.name,
-              comment_email: user?.name || "",
-              comment_by: user?.name || "",
-              content: reason,
-              subject: pendingBulkAction === "Approve" ? "Request Approved" : "Request Rejected",
-            }),
-          ),
-        );
+        if (reason !== null) {
+          await Promise.all(
+            docInfos.map((docInfo) =>
+              commentService.createApprovalComment({
+                comment_type: pendingBulkAction === "Approve" ? "Submitted" : "Cancelled",
+                reference_doctype: docInfo.doctype,
+                reference_name: docInfo.name,
+                comment_email: user?.name || "",
+                comment_by: user?.name || "",
+                content: reason,
+                subject: pendingBulkAction === "Approve" ? "Request Approved" : "Request Rejected",
+              }),
+            ),
+          );
+        }
 
         queryClient.invalidateQueries({ queryKey: ["teamRequests"] });
         queryClient.invalidateQueries({ queryKey: ["my-leave-requests"] });

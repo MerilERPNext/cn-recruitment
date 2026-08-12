@@ -21,7 +21,7 @@ import EmploymentSegmentsCard from "./EmploymentHistoryCards/EmploymentSegmentsC
 import NoDataFound from "../shared/atoms/NoDataFound";
 import ConfirmationModal from "../shared/atoms/ConfirmationModal";
 import { useLoadingOverlay } from "../../context/OverlayContext";
-import { computeSlideDateBounds, toDateOnly } from "../../utils/slideDateBounds";
+import { computeAddSlideBounds, computeSlideDateBounds } from "../../utils/slideDateBounds";
 import { errorResponseFormater } from "../../utils/errorResponseFormater";
 import toast from "react-hot-toast";
 
@@ -170,7 +170,8 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
 
   // Date bounds for the currently open add/edit modal. The pickers physically
   // disallow overlaps with neighbouring slides and any date before the joining
-  // date. On ADD there is no item yet, so only the joining-date floor applies.
+  // date. On ADD the new slide starts after the newest existing slide and runs
+  // to "Present", so its end date is read-only.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const activeSectionList: any[] =
     editType === "work_location" ? workLocation
@@ -180,7 +181,7 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
             : history;
   const dateBounds = isEditing && editItem
     ? computeSlideDateBounds(activeSectionList, editItem, joiningDate)
-    : { startMinDate: toDateOnly(joiningDate) };
+    : computeAddSlideBounds(activeSectionList, joiningDate);
 
   const handleCloseModal = () => {
     setIsModalOpen(false);
