@@ -569,9 +569,16 @@ def materialize_onboarding_from_applicant(job_applicant_id, prefill=None):
     doc.custom_bgv_vendor = applicant.get("custom_bgv_vendor")
 
     prefill = prefill or {}
+    # Joining date comes off the Job Offer: that is the date actually agreed with the
+    # candidate, and HR revises it there when it slips. Employee Onboarding requires a
+    # Job Offer, so in practice the offer's date is always the one used — the Job
+    # Applicant's Expected DOJ is only an early indication, is optional and so often
+    # blank, and is kept below purely as a guard.
     doj = (
         prefill.get("date_of_joining")
         or prefill.get("custom_date_of_joining")
+        or (frappe.db.get_value("Job Offer", job_offer, "custom_expected_doj")
+            if job_offer else None)
         or applicant.get("custom_expected_doj")
     )
     if doj:

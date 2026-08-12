@@ -21,7 +21,7 @@ const TodoPage = () => {
 
   const desktopLayout = (
     <DesktopLayoutWrapper title="Todo">
-      <div className="h-full w-full overflow-y-auto">{content}</div>
+      <div className="h-full w-full overflow-hidden">{content}</div>
     </DesktopLayoutWrapper>
   );
 

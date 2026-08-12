@@ -101,7 +101,11 @@ doctype_js = {
     "Job Description": ["public/js/job_description.js"],
     "Job Requisition": ["public/js/job_requisition.js"],
     "Campus Drive": ["public/js/campus_drive.js"],
-    "Interview": ["public/js/interview.js"],
+    "Interview": [
+        "public/js/interview.js",
+        # Trims the form down to what a panel member needs (panel-only users).
+        "public/js/interview_panel_view.js",
+    ],
     "Interview Feedback": ["public/js/interview_feedback.js"],
     "User": ["public/js/user.js"],
     "Employee Onboarding": [
@@ -257,16 +261,31 @@ doc_events = {
     "Interview": {
         "before_save": "recruitment.customizations.interview.interview.check_feedback_of_previous_interview",
         "validate": "recruitment.customizations.job_applicant.validation_blacklist_on_doctypes",
+        # Mirror the candidate's resume onto the interview, so the panel can open it
+        # without permission on the Job Applicant it is attached to.
+        "on_update": "recruitment.api.interview_resume.pull_resume_from_applicant",
     },
     "Interview Feedback": {
+        "validate": [
+            # Stamp the candidate's region on the feedback and check the work
+            # location the panel picked is one of that region's locations.
+            "recruitment.api.interview_work_location.validate_work_location",
+        ],
         "on_submit": [
             "recruitment.customizations.interview_feedback.interview_feedback.on_submit_feedback",
+            # The work location the panel chose becomes the candidate's final
+            # location (Job Applicant.custom_location).
+            "recruitment.api.interview_work_location.apply_work_location",
             # An interviewer may suggest the candidate suits another region. This only
             # records it and flags HR — the candidate is not moved until HR accepts.
             "recruitment.customizations.interview_feedback.interview_feedback.record_region_suggestion",
             # After the verdict is set on the Interview, advance/reject the
             # candidate's hiring stage (only for stages flagged "auto").
             "recruitment.customizations.interview_feedback.interview_feedback.auto_advance_stage",
+            # A campus additional round decides the round it was added to: cleared
+            # hands the candidate to the next round, rejected rejects them. Anchors
+            # on the round, so it completes what the generic advance above cannot.
+            "recruitment.recruitment.doctype.campus_drive.campus_drive.advance_after_extra_round",
         ]
     },
     "Job Offer": {
@@ -387,6 +406,9 @@ doc_events = {
         # Place a new applicant on the linked opening's first hiring stage
         # (no-op unless the Hiring Workflow feature is enabled).
         "after_insert": "recruitment.api.hiring_stage.seed_first_stage",
+        # A resume uploaded after the interviews were scheduled still has to reach
+        # the panel — see recruitment.api.interview_resume.
+        "on_update": "recruitment.api.interview_resume.push_resume_to_interviews",
     },
     "Appointment Letter": {
         "validate": "recruitment.customizations.job_applicant.validation_blacklist_on_doctypes"

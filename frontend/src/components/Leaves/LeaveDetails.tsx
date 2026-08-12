@@ -294,6 +294,16 @@ export function LeaveDetailView({
                   {formatToIndianDate(data?.reference_document?.creation)}
                 </Typography>
               </div>
+              {data?.reference_document?.custom_optional_holiday && (
+                <div className="flex flex-col gap-2 text-right">
+                  <Typography variant="mobileCardLabel" className="block">
+                    Holiday Name
+                  </Typography>
+                  <Typography variant="mobileCardValue">
+                    {data?.reference_document?.custom_optional_holiday}
+                  </Typography>
+                </div>
+              )}
             </div>
             <div className="flex flex-col gap-2">
               <Typography variant="mobileCardLabel">Description</Typography>

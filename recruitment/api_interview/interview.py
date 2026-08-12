@@ -137,6 +137,16 @@ def create_interview_feedback():
         doc.result = data["result"]
         doc.average_rating = float(data["rating"])
 
+        # Optional work location for a campus candidate — becomes their final
+        # location when on_submit applies it. This call skips validate (see the flags
+        # below), so run the same campus / in-region check explicitly; otherwise a
+        # non-campus or out-of-region branch would reach the candidate unchecked.
+        if data.get("work_location"):
+            from recruitment.api.interview_work_location import validate_work_location
+
+            doc.custom_work_location = data["work_location"]
+            validate_work_location(doc)
+
         # Assign skill_assessment child table
         for row in data["skill_assessment"]:
             doc.append("skill_assessment", {

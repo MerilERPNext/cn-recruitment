@@ -61,11 +61,16 @@ export const buildExpenseNavigationState = (
     typeof claimData.name === "string" ? claimData.name : "";
   const expenseName =
     typeof itemData.name === "string" ? itemData.name : "";
+  // custom_category_type lives on Expense Claim Detail, not on the parent claim,
+  // so read the row first and keep the claim only as a fallback.
   const categoryType =
-    typeof claimData.custom_category_type === "string" &&
-    claimData.custom_category_type
-      ? claimData.custom_category_type
-      : "General";
+    typeof itemData.custom_category_type === "string" &&
+    itemData.custom_category_type
+      ? itemData.custom_category_type
+      : typeof claimData.custom_category_type === "string" &&
+          claimData.custom_category_type
+        ? claimData.custom_category_type
+        : "General";
   const customFormData = parseCustomFormData(itemData.custom_form_data);
   const rawUnits =
     typeof itemData.custom_units === "number"

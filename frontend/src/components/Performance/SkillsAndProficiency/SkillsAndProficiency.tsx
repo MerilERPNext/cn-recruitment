@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { ChevronRight, Download, Loader2, Plus, SquareCheck, TrendingUp } from "lucide-react";
+import { ChevronRight, Download, Plus, SquareCheck, TrendingUp } from "lucide-react";
 import Chart from "react-apexcharts";
 import type { ApexOptions } from "apexcharts";
 import Badge from "../../shared/Badge";
@@ -9,6 +9,7 @@ import { categories, levelLabels, PROJECT_TONES } from "../mockdata";
 import type { Skill, MetricCard, ProjectTone } from "../types";
 import { useSkillsOverview } from "../../../hooks/useSkills";
 import type { SkillsOverviewData, SkillsChip, SkillsRadarItem, SkillsFocusArea } from "../../../types/skills";
+import SkillSkeleton from "./SkillSkeleton";
 
 const getLevelTone = (level: number) => {
   if (level === 5) return PROJECT_TONES.success.bar;
@@ -130,10 +131,7 @@ const SkillsAndProficiency: React.FC = () => {
       <div className="mx-auto max-w-screen space-y-4 lg:space-y-5">
         {/* Loading state */}
         {isLoading && (
-          <div className="flex items-center justify-center rounded-lg border border-primary-100 bg-white p-10 shadow-sm">
-            <Loader2 className="h-6 w-6 animate-spin text-primary-500" />
-            <Typography variant="bodySmall" className="ml-3 text-text-body2">Loading skills overview…</Typography>
-          </div>
+        <SkillSkeleton/>
         )}
 
         {/* Error state */}

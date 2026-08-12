@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+
 "use client";
 import { useEffect, useState } from "react";
 import { useCurrentEmployeeDetails } from "../../../hooks/useEmployee";
@@ -8,14 +8,53 @@ import { useTaxSheetPayrollPriodsData } from "../../../hooks/useTaxSheet";
 import { Typography } from "../../shared/atoms/Typography";
 import { NoDataFound } from "../../shared/atoms/NoDataFound";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
-import CardTable from "../../shared/CardTable";
+import CardTable, { ColumnSortConfig } from "../../shared/CardTable";
 import CustomDropdown from "../../shared/CustomDropdown";
 import StatusBadge from "../../shared/atoms/statusBadge";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import { formatCurrency } from "../../../utils/currency";
 import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
-import { useExtraDeductions } from "../../../hooks/useExtraDeduction";
 import { ExtraDeductionData } from "../../../types/extraDeduction";
+import DataListView from "../../DataListView";
+
+const EXTRA_DEDUCTION_SORT_CONFIG: ColumnSortConfig[] = [
+  {
+    sortable: false, // Actions
+  },
+  {
+    sortable: true,
+    type: "string",
+    field: "name",
+    getValue: (payment: ExtraDeductionData) =>
+      payment.name ?? "",
+  },
+
+  {
+    sortable: true,
+    type: "string",
+    field: "salary_component",
+    getValue: (payment: ExtraDeductionData) =>
+      payment.salary_component ?? "",
+  },
+  {
+    sortable: true,
+    type: "date",
+    field: "payroll_date",
+    getValue: (payment: ExtraDeductionData) =>
+      payment.payment_date ?? "",
+  },
+  {
+    sortable: true,
+    type: "number",
+    field: "amount",
+    getValue: (payment: ExtraDeductionData) =>
+      payment.amount ?? "",
+  },
+
+  {
+    sortable: false, // Actions
+  },
+];
 
 const titles = [
   "Recipient",
@@ -45,9 +84,9 @@ export default function ExtraDeduction() {
   const { data: payrollPeriods } = useTaxSheetPayrollPriodsData(
     effectiveCompany || null,
   ) as { data: { name: string; start_date: string; end_date: string }[] | undefined };
-  
+
   const [selectedPeriod, setSelectedPeriod] = useState<string>("");
-  
+
   useEffect(() => {
     if (!payrollPeriods?.length || selectedPeriod) return;
     const today = new Date();
@@ -58,13 +97,6 @@ export default function ExtraDeduction() {
     });
     setSelectedPeriod(matched?.name || payrollPeriods[0].name);
   }, [payrollPeriods, selectedPeriod]);
-
-  // Hook for Extra Deductions
-  const { data, isLoading, isError } = useExtraDeductions(
-    effectiveCompany,
-    effectiveEmployee,
-    selectedPeriod
-  );
 
   // Don't render until we have employee + company info
   if (!effectiveEmployee || !effectiveCompany) {
@@ -82,11 +114,23 @@ export default function ExtraDeduction() {
     );
   }
 
+  const customAPI = {
+    method: "cn_indian_payroll.cn_indian_payroll.overrides.webapp_api.extra_payment_api.get_extra_deduction_list",
+    params: {
+      employee: effectiveEmployee,
+      company: effectiveCompany,
+      payroll_period: selectedPeriod,
+    },
+    transformResponse: (res: { data?: ExtraDeductionData[] }) => {
+      return res.data || [];
+    },
+  };
+
   // Map raw API item to display shape
-  const mapItem = (item: ExtraDeductionData) => ({
+  const mapItem = (item: ExtraDeductionData, employeeName?: string) => ({
     id: item.name,
     salary_component: item.salary_component,
-    recipient: item.employee_name || item.employee,
+    recipient: employeeName || item.employee_name || item.employee,
     invoiceId: item.name,
     date: formatToIndianDate(item.payment_date),
     amount: item.amount,
@@ -94,10 +138,9 @@ export default function ExtraDeduction() {
   });
 
   const renderDesktopRow = (raw: ExtraDeductionData) => {
-    const payment = mapItem(raw);
+    const payment = mapItem(raw, raw.employee_name || raw.employee);
     return (
       <div
-        key={payment.id}
         className="grid items-center gap-4 px-6 h-16 border-b border-gray-50 transition-colors cursor-pointer hover:bg-primary/10"
         style={{ gridTemplateColumns: columnWidths.join(" "), alignItems: "center" }}
       >
@@ -129,11 +172,10 @@ export default function ExtraDeduction() {
   };
 
   const renderMobileCard = (raw: ExtraDeductionData) => {
-    const payment = mapItem(raw);
+    const payment = mapItem(raw, raw.employee_name || raw.employee);
 
     return (
       <div
-        key={payment.id}
         className="cursor-pointer border-t-4 border-x border-b 
         border-x-primary/20 border-b-primary/20 
         shadow-sm border-primary bg-white rounded-xl"
@@ -235,14 +277,17 @@ export default function ExtraDeduction() {
       {/* ---------------------- DESKTOP ---------------------- */}
       {isDesktop && (
         <div className="flex-1 overflow-y-auto md:px-4 pt-3 md:pt-4 pb-5 md:pb-20">
-          <CardTable titles={titles} columnWidths={columnWidths}>
-            {isLoading ? (
-              <CardSkeleton />
-            ) : isError || !data?.data?.length ? (
-              noRecords
-            ) : (
-              data.data.map((item) => renderDesktopRow(item))
-            )}
+          <CardTable titles={titles} columnWidths={columnWidths} columnSortConfig={EXTRA_DEDUCTION_SORT_CONFIG}>
+            <DataListView
+              queryKey={["extra-deductions", effectiveEmployee, effectiveCompany, selectedPeriod]}
+              customAPI={customAPI}
+              isSearch={true}
+              isFilter={false}
+              showPagination={true}
+              SkeletonComponent={CardSkeleton}
+              renderItem={(raw: ExtraDeductionData) => renderDesktopRow(raw)}
+              noRecordsScreen={noRecords}
+            />
           </CardTable>
         </div>
       )}
@@ -250,13 +295,16 @@ export default function ExtraDeduction() {
       {/* ---------------------- MOBILE ---------------------- */}
       {!isDesktop && (
         <div className="space-y-4 px-1">
-          {isLoading ? (
-            <CardSkeleton />
-          ) : isError || !data?.data?.length ? (
-            noRecords
-          ) : (
-            data.data.map((item) => renderMobileCard(item))
-          )}
+          <DataListView
+            queryKey={["extra-deductions", effectiveEmployee, effectiveCompany, selectedPeriod]}
+            customAPI={customAPI}
+            isSearch={true}
+            isFilter={false}
+            showPagination={true}
+            SkeletonComponent={CardSkeleton}
+            renderItem={(raw: ExtraDeductionData) => renderMobileCard(raw)}
+            noRecordsScreen={noRecords}
+          />
         </div>
       )}
     </div>

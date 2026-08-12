@@ -486,6 +486,35 @@ def get_interview_round_doctype():
 	return resolved
 
 
+@frappe.whitelist()
+def get_interview_round_field(doctype="Interview"):
+	"""The fieldname carrying the round on THIS HRMS version.
+
+	The companion to ``get_interview_round_doctype``: that answers *what* a document
+	links its round to, this answers *where*. v15 keeps it in ``interview_round``,
+	v16 in ``interview_type`` — on Interview and on Interview Feedback alike.
+	Resolved from the meta, by finding the Link that points at the round doctype,
+	rather than by trusting either name, so a third rename is handled too.
+
+	Returns ``None`` when neither exists, letting callers skip round-specific work
+	instead of writing to a field that isn't there — assigning one that is absent
+	looks like it worked and is silently dropped on save.
+	"""
+	round_doctype = get_interview_round_doctype()
+	if not round_doctype:
+		return None
+
+	try:
+		meta = frappe.get_meta(doctype)
+	except Exception:
+		return None
+
+	for df in meta.fields or []:
+		if df.fieldtype == "Link" and df.options == round_doctype:
+			return df.fieldname
+	return None
+
+
 def _round_title_field(doctype):
 	"""The field carrying the round's display name, or ``None`` when the docname
 	*is* the name.
@@ -810,15 +839,21 @@ def complete_interview(job_applicant, rating, comments=None, assessment=None, st
 	round_name = _ensure_interview_round(stage.get("stage_name"), doc.get("designation"))
 
 	# Reuse an interview scheduled for this stage, else create one now.
+	# Resolved, not named: v16 dropped `interview_round` for `interview_type`, and
+	# the old column survives the upgrade — so filtering on the literal matched
+	# nothing there and a fresh interview was created on every click.
+	round_field = get_interview_round_field()
 	interview = frappe.db.get_value(
 		"Interview",
-		{"job_applicant": doc.name, "interview_round": round_name, "docstatus": ["<", 2]},
+		{"job_applicant": doc.name, **({round_field: round_name} if round_field else {}),
+		 "docstatus": ["<", 2]},
 		"name",
 	)
 	if not interview:
 		iv = frappe.new_doc("Interview")
 		iv.job_applicant = doc.name
-		iv.interview_round = round_name
+		if round_field:
+			iv.set(round_field, round_name)
 		iv.job_opening = doc.get("job_title")
 		if doc.get("designation"):
 			iv.designation = doc.get("designation")
@@ -842,7 +877,9 @@ def complete_interview(job_applicant, rating, comments=None, assessment=None, st
 
 	fb = frappe.new_doc("Interview Feedback")
 	fb.interview = interview
-	fb.interview_round = round_name
+	fb_round_field = get_interview_round_field("Interview Feedback")
+	if fb_round_field:
+		fb.set(fb_round_field, round_name)
 	fb.interviewer = frappe.session.user
 	fb.job_applicant = doc.name
 	fb.feedback = comments or ""
@@ -903,15 +940,21 @@ def send_interview_feedback_form(job_applicant, stage_name=None):
 	stage = stages[idx]
 	round_name = _ensure_interview_round(stage.get("stage_name"), doc.get("designation"))
 
+	# Resolved, not named: v16 dropped `interview_round` for `interview_type`, and
+	# the old column survives the upgrade — so filtering on the literal matched
+	# nothing there and a fresh interview was created on every click.
+	round_field = get_interview_round_field()
 	interview = frappe.db.get_value(
 		"Interview",
-		{"job_applicant": doc.name, "interview_round": round_name, "docstatus": ["<", 2]},
+		{"job_applicant": doc.name, **({round_field: round_name} if round_field else {}),
+		 "docstatus": ["<", 2]},
 		"name",
 	)
 	if not interview:
 		iv = frappe.new_doc("Interview")
 		iv.job_applicant = doc.name
-		iv.interview_round = round_name
+		if round_field:
+			iv.set(round_field, round_name)
 		iv.job_opening = doc.get("job_title")
 		iv.scheduled_on = today()
 		iv.append("interview_details", {"interviewer": frappe.session.user})
@@ -987,13 +1030,16 @@ def get_workflow_view(job_applicant):
 
 	# Interviews grouped by round name (rounds are named after the stage).
 	interviews_by_stage = {}
+	round_field = get_interview_round_field()
 	for iv in frappe.get_all(
 		"Interview",
 		filters={"job_applicant": doc.name},
-		fields=["name", "interview_round", "scheduled_on", "status", "average_rating"],
+		fields=["name", "scheduled_on", "status", "average_rating"]
+		       + ([round_field] if round_field else []),
 		order_by="scheduled_on asc, creation asc",
 	):
-		interviews_by_stage.setdefault(iv.get("interview_round") or "", []).append(iv)
+		interviews_by_stage.setdefault(
+			(iv.get(round_field) if round_field else "") or "", []).append(iv)
 
 	out_stages = []
 	for i, s in enumerate(stages):

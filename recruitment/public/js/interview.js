@@ -2,8 +2,6 @@ frappe.ui.form.on("Interview", {
     refresh: function(frm){
 		if(frm.doc.status=="Pending"){
 			  frm.add_custom_button(__('Travel Request'), function(){
-				//frappe.msgprint("Page Will Redirect In 6 Seconds.Please Wait")
-				var interviewers = [];
 				var description="Applicant Name: ";
 				frappe.db.get_value('Job Applicant', {"name":frm.doc.job_applicant}, 'applicant_name', (r) => {
 					description+=r.applicant_name+"\nInterview Date: "+frm.doc.scheduled_on+"\nCreated By: "
@@ -15,19 +13,7 @@ frappe.ui.form.on("Interview", {
 						description+=r.employee_name
 					}
 				)
-				/*frm.doc.interview_details.forEach(function (item) {
-					frappe.db.get_value(
-						"Employee",
-						{"user_id": item.interviewer},
-						["employee_name"],(r)=>{
-							interviewers.push(r.employee_name)
-						}
-					)
-					console.log(interviewers)
-				})*/
-				
-				//setTimeout(() => {
-				 frappe.db.get_value('Employee', {"user_id":frappe.session.user}, 'name', (r) => {
+				frappe.db.get_value('Employee', {"user_id":frappe.session.user}, 'name', (r) => {
 					frappe.new_doc("Travel Request", {
 						travel_type: "Domestic",
 						employee:r.name,
@@ -37,15 +23,9 @@ frappe.ui.form.on("Interview", {
 						frappe.set_route("Form", doc.doctype, doc.name);
 					});
 				});
-				//}, "6000");
-				
-
-				
-				
-
 			},__("Create"));
 		}
-   
+
 	setup_teams_buttons(frm, {
             scheduled_on_field: 'scheduled_on',
             from_time_field: 'from_time',
@@ -60,18 +40,6 @@ frappe.ui.form.on("Interview", {
         });
     }
 })
-function formattime(isoTimestamp){
-	const date = new Date(isoTimestamp);
-
-	const istDate = new Date(date.getTime());
-
-	const hours = istDate.getHours().toString().padStart(2, '0');
-	const minutes = istDate.getMinutes().toString().padStart(2, '0');
-	const seconds = istDate.getSeconds().toString().padStart(2, '0');
-	
-	const time = `${hours}:${minutes}:${seconds}`;
-	return time
-}
 frappe.ui.form.on('Interview Detail', {
 	interview_details_remove: function(frm, cdt, cdn) {
 		frappe.db.get_list('User Permission', {
@@ -82,7 +50,5 @@ frappe.ui.form.on('Interview Detail', {
 				frappe.db.delete_doc("User Permission",element.name)
 			});
 		})
-		
-        // frappe.db.delete_doc("User Permission",{"allow":"Interview","for_value":frm.doc.name})
 	}
 })

@@ -69,7 +69,7 @@ export default function CreateLoanDialog({
     const fetchLoanProducts = async () => {
       try {
         const res = await fetch(
-          `/api/resource/Loan Product?fields=["name","product_name","rate_of_interest"]&filters=${encodeURIComponent(
+          `/api/resource/Loan Product?fields=["name","product_name","rate_of_interest", "company"]&filters=${encodeURIComponent(
             JSON.stringify([["company", "=", currentEmployee.company]])
           )}`
         );
@@ -210,7 +210,7 @@ export default function CreateLoanDialog({
                   toast.success("Loan Request updated successfully!");
                   setTimeout(() => setRefetchAttendance(true), 2000);
                   onClose?.();
-                  
+
                   resolve();
                 },
                 onError: (error: any) => {

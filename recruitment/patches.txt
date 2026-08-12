@@ -31,3 +31,7 @@ recruitment.patches.education_grid_columns
 recruitment.patches.delete_job_offer_salary_breakup
 recruitment.patches.rename_education_stage_label
 recruitment.patches.create_default_requisition_scope
+recruitment.patches.backfill_interview_resume
+recruitment.patches.drop_expected_doj_mandatory
+recruitment.patches.seed_extra_round_types
+recruitment.patches.campus_drive_pay_permlevel

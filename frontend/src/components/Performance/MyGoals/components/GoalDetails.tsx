@@ -12,6 +12,7 @@ import type { GoalCheckInSentiment, GoalDetailKeyResult } from '../../../../type
 import FrappeAPI from '../../../../utils/frappeAPI';
 import { getPerformanceErrorMessage } from '../../../../services/performanceService';
 import { KRCheckInModal } from './KRCheckInModal';
+import GoalDetailSkeleton from './GoalDetailSkeleton';
 
 const CircularProgress = ({ score }: { score: number }) => {
   const radius = 36;
@@ -113,7 +114,7 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, onBack }) => {
     setIsCheckInModalOpen(true);
   };
 
-  
+
   React.useEffect(() => {
     if (goalResponse?.data) {
       setNewValue(String(goalResponse.data.achievement ?? 0));
@@ -230,14 +231,7 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, onBack }) => {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-[400px] items-center justify-center bg-[#f8fafc]">
-        <div className="flex flex-col items-center gap-3">
-          <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
-          <Typography variant="bodySmall" className="text-slate-500">
-            Loading goal details…
-          </Typography>
-        </div>
-      </div>
+      <GoalDetailSkeleton />
     );
   }
 
@@ -258,18 +252,17 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, onBack }) => {
   }
 
   const goal = goalResponse.data;
-  const isLocked = Boolean(goal.is_locked);
   const ownerName = currentUser?.full_name || currentUser?.first_name || currentUser?.email || '-';
   const checkIns = checkInsResponse?.data?.check_ins ?? [];
   const displayedProgress = latestProgress ?? goal.achievement ?? 0;
   const isPendingGoal = goal.goal_status?.toLowerCase() === 'pending';
-
+  const isAutoCalculate = Boolean(goal.auto_calculate);
   return (
     <div ref={topRef} id="goal-details-container" className="min-h-full bg-[#f8fafc] overflow-y-auto p-3 font-sans sm:p-6">
       <div className="mx-auto max-w-screen space-y-4 sm:space-y-6">
-        
+
         {/* Back Button */}
-        <button 
+        <button
           aria-label="Back to goals"
           onClick={() => (onBack ? onBack() : navigate(-1))}
           className="flex items-center text-sm font-medium text-gray-500 hover:text-gray-700 transition-colors mb-2 cursor-pointer"
@@ -285,23 +278,21 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, onBack }) => {
               {/* Badges Row: OKR → Locked → Department → Designation → Status */}
               <div className="flex flex-wrap items-center gap-2">
                 <Badge label={goal.goal_type || 'OKR'} variant="purple" size="sm" />
-                {isLocked && (
-                  <Badge label="Locked" variant="default" size="sm" />
-                )}
+
                 {goal.department_title && (
                   <Badge label={goal.department_title} variant="default" size="sm" />
                 )}
                 {goal.designation_title && (
                   <Badge label={goal.designation_title} variant="info" size="sm" />
                 )}
-                <Badge 
-                  label={goal.status || '-'} 
+                <Badge
+                  label={goal.status || '-'}
                   variant={getStatusVariant(goal.status)}
-                  size="sm" 
-                  pulse={{ show: true }} 
+                  size="sm"
+                  pulse={{ show: true }}
                 />
               </div>
-              
+
               {/* Title */}
               <div className="min-w-0">
                 <Typography variant="h3" className="mb-2 text-xl leading-tight sm:text-2xl break-words [word-break:break-word]">{goal.title || '-'}</Typography>
@@ -341,19 +332,19 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, onBack }) => {
 
         {/* Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
-          
+
           {/* Left Column (2/3) */}
           <div className="lg:col-span-2 space-y-4 sm:space-y-6">
-            
+
             {/* Key Results */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6">
               <div className="flex items-center justify-between mb-4 sm:mb-6">
                 <Typography variant="h4">Key Results</Typography>
-                {!isEditingKRs && isPendingGoal && !isLocked && (
-                  <Button 
-                    variant="outline" 
+                {!isEditingKRs && isPendingGoal && (
+                  <Button
+                    variant="outline"
                     bgColor="text"
-                    size="sm" 
+                    size="sm"
                     onClick={handleStartEditKRs}
                     icon={goal.key_results?.length ? <Edit className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
                   >
@@ -369,63 +360,46 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, onBack }) => {
                       <div key={kr.id} className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
                         <div className="flex-1 w-full">
                           <label className="block text-xs font-medium text-gray-600 mb-1">Key Result Title</label>
-                          <input 
+                          <input
                             type="text"
                             value={kr.title}
-                            onChange={(e) => !isLocked && updateKRField(kr.id, 'title', e.target.value)}
-                            onFocus={(e) => isLocked && e.target.blur()}
-                            disabled={isLocked}
-                            readOnly={isLocked}
-                            className={`w-full border rounded-lg px-3 py-2 text-sm focus:outline-none transition ${
-                              isLocked
-                                ? "border-gray-200 bg-gray-50/80 text-gray-700 cursor-not-allowed select-none"
-                                : "border-gray-300 focus:ring-1 focus:ring-blue-500"
-                            }`}
+                            onChange={(e) => updateKRField(kr.id, 'title', e.target.value)}
+                            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 transition"
                             placeholder="Enter key result"
                           />
                         </div>
                         <div className="w-full sm:w-24 shrink-0">
                           <label className="block text-xs font-medium text-gray-600 mb-1">Weight (%)</label>
-                          <input 
+                          <input
                             type="number"
                             value={kr.weightage}
-                            onChange={(e) => !isLocked && updateKRField(kr.id, 'weightage', e.target.value)}
-                            onFocus={(e) => isLocked && e.target.blur()}
-                            disabled={isLocked}
-                            readOnly={isLocked}
-                            className={`w-full border rounded-lg px-3 py-2 text-sm focus:outline-none transition ${
-                              isLocked
-                                ? "border-gray-200 bg-gray-50/80 text-gray-700 cursor-not-allowed select-none"
-                                : "border-gray-300 focus:ring-1 focus:ring-blue-500"
-                            }`}
+                            onChange={(e) => updateKRField(kr.id, 'weightage', e.target.value)}
+                            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 transition"
                             placeholder="%"
                           />
                         </div>
-                        {!isLocked && (
-                          <div className="pt-0 sm:pt-5">
-                            <button
-                              type="button"
-                              onClick={() => removeKRField(kr.id)}
-                              className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                              aria-label="Remove KR"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
-                        )}
+                        <div className="pt-0 sm:pt-5">
+                          <button
+                            type="button"
+                            onClick={() => removeKRField(kr.id)}
+                            className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                            aria-label="Remove KR"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
                       </div>
                     ))}
-                    
-                    {!isLocked && (
-                      <button
-                        type="button"
-                        onClick={addKRField}
-                        className="flex items-center gap-2 text-sm font-medium text-blue-600 hover:text-blue-700 mt-2"
-                      >
-                        <Plus className="w-4 h-4" />
-                        Add More
-                      </button>
-                    )}
+
+                    <button
+                      type="button"
+                      onClick={addKRField}
+                      className="flex items-center gap-2 text-sm font-medium text-blue-600 hover:text-blue-700 mt-2"
+                    >
+                      <Plus className="w-4 h-4" />
+                      Add More
+                    </button>
+               
 
                     {(() => {
                       const currentTotalWeight = editingKRs.reduce((sum, kr) => sum + Number(kr.weightage || 0), 0);
@@ -442,9 +416,9 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, onBack }) => {
                             <Button variant="outline" bgColor="text" onClick={handleCancelEditKRs}>
                               Cancel
                             </Button>
-                            <Button variant="contain" bgColor="primary" onClick={handleUpdateKRs} disabled={isSavingGoals || isLocked}>
-                              {isSavingGoals 
-                                ? (goal.key_results?.length ? 'Updating...' : 'Adding...') 
+                            <Button variant="contain" bgColor="primary" onClick={handleUpdateKRs} disabled={isSavingGoals}>
+                              {isSavingGoals
+                                ? (goal.key_results?.length ? 'Updating...' : 'Adding...')
                                 : (goal.key_results?.length ? 'Update' : 'Add')}
                             </Button>
                           </div>
@@ -467,25 +441,21 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, onBack }) => {
                             <Typography variant="bodyMedium" className="font-bold text-gray-900">{kr.achievement ?? 0}% Achieved</Typography>
                             <Typography variant="caption" className="text-gray-500">Weightage: {kr.weightage ?? 0}%</Typography>
                           </div>
-                          <Button
+                         {isAutoCalculate && <Button
                             size="sm"
                             variant="outline"
                             bgColor="text"
-                            className={`text-xs border-blue-200 text-blue-600 transition-colors shrink-0 ${
-                              isLocked
-                                ? 'opacity-50 cursor-not-allowed pointer-events-none bg-gray-50 text-gray-400 border-gray-200'
-                                : 'hover:bg-blue-50 hover:border-blue-300'
-                            }`}
-                            onClick={() => !isLocked && handleOpenKRCheckInModal(kr, idx)}
-                            disabled={isLocked}
+                            className={`text-xs border-blue-200 text-blue-600 transition-colors shrink-0 hover:bg-blue-50 hover:border-blue-300`}
+                            onClick={() => handleOpenKRCheckInModal(kr, idx)}
+                           
                           >
                             Check in
-                          </Button>
+                          </Button>}
                         </div>
                       </div>
                       <div className="w-full bg-gray-100 rounded-md h-2 overflow-hidden">
-                        <div 
-                          className={`h-2 rounded-md ${kr.achievement >= 75 ? 'bg-green-500' : kr.achievement >= 50 ? 'bg-yellow-500' : 'bg-blue-500'}`} 
+                        <div
+                          className={`h-2 rounded-md ${kr.achievement >= 75 ? 'bg-green-500' : kr.achievement >= 50 ? 'bg-yellow-500' : 'bg-blue-500'}`}
                           style={{ width: `${Math.min(kr.achievement ?? 0, 100)}%` }}
                         />
                       </div>
@@ -498,128 +468,117 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, onBack }) => {
               </div>
             </div>
 
-            {/* Quick Check-in */}
-            <Card radius="xl" padding="none" className="overflow-hidden border border-gray-100">
-              <div className="p-4 sm:p-6">
-                <Typography variant="h4" className="mb-1">Quick Check-in</Typography>
-                <Typography variant="bodySmall" className="text-gray-500 mb-6">Update your progress</Typography>
-
-                <div className="grid grid-cols-1 gap-4 mb-4 sm:mb-6 md:grid-cols-2 md:gap-6">
-                  <div>
-                    <Typography variant="caption" className="text-gray-700 font-medium block mb-2">New Value</Typography>
-                    <div className="flex items-center">
-                      <input 
-                        type="number"
-                        value={newValue}
-                        onChange={(event) => !isLocked && setNewValue(event.target.value)}
-                        onFocus={(e) => isLocked && e.target.blur()}
-                        min="0"
-                        step="any"
-                        inputMode="decimal"
-                        className={`w-full border rounded-l-lg px-3 py-2 text-sm focus:outline-none transition ${
-                          isLocked
-                            ? "border-gray-200 bg-gray-50/80 text-gray-700 cursor-not-allowed select-none"
-                            : "border-gray-300 focus:ring-1 focus:ring-blue-500"
-                        }`}
-                        aria-label="New goal progress value"
-                        disabled={isLocked}
-                        readOnly={isLocked}
-                      />
-                      <span className="bg-gray-50 border border-l-0 border-gray-300 rounded-r-lg px-3 py-2 text-sm text-gray-500 whitespace-nowrap">
-                        %
-                      </span>
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <Typography variant="caption" className="text-gray-700 font-medium block mb-2">Auto Progress</Typography>
-                    <div className="bg-blue-50 border border-blue-100 rounded-lg px-3 py-2 flex min-h-[38px] items-center">
-                      <span className="text-blue-600 font-bold text-sm mr-2">{displayedProgress}%</span>
-                    </div>
-                  </div>
-
-                  <div className="md:col-span-2">
-                    <Typography variant="caption" className="text-gray-700 font-medium block mb-2">Self-declared Health</Typography>
-                    <div className="flex flex-nowrap gap-2" role="radiogroup" aria-label="Self-declared health">
-                      {(Object.keys(sentimentStyles) as GoalCheckInSentiment[]).map((option) => (
-                        <button
-                          key={option}
-                          type="button"
-                          role="radio"
-                          aria-checked={sentiment === option}
-                          disabled={isLocked}
-                          onClick={() => !isLocked && setSentiment(option)}
-                          className={`flex min-w-0 flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-xl border px-3 py-2 text-xs font-semibold transition-colors ${
-                            isLocked ? 'cursor-not-allowed opacity-60' : ''
-                          } ${sentiment === option ? sentimentStyles[option].active : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'}`}
-                        >
-                          <span className={`h-2 w-2 rounded-full ${sentimentStyles[option].dot}`} />
-                          {option}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
+            {isAutoCalculate ? (
+              <div className="flex items-start gap-3.5 rounded-xl border border-blue-100 bg-blue-50/70 p-4 sm:p-5 shadow-2xs">
+                <div className="min-w-0 flex-1">
+                  <Typography variant="bodyMedium" className="font-semibold text-blue-950">
+                    Automatic Progress Calculation
+                  </Typography>
+                  <Typography variant="caption" className="text-blue-700 mt-1 block leading-relaxed">
+                    Goal progress is automatically calculated from individual Key Result check-ins. Please use the <strong>"Check in"</strong> button on each Key Result above to update your progress.
+                  </Typography>
                 </div>
+              </div>
+            ) : (
+              <Card radius="xl" padding="none" className="overflow-hidden border border-gray-100">
+                <div className="p-4 sm:p-6">
+                  <Typography variant="h4" className="mb-1">Quick Check-in</Typography>
+                  <Typography variant="bodySmall" className="text-gray-500 mb-6">Update your progress</Typography>
 
-                <textarea
-                  value={note}
-                  onChange={(event) => !isLocked && setNote(event.target.value)}
-                  onFocus={(e) => isLocked && e.target.blur()}
-                  className={`w-full rounded-lg border p-3 text-sm focus:outline-none min-h-[100px] mb-4 transition ${
-                    isLocked
-                      ? "border-gray-200 bg-gray-50/80 text-gray-700 cursor-not-allowed select-none"
-                      : "border-gray-200 focus:ring-1 focus:ring-blue-500"
-                  }`}
-                  placeholder="Add details about your progress..."
-                  aria-label="Goal progress details"
-                  disabled={isLocked}
-                  readOnly={isLocked}
-                ></textarea>
+                  <div className="grid grid-cols-1 gap-4 mb-4 sm:mb-6 md:grid-cols-2 md:gap-6">
+                    <div>
+                      <Typography variant="caption" className="text-gray-700 font-medium block mb-2">New Value</Typography>
+                      <div className="flex items-center">
+                        <input
+                          type="number"
+                          value={newValue}
+                          onChange={(event) => setNewValue(event.target.value)}
+                          min="0"
+                          step="any"
+                          inputMode="decimal"
+                          className="w-full border border-gray-300 rounded-l-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 transition"
+                          aria-label="New goal progress value"
+                        />
+                        <span className="bg-gray-50 border border-l-0 border-gray-300 rounded-r-lg px-3 py-2 text-sm text-gray-500 whitespace-nowrap">
+                          %
+                        </span>
+                      </div>
+                    </div>
 
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="flex min-w-0 items-center gap-2">
-                    <input
-                      ref={attachmentInputRef}
-                      type="file"
-                      className="hidden"
-                      onChange={(event) => !isLocked && setAttachment(event.target.files?.[0] ?? null)}
-                      disabled={isLocked}
-                    />
-                    <Button 
-                      variant="outline" 
-                      bgColor="text" 
-                      size="sm" 
-                      icon={<Paperclip className="w-4 h-4" />} 
-                      onClick={() => !isLocked && attachmentInputRef.current?.click()}
-                      disabled={isLocked}
-                      className={isLocked ? "cursor-not-allowed opacity-60" : ""}
-                    >
-                      Attach
-                    </Button>
-                    {attachment && (
-                      <span className="flex min-w-0 items-center gap-1 rounded-md bg-blue-50 px-2 py-1 text-xs text-blue-700">
-                        <span className="truncate">{attachment.name}</span>
-                        {!isLocked && (
+                    <div>
+                      <Typography variant="caption" className="text-gray-700 font-medium block mb-2">Auto Progress</Typography>
+                      <div className="bg-blue-50 border border-blue-100 rounded-lg px-3 py-2 flex min-h-[38px] items-center">
+                        <span className="text-blue-600 font-bold text-sm mr-2">{displayedProgress}%</span>
+                      </div>
+                    </div>
+
+                    <div className="md:col-span-2">
+                      <Typography variant="caption" className="text-gray-700 font-medium block mb-2">Self-declared Health</Typography>
+                      <div className="flex flex-nowrap gap-2" role="radiogroup" aria-label="Self-declared health">
+                        {(Object.keys(sentimentStyles) as GoalCheckInSentiment[]).map((option) => (
+                          <button
+                            key={option}
+                            type="button"
+                            role="radio"
+                            aria-checked={sentiment === option}
+                            onClick={() => setSentiment(option)}
+                            className={`flex min-w-0 flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-xl border px-3 py-2 text-xs font-semibold transition-colors ${sentiment === option ? sentimentStyles[option].active : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'}`}
+                          >
+                            <span className={`h-2 w-2 rounded-full ${sentimentStyles[option].dot}`} />
+                            {option}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  <textarea
+                    value={note}
+                    onChange={(event) => setNote(event.target.value)}
+                    className="w-full rounded-lg border border-gray-200 p-3 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 min-h-[100px] mb-4 transition"
+                    placeholder="Add details about your progress..."
+                    aria-label="Goal progress details"
+                  ></textarea>
+
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex min-w-0 items-center gap-2">
+                      <input
+                        ref={attachmentInputRef}
+                        type="file"
+                        className="hidden"
+                        onChange={(event) => setAttachment(event.target.files?.[0] ?? null)}
+                      />
+                      <Button
+                        variant="outline"
+                        bgColor="text"
+                        size="sm"
+                        icon={<Paperclip className="w-4 h-4" />}
+                        onClick={() => attachmentInputRef.current?.click()}
+                      >
+                        Attach
+                      </Button>
+                      {attachment && (
+                        <span className="flex min-w-0 items-center gap-1 rounded-md bg-blue-50 px-2 py-1 text-xs text-blue-700">
+                          <span className="truncate">{attachment.name}</span>
                           <button type="button" aria-label="Remove attachment" onClick={() => { setAttachment(null); if (attachmentInputRef.current) attachmentInputRef.current.value = ''; }} className="shrink-0 text-blue-500 hover:text-blue-800">
                             <X className="h-3.5 w-3.5" />
                           </button>
-                        )}
-                      </span>
-                    )}
+                        </span>
+                      )}
+                    </div>
+                    <Button
+                      variant="contain"
+                      bgColor="primary"
+                      size="sm"
+                      onClick={handleSubmitCheckIn}
+                      disabled={isSubmittingCheckIn}
+                    >
+                      {isSubmittingCheckIn ? 'Submitting…' : 'Submit Check-in'}
+                    </Button>
                   </div>
-                  <Button 
-                    variant="contain" 
-                    bgColor="primary" 
-                    size="sm" 
-                    className={`justify-center ${isLocked ? "cursor-not-allowed opacity-60" : ""}`} 
-                    onClick={() => !isLocked && handleSubmitCheckIn()} 
-                    disabled={isSubmittingCheckIn || isLocked}
-                  >
-                    {isSubmittingCheckIn ? 'Submitting…' : 'Submit Check-in'}
-                  </Button>
                 </div>
-              </div>
-            </Card>
+              </Card>
+            )}
 
           </div>
 
@@ -676,6 +635,7 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, onBack }) => {
         kr={selectedKRForCheckIn?.kr ?? null}
         krIndex={selectedKRForCheckIn?.index}
         initialStatus={goal.status || goal.goal_status}
+        goalId={goal.goal_key}
       />
     </div>
   );

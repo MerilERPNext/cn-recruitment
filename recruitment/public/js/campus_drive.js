@@ -162,6 +162,10 @@ function cdRenderRounds(frm) {
 	$root.on("click", "[data-rd-extra]", function () {
 		cdAddCandidateInterview(frm, $(this).attr("data-rd-extra"), () => cdRenderRounds(frm));
 	});
+	// Open an additional round's interview — where its feedback and verdict live.
+	$root.on("click", "[data-rd-interview]", function () {
+		frappe.set_route("Form", "Interview", $(this).attr("data-rd-interview"));
+	});
 	// Assign candidates across panels -> creates their Interview records
 	$root.on("click", "[data-rd-assign]", function () {
 		cdAssignPanels(frm, $(this).attr("data-rd-assign"), () => cdRenderRounds(frm));
@@ -170,12 +174,11 @@ function cdRenderRounds(frm) {
 	$root.on("click", "[data-rd-open]", function () {
 		cdOpenPanelsDialog(frm, $(this).attr("data-rd-open"));
 	});
-	// "⋯" — per-candidate extra interview + feedback nudge
+	// "⋯" — round housekeeping (the additional round has its own button on its card)
 	$root.on("click", "[data-rd-more]", function () {
 		const code = $(this).attr("data-rd-more");
 		const r = (cdRoundsData.rounds || []).find((x) => x.round_code === code) || {};
 		const items = [
-			{ label: __("Add extra interview for one candidate"), action: () => cdAddCandidateInterview(frm, code, () => cdRenderRounds(frm)) },
 			{ label: __("Sync results from interviews (fix stuck candidates)"), action: () => cdReconcileRound(frm, code, () => cdRenderRounds(frm)) },
 		];
 		if (r.awaiting_feedback) {
@@ -378,43 +381,99 @@ function cdScheduleDialog(frm, roundCode, poolData, done) {
 	sync();
 }
 
-// Add an EXTRA interview for a single candidate (a round beyond the standard
-// pipeline) without touching the opening's workflow for everyone else.
+// Add an ADDITIONAL ROUND for a single candidate on this round — a second look at
+// someone borderline — without touching the opening's workflow for everyone else.
+// The interview type is fixed ("Additional Round", server-side); what HR chooses is
+// the candidate, which of this round's panels takes it, when, and why.
 function cdAddCandidateInterview(frm, roundCode, done) {
-	const stages = (cdRoundsData.stage_options || []).join("\n");
+	const round = (cdRoundsData.rounds || []).find((x) => x.round_code === roundCode) || {};
+	// Who may be given one, and every panel that could take it — resolved server-side,
+	// in one call, because both answers span records the board doesn't carry.
+	frappe.call({
+		method: "recruitment.recruitment.doctype.campus_drive.campus_drive.get_extra_round_options",
+		args: { campus_drive: frm.doc.name, round_code: roundCode },
+		callback: (r) => cdExtraDialog(frm, roundCode, round, r.message || {}, done),
+	});
+}
+
+function cdExtraDialog(frm, roundCode, round, options, done) {
+	const roundLabel = round.round_name || roundCode;
+	const candidates = options.candidates || [];
+	const panels = options.panels || [];
+
+	if (!candidates.length) {
+		frappe.msgprint({
+			title: __("Nobody has cleared this round yet"),
+			indicator: "orange",
+			message: __("An additional round is a second look at a candidate who has finished {0}. Once someone clears it, they can be given one here.", [
+				roundLabel,
+			]),
+		});
+		return;
+	}
+	if (!panels.length) {
+		frappe.msgprint({
+			title: __("No panel on this drive"),
+			indicator: "orange",
+			message: __("Add Round Panelists first — an interview needs interviewers to take it."),
+		});
+		return;
+	}
+
+	// Every panel on the drive, not just this round's: the panel that judged the round
+	// is often not the one HR wants for another look. The value carries the round the
+	// panel sits on, since panel names repeat across rounds.
+	// Panel names repeat across rounds, so the option value carries both. The
+	// separator is a control character, which no round code or panel name contains.
+	const KEY = "\u001f";
+	const panelOptions = panels.map((p) => ({
+		value: `${p.round_code}${KEY}${p.panel}`,
+		label: `${p.round_name} · ${p.panel}${
+			p.interviewers.length ? " — " + p.interviewers.join(", ") : ""
+		}`,
+	}));
+	const own = panelOptions.find((o) => o.value.startsWith(`${roundCode}${KEY}`));
+
 	const d = new frappe.ui.Dialog({
-		title: __("Extra Interview for One Candidate"),
+		title: __("Additional Round — {0}", [roundLabel]),
 		fields: [
 			{
-				fieldname: "job_applicant", label: __("Candidate"), fieldtype: "Link",
-				options: "Job Applicant", reqd: 1,
-				get_query: () => ({
-					filters: { custom_campus_invite: ["in", cdRoundsData.invites || []] },
-				}),
+				fieldname: "job_applicant", label: __("Candidate"), fieldtype: "Select", reqd: 1,
+				options: candidates.map((c) => ({
+					value: c.name,
+					label: [c.applicant_name, c.job_title, c.institute].filter(Boolean).join(" · "),
+				})),
+				default: candidates[0].name,
+				description: __("Candidates who cleared {0}.", [roundLabel]),
 			},
 			{
-				fieldname: "stage_name", label: __("Round / Stage"), fieldtype: stages ? "Select" : "Data",
-				options: stages || undefined, reqd: 1,
-				description: __("Adds one more interview for this candidate only."),
+				fieldname: "panel", label: __("Panel"), fieldtype: "Select", reqd: 1,
+				options: panelOptions, default: (own || panelOptions[0]).value,
+				description: __("Any panel on this drive can take it — this round's is offered first."),
+			},
+			{
+				fieldname: "reason", label: __("Reason"), fieldtype: "Small Text", reqd: 1,
+				description: __("Why this candidate gets a round beyond the standard pipeline. Recorded on the interview and on their hiring workflow."),
 			},
 			{ fieldname: "scheduled_on", label: __("Date"), fieldtype: "Date", reqd: 1,
 			  default: frappe.datetime.get_today() },
 		],
 		primary_action_label: __("Create Interview"),
 		primary_action(v) {
+			const [panelRound, panelName] = String(v.panel).split(KEY);
 			d.hide();
 			frappe.call({
 				method: "recruitment.recruitment.doctype.campus_drive.campus_drive.add_candidate_interview",
 				args: {
 					campus_drive: frm.doc.name, round_code: roundCode,
-					job_applicant: v.job_applicant, stage_name: v.stage_name,
-					scheduled_on: v.scheduled_on,
+					job_applicant: v.job_applicant, panel: panelName, panel_round: panelRound,
+					scheduled_on: v.scheduled_on, reason: v.reason,
 				},
 				callback: (r) => {
 					if (!r.message) return;
 					frappe.show_alert({
-						message: __("Interview {0} created ({1} interviewer(s)).", [
-							r.message.interview, r.message.interviewers,
+						message: __("{0} created for {1} ({2} interviewer(s)).", [
+							r.message.stage, r.message.interview, r.message.interviewers,
 						]),
 						indicator: "green",
 					});
@@ -571,8 +630,65 @@ function cdDrawRounds($root, frm, data) {
 				<span class="cd-pill">${esc(r.round_status || "")}</span>
 			</div>
 			${body}
-		</div>`;
+		</div>${isTerminal ? "" : cdExtraCard(r, accent, esc)}`;
 	};
+
+	// Additional rounds sit in their own card directly under the round they were added
+	// to, so the board reads Technical R1 → Additional Round → Technical R2 and a
+	// second look given to one candidate is never buried inside a round's totals.
+	// Always rendered (empty = one line), because a hidden action is one nobody finds.
+	function cdExtraCard(r, accent, esc) {
+		const extras = r.extras || [];
+		const verdict = (e) => {
+			const map = { Cleared: "#10B981", Rejected: "#EF4444", Pending: "#6B7280" };
+			const c = map[e.status] || "#F59E0B";
+			return `<span class="cd-pill" style="background:${cdTint(c, 0.16)};color:${c}">${esc(
+				e.status || "Pending"
+			)}</span>`;
+		};
+		const rows = extras
+			.map(
+				(e) => `<div class="cd-rd-extra-row">
+					<span class="cd-link cd-rd-extra-name" data-rd-interview="${esc(e.interview)}">${esc(
+					e.applicant_name
+				)}</span>
+					<span class="cd-pill">${esc(e.panel || __("no panel"))}</span>
+					<span class="cd-rd-extra-who">${esc(
+						cdRoundPanelWho(r, e.panel).join(", ") || "—"
+					)}</span>
+					<span class="cd-rd-extra-when">${esc(e.scheduled_on || "")}</span>
+					${verdict(e)}
+					<span class="cd-rd-extra-why" title="${esc(e.reason || "")}">${esc(e.reason || "")}</span>
+				</div>`
+			)
+			.join("");
+
+		return `<div class="cd-card cd-card-accent cd-rd-extra" style="--cd-accent:${accent}">
+			<div class="cd-card-head">
+				<span class="cd-card-title cd-rd-extra-title">↳ ${__("Additional Round")}
+					<span class="cd-hint text-muted">${__("after {0}", [
+						esc(r.round_name || r.round_code),
+					])}</span>
+				</span>
+				<span>
+					${extras.length ? `<span class="cd-chip cd-chip-tot">${extras.length} ${__(
+						"candidate(s)"
+					)}</span>` : ""}
+					<button class="btn btn-xs btn-default cd-rd-btn" data-rd-extra="${esc(r.round_code)}"
+						title="${__("Give one candidate another round on top of this one")}">${__(
+						"Add candidate"
+					)}</button>
+				</span>
+			</div>
+			${
+				extras.length
+					? `<div class="cd-rd-extra-list">${rows}</div>`
+					: `<div class="cd-rd-extra-empty text-muted">${__(
+							"None. Use this to give one candidate a second look on this round — clearing it moves them to the next round, rejecting it rejects them."
+					  )}</div>`
+			}
+		</div>`;
+	}
 
 	// Health banner — surfaces misconfigurations (a round mapped to a stage no opening
 	// has, wrong stage type, candidates stranded on an uncovered stage) so HR sees the
@@ -596,7 +712,13 @@ function cdDrawRounds($root, frm, data) {
 			)}</span></div></div>` + healthHtml + rounds.map(card).join("")
 	);
 
-	// Mount the GD grouping workspace inside each GD round's card.
+	// Mount the GD grouping workspace inside each GD round's card. The board already
+	// carries every round's panels (name + interviewers), so the GD cards can show who
+	// takes each group without a second server call.
+	cdGdState.panels = {};
+	rounds.forEach((r) => {
+		if (r.is_gd) cdGdState.panels[r.round_code] = r.panels || [];
+	});
 	$root.find(".cd-gd-host").each(function () {
 		cdMountGd(frm, this);
 	});
@@ -838,10 +960,25 @@ function cdOpenPanelsDialog(frm, roundCode) {
 // Candidate actions persist immediately server-side and never dirty the form.
 // ---------------------------------------------------------------------------
 
-const cdGdState = { open: null }; // group currently drilled into
+const cdGdState = { open: null, panels: {} }; // group drilled into + panels per GD round
 
 function cdGdRounds(frm) {
 	return (frm.doc.rounds || []).filter((r) => r.requires_gd_grouping);
+}
+
+// The round this workspace belongs to: each GD round card mounts its own, and the
+// host carries its round code — so two GD rounds never read each other's groups.
+function cdGdRoundOf($root, frm) {
+	return $root.attr("data-gd-round") || (cdGdRounds(frm)[0] || {}).round_code;
+}
+
+// Panels standing on a GD round (from the round board), and the interviewers on one.
+function cdGdPanels(roundCode) {
+	return (cdGdState.panels || {})[roundCode] || [];
+}
+function cdGdPanelWho(roundCode, panelName) {
+	const p = cdGdPanels(roundCode).find((x) => x.panel === panelName);
+	return p ? p.interviewers.map((i) => i.name) : [];
 }
 
 // Mount the GD grouping workspace INTO a host element inside the GD round's card
@@ -875,7 +1012,7 @@ function cdGdBind($root, frm) {
 
 	// open / close a group
 	$root.on("click", "[data-gd-open]", function () {
-		cdGdState.open = $(this).attr("data-gd-open");
+		cdGdState.open = { round: cdGdRoundOf($root, frm), group: $(this).attr("data-gd-open") };
 		cdGdDraw($root, frm);
 	});
 	$root.on("click", "[data-gd-back]", function () {
@@ -890,7 +1027,7 @@ function cdGdBind($root, frm) {
 	// generate groups
 	$root.on("click", "[data-gd-generate]", function () {
 		const size = parseInt($root.find("[data-gd-size]").val(), 10);
-		const round = $root.find("[data-gd-round]").val() || (cdGdRounds(frm)[0] || {}).round_code;
+		const round = cdGdRoundOf($root, frm);
 		const splitBy = $root.find("[data-gd-split]").val() || "drive";
 		if (!size || size < 2) {
 			frappe.msgprint(__("Enter a group size of 2 or more."));
@@ -913,7 +1050,7 @@ function cdGdBind($root, frm) {
 							m.groups,
 							m.candidates,
 							m.roles,
-						]),
+						]) + (m.panels ? " " + __("Panels assigned: {0}.", [m.panels]) : ""),
 						indicator: "green",
 					});
 					frm.reload_doc();
@@ -930,43 +1067,94 @@ function cdGdBind($root, frm) {
 		}
 	});
 
-	// switching GD round shows that round's own stored group size
-	$root.on("change", "[data-gd-round]", function () {
-		const r = cdGdRounds(frm).find((x) => x.round_code === $(this).val());
-		if (r) $root.find("[data-gd-size]").val(r.gd_group_size || 5);
+	// (re-)deal this round's panels across its groups
+	$root.on("click", "[data-gd-panels]", function () {
+		frappe.dom.freeze(__("Assigning panels…"));
+		cdGdCall("assign_gd_panels", { campus_drive: drive, round_code: cdGdRoundOf($root, frm) })
+			.then((m) => {
+				frappe.dom.unfreeze();
+				if (!m) return;
+				frappe.show_alert({
+					message: __("{0} panel(s) dealt across {1} group(s).", [m.panels, m.groups]),
+					indicator: "green",
+				});
+				frm.reload_doc();
+			})
+			.catch(() => frappe.dom.unfreeze());
+	});
+
+	// hand one group to a different panel
+	$root.on("change", "[data-gd-panel]", function () {
+		const g = cdGdOpenGroup($root, frm);
+		if (!g) return;
+		const panel = $(this).val();
+		cdGdCall("set_gd_group_panel", {
+			campus_drive: drive,
+			round_code: g.round_code,
+			group_name: g.group_name,
+			panel,
+		}).then(() => {
+			g.panel_name = panel || null;
+			cdGdDraw($root, frm);
+		});
 	});
 
 	// push GD outcomes into the hiring workflow
 	$root.on("click", "[data-gd-push]", function () {
-		const round = $root.find("[data-gd-round]").val() || (cdGdRounds(frm)[0] || {}).round_code;
-		const members = frm.doc.gd_group_members || [];
+		const round = cdGdRoundOf($root, frm);
+		const members = (frm.doc.gd_group_members || []).filter((m) => m.round_code === round);
+		const done = cdGdGroupProgress(members);
+
+		// Groups finish at different times, so a finished one goes on to the next round
+		// without waiting for the hall: only the unmarked groups are held back. Nobody
+		// is ever failed for an unticked box — they simply stay put.
+		if (!done.ready.length) {
+			frappe.msgprint({
+				title: __("Mark a group first"),
+				indicator: "orange",
+				message:
+					__("No group is fully marked yet. A group moves on once every candidate in it is Pass or Fail — you can push each group as it finishes.") +
+					"<br><br>" + done.pendingHtml,
+			});
+			return;
+		}
+
+		const all = !done.pending.length;
+		const scope = all
+			? __("Move {0} Pass candidate(s) into the next round and reject {1}?", [done.pass, done.fail])
+			: __("{0} of {1} groups are fully marked. Push those now — {2} advance, {3} rejected?", [
+					done.ready.length, done.ready.length + done.pending.length, done.pass, done.fail,
+			  ]) + "<br><br>" + __("Still being marked, left untouched:") + "<br>" + done.pendingHtml;
+
+		frappe.confirm(scope, () =>
+			cdGdPush(frm, round, all ? null : done.ready)
+		);
+	});
+
+	// Push ONE finished group from inside it.
+	$root.on("click", "[data-gd-push-group]", function () {
+		const g = cdGdOpenGroup($root, frm);
+		if (!g) return;
+		const members = (frm.doc.gd_group_members || []).filter(
+			(m) => m.round_code === g.round_code && m.group_name === g.group_name
+		);
+		const unmarked = members.filter((m) => m.result !== "Pass" && m.result !== "Fail");
+		if (unmarked.length) {
+			frappe.msgprint({
+				title: __("Mark every candidate first"),
+				indicator: "orange",
+				message: __("{0} candidate(s) in {1} have no GD result yet. Mark them Pass or Fail and this group can go on to the next round.", [
+					unmarked.length, frappe.utils.escape_html(g.group_name),
+				]),
+			});
+			return;
+		}
 		const pass = members.filter((m) => m.result === "Pass").length;
-		const fail = members.filter((m) => m.result === "Fail").length;
-		const pending = members.length - pass - fail;
 		frappe.confirm(
-			__("Move {0} Pass candidate(s) into the next round and reject {1}?", [pass, fail]) +
-				(pending
-					? "<br><br>" +
-					  __("{0} candidate(s) are still marked Pending and will be left untouched — you can run this again later.", [pending])
-					: ""),
-			() => {
-				frappe.dom.freeze(__("Updating candidates…"));
-				cdGdCall("apply_gd_results", { campus_drive: drive, round_code: round })
-					.then((m) => {
-						frappe.dom.unfreeze();
-						if (!m) return;
-						frappe.msgprint({
-							title: __("GD results pushed"),
-							indicator: "green",
-							message: __(
-								"Advanced: {0} &nbsp;·&nbsp; Rejected: {1} &nbsp;·&nbsp; Still pending: {2}",
-								[m.advanced, m.rejected, m.pending]
-							) + (m.gd_stage ? "<br>" + __("Passers moved to the stage after “{0}”.", [m.gd_stage]) : ""),
-						});
-						frm.reload_doc();
-					})
-					.catch(() => frappe.dom.unfreeze());
-			}
+			__("Move {0} Pass candidate(s) from {1} into the next round and reject {2}?", [
+				pass, frappe.utils.escape_html(g.group_name), members.length - pass,
+			]),
+			() => cdGdPush(frm, g.round_code, [g.group_name])
 		);
 	});
 
@@ -996,7 +1184,7 @@ function cdGdBind($root, frm) {
 	// bulk attendance for the open group
 	$root.on("click", "[data-gd-bulk]", function () {
 		const value = $(this).attr("data-gd-bulk");
-		const g = cdGdOpenGroup(frm);
+		const g = cdGdOpenGroup($root, frm);
 		if (!g) return;
 		cdGdCall("bulk_gd_attendance", {
 			campus_drive: drive,
@@ -1013,7 +1201,7 @@ function cdGdBind($root, frm) {
 
 	// group status
 	$root.on("change", "[data-gd-status]", function () {
-		const g = cdGdOpenGroup(frm);
+		const g = cdGdOpenGroup($root, frm);
 		if (!g) return;
 		const status = $(this).val();
 		cdGdCall("set_gd_group_status", {
@@ -1047,6 +1235,20 @@ function cdGdBind($root, frm) {
 	});
 }
 
+// Interviewer names on one panel of a round, from the board payload.
+function cdRoundPanelWho(round, panelName) {
+	const p = (round.panels || []).find((x) => x.panel === panelName);
+	return p ? p.interviewers.map((i) => i.name) : [];
+}
+
+// Readable name for an Institute id, from the drive's own participating institutes
+// (which carry the fetched name) — so groups read "St. Xavier's", not "INST-0668".
+function cdInstituteName(frm, institute) {
+	if (!institute) return "";
+	const row = (frm.doc.participating_institutes || []).find((r) => r.institute === institute);
+	return (row && row.institute_name) || institute;
+}
+
 // Readable title for a Job Opening id, from the drive's own linked openings.
 function cdRoleTitle(frm, opening) {
 	if (!opening) return __("Unassigned");
@@ -1054,27 +1256,89 @@ function cdRoleTitle(frm, opening) {
 	return (row && row.job_title) || opening;
 }
 
-function cdGdOpenGroup(frm) {
-	return (frm.doc.gd_groups || []).find((g) => g.group_name === cdGdState.open);
+// Which groups of a round are finished and which are still being marked, plus the
+// verdict tallies of the finished ones — what the push offers to move.
+function cdGdGroupProgress(members) {
+	const byGroup = {};
+	members.forEach((m) => {
+		const g = (byGroup[m.group_name] = byGroup[m.group_name] || { pass: 0, fail: 0, open: 0 });
+		if (m.result === "Pass") g.pass++;
+		else if (m.result === "Fail") g.fail++;
+		else g.open++;
+	});
+	const out = { ready: [], pending: [], pass: 0, fail: 0, pendingHtml: "" };
+	Object.keys(byGroup).forEach((name) => {
+		const g = byGroup[name];
+		if (g.open) {
+			out.pending.push({ name, open: g.open });
+		} else {
+			out.ready.push(name);
+			out.pass += g.pass;
+			out.fail += g.fail;
+		}
+	});
+	out.pendingHtml = out.pending
+		.map((p) => __("{0} — {1} still to mark", [frappe.utils.escape_html(p.name), p.open]))
+		.join("<br>");
+	return out;
+}
+
+// Send results to the pipeline: the whole round (groups = null) or named groups.
+function cdGdPush(frm, round, groups) {
+	frappe.dom.freeze(__("Updating candidates…"));
+	cdGdCall("apply_gd_results", {
+		campus_drive: frm.doc.name,
+		round_code: round,
+		groups: groups ? JSON.stringify(groups) : null,
+	})
+		.then((m) => {
+			frappe.dom.unfreeze();
+			if (!m) return;
+			frappe.msgprint({
+				title: __("GD results pushed"),
+				indicator: "green",
+				message:
+					__("Advanced: {0} &nbsp;·&nbsp; Rejected: {1}", [m.advanced, m.rejected]) +
+					(groups ? "<br>" + __("Pushed: {0}", [groups.join(", ")]) : "") +
+					(m.gd_stage ? "<br>" + __("Passers moved to the stage after “{0}”.", [m.gd_stage]) : ""),
+			});
+			frm.reload_doc();
+		})
+		.catch(() => frappe.dom.unfreeze());
+}
+
+// The group drilled into, in THIS workspace's round — group names repeat across
+// rounds, so both halves have to match.
+function cdGdOpenGroup($root, frm) {
+	const open = cdGdState.open;
+	const round = cdGdRoundOf($root, frm);
+	if (!open || open.round !== round) return null;
+	return (frm.doc.gd_groups || []).find(
+		(g) => g.round_code === round && g.group_name === open.group
+	);
 }
 
 // --- drawing ----------------------------------------------------------------
 function cdGdDraw($root, frm) {
 	const esc = (s) => frappe.utils.escape_html(String(s == null ? "" : s));
 	const rounds = cdGdRounds(frm);
-	const groups = frm.doc.gd_groups || [];
-	const members = frm.doc.gd_group_members || [];
+	// This card owns ONE GD round, so everything below is that round's own.
+	const roundCode = cdGdRoundOf($root, frm);
+	const round = rounds.find((r) => r.round_code === roundCode) || {};
+	const groups = (frm.doc.gd_groups || []).filter((g) => g.round_code === roundCode);
+	const members = (frm.doc.gd_group_members || []).filter((m) => m.round_code === roundCode);
 
-	// --- header: round + size + generate ---
-	const roundSel =
-		rounds.length > 1
-			? `<select class="cd-input" data-gd-round>${rounds
-					.map((r) => `<option value="${esc(r.round_code)}">${esc(r.round_name || r.round_code)}</option>`)
-					.join("")}</select>`
-			: "";
-	const defaultSize = (rounds[0] || {}).gd_group_size || 5;
-	// Existing groups tell us how they were built: role-scoped groups carry a role.
-	const wasRoleSplit = groups.length > 0 && groups.every((g) => g.job_opening);
+	// --- header: split + size + generate ---
+	const defaultSize = round.gd_group_size || 5;
+	// Existing groups tell us how they were built: the split's dimensions are stamped
+	// on the group row (role and/or institute), so the picker reopens on that mode.
+	const hadRole = groups.some((g) => g.job_opening);
+	const hadInst = groups.some((g) => g.institute);
+	const wasSplit = groups.length
+		? (hadInst ? (hadRole ? "institute_role" : "institute") : hadRole ? "role" : "drive")
+		: "drive";
+	const splitOpt = (value, label) =>
+		`<option value="${value}" ${wasSplit === value ? "selected" : ""}>${label}</option>`;
 	const header = `<div class="cd-toolbar">
 		<div class="cd-toolbar-title">${__("Group Discussion")}
 			<span class="cd-hint text-muted">${
@@ -1084,12 +1348,11 @@ function cdGdDraw($root, frm) {
 			}</span>
 		</div>
 		<div class="cd-gd-create">
-			${roundSel}
 			<select class="cd-input" data-gd-split title="${__("Who goes into a group together")}">
-				<option value="drive" ${wasRoleSplit ? "" : "selected"}>${__(
-		"All drive candidates (mix roles)"
-	)}</option>
-				<option value="role" ${wasRoleSplit ? "selected" : ""}>${__("Separate per role")}</option>
+				${splitOpt("drive", __("All drive candidates (mix roles)"))}
+				${splitOpt("role", __("Separate per role"))}
+				${splitOpt("institute", __("Separate per institute (mix roles)"))}
+				${splitOpt("institute_role", __("Separate per institute + role"))}
 			</select>
 			<label class="cd-gd-lbl">${__("Group size")}</label>
 			<input type="number" min="2" class="cd-input cd-input-num" data-gd-size value="${defaultSize}">
@@ -1098,7 +1361,10 @@ function cdGdDraw($root, frm) {
 			}</button>
 			${
 				groups.length
-					? `<button class="btn btn-sm btn-default" data-gd-push title="${__(
+					? `<button class="btn btn-sm btn-default" data-gd-panels title="${__(
+							"Deal this round's panels across the groups again"
+					  )}">${__("Assign Panels")}</button>
+					<button class="btn btn-sm btn-default" data-gd-push title="${__(
 							"Move everyone marked Pass into the next round; Fail becomes Rejected"
 					  )}">${__("Push GD Results →")}</button>`
 					: ""
@@ -1115,11 +1381,20 @@ function cdGdDraw($root, frm) {
 		);
 		return;
 	}
+	// Panels are what tell interviewers which GD they take, so say so when the round
+	// has none — the same nudge the interview rounds give.
+	const noPanels = cdGdPanels(roundCode).length
+		? ""
+		: `<div class="cd-rd-warn">${__(
+				"No panel set up for this GD round yet — add Round Panelists (this round + panel name + interviewers), then click Assign Panels so every group knows who conducts it."
+		  )}</div>`;
+
 	if (!groups.length) {
 		$root.html(
 			header +
+				noPanels +
 				`<div class="cd-empty text-muted">${__(
-					"No groups yet. Set a group size above and click Create Groups — candidates are taken from the Shortlisted pool, split per role and mixed across institutes."
+					"No groups yet. Pick how to split them and a group size above, then click Create Groups — candidates are taken from the Shortlisted pool and each round's panels are dealt across the groups."
 				)}</div>`
 		);
 		return;
@@ -1130,23 +1405,30 @@ function cdGdDraw($root, frm) {
 	const instColor = {};
 	institutes.forEach((i, idx) => (instColor[i] = CD_FALLBACK[idx % CD_FALLBACK.length]));
 
-	const open = cdGdOpenGroup(frm);
-	$root.html(header + (open ? cdGdDetail(frm, open, instColor, esc) : cdGdList(frm, instColor, esc)));
+	const open = cdGdOpenGroup($root, frm);
+	$root.html(
+		header +
+			noPanels +
+			(open
+				? cdGdDetail(frm, open, groups, members, instColor, esc)
+				: cdGdList(frm, groups, members, instColor, esc))
+	);
 }
 
-function cdGdList(frm, instColor, esc) {
-	const members = frm.doc.gd_group_members || [];
-	const allGroups = frm.doc.gd_groups || [];
+function cdGdList(frm, allGroups, members, instColor, esc) {
 	const badge = (s) => {
 		const map = { Planned: "#6B7280", Scheduled: "#0EA5E9", "In Progress": "#F59E0B", Completed: "#10B981" };
 		const c = map[s] || "#6B7280";
 		return `<span class="cd-badge" style="color:${c};background:${cdTint(c, 0.14)}">${esc(s || "Planned")}</span>`;
 	};
 
-	const membersOf = (g) =>
-		members.filter((m) => m.round_code === g.round_code && m.group_name === g.group_name);
+	// Indexed once: a big drive has hundreds of members and dozens of groups, and every
+	// card would otherwise re-scan the whole list.
+	const byGroup = {};
+	members.forEach((m) => (byGroup[m.group_name] = byGroup[m.group_name] || []).push(m));
+	const membersOf = (g) => byGroup[g.group_name] || [];
 
-	const card = (g, accent, showRoleMix) => {
+	const card = (g, accent) => {
 		const mem = membersOf(g);
 		const present = mem.filter((m) => m.attendance === "Present").length;
 		const passed = mem.filter((m) => m.result === "Pass").length;
@@ -1159,7 +1441,7 @@ function cdGdList(frm, instColor, esc) {
 
 		// Merged groups hold several roles — show the split (e.g. RSM 3 · CSM 3).
 		let mix = "";
-		if (showRoleMix) {
+		if (!g.job_opening) {
 			const counts = {};
 			mem.forEach((m) => {
 				const k = m.job_opening || "";
@@ -1183,6 +1465,7 @@ function cdGdList(frm, instColor, esc) {
 		)}</span>
 				${badge(g.group_status)}
 			</div>
+			${cdGdPanelChip(g, esc)}
 			${mix}
 			<div class="cd-gd-faces">${faces}${more}</div>
 			<div class="cd-gd-meta">
@@ -1190,79 +1473,98 @@ function cdGdList(frm, instColor, esc) {
 				<span class="cd-pill cd-pill-green">${present} ${__("present")}</span>
 				<span class="cd-pill cd-pill-pass">✓ ${passed} ${__("pass")}</span>
 				<span class="cd-pill cd-pill-fail">✕ ${failed} ${__("fail")}</span>
+				${
+					mem.length - passed - failed
+						? `<span class="cd-pill cd-pill-amber">${
+								mem.length - passed - failed
+						  } ${__("to mark")}</span>`
+						: ""
+				}
 			</div>
 			<div class="cd-gd-openhint">${__("Open group →")}</div>
 		</div>`;
 	};
 
-	// Merged groups (no role on the group) render as one flat grid; role-scoped
-	// groups stay bucketed under a per-role heading with its group count.
-	const roleScoped = allGroups.length > 0 && allGroups.every((g) => g.job_opening);
-	if (!roleScoped) {
-		const legendFlat = Object.keys(instColor)
-			.map(
-				(i) =>
-					`<span class="cd-gd-legend-item"><span class="cd-gd-dot" style="background:${instColor[i]}"></span>${esc(
-						i
-					)}</span>`
-			)
-			.join("");
-		return `<div class="cd-gd-legend">${legendFlat}</div>
-			<div class="cd-gd-grid">${allGroups
-				.map((g) => card(g, cdColorFor(g.group_name), true))
-				.join("")}</div>`;
-	}
+	const legend = `<div class="cd-gd-legend">${Object.keys(instColor)
+		.map(
+			(i) =>
+				`<span class="cd-gd-legend-item"><span class="cd-gd-dot" style="background:${instColor[i]}"></span>${esc(
+					cdInstituteName(frm, i)
+				)}</span>`
+		)
+		.join("")}</div>`;
+	const grid = (gs, accent) =>
+		`<div class="cd-gd-grid">${gs
+			.map((g) => card(g, accent || cdColorFor(g.group_name)))
+			.join("")}</div>`;
 
-	// Groups are per role — bucket them so HR sees, per opening, how many groups
-	// there are and how many candidates sit under it.
+	// A group carries the dimensions it was split by — its role and/or its institute.
+	// Bucket by whichever are set, so HR sees per college / per role how many groups
+	// there are and who sits under them. A drive-wide split has neither: one flat grid.
+	if (!allGroups.some((g) => g.job_opening || g.institute)) return legend + grid(allGroups);
+
 	const order = [];
-	const byRole = {};
+	const buckets = {};
 	allGroups.forEach((g) => {
-		const key = g.job_opening || "";
-		if (!byRole[key]) {
-			byRole[key] = { title: g.job_title || g.job_opening || __("Unassigned"), groups: [] };
+		const key = `${g.institute || ""}||${g.job_opening || ""}`;
+		if (!buckets[key]) {
+			buckets[key] = {
+				title:
+					[cdInstituteName(frm, g.institute), g.job_opening ? g.job_title || g.job_opening : ""]
+						.filter(Boolean)
+						.join(" · ") || __("Unassigned"),
+				groups: [],
+			};
 			order.push(key);
 		}
-		byRole[key].groups.push(g);
+		buckets[key].groups.push(g);
 	});
 
 	const sections = order
 		.map((key) => {
-			const role = byRole[key];
+			const b = buckets[key];
 			const accent = cdColorFor(key);
-			const headcount = role.groups.reduce((n, g) => n + membersOf(g).length, 0);
+			const headcount = b.groups.reduce((n, g) => n + membersOf(g).length, 0);
 			return `<div class="cd-gd-role-block">
 				<div class="cd-gd-role-head">
 					<span class="cd-role-dot" style="background:${accent}"></span>
-					<span class="cd-gd-role-title">${esc(role.title)}</span>
+					<span class="cd-gd-role-title">${esc(b.title)}</span>
 					<span class="cd-pill" style="background:${cdTint(accent, 0.16)};color:${accent}">${
-				role.groups.length
-			} ${role.groups.length === 1 ? __("group") : __("groups")}</span>
+				b.groups.length
+			} ${b.groups.length === 1 ? __("group") : __("groups")}</span>
 					<span class="cd-pill">${headcount} ${__("candidates")}</span>
 				</div>
-				<div class="cd-gd-grid">${role.groups.map((g) => card(g, accent, false)).join("")}</div>
+				${grid(b.groups, accent)}
 			</div>`;
 		})
 		.join("");
 
-	const legend = Object.keys(instColor)
-		.map(
-			(i) =>
-				`<span class="cd-gd-legend-item"><span class="cd-gd-dot" style="background:${instColor[i]}"></span>${esc(
-					i
-				)}</span>`
-		)
-		.join("");
-	return `<div class="cd-gd-legend">${legend}</div>${sections}`;
+	return legend + sections;
 }
 
-function cdGdDetail(frm, g, instColor, esc) {
-	const members = (frm.doc.gd_group_members || []).filter(
-		(m) => m.round_code === g.round_code && m.group_name === g.group_name
-	);
-	// groups the candidate may be moved into: same round + same role
-	const siblings = (frm.doc.gd_groups || []).filter(
-		(x) => x.round_code === g.round_code && (x.job_opening || "") === (g.job_opening || "")
+// The panel conducting a group, with its interviewers — the whole point of assigning
+// one, so it's on the card as well as inside the group.
+function cdGdPanelChip(g, esc) {
+	if (!g.panel_name) {
+		return `<div class="cd-gd-mix"><span class="cd-pill cd-pill-amber">${__(
+			"no panel yet"
+		)}</span></div>`;
+	}
+	const who = cdGdPanelWho(g.round_code, g.panel_name);
+	return `<div class="cd-gd-mix">
+		<span class="cd-pill cd-pill-blue">${esc(g.panel_name)}</span>
+		${who.map((n) => `<span class="cd-pill">${esc(n)}</span>`).join("")}
+	</div>`;
+}
+
+function cdGdDetail(frm, g, allGroups, allMembers, instColor, esc) {
+	const members = allMembers.filter((m) => m.group_name === g.group_name);
+	// groups the candidate may be moved into: whatever this round was split by has to
+	// match, so a per-institute split never mixes colleges by a stray move.
+	const siblings = allGroups.filter(
+		(x) =>
+			(x.job_opening || "") === (g.job_opening || "") &&
+			(x.institute || "") === (g.institute || "")
 	);
 
 	const seg = (row, field, value, label, color) => {
@@ -1294,7 +1596,7 @@ function cdGdDetail(frm, g, instColor, esc) {
 				<td class="cd-gd-inst-cell"><span class="cd-pill" style="background:${cdTint(
 					ic,
 					0.14
-				)};color:${ic}">${esc(m.institute || "—")}</span></td>
+				)};color:${ic}">${esc(cdInstituteName(frm, m.institute) || "—")}</span></td>
 				<td class="cd-gd-inst-cell"><span class="cd-pill" style="background:${cdTint(
 					cdColorFor(m.job_opening || ""),
 					0.16
@@ -1319,6 +1621,30 @@ function cdGdDetail(frm, g, instColor, esc) {
 			(s) => `<option value="${s}" ${(g.group_status || "Planned") === s ? "selected" : ""}>${s}</option>`
 		)
 		.join("");
+	// How many here still lack a verdict — this group can be pushed on its own once
+	// that is zero, whatever the rest of the hall is doing.
+	const open = members.filter((m) => m.result !== "Pass" && m.result !== "Fail").length;
+
+	// Who takes this GD: any panel standing on the round, changeable per group.
+	const panelOpts = [`<option value="">${__("No panel")}</option>`]
+		.concat(
+			cdGdPanels(g.round_code).map(
+				(p) =>
+					`<option value="${esc(p.panel)}" ${p.panel === g.panel_name ? "selected" : ""}>${esc(
+						p.panel
+					)}${p.interviewers.length ? " — " + esc(p.interviewers.map((i) => i.name).join(", ")) : ""}</option>`
+			)
+		)
+		.join("");
+
+	// A panel the roster no longer has (renamed / removed) would otherwise vanish
+	// silently from the picker, leaving the group looking unassigned.
+	const staleP =
+		g.panel_name && !cdGdPanels(g.round_code).some((p) => p.panel === g.panel_name)
+			? `<option value="${esc(g.panel_name)}" selected>${esc(g.panel_name)} — ${__(
+					"not on the roster"
+			  )}</option>`
+			: "";
 
 	return `<div class="cd-card">
 		<div class="cd-gd-detail-head">
@@ -1327,12 +1653,26 @@ function cdGdDetail(frm, g, instColor, esc) {
 				<div class="cd-gd-detail-title">${esc(g.group_name)}
 					<span class="cd-chip">${members.length} ${__("candidates")}</span>
 				</div>
-				<div class="cd-gd-role">${esc(g.job_title || g.job_opening || "")}</div>
+				<div class="cd-gd-role">${esc(
+					[cdInstituteName(frm, g.institute), g.job_title || g.job_opening]
+						.filter(Boolean)
+						.join(" · ")
+				)}</div>
 			</div>
 			<div class="cd-gd-detail-actions">
+				<label class="cd-gd-lbl">${__("Panel")}</label>
+				<select class="cd-input" data-gd-panel title="${__(
+					"Interviewers who conduct this group's GD"
+				)}">${staleP}${panelOpts}</select>
 				<select class="cd-input" data-gd-status>${statuses}</select>
 				<button class="btn btn-default btn-sm" data-gd-bulk="Present">${__("All Present")}</button>
 				<button class="btn btn-default btn-sm" data-gd-bulk="Pending">${__("Reset")}</button>
+				<button class="btn btn-sm ${open ? "btn-default" : "btn-primary"}" data-gd-push-group
+					title="${
+						open
+							? __("{0} candidate(s) here still need a Pass or Fail", [open])
+							: __("Send this group's results on — passers to the next round, fails rejected")
+					}">${__("Push this group →")}${open ? ` (${open} ${__("to mark")})` : ""}</button>
 			</div>
 		</div>
 		<div class="cd-table-wrap">
@@ -1650,6 +1990,14 @@ function cdInjectStyles() {
 .cd-rd-who{display:flex;gap:4px;flex-wrap:wrap}
 .cd-rd-warn{font-size:11px;color:#B45309;background:rgba(245,158,11,.13);border-radius:8px;padding:7px 10px;margin-bottom:10px}
 .cd-rd-btn{margin-left:6px}
+.cd-rd-extra{margin-top:-6px;margin-left:22px;border-style:dashed}
+.cd-rd-extra-title{font-size:13px}
+.cd-rd-extra-list{display:flex;flex-direction:column;gap:6px}
+.cd-rd-extra-row{display:grid;grid-template-columns:minmax(120px,1.2fr) auto minmax(90px,1fr) 90px 80px minmax(120px,1.4fr);
+	align-items:center;gap:8px;font-size:12px;padding:6px 8px;border-radius:8px;background:var(--control-bg,rgba(0,0,0,.03))}
+.cd-rd-extra-name{font-weight:600}
+.cd-rd-extra-who,.cd-rd-extra-when,.cd-rd-extra-why{color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cd-rd-extra-empty{font-size:11px;padding:4px 2px}
 .cd-rd-batch{margin-top:10px;padding:10px 12px;border-radius:10px;background:var(--control-bg,rgba(0,0,0,.03));border:1px solid var(--border-color)}
 .cd-rd-batch-head{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:8px}
 .cd-rd-batch-title{font-size:12px;font-weight:700;color:var(--heading-color,var(--text-color));margin-right:4px}
