@@ -422,20 +422,23 @@ export function TeamExpenseDetailView({
     setPendingAction(null);
   };
 
-  const handleSaveComment = async (reason: string) => {
+  const handleSaveComment = async (reason: string | null) => {
 
     try {
       await loading?.wrap(
-        () =>
-          commentMutation.mutateAsync({
-            comment_type: pendingAction?.toLowerCase() === "approve" ? "Submitted" : "Cancelled",
-            reference_doctype: ref?.doctype || "Expense Claim",
-            reference_name: claimId,
-            comment_email: user?.name || "",
-            comment_by: user?.name || "",
-            content: reason,
-            subject: pendingAction?.toLowerCase() === "approve" ? "Request Approved" : "Request Rejected",
-          }),
+        async () => {
+          if (reason !== null) {
+            await commentMutation.mutateAsync({
+              comment_type: pendingAction?.toLowerCase() === "approve" ? "Submitted" : "Cancelled",
+              reference_doctype: ref?.doctype || "Expense Claim",
+              reference_name: claimId,
+              comment_email: user?.name || "",
+              comment_by: user?.name || "",
+              content: reason,
+              subject: pendingAction?.toLowerCase() === "approve" ? "Request Approved" : "Request Rejected",
+            });
+          }
+        },
         "Saving comment...",
       );
 
