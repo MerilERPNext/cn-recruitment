@@ -1,4 +1,4 @@
-import { lazy, useState } from "react";
+import { lazy, useCallback, useState } from "react";
 import Button from "../../shared/atoms/Button";
 import { Typography } from "../../shared/atoms/Typography";
 import type { PeerReviewItem, FeedbackFormData } from "../../../types/goal";
@@ -103,7 +103,9 @@ const Feedback = () => {
     "GOAL-26-00902": { value: 4, comment: "" },
     "GOAL-26-00903": { value: 0, comment: "" },
   });
-
+  const handleSelectReview = useCallback((nominationId: string) => {
+    setActiveNominationId(nominationId);
+  }, []);
   return (
     <div className="min-h-full bg-[#f8fafc] overflow-y-scroll p-4 sm:p-1 font-sans">
       <div className="max-w-[1300px] mx-auto flex flex-col xl:flex-row gap-6">
@@ -192,7 +194,7 @@ const Feedback = () => {
             <FeedbackRightSidebar
               openReviews={openReviews}
               activeNominationId={activeNominationId}
-              onSelectReview={setActiveNominationId}
+                  onSelectReview={handleSelectReview}
             />
           )}
         </div>
