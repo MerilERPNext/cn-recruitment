@@ -232,8 +232,8 @@ const MyGoals: React.FC<MyGoalsProps> = ({ onCreateGoal, onSelectGoal }) => {
 
   return (
     <div
-      className={`min-h-full overflow-y-auto overflow-x-hidden bg-[#f6f8fb] px-3 py-4 font-sans sm:px-4 sm:py-5 lg:px-1 lg:py-1 ${
-        selectedGoals.length > 0 ? "pb-48 sm:pb-28" : ""
+      className={`min-h-full overflow-y-auto overflow-x-hidden bg-[#f6f8fb] px-3 py-4 font-sans sm:px-4 sm:py-5 lg:px-1 lg:pt-1 ${
+        selectedGoals.length > 0 ? "pb-52 sm:pb-44 lg:pb-48" : "pb-16 sm:pb-20 lg:pb-24"
       }`}
     >
       <MandatoryGoalsBanner />
@@ -503,7 +503,7 @@ const MyGoals: React.FC<MyGoalsProps> = ({ onCreateGoal, onSelectGoal }) => {
                           size="sm"
                         />
                       </div>
-                      <div className="flex shrink-0 items-center gap-2">
+                      <div className="flex shrink-0 justify-between items-center gap-2">
                         {isSelectableGoal(goal) && (
                           <button
                             onClick={(e) => handleDeleteDraftGoal(e, goal)}

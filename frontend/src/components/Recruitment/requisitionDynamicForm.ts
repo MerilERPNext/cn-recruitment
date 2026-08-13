@@ -204,6 +204,20 @@ const LINK_FIELD_DEPENDENCIES: Record<
   },
 };
 
+// Extra query params that limit a link picker to what Raise Requisition Scope
+// permits the current user. `requisition_scope=1` turns the restriction on
+// server-side (it is opt-in, since this endpoint also serves pickers elsewhere
+// in the app that must not be narrowed by a requisition-raising rule); the
+// `req_*` params tell it what has already been chosen, so the list narrows as
+// the user moves down Company -> Department -> Designation. Kept in sync with
+// the static URLs in requisitionFormSchemas.ts.
+const REQUISITION_SCOPE_FILTERED: Record<string, string> = {
+  company: "&requisition_scope=1",
+  department: "&requisition_scope=1&req_company={{ data.company }}",
+  designation:
+    "&requisition_scope=1&req_company={{ data.company }}&req_department={{ data.department }}",
+};
+
 // Force a component to read-only + non-mandatory when its fieldname is one of
 // the auto-derived fields. Also strips the `required-field` marker class.
 function enforceAutoDerived(component: any, fieldname: string): any {
@@ -684,6 +698,12 @@ function generateComponent(field: BackendField): any {
   const dependency = LINK_FIELD_DEPENDENCIES[field.fieldname];
   const linkDoctype = dependency?.doctype || field.options || "";
   const activeEmployeeFilter = linkDoctype === "Employee" ? "&status=Active" : "";
+  // Company / Department / Designation must be limited to what Raise Requisition
+  // Scope permits the user, exactly as the static schema does — otherwise a
+  // field rendered through this generic path would offer values the
+  // before_insert gate rejects. The extra req_* params give the server the
+  // context it needs to narrow the list as earlier choices are made.
+  const scopeFilter = REQUISITION_SCOPE_FILTERED[field.fieldname] || "";
 
   switch (field.fieldtype) {
     case "Link":
@@ -693,7 +713,7 @@ function generateComponent(field: BackendField): any {
         placeholder: `Select ${field.label}`,
         dataSrc: "url",
         data: {
-          url: `/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=${linkDoctype}${dependency?.filter || ""}${activeEmployeeFilter}`,
+          url: `/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=${linkDoctype}${dependency?.filter || ""}${activeEmployeeFilter}${scopeFilter}`,
           headers: [{ key: "Accept", value: "application/json" }],
         },
         selectValues: "message.results",

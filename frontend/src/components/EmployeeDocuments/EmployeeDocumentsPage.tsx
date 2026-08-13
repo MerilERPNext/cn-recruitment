@@ -133,7 +133,7 @@ const EmployeeDocumentsPage: React.FC = () => {
   return (
     <DesktopLayoutWrapper title="My Documents">
       {isMobile && <HeaderBar title="My Documents" />}
-      <div className={`bg-gray-50  bg-white min-h-screen ${isMobile ? "px-4 py-4" : "px-0 py-3 md:p-6"}`}>
+      <div className={`bg-white min-h-screen ${isMobile ? "px-4 py-4" : "px-0 py-3 md:p-6"}`}>
         {!isMobile && (
           <div className="flex items-start justify-between">
             <div className="border-gray-200 my-2 pb-2">

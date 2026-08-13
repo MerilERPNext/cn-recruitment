@@ -7,7 +7,10 @@
  "engine": "InnoDB",
  "field_order": [
   "region",
-  "no_of_openings"
+  "no_of_openings",
+  "active_employees",
+  "active_requisitions",
+  "active_openings"
  ],
  "fields": [
   {
@@ -26,6 +29,39 @@
    "label": "No. of Openings",
    "non_negative": 1,
    "reqd": 1
+  },
+  {
+   "columns": 1,
+   "description": "Active employees already holding this designation in this region.",
+   "fieldname": "active_employees",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Active Employees",
+   "no_copy": 1,
+   "non_negative": 1,
+   "read_only": 1
+  },
+  {
+   "columns": 1,
+   "description": "Other live requisitions hiring this designation in this region.",
+   "fieldname": "active_requisitions",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Active Requisitions",
+   "no_copy": 1,
+   "non_negative": 1,
+   "read_only": 1
+  },
+  {
+   "columns": 1,
+   "description": "Headcount those live requisitions have already budgeted for this region.",
+   "fieldname": "active_openings",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Hiring in Progress",
+   "no_copy": 1,
+   "non_negative": 1,
+   "read_only": 1
   }
  ],
  "grid_page_length": 50,

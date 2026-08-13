@@ -1,5 +1,6 @@
 import { differenceInCalendarDays } from "date-fns";
 import { useCallback, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router";
 import { useTargetUser } from "../../../context/ViewedUserContext";
 import { useCurrentEmployeeDetails } from "../../../hooks/useEmployee";
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
@@ -11,10 +12,18 @@ import { Typography } from "../../shared/atoms/Typography";
 import CardTable from "../../shared/CardTable";
 import { ColumnSortConfig } from "../../shared/CardTableContext";
 import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
+import { AttendanceDetailView } from "../AttendanceDetails";
 import EmpAttendanceRequestCard from "../Employee/EmpAttendanceRequestCard";
 import AttendanceRequestFormV2 from "./AttendanceRequestFormV2";
 
 const COLUMN_SORT_CONFIG: ColumnSortConfig[] = [
+  {
+    sortable: true,
+    type: "string",
+    field: "name",
+    getValue: (item: MyAttendanceRequest) =>
+      item.reference_document?.name ?? "",
+  },
   {
     sortable: true,
     type: "string",
@@ -81,16 +90,46 @@ const AttendanceRequest = ({
   const { refetchAttendance, setRefetchAttendance } = useGlobalStore();
 
   const [showForm, setShowForm] = useState(false);
+  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const requestId = searchParams.get("requestId");
+  const referenceName = searchParams.get("reference_name");
 
   const handleRefetchComplete = useCallback(() => {
     setRefetchAttendance(false);
   }, [setRefetchAttendance]);
 
+  const handleRequestClick = useCallback(
+    (request: MyAttendanceRequest) => {
+      if (request?.todo_id || request?.reference_name) {
+        setSearchParams({
+          requestId: request.todo_id,
+          reference_name: request.reference_name,
+        });
+      }
+    },
+    [setSearchParams],
+  );
+
+  const handleCloseModal = useCallback(() => {
+    navigate(-1);
+  }, [navigate]);
+
+  const handleActionComplete = useCallback(() => {
+    setSearchParams({});
+    setRefetchAttendance(true);
+  }, [setSearchParams, setRefetchAttendance]);
+
   const AttendanceItemComponent = useCallback(
     (props: { item: MyAttendanceRequest }) => (
-      <EmpAttendanceRequestCard type="pending" data={props.item} />
+      <EmpAttendanceRequestCard
+        type="pending"
+        data={props.item}
+        onClick={handleRequestClick}
+      />
     ),
-    [],
+    [handleRequestClick],
   );
 
   return (
@@ -116,8 +155,9 @@ const AttendanceRequest = ({
 
           <div className="flex-1 overflow-y-auto md:px-4 pb-20">
             <CardTable
-                columnWidths={["1.5fr", "1fr", "1fr", "1fr", "1fr", "0.8fr", "1fr", "1fr", "1fr", "1fr"]}
+              columnWidths={["1.5fr", "1fr", "1fr", "1fr", "1fr", "1fr", "0.8fr", "1fr", "1fr", "1fr", "1fr"]}
               titles={[
+                "Request ID",
                 "Request Type",
                 "Assigned To",
                 "From Date",
@@ -144,9 +184,6 @@ const AttendanceRequest = ({
                   }}
                   ItemComponent={AttendanceItemComponent}
                   SkeletonComponent={CardSkeleton}
-                  onItemClick={(data) => {
-                    console.log(data);
-                  }}
                   onRefetchComplete={handleRefetchComplete}
                   refetchTrigger={refetchAttendance}
                   pageSize={pageSize}
@@ -217,6 +254,14 @@ const AttendanceRequest = ({
                 </Button>
               </div>
             </div>
+          )}
+          {(requestId || referenceName) && (
+            <AttendanceDetailView
+              documentName={requestId || ""}
+              referenceName={referenceName || ""}
+              onClose={handleCloseModal}
+              onAction={handleActionComplete}
+            />
           )}
         </div>
       )}

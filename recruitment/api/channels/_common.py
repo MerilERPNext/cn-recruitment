@@ -508,6 +508,7 @@ def get_application_fields_for_channel(opening_name, channel, job_applicant=None
 		applicant_doc = frappe.get_doc("Job Applicant", job_applicant)
 
 	result = []
+	required_stages = None  # resolved lazily, only if this opening has a child table
 	for r in rows:
 		if not cint(r.get(view_col)):
 			continue
@@ -533,8 +534,13 @@ def get_application_fields_for_channel(opening_name, channel, job_applicant=None
 			),
 		}
 		# For child-table fields, ship the child doctype's columns filtered by
-		# child_field_config (if present). When no config is set, all columns
-		# are returned for backward compatibility.
+		# child_field_config (if present). When no config is set, all columns are
+		# returned for backward compatibility.
+		#
+		# Once a config EXISTS it is authoritative: a column missing from it counts as
+		# OFF, not ON. Defaulting the gap to visible leaked every column the config
+		# hadn't caught up with onto candidate forms. Matches the parent table (see
+		# JobApplicantProfileSettings._auto_sync — new fields land with View OFF).
 		if is_table:
 			all_table_fields = _child_table_fields(df.options)
 			child_config_raw = r.get("child_field_config") or ""
@@ -547,14 +553,69 @@ def get_application_fields_for_channel(opening_name, channel, job_applicant=None
 					entry["table_fields"] = [
 						{**f, "reqd_channel": cint(child_config.get(f["fieldname"], {}).get(mandatory_key, 0))}
 						for f in all_table_fields
-						if child_config.get(f["fieldname"], {}).get(view_key, 1)
+						if cint(child_config.get(f["fieldname"], {}).get(view_key, 0))
 					]
 				except Exception:
 					entry["table_fields"] = all_table_fields
 			else:
 				entry["table_fields"] = all_table_fields
+
+			# Tell the form which Education Stages this channel demands (e.g. 10th,
+			# 12th and Graduation on campus) so it can require one row per stage.
+			# Attached to whichever column links to Education Stage. Resolved on the
+			# first child table and reused, so a form with several tables still costs
+			# one lookup.
+			if required_stages is None:
+				required_stages = get_required_education_stages(channel)
+			stage_requirement = _stage_requirement_for(entry["table_fields"], required_stages)
+			if stage_requirement:
+				entry["stage_requirement"] = stage_requirement
 		result.append(entry)
 	return result
+
+
+_STAGE_DOCTYPE = "Education Stage"
+
+
+def get_required_education_stages(channel):
+	"""Education Stages a candidate must supply on `channel`, in configured order.
+
+	Configured on Job Applicant Profile Settings → Required Education Stages, one row
+	per stage with a per-channel checkbox. This is advertised to the candidate form,
+	which is what enforces it — nothing here blocks a submit.
+	"""
+	try:
+		rows = frappe.get_all(
+			"Job Applicant Required Education Stage",
+			filters={
+				"parenttype": "Job Applicant Profile Settings",
+				"parentfield": "required_education_stages",
+				f"required_{channel}": 1,
+			},
+			fields=["education_stage"],
+			order_by="idx asc",
+		)
+	except Exception:
+		# Doctype/column may not exist yet if bench migrate hasn't run.
+		return []
+	return [r.education_stage for r in rows if r.education_stage]
+
+
+def _stage_requirement_for(table_fields, required_stages):
+	"""Stage rule for a child table, or None when the table has no Education Stage
+	column or this channel requires no particular stage."""
+	if not required_stages:
+		return None
+	stage_field = next(
+		(f for f in (table_fields or []) if f.get("options") == _STAGE_DOCTYPE), None
+	)
+	if not stage_field:
+		return None
+	return {
+		"fieldname": stage_field["fieldname"],
+		"doctype": _STAGE_DOCTYPE,
+		"required_stages": list(required_stages),
+	}
 
 
 # ---------------------------------------------------------------------------
@@ -586,17 +647,21 @@ def source_value_for(channel):
 # Validation helpers used by submit endpoints
 # ---------------------------------------------------------------------------
 
-def assert_field_set_for_channel(opening_name, channel, payload):
+def assert_field_set_for_channel(opening_name, channel, payload, fields=None):
 	"""Validate the submit `payload` against the configured field set for the
 	channel. Raises frappe.ValidationError on:
 	  - unknown fields not configured for this channel
 	  - missing mandatory fields
 	Returns the cleaned dict (only configured fields, in declared order).
+
+	Pass `fields` when the caller already built the set for this opening/channel —
+	rebuilding it here costs a full template read on every submit.
 	"""
 	if not isinstance(payload, dict):
 		frappe.throw(frappe._("Application payload must be a dict"))
 
-	fields = get_application_fields_for_channel(opening_name, channel)
+	if fields is None:
+		fields = get_application_fields_for_channel(opening_name, channel)
 	allowed = {f["reference_name"]: f for f in fields}
 
 	unknown = [k for k in payload if k not in allowed]

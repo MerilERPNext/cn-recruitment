@@ -104,8 +104,12 @@ ALLOWED_ROLES_FIELD = "allowed_roles"
 DEFAULT_SCOPE_NAME = "Default - System Managers"
 DEFAULT_SCOPE_ROLE = "System Manager"
 
-# Attribute on frappe.local holding the request-scoped config cache.
-_CONFIG_CACHE_KEY = "_raise_requisition_scope_configs"
+# Attribute on frappe.local holding the request-scoped (configs, membership) pair.
+_REQUEST_CACHE_KEY = "_raise_requisition_scope_gate_data"
+# Redis key for the cross-request config cache, and the ceiling on how stale it
+# can get if a record is edited outside the document hooks.
+_CONFIG_CACHE_KEY = "raise_requisition_scope:configs"
+_CONFIG_CACHE_TTL = 300
 
 # dimension key -> (child doctype, parentfield, link fieldname, requisition
 # field, "Scope by" checkbox fieldname). requisition field is None for the
@@ -132,6 +136,66 @@ class RaiseRequisitionScope(Document):
 				title=_("Nobody Configured"),
 			)
 		self._protect_default()
+		self._validate_ticked_bases_have_values()
+		self._validate_cascade()
+
+	def _validate_ticked_bases_have_values(self):
+		"""A ticked basis with an empty selector restricts nothing, so it reads as
+		"scoped" while behaving as organization-wide — the most dangerous kind of
+		misconfiguration in a deny-by-default gate. ``mandatory_depends_on`` covers
+		the Desk form; this covers API writes and imports."""
+		for key, (_c, parentfield, _vf, _rf, check_field) in SCOPE_DIMENSIONS.items():
+			if self.get(check_field) and not self.get(parentfield):
+				frappe.throw(
+					_("Select at least one value for <b>{0}</b>, or untick <i>Scope by {0}</i>.").format(key),
+					title=_("Scope Basis Has No Values"),
+				)
+
+	def _validate_cascade(self):
+		"""Company → Department → Designation must be internally consistent.
+
+		A Department from a company outside the Company scope (or a Designation
+		outside the Department scope) can never match a real requisition, so the
+		record would silently block everything it was meant to allow. Rejected up
+		front instead.
+
+		Deliberately lenient where the master data is silent: a Department or
+		Designation whose own company/department link is unset is not evidence of
+		a conflict, so it passes. Only a *contradicting* value is an error."""
+		companies = [r.company for r in self.get("scope_companies") or [] if r.company]
+		departments = [r.department for r in self.get("scope_departments") or [] if r.department]
+		designations = [r.designation for r in self.get("scope_designations") or [] if r.designation]
+
+		if self.get("scope_by_company") and self.get("scope_by_department") and companies and departments:
+			self._reject_conflicts("Department", departments, "company", companies, "Company")
+
+		if self.get("scope_by_designation") and designations:
+			if self.get("scope_by_department") and departments:
+				self._reject_conflicts("Designation", designations, "custom_department", departments, "Department")
+			elif self.get("scope_by_company") and companies:
+				self._reject_conflicts("Designation", designations, "custom_company", companies, "Company")
+
+	def _reject_conflicts(self, doctype, names, link_field, allowed, parent_label):
+		"""Throw when any of ``names`` links to something outside ``allowed``."""
+		table = frappe.qb.DocType(doctype)
+		link_col = table[link_field]
+		bad = (
+			frappe.qb.from_(table)
+			.select(table.name)
+			.where(
+				table.name.isin(names)
+				& link_col.notnull()
+				& (link_col != "")
+				& link_col.notin(allowed)
+			)
+		).run(pluck=True)
+		if bad:
+			frappe.throw(
+				_("{0} {1} does not belong to the selected {2}. Remove it, or widen the {2} scope.").format(
+					_(doctype), frappe.bold(", ".join(bad[:5]) + (" …" if len(bad) > 5 else "")), _(parent_label)
+				),
+				title=_("Scope Selections Conflict"),
+			)
 
 	def _protect_default(self):
 		"""The default record must keep its System Manager grant — otherwise a
@@ -261,6 +325,41 @@ def _grouped_child(child_dt, parentfield, valuefield, parents):
 
 
 def _load_configs():
+	""":func:`_query_configs`, cached in Redis across requests.
+
+	The gate is no longer only on the save path: the link-field pickers on the
+	Raise Requisition form re-evaluate scope on **every keystroke**, so the
+	configuration was being re-read from the database several times per
+	character typed. It changes only when an administrator edits a Raise
+	Requisition Scope record, and :meth:`RaiseRequisitionScope.on_update` /
+	``on_trash`` invalidate it precisely, so caching is safe.
+
+	``_CONFIG_CACHE_TTL`` is a safety net, not the invalidation mechanism — it
+	bounds staleness if a record is ever changed by something that bypasses the
+	document hooks (a direct SQL edit, a restore).
+
+	Sets are converted to lists for storage and rebuilt on read, so the cached
+	payload stays plainly serialisable rather than depending on the cache
+	backend's pickling behaviour.
+	"""
+	# `expires=True` because this key is written with a TTL. Without it,
+	# RedisWrapper.get_value memoises the *miss* into frappe.local.cache, while
+	# set_value with an expiry deliberately does not update that local copy — so
+	# every later read in the same process keeps returning the stale None.
+	cached = frappe.cache.get_value(_CONFIG_CACHE_KEY, expires=True)
+	if cached is not None:
+		return [{**c, "dims_enabled": set(c["dims_enabled"])} for c in cached]
+
+	configs = _query_configs()
+	frappe.cache.set_value(
+		_CONFIG_CACHE_KEY,
+		[{**c, "dims_enabled": sorted(c["dims_enabled"])} for c in configs],
+		expires_in_sec=_CONFIG_CACHE_TTL,
+	)
+	return configs
+
+
+def _query_configs():
 	"""Every Raise Requisition Scope record (creation order — first-match wins) as
 	a dict of its allowed populations and its scope selector values.
 
@@ -338,18 +437,20 @@ def _cached_gate_data():
 	request; a Dynamic User Assignment changing mid-request is not picked up
 	until the next one, which is the same guarantee any single evaluation
 	already had."""
-	data = getattr(frappe.local, _CONFIG_CACHE_KEY, None)
+	data = getattr(frappe.local, _REQUEST_CACHE_KEY, None)
 	if data is None:
 		configs = _load_configs()
 		data = (configs, _AssignmentMembership(configs))
-		setattr(frappe.local, _CONFIG_CACHE_KEY, data)
+		setattr(frappe.local, _REQUEST_CACHE_KEY, data)
 	return data
 
 
 def clear_config_cache():
-	"""Drop the request-scoped config cache (see :func:`_cached_configs`)."""
-	if hasattr(frappe.local, _CONFIG_CACHE_KEY):
-		delattr(frappe.local, _CONFIG_CACHE_KEY)
+	"""Drop both cache layers — the request-scoped ``(configs, membership)`` pair
+	and the cross-request Redis copy of the configuration."""
+	if hasattr(frappe.local, _REQUEST_CACHE_KEY):
+		delattr(frappe.local, _REQUEST_CACHE_KEY)
+	frappe.cache.delete_value(_CONFIG_CACHE_KEY)
 
 
 class _AssignmentMembership:
@@ -546,6 +647,88 @@ def enforce_can_raise(doc, method=None):
 
 
 # ── Client-facing API ─────────────────────────────────────────────────────────
+
+
+@frappe.whitelist()
+def allowed_requisition_values(employee=None, user=None, company=None, department=None, designation=None):
+	"""Which Company / Department / Designation this requester may actually pick.
+
+	Drives the link-field filters on the Raise Requisition form so the pickers
+	only offer values that will pass the gate, instead of letting someone fill in
+	a requisition and be rejected at save.
+
+	The answer is **context-aware**, not a flat union. A requester may be admitted
+	by several records, and each record AND-combines its own bases — so offering
+	the union of all records would let them pair Company A (from record 1) with
+	Department X (from record 2) and hit a dead end no record allows. Instead a
+	record only contributes values for a field when every *other* field basis it
+	ticks is compatible with what has already been chosen. Pass the current form
+	values in and re-call as they change.
+
+	Returns, per field::
+
+	    {"company": {"unrestricted": bool, "values": [...]}, "department": ..., ...}
+
+	``unrestricted`` means some admitting record imposes no limit on that field,
+	so the picker should show everything. An empty ``values`` with
+	``unrestricted`` false means the requester may pick nothing — they cannot
+	raise at all, which :func:`check_can_raise_requisition` reports properly.
+	"""
+	# field name on Job Requisition -> scope dimension key
+	field_dim = {
+		reqfield: key
+		for key, (_c, _pf, _vf, reqfield, _ck) in SCOPE_DIMENSIONS.items()
+		if reqfield
+	}
+
+	if frappe.session.user == "Administrator":
+		return {f: {"unrestricted": True, "values": []} for f in field_dim}
+
+	if not employee:
+		employee = _employee_for_user(user or frappe.session.user)
+	user_roles = set(frappe.get_roles(user or frappe.session.user))
+	configs, membership = _cached_gate_data()
+
+	chosen = {"company": company, "department": department, "designation": designation}
+	out = {f: {"unrestricted": False, "values": set()} for f in field_dim}
+
+	for c in configs:
+		if not _admits(c, employee, user_roles, membership):
+			continue
+		# The User-Assignment basis is fully evaluable now, so a record it rules
+		# out must not contribute values.
+		if "User Assignment" in c["dims_enabled"]:
+			ua_values = c["scope"].get("User Assignment") or []
+			if ua_values and not membership.covers(ua_values, employee):
+				continue
+
+		for field, dim in field_dim.items():
+			if not _other_bases_compatible(c, field, field_dim, chosen):
+				continue
+			values = c["scope"].get(dim) or []
+			if dim not in c["dims_enabled"] or not values:
+				out[field]["unrestricted"] = True
+			else:
+				out[field]["values"].update(values)
+
+	return {
+		f: {"unrestricted": v["unrestricted"], "values": sorted(v["values"])}
+		for f, v in out.items()
+	}
+
+
+def _other_bases_compatible(config, field, field_dim, chosen):
+	"""Whether ``config`` can still apply given the values already chosen for the
+	fields *other* than ``field`` — a record whose Company basis excludes the
+	company already picked must not offer its Departments."""
+	for other_field, other_dim in field_dim.items():
+		if other_field == field or other_dim not in config["dims_enabled"]:
+			continue
+		values = config["scope"].get(other_dim) or []
+		picked = chosen.get(other_field)
+		if values and picked and picked not in values:
+			return False
+	return True
 
 
 @frappe.whitelist()
