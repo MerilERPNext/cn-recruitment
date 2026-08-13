@@ -1,6 +1,6 @@
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Paperclip, AlertCircle, ClipboardList, ExternalLink, X, Edit, Plus, Trash2 } from 'lucide-react';
+import { ArrowLeft, Paperclip, AlertCircle, ClipboardList, X, Edit, Plus, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Typography } from '../../../shared/atoms/Typography';
 import Badge, { type BadgeVariant } from '../../../shared/Badge';
@@ -14,6 +14,7 @@ import { getPerformanceErrorMessage } from '../../../../services/performanceServ
 import { KRCheckInModal } from './KRCheckInModal';
 import GoalDetailSkeleton from './GoalDetailSkeleton';
 import KRCheckInsAccordion from './KRCheckInsAccordion';
+import CheckInItem from './CheckInItem';
 
 const CircularProgress = ({ score }: { score: number }) => {
   const radius = 36;
@@ -68,11 +69,6 @@ const sentimentStyles: Record<GoalCheckInSentiment, { active: string; dot: strin
   Blocked: { active: 'border-red-300 bg-red-50 text-red-700 ring-1 ring-red-200', dot: 'bg-red-500' },
 };
 
-const formatCheckInDate = (value?: string) => {
-  if (!value) return '-';
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? value : date.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
-};
 
 const toSentiment = (status?: string): GoalCheckInSentiment => {
   const normalized = status?.toLowerCase().replace(/[-_]/g, ' ').trim();
@@ -643,23 +639,7 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, onBack }) => {
               ) : checkIns.length ? (
                 <div className="space-y-3 max-h-[300px] overflow-y-auto">
                   {checkIns.map((checkIn) => (
-                    <div key={checkIn.name} className="rounded-lg border border-gray-100 p-3">
-                      <div className="flex items-start justify-between gap-2">
-                        <div>
-                          <Typography variant="bodySmall" className="font-semibold text-gray-800">{checkIn.progress}% progress</Typography>
-                          <Typography variant="caption" className="text-gray-400">{formatCheckInDate(checkIn.checkin_date || checkIn.creation)}</Typography>
-                        </div>
-                        <span className={`inline-flex items-center gap-1 whitespace-nowrap rounded-xl px-2 py-1 text-[11px] font-semibold ${sentimentStyles[checkIn.sentiment]?.active ?? 'bg-gray-100 text-gray-600'}`}>
-                          <span className={`h-1.5 w-1.5 rounded-full ${sentimentStyles[checkIn.sentiment]?.dot ?? 'bg-gray-400'}`} />{checkIn.sentiment}
-                        </span>
-                      </div>
-                      {checkIn.note && <Typography variant="caption" className="mt-2 block whitespace-pre-wrap break-words [word-break:break-word] text-gray-600">{checkIn.note}</Typography>}
-                      {checkIn.attachment && (
-                        <a href={checkIn.attachment} target="_blank" rel="noreferrer" className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-blue-600 hover:text-blue-800">
-                          <Paperclip className="h-3.5 w-3.5" />View attachment<ExternalLink className="h-3 w-3" />
-                        </a>
-                      )}
-                    </div>
+                    <CheckInItem key={checkIn.name} checkIn={checkIn} />
                   ))}
                 </div>
               ) : (
