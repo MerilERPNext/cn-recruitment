@@ -50,7 +50,7 @@ export default function LoanInstallments({
           installments.map((installment, index) => {
             const formattedDate = installment.payment_date ? formatDateDDMonthYYYY(installment.payment_date) : "";
             const monthYear = formattedDate ? formattedDate.split(" ").slice(1).join(" ") : "-";
-            
+
             // Recompute opening balance if not provided directly
             const openingBalance = installment.balance_loan_amount + installment.principal_amount;
 
@@ -97,7 +97,7 @@ export default function LoanInstallments({
 
                 {/* Perquisites */}
                 <Typography variant="bodySmall" className="text-center">
-                  0
+                  {installment.perquisite_amount}
                 </Typography>
 
                 {/* ACTIONS */}
