@@ -212,6 +212,13 @@ export interface MyGoalsKeyResult {
   achievement: number;
   status?: string;
   goal_status?: string;
+  last_checkin_date?: string | null;
+  checkin_requested?: boolean;
+  checkin_due?: string | null;
+  is_locked?: boolean;
+  metric?: string | number | null;
+  target?: number;
+  target_type?: string;
 }
 
 export interface MyGoalsGoal {

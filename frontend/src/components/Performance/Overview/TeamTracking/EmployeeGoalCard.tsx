@@ -1,10 +1,11 @@
-import React from "react";
+import React, { useState } from "react";
 import toast from "react-hot-toast";
+import { ChevronDown } from "lucide-react";
 import { Typography } from "../../../shared/atoms/Typography";
 import { Card } from "../../../shared/atoms/Card";
 import Badge, { type BadgeVariant } from "../../../shared/Badge";
 import Button from "../../../shared/atoms/Button";
-import type { MyGoalsGoal } from "../../../../types/goal";
+import type { MyGoalsGoal, MyGoalsKeyResult } from "../../../../types/goal";
 
 const getStatusVariant = (status?: string): BadgeVariant => {
   if (!status) return "default";
@@ -15,6 +16,58 @@ const getStatusVariant = (status?: string): BadgeVariant => {
   return "info";
 };
 
+export interface KeyResultCardItemProps {
+  kr: MyGoalsKeyResult;
+  index: number;
+  className?: string;
+}
+
+export const KeyResultCardItem: React.FC<KeyResultCardItemProps> = React.memo(
+  ({ kr, index, className = "" }) => {
+    const achievement = kr.achievement ?? 0;
+    const krStatus = kr.goal_status || kr.status;
+
+    return (
+      <div
+        className={`flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-slate-50/80 border border-slate-100 rounded-lg ${className}`}
+      >
+        <div className="flex flex-col gap-1 min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2 min-w-0">
+            <Badge label={`KR ${index + 1}`} variant="purple" size="sm" />
+            {krStatus && (
+              <Badge label={krStatus} variant={getStatusVariant(krStatus)} size="sm" />
+            )}
+            <Typography variant="bodySmall" className="font-semibold text-gray-800 break-words min-w-0 leading-snug">
+              {kr.title || "-"}
+            </Typography>
+          </div>
+          {kr.last_checkin_date && (
+            <span className="text-[11px] text-gray-500 font-medium block">
+              Last check in - {kr.last_checkin_date}
+            </span>
+          )}
+        </div>
+
+        <div className="flex items-center gap-3 shrink-0 self-end sm:self-auto">
+          <div className="w-28 sm:w-36 bg-gray-200 rounded-md h-2 overflow-hidden">
+            <div
+              className={`h-2 rounded-md transition-all duration-300 ${
+                achievement >= 75 ? "bg-green-500" : achievement >= 50 ? "bg-yellow-500" : "bg-blue-500"
+              }`}
+              style={{ width: `${Math.min(achievement, 100)}%` }}
+            />
+          </div>
+          <Typography variant="caption" className="font-bold text-gray-700 w-9 text-right">
+            {achievement}%
+          </Typography>
+        </div>
+      </div>
+    );
+  }
+);
+
+KeyResultCardItem.displayName = "KeyResultCardItem";
+
 interface EmployeeGoalCardProps {
   goal: MyGoalsGoal;
   isGoalPending: boolean;
@@ -22,13 +75,15 @@ interface EmployeeGoalCardProps {
 }
 
 export const EmployeeGoalCard = React.memo(({ goal, isGoalPending, onRequestCheckIn }: EmployeeGoalCardProps) => {
+  const [isExpanded, setIsExpanded] = useState(false);
   const goalIdentifier = goal?.goal_key || goal?.goal || goal?.name || "";
   const currentStatus = goal?.goal_status || goal?.status;
   const statusLower = (currentStatus || "").toLowerCase();
   const isPendingStatus = statusLower === "pending" || statusLower === "draft";
+  const keyResults = goal?.key_results ?? [];
 
   return (
-    <Card className="p-3.5 sm:p-5 border border-gray-100 hover:border-blue-300 hover:shadow-md transition-all bg-white group">
+    <Card className="p-3.5 sm:p-5 border border-gray-100 hover:border-blue-200 transition-all bg-white group overflow-hidden">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-6">
         <div className="min-w-0 space-y-2 flex-1 w-full">
           <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
@@ -58,11 +113,12 @@ export const EmployeeGoalCard = React.memo(({ goal, isGoalPending, onRequestChec
             </span>
           </div>
         </div>
-        <div className="flex items-center justify-end sm:justify-center shrink-0 w-full sm:w-auto pt-1 sm:pt-0">
+
+        <div className="flex items-center justify-between sm:justify-end shrink-0 w-full sm:w-auto gap-2 pt-1 sm:pt-0">
           <Button
             variant="outline"
             disabled={isGoalPending}
-            className={`font-medium mx-auto text-xs px-3.5 py-1.5 rounded-lg transition-all shadow-xs flex items-center gap-1.5 ${
+            className={`font-medium text-xs px-3.5 py-1.5 rounded-lg transition-all shadow-xs flex items-center gap-1.5 ${
               isPendingStatus
                 ? "border-gray-200 text-gray-400 bg-gray-50 opacity-60 cursor-not-allowed"
                 : "border-blue-200 text-blue-600 hover:bg-blue-50 hover:border-blue-300 disabled:opacity-60 disabled:cursor-not-allowed"
@@ -85,8 +141,43 @@ export const EmployeeGoalCard = React.memo(({ goal, isGoalPending, onRequestChec
               "Request Check in"
             )}
           </Button>
+
+          {keyResults.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setIsExpanded(!isExpanded)}
+              className="p-1.5 rounded-full border border-gray-300 hover:border-blue-400 hover:bg-blue-50 text-gray-500 transition-colors flex items-center justify-center shrink-0 cursor-pointer"
+              aria-label={isExpanded ? "Collapse Key Results" : "Expand Key Results"}
+            >
+              <ChevronDown
+                className={`w-4 h-4 transition-transform duration-200 ${
+                  isExpanded ? "rotate-180 text-blue-600" : ""
+                }`}
+              />
+            </button>
+          )}
         </div>
       </div>
+
+      {keyResults.length > 0 && (
+        <div
+          className={`grid transition-[grid-template-rows] duration-300 ease-in-out ${
+            isExpanded ? "grid-rows-[1fr] mt-4 pt-3 border-t border-gray-100" : "grid-rows-[0fr]"
+          }`}
+        >
+          <div className="overflow-hidden">
+            <div className="space-y-2">
+              {keyResults.map((kr: MyGoalsKeyResult, idx: number) => (
+                <KeyResultCardItem
+                  key={kr.goal_key || kr.title || idx}
+                  kr={kr}
+                  index={idx}
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </Card>
   );
 });

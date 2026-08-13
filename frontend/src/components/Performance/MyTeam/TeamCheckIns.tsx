@@ -52,7 +52,6 @@ const TeamCheckIns: React.FC = () => {
       className={`min-h-full overflow-y-auto overflow-x-hidden bg-[#f8fafc] font-sans ${isMobile ? "p-4" : "p-1"}`}
     >
       <div className="mx-auto w-full max-w-screen space-y-5">
-        {/* ── Header ──────────────────────────────────────────────────── */}
         <div
           className={`flex ${isCompact ? "flex-col gap-4" : "items-end justify-between"} mb-6`}
         >
@@ -80,7 +79,7 @@ const TeamCheckIns: React.FC = () => {
 
         {/* ── Stats Cards ─────────────────────────────────────────────── */}
         <div
-          className={`grid ${isCompact ? "grid-cols-2" : "grid-cols-4"} gap-4 mb-4`}
+          className={`grid ${isCompact ? "grid-cols-2" : "grid-cols-4"} max-w-4xl mx-auto gap-4 mb-4`}
         >
           {STATS.map((stat, idx) => (
             <div
