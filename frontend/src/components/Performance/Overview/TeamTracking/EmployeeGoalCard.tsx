@@ -162,11 +162,11 @@ export const EmployeeGoalCard = React.memo(({ goal, isGoalPending, onRequestChec
       {keyResults.length > 0 && (
         <div
           className={`grid transition-[grid-template-rows] duration-300 ease-in-out ${
-            isExpanded ? "grid-rows-[1fr] mt-4 pt-3 border-t border-gray-100" : "grid-rows-[0fr]"
+            isExpanded ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
           }`}
         >
           <div className="overflow-hidden">
-            <div className="space-y-2">
+            <div className="pt-3.5 mt-3 border-t border-gray-100 space-y-2">
               {keyResults.map((kr: MyGoalsKeyResult, idx: number) => (
                 <KeyResultCardItem
                   key={kr.goal_key || kr.title || idx}
