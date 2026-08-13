@@ -6,6 +6,9 @@
  "field_order": [
   "portal_settings_section",
   "candidate_portal_url",
+  "hiring_workflow_section",
+  "default_hiring_workflow",
+  "apply_workflow_to_openings",
   "email_settings_section",
   "candidate_registration_email_template",
   "tpo_set_password_email_template",
@@ -28,6 +31,26 @@
    "fieldtype": "Data",
    "label": "Candidate Portal URL",
    "options": "URL"
+  },
+  {
+   "fieldname": "hiring_workflow_section",
+   "fieldtype": "Section Break",
+   "label": "Campus Hiring Workflow"
+  },
+  {
+   "description": "The rounds every campus drive runs. A new drive's Rounds table is built from this template, and any linked Job Opening with no hiring stages of its own is given the same list — without that, a round maps to a stage candidates can never reach. Leave blank to set drives up by hand.",
+   "fieldname": "default_hiring_workflow",
+   "fieldtype": "Link",
+   "label": "Default Campus Hiring Workflow",
+   "options": "TA Interview Strategy Template"
+  },
+  {
+   "default": "1",
+   "depends_on": "default_hiring_workflow",
+   "description": "Give a linked opening this workflow when it has no hiring stages of its own. Openings that already have stages are never touched.",
+   "fieldname": "apply_workflow_to_openings",
+   "fieldtype": "Check",
+   "label": "Apply to Openings Without Stages"
   },
   {
    "fieldname": "email_settings_section",

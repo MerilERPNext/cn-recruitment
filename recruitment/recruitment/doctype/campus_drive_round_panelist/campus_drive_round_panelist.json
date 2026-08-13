@@ -21,7 +21,8 @@
    "fieldtype": "Data",
    "in_list_view": 1,
    "label": "Round Code",
-   "reqd": 1
+   "reqd": 1,
+   "description": "The round this panel judges (R1, R2, ...). For the Additional Round that hangs off a round, use that round's code plus -EXTRA (e.g. R3-EXTRA) — an additional round is staffed separately from the round itself."
   },
   {
    "columns": 2,
@@ -56,7 +57,7 @@
    "options": "Region",
    "in_list_view": 1,
    "columns": 2,
-   "description": "Leave blank to let this panel cover every region. Set it to interview only candidates whose region matches — including those transferred in from another region."
+   "description": "Leave blank for this drive's own region(s) — the candidates who did not ask to be interviewed elsewhere. Set it to take a candidate transferred into that region: only a panel tagged with a region can interview someone moved to it."
   },
   {
    "columns": 1,

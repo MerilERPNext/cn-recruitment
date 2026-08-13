@@ -23,6 +23,12 @@ app_include_js = [
 	# change here silently doesn't reach anyone. Bump the number whenever this file
 	# changes — the new URL defeats the browser cache and any service worker.
 	"/assets/recruitment/js/applicant_fields_ui.js?v=3",
+	# Column registry behind the designed Job Applicant / Job Opening / Job
+	# Requisition list views — which columns show, in what order, alignment and
+	# width, plus the "Configure Columns" dialog. Global rather than per-doctype
+	# because a doctype's *_list.js is evaluated after doctype_list_js resolves,
+	# which is too late for the lists that build on it. Bump ?v= when it changes.
+	"/assets/recruitment/js/list_column_engine.js?v=3",
 ]
 
 add_to_apps_screen = [
@@ -100,6 +106,8 @@ doctype_js = {
     "TA Rehire Check Settings": ["public/js/applicant_field_picker.js"],
     "Job Description": ["public/js/job_description.js"],
     "Job Requisition": ["public/js/job_requisition.js"],
+    # Cascading Company -> Department -> Designation pickers on the scope form.
+    "Raise Requisition Scope": ["public/js/raise_requisition_scope.js"],
     "Campus Drive": ["public/js/campus_drive.js"],
     "Interview": [
         "public/js/interview.js",
@@ -195,6 +203,12 @@ jinja = {
 		"recruitment.recruitment.link_token.campus_registration_link",
 	],
 }
+
+# Boot
+# ------------
+# Site-wide column layouts for the designed list views, so the first paint of a
+# Job Applicant / Job Opening / Job Requisition list already knows its columns.
+extend_bootinfo = "recruitment.api.list_columns.extend_bootinfo"
 
 # Installation
 # ------------
@@ -358,11 +372,19 @@ doc_events = {
             # (max positions, replacement-employee restriction & uniqueness).
             "recruitment.api.job_requisition.validate_requisition_settings",
         ],
-        # Once a requisition is approved its positions "start appearing in the
-        # position master": materialise the per-position tracking rows
-        # (custom_position_summary) from the headcount rows
-        # (custom_position_details). Idempotent, so it is safe on every update.
-        "on_update": "recruitment.api.requisition_status.materialise_positions_on_approval",
+        "on_update": [
+            # Once a requisition is approved its positions "start appearing in the
+            # position master": materialise the per-position tracking rows
+            # (custom_position_summary) from the headcount rows
+            # (custom_position_details). Idempotent, so it is safe on every update.
+            "recruitment.api.requisition_status.materialise_positions_on_approval",
+            # Store "how many of this designation do we already have in this region"
+            # and "how much are we already hiring there". Runs here rather than in
+            # validate because these are derived columns: written during validate
+            # they would look like a business edit to the edit-after-approval guard
+            # and every save of an approved requisition would be refused.
+            "recruitment.api.requisition_headcount.store_headcount",
+        ],
     },
     "Job Opening": {
         "validate": [

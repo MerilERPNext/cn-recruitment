@@ -23,9 +23,11 @@ import { useQueryClient } from "@tanstack/react-query";
 const EmpAttendanceRequestCard = ({
   data,
   type,
+  onClick,
 }: {
   data: MyAttendanceRequest;
   type: "actioned" | "pending";
+  onClick?: (data: MyAttendanceRequest) => void;
 }) => {
   const revokeEventMutation = useRevokeEvent();
   const { setRefetchAttendance } = useGlobalStore();
@@ -82,7 +84,7 @@ const EmpAttendanceRequestCard = ({
     data?.reference_document?.from_date ?? "",
     data?.reference_document?.to_date ?? "",
   );
-  const gridTemplateColumns = "1.5fr 1fr 1fr 1fr 1fr 0.8fr 1fr 1fr 1fr 1fr";
+  const gridTemplateColumns = "1.5fr 1fr 1fr 1fr 1fr 1fr 0.8fr 1fr 1fr 1fr 1fr";
 
   const status = data?.custom_allow_revoke && data?.reference_document?.docstatus === 2 && data?.todo_status.toLowerCase() === "cancelled" ? "Revoked" : data?.reference_document?.custom_status;
   const isPendingStatus = ["pending", "open"].includes(status?.toLowerCase());
@@ -93,7 +95,17 @@ const EmpAttendanceRequestCard = ({
         <div
           className="grid items-center gap-4 px-6 h-16 border-b border-gray-50 transition-colors cursor-pointer hover:bg-primary/10"
           style={{ gridTemplateColumns }}
+          onClick={() => onClick?.(data)}
         >
+          {/* Request ID */}
+          <Tooltip content={data?.reference_document?.name}>
+            <Typography
+              variant="bodySmall"
+              className="font-medium text-center truncate"
+            >
+              {data?.reference_document?.name || "--"}
+            </Typography>
+          </Tooltip>
           {/* Request Type */}
           <Tooltip content={data?.reference_document?.custom_request_type}>
             <Typography
@@ -103,6 +115,7 @@ const EmpAttendanceRequestCard = ({
               {truncateByChars(data?.reference_document?.custom_request_type)}
             </Typography>
           </Tooltip>
+
 
           <div className="flex items-center justify-center">
             {getAssignedUsersCell(data)}
@@ -178,9 +191,10 @@ const EmpAttendanceRequestCard = ({
         </div>
       ) : (
         <div
-          className="cursor-pointer border-t-4 border-x border-b 
-      border-x-primary/20 border-b-primary/20 
+          className="cursor-pointer border-t-4 border-x border-b
+      border-x-primary/20 border-b-primary/20
       shadow-sm border-primary bg-white rounded-xl"
+          onClick={() => onClick?.(data)}
         >
           <div className="p-4 flex flex-col gap-4 w-full">
             {/* Header */}
@@ -206,6 +220,15 @@ const EmpAttendanceRequestCard = ({
                 <Typography variant="mobileCardLabel">Days</Typography>
                 <Typography variant="mobileCardValue">
                   {duration > 1 ? duration + " Days" : duration + " Day"}
+                </Typography>
+              </div>
+            </div>
+
+            <div className="flex items-start justify-between">
+              <div className="flex flex-col gap-1">
+                <Typography variant="mobileCardLabel">Request ID</Typography>
+                <Typography variant="mobileCardValue">
+                  {data?.reference_document?.name || "--"}
                 </Typography>
               </div>
             </div>

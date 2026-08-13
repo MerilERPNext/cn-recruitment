@@ -720,9 +720,15 @@ def demo_verify_round_features():
         "email_id": ["like", f"{CAND_PREFIX}%{TPO_DOMAIN}"]}, pluck="name", limit=1)
     if ja:
         # An additional round is only offered to someone who cleared the round, and its
-        # type is fixed — HR supplies the candidate, panel, date and reason.
-        panel = frappe.db.get_value("Campus Drive Round Panelist",
-                                    {"parent": d, "round_code": "R2"}, "panel_name")
+        # type is fixed — HR supplies the candidate, panel, date and reason. It is
+        # staffed on its OWN roster (R2 -> R2-EXTRA), so read the panel from there.
+        from recruitment.recruitment.doctype.campus_drive.campus_drive import (
+            extra_panel_round_code,
+        )
+
+        panel = frappe.db.get_value(
+            "Campus Drive Round Panelist",
+            {"parent": d, "round_code": extra_panel_round_code("R2")}, "panel_name")
         try:
             out["extra_round"] = add_candidate_interview(
                 d, ja[0], today(), round_code="R2", panel=panel,

@@ -7,13 +7,16 @@
   "description_block",
   "default_fields_ui",
   "default_application_fields",
+  "education_stages_section",
+  "education_stages_block",
+  "required_education_stages",
   "synced_field_refs"
  ],
  "fields": [
   {
    "fieldname": "description_block",
    "fieldtype": "HTML",
-   "options": "<div style='padding:8px;color:#4B5563;font-size:13px;'>Configure the <b>default Job Applicant profile setup</b> that every new Job Opening inherits. Admins can override these per-opening on the Job Opening's <i>Job application</i> tab. This is a <b>curated list</b> — internal-process fields (the Job Applicant <i>Feedback</i> tab: PIP, induction/onboarding feedback, goals) are intentionally excluded. New Job Applicant fields are <b>not</b> added automatically; add the ones you want with <i>Add Row</i>.</div>"
+   "options": "<div style='padding:8px;color:#4B5563;font-size:13px;'>Configure the <b>default Job Applicant profile setup</b> that every new Job Opening inherits. Admins can override these per-opening on the Job Opening's <i>Job application</i> tab. This is a <b>curated list</b> \u2014 internal-process fields (the Job Applicant <i>Feedback</i> tab: PIP, induction/onboarding feedback, goals) are intentionally excluded. New Job Applicant fields are <b>not</b> added automatically; add the ones you want with <i>Add Row</i>.</div>"
   },
   {
    "fieldname": "default_fields_ui",
@@ -28,12 +31,28 @@
    "hidden": 1
   },
   {
+   "fieldname": "education_stages_section",
+   "fieldtype": "Section Break",
+   "label": "Required Education Stages"
+  },
+  {
+   "fieldname": "education_stages_block",
+   "fieldtype": "HTML",
+   "options": "<div style='padding:8px;color:#4B5563;font-size:13px;'>Education Stages a candidate must supply in the <b>Educational Qualification</b> table, per channel. The application-fields API returns these as <code>stage_requirement.required_stages</code> so the candidate form can enforce them (e.g. require 10th, 12th and Graduation on Campus). Leave empty to require no specific stage.</div>"
+  },
+  {
+   "fieldname": "required_education_stages",
+   "fieldtype": "Table",
+   "label": "Required Education Stages",
+   "options": "Job Applicant Required Education Stage"
+  },
+  {
    "fieldname": "synced_field_refs",
    "fieldtype": "Long Text",
    "label": "Synced field refs (internal)",
    "hidden": 1,
    "read_only": 1,
-   "description": "Newline-separated list of Job Applicant field refs already seen by the reconcile (imported, deleted, or deliberately kept out). Anything in this list is never auto-added — this is what keeps manual deletes sticky and stops the curated list from being flooded by the rest of the doctype."
+   "description": "Newline-separated list of Job Applicant field refs already seen by the reconcile (imported, deleted, or deliberately kept out). Anything in this list is never auto-added \u2014 this is what keeps manual deletes sticky and stops the curated list from being flooded by the rest of the doctype."
   }
  ],
  "index_web_pages_for_search": 1,

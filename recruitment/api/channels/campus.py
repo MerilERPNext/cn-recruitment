@@ -217,18 +217,32 @@ def list_openings(search_term=None, filters=None, email=None, page=None, limit=N
 
 
 @candidate_required
-def get_application_fields(opening):
+def get_application_fields(opening, email=None, campus_invite=None):
     """Campus application fields for `opening` — the fields configured as campus-enabled
-    (view_campus) on that Job Opening — pre-filled from any existing Draft for this
-    candidate. Used by both the campus channel and the Campus Invite (TPO drive) flow;
-    the opening is accepted as-is, so an invite's opening works without being separately
-    posted on the campus channel."""
+    (view_campus) on that Job Opening. Used by both the campus channel and the Campus
+    Invite (TPO drive) flow; the opening is accepted as-is, so an invite's opening works
+    without being separately posted on the campus channel.
+
+    Values are pre-filled from, in order of precedence:
+      1. the candidate's own Draft (or latest) Job Applicant for this opening
+      2. the Candidate Registration their TPO submitted them on, when `campus_invite`
+         is given — a first-time invite candidate has no Job Applicant yet, so without
+         this every field comes back null even though the TPO already supplied their
+         name, email, mobile and gender.
+
+    `email` defaults to the session candidate; when passed explicitly it must match
+    the session (enforce_candidate_identity), so one candidate can't read another's
+    registration details.
+    """
     if not opening:
         frappe.throw(frappe._("opening is required"))
     if not frappe.db.exists("Job Opening", opening):
         frappe.throw(frappe._("Invalid job opening."))
 
-    candidate_email = (get_current_candidate() or "").strip().lower()
+    candidate_email = (email or get_current_candidate() or "").strip().lower()
+    if email and candidate_email:
+        enforce_candidate_identity(email=candidate_email)
+
     job_applicant = None
     if candidate_email:
         job_applicant = frappe.db.get_value(
@@ -242,7 +256,57 @@ def get_application_fields(opening):
             "name",
             order_by="modified desc",
         )
-    return _common.get_application_fields_for_channel(opening, CHANNEL, job_applicant=job_applicant)
+
+    fields = _common.get_application_fields_for_channel(
+        opening, CHANNEL, job_applicant=job_applicant
+    )
+    if campus_invite and candidate_email:
+        _apply_registration_prefill(fields, candidate_email, campus_invite)
+    return fields
+
+
+# Candidate Registration column -> Job Applicant fieldname. `middle_name` is collected
+# by the TPO but Job Applicant has no field for it, so it is deliberately not mapped.
+_REGISTRATION_PREFILL = {
+    "applicant_name": "first_name",
+    "custom_applicant_last_name": "last_name",
+    "email_id": "email_id",
+    "phone_number": "mobile_number",
+    "custom_gender": "gender",
+}
+
+
+def _apply_registration_prefill(fields, email, campus_invite):
+    """Fill still-empty `value`s from the TPO's Candidate Registration.
+
+    Only touches fields that came back empty, so a candidate's own saved Draft always
+    wins over what their TPO typed.
+    """
+    from recruitment.recruitment.doctype.candidate_registration.candidate_registration import (
+        get_registration_details,
+    )
+
+    details = get_registration_details(email, campus_invite)
+    if not details:
+        return
+
+    for entry in fields:
+        source = _REGISTRATION_PREFILL.get(entry["reference_name"])
+        if not source:
+            continue
+        current = entry.get("value")
+        if current not in (None, "", []):
+            continue
+        value = details.get(source)
+        if value in (None, ""):
+            continue
+        # A Select only accepts one of its own options — the registration's Gender is a
+        # Link to a master that may carry values the Select doesn't list.
+        if entry["fieldtype"] == "Select":
+            allowed = [o.strip() for o in (entry.get("options") or "").split("\n") if o.strip()]
+            if allowed and value not in allowed:
+                continue
+        entry["value"] = value
 
 
 @candidate_required
