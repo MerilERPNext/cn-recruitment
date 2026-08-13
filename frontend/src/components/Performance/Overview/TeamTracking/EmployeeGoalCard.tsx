@@ -41,11 +41,9 @@ export const KeyResultCardItem: React.FC<KeyResultCardItemProps> = React.memo(
               {kr.title || "-"}
             </Typography>
           </div>
-          {kr.last_checkin_date && (
-            <span className="text-[11px] text-gray-500 font-medium block">
-              Last check in - {kr.last_checkin_date}
-            </span>
-          )}
+          <span className="text-[11px] text-gray-500 font-medium block mt-0.5">
+            Last check in - {kr.last_checkin_date ?? "No date found!"}
+          </span>
         </div>
 
         <div className="flex items-center gap-3 shrink-0 self-end sm:self-auto">
