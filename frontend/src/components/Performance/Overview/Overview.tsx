@@ -64,7 +64,6 @@ const Overview: React.FC = () => {
               { id: 'skills', name: 'Skills', path: '/webapp/performance-app/skills' },
               { id: 'review', name: 'Review', path: '/webapp/performance-app/review' },
               { id: 'feedback', name: 'Feedback', path: '/webapp/performance-app/feedback' },
-              { id: 'team-tracking', name: 'Team Tracking', path: '/webapp/performance-app/team-tracking' },
             ].map((tab) => {
               const isActive = activeTab === tab.id;
               return (
