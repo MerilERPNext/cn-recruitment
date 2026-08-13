@@ -10,7 +10,7 @@ export interface AnonymousInfoCardProps {
 
 export const AnonymousInfoCard: React.FC<AnonymousInfoCardProps> = ({
   title = "YOUR FEEDBACK IS ANONYMOUS",
-  note = "Karthik will see aggregated peer scores only if at least 2 peers submit (Leapsome floor). Comments are shared verbatim without attribution.",
+  note = "Your feedback is anonymous. Aggregated peer scores are shared only if at least 2 peers submit. Comments are shared verbatim without attribution.",
   className = "",
 }) => {
   return (

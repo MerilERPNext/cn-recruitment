@@ -1,14 +1,9 @@
 import React from 'react';
 import { Typography } from '../../../shared/atoms/Typography';
 import Badge from '../../../shared/Badge';
+import { FeedbackScaleOption } from '../../../../types/goal';
 
-const RATING_OPTIONS = [
-  { value: 1, label: 'Unsatisfactory', score: '1 / 5' },
-  { value: 2, label: 'Below', score: '2 / 5' },
-  { value: 3, label: 'Meets', score: '3 / 5' },
-  { value: 4, label: 'Exceeds', score: '4 / 5', color: 'text-green-600', bg: 'bg-green-50', border: 'border-green-500' },
-  { value: 5, label: 'Outstanding', score: '5 / 5', color: 'text-green-600', bg: 'bg-green-50', border: 'border-green-500' },
-];
+
 
 export interface RatingCardProps {
   title: string;
@@ -19,10 +14,11 @@ export interface RatingCardProps {
   comment: string;
   onCommentChange: (val: string) => void;
   weightage?: number;
+  scale: FeedbackScaleOption[]
 }
 
-export const RatingCard: React.FC<RatingCardProps> = ({ title, description, required = true, value, onChange, comment, onCommentChange , weightage }) => {
-  const selectedOption = RATING_OPTIONS.find(o => o.value === value);
+export const RatingCard: React.FC<RatingCardProps> = ({ title, description, required = true, value, onChange, comment, onCommentChange, weightage, scale=[] }) => {
+  const selectedOption = scale.find(o => o.value === value);
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6 mb-6">
@@ -43,12 +39,17 @@ export const RatingCard: React.FC<RatingCardProps> = ({ title, description, requ
         {weightage !== undefined && (
           <Badge label={`Weight: ${weightage}%`} variant="info" size="sm" />
         )}
-       
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mt-6 mb-6">
-        {RATING_OPTIONS.map((opt) => {
+        {scale.map((opt) => {
           const isSelected = value === opt.value;
+          const isHighRating = opt.value >= 4;
+          
+          const selectedBgClass = isHighRating ? "bg-green-50 border-green-500" : "bg-blue-50 border-blue-500";
+          const selectedTextClass = isHighRating ? "text-green-600" : "text-blue-600";
+          const scoreTextClass = isHighRating ? "text-green-500" : "text-blue-500";
+
           return (
             <button
               key={opt.value}
@@ -56,15 +57,15 @@ export const RatingCard: React.FC<RatingCardProps> = ({ title, description, requ
               onClick={() => onChange(opt.value)}
               className={`flex flex-col items-center justify-center p-3 rounded-lg border transition-all ${
                 isSelected 
-                  ? `${opt.border || 'border-blue-500'} ${opt.bg || 'bg-blue-50'}` 
+                  ? selectedBgClass 
                   : 'border-gray-200 hover:border-gray-300 bg-white'
               }`}
             >
-              <span className={`text-sm font-medium mb-1 ${isSelected ? (opt.color || 'text-gray-900') : 'text-gray-700'}`}>
+              <span className={`text-sm font-medium mb-1 ${isSelected ? selectedTextClass : 'text-gray-700'}`}>
                 {opt.label}
               </span>
-              <span className={`text-xs ${isSelected ? (opt.color ? 'text-green-500' : 'text-gray-500') : 'text-gray-400'}`}>
-                {opt.score}
+              <span className={`text-xs ${isSelected ? scoreTextClass : 'text-gray-400'}`}>
+                {opt.value} / {scale.length}
               </span>
             </button>
           );

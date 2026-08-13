@@ -674,6 +674,8 @@ export interface FeedbackFormData {
   comment_mandatory: boolean;
   anonymity: FeedbackAnonymity;
   scale: FeedbackScaleOption[];
+  status:string;
+  locked:boolean
   items?: FeedbackFormItem[];
 }
 
