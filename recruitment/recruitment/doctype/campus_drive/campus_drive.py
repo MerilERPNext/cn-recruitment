@@ -6,6 +6,10 @@ from recruitment.recruitment.campus_helpers import (
 	sync_drive_applicant_links,
 	validate_unique_job_openings,
 )
+from recruitment.recruitment.campus_workflow import (
+	apply_to_drive as apply_workflow_to_drive,
+	apply_to_openings as apply_workflow_to_openings,
+)
 
 # Round types that need an interview panel / GD grouping in the reference portal.
 PANEL_ROUND_TYPES = {"Group Discussion", "Technical", "HR"}
@@ -20,6 +24,10 @@ class CampusDrive(Document):
 		self._sync_campus_invites()
 		validate_unique_job_openings(self, table_fieldname="linked_job_openings")
 		self._set_registration_defaults()
+		# After the invites are in: the rounds are built from the workflow named in
+		# Campus Settings, and its closing Offer round follows the openings' own
+		# stages — neither is knowable before the invites resolve.
+		apply_workflow_to_drive(self)
 		self._set_round_codes()
 		self._warn_round_stage_alignment()
 
@@ -107,6 +115,11 @@ class CampusDrive(Document):
 		# tables are settled) so adding an invite immediately pulls in the applicants
 		# who came through it, and removing one lets them go.
 		self._link_applicants()
+
+		# An opening with no hiring stages of its own makes every round mapped to one
+		# unreachable — the silent "0 waiting". Give it the campus workflow. Here
+		# rather than in validate because it saves other documents.
+		apply_workflow_to_openings(self)
 
 		# Auto-generate the QR the first time the form is enabled. Refreshing is
 		# manual (the "Generate QR Code" button) so the image isn't rebuilt on
@@ -880,6 +893,30 @@ DEFAULT_DAY_END = "18:00:00"
 # _extra_round_type_for. HR never picks a number; they only ever see "Additional Round".
 EXTRA_ROUND_TYPE = "Additional Round"
 
+# An additional round is judged by its OWN panel, not by the panel that judged the
+# round it hangs off. Those panelists live in the same Round Panelists table under a
+# round code derived from that round: R3 -> R3-EXTRA.
+#
+# Previously every panel on the drive was offered here. That quietly put a candidate
+# in front of interviewers nobody had assigned to a second look — the roster said
+# "Technical Round 2 · Panel 1" while the interview was an Additional Round — and it
+# made a re-test unauditable, because there was no row anywhere saying who was meant
+# to take additional rounds. Requiring an explicit roster makes that a deliberate
+# setup step instead of a side effect of whoever happened to be on the drive.
+EXTRA_PANEL_SUFFIX = "-EXTRA"
+
+
+def extra_panel_round_code(round_code):
+	"""The Round Panelists code an additional round on `round_code` reads.
+
+	Idempotent, so a code that already carries the suffix is returned unchanged (the
+	dialog sends the resolved code back on submit).
+	"""
+	code = (round_code or "").strip()
+	if not code:
+		return None
+	return code if code.endswith(EXTRA_PANEL_SUFFIX) else f"{code}{EXTRA_PANEL_SUFFIX}"
+
 
 def _round_by_code(doc, round_code):
 	row = next((r for r in (doc.rounds or []) if r.round_code == round_code), None)
@@ -1107,15 +1144,89 @@ def _effective_region(cand, invite_regions):
 	        or invite_regions.get(cand.get("custom_campus_invite")))
 
 
-def _panels_serving_region(panels, region):
+def _regions_without_panel(panels, candidates, home_regions=None):
+	"""``{region: [candidate, ...]}`` for the regions no panel on this round covers.
+
+	A candidate HR transferred (``custom_interview_region``) is interviewed by the
+	region they were moved TO — so a panel for that region has to exist, or nobody
+	can take their interview. `region` is resolved once by get_round_pool.
+	"""
+	missing, checked = {}, {}
+	for cand in candidates:
+		region = cand.get("region")
+		if region not in checked:
+			checked[region] = bool(_panels_serving_region(panels, region, home_regions))
+		if not checked[region]:
+			missing.setdefault(region, []).append(cand)
+	return missing
+
+
+def _assert_region_panels(panels, pool, round_code, home_regions=None):
+	"""Refuse to schedule when a candidate's region has no panel on this round.
+
+	Silently skipping them was how a transferred candidate went missing: the round
+	reported "28 scheduled" and nobody noticed the 29th had nowhere to go. Named
+	regions and counts, so the fix is one Round Panelist away.
+	"""
+	missing = _regions_without_panel(panels, pool, home_regions)
+	if not missing:
+		return
+
+	labels = _region_names([r for r in missing if r])
+	lines = []
+	for region, candidates in sorted(missing.items(), key=lambda kv: str(kv[0])):
+		who = ", ".join(c.get("applicant_name") or c.name for c in candidates[:5])
+		if len(candidates) > 5:
+			who += _(" and {0} more").format(len(candidates) - 5)
+		lines.append("<li><b>{0}</b> — {1} candidate(s): {2}</li>".format(
+			frappe.utils.escape_html(labels.get(region) or region or _("(no region set)")),
+			len(candidates), frappe.utils.escape_html(who)))
+
+	frappe.throw(
+		_("No panel on round {0} covers these regions, so their interviews cannot be "
+		  "created:").format(frappe.bold(round_code))
+		+ "<ul>" + "".join(lines) + "</ul>"
+		+ _("Add a Round Panelist for this round with that Region — or leave a panel's "
+		    "Region blank, which covers every region — and schedule again."),
+		title=_("Set up a panel for this region"),
+	)
+
+
+def _drive_home_regions(doc):
+	"""The regions this drive is actually running in — its campus invites' own.
+
+	A Karnataka drive's panels are Karnataka's unless they say otherwise; that is
+	what an untagged panel means. Empty when the invites carry no region at all, and
+	then regions play no part in the drive (see _panels_serving_region).
+	"""
+	return {r for r in _invite_region_map(_drive_invites(doc)).values() if r}
+
+
+def _panels_serving_region(panels, region, home_regions=None):
 	"""Panels that may interview a candidate of `region`.
 
 	Region is a HARD filter, unlike role: the point of a transfer is that the target
 	region's panel conducts the interview, so falling back to some other region's
-	panel would quietly defeat it. Untagged panels still cover everyone, which is
-	what keeps drives that never set a region working unchanged.
+	panel would quietly defeat it.
+
+	An UNTAGGED panel is the drive's own panel, so it covers the drive's own regions
+	(`home_regions`) — the candidates who did not ask to go anywhere. A candidate
+	moved to another region is served only by a panel tagged with that region: a
+	Karnataka drive's panel does not quietly take the candidate who asked for
+	Maharashtra, which is the whole point of asking.
+
+	With no `home_regions` — a drive whose invites name no region — regions play no
+	part and an untagged panel covers everyone, exactly as before.
 	"""
-	return {k: v for k, v in panels.items() if not v["region"] or v["region"] == region}
+	if not home_regions:
+		return {k: v for k, v in panels.items() if not v["region"] or v["region"] == region}
+	# A candidate with no resolvable region at all is treated as the drive's own,
+	# rather than being stranded by a rule about transfers they never made.
+	at_home = not region or region in home_regions
+	return {
+		k: v for k, v in panels.items()
+		if (v["region"] == region) or (not v["region"] and at_home)
+	}
 
 
 def _round_kind(row, stage_type):
@@ -1341,6 +1452,11 @@ def schedule_round_interviews(campus_drive, round_code, scheduled_on=None,
 	elif not pool:
 		frappe.throw(_("Nobody is waiting at stage {0} for this drive.").format(frappe.bold(stage)))
 
+	# The drive's own regions: an untagged panel covers those and no others, so a
+	# candidate who asked for a different one needs a panel tagged with it.
+	home_regions = _drive_home_regions(doc)
+	_assert_region_panels(panels, pool, round_code, home_regions)
+
 	interview_round = _ensure_interview_round(stage)
 	autofill = _interview_autofill_defaults()  # computed ONCE, reused for every row
 	created, skipped, cursor, bucket_cache = [], [], {}, {}
@@ -1349,7 +1465,7 @@ def schedule_round_interviews(campus_drive, round_code, scheduled_on=None,
 		"""(by_role, general) for the panels serving `region`. Cached per region —
 		a drive has a handful of regions but can have hundreds of candidates."""
 		if region not in bucket_cache:
-			serving = _panels_serving_region(panels, region)
+			serving = _panels_serving_region(panels, region, home_regions)
 			# Panels that name a role serve only that role; the rest are general-purpose.
 			by_role = {}
 			for k, v in serving.items():
@@ -1681,15 +1797,22 @@ def get_rounds_overview(campus_drive):
 	# Non-terminal candidates parked at each stage — used by the health check to spot
 	# candidates stranded on a stage no round covers.
 	stage_active = {}
+	# Which region each waiting candidate is interviewed by, so the health check can
+	# say up front when a round has nobody to take them — read off the same rows.
+	stage_regions = {}
+	invite_regions = _invite_region_map(invites)
 	if invites:
 		for r in frappe.get_all(
 			"Job Applicant",
 			filters={"custom_campus_invite": ["in", invites]},
-			fields=["name", "custom_current_stage as stage", "status"],
+			fields=["name", "custom_current_stage as stage", "status", *_REGION_FIELDS],
 			limit_page_length=0,
 		):
 			s = r.stage or ""
 			stage_applicants.setdefault(s, set()).add(r.name)
+			if r.status not in ("Rejected", "Accepted", "Hold"):
+				stage_regions.setdefault(s, {}).setdefault(
+					_effective_region(r, invite_regions), []).append(r.name)
 			# "Hold" candidates were deliberately knocked out (eligibility not met);
 			# like Rejected/Accepted they are parked on purpose, so they must not
 			# count toward the "stuck at a stage no round covers" health warning.
@@ -1814,10 +1937,11 @@ def get_rounds_overview(campus_drive):
 	        "roles": [{"job_opening": k, "job_title": v} for k, v in role_titles.items()],
 	        "stage_options": stage_options,
 	        "extra_round_type": EXTRA_ROUND_TYPE,
-	        "health": _drive_health(doc, stage_options, stage_active)}
+	        "health": _drive_health(doc, stage_options, stage_active,
+	                                stage_regions, panels_by_round)}
 
 
-def _drive_health(doc, stage_options, stage_active):
+def _drive_health(doc, stage_options, stage_active, stage_regions=None, panels_by_round=None):
 	"""Surface, in plain language, the misconfigurations that otherwise show up only
 	as a silent "0 waiting" — so HR can see and fix them on the form instead of
 	guessing. Checks:
@@ -1828,6 +1952,9 @@ def _drive_health(doc, stage_options, stage_active):
 	     those stage types are exactly what makes them terminal rounds, so flagging
 	     them buried the real issues under a warning on correct configuration.
 	  4. Candidates stranded at a stage no round on the drive covers.
+	  5. Candidates waiting for a round whose REGION no panel on it covers — the
+	     transferred-candidate case, which otherwise only surfaces as a refusal when
+	     someone finally clicks Schedule.
 	"""
 	stage_names = set(stage_options.get("stages") or [])
 	stage_type = stage_options.get("stage_type") or {}
@@ -1868,6 +1995,45 @@ def _drive_health(doc, stage_options, stage_active):
 			           if orphan else
 			           _("No round on this drive covers “{0}”. Add a round mapped to it, or move these candidates.").format(stg)),
 			"stage": stg})
+
+	issues.extend(_region_panel_issues(rounds, stage_regions or {}, panels_by_round or {},
+	                                   _drive_home_regions(doc)))
+	return issues
+
+
+def _region_panel_issues(rounds, stage_regions, panels_by_round, home_regions=None):
+	"""Candidates waiting for a round that has no panel for their region.
+
+	A candidate HR transferred is interviewed by the region they were moved TO, so
+	that region needs a panel of its own on the round — the drive's untagged panels
+	cover the drive's own regions only. Otherwise scheduling refuses them (see
+	_assert_region_panels) and the drive stalls with no visible cause. Said here so
+	it is fixed before anyone clicks Schedule.
+	"""
+	issues = []
+	for r in rounds:
+		if r.requires_gd_grouping or not r.hiring_stage:
+			continue
+		panels, _missing = panels_by_round.get(r.round_code, ({}, []))
+		if not panels:
+			continue  # "no panel at all" is the round card's own warning
+		waiting = stage_regions.get(r.hiring_stage) or {}
+		uncovered = {
+			region: names for region, names in waiting.items()
+			if not _panels_serving_region(panels, region, home_regions)
+		}
+		if not uncovered:
+			continue
+		labels = _region_names([x for x in uncovered if x])
+		for region, names in sorted(uncovered.items(), key=lambda kv: str(kv[0])):
+			issues.append({"level": "error", "region": region,
+				"title": _("{0} candidate(s) waiting for “{1}” are in region {2}, which no panel covers").format(
+					len(names), r.round_name or r.round_code,
+					labels.get(region) or region or _("(not set)")),
+				"detail": _("Their interviews cannot be created until a panel takes that region. "
+				            "Add a Round Panelist on this round with Region = {0} — or leave a "
+				            "panel's Region blank, which covers every region.").format(
+					labels.get(region) or region or _("(not set)"))})
 	return issues
 
 
@@ -2017,9 +2183,12 @@ def get_extra_round_options(campus_drive, round_code):
 	at someone who has finished it — offering the whole drive's pool made the picker
 	useless and let an extra round be created for candidates who never sat the round.
 
-	Panels: every panel on the drive, not just this round's. The panel that judged the
-	round is often not the one HR wants for another look, and the roster is set up once
-	per round anyway — so they are all offered, each labelled with the round it sits on.
+	Panels: the additional round's OWN roster only — the Round Panelist rows filed
+	under this round's extra code (R3 -> R3-EXTRA). A second look is a deliberate
+	decision about who re-examines the candidate, so it needs interviewers who were
+	assigned to exactly that, not whoever happened to judge the round. When that
+	roster is empty the dialog says which code to add rather than silently borrowing
+	another round's panel.
 	"""
 	doc = _drive_lite(campus_drive)
 	names = list(dict.fromkeys(frappe.get_all(
@@ -2035,16 +2204,17 @@ def get_extra_round_options(campus_drive, round_code):
 	} if names else {}
 	role_titles = {r.job_opening: r.job_title for r in (doc.linked_job_openings or [])}
 
-	# Panels are read off the roster in memory (one Employee query for the drive), so
-	# offering every round's panels costs no more than offering one round's.
+	# The additional round's own roster, read off the drive in memory (one Employee
+	# query). Panelists whose Employee has no login are reported as `missing_user` so
+	# the dialog can say why a panel it can see still cannot take an interview.
 	emp_users = _employee_user_map(doc)
+	extra_code = extra_panel_round_code(round_code)
+	extra_panels, missing_user = _panels_for_round(doc, extra_code, emp_users)
 	panels, users = [], set()
-	for r in (doc.rounds or []):
-		round_panels, _missing = _panels_for_round(doc, r.round_code, emp_users)
-		for panel_name, v in round_panels.items():
-			panels.append({"round_code": r.round_code, "round_name": r.round_name or r.round_code,
-			               "panel": panel_name, "users": v["users"]})
-			users.update(v["users"])
+	for panel_name, v in extra_panels.items():
+		panels.append({"round_code": extra_code, "round_name": _(EXTRA_ROUND_TYPE),
+		               "panel": panel_name, "users": v["users"]})
+		users.update(v["users"])
 	user_names = {
 		u.name: (u.full_name or u.name)
 		for u in frappe.get_all("User", filters={"name": ["in", list(users)]},
@@ -2055,6 +2225,11 @@ def get_extra_round_options(campus_drive, round_code):
 
 	return {
 		"round_code": round_code,
+		# The Round Panelists code HR must file this round's additional-round panel
+		# under. Returned so the dialog can name it verbatim when it is missing.
+		"extra_panel_round_code": extra_code,
+		"round_name": next((r.round_name for r in (doc.rounds or [])
+		                    if r.round_code == round_code), None) or round_code,
 		"candidates": [
 			{"name": n,
 			 "applicant_name": _full_name(detail[n].applicant_name,
@@ -2064,6 +2239,9 @@ def get_extra_round_options(campus_drive, round_code):
 			for n in names if n in detail
 		],
 		"panels": panels,
+		# Panelists on the extra roster whose Employee has no User account — they
+		# cannot be put on an Interview, so a roster of only these reads as empty.
+		"missing_user": missing_user,
 	}
 
 
@@ -2114,13 +2292,30 @@ def add_candidate_interview(campus_drive, job_applicant, scheduled_on, round_cod
 
 	doc = _drive_lite(campus_drive)  # only the panel roster is read off the drive
 	users = []
-	# The panel may be borrowed from ANOTHER round of this drive (panel_round) — the
-	# people who judged this round are not always the ones HR wants for a second look.
-	roster_round = panel_round or round_code
+	# The additional round reads its OWN roster (R3 -> R3-EXTRA), never the panel that
+	# judged the round itself. `panel_round` is what the dialog sends back, already
+	# resolved; it is put through the same helper so an API caller passing the plain
+	# round code lands on the extra roster too and cannot reach a round's own panel.
+	roster_round = extra_panel_round_code(panel_round or round_code)
 	if roster_round:
-		panels, _missing = _panels_for_round(doc, roster_round)
+		panels, missing_user = _panels_for_round(doc, roster_round)
+		if not panels:
+			# Named explicitly, because "add a panel" is useless without the code the
+			# row has to carry — round_code on Round Panelists is free text.
+			frappe.throw(
+				_("No panel is set up for the {0} on round {1}. Add a row in "
+				  "<b>Round Panelists</b> with Round Code <b>{2}</b> and the "
+				  "interviewer(s) who should take it, save the drive, then try again.")
+				.format(_(EXTRA_ROUND_TYPE), frappe.bold(round_code or "-"),
+				        roster_round)
+				+ (" " + _("({0} panelist(s) are set up but their Employee has no "
+				           "User account, so they cannot be put on an interview.)")
+				   .format(len(missing_user)) if missing_user else ""),
+				title=_("Add an Additional Round panel"),
+			)
 		if panel and panel not in panels:
-			frappe.throw(_("{0} is not a panel on round {1}.").format(panel, roster_round))
+			frappe.throw(_("{0} is not a panel on {1} ({2}).").format(
+				panel, _(EXTRA_ROUND_TYPE), roster_round))
 		if panel:
 			users = panels[panel]["users"]
 		elif panels:
@@ -2128,7 +2323,7 @@ def add_candidate_interview(campus_drive, job_applicant, scheduled_on, round_cod
 			# region rather than the first one outright, so a transferred candidate is
 			# never handed to the region they transferred away from.
 			region = _effective_region(ja, _invite_region_map({ja.get("custom_campus_invite")}))
-			serving = _panels_serving_region(panels, region)
+			serving = _panels_serving_region(panels, region, _drive_home_regions(doc))
 			if not serving:
 				frappe.throw(_("No panel on round {0} covers region {1}.").format(
 					roster_round, frappe.bold(region or _("(unset)"))))
@@ -2136,11 +2331,13 @@ def add_candidate_interview(campus_drive, job_applicant, scheduled_on, round_cod
 
 	# Interview requires at least one interviewer, so an empty panel would otherwise
 	# surface to HR as a raw "interview_details is mandatory" error naming a field the
-	# extra-interview dialog does not even show.
+	# extra-interview dialog does not even show. Reachable when the panel exists but
+	# every panelist on it lacks a User account.
 	if not users:
-		frappe.throw(_("Round {0} has no panel to take this interview. Add a panel to "
-		               "the round (leave its Role and Region blank to cover everyone), "
-		               "then try again.").format(frappe.bold(roster_round))
+		frappe.throw(_("The {0} panel on <b>{1}</b> has nobody who can take this "
+		               "interview — its panelists have no User account. Add an "
+		               "interviewer with a login to that row and try again.")
+		             .format(_(EXTRA_ROUND_TYPE), roster_round)
 		             if roster_round else
 		             _("No panel was resolved for this interview, so there is nobody to "
 		               "take it. Add a panel to the round and try again."))

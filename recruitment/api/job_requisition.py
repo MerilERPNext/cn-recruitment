@@ -103,6 +103,14 @@ PARENT_READONLY_FIELDS = (
     "custom_requested_by_user_id",
     "custom_salary_range_display",
     "time_to_fill",
+    # Existing strength vs. hiring already in flight for this designation in this
+    # requisition's region(s). Counted from the masters and stored on the doc by
+    # recruitment.api.requisition_headcount — read-only here so the UI can show
+    # them but no caller can write them.
+    "custom_active_employees",
+    "custom_active_requisitions",
+    "custom_active_openings",
+    "custom_headcount_last_updated",
 )
 
 # Fields that Frappe / workflow engine controls — never written by this API.
@@ -1440,7 +1448,12 @@ def get_available_job_requisition_fields():
 # out of the box. Job Requisition fieldnames; "name" is the Requisition ID.
 _DEFAULT_REQUISITION_COLUMNS = [
     "name", "designation", "department", "company",
-    "status", "no_of_positions", "posting_date", "expected_by",
+    "status", "no_of_positions",
+    # The ask is only meaningful next to what already exists: how many of this
+    # designation are on the rolls in this region, and how many are already being
+    # hired there. Both are stored on the requisition, so this costs no extra query.
+    "custom_active_employees", "custom_active_openings",
+    "posting_date", "expected_by",
 ]
 
 # Column key already carries a friendlier label than the raw field for these.
@@ -2058,6 +2071,10 @@ def _serialise_requisition(doc):
             # mislabelled "New" still report the correct type. See _row_vacancy_type.
             "vacancy_type": _row_vacancy_type(row),
             "location": row.get("location"),
+            # Active employees already doing this designation, in this department,
+            # at this location — the lateral answer to "do we already have these
+            # people". Stored per row by recruitment.api.requisition_headcount.
+            "active_employees": row.get("active_employees") or 0,
             "sub_location": row.get("sub_location"),
             "reporting_manager": row.get("reporting_manager"),
             "replacement_for": row.get("replacement_for"),
@@ -2086,6 +2103,11 @@ def _serialise_requisition(doc):
         {
             "region": row.get("region"),
             "no_of_openings": row.get("no_of_openings"),
+            # Per-region existing strength / live demand, so the UI can show each
+            # region's "asking for N, already have M" line next to its ask.
+            "active_employees": row.get("active_employees") or 0,
+            "active_requisitions": row.get("active_requisitions") or 0,
+            "active_openings": row.get("active_openings") or 0,
         }
         for row in doc.get("custom_regions") or []
     ]
@@ -2940,8 +2962,41 @@ def _jd_prefill_values(doc):
 # ---------------------------------------------------------------------------
 
 
+def _requisition_scope_name_filter(doctype, company=None, department=None, designation=None):
+    """`["in", [...]]` limiting `doctype` to what Raise Requisition Scope lets the
+    session user raise for, or None when that field is unrestricted for them.
+
+    Backs the `requisition_scope=1` flag on :func:`get_link_field_options` so the
+    ESS/React requisition form offers exactly the Companies / Departments /
+    Designations the Desk form does — the pickers can't offer a value the
+    before_insert gate would then reject.
+
+    The allowance is context-aware, so pass whatever the form has already chosen.
+    """
+    field = {"Company": "company", "Department": "department", "Designation": "designation"}.get(doctype)
+    if not field:
+        return None
+
+    from recruitment.recruitment.doctype.raise_requisition_scope.raise_requisition_scope import (
+        allowed_requisition_values,
+    )
+
+    allowance = allowed_requisition_values(
+        company=company, department=department, designation=designation
+    ).get(field) or {}
+    if allowance.get("unrestricted"):
+        return None
+    # No permitted values ⇒ match nothing. `[""]` rather than `[]` because an
+    # empty IN list is dropped by the query builder, which would silently show
+    # everything — the opposite of what a deny-by-default scope means.
+    return ["in", allowance.get("values") or [""]]
+
+
 @frappe.whitelist()
-def get_link_field_options(doctype, search_text=None, query=None, txt=None, limit=20, include=None, filters=None, skip=0, **kwargs):
+def get_link_field_options(
+    doctype, search_text=None, query=None, txt=None, limit=20, include=None, filters=None, skip=0,
+    requisition_scope=None, req_company=None, req_department=None, req_designation=None, **kwargs,
+):
     """Returns [{id, label}] for a doctype; label uses title_field when set.
     Accepts `search_text`, `query`, or `txt` as the search term (first non-empty wins).
     `include` is an id (or comma-separated ids) that must always appear in the
@@ -2990,6 +3045,25 @@ def get_link_field_options(doctype, search_text=None, query=None, txt=None, limi
         df = meta.get_field(key)
         if df and df.fieldtype not in no_value_fields:
             filters[key] = value
+
+    # Opt-in Raise Requisition Scope restriction. Deliberately a flag rather than
+    # always-on: this endpoint serves link pickers across the whole app, and
+    # Company/Department/Designation elsewhere (Job Offer, reports) must not be
+    # narrowed by a requisition-raising rule.
+    if frappe.utils.cint(requisition_scope or 0):
+        scope_filter = _requisition_scope_name_filter(
+            doctype, company=req_company, department=req_department, designation=req_designation
+        )
+        if scope_filter is not None:
+            existing = filters.get("name")
+            if isinstance(existing, (list, tuple)) and len(existing) == 2 and existing[0] == "in":
+                # Intersect rather than overwrite, so a caller-supplied name
+                # filter still applies.
+                filters["name"] = ["in", [v for v in existing[1] if v in set(scope_filter[1])] or [""]]
+            elif existing:
+                filters["name"] = existing if existing in scope_filter[1] else ""
+            else:
+                filters["name"] = scope_filter
 
     search = (search_text or query or txt or "").strip()
     or_filters = None
@@ -3313,6 +3387,12 @@ _EDIT_AFTER_APPROVAL_IGNORE = {
     "status", "workflow_state", "modified", "modified_by",
     "no_of_positions", "custom_type_of_position", "time_to_fill",
     "_user_tags", "_comments", "_assign", "_liked_by",
+    # Existing-strength / live-hiring roll-ups. Counted from the masters and
+    # rewritten after every save (see recruitment.api.requisition_headcount), and
+    # previewed on the client while the form is open — so they legitimately differ
+    # from the stored value without anyone having edited the requisition.
+    "custom_active_employees", "custom_active_requisitions", "custom_active_openings",
+    "custom_headcount_last_updated",
 }
 _LAYOUT_FIELDTYPES = {
     "Section Break", "Column Break", "Tab Break", "HTML", "Button", "Heading", "Fold",
@@ -3321,13 +3401,17 @@ _ROW_META_KEYS = {
     "name", "idx", "creation", "modified", "owner", "modified_by",
     "parent", "parentfield", "parenttype", "docstatus", "doctype",
 }
+# Child-row columns that are derived, not entered — same reasoning as the parent
+# entries above, for the per-region breakdown on custom_regions.
+_ROW_DERIVED_KEYS = {"active_employees", "active_requisitions", "active_openings"}
 
 
 def _row_snapshot(d, fieldname):
+    ignore = _ROW_META_KEYS | _ROW_DERIVED_KEYS
     out = []
     for r in d.get(fieldname) or []:
         rd = r.as_dict() if hasattr(r, "as_dict") else dict(r)
-        out.append({k: str(v) for k, v in rd.items() if k not in _ROW_META_KEYS})
+        out.append({k: str(v) for k, v in rd.items() if k not in ignore})
     return out
 
 
@@ -3468,6 +3552,57 @@ def get_replacement_employee_options(
     return get_link_field_options(
         "Employee", search_text=search_text, query=query, txt=txt,
         limit=limit, include=include, filters=filters,
+    )
+
+
+@frappe.whitelist()
+@frappe.validate_and_sanitize_search_inputs
+def unassociated_job_opening_query(doctype, txt, searchfield, start, page_len, filters):
+    """Link-field query for the "Activate Job Requisition" Job Opening picker.
+
+    A Job Opening belongs to at most one requisition (activate_job_requisition below
+    rejects anything else), so the picker must not offer openings that are already
+    associated — otherwise every already-linked opening shows up and the user only
+    finds out it was invalid after picking it.
+
+    Offered: openings with status Open whose `job_requisition` is unset, plus the one
+    this requisition already holds (so re-activating the same pair still works).
+    `filters` carries the requisition in `job_requisition` and its optional
+    company / designation / department scope.
+    """
+    from frappe.query_builder import Order
+
+    filters = dict(filters or {})
+    requisition = filters.get("job_requisition")
+
+    jo = frappe.qb.DocType("Job Opening")
+    query = (
+        frappe.qb.from_(jo)
+        .select(jo.name, jo.job_title, jo.designation, jo.status)
+        .where(jo.status == "Open")
+    )
+
+    for key in ("company", "designation", "department"):
+        value = filters.get(key)
+        if value:
+            query = query.where(getattr(jo, key) == value)
+
+    # Unset is stored as NULL here, but tolerate "" too — a Link cleared through some
+    # other path can land as an empty string.
+    available = jo.job_requisition.isnull() | (jo.job_requisition == "")
+    if requisition:
+        available = available | (jo.job_requisition == requisition)
+    query = query.where(available)
+
+    if txt:
+        like = f"%{txt}%"
+        query = query.where(jo.name.like(like) | jo.job_title.like(like) | jo.designation.like(like))
+
+    return (
+        query.orderby(jo.job_title, order=Order.asc)
+        .limit(page_len)
+        .offset(start)
+        .run()
     )
 
 

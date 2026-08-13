@@ -35,3 +35,5 @@ recruitment.patches.backfill_interview_resume
 recruitment.patches.drop_expected_doj_mandatory
 recruitment.patches.seed_extra_round_types
 recruitment.patches.campus_drive_pay_permlevel
+recruitment.patches.add_requisition_headcount_fields
+recruitment.patches.add_job_requisition_print_format

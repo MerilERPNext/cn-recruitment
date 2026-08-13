@@ -20,16 +20,15 @@ import ReportingDetailsFormV2 from "./ReportingDetailsFormV2/ReportingDetailsFor
 import ConfirmationModal from "../shared/atoms/ConfirmationModal";
 import NoDataFound from "../shared/atoms/NoDataFound";
 import { useLoadingOverlay } from "../../context/OverlayContext";
-import { computeSlideDateBounds, toDateOnly } from "../../utils/slideDateBounds";
+import { computeAddSlideBounds, computeSlideDateBounds } from "../../utils/slideDateBounds";
 import { errorResponseFormater } from "../../utils/errorResponseFormater";
 import toast from "react-hot-toast";
 
 // Sort a reporting category's items current-first, then newest start_date first
 // (same order the cards render in and the order computeSlideDateBounds expects).
-// Two items sharing a start_date (e.g. after a start-date edit collapsed one of
-// them onto the other) tie-break on creation, so the more recently created one
-// counts as the newer period and sorts on top — matching the backend card
-// builders in cn_hrms_core.apis.employee.
+// When two items share a start_date (e.g. a start-date edit collapsed one onto
+// the other), creation DESC breaks the tie so the more recently recorded one
+// shows first — matching the backend card builders in cn_hrms_core.apis.employee.
 const sortReportingItems = (items: any[]): any[] =>
   [...items].sort((a, b) => {
     const aIsCurrent = !a.end_date;
@@ -138,8 +137,8 @@ const ReportingDetails = ({ onActionSuccess }: ReportingDetailsProps) => {
 
   // Date bounds for the currently open reporting add/edit modal. Reporting items
   // use start_date/end_date and expose can_delete (not can_edit), so map them to
-  // the shape computeSlideDateBounds expects. On ADD only the joining floor
-  // applies (no item yet).
+  // the shape computeSlideDateBounds expects. On ADD the new slide starts after
+  // the newest existing one and runs to "Present", so its end date is read-only.
   const reportingBounds = (() => {
     const sorted = sortReportingItems((hierarchyData?.data || {})[selectedCategory] || []);
     const mapped = sorted.map((it: any) => ({
@@ -154,7 +153,7 @@ const ReportingDetails = ({ onActionSuccess }: ReportingDetailsProps) => {
       : -1;
     return isEditing && selectedItem && editIndex >= 0
       ? computeSlideDateBounds(mapped, mapped[editIndex], currentEmployee?.date_of_joining)
-      : { startMinDate: toDateOnly(currentEmployee?.date_of_joining) };
+      : computeAddSlideBounds(mapped, currentEmployee?.date_of_joining);
   })();
 
   interface HierarchyCardProps {

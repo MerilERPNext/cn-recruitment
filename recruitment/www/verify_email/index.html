@@ -4,7 +4,7 @@
 {% block page_content %}
 <div class="verify-email-page">
 	<div class="verify-card">
-		<div class="verify-badge">
+		<div class="verify-badge" id="verify-badge">
 			<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor"
 				stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
 				<path d="M4 4h16v16H4z" opacity="0"></path>
@@ -12,11 +12,12 @@
 				<rect x="2" y="4" width="20" height="16" rx="2"></rect>
 			</svg>
 		</div>
-		<h2 class="verify-title">{{ _("Verify Your Email") }}</h2>
-		<p class="verify-subtitle">
+		<h2 class="verify-title" id="verify-heading">{{ _("Verify Your Email") }}</h2>
+		<p class="verify-subtitle" id="verify-subheading">
 			{{ _("Enter your details below and we'll check your application status.") }}
 		</p>
 
+		<!-- Step 1 — email check -->
 		<form id="verify-email-form" novalidate>
 			<div class="verify-row">
 				<div class="verify-field">
@@ -33,14 +34,47 @@
 				<input type="email" id="email" name="email" autocomplete="email" placeholder="{{ _('you@example.com') }}" required />
 			</div>
 			<div class="verify-field">
-				<label for="phone_number">{{ _("Mobile Number") }} <span class="req">*</span></label>
-				<input type="tel" id="phone_number" name="phone_number" autocomplete="tel" placeholder="{{ _('9876543210') }}" required />
+				<label for="phone_number">{{ _("Mobile Number") }}</label>
+				<input type="tel" id="phone_number" name="phone_number" autocomplete="tel" placeholder="{{ _('9876543210') }}" />
 			</div>
 			<button type="submit" class="verify-btn" id="verify-submit-btn">
 				<span class="btn-label">{{ _("Submit") }}</span>
 				<span class="btn-spinner" aria-hidden="true"></span>
 			</button>
 			<div id="verify-inline-error" class="verify-inline-error" style="display:none;"></div>
+		</form>
+
+		<!-- Step 2 — pick institute + opening (spot registration) -->
+		<form id="spot-pick-form" class="verify-step" style="display:none;" novalidate>
+			<div class="verify-field">
+				<label for="spot_institute">{{ _("Institute") }} <span class="req">*</span></label>
+				<select id="spot_institute" name="institute" required>
+					<option value="">{{ _("Select your institute") }}</option>
+				</select>
+			</div>
+			<div class="verify-field">
+				<label for="spot_opening">{{ _("Job Opening") }} <span class="req">*</span></label>
+				<select id="spot_opening" name="job_opening" required>
+					<option value="">{{ _("Select an opening") }}</option>
+				</select>
+			</div>
+			<button type="submit" class="verify-btn" id="spot-pick-btn">
+				<span class="btn-label">{{ _("Continue") }}</span>
+				<span class="btn-spinner" aria-hidden="true"></span>
+			</button>
+			<div id="spot-pick-error" class="verify-inline-error" style="display:none;"></div>
+		</form>
+
+		<!-- Step 3 — the opening's campus application form, rendered from its field config -->
+		<form id="spot-apply-form" class="verify-step" style="display:none;" novalidate>
+			<div id="spot-selection-summary" class="spot-summary"></div>
+			<div id="spot-fields"></div>
+			<button type="submit" class="verify-btn" id="spot-apply-btn">
+				<span class="btn-label">{{ _("Register") }}</span>
+				<span class="btn-spinner" aria-hidden="true"></span>
+			</button>
+			<button type="button" class="verify-link-btn" id="spot-back-btn">{{ _("Back") }}</button>
+			<div id="spot-apply-error" class="verify-inline-error" style="display:none;"></div>
 		</form>
 	</div>
 </div>

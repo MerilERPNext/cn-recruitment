@@ -42,6 +42,9 @@ interface ReportingDetailsProps {
     // When the previous (older) slide is a locked previous-employee tile, freeze
     // the start date (read-only) so only end date is editable.
     disableStartDate?: boolean;
+    // While ADDING a slide the end date isn't editable: a new slide always
+    // becomes the open ("Present") period, so the field is rendered read-only.
+    disableEndDate?: boolean;
     initialEditData?: InitialEditData;
 }
 
@@ -99,6 +102,7 @@ const ReportingDetailsFormV2 = ({
     endMinDate,
     endMaxDate,
     disableStartDate = false,
+    disableEndDate = false,
     initialEditData,
 }: ReportingDetailsProps) => {
     const formInstance = useRef<any>(null);
@@ -131,13 +135,17 @@ const ReportingDetailsFormV2 = ({
                         );
                     }
                     if (c.key === "end_date") {
-                        return applyDateBounds(c, endMinDate, endMaxDate);
+                        return applyDateBounds(
+                            { ...c, disabled: disableEndDate },
+                            endMinDate,
+                            endMaxDate,
+                        );
                     }
                     return c;
                 }),
             ],
         }],
-    }), [category, lockStart, disableStartDate, startMinDate, startMaxDate, endMinDate, endMaxDate]);
+    }), [category, lockStart, disableStartDate, disableEndDate, startMinDate, startMaxDate, endMinDate, endMaxDate]);
 
     const initialSubmissionData = useMemo(() => {
         if (isEdit && initialEditData) {

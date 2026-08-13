@@ -48,6 +48,9 @@ interface EmploymentHistoryProps {
   // When the previous (older) slide is a locked previous-employee tile, the
   // start date can't move — render it read-only so only end date is editable.
   disableStartDate?: boolean;
+  // While ADDING a slide the end date isn't editable: a new slide always becomes
+  // the open ("Present") period, so the field is rendered read-only.
+  disableEndDate?: boolean;
   initialEditData?: InitialEditData;
 }
 
@@ -62,6 +65,7 @@ const EmploymentHistoryForm = ({
   endMinDate,
   endMaxDate,
   disableStartDate = false,
+  disableEndDate = false,
   initialEditData,
 }: EmploymentHistoryProps) => {
   const [instance, setInstance] = useState<any>(null);
@@ -199,8 +203,9 @@ const EmploymentHistoryForm = ({
     );
     s = withDateBounds(s, "startDate", { minDate: startMinDate, maxDate: startMaxDate });
     s = withDateBounds(s, "endDate", { minDate: endMinDate, maxDate: endMaxDate });
+    s = withComponentDisabled(s, "endDate", !!disableEndDate);
     return s;
-  }, [lockStartDate, isEdit, disableStartDate, startMinDate, startMaxDate, endMinDate, endMaxDate]);
+  }, [lockStartDate, isEdit, disableStartDate, disableEndDate, startMinDate, startMaxDate, endMinDate, endMaxDate]);
 
   const validateForm = (data: any) => {
     if (!instance) return false;

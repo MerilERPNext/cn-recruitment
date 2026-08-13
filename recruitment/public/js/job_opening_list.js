@@ -12,6 +12,11 @@
  * aggregates that aren't on the Job Opening doc, so after each render we fetch
  * them for the visible rows (`get_job_openings_with_stats(names=...)`) and fill
  * the cells. "Open For" days is computed client-side from posted_on/creation.
+ *
+ * The COLUMNS below are a registration, not a layout: `recruitment.list_columns`
+ * decides which of them are drawn, in what order, at what alignment and width,
+ * from whatever the user (or the site) saved in "Configure Columns" (⋯ menu).
+ * Any docfield on Job Opening can be added there as a column of its own.
  */
 (function () {
 	const DOCTYPE = "Job Opening";
@@ -70,7 +75,6 @@
 	// "fieldname,operator,value"`. Our custom table renders INTO that same `$result`,
 	// so any cell we tag with `filterable` + `data-filter` gets the exact same
 	// behaviour (click "Draft" -> adds status = Draft filter) for free.
-	function filterCls(value) { return value === null || value === undefined || value === "" ? "" : " filterable"; }
 	function filterData(fieldname, value) {
 		if (value === null || value === undefined || value === "") return "";
 		return ` data-filter="${escapeHtml(fieldname)},=,${escapeHtml(value)}"`;
@@ -89,60 +93,6 @@
 
 	let state = { activeTab: "All", tabCounts: {}, statusOptions: [], stats: {} };
 	let _listview = null;
-
-	// Fieldnames that already have their OWN dedicated column in our designed table
-	// (so we don't draw them twice). Everything else the user adds via Frappe's List
-	// Settings — including fields we only show inside a composite cell, like
-	// designation/department/location in the "Opening" sub-line — is appended as a
-	// real extra column with its own value. (name/title is the Opening column; the
-	// activity column already shows modified time + likes.)
-	const KNOWN_FIELDS = new Set([
-		"name", "job_title", "status", "owner",
-		"modified", "_liked_by", "_comment_count",
-	]);
-
-	// Columns the user added via List Settings that we don't already draw.
-	// Frappe builds `listview.columns` from the doctype's in_list_view fields +
-	// List View Settings, and fetches their data automatically, so doc[fieldname]
-	// is populated for us.
-	function extraColumns(listview) {
-		const cols = (listview && listview.columns) || [];
-		return cols.filter((c) => c && c.type === "Field" && c.df && c.df.fieldname && !KNOWN_FIELDS.has(c.df.fieldname));
-	}
-	function extraHeadCells(listview) {
-		return extraColumns(listview).map((c) =>
-			`<th class="jo-col-extra">${escapeHtml(__(c.df.label || c.df.fieldname))}</th>`
-		).join("");
-	}
-	function extraRowCells(doc, listview) {
-		return extraColumns(listview).map((c) =>
-			`<td class="jo-col-extra">${formatCellHtml(doc, c.df)}</td>`
-		).join("");
-	}
-
-	// Render one extra-column value exactly like Frappe's native list cell:
-	// formatted for display, but wrapped in a `.filterable` element (with the raw
-	// stored value in data-filter) for every field type Frappe makes clickable —
-	// i.e. everything except Image / rich-HTML fields.
-	function formatCellHtml(doc, df) {
-		const fieldname = df && df.fieldname;
-		const value = doc[fieldname];
-		if (value === null || value === undefined || value === "") return "";
-		const htmlTypes = (frappe.model && frappe.model.html_fieldtypes) || [];
-		if (df.fieldtype === "Image" || htmlTypes.includes(df.fieldtype)) {
-			try { return frappe.format(value, df, { inline: true }, doc); }
-			catch (e) { return escapeHtml(value); }
-		}
-		// Link: render the raw value as a filter-only anchor (no href) so clicking
-		// filters instead of navigating — matching Frappe's native Link cell.
-		if (df.fieldtype === "Link" || df.fieldtype === "Dynamic Link") {
-			return `<a class="filterable"${filterData(fieldname, value)}>${escapeHtml(value)}</a>`;
-		}
-		let display;
-		try { display = frappe.format(value, df, { inline: true }, doc); }
-		catch (e) { display = escapeHtml(value); }
-		return `<span class="filterable"${filterData(fieldname, value)}>${display == null ? "" : display}</span>`;
-	}
 
 	function injectStyles() {
 		if (document.getElementById("job-opening-list-styles")) return;
@@ -174,15 +124,11 @@
 				white-space: nowrap;
 			}
 			.jo-table tbody td { padding: 12px 6px; border-bottom: 1px solid #F3F4F6; vertical-align: middle; }
-			.jo-col-check     { width: 28px; padding-left: 10px !important; padding-right: 2px !important; }
-			.jo-col-opening   { min-width: 180px; }
-			.jo-col-status    { width: 72px;  white-space: nowrap; }
-			.jo-col-applicants{ width: 64px;  white-space: nowrap; }
-			.jo-col-pipeline  { min-width: 200px; max-width: 280px; }
-			.jo-col-interviews{ width: 70px;  white-space: nowrap; }
-			.jo-col-days      { width: 52px;  white-space: nowrap; }
-			.jo-col-owner     { width: 110px; white-space: nowrap; }
-			.jo-col-extra     { color: #374151; white-space: nowrap; }
+			/* Width, alignment and wrapping are per-column configuration now, emitted
+			   as inline styles by the column registry; only the padding tweaks and
+			   the default text colour of a plain field cell stay here. */
+			.jo-col-check   { padding-left: 10px !important; padding-right: 2px !important; }
+			.rlc-field-cell { color: #374151; }
 			.jo-table tbody tr { cursor: pointer; }
 			.jo-table tbody tr:hover { background: #FAFAFA; }
 			.jo-table tbody tr:last-child td { border-bottom: none; }
@@ -228,7 +174,7 @@
 			}
 
 			/* Native activity meta (modified time · comment count · like) */
-			.jo-col-activity { width: 120px; white-space: nowrap; text-align: right; padding-right: 12px !important; }
+			.jo-col-activity { padding-right: 12px !important; }
 			.jo-activity { display: inline-flex; align-items: center; gap: 6px; justify-content: flex-end; color: #9CA3AF; font-size: 12px; }
 			.jo-activity .comment-count { display: inline-flex; align-items: center; gap: 2px; }
 			.jo-activity .list-row-like, .jo-activity .like-action { cursor: pointer; display: inline-flex; align-items: center; }
@@ -375,33 +321,108 @@
 		</div>`;
 	}
 
-	function renderRow(doc, listview) {
-		const sub = [doc.designation, doc.department, doc.location].filter(Boolean).map(escapeHtml).join("  ·  ");
-		// Title -> applicants for this opening, ID -> the opening form. Both are real
-		// anchors so ctrl / middle click opens a new tab natively; a plain left click
-		// is intercepted by Frappe's router (no page reload). The whole row falls back
-		// to the applicants list via the delegated handler in bindTable().
-		return `
-			<tr data-name="${escapeHtml(doc.name)}">
-				<td class="jo-col-check"><input type="checkbox" class="jo-check list-row-checkbox" data-doctype="${DOCTYPE}" data-name="${escapeHtml(doc.name)}"/></td>
-				<td class="jo-col-opening">
-					<div class="jo-opening-title">
-						<a href="${applicantsUrl(doc.name)}" title="${escapeHtml(__("View applicants"))}">${escapeHtml(doc.job_title || doc.name)}</a>
-					</div>
-					<div class="jo-opening-sub">
-						<a class="jo-open-form" href="${formUrl(doc.name)}" title="${escapeHtml(__("Open job opening"))}">${escapeHtml(doc.name)}</a>${sub ? "  ·  " + sub : ""}
-					</div>
-				</td>
-				<td class="jo-col-status">${renderStatusPill(doc.status)}</td>
-				<td class="jo-col-applicants" data-stat="applicants"><span class="jo-applicants">0</span><span class="jo-applicants-sub">total</span></td>
-				<td class="jo-col-pipeline" data-stat="pipeline">${renderPipeline(null)}</td>
-				<td class="jo-col-interviews" data-stat="interviews">${interviewBadge(0)}</td>
-				<td class="jo-col-days"><span class="jo-days">${daysOpen(doc)}d</span></td>
-				<td class="jo-col-owner" data-stat="owner" data-owner="${escapeHtml(doc.owner || "")}">${ownerCellHtml(doc.owner)}</td>
-				${extraRowCells(doc, listview)}
-				<td class="jo-col-activity">${renderActivity(doc, listview)}</td>
-			</tr>`;
-	}
+	/*
+	 * The designed columns, declared once. Order here is only the DEFAULT — the
+	 * saved configuration (⋯ → Configure Columns) decides what actually renders.
+	 * Columns whose value arrives with the aggregate call carry a `data-stat`
+	 * attribute; fillStats() finds them again through it once the call lands.
+	 */
+	recruitment.list_columns.register(DOCTYPE, {
+		reserved_fields: ["modified", "_liked_by", "_comment_count"],
+		// Needed by the composite "Opening" cell's sub-line and the days-open maths,
+		// and still addable as columns in their own right.
+		fetch_fields: ["designation", "department", "location", "publish", "posted_on", "closes_on", "closed_on", "creation"],
+
+		leading: {
+			key: "__check",
+			width: "28px",
+			cell_class: "jo-col-check",
+			head_render: () => `<input type="checkbox" class="jo-check jo-select-all"/>`,
+			render: (doc) =>
+				`<input type="checkbox" class="jo-check list-row-checkbox" data-doctype="${DOCTYPE}" data-name="${escapeHtml(doc.name)}"/>`,
+		},
+
+		trailing: {
+			key: "__activity",
+			align: "right",
+			width: "120px",
+			cell_class: "jo-col-activity",
+			fields: ["modified", "_liked_by", "_comment_count"],
+			render: (doc, listview) => renderActivity(doc, listview),
+		},
+
+		columns: [
+			{
+				key: "opening",
+				label: __("Opening"),
+				// The row's identity cell — and the only way into the opening's form.
+				locked: true,
+				min_width: "180px",
+				nowrap: false,
+				fields: ["name", "job_title", "designation", "department", "location"],
+				// Title -> applicants for this opening, ID -> the opening form. Both are
+				// real anchors so ctrl / middle click opens a new tab natively; a plain
+				// left click is intercepted by Frappe's router (no page reload). The whole
+				// row falls back to the applicants list via bindTable()'s handler.
+				render: (doc) => {
+					const sub = [doc.designation, doc.department, doc.location]
+						.filter(Boolean).map(escapeHtml).join("  ·  ");
+					return `
+						<div class="jo-opening-title">
+							<a href="${applicantsUrl(doc.name)}" title="${escapeHtml(__("View applicants"))}">${escapeHtml(doc.job_title || doc.name)}</a>
+						</div>
+						<div class="jo-opening-sub">
+							<a class="jo-open-form" href="${formUrl(doc.name)}" title="${escapeHtml(__("Open job opening"))}">${escapeHtml(doc.name)}</a>${sub ? "  ·  " + sub : ""}
+						</div>`;
+				},
+			},
+			{
+				key: "status",
+				label: __("Status"),
+				width: "72px",
+				fields: ["status"],
+				render: (doc) => renderStatusPill(doc.status),
+			},
+			{
+				key: "applicants",
+				label: __("Applicants"),
+				width: "64px",
+				cell_attrs: () => ` data-stat="applicants"`,
+				render: () => `<span class="jo-applicants">0</span><span class="jo-applicants-sub">total</span>`,
+			},
+			{
+				key: "pipeline",
+				label: __("Pipeline"),
+				min_width: "200px",
+				max_width: "280px",
+				nowrap: false,
+				cell_attrs: () => ` data-stat="pipeline"`,
+				render: () => renderPipeline(null),
+			},
+			{
+				key: "interviews",
+				label: __("Interviews"),
+				width: "70px",
+				cell_attrs: () => ` data-stat="interviews"`,
+				render: () => interviewBadge(0),
+			},
+			{
+				key: "days_open",
+				label: __("Open For"),
+				width: "52px",
+				fields: ["posted_on", "closed_on", "creation"],
+				render: (doc) => `<span class="jo-days">${daysOpen(doc)}d</span>`,
+			},
+			{
+				key: "owner",
+				label: __("Owner"),
+				width: "110px",
+				fields: ["owner"],
+				cell_attrs: (doc) => ` data-stat="owner" data-owner="${escapeHtml(doc.owner || "")}"`,
+				render: (doc) => ownerCellHtml(doc.owner),
+			},
+		],
+	});
 
 	function fillStats() {
 		const $result = _listview && _listview.$result;
@@ -505,25 +526,12 @@
 		const data = listview.data || [];
 		if (!data.length) { $host.html(""); return; }
 
-		const head = `
-			<tr>
-				<th class="jo-col-check"><input type="checkbox" class="jo-check jo-select-all"/></th>
-				<th class="jo-col-opening">Opening</th>
-				<th class="jo-col-status">Status</th>
-				<th class="jo-col-applicants">Applicants</th>
-				<th class="jo-col-pipeline">Pipeline</th>
-				<th class="jo-col-interviews">Interviews</th>
-				<th class="jo-col-days">Open For</th>
-				<th class="jo-col-owner">Owner</th>
-				${extraHeadCells(listview)}
-				<th class="jo-col-activity"></th>
-			</tr>`;
-
+		const cols = recruitment.list_columns;
 		$host.html(`
 			<div class="jo-table-wrapper">
 				<table class="jo-table">
-					<thead>${head}</thead>
-					<tbody>${data.map((d) => renderRow(d, listview)).join("")}</tbody>
+					<thead>${cols.head_html(DOCTYPE, listview)}</thead>
+					<tbody>${data.map((d) => cols.row_html(DOCTYPE, d, listview)).join("")}</tbody>
 				</table>
 			</div>`);
 
@@ -595,17 +603,29 @@
 
 	frappe.listview_settings[DOCTYPE] = {
 		hide_name_column: true,
-		add_fields: [
-			"job_title", "designation", "department", "location",
-			"status", "publish", "posted_on", "closes_on", "closed_on",
-			"owner", "creation", "modified", "name", "_liked_by",
-		],
+		/*
+		 * Every field any registered column can need, whether or not it is currently
+		 * shown — so switching a column on in "Configure Columns" redraws instantly
+		 * instead of waiting on a refetch.
+		 *
+		 * A GETTER, not a value: this file is executed by model.js's init_doctype(),
+		 * which runs BEFORE the same callback assigns frappe.model.user_settings for
+		 * the doctype. Computing eagerly would miss a user's personally configured
+		 * field columns on the first load of the session and render them blank.
+		 * Frappe reads settings.add_fields later, in set_fields(), by which point the
+		 * settings are in place.
+		 */
+		get add_fields() {
+			return recruitment.list_columns.required_fields(DOCTYPE);
+		},
 
 		onload(listview) {
 			_listview = listview;
+			recruitment.list_columns.ensure_fields(DOCTYPE, listview);
 			injectStyles();
 			mountAboveList(listview);
 			installRenderOverride(listview);
+			recruitment.list_columns.add_menu_item(DOCTYPE, listview);
 			syncActiveTabFromFilters(listview);
 			renderTabs();
 		},
@@ -614,6 +634,7 @@
 			_listview = listview;
 			mountAboveList(listview);
 			installRenderOverride(listview);
+			recruitment.list_columns.add_menu_item(DOCTYPE, listview);
 			syncActiveTabFromFilters(listview);
 			renderTabs();
 		},

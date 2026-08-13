@@ -428,6 +428,55 @@ def get_registered_institute(email, campus_invite):
 	return None
 
 
+def get_registration_details(email, campus_invite):
+	"""The Candidate Registration row a TPO submitted for `email` on this invite.
+
+	Returns ``{first_name, middle_name, last_name, email_id, mobile_number, gender,
+	institute, registration}`` or None. This is what the campus application form
+	pre-fills from before the candidate has any Job Applicant of their own — without
+	it a candidate whose TPO already supplied their details is handed an empty form.
+	"""
+	email = (email or "").strip().lower()
+	if not (email and campus_invite):
+		return None
+
+	registrations = frappe.get_all(
+		"Candidate Registration",
+		filters={"campus_invite": campus_invite, "docstatus": 1},
+		fields=["name", "institute"],
+	)
+	by_name = {r.name: r.institute for r in registrations}
+	if not by_name:
+		return None
+
+	rows = frappe.get_all(
+		"Candidate Registration Detail",
+		filters={
+			"parenttype": "Candidate Registration",
+			"parentfield": "candidates",
+			"parent": ["in", list(by_name)],
+		},
+		fields=[
+			"parent", "first_name", "middle_name", "last_name",
+			"email_id", "mobile_number", "gender",
+		],
+	)
+	# Compare in Python: an email local-part may contain "_", a SQL LIKE wildcard.
+	for row in rows:
+		if (row.email_id or "").strip().lower() == email:
+			return {
+				"registration": row.parent,
+				"institute": by_name.get(row.parent),
+				"first_name": row.first_name,
+				"middle_name": row.middle_name,
+				"last_name": row.last_name,
+				"email_id": row.email_id,
+				"mobile_number": row.mobile_number,
+				"gender": row.gender,
+			}
+	return None
+
+
 def is_email_registered_for_invite(email, campus_invite):
 	"""True when `email` was registered by a TPO (a submitted Candidate Registration)
 	against this specific Campus Invite. This is the gate the campus application flow

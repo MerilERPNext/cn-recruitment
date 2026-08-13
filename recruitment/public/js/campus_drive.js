@@ -411,28 +411,42 @@ function cdExtraDialog(frm, roundCode, round, options, done) {
 		});
 		return;
 	}
+	// An additional round is judged by its OWN panel, filed under this round's extra
+	// code. Naming that code is the whole message: round_code on Round Panelists is
+	// free text, so "add a panel" alone leaves HR guessing what to type.
 	if (!panels.length) {
+		const code = options.extra_panel_round_code || `${roundCode}-EXTRA`;
+		const missing = (options.missing_user || []).length;
 		frappe.msgprint({
-			title: __("No panel on this drive"),
+			title: __("Add an Additional Round panel"),
 			indicator: "orange",
-			message: __("Add Round Panelists first — an interview needs interviewers to take it."),
+			message:
+				__("No panel is set up for the Additional Round on {0}.", [`<b>${roundLabel}</b>`]) +
+				"<br><br>" +
+				__("Open <b>Round Panelists</b> on this drive and add a row with Round Code {0} and the interviewer(s) who should take it, then save.", [
+					`<b>${code}</b>`,
+				]) +
+				(missing
+					? "<br><br>" +
+					  __("({0} panelist(s) are already on {1} but their Employee has no User account, so they cannot be put on an interview.)", [
+							missing,
+							code,
+					  ])
+					: ""),
 		});
 		return;
 	}
 
-	// Every panel on the drive, not just this round's: the panel that judged the round
-	// is often not the one HR wants for another look. The value carries the round the
-	// panel sits on, since panel names repeat across rounds.
-	// Panel names repeat across rounds, so the option value carries both. The
-	// separator is a control character, which no round code or panel name contains.
+	// Only this round's Additional Round panels reach here, so a label no longer needs
+	// to name a round — every option belongs to the same roster. The value still
+	// carries that roster's code, because it is what the server re-resolves the panel
+	// against. The separator is a control character, which no round code or panel name
+	// contains.
 	const KEY = "\u001f";
 	const panelOptions = panels.map((p) => ({
 		value: `${p.round_code}${KEY}${p.panel}`,
-		label: `${p.round_name} · ${p.panel}${
-			p.interviewers.length ? " — " + p.interviewers.join(", ") : ""
-		}`,
+		label: `${p.panel}${p.interviewers.length ? " — " + p.interviewers.join(", ") : ""}`,
 	}));
-	const own = panelOptions.find((o) => o.value.startsWith(`${roundCode}${KEY}`));
 
 	const d = new frappe.ui.Dialog({
 		title: __("Additional Round — {0}", [roundLabel]),
@@ -448,8 +462,11 @@ function cdExtraDialog(frm, roundCode, round, options, done) {
 			},
 			{
 				fieldname: "panel", label: __("Panel"), fieldtype: "Select", reqd: 1,
-				options: panelOptions, default: (own || panelOptions[0]).value,
-				description: __("Any panel on this drive can take it — this round's is offered first."),
+				options: panelOptions, default: panelOptions[0].value,
+				description: __("Panels rostered for the Additional Round on {0} (Round Code {1}).", [
+					roundLabel,
+					options.extra_panel_round_code || `${roundCode}-EXTRA`,
+				]),
 			},
 			{
 				fieldname: "reason", label: __("Reason"), fieldtype: "Small Text", reqd: 1,

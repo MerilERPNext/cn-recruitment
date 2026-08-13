@@ -16,14 +16,13 @@
   "scope_section",
   "scope_by_help",
   "scope_by_user_assignment",
-  "scope_by_department",
-  "scope_by_designation",
-  "scope_by_company",
-  "scope_selectors_section",
   "scope_of_raising_requisitions",
+  "scope_by_company",
+  "scope_companies",
+  "scope_by_department",
   "scope_departments",
-  "scope_designations",
-  "scope_companies"
+  "scope_by_designation",
+  "scope_designations"
  ],
  "fields": [
   {
@@ -75,74 +74,69 @@
   {
    "fieldname": "scope_by_help",
    "fieldtype": "HTML",
-   "options": "<div class=\"text-muted\" style=\"padding:4px 0 8px\"><b>Scope By</b> — tick one or more bases below; each selected basis reveals its selector. A requisition must satisfy <b>all</b> selected bases (an empty selector means no restriction for that basis). Tick nothing for organization-wide scope.</div>"
+   "options": "<div class=\"text-muted\" style=\"padding:4px 0 8px\"><b>Scope By</b> — tick one or more bases below; each selected basis reveals its selector and requires at least one value. A requisition must satisfy <b>all</b> selected bases. Tick nothing for organization-wide scope.<br>Company, Department and Designation <b>cascade</b>: the Departments list is limited to the selected Companies, and the Designations list to the selected Departments. Changing a Company or Department clears the selections below it that no longer apply.</div>"
   },
   {
    "default": "1",
-   "description": "Restrict by the User Assignment population.",
    "fieldname": "scope_by_user_assignment",
    "fieldtype": "Check",
    "label": "Scope by User Assignment"
   },
   {
-   "description": "Restrict by the requisition's Department.",
-   "fieldname": "scope_by_department",
-   "fieldtype": "Check",
-   "label": "Scope by Department"
+   "depends_on": "eval:doc.scope_by_user_assignment",
+   "description": "User Assignments whose resolved employees define this scope. The assignment's own attributes decide who it covers.",
+   "fieldname": "scope_of_raising_requisitions",
+   "fieldtype": "Table MultiSelect",
+   "label": "Scope of Raising Requisitions (User Assignments)",
+   "mandatory_depends_on": "eval:doc.scope_by_user_assignment",
+   "options": "Raise Requisition Scope Assignment"
   },
   {
-   "description": "Restrict by the requisition's Designation.",
-   "fieldname": "scope_by_designation",
-   "fieldtype": "Check",
-   "label": "Scope by Designation"
-  },
-  {
-   "description": "Restrict by the requisition's Company.",
    "fieldname": "scope_by_company",
    "fieldtype": "Check",
    "label": "Scope by Company"
   },
   {
-   "fieldname": "scope_selectors_section",
-   "fieldtype": "Section Break",
-   "label": "Scope Selectors"
-  },
-  {
-   "depends_on": "eval:doc.scope_by_user_assignment",
-   "description": "User Assignments defining the population within which the selected users can raise requisitions. Leave empty for organization-wide scope.",
-   "fieldname": "scope_of_raising_requisitions",
-   "fieldtype": "Table MultiSelect",
-   "label": "Scope of Raising Requisitions (User Assignments)",
-   "options": "Raise Requisition Scope Assignment"
-  },
-  {
-   "depends_on": "eval:doc.scope_by_department",
-   "description": "Departments the selected users may raise requisitions for. A requisition whose Department is in this list is within scope. Leave empty for all departments.",
-   "fieldname": "scope_departments",
-   "fieldtype": "Table MultiSelect",
-   "label": "Departments in Scope",
-   "options": "Raise Requisition Scope Department"
-  },
-  {
-   "depends_on": "eval:doc.scope_by_designation",
-   "description": "Designations the selected users may raise requisitions for. A requisition whose Designation is in this list is within scope. Leave empty for all designations.",
-   "fieldname": "scope_designations",
-   "fieldtype": "Table MultiSelect",
-   "label": "Designations in Scope",
-   "options": "Raise Requisition Scope Designation"
-  },
-  {
    "depends_on": "eval:doc.scope_by_company",
-   "description": "Companies the selected users may raise requisitions for. A requisition whose Company is in this list is within scope. Leave empty for all companies.",
+   "description": "Requisitions for these Companies are in scope. Top of the cascade — narrows the Departments and Designations below.",
    "fieldname": "scope_companies",
    "fieldtype": "Table MultiSelect",
    "label": "Companies in Scope",
+   "mandatory_depends_on": "eval:doc.scope_by_company",
    "options": "Raise Requisition Scope Company"
+  },
+  {
+   "fieldname": "scope_by_department",
+   "fieldtype": "Check",
+   "label": "Scope by Department"
+  },
+  {
+   "depends_on": "eval:doc.scope_by_department",
+   "description": "Requisitions for these Departments are in scope. Limited to the Companies selected above.",
+   "fieldname": "scope_departments",
+   "fieldtype": "Table MultiSelect",
+   "label": "Departments in Scope",
+   "mandatory_depends_on": "eval:doc.scope_by_department",
+   "options": "Raise Requisition Scope Department"
+  },
+  {
+   "fieldname": "scope_by_designation",
+   "fieldtype": "Check",
+   "label": "Scope by Designation"
+  },
+  {
+   "depends_on": "eval:doc.scope_by_designation",
+   "description": "Requisitions for these Designations are in scope. Limited to the Departments selected above.",
+   "fieldname": "scope_designations",
+   "fieldtype": "Table MultiSelect",
+   "label": "Designations in Scope",
+   "mandatory_depends_on": "eval:doc.scope_by_designation",
+   "options": "Raise Requisition Scope Designation"
   }
  ],
  "index_web_pages_for_search": 0,
  "links": [],
- "modified": "2026-08-10 10:00:00.000000",
+ "modified": "2026-08-13 00:00:00.000000",
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "Raise Requisition Scope",

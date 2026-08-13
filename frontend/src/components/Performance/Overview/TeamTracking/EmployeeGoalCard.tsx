@@ -62,7 +62,7 @@ export const EmployeeGoalCard = React.memo(({ goal, isGoalPending, onRequestChec
           <Button
             variant="outline"
             disabled={isGoalPending}
-            className={`font-medium text-xs px-3.5 py-1.5 rounded-lg transition-all shadow-xs flex items-center gap-1.5 ${
+            className={`font-medium mx-auto text-xs px-3.5 py-1.5 rounded-lg transition-all shadow-xs flex items-center gap-1.5 ${
               isPendingStatus
                 ? "border-gray-200 text-gray-400 bg-gray-50 opacity-60 cursor-not-allowed"
                 : "border-blue-200 text-blue-600 hover:bg-blue-50 hover:border-blue-300 disabled:opacity-60 disabled:cursor-not-allowed"

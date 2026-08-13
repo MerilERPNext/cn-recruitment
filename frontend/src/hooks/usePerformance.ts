@@ -202,9 +202,9 @@ export const useSubmitGoalCheckIn = () => {
 
   return useMutation<SubmitGoalCheckInResponse, Error, SubmitGoalCheckInPayload>({
     mutationFn: (payload) => performanceService.submitGoalCheckIn(payload),
-    onSuccess: (_response, payload) => {
-      queryClient.invalidateQueries({ queryKey: PERFORMANCE_QUERY_KEYS.goalCheckIns(payload.goal) });
-      queryClient.invalidateQueries({ queryKey: PERFORMANCE_QUERY_KEYS.goalDetail(payload.goal) });
+    onSuccess: (_response) => {
+      queryClient.invalidateQueries({ queryKey: ["performance", "goal-detail"]})
+      queryClient.invalidateQueries({ queryKey: ["performance", "goal-check-ins"]})
       queryClient.invalidateQueries({ queryKey: PERFORMANCE_QUERY_KEYS.myGoals });
     },
   });

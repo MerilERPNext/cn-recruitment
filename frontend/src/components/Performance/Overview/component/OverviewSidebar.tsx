@@ -34,13 +34,15 @@ const OverviewSidebar: React.FC = () => {
 
         <div aria-label="Task List" className="space-y-3 sm:space-y-4">
           {/* Task 1: Complete Self-Review → navigates to Review tab */}
-          <article aria-label="Task: Complete Q1 Self-Review" className="flex min-w-0 flex-col gap-3 rounded-xl border border-gray-100 p-3 text-left min-[420px]:flex-row min-[420px]:items-center lg:border-0 lg:p-0">
-            <div className="w-10 h-10 rounded-lg bg-blue-50 text-blue-500 flex items-center justify-center shrink-0">
-              <Sparkles className="w-5 h-5" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <Typography variant="bodySmall" className="mb-1 block break-words font-medium text-gray-900">Complete Q1 Self-Review</Typography>
-              <Typography variant="caption" className="block break-words text-gray-500">Due in 9 days</Typography>
+          <article aria-label="Task: Complete Q1 Self-Review" className="flex min-w-0 flex-col gap-3 rounded-xl border border-gray-100 p-3.5 text-left min-[420px]:flex-row min-[420px]:items-center min-[420px]:justify-between lg:border-0 lg:p-0">
+            <div className="flex min-w-0 flex-1 items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-500 flex items-center justify-center shrink-0">
+                <Sparkles className="w-5 h-5" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <Typography variant="bodySmall" className="block break-words font-semibold text-gray-900 leading-snug">Complete Q1 Self-Review</Typography>
+                <Typography variant="caption" className="mt-0.5 block break-words text-gray-500 text-xs">Due in 9 days</Typography>
+              </div>
             </div>
             <button
               onClick={() => navigate('/webapp/performance-app/review')}
@@ -52,13 +54,15 @@ const OverviewSidebar: React.FC = () => {
           </article>
 
           {/* Task 2: Nominate peer reviewers */}
-          <article aria-label="Task: Nominate 4 peer reviewers" className="flex min-w-0 flex-col gap-3 rounded-xl border border-gray-100 p-3 text-left min-[420px]:flex-row min-[420px]:items-center lg:border-0 lg:p-0">
-            <div className="w-10 h-10 rounded-lg bg-purple-50 text-purple-500 flex items-center justify-center shrink-0">
-              <Check className="w-5 h-5" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <Typography variant="bodySmall" className="mb-1 block break-words font-medium text-gray-900">Nominate 4 peer reviewers</Typography>
-              <Typography variant="caption" className="block break-words text-gray-500">Due in 4 days</Typography>
+          <article aria-label="Task: Nominate 4 peer reviewers" className="flex min-w-0 flex-col gap-3 rounded-xl border border-gray-100 p-3.5 text-left min-[420px]:flex-row min-[420px]:items-center min-[420px]:justify-between lg:border-0 lg:p-0">
+            <div className="flex min-w-0 flex-1 items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-500 flex items-center justify-center shrink-0">
+                <Check className="w-5 h-5" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <Typography variant="bodySmall" className="block break-words font-semibold text-gray-900 leading-snug">Nominate 4 peer reviewers</Typography>
+                <Typography variant="caption" className="mt-0.5 block break-words text-gray-500 text-xs">Due in 4 days</Typography>
+              </div>
             </div>
             <button
               className="min-h-9 w-full shrink-0 rounded-lg border border-blue-200 px-3 py-1.5 text-sm font-medium text-blue-600 transition-colors hover:bg-blue-50 min-[420px]:w-auto sm:px-4"
@@ -69,13 +73,15 @@ const OverviewSidebar: React.FC = () => {
           </article>
 
           {/* Task 3: Update progress → opens Check-in modal */}
-          <article aria-label="Task: Update progress on goals" className="flex min-w-0 flex-col gap-3 rounded-xl border border-gray-100 p-3 text-left min-[420px]:flex-row min-[420px]:items-center lg:border-0 lg:p-0">
-            <div className="w-10 h-10 rounded-lg bg-orange-50 text-orange-500 flex items-center justify-center shrink-0">
-              <Calendar className="w-5 h-5" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <Typography variant="bodySmall" className="mb-1 block break-words font-medium text-gray-900">Update progress on your goals</Typography>
-              <Typography variant="caption" className="block break-words text-gray-500">Track and update your goal progress regularly</Typography>
+          <article aria-label="Task: Update progress on goals" className="flex min-w-0 flex-col gap-3 rounded-xl border border-gray-100 p-3.5 text-left min-[420px]:flex-row min-[420px]:items-center min-[420px]:justify-between lg:border-0 lg:p-0">
+            <div className="flex min-w-0 flex-1 items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-orange-50 text-orange-500 flex items-center justify-center shrink-0">
+                <Calendar className="w-5 h-5" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <Typography variant="bodySmall" className="block break-words font-semibold text-gray-900 leading-snug">Update progress on your goals</Typography>
+                <Typography variant="caption" className="mt-0.5 block break-words text-gray-500 text-xs">Track and update your goal progress regularly</Typography>
+              </div>
             </div>
             <button
               onClick={() => setIsCheckInModalOpen(true)}
