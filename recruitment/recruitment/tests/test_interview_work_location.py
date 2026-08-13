@@ -61,9 +61,10 @@ class TestInterviewWorkLocation(FrappeTestCase):
 		frappe.set_user("Administrator")
 		cls._purge()
 
-		# Two regions. Region A is mapped to locations both ways — one branch via
-		# Branch.custom_region, one via Region.locations — because either master may
-		# be the maintained one on a live site. Region B is mapped to nothing.
+		# Two regions. The mapping is maintained on the WORK LOCATION
+		# (Branch.custom_region) — that field alone decides which region a location
+		# belongs to. A branch is also listed under Region.locations, to prove the
+		# retired master is no longer consulted. Region B has one location.
 		cls.region_a = frappe.get_doc({
 			"doctype": "Region", "location_region": f"{PREFIX} Region A"}
 		).insert(ignore_permissions=True).name
@@ -72,12 +73,15 @@ class TestInterviewWorkLocation(FrappeTestCase):
 		).insert(ignore_permissions=True).name
 
 		cls.branch_via_field = _branch(f"{PREFIX} Loc A1", region=cls.region_a)
-		cls.branch_via_table = _branch(f"{PREFIX} Loc A2")
+		cls.branch_via_table = _branch(f"{PREFIX} Loc A2", region=cls.region_a)
 		cls.branch_disabled = _branch(f"{PREFIX} Loc A3", region=cls.region_a, disabled=1)
 		cls.branch_other_region = _branch(f"{PREFIX} Loc B1", region=cls.region_b)
+		# Listed under Region A's `locations` table but carrying NO custom_region of
+		# its own. It must never be offered: the region master no longer decides this.
+		cls.branch_table_only = _branch(f"{PREFIX} Loc A4")
 
 		region_a = frappe.get_doc("Region", cls.region_a)
-		region_a.append("locations", {"location": cls.branch_via_table})
+		region_a.append("locations", {"location": cls.branch_table_only})
 		region_a.save(ignore_permissions=True)
 
 		cls.institute = cls._institute()
@@ -258,15 +262,34 @@ class TestInterviewWorkLocation(FrappeTestCase):
 
 	# ── which locations a region offers ──
 
-	def test_locations_union_both_masters_and_skip_disabled(self):
-		self.assertEqual(iwl.get_region_branches(self.region_a),
-		                 sorted([self.branch_via_field, self.branch_via_table]))
+	def test_locations_come_from_the_work_location_field_and_skip_disabled(self):
+		"""The Work Location's own Region field is the mapping. A branch listed under
+		Region.locations but carrying no custom_region is NOT offered — that master is
+		retired, and honouring it is how the two sides used to drift apart."""
+		offered = iwl.get_region_branches(self.region_a)
+		self.assertEqual(offered, sorted([self.branch_via_field, self.branch_via_table]))
+		# listed under Region.locations, but it carries no region of its own
+		self.assertNotIn(self.branch_table_only, offered)
+		# disabled locations stay out
+		self.assertNotIn(self.branch_disabled, offered)
+
+	def test_a_location_moves_region_by_changing_its_own_field(self):
+		"""Re-pointing the Work Location is the whole operation — nothing has to be
+		added to or removed from a region's list."""
+		self.assertEqual(iwl.get_region_branches(self.region_b), [self.branch_other_region])
+		frappe.db.set_value("Branch", self.branch_other_region, "custom_region", self.region_a)
+		try:
+			self.assertEqual(iwl.get_region_branches(self.region_b), [])
+			self.assertIn(self.branch_other_region, iwl.get_region_branches(self.region_a))
+		finally:
+			frappe.db.set_value("Branch", self.branch_other_region, "custom_region", self.region_b)
 
 	def test_region_with_no_locations_mapped(self):
-		self.assertEqual(iwl.get_region_branches(self.region_b),
-		                 [self.branch_other_region])
 		frappe.db.set_value("Branch", self.branch_other_region, "custom_region", None)
-		self.assertEqual(iwl.get_region_branches(self.region_b), [])
+		try:
+			self.assertEqual(iwl.get_region_branches(self.region_b), [])
+		finally:
+			frappe.db.set_value("Branch", self.branch_other_region, "custom_region", self.region_b)
 
 	# ── the form's context ──
 
@@ -338,15 +361,28 @@ class TestInterviewWorkLocation(FrappeTestCase):
 			doc.insert()
 
 	def test_any_location_allowed_when_the_region_maps_to_nothing(self):
-		frappe.db.set_value("Branch", self.branch_via_field, "custom_region", None)
+		"""An unmaintained location master must not block feedback: with nothing
+		mapped to the region, whatever the panel picked is accepted.
+
+		Every Work Location of the region is un-mapped, since the mapping now lives
+		only on the Branch — clearing the region's own list is not enough (and is done
+		here purely to prove the retired master is not consulted either)."""
+		mapped = (self.branch_via_field, self.branch_via_table, self.branch_disabled)
+		for branch in mapped:
+			frappe.db.set_value("Branch", branch, "custom_region", None)
 		region_a = frappe.get_doc("Region", self.region_a)
 		region_a.locations = []
 		region_a.save(ignore_permissions=True)
 
-		doc = self._feedback(self.campus_interview, self.campus_applicant,
-		                     self.branch_other_region)
-		doc.insert()
-		self.assertEqual(doc.custom_work_location, self.branch_other_region)
+		try:
+			self.assertEqual(iwl.get_region_branches(self.region_a), [])
+			doc = self._feedback(self.campus_interview, self.campus_applicant,
+			                     self.branch_other_region)
+			doc.insert()
+			self.assertEqual(doc.custom_work_location, self.branch_other_region)
+		finally:
+			for branch in mapped:
+				frappe.db.set_value("Branch", branch, "custom_region", self.region_a)
 
 	def test_lateral_feedback_has_the_field_cleared(self):
 		doc = self._feedback(self.lateral_interview, self.lateral_applicant,
@@ -507,3 +543,21 @@ class TestInterviewWorkLocation(FrappeTestCase):
 		self.assertEqual(
 			frappe.db.get_value("Job Applicant", self.lateral_applicant, "custom_location"),
 			before)
+
+
+def run():
+	"""Run this suite directly, without `bench run-tests`.
+
+	    bench --site <site> execute \
+	        recruitment.recruitment.tests.test_interview_work_location.run
+
+	`bench run-tests` bootstraps ERPNext test records first, which on a site that
+	already has a Fiscal Year fails before any of these tests get to run.
+	"""
+	import unittest
+
+	frappe.flags.in_test = True
+	suite = unittest.TestLoader().loadTestsFromTestCase(TestInterviewWorkLocation)
+	result = unittest.TextTestRunner(verbosity=2).run(suite)
+	return {"tests": result.testsRun, "failures": len(result.failures),
+	        "errors": len(result.errors)}

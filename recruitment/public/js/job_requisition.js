@@ -68,15 +68,24 @@ frappe.ui.form.on("Job Requisition", {
 // Only applied to NEW requisitions: the gate runs on insert, so an existing
 // document must stay editable even if the scope has since been narrowed,
 // otherwise its current values would become unselectable.
-const SCOPE_FILTERED_FIELDS = ["company", "department", "designation"];
+// Fields the gate is *capable* of restricting. The server answers per fieldname
+// and only mentions fields some assignment actually restricts, so this list only
+// has to cover which pickers get a set_query installed — a field scoped later
+// (Location, Branch, Grade) needs adding here, and nothing else.
+const SCOPE_FILTERED_FIELDS = ["company", "department", "designation", "custom_location"];
 
 function apply_scope_field_filters(frm) {
     if (!frm.is_new()) {
         return;
     }
     SCOPE_FILTERED_FIELDS.forEach((fieldname) => {
+        if (!frm.fields_dict[fieldname]) {
+            return;
+        }
         frm.set_query(fieldname, () => {
             const allowance = (frm.__scope_allowance || {})[fieldname];
+            // Absent means no assignment restricts this field, so the picker
+            // stays open. Only an explicit, non-unrestricted entry narrows it.
             if (!allowance || allowance.unrestricted) {
                 return {};
             }
@@ -98,6 +107,7 @@ function refresh_scope_allowance(frm) {
             company: frm.doc.company || null,
             department: frm.doc.department || null,
             designation: frm.doc.designation || null,
+            custom_location: frm.doc.custom_location || null,
         },
         callback(r) {
             frm.__scope_allowance = r.message || {};

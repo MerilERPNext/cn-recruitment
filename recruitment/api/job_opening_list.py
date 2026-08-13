@@ -32,6 +32,7 @@ PIPELINE_STAGES = (
 	"Interview",
 	"Hold",
 	"Approvals",
+	"Hired",
 	"Accepted",
 	"Rejected",
 )

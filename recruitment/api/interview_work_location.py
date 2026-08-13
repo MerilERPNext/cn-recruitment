@@ -12,8 +12,9 @@ Two rules make it safe to let an interviewer write a candidate-level field:
 * **Campus only.** Region routing, and therefore this list, only exists for campus
   hiring. For a lateral / referral / IJP interview the field is hidden and cleared —
   see ``validate_work_location``.
-* **Inside the region.** The options are the locations mapped to the candidate's
-  region, so a panel cannot post someone to a branch their region does not run.
+* **Inside the region.** The options are the Work Locations whose ``custom_region``
+  is the candidate's region, so a panel cannot post someone to a branch their region
+  does not run.
 
 The region itself is never typed in: it is derived from the candidate (see
 ``resolve_region``) and shown read-only next to the location.
@@ -102,26 +103,24 @@ def resolve_region(applicant, recommended_region=None):
 
 
 def get_region_branches(region):
-	"""Enabled Branches belonging to a Region, or [] when the region maps to none.
+	"""Enabled Work Locations belonging to a Region, or [] when none are mapped.
 
-	Two masters express the same link and either can be the maintained one on a given
-	site: ``Region.locations`` (a Table MultiSelect of Branch) and
-	``Branch.custom_region``. The union is taken so the filter works whichever way the
-	location master was set up, and so a branch added on only one side is not silently
-	missing from the panel's list.
+	The mapping is maintained on the WORK LOCATION: each Branch carries a
+	``custom_region`` Link, and that field alone decides which region a location
+	belongs to. This is the one direction the filter reads, here and everywhere else
+	region-to-location filtering happens.
+
+	``Region.locations`` (a Table MultiSelect on the Region master) expressed the same
+	link from the other side and used to be unioned in here. Two masters for one fact
+	is how they drift: the same branch could sit under two regions, a branch removed
+	from one side stayed visible through the other, and neither side could be trusted
+	as the answer. The Branch field wins because a location belongs to exactly one
+	region — that is a property of the location, not a list the region keeps.
 	"""
 	if not region:
 		return []
 
-	names = set(frappe.get_all("Location Table",
-	                           filters={"parent": region, "parenttype": "Region"},
-	                           pluck="location"))
-	names.update(frappe.get_all("Branch", filters={"custom_region": region}, pluck="name"))
-	names.discard(None)
-	if not names:
-		return []
-
-	rows = frappe.get_all("Branch", filters={"name": ("in", list(names))},
+	rows = frappe.get_all("Branch", filters={"custom_region": region},
 	                      fields=["name", *DISABLED_BRANCH_FIELDS], order_by="name asc")
 	return [r.name for r in rows if not any(r.get(f) for f in DISABLED_BRANCH_FIELDS)]
 
@@ -148,9 +147,21 @@ def locked_location(job_applicant, exclude=None):
 	if exclude:
 		filters["name"] = ("!=", exclude)
 	rows = frappe.get_all("Interview Feedback", filters=filters,
-	                      fields=["name", "custom_work_location", "interviewer"],
+	                      fields=["name", "custom_work_location", "interviewer",
+	                              "custom_work_location_region"],
 	                      order_by="creation asc", limit=1)
-	return rows[0] if rows else None
+	if not rows:
+		return None
+
+	# A settled location only binds while the candidate is still being interviewed by
+	# the region that settled it. Once HR moves them — the candidate asked to sit in
+	# Gujarat, say — a branch in the region they left is the wrong answer, and the
+	# panel taking the next round has to pick one in the new region. Feedback from
+	# before this field existed carries no region and keeps binding, as it did.
+	settled_in = rows[0].get("custom_work_location_region")
+	if settled_in and settled_in != resolve_region(_applicant(job_applicant)):
+		return None
+	return rows[0]
 
 
 def _may_see(job_applicant):
@@ -293,3 +304,34 @@ def apply_work_location(doc, method=None):
 		note += _("<br>Replaces: {0}.").format(frappe.utils.escape_html(previous))
 
 	frappe.get_doc("Job Applicant", doc.job_applicant).add_comment("Info", note)
+
+
+def clear_location_on_region_change(doc, method=None):
+	"""Empty the candidate's work location when HR moves them to another region.
+
+	The location is a branch, and a branch belongs to one region — leaving Borivali
+	on a candidate now being interviewed in Gujarat states something untrue, and the
+	offer and the Employee record both read this field.
+
+	So the change unsettles it: the field is cleared and the panel taking the next
+	round picks a location in the new region on their feedback, which writes it back
+	(``apply_work_location``). ``locked_location`` stops binding across a region
+	change for the same reason.
+	"""
+	if doc.is_new():
+		return
+	before = doc.get_doc_before_save()
+	if not before:
+		return
+	if (before.get("custom_interview_region") or "") == (doc.get("custom_interview_region") or ""):
+		return
+	if not doc.get("custom_location"):
+		return
+
+	frappe.msgprint(
+		_("Work location {0} was cleared: it is in the region this candidate is moving "
+		  "away from. The panel taking their next round will pick one in {1}.").format(
+			frappe.bold(doc.get("custom_location")),
+			frappe.bold(_region_label(doc.get("custom_interview_region")) or _("the new region"))),
+		title=_("Work location cleared"), indicator="orange", alert=True)
+	doc.custom_location = None

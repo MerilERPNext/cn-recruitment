@@ -53,6 +53,7 @@ def after_migrate():
     ensure_notice_portal_fields()
     ensure_education_presentation()
     ensure_tpo_email_templates()
+    ensure_hired_status()
 
 
 def ensure_tpo_email_templates():
@@ -560,3 +561,49 @@ def repair_broken_fetch_from():
                 len(cleared), "; ".join(cleared)
             )
         )
+
+
+# The offer stage on a candidate: an offer exists but they have not replied yet.
+# Sits between "Approvals" (waiting for the offer to be raised) and "Accepted"
+# (the candidate said yes), and is what recruitment.api.bulk_job_offer writes.
+HIRED_STATUS = "Hired"
+HIRED_AFTER = "Approvals"
+HIRED_SUB_STATUSES = ("Offer To Be Sent", "Offer Sent")
+
+
+def ensure_hired_status():
+    """Add "Hired" to Job Applicant.status, and its sub-statuses to the master.
+
+    Applied from after_migrate rather than a patch: the status options live in a
+    Property Setter that ships as a fixture, and a fixture sync re-applies its own
+    value over anything a patch wrote. Idempotent — it only writes when "Hired" is
+    genuinely missing, and it never reorders what is already there.
+    """
+    try:
+        meta = frappe.get_meta("Job Applicant")
+        field = meta.get_field("status")
+        if not field:
+            return
+        options = [o for o in (field.options or "").split("\n")]
+        if HIRED_STATUS in options:
+            _ensure_hired_sub_statuses()
+            return
+
+        at = options.index(HIRED_AFTER) + 1 if HIRED_AFTER in options else len(options)
+        options.insert(at, HIRED_STATUS)
+        frappe.make_property_setter({
+            "doctype": "Job Applicant", "fieldname": "status", "property": "options",
+            "value": "\n".join(options), "property_type": "Text",
+        }, is_system_generated=False)
+        frappe.clear_cache(doctype="Job Applicant")
+        _ensure_hired_sub_statuses()
+    except Exception:
+        frappe.log_error(frappe.get_traceback(), "Hired status: setup failed")
+
+
+def _ensure_hired_sub_statuses():
+    """The two the offer flow writes, so the dropdown offers them from day one."""
+    from recruitment.api.hiring_stage import _ensure_sub_status_option
+
+    for sub_status in HIRED_SUB_STATUSES:
+        _ensure_sub_status_option(HIRED_STATUS, sub_status)

@@ -2983,8 +2983,12 @@ def _requisition_scope_name_filter(doctype, company=None, department=None, desig
 
     allowance = allowed_requisition_values(
         company=company, department=department, designation=designation
-    ).get(field) or {}
-    if allowance.get("unrestricted"):
+    ).get(field)
+    # Absent means no configured assignment restricts this field at all, which is
+    # unrestricted. Treating a missing entry as an empty allowance would return
+    # `["in", [""]]` below and block every value — the exact inversion of what
+    # "nobody scoped this" means.
+    if allowance is None or allowance.get("unrestricted"):
         return None
     # No permitted values ⇒ match nothing. `[""]` rather than `[]` because an
     # empty IN list is dropped by the query builder, which would silently show

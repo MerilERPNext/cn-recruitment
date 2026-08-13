@@ -9,22 +9,17 @@ class JobApplicantDPDPConsentLog(Document):
         self.evaluate_consent()
 
     def set_applicant_full_name(self):
-        """Store the applicant's FULL name (first + last).
+        """Store the applicant's FULL name.
 
-        Job Applicant keeps the first name in ``applicant_name`` and the surname in
-        ``custom_applicant_last_name``; fetch_from can only pull one field, so we
-        combine them here. Falls back to whatever is present."""
+        Job Applicant keeps the name in parts (first / middle / surname) and derives
+        ``custom_full_name`` from them; fetch_from can only pull one field, so the
+        derived name is read here through the shared helper rather than being joined
+        again locally — joining it here is how "Neha Iyer Iyer" used to happen."""
         if not self.job_applicant:
             return
-        row = frappe.db.get_value(
-            "Job Applicant",
-            self.job_applicant,
-            ["applicant_name", "custom_applicant_last_name"],
-            as_dict=True,
-        ) or {}
-        full = " ".join(
-            p for p in [row.get("applicant_name"), row.get("custom_applicant_last_name")] if p
-        ).strip()
+        from recruitment.api.applicant_name import get_full_name
+
+        full = get_full_name(self.job_applicant)
         if full:
             self.applicant_name = full
 

@@ -161,7 +161,8 @@
    "fieldtype": "Currency",
    "label": "Fixed Pay",
    "non_negative": 1,
-   "permlevel": 1
+   "permlevel": 1,
+   "reqd": 1
   },
   {
    "fieldname": "column_break_offer_package",
@@ -173,7 +174,8 @@
    "fieldtype": "Currency",
    "label": "Variable Pay",
    "non_negative": 1,
-   "permlevel": 1
+   "permlevel": 1,
+   "reqd": 1
   },
   {
    "fieldname": "registration_config_section",

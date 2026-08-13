@@ -310,6 +310,16 @@ doc_events = {
         ]
     },
     "Job Offer": {
+        # Nothing here touches a DRAFT. An offer is negotiated over several saves and
+        # the joining date is often the last thing agreed, so saving is never blocked
+        # or rewritten — everything below happens at the moment the offer is SENT.
+        #
+        # Order matters: fill Employee Type first, then check what is still missing,
+        # so the check never rejects an offer for a value it could have derived.
+        "before_submit": [
+            "recruitment.customizations.job_offer.set_employment_type",
+            "recruitment.customizations.job_offer.validate_offer_is_complete",
+        ],
         "validate": [
             "recruitment.customizations.job_applicant.validation_blacklist_on_doctypes",
             # Hiring Lead Permission Settings (change designation at offer stage).
@@ -388,6 +398,10 @@ doc_events = {
     },
     "Job Opening": {
         "validate": [
+            # An opening raised from a requisition inherits its recruiter — without
+            # one the opening belongs to nobody. Creation only, and on every path
+            # (the Desk mapper, the web app's Resource API call, an import).
+            "recruitment.customizations.job_requisition.require_recruiter_on_new_opening",
             # Enforce Recruitment Settings -> Job Posting Settings
             # (mandatory Job Description, no posting without linked positions).
             "recruitment.customizations.job_opening_settings.validate_job_posting_settings",
@@ -430,8 +444,19 @@ doc_events = {
             # for applications created after the drive was set up.
             "recruitment.recruitment.campus_helpers.set_applicant_drive_from_invite",
         ],
-        # Hiring Lead Permission Settings (update candidate source).
-        "validate": "recruitment.customizations.hiring_lead_permissions.validate_job_applicant_hiring_lead_edits",
+        "validate": [
+            # Hiring Lead Permission Settings (update candidate source).
+            "recruitment.customizations.hiring_lead_permissions.validate_job_applicant_hiring_lead_edits",
+            # Rebuild custom_full_name from the name parts. The parts are what the
+            # candidate typed (first / middle / surname, each in its own field); the
+            # full name is derived here and is the doctype's title, so nothing else
+            # ever has to join them — which is what produced "Neha Iyer Iyer".
+            "recruitment.api.applicant_name.set_full_name",
+            # A region change unsettles where the candidate would be posted: the
+            # branch on them belongs to the region they are leaving, so it is
+            # cleared and the next panel picks one in the new region.
+            "recruitment.api.interview_work_location.clear_location_on_region_change",
+        ],
         # Place a new applicant on the linked opening's first hiring stage
         # (no-op unless the Hiring Workflow feature is enabled).
         "after_insert": "recruitment.api.hiring_stage.seed_first_stage",

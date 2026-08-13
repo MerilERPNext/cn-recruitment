@@ -779,20 +779,9 @@ def _resolve_candidate_full_name(values):
             )
         if not job_applicant:
             return None
-        row = frappe.db.get_value(
-            "Job Applicant", job_applicant,
-            ["applicant_name", "custom_applicant_last_name"],
-            as_dict=True,
-        )
-        if not row:
-            return None
-        full = " ".join(
-            part for part in [
-                (row.applicant_name or "").strip(),
-                (row.custom_applicant_last_name or "").strip(),
-            ] if part
-        ).strip()
-        return full or None
+        from recruitment.api.applicant_name import get_full_name
+
+        return get_full_name(job_applicant) or None
     except Exception:
         return None
 

@@ -28,6 +28,7 @@
 		{ key: "Interview",   color: "#3B82F6", label: "Interview" },
 		{ key: "Hold",        color: "#F59E0B", label: "Hold" },
 		{ key: "Approvals",   color: "#F97316", label: "Approvals" },
+		{ key: "Hired",       color: "#0EA5E9", label: "Hired" },
 		{ key: "Accepted",    color: "#10B981", label: "Accepted" },
 		{ key: "Rejected",    color: "#FCA5A5", label: "Rejected" },
 	];

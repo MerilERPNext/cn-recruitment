@@ -51,11 +51,25 @@
 			.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
 			.replace(/"/g, "&quot;").replace(/'/g, "&#039;");
 	}
-	// `applicant_name` holds only the first name (relabelled "Applicant First Name"),
-	// with the surname in the custom_applicant_last_name field.
+	// The name is stored in parts (first / middle / surname) and Job Applicant derives
+	// `custom_full_name` from them on save — prefer that. The join below is only a
+	// fallback for a row saved before the derived field existed, and it skips a part
+	// already present in an earlier one so a surname is never printed twice
+	// ("Neha Iyer Iyer").
 	function fullName(doc) {
-		return [doc.applicant_name, doc.custom_applicant_last_name]
-			.filter(Boolean).join(" ").trim() || doc.name;
+		if (doc.custom_full_name) return doc.custom_full_name;
+		const seen = new Set();
+		const parts = [];
+		[doc.applicant_name, doc.custom_applicant_middle_name, doc.custom_applicant_last_name]
+			.map((p) => String(p || "").trim())
+			.filter(Boolean)
+			.forEach((part) => {
+				const words = part.toLowerCase().split(/\s+/).filter(Boolean);
+				if (words.length && words.every((w) => seen.has(w))) return;
+				words.forEach((w) => seen.add(w));
+				parts.push(part);
+			});
+		return parts.join(" ").trim() || doc.name;
 	}
 	function initialsOf(name) {
 		const parts = String(name || "").replace(/@/g, " ").split(/\s+/).filter(Boolean);
@@ -407,7 +421,8 @@
 				locked: true,
 				min_width: "220px",
 				nowrap: false,
-				fields: ["name", "applicant_name", "custom_applicant_last_name", "email_id"],
+				fields: ["name", "applicant_name", "custom_applicant_middle_name",
+					"custom_applicant_last_name", "custom_full_name", "email_id"],
 				render: (doc) => {
 					const candidate = fullName(doc);
 					const ini = initialsOf(candidate || doc.email_id || doc.name);
