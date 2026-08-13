@@ -1,0 +1,26 @@
+import React from 'react';
+import { FileText } from 'lucide-react';
+import { Typography } from '../../../shared/atoms/Typography';
+
+export interface AnonymousInfoCardProps {
+  title?: string;
+  note?: string;
+  className?: string;
+}
+
+export const AnonymousInfoCard: React.FC<AnonymousInfoCardProps> = ({
+  title = "YOUR FEEDBACK IS ANONYMOUS",
+  note = "Karthik will see aggregated peer scores only if at least 2 peers submit (Leapsome floor). Comments are shared verbatim without attribution.",
+  className = "",
+}) => {
+  return (
+    <div className={`bg-blue-50 rounded-xl border border-blue-100 p-5 ${className}`}>
+      <div className="flex items-center gap-2 mb-3 text-blue-700 font-semibold text-sm tracking-wide">
+        <FileText className="w-4 h-4" /> {title}
+      </div>
+      <Typography variant="bodyMedium" className="text-gray-600 leading-relaxed text-sm">
+        {note}
+      </Typography>
+    </div>
+  );
+};
