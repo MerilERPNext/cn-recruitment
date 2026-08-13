@@ -31,9 +31,11 @@ export const KRCheckInsAccordion: React.FC<KRCheckInsAccordionProps> = memo(
             <span className="text-xs font-semibold text-gray-800 truncate" title={kr.title}>
               {kr.title || `KR ${index + 1}`}
             </span>
-            <span className="text-[10px] text-gray-500 font-medium shrink-0 bg-gray-200/60 px-1.5 py-0.5 rounded-md">
-              {checkIns.length} {checkIns.length === 1 ? 'check-in' : 'check-ins'}
-            </span>
+            {krCheckInsResponse?.data && (
+              <span className="text-[10px] text-gray-500 font-medium shrink-0 bg-gray-200/60 px-1.5 py-0.5 rounded-md">
+                {checkIns.length} {checkIns.length === 1 ? 'check-in' : 'check-ins'}
+              </span>
+            )}
           </div>
           <div className="flex items-center gap-1 shrink-0 text-gray-400 hover:text-gray-600">
             <ChevronDown

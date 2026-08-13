@@ -94,7 +94,6 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, onBack }) => {
   const [isCheckInModalOpen, setIsCheckInModalOpen] = React.useState(false);
 
   const firstKRId = goalResponse?.data?.key_results?.[0]?.goal_key || goalResponse?.data?.key_results?.[0]?.goal || '';
-  const activeKRId = selectedKRForCheckIn?.kr?.goal_key || selectedKRForCheckIn?.kr?.goal || firstKRId;
   const [openKRId, setOpenKRId] = React.useState<string | null>(null);
 
   React.useEffect(() => {
@@ -102,10 +101,6 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, onBack }) => {
       setOpenKRId(firstKRId);
     }
   }, [firstKRId]);
-
-  const { data: krCheckInsResponse, isLoading: isKRCheckInsLoading } = useGoalCheckIns(activeKRId);
-
- console.log(krCheckInsResponse,'thissssss is kr check in')
   const { mutateAsync: submitCheckIn, isPending: isSubmittingCheckIn } = useSubmitGoalCheckIn();
   const { mutateAsync: saveGoals, isPending: isSavingGoals } = useSaveGoals();
   const { data: currentUser } = useCurrentUser();
@@ -267,10 +262,8 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, onBack }) => {
   const displayedProgress = latestProgress ?? goal.achievement ?? 0;
   const isPendingGoal = goal.goal_status?.toLowerCase() === 'pending';
   const isAutoCalculate = Boolean(goal.auto_calculate);
-  const parentCheckIns = parentCheckInsResponse?.data?.check_ins ?? [];
-  const krCheckIns = krCheckInsResponse?.data?.check_ins ?? [];
-  const checkIns = !isAutoCalculate ? parentCheckIns : krCheckIns;
-  const isCheckInsLoading = isParentCheckInsLoading || (parentCheckIns.length === 0 && isKRCheckInsLoading && Boolean(activeKRId));
+  const checkIns = parentCheckInsResponse?.data?.check_ins ?? [];
+  const isCheckInsLoading = isParentCheckInsLoading;
  
   return (
     <div ref={topRef} id="goal-details-container" className="min-h-full bg-[#f8fafc] overflow-y-auto p-3 font-sans sm:p-6">
