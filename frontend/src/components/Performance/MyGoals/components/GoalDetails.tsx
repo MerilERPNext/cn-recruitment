@@ -547,15 +547,16 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, onBack }) => {
           </div>
 
           {/* Quick Check-in Card (Full Width 3/3 Across the Grid) */}
+          {/* Quick Check-in Card (Full Width 3/3 Across the Grid) */}
           {!isAutoCalculate && (
-            <Card radius="xl" padding="none" className="lg:col-span-3 overflow-hidden border border-gray-100">
-              <div className="p-4 sm:p-5">
-                <Typography variant="h4" className="mb-1">Quick Check-in</Typography>
-                <Typography variant="bodySmall" className="text-gray-500 mb-4">Update your progress</Typography>
+            <Card radius="xl" padding="none" className="lg:col-span-3 overflow-hidden border border-gray-100 bg-white">
+              <div className="p-4 sm:p-6">
+                <Typography variant="h4" className="mb-1 text-gray-900 font-semibold">Quick Check-in</Typography>
+                <Typography variant="bodySmall" className="text-gray-500 mb-5">Update your progress</Typography>
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
                   {/* Left Side: New Value, Auto Progress, Self-declared Health */}
-                  <div className="space-y-6">
+                  <div className="flex flex-col justify-between space-y-4">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <Typography variant="caption" className="text-gray-700 font-medium block mb-1.5">New Value</Typography>
@@ -567,10 +568,10 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, onBack }) => {
                             min="0"
                             step="any"
                             inputMode="decimal"
-                            className="w-full border border-gray-300 rounded-l-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 transition"
+                            className="w-full h-[40px] border border-gray-200 rounded-l-xl px-3 text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition"
                             aria-label="New goal progress value"
                           />
-                          <span className="bg-gray-50 border border-l-0 border-gray-300 rounded-r-lg px-3 py-2 text-sm text-gray-500 whitespace-nowrap">
+                          <span className="h-[40px] bg-gray-50 border border-l-0 border-gray-200 rounded-r-xl px-3 text-sm text-gray-500 flex items-center font-medium">
                             %
                           </span>
                         </div>
@@ -578,15 +579,15 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, onBack }) => {
 
                       <div>
                         <Typography variant="caption" className="text-gray-700 font-medium block mb-1.5">Auto Progress</Typography>
-                        <div className="bg-blue-50 border border-blue-100 rounded-lg px-3 py-2 flex min-h-[38px] items-center">
-                          <span className="text-blue-600 font-bold text-sm mr-2">{displayedProgress}%</span>
+                        <div className="bg-blue-50/70 border border-blue-100 rounded-xl px-3 h-[40px] flex items-center">
+                          <span className="text-blue-600 font-bold text-sm">{displayedProgress}%</span>
                         </div>
                       </div>
                     </div>
 
                     <div>
                       <Typography variant="caption" className="text-gray-700 font-medium block mb-1.5">Self-declared Health</Typography>
-                      <div className="flex flex-nowrap gap-2" role="radiogroup" aria-label="Self-declared health">
+                      <div className="flex flex-nowrap gap-2.5" role="radiogroup" aria-label="Self-declared health">
                         {(Object.keys(sentimentStyles) as GoalCheckInSentiment[]).map((option) => (
                           <button
                             key={option}
@@ -594,7 +595,11 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, onBack }) => {
                             role="radio"
                             aria-checked={sentiment === option}
                             onClick={() => setSentiment(option)}
-                            className={`flex min-w-0 flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-xl border px-3 py-2 text-xs font-semibold transition-colors ${sentiment === option ? sentimentStyles[option].active : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'}`}
+                            className={`flex h-[40px] min-w-0 flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-xl border px-3 text-xs font-semibold transition-colors ${
+                              sentiment === option
+                                ? sentimentStyles[option].active
+                                : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'
+                            }`}
                           >
                             <span className={`h-2 w-2 rounded-full ${sentimentStyles[option].dot}`} />
                             {option}
@@ -605,19 +610,19 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, onBack }) => {
                   </div>
 
                   {/* Right Side: Description Note, Attachment & Submit Button */}
-                  <div className="flex flex-col justify-between space-y-2.5">
-                    <div>
+                  <div className="flex flex-col justify-between space-y-3">
+                    <div className="flex flex-col flex-1">
                       <Typography variant="caption" className="text-gray-700 font-medium block mb-1.5">Description</Typography>
                       <textarea
                         value={note}
                         onChange={(event) => setNote(event.target.value)}
-                        className="w-full rounded-lg border border-gray-200 p-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 min-h-[85px] transition"
+                        className="w-full flex-1 min-h-[80px] rounded-xl border border-gray-200 p-3 text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition resize-none"
                         placeholder="Add details about your progress..."
                         aria-label="Goal progress details"
                       ></textarea>
                     </div>
 
-                    <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex items-center justify-between gap-3 pt-1">
                       <div className="flex min-w-0 items-center gap-2">
                         <input
                           ref={attachmentInputRef}
@@ -631,13 +636,19 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, onBack }) => {
                           size="sm"
                           icon={<Paperclip className="w-4 h-4" />}
                           onClick={() => attachmentInputRef.current?.click()}
+                          className="rounded-lg border-gray-200 hover:bg-gray-50 text-gray-700"
                         >
                           Attach
                         </Button>
                         {attachment && (
-                          <span className="flex min-w-0 items-center gap-1 rounded-md bg-blue-50 px-2 py-1 text-xs text-blue-700">
-                            <span className="truncate">{attachment.name}</span>
-                            <button type="button" aria-label="Remove attachment" onClick={() => { setAttachment(null); if (attachmentInputRef.current) attachmentInputRef.current.value = ''; }} className="shrink-0 text-blue-500 hover:text-blue-800">
+                          <span className="flex min-w-0 items-center gap-1 rounded-lg bg-blue-50 border border-blue-100 px-2.5 py-1 text-xs text-blue-700 font-medium">
+                            <span className="truncate max-w-[140px]">{attachment.name}</span>
+                            <button
+                              type="button"
+                              aria-label="Remove attachment"
+                              onClick={() => { setAttachment(null); if (attachmentInputRef.current) attachmentInputRef.current.value = ''; }}
+                              className="shrink-0 text-blue-500 hover:text-blue-800 transition-colors ml-0.5"
+                            >
                               <X className="h-3.5 w-3.5" />
                             </button>
                           </span>
@@ -649,6 +660,7 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, onBack }) => {
                         size="sm"
                         onClick={handleSubmitCheckIn}
                         disabled={isSubmittingCheckIn}
+                        className="rounded-lg font-medium px-4 shadow-2xs"
                       >
                         {isSubmittingCheckIn ? 'Submitting…' : 'Submit Check-in'}
                       </Button>
