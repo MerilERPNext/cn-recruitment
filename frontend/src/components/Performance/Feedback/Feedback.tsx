@@ -1,7 +1,7 @@
 import { lazy, useCallback, useEffect, useState } from "react";
 import Button from "../../shared/atoms/Button";
 import { Typography } from "../../shared/atoms/Typography";
-import type { PeerReviewItem, FeedbackFormData } from "../../../types/goal";
+import type { PeerReviewItem } from "../../../types/goal";
 import { useGetFeedBackForm, useGetMyPeerReviews } from "../../../hooks/usePerformance";
 import Badge from "../../shared/Badge";
 
@@ -147,29 +147,37 @@ const Feedback = () => {
               </div>
 
               <div className="flex flex-col">
-                {(reviewFeedbackResponse?.items || []).map((item) => (
-                  <RatingCard
-                    key={item.id}
-                    title={item.title}
-                    description={item.description}
-                    value={ratings?.[item.id]?.value ?? item.rating ?? 0}
-                    onChange={(val) =>
-                      setRatings((prev) => ({
-                        ...(prev || {}),
-                        [item.id]: { ...((prev && prev[item.id]) || { comment: "" }), value: val },
-                      }))
-                    }
-                    comment={ratings?.[item.id]?.comment ?? item.comment ?? ""}
-                    onCommentChange={(val) =>
-                      setRatings((prev) => ({
-                        ...(prev || {}),
-                        [item.id]: { ...((prev && prev[item.id]) || { value: 0 }), comment: val },
-                      }))
-                    }
-                    weightage={item.weightage}
-                    scale={reviewFeedbackResponse?.scale ?? []}
-                  />
-                ))}
+                {!reviewFeedbackResponse?.items || reviewFeedbackResponse.items.length === 0 ? (
+                  <div className="bg-white rounded-xl border border-gray-100 p-8 flex flex-col items-center justify-center text-center shadow-sm mb-6">
+                    <Typography variant="bodyMedium" className="text-gray-500 font-medium text-sm">
+                      No evaluation objectives or goals are configured for this employee.
+                    </Typography>
+                  </div>
+                ) : (
+                  reviewFeedbackResponse.items.map((item) => (
+                    <RatingCard
+                      key={item.id}
+                      title={item.title}
+                      description={item.description}
+                      value={ratings?.[item.id]?.value ?? item.rating ?? 0}
+                      onChange={(val) =>
+                        setRatings((prev) => ({
+                          ...(prev || {}),
+                          [item.id]: { ...((prev && prev[item.id]) || { comment: "" }), value: val },
+                        }))
+                      }
+                      comment={ratings?.[item.id]?.comment ?? item.comment ?? ""}
+                      onCommentChange={(val) =>
+                        setRatings((prev) => ({
+                          ...(prev || {}),
+                          [item.id]: { ...((prev && prev[item.id]) || { value: 0 }), comment: val },
+                        }))
+                      }
+                      weightage={item.weightage}
+                      scale={reviewFeedbackResponse?.scale ?? []}
+                    />
+                  ))
+                )}
               </div>
 
               <div className="mt-5 flex flex-col gap-5">

@@ -17,7 +17,7 @@ export interface RatingCardProps {
   scale: FeedbackScaleOption[]
 }
 
-export const RatingCard: React.FC<RatingCardProps> = ({ title, description, required = true, value, onChange, comment, onCommentChange, weightage, scale=[] }) => {
+export const RatingCard: React.FC<RatingCardProps> = ({ title, description, required = false, value, onChange, comment, onCommentChange, weightage, scale=[] }) => {
   const selectedOption = scale.find(o => o.value === value);
 
   return (
