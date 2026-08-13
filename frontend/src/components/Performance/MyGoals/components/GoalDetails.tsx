@@ -476,7 +476,7 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, onBack }) => {
               </div>
             </div>
 
-            {isAutoCalculate ? (
+            {isAutoCalculate && (
               <div className="flex items-start gap-3.5 rounded-xl border border-blue-100 bg-blue-50/70 p-4 sm:p-5 shadow-2xs">
                 <div className="min-w-0 flex-1">
                   <Typography variant="bodyMedium" className="font-semibold text-blue-950">
@@ -487,105 +487,6 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, onBack }) => {
                   </Typography>
                 </div>
               </div>
-            ) : (
-              <Card radius="xl" padding="none" className="overflow-hidden border border-gray-100">
-                <div className="p-4 sm:p-6">
-                  <Typography variant="h4" className="mb-1">Quick Check-in</Typography>
-                  <Typography variant="bodySmall" className="text-gray-500 mb-6">Update your progress</Typography>
-
-                  <div className="grid grid-cols-1 gap-4 mb-4 sm:mb-6 md:grid-cols-2 md:gap-6">
-                    <div>
-                      <Typography variant="caption" className="text-gray-700 font-medium block mb-2">New Value</Typography>
-                      <div className="flex items-center">
-                        <input
-                          type="number"
-                          value={newValue}
-                          onChange={(event) => setNewValue(event.target.value)}
-                          min="0"
-                          step="any"
-                          inputMode="decimal"
-                          className="w-full border border-gray-300 rounded-l-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 transition"
-                          aria-label="New goal progress value"
-                        />
-                        <span className="bg-gray-50 border border-l-0 border-gray-300 rounded-r-lg px-3 py-2 text-sm text-gray-500 whitespace-nowrap">
-                          %
-                        </span>
-                      </div>
-                    </div>
-
-                    <div>
-                      <Typography variant="caption" className="text-gray-700 font-medium block mb-2">Auto Progress</Typography>
-                      <div className="bg-blue-50 border border-blue-100 rounded-lg px-3 py-2 flex min-h-[38px] items-center">
-                        <span className="text-blue-600 font-bold text-sm mr-2">{displayedProgress}%</span>
-                      </div>
-                    </div>
-
-                    <div className="md:col-span-2">
-                      <Typography variant="caption" className="text-gray-700 font-medium block mb-2">Self-declared Health</Typography>
-                      <div className="flex flex-nowrap gap-2" role="radiogroup" aria-label="Self-declared health">
-                        {(Object.keys(sentimentStyles) as GoalCheckInSentiment[]).map((option) => (
-                          <button
-                            key={option}
-                            type="button"
-                            role="radio"
-                            aria-checked={sentiment === option}
-                            onClick={() => setSentiment(option)}
-                            className={`flex min-w-0 flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-xl border px-3 py-2 text-xs font-semibold transition-colors ${sentiment === option ? sentimentStyles[option].active : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'}`}
-                          >
-                            <span className={`h-2 w-2 rounded-full ${sentimentStyles[option].dot}`} />
-                            {option}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-
-                  <textarea
-                    value={note}
-                    onChange={(event) => setNote(event.target.value)}
-                    className="w-full rounded-lg border border-gray-200 p-3 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 min-h-[100px] mb-4 transition"
-                    placeholder="Add details about your progress..."
-                    aria-label="Goal progress details"
-                  ></textarea>
-
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="flex min-w-0 items-center gap-2">
-                      <input
-                        ref={attachmentInputRef}
-                        type="file"
-                        className="hidden"
-                        onChange={(event) => setAttachment(event.target.files?.[0] ?? null)}
-                      />
-                      <Button
-                        variant="outline"
-                        bgColor="text"
-                        size="sm"
-                        icon={<Paperclip className="w-4 h-4" />}
-                        onClick={() => attachmentInputRef.current?.click()}
-                      >
-                        Attach
-                      </Button>
-                      {attachment && (
-                        <span className="flex min-w-0 items-center gap-1 rounded-md bg-blue-50 px-2 py-1 text-xs text-blue-700">
-                          <span className="truncate">{attachment.name}</span>
-                          <button type="button" aria-label="Remove attachment" onClick={() => { setAttachment(null); if (attachmentInputRef.current) attachmentInputRef.current.value = ''; }} className="shrink-0 text-blue-500 hover:text-blue-800">
-                            <X className="h-3.5 w-3.5" />
-                          </button>
-                        </span>
-                      )}
-                    </div>
-                    <Button
-                      variant="contain"
-                      bgColor="primary"
-                      size="sm"
-                      onClick={handleSubmitCheckIn}
-                      disabled={isSubmittingCheckIn}
-                    >
-                      {isSubmittingCheckIn ? 'Submitting…' : 'Submit Check-in'}
-                    </Button>
-                  </div>
-                </div>
-              </Card>
             )}
 
           </div>
@@ -630,7 +531,7 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, onBack }) => {
                   ))}
                 </div>
               ) : checkIns.length ? (
-                <div className="space-y-3 max-h-[300px] overflow-y-auto">
+                <div className="space-y-3 max-h-[150px] overflow-y-auto">
                   {checkIns.map((checkIn) => (
                     <CheckInItem key={checkIn.name} checkIn={checkIn} />
                   ))}
@@ -644,6 +545,119 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, onBack }) => {
               )}
             </div>
           </div>
+
+          {/* Quick Check-in Card (Full Width 3/3 Across the Grid) */}
+          {!isAutoCalculate && (
+            <Card radius="xl" padding="none" className="lg:col-span-3 overflow-hidden border border-gray-100">
+              <div className="p-4 sm:p-5">
+                <Typography variant="h4" className="mb-1">Quick Check-in</Typography>
+                <Typography variant="bodySmall" className="text-gray-500 mb-4">Update your progress</Typography>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                  {/* Left Side: New Value, Auto Progress, Self-declared Health */}
+                  <div className="space-y-3.5">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <Typography variant="caption" className="text-gray-700 font-medium block mb-1.5">New Value</Typography>
+                        <div className="flex items-center">
+                          <input
+                            type="number"
+                            value={newValue}
+                            onChange={(event) => setNewValue(event.target.value)}
+                            min="0"
+                            step="any"
+                            inputMode="decimal"
+                            className="w-full border border-gray-300 rounded-l-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 transition"
+                            aria-label="New goal progress value"
+                          />
+                          <span className="bg-gray-50 border border-l-0 border-gray-300 rounded-r-lg px-3 py-2 text-sm text-gray-500 whitespace-nowrap">
+                            %
+                          </span>
+                        </div>
+                      </div>
+
+                      <div>
+                        <Typography variant="caption" className="text-gray-700 font-medium block mb-1.5">Auto Progress</Typography>
+                        <div className="bg-blue-50 border border-blue-100 rounded-lg px-3 py-2 flex min-h-[38px] items-center">
+                          <span className="text-blue-600 font-bold text-sm mr-2">{displayedProgress}%</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <Typography variant="caption" className="text-gray-700 font-medium block mb-1.5">Self-declared Health</Typography>
+                      <div className="flex flex-nowrap gap-2" role="radiogroup" aria-label="Self-declared health">
+                        {(Object.keys(sentimentStyles) as GoalCheckInSentiment[]).map((option) => (
+                          <button
+                            key={option}
+                            type="button"
+                            role="radio"
+                            aria-checked={sentiment === option}
+                            onClick={() => setSentiment(option)}
+                            className={`flex min-w-0 flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-xl border px-3 py-2 text-xs font-semibold transition-colors ${sentiment === option ? sentimentStyles[option].active : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'}`}
+                          >
+                            <span className={`h-2 w-2 rounded-full ${sentimentStyles[option].dot}`} />
+                            {option}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Right Side: Description Note, Attachment & Submit Button */}
+                  <div className="flex flex-col justify-between space-y-2.5">
+                    <div>
+                      <Typography variant="caption" className="text-gray-700 font-medium block mb-1.5">Description</Typography>
+                      <textarea
+                        value={note}
+                        onChange={(event) => setNote(event.target.value)}
+                        className="w-full rounded-lg border border-gray-200 p-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 min-h-[85px] transition"
+                        placeholder="Add details about your progress..."
+                        aria-label="Goal progress details"
+                      ></textarea>
+                    </div>
+
+                    <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="flex min-w-0 items-center gap-2">
+                        <input
+                          ref={attachmentInputRef}
+                          type="file"
+                          className="hidden"
+                          onChange={(event) => setAttachment(event.target.files?.[0] ?? null)}
+                        />
+                        <Button
+                          variant="outline"
+                          bgColor="text"
+                          size="sm"
+                          icon={<Paperclip className="w-4 h-4" />}
+                          onClick={() => attachmentInputRef.current?.click()}
+                        >
+                          Attach
+                        </Button>
+                        {attachment && (
+                          <span className="flex min-w-0 items-center gap-1 rounded-md bg-blue-50 px-2 py-1 text-xs text-blue-700">
+                            <span className="truncate">{attachment.name}</span>
+                            <button type="button" aria-label="Remove attachment" onClick={() => { setAttachment(null); if (attachmentInputRef.current) attachmentInputRef.current.value = ''; }} className="shrink-0 text-blue-500 hover:text-blue-800">
+                              <X className="h-3.5 w-3.5" />
+                            </button>
+                          </span>
+                        )}
+                      </div>
+                      <Button
+                        variant="contain"
+                        bgColor="primary"
+                        size="sm"
+                        onClick={handleSubmitCheckIn}
+                        disabled={isSubmittingCheckIn}
+                      >
+                        {isSubmittingCheckIn ? 'Submitting…' : 'Submit Check-in'}
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </Card>
+          )}
 
         </div>
       </div>
