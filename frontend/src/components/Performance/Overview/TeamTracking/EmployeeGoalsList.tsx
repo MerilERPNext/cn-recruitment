@@ -42,6 +42,7 @@ export const EmployeeGoalsList = ({
 
   const { mutate: employeCheckIn, isPending } = useEmployeeGoalsCheckIn();
   const [loadingGoalKey, setLoadingGoalKey] = useState<string | null>(null);
+  const [openGoalKey, setOpenGoalKey] = useState<string | null>(null);
 
   const submitCheckIns = useCallback(
     (goalKey: string) => {
@@ -91,9 +92,10 @@ export const EmployeeGoalsList = ({
 
   return (
     <div className="space-y-4 max-w-4xl mx-auto">
-      {goalsList.map((goal) => {
-        const goalIdentifier = goal?.goal_key || goal?.goal || goal?.name || "";
+      {goalsList.map((goal, idx) => {
+        const goalIdentifier = goal?.goal_key || goal?.goal || goal?.name || String(idx);
         const isGoalPending = isPending && loadingGoalKey === goalIdentifier;
+        const isExpanded = openGoalKey === goalIdentifier;
 
         return (
           <EmployeeGoalCard
@@ -101,6 +103,8 @@ export const EmployeeGoalsList = ({
             goal={goal}
             isGoalPending={isGoalPending}
             onRequestCheckIn={submitCheckIns}
+            isExpanded={isExpanded}
+            onToggleExpand={() => setOpenGoalKey(isExpanded ? null : goalIdentifier)}
           />
         );
       })}

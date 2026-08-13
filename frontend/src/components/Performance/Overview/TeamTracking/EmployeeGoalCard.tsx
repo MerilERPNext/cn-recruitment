@@ -72,10 +72,28 @@ interface EmployeeGoalCardProps {
   goal: MyGoalsGoal;
   isGoalPending: boolean;
   onRequestCheckIn: (goalIdentifier: string) => void;
+  isExpanded?: boolean;
+  onToggleExpand?: () => void;
 }
 
-export const EmployeeGoalCard = React.memo(({ goal, isGoalPending, onRequestCheckIn }: EmployeeGoalCardProps) => {
-  const [isExpanded, setIsExpanded] = useState(false);
+export const EmployeeGoalCard = React.memo(({
+  goal,
+  isGoalPending,
+  onRequestCheckIn,
+  isExpanded: externalIsExpanded,
+  onToggleExpand,
+}: EmployeeGoalCardProps) => {
+  const [internalIsExpanded, setInternalIsExpanded] = useState(false);
+  const isExpanded = externalIsExpanded !== undefined ? externalIsExpanded : internalIsExpanded;
+
+  const handleToggle = () => {
+    if (onToggleExpand) {
+      onToggleExpand();
+    } else {
+      setInternalIsExpanded((prev) => !prev);
+    }
+  };
+
   const goalIdentifier = goal?.goal_key || goal?.goal || goal?.name || "";
   const currentStatus = goal?.goal_status || goal?.status;
   const statusLower = (currentStatus || "").toLowerCase();
@@ -145,7 +163,7 @@ export const EmployeeGoalCard = React.memo(({ goal, isGoalPending, onRequestChec
           {keyResults.length > 0 && (
             <button
               type="button"
-              onClick={() => setIsExpanded(!isExpanded)}
+              onClick={handleToggle}
               className="p-1.5 rounded-full border border-gray-300 hover:border-blue-400 hover:bg-blue-50 text-gray-500 transition-colors flex items-center justify-center shrink-0 cursor-pointer"
               aria-label={isExpanded ? "Collapse Key Results" : "Expand Key Results"}
             >
