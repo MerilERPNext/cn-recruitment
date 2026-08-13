@@ -189,12 +189,13 @@ export const useGoalDetail = (goalId: string, options?: { enabled?: boolean }): 
     staleTime: 1 * 60 * 1000,
   });
 
-export const useGoalCheckIns = (goalId: string): UseQueryResult<GoalCheckInsResponse, Error> =>
+export const useGoalCheckIns = (goalId: string, options?: { enabled?: boolean }): UseQueryResult<GoalCheckInsResponse, Error> =>
   useQuery<GoalCheckInsResponse, Error>({
     queryKey: PERFORMANCE_QUERY_KEYS.goalCheckIns(goalId),
     queryFn: () => performanceService.getGoalCheckIns(goalId),
-    enabled: !!goalId,
+    enabled: (options?.enabled ?? true) && !!goalId,
     staleTime: 30 * 1000,
+    ...options,
   });
 
 export const useSubmitGoalCheckIn = () => {
