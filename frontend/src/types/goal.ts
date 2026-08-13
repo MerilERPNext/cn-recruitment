@@ -614,3 +614,91 @@ export interface PerformanceOverviewResponse {
   message: string;
   data: PerformanceOverviewData;
 }
+
+export interface PeerReviewItem {
+  nomination: string;
+  subject: string;
+  subject_name: string;
+  designation: string;
+  department: string;
+  process: string;
+  process_name: string;
+  basis: string;
+  status: string;
+  submitted: boolean;
+  due_date: string;
+  due_in_days: number;
+}
+
+export interface MyPeerReviewsData {
+  count: number;
+  pending: number;
+  reviews: PeerReviewItem[];
+}
+
+export interface MyPeerReviewsResponse {
+  success: boolean;
+  message: string;
+  data: MyPeerReviewsData;
+}
+
+export interface FeedbackScaleOption {
+  value: number;
+  label: string;
+}
+
+export interface FeedbackAnonymity {
+  threshold: number;
+  note: string;
+}
+
+export interface FeedbackFormItem {
+  id: string;
+  title: string;
+  description: string;
+  rating?: number | null;
+  comment?: string;
+}
+
+export interface FeedbackFormData {
+  nomination: string;
+  process: string;
+  basis: string;
+  subject: string;
+  subject_name: string;
+  designation: string;
+  department: string;
+  due_date: string;
+  due_in_days: number;
+  comment_mandatory: boolean;
+  anonymity: FeedbackAnonymity;
+  scale: FeedbackScaleOption[];
+  items?: FeedbackFormItem[];
+}
+
+export interface FeedbackFormResponse {
+  success: boolean;
+  message: string;
+  data: FeedbackFormData;
+}
+
+export interface FeedbackAnswer {
+  id: string;
+  rating: number;
+  comment: string;
+}
+
+export interface SaveFeedbackPayload {
+  payload: {
+    nomination: string;
+    answers: FeedbackAnswer[];
+  };
+}
+
+export interface SubmitFeedbackPayload {
+  payload: {
+    nomination: string;
+    answers: FeedbackAnswer[];
+  };
+}
+
