@@ -13,6 +13,7 @@ import FrappeAPI from '../../../../utils/frappeAPI';
 import { getPerformanceErrorMessage } from '../../../../services/performanceService';
 import { KRCheckInModal } from './KRCheckInModal';
 import GoalDetailSkeleton from './GoalDetailSkeleton';
+import KRCheckInsAccordion from './KRCheckInsAccordion';
 
 const CircularProgress = ({ score }: { score: number }) => {
   const radius = 36;
@@ -98,10 +99,17 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, onBack }) => {
 
   const firstKRId = goalResponse?.data?.key_results?.[0]?.goal_key || goalResponse?.data?.key_results?.[0]?.goal || '';
   const activeKRId = selectedKRForCheckIn?.kr?.goal_key || selectedKRForCheckIn?.kr?.goal || firstKRId;
+  const [openKRId, setOpenKRId] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    if (firstKRId && openKRId === null) {
+      setOpenKRId(firstKRId);
+    }
+  }, [firstKRId]);
 
   const { data: krCheckInsResponse, isLoading: isKRCheckInsLoading } = useGoalCheckIns(activeKRId);
 
- 
+ console.log(krCheckInsResponse,'thissssss is kr check in')
   const { mutateAsync: submitCheckIn, isPending: isSubmittingCheckIn } = useSubmitGoalCheckIn();
   const { mutateAsync: saveGoals, isPending: isSavingGoals } = useSaveGoals();
   const { data: currentUser } = useCurrentUser();
@@ -602,7 +610,23 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, onBack }) => {
               </div>
               <Typography variant="bodySmall" className="text-gray-500 mb-6">Progress check-in history</Typography>
 
-              {isCheckInsLoading ? (
+              {isAutoCalculate && goal.key_results?.length ? (
+                <div className="max-h-[480px] overflow-y-auto pr-0.5">
+                  {goal.key_results.map((kr: GoalDetailKeyResult, idx: number) => {
+                    const krId = kr.goal_key || kr.goal || String(idx);
+                    const isOpen = openKRId === krId;
+                    return (
+                      <KRCheckInsAccordion
+                        key={krId}
+                        kr={kr}
+                        index={idx}
+                        isOpen={isOpen}
+                        onToggle={() => setOpenKRId(isOpen ? null : krId)}
+                      />
+                    );
+                  })}
+                </div>
+              ) : isCheckInsLoading ? (
                 <div className="space-y-3">
                   {[1, 2, 3].map((item) => (
                     <div key={item} className="rounded-xl border border-gray-100 p-3 animate-pulse bg-white">

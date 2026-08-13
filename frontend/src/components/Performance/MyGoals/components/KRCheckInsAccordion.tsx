@@ -1,0 +1,134 @@
+import React, { memo } from 'react';
+import { ChevronDown, Paperclip, ExternalLink } from 'lucide-react';
+import { Typography } from '../../../shared/atoms/Typography';
+import Badge from '../../../shared/Badge';
+import { useGoalCheckIns } from '../../../../hooks/usePerformance';
+import type { GoalCheckInSentiment, GoalDetailKeyResult } from '../../../../types/goal';
+
+const formatCheckInDate = (value?: string) => {
+  if (!value) return '-';
+  const date = new Date(value);
+  return Number.isNaN(date.getTime())
+    ? value
+    : date.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
+};
+
+const sentimentStyles: Record<GoalCheckInSentiment, { active: string; dot: string }> = {
+  'On Track': { active: 'border-green-300 bg-green-50 text-green-700 ring-1 ring-green-200', dot: 'bg-green-500' },
+  'At Risk': { active: 'border-amber-300 bg-amber-50 text-amber-700 ring-1 ring-amber-200', dot: 'bg-amber-500' },
+  Blocked: { active: 'border-red-300 bg-red-50 text-red-700 ring-1 ring-red-200', dot: 'bg-red-500' },
+};
+
+export interface KRCheckInsAccordionProps {
+  kr: GoalDetailKeyResult;
+  index: number;
+  isOpen: boolean;
+  onToggle: () => void;
+}
+
+export const KRCheckInsAccordion: React.FC<KRCheckInsAccordionProps> = memo(({ kr, index, isOpen, onToggle }) => {
+  const krId = kr.goal_key || kr.goal || '';
+  const { data: krCheckInsResponse, isLoading } = useGoalCheckIns(krId);
+  const checkIns = krCheckInsResponse?.data?.check_ins ?? [];
+
+  return (
+    <div className="border border-gray-200 rounded-xl overflow-hidden mb-3 bg-white shadow-2xs transition-shadow hover:shadow-xs">
+      <button
+        type="button"
+        onClick={onToggle}
+        className="w-full flex items-center justify-between p-3 bg-gray-50/80 hover:bg-gray-100 transition-colors text-left cursor-pointer select-none"
+      >
+        <div className="flex items-center gap-2 min-w-0 pr-2">
+          <Badge label={`KR ${index + 1}`} variant="purple" size="sm" />
+          <span className="text-xs font-semibold text-gray-800 truncate" title={kr.title}>
+            {kr.title || `KR ${index + 1}`}
+          </span>
+          <span className="text-[10px] text-gray-500 font-medium shrink-0 bg-gray-200/60 px-1.5 py-0.5 rounded-full">
+            {checkIns.length} {checkIns.length === 1 ? 'check-in' : 'check-ins'}
+          </span>
+        </div>
+        <div className="flex items-center gap-1 shrink-0 text-gray-400 hover:text-gray-600">
+          <ChevronDown
+            className={`w-4 h-4 transform transition-transform duration-300 ease-in-out ${
+              isOpen ? 'rotate-180' : 'rotate-0'
+            }`}
+          />
+        </div>
+      </button>
+
+      <div
+        className={`grid transition-[grid-template-rows,opacity] duration-300 ease-in-out ${
+          isOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+        }`}
+      >
+        <div className="overflow-hidden">
+          <div className="p-3 space-y-2.5 max-h-[280px] overflow-y-auto border-t border-gray-100 bg-white">
+            {isLoading ? (
+              <div className="space-y-2">
+                <div className="h-10 bg-slate-100 rounded-lg animate-pulse" />
+              </div>
+            ) : checkIns.length ? (
+              checkIns.map((checkIn) => (
+                <div
+                  key={checkIn.name}
+                  className="rounded-lg border border-gray-100 p-2.5 bg-gray-50/40 hover:border-gray-200 transition-colors"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <Typography variant="bodySmall" className="font-semibold text-gray-800">
+                        {checkIn.progress}% progress
+                      </Typography>
+                      <Typography variant="caption" className="text-gray-400">
+                        {formatCheckInDate(checkIn.checkin_date || checkIn.creation)}
+                      </Typography>
+                    </div>
+                    <span
+                      className={`inline-flex items-center gap-1 whitespace-nowrap rounded-xl px-2 py-0.5 text-[10px] font-semibold ${
+                        sentimentStyles[checkIn.sentiment]?.active ?? 'bg-gray-100 text-gray-600'
+                      }`}
+                    >
+                      <span
+                        className={`h-1.5 w-1.5 rounded-full ${
+                          sentimentStyles[checkIn.sentiment]?.dot ?? 'bg-gray-400'
+                        }`}
+                      />
+                      {checkIn.sentiment}
+                    </span>
+                  </div>
+                  {checkIn.note && (
+                    <Typography
+                      variant="caption"
+                      className="mt-1.5 block whitespace-pre-wrap break-words [word-break:break-word] text-gray-600"
+                    >
+                      {checkIn.note}
+                    </Typography>
+                  )}
+                  {checkIn.attachment && (
+                    <a
+                      href={checkIn.attachment}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="mt-1.5 inline-flex items-center gap-1 text-xs font-medium text-blue-600 hover:text-blue-800"
+                    >
+                      <Paperclip className="h-3 w-3" />
+                      View attachment
+                      <ExternalLink className="h-3 w-3" />
+                    </a>
+                  )}
+                </div>
+              ))
+            ) : (
+              <Typography variant="caption" className="text-gray-400 block text-center py-2">
+                No check-ins yet for this KR
+              </Typography>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+});
+
+KRCheckInsAccordion.displayName = 'KRCheckInsAccordion';
+
+export default KRCheckInsAccordion;
