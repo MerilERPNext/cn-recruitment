@@ -361,7 +361,7 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, onBack }) => {
                 )}
               </div>
 
-              <div className="space-y-4 sm:space-y-6">
+              <div className="space-y-4 sm:space-y-6 max-h-[180px] overflow-y-auto">
                 {isEditingKRs ? (
                   <div className="space-y-4">
                     {editingKRs.map((kr) => (
@@ -501,7 +501,7 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, onBack }) => {
               <Typography variant="bodySmall" className="text-gray-500 mb-6">Progress check-in history</Typography>
 
               {isAutoCalculate && goal.key_results?.length ? (
-                <div className="max-h-[480px] overflow-y-auto pr-0.5">
+                <div className="max-h-[480px]  overflow-y-auto pr-0.5">
                   {goal.key_results.map((kr: GoalDetailKeyResult, idx: number) => {
                     const krId = kr.goal_key || kr.goal || String(idx);
                     const isOpen = openKRId === krId;
@@ -531,7 +531,7 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, onBack }) => {
                   ))}
                 </div>
               ) : checkIns.length ? (
-                <div className="space-y-3 max-h-[150px] overflow-y-auto">
+                <div className="space-y-3  max-h-[150px]   overflow-y-auto">
                   {checkIns.map((checkIn) => (
                     <CheckInItem key={checkIn.name} checkIn={checkIn} />
                   ))}
