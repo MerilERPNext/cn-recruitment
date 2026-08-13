@@ -658,6 +658,7 @@ export interface FeedbackFormItem {
   description: string;
   rating?: number | null;
   comment?: string;
+  weightage:number
 }
 
 export interface FeedbackFormData {
