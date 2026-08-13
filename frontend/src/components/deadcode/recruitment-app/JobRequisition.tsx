@@ -1,6 +1,6 @@
 import React from "react";
 import { useNavigate } from "react-router";
-import FrappeListView from "./ListView";
+import FrappeListView from "../../ListView";
 
 interface APIRequisition {
   name: string;

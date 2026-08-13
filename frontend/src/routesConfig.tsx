@@ -61,10 +61,7 @@ const TeamApprovalListExemptionTable = lazyWithRetry(
 const FlexiDeclaration = lazyWithRetry(
   () => import("./components/Compansation/FlexiDeclaration/FlexiDeclaration"),
 );
-const RecruitmentApp = lazyWithRetry(
-  () => import("./components/RecruitmentApp"),
-  "RecruitmentApp",
-);
+
 const InterviewPage = lazyWithRetry(
   () => import("./components/InterviewDetails"),
   "InterviewPage",
@@ -81,22 +78,10 @@ const ReferralDetails = lazyWithRetry(
   () => import("./components/ReferralDetails"),
   "ReferralDetails",
 );
-const InterviewFeedbackForm = lazyWithRetry(
-  () => import("./components/Feedback"),
-  "InterviewFeedbackForm",
-);
-const AddRequisition = lazyWithRetry(
-  () => import("./components/AddRequisition"),
-  "AddRequisition",
-);
-const JobRequisition = lazyWithRetry(
-  () => import("./components/JobRequisition"),
-  "JobRequisition",
-);
-const RequisitionDetails = lazyWithRetry(
-  () => import("./components/RequisitionDetails"),
-  "RequisitionDetails",
-);
+
+
+
+
 const ReferralList = lazyWithRetry(
   () => import("./components/ReferralList"),
   "ReferralList",
@@ -865,44 +850,7 @@ export const routesConfig: AppRoute[] = [
     element: <MandatoryDocumentsEnforced />,
     permissionKey: "Dashboard",
   },
-  {
-    path: "/webapp/recruitment-app/job-applicant-detail/:id",
-    element: <JobApplicantDetails />,
-    permissionKey: "Recruitment",
-  },
 
-  {
-    path: "/webapp/recruitment-app",
-    element: <RecruitmentApp />,
-    permissionKey: "Recruitment",
-    children: [
-      {
-        path: "requisitions",
-        element: <JobRequisition />,
-        permissionKey: "Requisitions",
-      },
-      {
-        path: "referrals",
-        element: <ReferralList />,
-        permissionKey: "Referrals",
-      },
-      {
-        path: "interviews",
-        element: <InterviewList />,
-        permissionKey: "Interviews",
-      },
-      {
-        path: "job-openings",
-        element: <JobOpeningsUI />,
-        permissionKey: "Job Openings",
-      },
-      {
-        path: "job-applicant-list",
-        element: <JobApplicantList />,
-        permissionKey: "Job Applicant List",
-      },
-    ],
-  },
 
   //salary slip route
   {
@@ -1163,37 +1111,7 @@ export const routesConfig: AppRoute[] = [
     element: <AddExpensePage />,
     permissionKey: "Expense Claims",
   },
-  // Flat Recruitment Routes
-  {
-    path: "/webapp/recruitment-app/referrals/add-new-referral",
-    element: <AddNewReferral />,
-    permissionKey: "Referrals",
-  },
-  {
-    path: "/webapp/recruitment-app/referrals/:id",
-    element: <ReferralDetails />,
-    permissionKey: "Referrals",
-  },
-  {
-    path: "/webapp/recruitment-app/requisitions/:requisitionId",
-    element: <RequisitionDetails />,
-    permissionKey: "Requisitions",
-  },
-  {
-    path: "/webapp/recruitment-app/interviews/:id",
-    element: <InterviewPage />,
-    permissionKey: "Interviews",
-  },
-  {
-    path: "/webapp/recruitment-app/interviews/interview-feedback/:id",
-    element: <InterviewFeedbackForm />,
-    permissionKey: "Interviews",
-  },
-  {
-    path: "/webapp/recruitment-app/requisitions/add-requisition/*",
-    element: <AddRequisition />,
-    permissionKey: "Requisitions",
-  },
+
   {
     path: "/webapp/attendance",
     element: <AttendanceLayout />,

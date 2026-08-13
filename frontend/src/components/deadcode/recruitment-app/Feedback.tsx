@@ -7,7 +7,7 @@ import {
   useInterviewForFeedback,
   useFeedbackSubmission,
   isPermissionError,
-} from "../hooks/useFeedbackQuery"
+} from "../../../hooks/useFeedbackQuery"
 import { AlertCircle, RefreshCw, ArrowLeft, X } from "lucide-react"
 import type {
   FeedbackForm,
@@ -17,7 +17,7 @@ import type {
   ExpectedSkillSet,
   StarRatingProps,
   FeedbackSubmissionData,
-} from "../types/feedback"
+} from "../../../types/feedback"
 
 export default function InterviewFeedbackForm() {
   const { id } = useParams<{ id: string }>()

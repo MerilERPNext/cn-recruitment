@@ -9,7 +9,7 @@ const routePreloadMap: Record<string, () => Promise<any>> = {
   '/webapp/leave-app': () => import('../components/Leaves/LeaveApp'),
   '/webapp/salary-slip-app': () => import('../components/Compansation/SalarySlipApp'),
   '/webapp/expenses-app': () => import('../components/Expenses-App/ExpensesApp'),
-  '/webapp/recruitment-app': () => import('../components/RecruitmentApp'),
+
   '/webapp/shift-request': async () => {
     // Preload both the main app and the dynamic routes
     await Promise.all([
@@ -58,7 +58,7 @@ export function preloadCriticalRoutes(): void {
   // Low priority routes - preload after 5 seconds
   const lowPriorityRoutes = [
     '/webapp/expenses-app',
-    '/webapp/recruitment-app',
+
     '/webapp/policies-app',
   ];
 

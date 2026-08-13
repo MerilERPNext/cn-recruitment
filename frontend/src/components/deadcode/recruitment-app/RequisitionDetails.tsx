@@ -16,9 +16,9 @@ import { useNavigate, useParams } from "react-router-dom";
 import {
   useRequisitionDetails,
   isPermissionError,
-} from "../hooks/useRequisition";
-import { useCreateJobOpeningFromRequisition } from "../hooks/useJobOpening";
-import type { StatusDisplay } from "../types/requisition";
+} from "../../../hooks/useRequisition";
+import { useCreateJobOpeningFromRequisition } from "../../../hooks/useJobOpening";
+import type { StatusDisplay } from "../../../types/requisition";
 import DOMPurify from "dompurify";
 import { toast } from "react-hot-toast";
 
