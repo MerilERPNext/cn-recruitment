@@ -101,7 +101,7 @@ export const EmployeeGoalCard = React.memo(({
   const keyResults = goal?.key_results ?? [];
 
   return (
-    <Card className="p-3.5 sm:p-5 border border-gray-100 hover:border-blue-200 transition-all bg-white group overflow-hidden">
+    <Card onClick={handleToggle} className="p-3.5 cursor-pointer sm:p-5 border border-gray-100 hover:border-blue-200 transition-all bg-white group overflow-hidden">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-6">
         <div className="min-w-0 space-y-2 flex-1 w-full">
           <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
