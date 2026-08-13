@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient, type UseQueryResult } from "@tanstack/react-query";
-import type { DeleteGoalsPayload, GoalActionResponse, GoalFormConfig, GoalPlanId, GoalPlanResponse, GoalsRequest, GoalSubmitResponse, Message, MyGoalsResponse, ReferenceGoalsParams, ReferenceGoalsResponse, GoalRepositoryResponse, SaveGoalsPayload, SubmitSelectedGoalsPayload, CascadeGoalsParams, CascadeGoalsResponse, GoalDetailResponse, GoalCheckInsResponse, SubmitGoalCheckInPayload, SubmitGoalCheckInResponse, PerformanceOverviewResponse, RequestCheckInPayload, RequestCheckInResponse, MyPeerReviewsResponse } from "../types/goal";
+import type { DeleteGoalsPayload, GoalActionResponse, GoalFormConfig, GoalPlanId, GoalPlanResponse, GoalsRequest, GoalSubmitResponse, Message, MyGoalsResponse, ReferenceGoalsParams, ReferenceGoalsResponse, GoalRepositoryResponse, SaveGoalsPayload, SubmitSelectedGoalsPayload, CascadeGoalsParams, CascadeGoalsResponse, GoalDetailResponse, GoalCheckInsResponse, SubmitGoalCheckInPayload, SubmitGoalCheckInResponse, PerformanceOverviewResponse, RequestCheckInPayload, RequestCheckInResponse, MyPeerReviewsResponse, FeedbackFormResponse } from "../types/goal";
 import { performanceService } from "../services/performanceService";
 interface PerformanceQueryKey {
 
@@ -225,6 +225,14 @@ export const useGetMyPeerReviews = (): UseQueryResult<MyPeerReviewsResponse, Err
     queryKey: PERFORMANCE_QUERY_KEYS.myPeerReviews,
     queryFn: performanceService.getMyPeerReviews,
     staleTime: 5 * 60 * 1000,
+  });
+export const useGetFeedBackForm = (peerId: string, options?: { enabled?: boolean }): UseQueryResult<FeedbackFormResponse, Error> =>
+  useQuery<FeedbackFormResponse, Error>({
+    queryKey: PERFORMANCE_QUERY_KEYS.feedbackForm(peerId),
+    queryFn:()=> performanceService.getFeedbackForm(peerId),
+    enabled: (options?.enabled ?? true) && !!peerId,
+    staleTime: 30 * 1000,
+    ...options,
   });
 
 export const useEmployeeGoalsCheckIn = () => {
