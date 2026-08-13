@@ -1,6 +1,6 @@
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Paperclip, Loader2, AlertCircle, ClipboardList, ExternalLink, X, Edit, Plus, Trash2 } from 'lucide-react';
+import { ArrowLeft, Paperclip, AlertCircle, ClipboardList, ExternalLink, X, Edit, Plus, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Typography } from '../../../shared/atoms/Typography';
 import Badge, { type BadgeVariant } from '../../../shared/Badge';
@@ -91,7 +91,17 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, onBack }) => {
   const id = goalId || paramId || '';
 
   const { data: goalResponse, isLoading, isError, error } = useGoalDetail(id);
-  const { data: checkInsResponse, isLoading: isCheckInsLoading } = useGoalCheckIns(id);
+  const { data: parentCheckInsResponse, isLoading: isParentCheckInsLoading } = useGoalCheckIns(id);
+
+  const [selectedKRForCheckIn, setSelectedKRForCheckIn] = React.useState<{ kr: GoalDetailKeyResult; index: number } | null>(null);
+  const [isCheckInModalOpen, setIsCheckInModalOpen] = React.useState(false);
+
+  const firstKRId = goalResponse?.data?.key_results?.[0]?.goal_key || goalResponse?.data?.key_results?.[0]?.goal || '';
+  const activeKRId = selectedKRForCheckIn?.kr?.goal_key || selectedKRForCheckIn?.kr?.goal || firstKRId;
+
+  const { data: krCheckInsResponse, isLoading: isKRCheckInsLoading } = useGoalCheckIns(activeKRId);
+
+ 
   const { mutateAsync: submitCheckIn, isPending: isSubmittingCheckIn } = useSubmitGoalCheckIn();
   const { mutateAsync: saveGoals, isPending: isSavingGoals } = useSaveGoals();
   const { data: currentUser } = useCurrentUser();
@@ -105,9 +115,6 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, onBack }) => {
 
   const [isEditingKRs, setIsEditingKRs] = React.useState(false);
   const [editingKRs, setEditingKRs] = React.useState<{ id: string; title: string; weightage: string; goal_key?: string }[]>([]);
-
-  const [selectedKRForCheckIn, setSelectedKRForCheckIn] = React.useState<{ kr: GoalDetailKeyResult; index: number } | null>(null);
-  const [isCheckInModalOpen, setIsCheckInModalOpen] = React.useState(false);
 
   const handleOpenKRCheckInModal = (kr: GoalDetailKeyResult, index: number) => {
     setSelectedKRForCheckIn({ kr, index });
@@ -253,10 +260,14 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, onBack }) => {
 
   const goal = goalResponse.data;
   const ownerName = currentUser?.full_name || currentUser?.first_name || currentUser?.email || '-';
-  const checkIns = checkInsResponse?.data?.check_ins ?? [];
   const displayedProgress = latestProgress ?? goal.achievement ?? 0;
   const isPendingGoal = goal.goal_status?.toLowerCase() === 'pending';
   const isAutoCalculate = Boolean(goal.auto_calculate);
+  const parentCheckIns = parentCheckInsResponse?.data?.check_ins ?? [];
+  const krCheckIns = krCheckInsResponse?.data?.check_ins ?? [];
+  const checkIns = !isAutoCalculate ? parentCheckIns : krCheckIns;
+  const isCheckInsLoading = isParentCheckInsLoading || (parentCheckIns.length === 0 && isKRCheckInsLoading && Boolean(activeKRId));
+ 
   return (
     <div ref={topRef} id="goal-details-container" className="min-h-full bg-[#f8fafc] overflow-y-auto p-3 font-sans sm:p-6">
       <div className="mx-auto max-w-screen space-y-4 sm:space-y-6">
@@ -592,9 +603,21 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, onBack }) => {
               <Typography variant="bodySmall" className="text-gray-500 mb-6">Progress check-in history</Typography>
 
               {isCheckInsLoading ? (
-                <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-blue-500" /></div>
-              ) : checkIns.length ? (
                 <div className="space-y-3">
+                  {[1, 2, 3].map((item) => (
+                    <div key={item} className="rounded-xl border border-gray-100 p-3 animate-pulse bg-white">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="space-y-1.5 flex-1">
+                          <div className="h-4 w-24 rounded bg-slate-200" />
+                          <div className="h-3 w-16 rounded bg-slate-100" />
+                        </div>
+                        <div className="h-6 w-16 rounded-md bg-slate-100" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : checkIns.length ? (
+                <div className="space-y-3 max-h-[300px] overflow-y-auto">
                   {checkIns.map((checkIn) => (
                     <div key={checkIn.name} className="rounded-lg border border-gray-100 p-3">
                       <div className="flex items-start justify-between gap-2">
