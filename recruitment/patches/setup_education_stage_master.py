@@ -89,7 +89,7 @@ def execute():
 		"doctype": CHILD_DOCTYPE,
 		"fieldname": "class_per",
 		"property": "fieldtype",
-		"value": "Float",
+		"value": "Data",
 		"property_type": "Select",
 	}, is_system_generated=False)
 
