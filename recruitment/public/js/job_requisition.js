@@ -24,6 +24,7 @@ frappe.ui.form.on("Job Requisition", {
         }));
 
         gate_raise_requisition(frm);
+        apply_scope_field_filters(frm);
     },
 
     refresh(frm) {
@@ -40,6 +41,13 @@ frappe.ui.form.on("Job Requisition", {
 
     department(frm) {
         try_autofetch_jd(frm);
+        // Department narrows which records can still apply, so what remains
+        // selectable for Designation can change.
+        refresh_scope_allowance(frm);
+    },
+
+    company(frm) {
+        refresh_scope_allowance(frm);
     },
 
     custom_job_description_template(frm) {
@@ -50,6 +58,52 @@ frappe.ui.form.on("Job Requisition", {
         hydrate_from_job_description(frm, jd);
     },
 });
+
+// Restrict Company / Department / Designation to what Raise Requisition Scope
+// actually permits this user, so the pickers can't offer a value that would be
+// rejected at save. The server API is context-aware — a record only contributes
+// values for a field when its other bases agree with what is already chosen —
+// so the allowance is re-fetched whenever Company or Department changes.
+//
+// Only applied to NEW requisitions: the gate runs on insert, so an existing
+// document must stay editable even if the scope has since been narrowed,
+// otherwise its current values would become unselectable.
+const SCOPE_FILTERED_FIELDS = ["company", "department", "designation"];
+
+function apply_scope_field_filters(frm) {
+    if (!frm.is_new()) {
+        return;
+    }
+    SCOPE_FILTERED_FIELDS.forEach((fieldname) => {
+        frm.set_query(fieldname, () => {
+            const allowance = (frm.__scope_allowance || {})[fieldname];
+            if (!allowance || allowance.unrestricted) {
+                return {};
+            }
+            // No permitted values => match nothing, rather than falling back to
+            // showing everything.
+            return { filters: { name: ["in", allowance.values.length ? allowance.values : [""]] } };
+        });
+    });
+    refresh_scope_allowance(frm);
+}
+
+function refresh_scope_allowance(frm) {
+    if (!frm.is_new()) {
+        return;
+    }
+    frappe.call({
+        method: "recruitment.recruitment.doctype.raise_requisition_scope.raise_requisition_scope.allowed_requisition_values",
+        args: {
+            company: frm.doc.company || null,
+            department: frm.doc.department || null,
+            designation: frm.doc.designation || null,
+        },
+        callback(r) {
+            frm.__scope_allowance = r.message || {};
+        },
+    });
+}
 
 // Gate: on a NEW requisition, check Raise Requisition Scope up front so a user
 // who isn't permitted gets a clean popup and is bounced back instead of filling

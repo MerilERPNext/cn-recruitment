@@ -2962,8 +2962,41 @@ def _jd_prefill_values(doc):
 # ---------------------------------------------------------------------------
 
 
+def _requisition_scope_name_filter(doctype, company=None, department=None, designation=None):
+    """`["in", [...]]` limiting `doctype` to what Raise Requisition Scope lets the
+    session user raise for, or None when that field is unrestricted for them.
+
+    Backs the `requisition_scope=1` flag on :func:`get_link_field_options` so the
+    ESS/React requisition form offers exactly the Companies / Departments /
+    Designations the Desk form does — the pickers can't offer a value the
+    before_insert gate would then reject.
+
+    The allowance is context-aware, so pass whatever the form has already chosen.
+    """
+    field = {"Company": "company", "Department": "department", "Designation": "designation"}.get(doctype)
+    if not field:
+        return None
+
+    from recruitment.recruitment.doctype.raise_requisition_scope.raise_requisition_scope import (
+        allowed_requisition_values,
+    )
+
+    allowance = allowed_requisition_values(
+        company=company, department=department, designation=designation
+    ).get(field) or {}
+    if allowance.get("unrestricted"):
+        return None
+    # No permitted values ⇒ match nothing. `[""]` rather than `[]` because an
+    # empty IN list is dropped by the query builder, which would silently show
+    # everything — the opposite of what a deny-by-default scope means.
+    return ["in", allowance.get("values") or [""]]
+
+
 @frappe.whitelist()
-def get_link_field_options(doctype, search_text=None, query=None, txt=None, limit=20, include=None, filters=None, skip=0, **kwargs):
+def get_link_field_options(
+    doctype, search_text=None, query=None, txt=None, limit=20, include=None, filters=None, skip=0,
+    requisition_scope=None, req_company=None, req_department=None, req_designation=None, **kwargs,
+):
     """Returns [{id, label}] for a doctype; label uses title_field when set.
     Accepts `search_text`, `query`, or `txt` as the search term (first non-empty wins).
     `include` is an id (or comma-separated ids) that must always appear in the
@@ -3012,6 +3045,25 @@ def get_link_field_options(doctype, search_text=None, query=None, txt=None, limi
         df = meta.get_field(key)
         if df and df.fieldtype not in no_value_fields:
             filters[key] = value
+
+    # Opt-in Raise Requisition Scope restriction. Deliberately a flag rather than
+    # always-on: this endpoint serves link pickers across the whole app, and
+    # Company/Department/Designation elsewhere (Job Offer, reports) must not be
+    # narrowed by a requisition-raising rule.
+    if frappe.utils.cint(requisition_scope or 0):
+        scope_filter = _requisition_scope_name_filter(
+            doctype, company=req_company, department=req_department, designation=req_designation
+        )
+        if scope_filter is not None:
+            existing = filters.get("name")
+            if isinstance(existing, (list, tuple)) and len(existing) == 2 and existing[0] == "in":
+                # Intersect rather than overwrite, so a caller-supplied name
+                # filter still applies.
+                filters["name"] = ["in", [v for v in existing[1] if v in set(scope_filter[1])] or [""]]
+            elif existing:
+                filters["name"] = existing if existing in scope_filter[1] else ""
+            else:
+                filters["name"] = scope_filter
 
     search = (search_text or query or txt or "").strip()
     or_filters = None

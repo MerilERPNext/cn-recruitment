@@ -44,7 +44,7 @@ export const requisitionFormSchemas = {
         input: true,
         dataSrc: "url",
         data: {
-          url: '/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=Company',
+          url: '/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=Company&requisition_scope=1',
           headers: [{ key: "Accept", value: "application/json" }],
         },
         selectValues: "message.results",
@@ -65,7 +65,7 @@ export const requisitionFormSchemas = {
         input: true,
         dataSrc: "url",
         data: {
-          url: '/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=Department&company={{ data.company }}&disabled=0',
+          url: '/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=Department&company={{ data.company }}&disabled=0&requisition_scope=1&req_company={{ data.company }}',
           headers: [{ key: "Accept", value: "application/json" }],
         },
         selectValues: "message.results",
@@ -89,7 +89,7 @@ export const requisitionFormSchemas = {
         input: true,
         dataSrc: "url",
         data: {
-          url: '/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=Designation&custom_department={{ data.department }}&custom_status=Active',
+          url: '/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=Designation&custom_department={{ data.department }}&custom_status=Active&requisition_scope=1&req_company={{ data.company }}&req_department={{ data.department }}',
           headers: [{ key: "Accept", value: "application/json" }],
         },
         selectValues: "message.results",
