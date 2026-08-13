@@ -7,11 +7,6 @@ import { useGetFeedBackForm, useGetMyPeerReviews } from "../../../hooks/usePerfo
 const RatingCard = lazy(() =>
   import("./components/RatingCard").then((m) => ({ default: m.RatingCard })),
 );
-const FeedbackHeaderCard = lazy(() =>
-  import("./components/FeedbackHeaderCard").then((m) => ({
-    default: m.FeedbackHeaderCard,
-  })),
-);
 const FeedbackRightSidebar = lazy(() =>
   import("./components/FeedbackRightSidebar").then((m) => ({
     default: m.FeedbackRightSidebar,
@@ -64,6 +59,7 @@ export const MOCK_FEEDBACK_FORM_DATA: Record<string, FeedbackFormData> = {
         description: "Designs & delivers complex systems with quality, scale and craft.",
         rating: 5,
         comment: "",
+        weightage:3
       },
       {
         id: "GOAL-26-00902",
@@ -71,6 +67,7 @@ export const MOCK_FEEDBACK_FORM_DATA: Record<string, FeedbackFormData> = {
         description: "Collaborates effectively with Design, Product and QA.",
         rating: 4,
         comment: "",
+        weightage: 3
       },
       {
         id: "GOAL-26-00903",
@@ -78,9 +75,19 @@ export const MOCK_FEEDBACK_FORM_DATA: Record<string, FeedbackFormData> = {
         description: "Sets technical direction; coaches engineers; communicates trade-offs.",
         rating: 0,
         comment: "",
+        weightage: 3
       },
     ],
   },
+};
+
+const getInitials = (name?: string) => {
+  if (!name) return "??";
+  const parts = name.trim().split(" ");
+  if (parts.length >= 2) {
+    return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+  }
+  return name.slice(0, 2).toUpperCase();
 };
 
 const Feedback = () => {
@@ -93,10 +100,10 @@ const Feedback = () => {
   const [activeNominationId, setActiveNominationId] = useState<string>("MSFN-00001");
   const activeReview: PeerReviewItem =
     openReviews.find((r) => r.nomination === activeNominationId) || openReviews[0];
-  const { data: feedBackResponse, isLoading:feedbackLoading, error:feedBackError, refetch:feedBackRefetch  } = useGetFeedBackForm(activeNominationId)
+  const { data: feedBackResponse  } = useGetFeedBackForm(activeNominationId)
   const currentFormData: FeedbackFormData =
     MOCK_FEEDBACK_FORM_DATA[activeReview?.nomination] || MOCK_FEEDBACK_FORM_DATA["MSFN-00001"];
-
+  const reviewFeedbackResponse = feedBackResponse?.data
   const [ratings, setRatings] = useState<Record<string, { value: number; comment: string }>>({
     "GOAL-26-00901": { value: 5, comment: "" },
     "GOAL-26-00902": { value: 4, comment: "" },
@@ -105,16 +112,46 @@ const Feedback = () => {
   const handleSelectReview = useCallback((nominationId: string) => {
     setActiveNominationId(nominationId);
   }, []);
+
+  const headerSubjectName = reviewFeedbackResponse?.subject_name || activeReview?.subject_name || "Peer";
+  const headerDesignation = reviewFeedbackResponse?.designation || activeReview?.designation || "";
+  const headerInitials = getInitials(headerSubjectName);
+  const headerDueDays = reviewFeedbackResponse?.due_in_days ?? activeReview?.due_in_days ?? 3;
+
   return (
     <div className="min-h-full bg-[#f8fafc] overflow-y-scroll p-4 sm:p-1 font-sans">
       <div className="max-w-[1300px] mx-auto flex flex-col xl:flex-row gap-6">
         {/* Main Content (Left) */}
         <div className="flex-1 flex flex-col min-w-0">
-          <FeedbackHeaderCard activeReview={activeReview} />
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6 mb-6 flex flex-col sm:flex-row justify-between items-start">
+            <div className="flex flex-col md:flex-row gap-4">
+              <div className="w-14 h-14 mx-auto rounded-full bg-blue-50 text-blue-700 flex items-center justify-center text-xl font-bold shrink-0">
+                {headerInitials}
+              </div>
+              <div className="flex flex-col justify-center">
+                <Typography variant="caption" className="text-gray-500 mb-1">You are giving peer feedback on</Typography>
+                <Typography variant="h3" className="text-gray-900 font-bold mb-2">
+                  {headerSubjectName} {headerDesignation ? `· ${headerDesignation}` : ''}
+                </Typography>
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                  <div className="w-fit rounded-xl bg-purple-100 text-purple-700 py-0.5 px-2 text-xs flex justify-center items-center gap-1.5">
+                    <Typography variant="label" className="text-purple-700 font-semibold">
+                      Aggregated - Anonymous
+                    </Typography>
+                  </div>
+                  <Typography variant="caption" className="text-gray-500">· Manager will see aggregated scores only</Typography>
+                </div>
+              </div>
+            </div>
+            <div className="flex flex-col items-start sm:items-end text-left sm:text-right shrink-0 mt-4 sm:mt-0">
+              <Typography variant="caption" className="text-gray-500 font-semibold tracking-wider mb-1">DUE IN</Typography>
+              <Typography variant="h3" className="text-amber-600 font-bold">{headerDueDays} days</Typography>
+            </div>
+          </div>
 
           {/* Feedback Form Rating Cards */}
           <div className="flex flex-col">
-            {(currentFormData?.items || []).map((item) => (
+            {(reviewFeedbackResponse?.items || []).map((item) => (
               <RatingCard
                 key={item.id}
                 title={item.title}
@@ -133,6 +170,7 @@ const Feedback = () => {
                     [item.id]: { ...(prev[item.id] || { value: 0 }), comment: val },
                   }))
                 }
+                weightage={item.weightage}
               />
             ))}
           </div>

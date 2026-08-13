@@ -18,9 +18,10 @@ export interface RatingCardProps {
   onChange: (val: number) => void;
   comment: string;
   onCommentChange: (val: string) => void;
+  weightage?: number;
 }
 
-export const RatingCard: React.FC<RatingCardProps> = ({ title, description, required = true, value, onChange, comment, onCommentChange }) => {
+export const RatingCard: React.FC<RatingCardProps> = ({ title, description, required = true, value, onChange, comment, onCommentChange , weightage }) => {
   const selectedOption = RATING_OPTIONS.find(o => o.value === value);
 
   return (
@@ -37,6 +38,12 @@ export const RatingCard: React.FC<RatingCardProps> = ({ title, description, requ
         {selectedOption && value >= 4 && (
           <Badge label={selectedOption.label} variant="success" size="sm" pulse={{show: false}} icon={<div className="w-1.5 h-1.5 rounded-full bg-green-500"></div>} />
         )}
+      </div>
+      <div className="flex items-center gap-2 shrink-0">
+        {weightage !== undefined && (
+          <Badge label={`Weight: ${weightage}%`} variant="info" size="sm" />
+        )}
+       
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mt-6 mb-6">
