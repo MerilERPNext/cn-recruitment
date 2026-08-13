@@ -1154,7 +1154,7 @@ export const routesConfig: AppRoute[] = [
       {
         path: "expense-summary",
         element: <ExpenseSummary />,
-        permissionKey: "ExpenseSummary",
+        permissionKey: "Expense Summary",
       },
     ],
   },
