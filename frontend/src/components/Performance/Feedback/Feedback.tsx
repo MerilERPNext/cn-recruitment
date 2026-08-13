@@ -91,7 +91,6 @@ const Feedback = () => {
     apiReviews && apiReviews.length > 0 ? apiReviews : [];
 
   const [activeNominationId, setActiveNominationId] = useState<string>("MSFN-00001");
-
   const activeReview: PeerReviewItem =
     openReviews.find((r) => r.nomination === activeNominationId) || openReviews[0];
 
