@@ -62,7 +62,7 @@ FIELDS = [
 	# A real number, so an eligibility rule can compare it ("GPA / Percentage ≥ 60")
 	# instead of comparing text.
 	{"fieldname": "class_per", "label": "GPA / Percentage", "columns": 2,
-	 "fieldtype": "Float"},
+	 "fieldtype": "Data"},
 	{"fieldname": "custom_start_date", "label": "Start Date"},
 	{"fieldname": "custom_completion_date", "label": "End Date"},
 	{"fieldname": "year_of_passing", "label": "Year of Passing", "columns": 2},
