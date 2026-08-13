@@ -89,7 +89,7 @@ const Feedback = () => {
   const headerDueDays = reviewFeedbackResponse?.due_in_days ?? activeReview?.due_in_days ?? 1;
 
   return (
-    <div className="min-h-full bg-[#f8fafc] overflow-y-scroll p-4 sm:p-1 font-sans">
+    <div className="min-h-full bg-[#f8fafc]  p-4 sm:p-1 font-sans">
       <div className="max-w-[1300px] mx-auto flex flex-col xl:flex-row gap-6">
         <div className="flex-1 flex flex-col min-w-0">
           {feedbackLoading ? (
