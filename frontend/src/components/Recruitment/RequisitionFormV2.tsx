@@ -634,6 +634,13 @@ const RequisitionFormV2 = () => {
   const [config, setConfig] = useState<FormConfig | null>(null);
   const [configLoading, setConfigLoading] = useState(true);
   const [configError, setConfigError] = useState<string | null>(null);
+  // Dedicated state for hiring type so the config-fetch effect doesn't
+  // double-fire (undefined → default "Lateral" on mount, then the user's
+  // selection).  Initialised to "Lateral" so only one fetch happens on mount.
+  const [hiringType, setHiringType] = useState("Lateral");
+  // Track whether the initial config has been loaded.  Subsequent re-fetches
+  // (triggered by hiring-type change) should NOT unmount the form.
+  const [initialConfigLoaded, setInitialConfigLoaded] = useState(false);
   
   const [schemas, setSchemas] = useState<any[]>([]);
   const [steps, setSteps] = useState<string[]>([]);
@@ -673,9 +680,11 @@ const RequisitionFormV2 = () => {
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      setConfigLoading(true);
+      // Only show the full-page loading spinner on the very first fetch.
+      // Subsequent fetches (hiring-type change) update schemas in-place
+      // without unmounting the form, which avoids the page "splash".
+      if (!initialConfigLoaded) setConfigLoading(true);
       try {
-        const hiringType = formData.custom_hiring_type || "Lateral";
         const res: any = await FrappeAPI.callMethod(
           "recruitment.api.job_requisition.get_job_requisition_form_config",
           { hiring_type: hiringType }
@@ -687,6 +696,11 @@ const RequisitionFormV2 = () => {
             const { schemas: newSchemas, steps: newSteps } = buildTabSchemas(data);
             setSchemas(newSchemas);
             setSteps(newSteps);
+            // Sync formData so the form.io submission reflects the current
+            // hiring type (prevents the dropdown from resetting to the
+            // field's default value during re-initialisation).
+            setFormData(prev => ({ ...prev, custom_hiring_type: hiringType }));
+            setFormSyncTick(t => t + 1);
           } else {
             setConfigError("Invalid form configuration received.");
           }
@@ -697,11 +711,15 @@ const RequisitionFormV2 = () => {
           setConfigError("Failed to load form configuration.");
         }
       } finally {
-        if (!cancelled) setConfigLoading(false);
+        if (!cancelled) {
+          setConfigLoading(false);
+          setInitialConfigLoaded(true);
+        }
       }
     })();
     return () => { cancelled = true; };
-  }, [formData.custom_hiring_type]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hiringType]);
 
   useEffect(() => {
     if (currentEmployee?.name && !formData.hiring_manager) {
@@ -824,6 +842,21 @@ const RequisitionFormV2 = () => {
   const handleChange = (changed: any) => {
     const newData = { ...formDataRef.current, ...changed.data };
     const changedKey = changed.changed?.component?.key;
+
+    // Update the dedicated hiringType state when the user explicitly changes
+    // the hiring type dropdown.  This triggers a config re-fetch via the
+    // useEffect that depends on hiringType.  The guard !== hiringType prevents
+    // a re-fetch when the value hasn't actually changed (e.g. form.io echoing
+    // the same default value during initialisation).
+    if (changedKey === "custom_hiring_type" && newData.custom_hiring_type && newData.custom_hiring_type !== hiringType) {
+      setHiringType(newData.custom_hiring_type);
+    } else if (changedKey !== "custom_hiring_type") {
+      // When the change is NOT a direct user interaction with the hiring type
+      // dropdown, preserve the hiringType state as the source of truth.
+      // This prevents form.io re-initialisation from overwriting the value
+      // with the field's default ("Lateral") via the changed.data spread.
+      newData.custom_hiring_type = hiringType;
+    }
     const positionCountsChanged =
       changedKey === "number_of_positions" ||
       changedKey === "number_of_new_positions" ||
@@ -1111,6 +1144,16 @@ const RequisitionFormV2 = () => {
     config?.child_groups?.custom_qualifications?.fields || [];
   const hasQualifications = qualificationFields.length > 0;
 
+  // ── Position counts (only when the config includes no_of_positions) ─────
+  const hasPositionCounts = useMemo(() => {
+    if (!config) return false;
+    return config.tabs.some(tab =>
+      tab.sections.some(section =>
+        section.fields.some(f => f.fieldname === "no_of_positions")
+      )
+    );
+  }, [config]);
+
   const addQualification = () => {
     const mandatoryField = qualificationFields.find(
       (f: any) => f.fieldname === "mandatory"
@@ -1174,7 +1217,7 @@ const RequisitionFormV2 = () => {
       });
     });
 
-    if (/position/i.test(currentTabConfig.tab)) {
+    if (/position/i.test(currentTabConfig.tab) && hasPositionCounts) {
       const total = Number(data.number_of_positions) || 0;
       const newPositions = Number(data.number_of_new_positions) || 0;
       const replacementPositions = Number(data.number_of_replacement_positions) || 0;
@@ -1393,7 +1436,7 @@ const RequisitionFormV2 = () => {
       payload.designation = formData.designation;
       payload.posting_date = toBackendDate(formData.recruitment_start_date);
       payload.no_of_positions = formData.number_of_positions || 1;
-      payload.custom_hiring_type = formData.custom_hiring_type || "Lateral";
+      payload.custom_hiring_type = hiringType;
 
       // Qualifications is a child group (absent from the tabs), so collect it
       // explicitly — the backend ignores rows without a qualification.
@@ -1538,7 +1581,7 @@ const RequisitionFormV2 = () => {
               <h2 className="text-lg font-semibold text-gray-800 mb-6">
                 {steps[currentTab]}
               </h2>
-              {/position/i.test(steps[currentTab] || "") && (
+              {/position/i.test(steps[currentTab] || "") && hasPositionCounts && (
                 <div className="mb-6 rounded-lg border border-gray-200 bg-gray-50 p-4">
                   <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                     <div>
@@ -1601,7 +1644,7 @@ const RequisitionFormV2 = () => {
                     formInstanceRef.current = instance;
                   }}
                 />
-                {/position/i.test(steps[currentTab] || "") && (
+                {/position/i.test(steps[currentTab] || "") && hasPositionCounts && (
                   <PositionColumnCopyButtons
                     containerRef={formContainerRef}
                     onCopyColumn={copyColumnToAllPositions}
@@ -1869,7 +1912,7 @@ const RequisitionFormV2 = () => {
             </>
           )}
 
-          <div className="flex justify-between mt-8 pt-6 border-t border-gray-100">
+          {!isReviewStep && (<div className="flex justify-between mt-8 pt-6 border-t border-gray-100">
             <Button variant="outline" onClick={handlePrevious} disabled={currentTab === 0} size="md">
               Previous
             </Button>
@@ -1888,6 +1931,8 @@ const RequisitionFormV2 = () => {
               </div>
             )}
           </div>
+          )}
+
         </div>
       </div>
 
