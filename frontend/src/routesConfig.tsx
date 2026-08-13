@@ -578,6 +578,10 @@ const RequisitionForm = lazyWithRetry(
   () => import("./components/Recruitment/RequisitionForm"),
   "RequisitionForm",
 );
+const RequisitionFormV2 = lazyWithRetry(
+  () => import("./components/Recruitment/RequisitionFormV2"),
+  "RequisitionFormV2",
+);
 const RequisitionDetailPage = lazyWithRetry(
   () => import("./components/Recruitment/RequisitionDetailPage"),
   "RequisitionDetailPage",
@@ -1367,6 +1371,11 @@ export const routesConfig: AppRoute[] = [
       {
         path: "requisition/edit",
         element: <RequisitionForm />,
+        permissionKey: "Requisitions",
+      },
+      {
+        path: "requisition/v2",
+        element: <RequisitionFormV2 />,
         permissionKey: "Requisitions",
       },
       {
