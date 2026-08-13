@@ -22,52 +22,16 @@ const AnonymousInfoCard = lazy(() =>
     default: m.AnonymousInfoCard,
   })),
 );
-
-// Typed Mock Data matching get_my_peer_reviews API
-export const MOCK_PEER_REVIEWS: PeerReviewItem[] = [
-  {
-    nomination: "MSFN-00001",
-    subject: "PW4872",
-    subject_name: "Kamesh Isame",
-    designation: "Test_Test",
-    department: "DEP_1119",
-    process: "FY26 Goal Peer Feedback",
-    process_name: "FY26 Goal Peer Feedback",
-    basis: "Goals",
-    status: "Pending",
-    submitted: false,
-    due_date: "2026-08-18",
-    due_in_days: 5,
-  },
-  {
-    nomination: "MSFN-00002",
-    subject: "PW4873",
-    subject_name: "Karthik Iyer",
-    designation: "Eng Lead",
-    department: "DEP_1119",
-    process: "FY26 Goal Peer Feedback",
-    process_name: "FY26 Goal Peer Feedback",
-    basis: "Goals",
-    status: "Pending",
-    submitted: false,
-    due_date: "2026-08-18",
-    due_in_days: 3,
-  },
-  {
-    nomination: "MSFN-00003",
-    subject: "PW4874",
-    subject_name: "Neha Patel",
-    designation: "Product Manager",
-    department: "DEP_1119",
-    process: "FY26 Goal Peer Feedback",
-    process_name: "FY26 Goal Peer Feedback",
-    basis: "Goals",
-    status: "Submitted",
-    submitted: true,
-    due_date: "2026-08-18",
-    due_in_days: 0,
-  },
-];
+const PeerReviewSidebarSkeleton = lazy(() =>
+  import("./components/PeerReviewSidebarSkeleton").then((m) => ({
+    default: m.PeerReviewSidebarSkeleton,
+  })),
+);
+const FeedbackErrorCard = lazy(() =>
+  import("./components/FeedbackErrorCard").then((m) => ({
+    default: m.FeedbackErrorCard,
+  })),
+);
 
 // Typed Mock Data matching get_feedback_form API
 export const MOCK_FEEDBACK_FORM_DATA: Record<string, FeedbackFormData> = {
@@ -120,12 +84,11 @@ export const MOCK_FEEDBACK_FORM_DATA: Record<string, FeedbackFormData> = {
 };
 
 const Feedback = () => {
-  const { data: myPeerReviewsResponse } = useGetMyPeerReviews();
+  const { data: myPeerReviews, isLoading, error, refetch } = useGetMyPeerReviews();
 
-  // Use API reviews if available, otherwise fallback to typed mock data
-  const apiReviews = myPeerReviewsResponse?.data?.reviews;
+  const apiReviews = myPeerReviews?.data?.reviews;
   const openReviews: PeerReviewItem[] =
-    apiReviews && apiReviews.length > 0 ? apiReviews : MOCK_PEER_REVIEWS;
+    apiReviews && apiReviews.length > 0 ? apiReviews : [];
 
   const [activeNominationId, setActiveNominationId] = useState<string>("MSFN-00001");
 
@@ -221,11 +184,17 @@ const Feedback = () => {
 
         <div className="w-full xl:w-[420px] shrink-0 flex flex-col gap-6">
           <AnonymousInfoCard note={currentFormData?.anonymity?.note} />
-          <FeedbackRightSidebar
-            openReviews={openReviews}
-            activeNominationId={activeNominationId}
-            onSelectReview={setActiveNominationId}
-          />
+          {isLoading ? (
+            <PeerReviewSidebarSkeleton />
+          ) : error ? (
+            <FeedbackErrorCard error={error} onRetry={() => refetch()} />
+          ) : (
+            <FeedbackRightSidebar
+              openReviews={openReviews}
+              activeNominationId={activeNominationId}
+              onSelectReview={setActiveNominationId}
+            />
+          )}
         </div>
       </div>
     </div>
