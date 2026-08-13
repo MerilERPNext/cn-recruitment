@@ -23,6 +23,12 @@ app_include_js = [
 	# change here silently doesn't reach anyone. Bump the number whenever this file
 	# changes — the new URL defeats the browser cache and any service worker.
 	"/assets/recruitment/js/applicant_fields_ui.js?v=3",
+	# Column registry behind the designed Job Applicant / Job Opening / Job
+	# Requisition list views — which columns show, in what order, alignment and
+	# width, plus the "Configure Columns" dialog. Global rather than per-doctype
+	# because a doctype's *_list.js is evaluated after doctype_list_js resolves,
+	# which is too late for the lists that build on it. Bump ?v= when it changes.
+	"/assets/recruitment/js/list_column_engine.js?v=3",
 ]
 
 add_to_apps_screen = [
@@ -197,6 +203,12 @@ jinja = {
 		"recruitment.recruitment.link_token.campus_registration_link",
 	],
 }
+
+# Boot
+# ------------
+# Site-wide column layouts for the designed list views, so the first paint of a
+# Job Applicant / Job Opening / Job Requisition list already knows its columns.
+extend_bootinfo = "recruitment.api.list_columns.extend_bootinfo"
 
 # Installation
 # ------------

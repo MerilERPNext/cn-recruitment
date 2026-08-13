@@ -8,6 +8,11 @@
  * Frappe's `$result`; each row checkbox uses the native `.list-row-checkbox`
  * class so native selection / bulk actions work untouched. A small aux API call
  * supplies tab counts, the top pipeline bar, the scoped header and owner names.
+ *
+ * The COLUMNS below are a registration, not a layout: `recruitment.list_columns`
+ * decides which of them are drawn, in what order, at what alignment and width,
+ * from whatever the user (or the site) saved in "Configure Columns" (⋯ menu).
+ * Any docfield on Job Applicant can be added there as a column of its own.
  */
 (function () {
 	const DOCTYPE = "Job Applicant";
@@ -78,58 +83,6 @@
 	};
 	let _listview = null;
 
-	// Fieldnames that already have their OWN dedicated column in our designed table
-	// (so we don't draw them twice). Everything else the user adds via Frappe's List
-	// Settings is appended as a real extra column with its own value.
-	const KNOWN_FIELDS = new Set([
-		"name", "applicant_name", "custom_applicant_last_name", "email_id", "status",
-		"source", "source_name", "applicant_rating", "custom_total_experience",
-		"owner", "creation", "modified", "_liked_by", "_comment_count",
-	]);
-
-	// Columns the user added via List Settings that we don't already draw.
-	// Frappe builds `listview.columns` from the doctype's in_list_view fields +
-	// List View Settings, and fetches their data automatically, so doc[fieldname]
-	// is populated for us.
-	function extraColumns(listview) {
-		const cols = (listview && listview.columns) || [];
-		return cols.filter((c) => c && c.type === "Field" && c.df && c.df.fieldname && !KNOWN_FIELDS.has(c.df.fieldname));
-	}
-	function extraHeadCells(listview) {
-		return extraColumns(listview).map((c) =>
-			`<th class="ja-col-extra">${escapeHtml(__(c.df.label || c.df.fieldname))}</th>`
-		).join("");
-	}
-	function extraRowCells(doc, listview) {
-		return extraColumns(listview).map((c) =>
-			`<td class="ja-col-extra">${formatCellHtml(doc, c.df)}</td>`
-		).join("");
-	}
-
-	// Render one extra-column value exactly like Frappe's native list cell:
-	// formatted for display, but wrapped in a `.filterable` element (with the raw
-	// stored value in data-filter) for every field type Frappe makes clickable —
-	// i.e. everything except Image / rich-HTML fields.
-	function formatCellHtml(doc, df) {
-		const fieldname = df && df.fieldname;
-		const value = doc[fieldname];
-		if (value === null || value === undefined || value === "") return "";
-		const htmlTypes = (frappe.model && frappe.model.html_fieldtypes) || [];
-		if (df.fieldtype === "Image" || htmlTypes.includes(df.fieldtype)) {
-			try { return frappe.format(value, df, { inline: true }, doc); }
-			catch (e) { return escapeHtml(value); }
-		}
-		// Link: render the raw value as a filter-only anchor (no href) so clicking
-		// filters instead of navigating — matching Frappe's native Link cell.
-		if (df.fieldtype === "Link" || df.fieldtype === "Dynamic Link") {
-			return `<a class="filterable"${filterData(fieldname, value)}>${escapeHtml(value)}</a>`;
-		}
-		let display;
-		try { display = frappe.format(value, df, { inline: true }, doc); }
-		catch (e) { display = escapeHtml(value); }
-		return `<span class="filterable"${filterData(fieldname, value)}>${display == null ? "" : display}</span>`;
-	}
-
 	function injectStyles() {
 		if (document.getElementById("ja-list-styles")) return;
 		const style = document.createElement("style");
@@ -183,15 +136,13 @@
 			.ja-table .filterable { cursor: pointer; }
 			.ja-table .filterable:hover { text-decoration: underline; text-underline-offset: 2px; }
 
-			.ja-col-check     { width: 28px; padding-left: 10px !important; padding-right: 2px !important; }
-			.ja-col-candidate { min-width: 220px; }
-			.ja-col-stage     { width: 100px; white-space: nowrap; }
-			.ja-col-exp       { width: 70px; white-space: nowrap; }
-			.ja-col-score     { width: 130px; }
-			.ja-col-source    { width: 110px; white-space: nowrap; }
-			.ja-col-applied   { width: 110px; white-space: nowrap; }
-			.ja-col-owner     { width: 110px; white-space: nowrap; }
-			.ja-col-extra     { color: #374151; white-space: nowrap; }
+			/* Width, alignment and wrapping are per-column configuration now, emitted
+			   as inline styles by the column registry. Only what can't be configured
+			   — padding tweaks, the default text colour of a plain field cell —
+			   stays here. Header cells inherit the same inline alignment, so a
+			   right-aligned column's label sits over its values. */
+			.ja-col-check   { padding-left: 10px !important; padding-right: 2px !important; }
+			.rlc-field-cell { color: #374151; }
 
 			.ja-check { width: 16px; height: 16px; cursor: pointer; }
 			.ja-candidate { display: flex; align-items: center; gap: 10px; }
@@ -216,7 +167,7 @@
 			.ja-owner { display: inline-flex; align-items: center; gap: 6px; color: #374151; font-size: 12px; }
 
 			/* Native activity meta (modified time · comment count · like) */
-			.ja-col-activity { width: 120px; white-space: nowrap; text-align: right; padding-right: 12px !important; }
+			.ja-col-activity { padding-right: 12px !important; }
 			.ja-activity { display: inline-flex; align-items: center; gap: 6px; justify-content: flex-end; color: #9CA3AF; font-size: 12px; }
 			.ja-activity .comment-count { display: inline-flex; align-items: center; gap: 2px; }
 			.ja-activity .list-row-like, .ja-activity .like-action { cursor: pointer; display: inline-flex; align-items: center; }
@@ -416,45 +367,120 @@
 		</div>`;
 	}
 
-	function renderRow(doc, listview) {
-		const statusColor = getStatusColor(doc.status);
-		const score = Math.max(0, Math.min(100, Math.round((Number(doc.applicant_rating) || 0) * 20)));
-		const applied = doc.creation ? frappe.datetime.global_date_format(doc.creation) : "";
-		const candidate = fullName(doc);
-		const nameInitials = initialsOf(candidate || doc.email_id || doc.name);
-		return `
-			<tr data-name="${escapeHtml(doc.name)}">
-				<td class="ja-col-check"><input type="checkbox" class="ja-check list-row-checkbox" data-doctype="${DOCTYPE}" data-name="${escapeHtml(doc.name)}"/></td>
-				<td class="ja-col-candidate">
-					<div class="ja-candidate">
-						<span class="ja-avatar" style="background:${avatarColor(doc.name)}">${escapeHtml(nameInitials)}</span>
-						<div>
-							<div class="ja-cand-name">${escapeHtml(candidate)}</div>
-							<div class="ja-cand-email">${escapeHtml(doc.email_id || "")}</div>
-						</div>
-					</div>
-				</td>
-				<td class="ja-col-stage">
-					<span class="ja-status-pill${filterCls(doc.status)}"${filterData("status", doc.status)} style="background:${statusColor}1a;color:#111827">
-						<span class="ja-status-dot" style="background:${statusColor}"></span>${escapeHtml(doc.status || "")}
-					</span>
-				</td>
-				<td class="ja-col-exp">${escapeHtml(doc.custom_total_experience || "—")}</td>
-				<td class="ja-col-score">
-					<div class="ja-score">
+	/*
+	 * The designed columns, declared once. Order here is only the DEFAULT — the
+	 * saved configuration (⋯ → Configure Columns) decides what actually renders.
+	 * `fields` is what each column needs SELECTed; the engine unions them into
+	 * `add_fields` so a column can be switched on without a refetch.
+	 */
+	recruitment.list_columns.register(DOCTYPE, {
+		// Always fetched, never a column of their own.
+		reserved_fields: ["modified", "_liked_by", "_comment_count"],
+		// Fetched for the rest of the page (quick filters, aux calls), but still
+		// available to add as columns.
+		fetch_fields: ["phone_number", "job_title", "designation"],
+
+		leading: {
+			key: "__check",
+			width: "28px",
+			cell_class: "ja-col-check",
+			head_render: () => `<input type="checkbox" class="ja-check ja-select-all"/>`,
+			render: (doc) =>
+				`<input type="checkbox" class="ja-check list-row-checkbox" data-doctype="${DOCTYPE}" data-name="${escapeHtml(doc.name)}"/>`,
+		},
+
+		trailing: {
+			key: "__activity",
+			align: "right",
+			width: "120px",
+			cell_class: "ja-col-activity",
+			fields: ["modified", "_liked_by", "_comment_count"],
+			render: (doc, listview) => renderActivity(doc, listview),
+		},
+
+		columns: [
+			{
+				key: "candidate",
+				label: __("Candidate"),
+				// The row's identity cell: hiding it would leave rows you can't tell
+				// apart, so it stays put while everything around it moves.
+				locked: true,
+				min_width: "220px",
+				nowrap: false,
+				fields: ["name", "applicant_name", "custom_applicant_last_name", "email_id"],
+				render: (doc) => {
+					const candidate = fullName(doc);
+					const ini = initialsOf(candidate || doc.email_id || doc.name);
+					return `
+						<div class="ja-candidate">
+							<span class="ja-avatar" style="background:${avatarColor(doc.name)}">${escapeHtml(ini)}</span>
+							<div>
+								<div class="ja-cand-name">${escapeHtml(candidate)}</div>
+								<div class="ja-cand-email">${escapeHtml(doc.email_id || "")}</div>
+							</div>
+						</div>`;
+				},
+			},
+			{
+				key: "stage",
+				label: __("Stage"),
+				width: "100px",
+				fields: ["status"],
+				render: (doc) => {
+					const color = getStatusColor(doc.status);
+					return `<span class="ja-status-pill${filterCls(doc.status)}"${filterData("status", doc.status)} style="background:${color}1a;color:#111827">
+						<span class="ja-status-dot" style="background:${color}"></span>${escapeHtml(doc.status || "")}
+					</span>`;
+				},
+			},
+			{
+				key: "experience",
+				label: __("Experience"),
+				width: "70px",
+				fields: ["custom_total_experience"],
+				render: (doc) => escapeHtml(doc.custom_total_experience || "—"),
+			},
+			{
+				key: "score",
+				label: __("Score"),
+				width: "130px",
+				fields: ["applicant_rating"],
+				render: (doc) => {
+					const score = Math.max(0, Math.min(100, Math.round((Number(doc.applicant_rating) || 0) * 20)));
+					return `<div class="ja-score">
 						<div class="ja-score-bar"><div class="ja-score-fill" style="width:${score}%"></div></div>
 						<span class="ja-score-num">${score}</span>
-					</div>
-				</td>
-				<td class="ja-col-source">${doc.source
+					</div>`;
+				},
+			},
+			{
+				key: "source",
+				label: __("Source"),
+				width: "110px",
+				fields: ["source", "source_name"],
+				render: (doc) => (doc.source
 					? `<span class="filterable"${filterData("source", doc.source)}>${escapeHtml(doc.source)}</span>`
-					: escapeHtml(doc.source_name || "—")}</td>
-				<td class="ja-col-applied">${escapeHtml(applied)}</td>
-				<td class="ja-col-owner" data-owner="${escapeHtml(doc.owner || "")}">${ownerCellHtml(doc.owner)}</td>
-				${extraRowCells(doc, listview)}
-				<td class="ja-col-activity">${renderActivity(doc, listview)}</td>
-			</tr>`;
-	}
+					: escapeHtml(doc.source_name || "—")),
+			},
+			{
+				key: "applied",
+				label: __("Applied"),
+				width: "110px",
+				fields: ["creation"],
+				render: (doc) => escapeHtml(doc.creation ? frappe.datetime.global_date_format(doc.creation) : ""),
+			},
+			{
+				key: "owner",
+				label: __("Owner"),
+				width: "110px",
+				fields: ["owner"],
+				// Names arrive with the aux call; patchOwnerCells() finds the cell again
+				// through this attribute and swaps the placeholder for the real name.
+				cell_attrs: (doc) => ` data-owner="${escapeHtml(doc.owner || "")}"`,
+				render: (doc) => ownerCellHtml(doc.owner),
+			},
+		],
+	});
 
 	function updateSelectAllState(container) {
 		const selectAll = container.querySelector(".ja-select-all");
@@ -498,25 +524,12 @@
 		const data = listview.data || [];
 		if (!data.length) { $host.html(""); return; }
 
-		const head = `
-			<tr>
-				<th class="ja-col-check"><input type="checkbox" class="ja-check ja-select-all"/></th>
-				<th class="ja-col-candidate">Candidate</th>
-				<th class="ja-col-stage">Stage</th>
-				<th class="ja-col-exp">Experience</th>
-				<th class="ja-col-score">Score</th>
-				<th class="ja-col-source">Source</th>
-				<th class="ja-col-applied">Applied</th>
-				<th class="ja-col-owner">Owner</th>
-				${extraHeadCells(listview)}
-				<th class="ja-col-activity"></th>
-			</tr>`;
-
+		const cols = recruitment.list_columns;
 		$host.html(`
 			<div class="ja-table-wrapper">
 				<table class="ja-table">
-					<thead>${head}</thead>
-					<tbody>${data.map((d) => renderRow(d, listview)).join("")}</tbody>
+					<thead>${cols.head_html(DOCTYPE, listview)}</thead>
+					<tbody>${data.map((d) => cols.row_html(DOCTYPE, d, listview)).join("")}</tbody>
 				</table>
 			</div>`);
 
@@ -623,21 +636,29 @@
 
 	frappe.listview_settings[DOCTYPE] = {
 		hide_name_column: true,
-		// Columns are driven by Frappe's List Settings (in_list_view + the per-user
-		// "Settings" picker); anything selected there is fetched by Frappe and drawn
-		// as an extra column. These are only the fields our own cells need.
-		add_fields: [
-			"applicant_name", "custom_applicant_last_name", "email_id", "phone_number", "status",
-			"job_title", "designation", "source", "source_name",
-			"applicant_rating", "custom_total_experience",
-			"owner", "creation", "modified", "_liked_by",
-		],
+		/*
+		 * Every field any registered column can need, whether or not it is currently
+		 * shown — so switching a column on in "Configure Columns" redraws instantly
+		 * instead of waiting on a refetch.
+		 *
+		 * A GETTER, not a value: this file is executed by model.js's init_doctype(),
+		 * which runs BEFORE the same callback assigns frappe.model.user_settings for
+		 * the doctype. Computing eagerly would miss a user's personally configured
+		 * field columns on the first load of the session and render them blank.
+		 * Frappe reads settings.add_fields later, in set_fields(), by which point the
+		 * settings are in place.
+		 */
+		get add_fields() {
+			return recruitment.list_columns.required_fields(DOCTYPE);
+		},
 
 		onload(listview) {
 			_listview = listview;
+			recruitment.list_columns.ensure_fields(DOCTYPE, listview);
 			injectStyles();
 			mountAboveList(listview);
 			installRenderOverride(listview);
+			recruitment.list_columns.add_menu_item(DOCTYPE, listview);
 			syncActiveTabFromFilters(listview);
 			syncOpeningFromFilters();
 			renderHeader();
@@ -708,6 +729,7 @@
 			_listview = listview;
 			mountAboveList(listview);
 			installRenderOverride(listview);
+			recruitment.list_columns.add_menu_item(DOCTYPE, listview);
 			syncActiveTabFromFilters(listview);
 			syncOpeningFromFilters();
 			renderHeader();

@@ -135,59 +135,6 @@
 	let state = { activeTab: "All", tabCounts: {}, statusOptions: [] };
 	let _listview = null;
 
-	// Fieldnames that already have their OWN dedicated column in our designed table
-	// (so we don't draw them twice). Everything else the user adds via Frappe's List
-	// Settings is appended as a real extra column with its own value.
-	const KNOWN_FIELDS = new Set([
-		"name", "designation", "department", "status", "custom_employment_type_link",
-		"requested_by", "requested_by_name", "no_of_positions",
-		"expected_compensation", "expected_by",
-		"modified", "_liked_by", "_comment_count",
-	]);
-
-	// Columns the user added via List Settings that we don't already draw.
-	// Frappe builds `listview.columns` from the doctype's in_list_view fields +
-	// List View Settings, and fetches their data automatically, so doc[fieldname]
-	// is populated for us.
-	function extraColumns(listview) {
-		const cols = (listview && listview.columns) || [];
-		return cols.filter((c) => c && c.type === "Field" && c.df && c.df.fieldname && !KNOWN_FIELDS.has(c.df.fieldname));
-	}
-	function extraHeadCells(listview) {
-		return extraColumns(listview).map((c) =>
-			`<th class="jr-col-extra">${escapeHtml(__(c.df.label || c.df.fieldname))}</th>`
-		).join("");
-	}
-	function extraRowCells(doc, listview) {
-		return extraColumns(listview).map((c) =>
-			`<td class="jr-col-extra">${formatCellHtml(doc, c.df)}</td>`
-		).join("");
-	}
-
-	// Render one extra-column value exactly like Frappe's native list cell:
-	// formatted for display, but wrapped in a `.filterable` element (with the raw
-	// stored value in data-filter) for every field type Frappe makes clickable —
-	// i.e. everything except Image / rich-HTML fields.
-	function formatCellHtml(doc, df) {
-		const fieldname = df && df.fieldname;
-		const value = doc[fieldname];
-		if (value === null || value === undefined || value === "") return "";
-		const htmlTypes = (frappe.model && frappe.model.html_fieldtypes) || [];
-		if (df.fieldtype === "Image" || htmlTypes.includes(df.fieldtype)) {
-			try { return frappe.format(value, df, { inline: true }, doc); }
-			catch (e) { return escapeHtml(value); }
-		}
-		// Link: render the raw value as a filter-only anchor (no href) so clicking
-		// filters instead of navigating — matching Frappe's native Link cell.
-		if (df.fieldtype === "Link" || df.fieldtype === "Dynamic Link") {
-			return `<a class="filterable"${filterData(fieldname, value)}>${escapeHtml(value)}</a>`;
-		}
-		let display;
-		try { display = frappe.format(value, df, { inline: true }, doc); }
-		catch (e) { display = escapeHtml(value); }
-		return `<span class="filterable"${filterData(fieldname, value)}>${display == null ? "" : display}</span>`;
-	}
-
 	function injectStyles() {
 		if (document.getElementById("jr-list-styles")) return;
 		const style = document.createElement("style");
@@ -224,17 +171,18 @@
 			.jr-table .filterable { cursor: pointer; }
 			.jr-table .filterable:hover { text-decoration: underline; text-underline-offset: 2px; }
 
-			.jr-col-check        { width: 28px; padding-left: 10px !important; padding-right: 2px !important; }
-			.jr-col-id           { width: 170px; white-space: nowrap; color: #6B7280; font-size: 12px; }
-			.jr-col-designation  { min-width: 200px; font-weight: 600; color: #111827; }
-			.jr-col-status       { width: 130px; white-space: nowrap; }
-			.jr-col-department   { width: 140px; white-space: nowrap; color: #4B5563; }
-			.jr-col-type         { width: 90px; white-space: nowrap; color: #4B5563; }
-			.jr-col-requester    { width: 160px; white-space: nowrap; }
-			.jr-col-positions    { width: 80px; text-align: right; font-weight: 600; color: #111827; padding-right: 18px !important; }
-			.jr-col-compensation { width: 130px; text-align: right; white-space: nowrap; font-weight: 600; color: #111827; }
-			.jr-col-expected     { width: 130px; white-space: nowrap; padding-right: 12px !important; }
-			.jr-col-extra        { color: #374151; white-space: nowrap; }
+			/* Width, alignment and wrapping are per-column configuration now, emitted
+			   as inline styles by the column registry; what stays here is the visual
+			   treatment of a cell (weight, colour, padding) that isn't configurable. */
+			.jr-col-check        { padding-left: 10px !important; padding-right: 2px !important; }
+			.jr-col-id           { color: #6B7280; font-size: 12px; }
+			.jr-col-designation  { font-weight: 600; color: #111827; }
+			.jr-col-department   { color: #4B5563; }
+			.jr-col-type         { color: #4B5563; }
+			.jr-col-positions    { font-weight: 600; color: #111827; padding-right: 18px !important; }
+			.jr-col-compensation { font-weight: 600; color: #111827; }
+			.jr-col-expected     { padding-right: 12px !important; }
+			.rlc-field-cell      { color: #374151; }
 
 			.jr-check { width: 16px; height: 16px; cursor: pointer; }
 			.jr-status-pill {
@@ -253,7 +201,7 @@
 			.jr-expected-hint { font-size: 11px; color: #6B7280; margin-top: 2px; }
 
 			/* Native activity meta (modified time · comment count · like) */
-			.jr-col-activity { width: 120px; white-space: nowrap; text-align: right; padding-right: 12px !important; }
+			.jr-col-activity { padding-right: 12px !important; }
 			.jr-activity { display: inline-flex; align-items: center; gap: 6px; justify-content: flex-end; color: #9CA3AF; font-size: 12px; }
 			.jr-activity .comment-count { display: inline-flex; align-items: center; gap: 2px; }
 			.jr-activity .list-row-like, .jr-activity .like-action { cursor: pointer; display: inline-flex; align-items: center; }
@@ -354,46 +302,132 @@
 		</div>`;
 	}
 
-	function renderRow(doc, listview) {
-		const statusColor = getStatusColor(doc.status);
-		const reqName = doc.requested_by_name || doc.requested_by || "";
-		const currency = defaultCurrency();
-		return `
-			<tr data-name="${escapeHtml(doc.name)}">
-				<td class="jr-col-check"><input type="checkbox" class="jr-check list-row-checkbox" data-doctype="${DOCTYPE}" data-name="${escapeHtml(doc.name)}"/></td>
-				<td class="jr-col-id">${escapeHtml(doc.name)}</td>
-				<td class="jr-col-designation">${doc.designation
+	/*
+	 * The designed columns, declared once. Order here is only the DEFAULT — the
+	 * saved configuration (⋯ → Configure Columns) decides what actually renders,
+	 * in what order, at what alignment and width.
+	 */
+	recruitment.list_columns.register(DOCTYPE, {
+		reserved_fields: ["modified", "_liked_by", "_comment_count"],
+		// Read by the "Activate Job Requisition" action's get_query, not by a column.
+		fetch_fields: ["company", "creation"],
+
+		leading: {
+			key: "__check",
+			width: "28px",
+			cell_class: "jr-col-check",
+			head_render: () => `<input type="checkbox" class="jr-check jr-select-all"/>`,
+			render: (doc) =>
+				`<input type="checkbox" class="jr-check list-row-checkbox" data-doctype="${DOCTYPE}" data-name="${escapeHtml(doc.name)}"/>`,
+		},
+
+		trailing: {
+			key: "__activity",
+			align: "right",
+			width: "120px",
+			cell_class: "jr-col-activity",
+			fields: ["modified", "_liked_by", "_comment_count"],
+			render: (doc, listview) => renderActivity(doc, listview),
+		},
+
+		columns: [
+			{
+				key: "id",
+				label: __("ID"),
+				width: "170px",
+				fields: ["name"],
+				cell_class: "jr-col-id",
+				render: (doc) => escapeHtml(doc.name),
+			},
+			{
+				key: "designation",
+				label: __("Designation"),
+				// The requisition's identity in the row; everything else can go.
+				locked: true,
+				min_width: "200px",
+				nowrap: false,
+				fields: ["designation"],
+				cell_class: "jr-col-designation",
+				render: (doc) => (doc.designation
 					? `<span class="filterable"${filterData("designation", doc.designation)}>${escapeHtml(doc.designation)}</span>`
-					: "—"}</td>
-				<td class="jr-col-status">
-					<span class="jr-status-pill${filterCls(doc.status)}"${filterData("status", doc.status)} style="background:${statusColor}1a;color:#111827">
-						<span class="jr-status-dot" style="background:${statusColor}"></span>${escapeHtml(doc.status || "")}
-					</span>
-				</td>
-				<td class="jr-col-department">${doc.department
+					: "—"),
+			},
+			{
+				key: "status",
+				label: __("Status"),
+				width: "130px",
+				fields: ["status"],
+				render: (doc) => {
+					const color = getStatusColor(doc.status);
+					return `<span class="jr-status-pill${filterCls(doc.status)}"${filterData("status", doc.status)} style="background:${color}1a;color:#111827">
+						<span class="jr-status-dot" style="background:${color}"></span>${escapeHtml(doc.status || "")}
+					</span>`;
+				},
+			},
+			{
+				key: "department",
+				label: __("Department"),
+				width: "140px",
+				fields: ["department"],
+				cell_class: "jr-col-department",
+				render: (doc) => (doc.department
 					? `<span class="filterable"${filterData("department", doc.department)}>${escapeHtml(doc.department)}</span>`
-					: "—"}</td>
-				<td class="jr-col-type">${doc.custom_employment_type_link
+					: "—"),
+			},
+			{
+				key: "employment_type",
+				label: __("Type"),
+				width: "90px",
+				fields: ["custom_employment_type_link"],
+				cell_class: "jr-col-type",
+				render: (doc) => (doc.custom_employment_type_link
 					? `<span class="filterable"${filterData("custom_employment_type_link", doc.custom_employment_type_link)}>${escapeHtml(doc.custom_employment_type_link)}</span>`
-					: "—"}</td>
-				<td class="jr-col-requester">
-					${reqName
-						? `<span class="jr-requester${filterCls(doc.requested_by)}"${filterData("requested_by", doc.requested_by)}>
-							<span class="jr-avatar" style="background:${avatarColor(doc.requested_by || reqName)}">${escapeHtml(initialsOf(reqName))}</span>
-							${escapeHtml(reqName)}
-						</span>`
-						: "—"}
-				</td>
-				<td class="jr-col-positions">${escapeHtml(String(doc.no_of_positions || 0))}</td>
-				<td class="jr-col-compensation">${escapeHtml(formatCurrency(doc.expected_compensation, currency))}</td>
-				<td class="jr-col-expected">
+					: "—"),
+			},
+			{
+				key: "requested_by",
+				label: __("Requested By"),
+				width: "160px",
+				fields: ["requested_by", "requested_by_name"],
+				render: (doc) => {
+					const reqName = doc.requested_by_name || doc.requested_by || "";
+					if (!reqName) return "—";
+					return `<span class="jr-requester${filterCls(doc.requested_by)}"${filterData("requested_by", doc.requested_by)}>
+						<span class="jr-avatar" style="background:${avatarColor(doc.requested_by || reqName)}">${escapeHtml(initialsOf(reqName))}</span>
+						${escapeHtml(reqName)}
+					</span>`;
+				},
+			},
+			{
+				key: "positions",
+				label: __("Positions"),
+				width: "80px",
+				align: "right",
+				fields: ["no_of_positions"],
+				cell_class: "jr-col-positions",
+				render: (doc) => escapeHtml(String(doc.no_of_positions || 0)),
+			},
+			{
+				key: "compensation",
+				label: __("Compensation"),
+				width: "130px",
+				align: "right",
+				fields: ["expected_compensation"],
+				cell_class: "jr-col-compensation",
+				render: (doc) => escapeHtml(formatCurrency(doc.expected_compensation, defaultCurrency())),
+			},
+			{
+				key: "expected_by",
+				label: __("Expected By"),
+				width: "130px",
+				fields: ["expected_by"],
+				cell_class: "jr-col-expected",
+				render: (doc) => `
 					<div class="jr-expected-date">${escapeHtml(formatDate(doc.expected_by) || "—")}</div>
-					${doc.expected_by ? `<div class="jr-expected-hint">${escapeHtml(relativeDate(doc.expected_by))}</div>` : ""}
-				</td>
-				${extraRowCells(doc, listview)}
-				<td class="jr-col-activity">${renderActivity(doc, listview)}</td>
-			</tr>`;
-	}
+					${doc.expected_by ? `<div class="jr-expected-hint">${escapeHtml(relativeDate(doc.expected_by))}</div>` : ""}`,
+			},
+		],
+	});
 
 	function updateSelectAllState(container) {
 		const selectAll = container.querySelector(".jr-select-all");
@@ -438,27 +472,12 @@
 		const data = listview.data || [];
 		if (!data.length) { $host.html(""); return; }  // let Frappe's native no-result show
 
-		const head = `
-			<tr>
-				<th class="jr-col-check"><input type="checkbox" class="jr-check jr-select-all"/></th>
-				<th class="jr-col-id">ID</th>
-				<th class="jr-col-designation">Designation</th>
-				<th class="jr-col-status">Status</th>
-				<th class="jr-col-department">Department</th>
-				<th class="jr-col-type">Type</th>
-				<th class="jr-col-requester">Requested By</th>
-				<th class="jr-col-positions">Positions</th>
-				<th class="jr-col-compensation">Compensation</th>
-				<th class="jr-col-expected">Expected By</th>
-				${extraHeadCells(listview)}
-				<th class="jr-col-activity"></th>
-			</tr>`;
-
+		const cols = recruitment.list_columns;
 		$host.html(`
 			<div class="jr-table-wrapper">
 				<table class="jr-table">
-					<thead>${head}</thead>
-					<tbody>${data.map((d) => renderRow(d, listview)).join("")}</tbody>
+					<thead>${cols.head_html(DOCTYPE, listview)}</thead>
+					<tbody>${data.map((d) => cols.row_html(DOCTYPE, d, listview)).join("")}</tbody>
 				</table>
 			</div>`);
 
@@ -522,18 +541,29 @@
 
 	frappe.listview_settings[DOCTYPE] = {
 		hide_name_column: true,
-		add_fields: [
-			"designation", "department", "status", "custom_employment_type_link",
-			"requested_by", "requested_by_name", "no_of_positions",
-			"expected_compensation", "expected_by", "company",
-			"modified", "creation", "_liked_by",
-		],
+		/*
+		 * Every field any registered column can need, whether or not it is currently
+		 * shown — so switching a column on in "Configure Columns" redraws instantly
+		 * instead of waiting on a refetch.
+		 *
+		 * A GETTER, not a value: this file is executed by model.js's init_doctype(),
+		 * which runs BEFORE the same callback assigns frappe.model.user_settings for
+		 * the doctype. Computing eagerly would miss a user's personally configured
+		 * field columns on the first load of the session and render them blank.
+		 * Frappe reads settings.add_fields later, in set_fields(), by which point the
+		 * settings are in place.
+		 */
+		get add_fields() {
+			return recruitment.list_columns.required_fields(DOCTYPE);
+		},
 
 		onload(listview) {
 			_listview = listview;
+			recruitment.list_columns.ensure_fields(DOCTYPE, listview);
 			injectStyles();
 			mountAboveList(listview);
 			installRenderOverride(listview);
+			recruitment.list_columns.add_menu_item(DOCTYPE, listview);
 			syncActiveTabFromFilters(listview);
 			renderTabs();
 			fetchAux();
@@ -623,6 +653,7 @@
 			_listview = listview;
 			mountAboveList(listview);
 			installRenderOverride(listview);
+			recruitment.list_columns.add_menu_item(DOCTYPE, listview);
 			syncActiveTabFromFilters(listview);
 			renderTabs();
 		},
