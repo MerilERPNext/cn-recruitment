@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import toast from "react-hot-toast";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, MessageSquare } from "lucide-react";
 import { Typography } from "../../../shared/atoms/Typography";
 import { Card } from "../../../shared/atoms/Card";
 import Badge, { type BadgeVariant } from "../../../shared/Badge";
@@ -131,6 +131,19 @@ export const EmployeeGoalCard = React.memo(({
         </div>
 
         <div className="flex items-center justify-between sm:justify-end shrink-0 w-full sm:w-auto gap-2 pt-1 sm:pt-0">
+         
+          <Button
+            variant="subtle"
+            bgColor="primary"
+            size="sm"
+            onClick={(e) => {
+              e.stopPropagation();
+            }}
+            className="font-medium text-xs px-3.5 py-1.5 rounded-lg border border-blue-100 text-blue-700 bg-blue-50/80 hover:bg-blue-100 hover:border-blue-200 transition-all flex items-center gap-1.5 shadow-xs cursor-pointer"
+          >
+            <MessageSquare className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+            Comment
+          </Button>
           <Button
             variant="outline"
             disabled={isGoalPending}
