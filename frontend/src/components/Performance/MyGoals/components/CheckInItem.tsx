@@ -66,6 +66,12 @@ export const CheckInItem: React.FC<CheckInItemProps> = memo(({ checkIn }) => {
           <ExternalLink className="h-3 w-3" />
         </a>
       )}
+      <Typography >
+        {checkIn.manager_comment ?? ""}
+        {checkIn.manager_comment_by ?? ""}
+        {checkIn.manager_comment_on ?? ""}
+
+      </Typography>
     </div>
   );
 });

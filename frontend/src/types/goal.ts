@@ -560,6 +560,9 @@ export interface GoalCheckIn {
   note: string;
   attachment: string | null;
   creation: string;
+  manager_comment:string | null;
+  manager_comment_by:string | null;
+  manager_comment_on:string |null
 }
 
 export interface SubmitGoalCheckInResponse {
