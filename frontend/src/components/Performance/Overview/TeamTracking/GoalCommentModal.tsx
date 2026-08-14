@@ -67,18 +67,18 @@ export const GoalCommentModal: React.FC<GoalCommentModalProps> = memo(({
 
   return (
     <Modal isOpen={isOpen} onClose={handleClose} size="md">
-      <div className="p-5 sm:p-6 flex flex-col gap-4">
+      <div className="p-4 sm:p-6 flex flex-col gap-4">
         {/* Header */}
-        <div className="flex items-center justify-between pb-3 border-b border-gray-100">
-          <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
-              <MessageSquare className="w-5 h-5" />
+        <div className="flex items-start justify-between gap-3 pb-3 border-b border-gray-100">
+          <div className="flex items-start gap-3 min-w-0 flex-1">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 mt-0.5">
+              <MessageSquare className="w-4.5 h-4.5 sm:w-5 sm:h-5" />
             </div>
-            <div>
-              <Typography variant="h3" className="text-gray-900 font-bold text-base sm:text-lg">
+            <div className="min-w-0 flex-1">
+              <Typography variant="h3" className="text-gray-900 font-bold text-sm sm:text-base leading-snug">
                 Add Goal Comment
               </Typography>
-              <Typography variant="caption" className="text-gray-500 text-xs">
+              <Typography variant="caption" className="text-gray-500 text-[11px] sm:text-xs leading-normal mt-0.5 block">
                 Share updates, progress feedback, or key notes
               </Typography>
             </div>
@@ -87,7 +87,8 @@ export const GoalCommentModal: React.FC<GoalCommentModalProps> = memo(({
             type="button"
             disabled={isPending}
             onClick={handleClose}
-            className="text-gray-400 hover:text-gray-600 p-1.5 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer disabled:opacity-50"
+            className="text-gray-400 hover:text-gray-600 p-1.5 -mr-1 -mt-1 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer disabled:opacity-50 shrink-0"
+            aria-label="Close"
           >
             <X className="w-5 h-5" />
           </button>
@@ -106,7 +107,7 @@ export const GoalCommentModal: React.FC<GoalCommentModalProps> = memo(({
               value={comment}
               onChange={(e) => setComment(e.target.value)}
               placeholder="Write your feedback, progress updates, or notes here..."
-              className="w-full min-h-[120px] p-3 text-sm text-gray-800 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 resize-none transition-all placeholder:text-gray-400 disabled:bg-gray-50 disabled:cursor-not-allowed"
+              className="w-full min-h-[100px] sm:min-h-[120px] p-3 text-sm text-gray-800 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 resize-none transition-all placeholder:text-gray-400 disabled:bg-gray-50 disabled:cursor-not-allowed"
               maxLength={500}
             />
             <div className="flex justify-end items-center text-[11px] text-gray-400 px-1">
@@ -115,14 +116,14 @@ export const GoalCommentModal: React.FC<GoalCommentModalProps> = memo(({
           </div>
 
           {/* Footer Actions */}
-          <div className="flex items-center justify-end gap-3 pt-3 border-t border-gray-100">
+          <div className="flex items-center justify-end gap-2.5 sm:gap-3 pt-3 border-t border-gray-100">
             <Button
               variant="outline"
               size="md"
               type="button"
               onClick={handleClose}
               disabled={isPending}
-              className="border-gray-200 text-gray-700 hover:bg-gray-50 px-4 h-10 text-xs font-medium cursor-pointer"
+              className="flex-1 sm:flex-initial border-gray-200 text-gray-700 hover:bg-gray-50 px-4 h-10 text-xs font-medium cursor-pointer"
             >
               Cancel
             </Button>
@@ -133,7 +134,7 @@ export const GoalCommentModal: React.FC<GoalCommentModalProps> = memo(({
               type="submit"
               loading={isPending}
               disabled={isPending || !comment.trim()}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-5 h-10 text-xs font-medium cursor-pointer"
+              className="flex-1 sm:flex-initial bg-blue-600 hover:bg-blue-700 text-white px-5 h-10 text-xs font-medium cursor-pointer"
             >
               Submit Comment
             </Button>
