@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient, type UseQueryResult } from "@tanstack/react-query";
-import type { DeleteGoalsPayload, GoalActionResponse, GoalFormConfig, GoalPlanId, GoalPlanResponse, GoalsRequest, GoalSubmitResponse, Message, MyGoalsResponse, ReferenceGoalsParams, ReferenceGoalsResponse, GoalRepositoryResponse, SaveGoalsPayload, SubmitSelectedGoalsPayload, CascadeGoalsParams, CascadeGoalsResponse, GoalDetailResponse, GoalCheckInsResponse, SubmitGoalCheckInPayload, SubmitGoalCheckInResponse, PerformanceOverviewResponse, RequestCheckInPayload, RequestCheckInResponse, MyPeerReviewsResponse, FeedbackFormResponse, SaveFeedbackResponse, SaveFeedbackPayload } from "../types/goal";
+import type { DeleteGoalsPayload, GoalActionResponse, GoalFormConfig, GoalPlanId, GoalPlanResponse, GoalsRequest, GoalSubmitResponse, Message, MyGoalsResponse, ReferenceGoalsParams, ReferenceGoalsResponse, GoalRepositoryResponse, SaveGoalsPayload, SubmitSelectedGoalsPayload, CascadeGoalsParams, CascadeGoalsResponse, GoalDetailResponse, GoalCheckInsResponse, SubmitGoalCheckInPayload, SubmitGoalCheckInResponse, PerformanceOverviewResponse, RequestCheckInPayload, RequestCheckInResponse, MyPeerReviewsResponse, FeedbackFormResponse, SaveFeedbackResponse, SaveFeedbackPayload, SubmitFeedbackPayload, SubmitFeedbackResponse } from "../types/goal";
 import { performanceService } from "../services/performanceService";
 import { queryClient } from "../providers/QueryProvider";
 interface PerformanceQueryKey {
@@ -238,6 +238,15 @@ export const useGetFeedBackForm = (peerId: string, options?: { enabled?: boolean
 export const useSaveFeedback = ()  => {
   return useMutation<SaveFeedbackResponse, Error, SaveFeedbackPayload>({
     mutationFn:(payload)=>performanceService.saveFeedback(payload),
+    onSuccess:()=>{
+      queryClient.invalidateQueries({queryKey:PERFORMANCE_QUERY_KEYS.myPeerReviews})
+    }
+  })
+}
+  
+export const useSubmitFeedback = ()  => {
+  return useMutation<SubmitFeedbackResponse, Error, SubmitFeedbackPayload>({
+    mutationFn:(payload)=>performanceService.submitFeedback(payload),
     onSuccess:()=>{
       queryClient.invalidateQueries({queryKey:PERFORMANCE_QUERY_KEYS.myPeerReviews})
     }

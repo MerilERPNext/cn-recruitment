@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import Button from "../../shared/atoms/Button";
 import { Typography } from "../../shared/atoms/Typography";
 import type { PeerReviewItem } from "../../../types/goal";
-import { PERFORMANCE_QUERY_KEYS, useGetFeedBackForm, useGetMyPeerReviews, useSaveFeedback } from "../../../hooks/usePerformance";
+import { PERFORMANCE_QUERY_KEYS, useGetFeedBackForm, useGetMyPeerReviews, useSaveFeedback, useSubmitFeedback } from "../../../hooks/usePerformance";
 import Badge from "../../shared/Badge";
 import toast from "react-hot-toast";
 import { useQueryClient } from "@tanstack/react-query";
@@ -40,6 +40,7 @@ const queryClient = useQueryClient()
     openReviews.find((r) => r.nomination === activeNominationId) || openReviews[0];
   const { data: feedBackResponse, isLoading: feedbackLoading, error: feedbackErr, refetch: feedBackRefetch } = useGetFeedBackForm(activeNominationId)
   const { mutate:saveFeedback,isPending:saveFeedbackLoading,error:saveFeedbackErr } = useSaveFeedback() 
+  const { mutate:submitFeedback , isPending:submitfeedbackLoading , error:submitfeedbackErr} = useSubmitFeedback()
   const reviewFeedbackResponse = feedBackResponse?.data
   const [ratings, setRatings] = useState<
     Record<string, { value: number; comment: string }>
@@ -83,6 +84,21 @@ const queryClient = useQueryClient()
   const hasItems = Boolean(reviewFeedbackResponse?.items && reviewFeedbackResponse.items.length > 0);
   const isSubmitted = Boolean(reviewFeedbackResponse?.locked || reviewFeedbackResponse?.status?.toLowerCase() === "submitted");
 
+  const isAnyLoading = saveFeedbackLoading || submitfeedbackLoading;
+
+  const getErrorMessage = (err: any): string => {
+    if (!err) return "";
+    if (typeof err === "string") return err;
+    if (err.response?.data?.message?.data?.errors?.length) {
+      return err.response.data.message.data.errors.join(", ");
+    }
+    if (err.response?.data?.message?.message) {
+      return err.response.data.message.message;
+    }
+    if (err.message) return err.message;
+    return "An error occurred";
+  };
+
   const handelRatingDraft = () => {
     const formattAns = Object.entries(ratings).map(([id, item]) => ({
       id,
@@ -99,11 +115,36 @@ const queryClient = useQueryClient()
       {
         onSuccess: (res) => {
           toast.success(res?.message || "Draft saved successfully!");
-          queryClient.invalidateQueries({queryKey:PERFORMANCE_QUERY_KEYS.feedbackForm(activeNominationId)})
-
+          queryClient.invalidateQueries({queryKey:PERFORMANCE_QUERY_KEYS.feedbackForm(activeNominationId)});
+          queryClient.invalidateQueries({queryKey:PERFORMANCE_QUERY_KEYS.myPeerReviews});
         },
         onError: (err) => {
-          toast.error(err?.message || "Failed to save draft.");
+          toast.error(getErrorMessage(err) || "Failed to save draft.");
+        },
+      }
+    );
+  };
+  const handelSubmitFeedback = () => {
+    const formattAns = Object.entries(ratings).map(([id, item]) => ({
+      id,
+      rating: item.value,
+      comment: item.comment,
+    }));
+    submitFeedback(
+      {
+        payload: {
+          nomination: activeNominationId,
+          answers: formattAns,
+        },
+      },
+      {
+        onSuccess: (res) => {
+          toast.success(res?.message || "Feedback submitted successfully!");
+          queryClient.invalidateQueries({queryKey:PERFORMANCE_QUERY_KEYS.feedbackForm(activeNominationId)});
+          queryClient.invalidateQueries({queryKey:PERFORMANCE_QUERY_KEYS.myPeerReviews});
+        },
+        onError: (err) => {
+          toast.error(getErrorMessage(err) || "Failed to submit feedback.");
         },
       }
     );
@@ -200,12 +241,12 @@ const queryClient = useQueryClient()
                 )}
               </div>
 
-              {saveFeedbackErr && (
+              {(saveFeedbackErr || submitfeedbackErr) && (
                 <div className="mt-4">
                   <FeedbackErrorCard
-                    title="Failed to save feedback draft"
-                    error={saveFeedbackErr}
-                        onRetry={() => handelRatingDraft()}
+                    title={submitfeedbackErr ? "Failed to submit feedback" : "Failed to save feedback draft"}
+                    error={getErrorMessage(submitfeedbackErr || saveFeedbackErr)}
+                    onRetry={() => (submitfeedbackErr ? handelSubmitFeedback() : handelRatingDraft())}
                   />
                 </div>
               )}
@@ -218,16 +259,18 @@ const queryClient = useQueryClient()
                     bgColor="text"
                     size="md"
                     loading={saveFeedbackLoading}
-                    disabled={saveFeedbackLoading || !hasItems || isSubmitted}
+                    disabled={isAnyLoading || !hasItems || isSubmitted}
                     className="h-11 w-full justify-center border-gray-200 bg-white px-5 text-gray-700 hover:bg-gray-50 sm:w-auto"
                   >
                     Save Draft
                   </Button>
                   <Button
+                    onClick={() => handelSubmitFeedback()}
                     variant="contain"
                     bgColor="primary"
                     size="md"
-                    disabled={!hasItems || isSubmitted}
+                    loading={submitfeedbackLoading}
+                    disabled={isAnyLoading || !hasItems || isSubmitted}
                     className="h-11 w-full justify-center bg-blue-600 px-6 text-white hover:bg-blue-700 sm:w-auto"
                   >
                     Submit Feedback

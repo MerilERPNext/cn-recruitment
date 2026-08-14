@@ -715,10 +715,15 @@ export interface SaveFeedbackResponse {
   data: SaveFeedbackData;
 }
 
+export interface SubmitFeedbackData {
+  feedback: string;
+  status: string;
+}
+
 export interface SubmitFeedbackResponse {
   success: boolean;
   message: string;
-  data: SaveFeedbackData;
+  data: SubmitFeedbackData;
 }
 
 
