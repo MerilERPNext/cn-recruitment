@@ -182,6 +182,17 @@ chatnext-app.field-required::after {
   display: inline !important;
 }
 
+/* Other datagrids in the V2 requisition form (e.g. Pre-Screened Candidates):
+   same column-HEADER asterisk for required columns, instead of a stray marker
+   on each cell's label. Scoped to the V2 container via its data-testid. */
+[data-testid="formioContainer"] .formio-component table thead th.field-required::after,
+[data-testid="formioContainer"] .formio-component table thead th .field-required::after {
+  content: " *" !important;
+  color: #ef4444 !important;
+  font-weight: 600 !important;
+  display: inline !important;
+}
+
 .form-control.input {
   border-radius: 4px 0 0 4px !important;
 }
@@ -207,7 +218,15 @@ chatnext-app.field-required::after {
    off the nested Cost Center child table, which must stay small. */
 [data-testid="formioContainer"] .formio-component-positions > table,
 [data-testid="formioContainer"] .formio-component-positions > .table-responsive > table {
-  min-width: 2450px;
+  min-width: 2850px;
+}
+
+/* Keep Position Details headings on one line. The outer grid scrolls
+   horizontally, so widening the table is preferable to wrapping a heading. */
+[data-testid="formioContainer"] .formio-component-positions > table th,
+[data-testid="formioContainer"] .formio-component-positions > .table-responsive > table th {
+  white-space: nowrap !important;
+  word-break: normal !important;
 }
 
 /* Widen the position select columns so the selected value / dropdown data does

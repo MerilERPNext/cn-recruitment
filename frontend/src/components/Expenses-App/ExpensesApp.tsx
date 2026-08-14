@@ -55,7 +55,7 @@ const ExpensesApp: React.FC = () => {
       {
         key: "Summary",
         label: "Expense Summary",
-        permissionKey: "ExpenseSummary",
+        permissionKey: "Expense Summary",
       },
       { key: "Expenses", label: "My Expenses", permissionKey: "Expense Claims" },
       { key: "Team", label: "Team Expenses", permissionKey: "Team Requests" },
