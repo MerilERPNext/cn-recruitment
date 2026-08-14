@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient, type UseQueryResult } from "@tanstack/react-query";
-import type { DeleteGoalsPayload, GoalActionResponse, GoalFormConfig, GoalPlanId, GoalPlanResponse, GoalsRequest, GoalSubmitResponse, Message, MyGoalsResponse, ReferenceGoalsParams, ReferenceGoalsResponse, GoalRepositoryResponse, SaveGoalsPayload, SubmitSelectedGoalsPayload, CascadeGoalsParams, CascadeGoalsResponse, GoalDetailResponse, GoalCheckInsResponse, SubmitGoalCheckInPayload, SubmitGoalCheckInResponse, PerformanceOverviewResponse, RequestCheckInPayload, RequestCheckInResponse } from "../types/goal";
+import type { DeleteGoalsPayload, GoalActionResponse, GoalFormConfig, GoalPlanId, GoalPlanResponse, GoalsRequest, GoalSubmitResponse, Message, MyGoalsResponse, ReferenceGoalsParams, ReferenceGoalsResponse, GoalRepositoryResponse, SaveGoalsPayload, SubmitSelectedGoalsPayload, CascadeGoalsParams, CascadeGoalsResponse, GoalDetailResponse, GoalCheckInsResponse, SubmitGoalCheckInPayload, SubmitGoalCheckInResponse, PerformanceOverviewResponse, RequestCheckInPayload, RequestCheckInResponse, MyPeerReviewsResponse, FeedbackFormResponse } from "../types/goal";
 import { performanceService } from "../services/performanceService";
 interface PerformanceQueryKey {
 
@@ -14,7 +14,8 @@ interface PerformanceQueryKey {
   goalDetail: (goalId: string) => ["performance", "goal-detail", string];
   goalCheckIns: (goalId: string) => ["performance", "goal-check-ins", string];
   overview: ["performance", "overview"];
-
+  myPeerReviews: ["performance", "my-peer-reviews"];
+  feedbackForm: (nomination: string) => ["performance", "feedback-form", string];
 }
 export const PERFORMANCE_QUERY_KEYS: PerformanceQueryKey = {
   goalPlans: (employeeId: string) => ["performance", "goal-plans", employeeId] as const,
@@ -28,6 +29,8 @@ export const PERFORMANCE_QUERY_KEYS: PerformanceQueryKey = {
   goalDetail: (goalId: string) => ["performance", "goal-detail", goalId] as const,
   goalCheckIns: (goalId: string) => ["performance", "goal-check-ins", goalId] as const,
   overview: ["performance", "overview"] as const,
+  myPeerReviews: ["performance", "my-peer-reviews"] as const,
+  feedbackForm: (nomination: string) => ["performance", "feedback-form", nomination] as const,
 };
 
 export const useGoalPlans = (employeeId: string): UseQueryResult<GoalPlanId[], Error> =>
@@ -189,12 +192,13 @@ export const useGoalDetail = (goalId: string, options?: { enabled?: boolean }): 
     staleTime: 1 * 60 * 1000,
   });
 
-export const useGoalCheckIns = (goalId: string): UseQueryResult<GoalCheckInsResponse, Error> =>
+export const useGoalCheckIns = (goalId: string, options?: { enabled?: boolean }): UseQueryResult<GoalCheckInsResponse, Error> =>
   useQuery<GoalCheckInsResponse, Error>({
     queryKey: PERFORMANCE_QUERY_KEYS.goalCheckIns(goalId),
     queryFn: () => performanceService.getGoalCheckIns(goalId),
-    enabled: !!goalId,
+    enabled: (options?.enabled ?? true) && !!goalId,
     staleTime: 30 * 1000,
+    ...options,
   });
 
 export const useSubmitGoalCheckIn = () => {
@@ -215,6 +219,20 @@ export const usePerformanceOverview = (): UseQueryResult<PerformanceOverviewResp
     queryKey: PERFORMANCE_QUERY_KEYS.overview,
     queryFn: performanceService.getOverview,
     staleTime: 5 * 60 * 1000,
+  });
+export const useGetMyPeerReviews = (): UseQueryResult<MyPeerReviewsResponse, Error> =>
+  useQuery<MyPeerReviewsResponse, Error>({
+    queryKey: PERFORMANCE_QUERY_KEYS.myPeerReviews,
+    queryFn: performanceService.getMyPeerReviews,
+    staleTime: 5 * 60 * 1000,
+  });
+export const useGetFeedBackForm = (peerId: string, options?: { enabled?: boolean }): UseQueryResult<FeedbackFormResponse, Error> =>
+  useQuery<FeedbackFormResponse, Error>({
+    queryKey: PERFORMANCE_QUERY_KEYS.feedbackForm(peerId),
+    queryFn:()=> performanceService.getFeedbackForm(peerId),
+    enabled: (options?.enabled ?? true) && !!peerId,
+    staleTime: 30 * 1000,
+    ...options,
   });
 
 export const useEmployeeGoalsCheckIn = () => {

@@ -117,6 +117,19 @@ export const useCompoffLateDetailsEnabled = (): UseQueryResult<boolean, Error> =
   });
 };
 
+// Attendance Settings flag that decides whether an approver can edit the
+// From Time / To Time of an attendance request while approving it.
+export const useTimeEditableWhileApproving = (
+  options?: { enabled?: boolean }
+): UseQueryResult<boolean, Error> => {
+  return useQuery<boolean, Error>({
+    queryKey: ["time-editable-while-approving"],
+    queryFn: () => attendanceService.getTimeEditableWhileApproving(),
+    enabled: options?.enabled ?? true,
+    ...defaultQueryOptions,
+  });
+};
+
 export const useUserMicroApps = (
   filters?: string
 ): UseQueryResult<any, Error> => {

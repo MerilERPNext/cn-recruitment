@@ -228,6 +228,7 @@ const TeamAttendanceDetails = () => {
           referenceName={referenceName || ""}
           onClose={handleCloseModal}
           onAction={handleActionComplete}
+          isApproverView
         />
       )}
     </div>

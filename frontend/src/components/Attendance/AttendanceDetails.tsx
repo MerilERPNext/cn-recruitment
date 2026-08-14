@@ -5,6 +5,7 @@ import toast from "react-hot-toast";
 import { useLoadingOverlay } from "../../context/OverlayContext";
 import {
   useGetToDoWithReferenceDoc,
+  useTimeEditableWhileApproving,
   useUpdateAttendanceRequest,
 } from "../../hooks/useAttendance";
 import { useCreateApprovalComment } from "../../hooks/useCreateApprovalComment";
@@ -34,6 +35,7 @@ export function AttendanceDetailView({
   onClose,
   onAction,
   label = "Attendance Request",
+  isApproverView = false,
 }: {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   data?: any;
@@ -42,6 +44,9 @@ export function AttendanceDetailView({
   onClose: () => void;
   onAction?: () => void;
   label?: string;
+  // Opened from the team/approval list, so the "Time Editable While Approving"
+  // setting decides whether the times can be edited here.
+  isApproverView?: boolean;
 }) {
   // Fetch data if documentName is provided
   const {
@@ -73,9 +78,21 @@ export function AttendanceDetailView({
     data?.reference_document?.custom_request_type === "Attendance Adjustment" &&
     data?.reference_document?.custom_status === "Pending";
 
+  // "Time Editable While Approving" in Attendance Settings. When it is off the
+  // approver only sees the times, with no way to edit them.
+  const { data: isTimeEditableWhileApproving } = useTimeEditableWhileApproving({
+    enabled: isApproverView,
+  });
+  const canEditTimes =
+    isAttendanceAdjustmentPending &&
+    (!isApproverView || !!isTimeEditableWhileApproving);
+
   const [isEditingTimes, setIsEditingTimes] = useState(false);
   const [fromTime, setFromTime] = useState<string>("");
   const [toTime, setToTime] = useState<string>("");
+
+  // Never keep the inputs open if the setting gets switched off mid-view.
+  const showTimeInputs = isEditingTimes && canEditTimes;
 
   useEffect(() => {
     if (data?.reference_document?.custom_from_time) {
@@ -320,7 +337,7 @@ export function AttendanceDetailView({
                   <div className="flex justify-between w-full">
                     <div className="flex flex-col gap-1">
                       <Typography variant="mobileCardLabel">From Time</Typography>
-                      {isEditingTimes ? (
+                      {showTimeInputs ? (
                         <input
                           type="time"
                           value={fromTime}
@@ -332,7 +349,7 @@ export function AttendanceDetailView({
                           <Typography variant="mobileCardValue">
                             {fromTime || "—"}
                           </Typography>
-                          {isAttendanceAdjustmentPending && (
+                          {canEditTimes && (
                             <button onClick={() => setIsEditingTimes(true)}>
                               <Pencil className="h-3.5 w-3.5 text-blue-400 hover:text-gray-600" />
                             </button>
@@ -343,7 +360,7 @@ export function AttendanceDetailView({
 
                     <div className="flex flex-col gap-1 text-right">
                       <Typography variant="mobileCardLabel">To Time</Typography>
-                      {isEditingTimes ? (
+                      {showTimeInputs ? (
                         <input
                           type="time"
                           value={toTime}
@@ -360,7 +377,7 @@ export function AttendanceDetailView({
                     </div>
                   </div>
 
-                  {isEditingTimes && (
+                  {showTimeInputs && (
                     <div className="flex justify-end gap-2">
                       <button
                         onClick={() => setIsEditingTimes(false)}

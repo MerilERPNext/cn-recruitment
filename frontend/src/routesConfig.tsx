@@ -1548,11 +1548,7 @@ export const routesConfig: AppRoute[] = [
             element: <Feedback />,
             permissionKey: "Feedback",
           },
-          {
-            path: "team-tracking",
-            element: <TeamTracking />,
-            permissionKey: "Overview",
-          },
+         
           {
             path: "skills",
             element: <SkillsAndProficiency />,
@@ -1565,6 +1561,11 @@ export const routesConfig: AppRoute[] = [
           },
 
         ]
+      },
+      {
+        path: "team-tracking",
+        element: <TeamTracking />,
+        permissionKey: "Team Tracking",
       },
       {
         path: "",
