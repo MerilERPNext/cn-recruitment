@@ -27,6 +27,10 @@ import type {
   PerformanceOverviewResponse,
   RequestCheckInPayload,
   RequestCheckInResponse,
+  MyPeerReviewsResponse,
+  FeedbackFormResponse,
+  SaveFeedbackPayload,
+  SubmitFeedbackPayload,
 } from "../types/goal";
 import FrappeAPI from "../utils/frappeAPI";
 
@@ -261,6 +265,36 @@ export const performanceService = {
       "cn_pms.cn_performance_management.api.goal_api.get_overview",
     );
     return response as PerformanceOverviewResponse;
+  },
+  getMyPeerReviews: async (): Promise<MyPeerReviewsResponse> => {
+    const response = await FrappeAPI.getMethod(
+      "cn_pms.cn_performance_management.api.feedback_api.get_my_peer_reviews",
+    );
+    return response as MyPeerReviewsResponse;
+  },
+
+  getFeedbackForm: async (nomination: string): Promise<FeedbackFormResponse> => {
+    const response = await FrappeAPI.getMethod(
+      "cn_pms.cn_performance_management.api.feedback_api.get_feedback_form",
+      { nomination },
+    );
+    return response as FeedbackFormResponse;
+  },
+
+  saveFeedback: async (payload: SaveFeedbackPayload): Promise<unknown> => {
+    const response = await FrappeAPI.callMethod(
+      "cn_pms.cn_performance_management.api.feedback_api.save_feedback",
+      payload as unknown as Record<string, unknown>,
+    );
+    return throwIfUnsuccessful(response);
+  },
+
+  submitFeedback: async (payload: SubmitFeedbackPayload): Promise<unknown> => {
+    const response = await FrappeAPI.callMethod(
+      "cn_pms.cn_performance_management.api.feedback_api.submit_feedback",
+      payload as unknown as Record<string, unknown>,
+    );
+    return throwIfUnsuccessful(response);
   },
 };
 
