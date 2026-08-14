@@ -538,8 +538,11 @@ def update_section_approval_status(onboarding_name, section_name, new_status, co
         if row_section != section_name:
             continue
 
-        # Only approve/reject fields that are pending or filled
-        if new_status in ("Approved", "Rejected") and (row.get("approval_status") or "Pending") not in ("Pending", "Filled", "Approved", "Rejected"):
+        # "Approve" (Approve Section / Approve All Remaining) must not silently
+        # override an explicit rejection — leave Rejected fields as-is so the
+        # candidate still has to re-fill them. HR can clear a rejection on the
+        # individual field if they truly want to approve it.
+        if new_status == "Approved" and (row.get("approval_status") or "Pending") == "Rejected":
             continue
 
         row.approval_status = new_status
