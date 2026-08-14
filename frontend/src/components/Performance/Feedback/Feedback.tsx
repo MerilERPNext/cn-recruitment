@@ -37,12 +37,16 @@ const FeedbackFormSkeleton = lazy(() =>
 
 const getInitials = (name?: string) => {
   if (!name) return "??";
-  const parts = name.trim().split(" ");
+  const parts = name.trim().split(/\s+/).filter(Boolean);
   if (parts.length >= 2) {
     return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
   }
-  return name.slice(0, 2).toUpperCase();
+  if (parts.length === 1) {
+    return parts[0].slice(0, 2).toUpperCase();
+  }
+  return "??";
 };
+
 
 const Feedback = () => {
   const { data: myPeerReviews, isLoading, error, refetch } = useGetMyPeerReviews();
@@ -55,21 +59,21 @@ const Feedback = () => {
   const activeReview: PeerReviewItem =
     openReviews.find((r) => r.nomination === activeNominationId) || openReviews[0];
   const { data: feedBackResponse, isLoading: feedbackLoading, error: feedbackErr, refetch: feedBackRefetch } = useGetFeedBackForm(activeNominationId)
-  
+
   const reviewFeedbackResponse = feedBackResponse?.data
-  const [ratings, setRatings] = useState<Record<string, { value: number; comment: string }> | null>(null);
-  const handleSelectReview = useCallback((nominationId: string) => {
+  const [ratings, setRatings] = useState<
+    Record<string, { value: number; comment: string }>
+  >({});
+    const handleSelectReview = useCallback((nominationId: string) => {
     setActiveNominationId(nominationId);
   }, []);
 
-  // 1. Select the first peer review by default when the reviews list loads
   useEffect(() => {
     if (apiReviews && apiReviews.length > 0 && !activeNominationId) {
       setActiveNominationId(apiReviews[0].nomination);
     }
   }, [apiReviews, activeNominationId]);
 
-  // 2. Initialize and load ratings state whenever the active review's feedback form data changes
   useEffect(() => {
     if (reviewFeedbackResponse?.items) {
       const initialRatings: Record<string, { value: number; comment: string }> = {};
@@ -86,7 +90,7 @@ const Feedback = () => {
   const headerSubjectName = reviewFeedbackResponse?.subject_name || activeReview?.subject_name || "Peer";
   const headerDesignation = reviewFeedbackResponse?.designation || activeReview?.designation || "";
   const headerInitials = getInitials(headerSubjectName);
-  const headerDueDays = reviewFeedbackResponse?.due_in_days ?? activeReview?.due_in_days ?? 1;
+  const headerDueDays = reviewFeedbackResponse?.due_in_days ?? activeReview?.due_in_days ;
 
   return (
     <div className="min-h-full bg-[#f8fafc]  p-4 sm:p-1 font-sans">
@@ -114,24 +118,24 @@ const Feedback = () => {
                         {headerSubjectName} {headerDesignation ? `· ${headerDesignation}` : ''}
                       </Typography>
                       {reviewFeedbackResponse?.status && (
-                        <Badge 
-                          label={reviewFeedbackResponse.status} 
+                        <Badge
+                          label={reviewFeedbackResponse.status}
                           variant={reviewFeedbackResponse.status.toLowerCase() === "draft" ? "warning" : "success"}
                           size="sm"
                         />
                       )}
                     </div>
                     <div className="flex flex-wrap items-center gap-2.5">
-                      <Badge 
-                        label="Aggregated - Anonymous" 
-                        variant="purple" 
-                        size="sm" 
+                      <Badge
+                        label="Aggregated - Anonymous"
+                        variant="purple"
+                        size="sm"
                       />
                       {reviewFeedbackResponse?.due_date && (
-                        <Badge 
-                          label={`Due Date: ${reviewFeedbackResponse.due_date}`} 
-                          variant="info" 
-                          size="sm" 
+                        <Badge
+                          label={`Due Date: ${reviewFeedbackResponse.due_date}`}
+                          variant="info"
+                          size="sm"
                         />
                       )}
                       <Typography variant="caption" className="text-gray-500 text-xs">
@@ -142,7 +146,7 @@ const Feedback = () => {
                 </div>
                 <div className="flex flex-col items-start sm:items-end text-left sm:text-right shrink-0 mt-4 sm:mt-0">
                   <Typography variant="caption" className="text-gray-500 font-semibold tracking-wider mb-1">DUE IN</Typography>
-                  <Typography variant="h3" className="text-amber-600 font-bold">{headerDueDays} days</Typography>
+                      <Typography variant="h3" className="text-amber-600 font-bold">{headerDueDays != null ? `${headerDueDays} days` : "—"}</Typography>
                 </div>
               </div>
 
@@ -205,9 +209,9 @@ const Feedback = () => {
         </div>
 
         <div className="w-full xl:w-[420px] shrink-0 flex flex-col gap-6">
-          <AnonymousInfoCard 
+          <AnonymousInfoCard
             title="YOUR FEEDBACK IS ANONYMOUS"
-            note={reviewFeedbackResponse?.anonymity?.note} 
+            note={reviewFeedbackResponse?.anonymity?.note}
           />
           {isLoading ? (
             <PeerReviewSidebarSkeleton />
