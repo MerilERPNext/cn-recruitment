@@ -726,5 +726,28 @@ export interface SubmitFeedbackResponse {
   data: SubmitFeedbackData;
 }
 
+export interface AddGoalCommentContent {
+  goal: string;
+  employee: string;
+  comment: string;
+}
+
+export interface AddGoalCommentPayload {
+  payload: AddGoalCommentContent;
+}
+
+export interface AddGoalCommentData {
+  check_in?: string;
+  goal?: string;
+  manager_comment?: string;
+  manager_comment_by?: string;
+}
+
+export interface AddGoalCommentResponse {
+  success: boolean;
+  message: string;
+  data?: AddGoalCommentData;
+}
+
 
 

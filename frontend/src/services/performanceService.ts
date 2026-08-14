@@ -33,6 +33,8 @@ import type {
   SaveFeedbackResponse,
   SubmitFeedbackPayload,
   SubmitFeedbackResponse,
+  AddGoalCommentPayload,
+  AddGoalCommentResponse,
 } from "../types/goal";
 import FrappeAPI from "../utils/frappeAPI";
 
@@ -297,6 +299,13 @@ export const performanceService = {
       payload as unknown as Record<string, unknown>,
     );
     return throwIfUnsuccessful(response as SubmitFeedbackResponse);
+  },
+  addGoalComment: async (payload: AddGoalCommentPayload): Promise<AddGoalCommentResponse> => {
+    const response = await FrappeAPI.callMethod(
+      "cn_pms.cn_performance_management.api.goal_api.add_checkin_comment",
+      payload as unknown as Record<string, unknown>,
+    );
+    return throwIfUnsuccessful(response as AddGoalCommentResponse);
   },
 };
 
