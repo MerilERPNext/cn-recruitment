@@ -236,6 +236,7 @@ const queryClient = useQueryClient()
                       }
                       weightage={item.weightage}
                       scale={reviewFeedbackResponse?.scale ?? []}
+                      disabled={isSubmitted}
                     />
                   ))
                 )}

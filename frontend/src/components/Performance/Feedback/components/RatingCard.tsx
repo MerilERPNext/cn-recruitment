@@ -14,14 +14,15 @@ export interface RatingCardProps {
   comment: string;
   onCommentChange: (val: string) => void;
   weightage?: number;
-  scale: FeedbackScaleOption[]
+  scale: FeedbackScaleOption[];
+  disabled?: boolean;
 }
 
-export const RatingCard: React.FC<RatingCardProps> = ({ title, description, required = false, value, onChange, comment, onCommentChange, weightage, scale=[] }) => {
+export const RatingCard: React.FC<RatingCardProps> = ({ title, description, required = false, value, onChange, comment, onCommentChange, weightage, scale=[], disabled = false }) => {
   const selectedOption = scale.find(o => o.value === value);
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6 mb-6">
+    <div className={`bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6 mb-6 transition-all ${disabled ? 'bg-gray-50/60 opacity-90' : ''}`}>
       <div className="flex flex-col sm:flex-row justify-between items-start mb-4">
         <div className="mb-2 sm:mb-0">
           <Typography variant="h3" className="text-gray-900 font-semibold mb-1">
@@ -54,14 +55,19 @@ export const RatingCard: React.FC<RatingCardProps> = ({ title, description, requ
             <button
               key={opt.value}
               aria-label={`Select ${opt.label} rating`}
-              onClick={() => onChange(opt.value)}
+              disabled={disabled}
+              onClick={() => !disabled && onChange(opt.value)}
               className={`flex flex-col items-center justify-center p-3 rounded-lg border transition-all ${
-                isSelected 
-                  ? selectedBgClass 
-                  : 'border-gray-200 hover:border-gray-300 bg-white'
+                disabled
+                  ? isSelected
+                    ? `${selectedBgClass} opacity-80 cursor-not-allowed`
+                    : 'border-gray-200 bg-gray-100/60 text-gray-400 cursor-not-allowed'
+                  : isSelected 
+                    ? selectedBgClass 
+                    : 'border-gray-200 hover:border-gray-300 bg-white'
               }`}
             >
-              <span className={`text-sm font-medium mb-1 ${isSelected ? selectedTextClass : 'text-gray-700'}`}>
+              <span className={`text-sm font-medium mb-1 ${isSelected ? selectedTextClass : disabled ? 'text-gray-400' : 'text-gray-700'}`}>
                 {opt.label}
               </span>
               <span className={`text-xs ${isSelected ? scoreTextClass : 'text-gray-400'}`}>
@@ -77,9 +83,15 @@ export const RatingCard: React.FC<RatingCardProps> = ({ title, description, requ
         <textarea
           aria-label="Rating comment"
           value={comment}
+          disabled={disabled}
+          readOnly={disabled}
           onChange={(e) => onCommentChange(e.target.value)}
           placeholder="A specific example that supports your rating..."
-          className="w-full border border-gray-200 rounded-lg p-3 text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 resize-none min-h-[80px]"
+          className={`w-full border rounded-lg p-3 text-sm resize-none min-h-[80px] transition-all ${
+            disabled
+              ? 'bg-gray-100/60 border-gray-200 text-gray-500 cursor-not-allowed'
+              : 'border-gray-200 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500'
+          }`}
         />
       </div>
     </div>
