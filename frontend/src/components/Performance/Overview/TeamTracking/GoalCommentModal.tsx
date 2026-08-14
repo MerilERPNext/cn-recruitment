@@ -66,7 +66,7 @@ export const GoalCommentModal: React.FC<GoalCommentModalProps> = memo(({
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={handleClose} size="md">
+    <Modal isOpen={isOpen} onClose={handleClose} size="sm">
       <div className="p-4 sm:p-6 flex flex-col gap-4">
         {/* Header */}
         <div className="flex items-start justify-between gap-3 pb-3 border-b border-gray-100">
