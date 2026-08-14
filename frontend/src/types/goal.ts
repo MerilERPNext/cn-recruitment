@@ -705,3 +705,22 @@ export interface SubmitFeedbackPayload {
   };
 }
 
+export interface SaveFeedbackData {
+  feedback: string;
+  status: string;
+}
+
+export interface SaveFeedbackResponse {
+  success: boolean;
+  message: string;
+  data: SaveFeedbackData;
+}
+
+export interface SubmitFeedbackResponse {
+  success: boolean;
+  message: string;
+  data: SaveFeedbackData;
+}
+
+
+
