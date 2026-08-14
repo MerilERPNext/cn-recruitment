@@ -64,7 +64,7 @@ const Feedback = () => {
   const [ratings, setRatings] = useState<
     Record<string, { value: number; comment: string }>
   >({});
-    const handleSelectReview = useCallback((nominationId: string) => {
+  const handleSelectReview = useCallback((nominationId: string) => {
     setActiveNominationId(nominationId);
   }, []);
 
@@ -90,8 +90,10 @@ const Feedback = () => {
   const headerSubjectName = reviewFeedbackResponse?.subject_name || activeReview?.subject_name || "Peer";
   const headerDesignation = reviewFeedbackResponse?.designation || activeReview?.designation || "";
   const headerInitials = getInitials(headerSubjectName);
-  const headerDueDays = reviewFeedbackResponse?.due_in_days ?? activeReview?.due_in_days ;
-
+  const headerDueDays = reviewFeedbackResponse?.due_in_days ?? activeReview?.due_in_days;
+  const handelRatingSubmit = () => {
+    console.log(activeNominationId, ratings, 'rrrrrrrrrrrrrraaaaaaaaaaa')
+  }
   return (
     <div className="min-h-full bg-[#f8fafc]  p-4 sm:p-1 font-sans">
       <div className="max-w-[1300px] mx-auto flex flex-col xl:flex-row gap-6">
@@ -146,7 +148,7 @@ const Feedback = () => {
                 </div>
                 <div className="flex flex-col items-start sm:items-end text-left sm:text-right shrink-0 mt-4 sm:mt-0">
                   <Typography variant="caption" className="text-gray-500 font-semibold tracking-wider mb-1">DUE IN</Typography>
-                      <Typography variant="h3" className="text-amber-600 font-bold">{headerDueDays != null ? `${headerDueDays} days` : "—"}</Typography>
+                  <Typography variant="h3" className="text-amber-600 font-bold">{headerDueDays != null ? `${headerDueDays} days` : "—"}</Typography>
                 </div>
               </div>
 
@@ -195,6 +197,7 @@ const Feedback = () => {
                     Save Draft
                   </Button>
                   <Button
+                    onClick={() => handelRatingSubmit()}
                     variant="contain"
                     bgColor="primary"
                     size="md"
