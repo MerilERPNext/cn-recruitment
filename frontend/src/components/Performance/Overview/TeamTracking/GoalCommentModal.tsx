@@ -1,9 +1,11 @@
-import React, { useState } from "react";
+import React, { memo, useState } from "react";
 import { MessageSquare, X } from "lucide-react";
 import Modal from "../../../shared/Modal";
 import Button from "../../../shared/atoms/Button";
 import { Typography } from "../../../shared/atoms/Typography";
 import toast from "react-hot-toast";
+import { useAddGoalComment } from "../../../../hooks/usePerformance";
+import { getPerformanceErrorMessage } from "../../../../services/performanceService";
 
 interface GoalCommentModalProps {
   isOpen: boolean;
@@ -13,14 +15,15 @@ interface GoalCommentModalProps {
   goal: string;
 }
 
-export const GoalCommentModal: React.FC<GoalCommentModalProps> = ({
+export const GoalCommentModal: React.FC<GoalCommentModalProps> = memo(({
   isOpen,
   onClose,
+  onSuccess,
   employeeId,
-  goal
+  goal,
 }) => {
   const [comment, setComment] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { mutate: submitGoalComment, isPending } = useAddGoalComment();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,11 +31,36 @@ export const GoalCommentModal: React.FC<GoalCommentModalProps> = ({
       toast.error("Please enter a comment before submitting.");
       return;
     }
+    if (!goal) {
+      toast.error("No valid goal selected.");
+      return;
+    }
 
-  console.log(employeeId,goal,comment)
+    submitGoalComment(
+      {
+        payload: {
+          employee: employeeId ?? "",
+          comment: comment.trim(),
+          goal,
+        },
+      },
+      {
+        onSuccess: (res) => {
+          toast.success(res?.message || "Comment added successfully!");
+          if (onSuccess) onSuccess(comment);
+          setComment("");
+          onClose();
+        },
+        onError: (err) => {
+          const errMsg = getPerformanceErrorMessage(err, "Failed to add comment.");
+          toast.error(errMsg);
+        },
+      }
+    );
   };
 
   const handleClose = () => {
+    if (isPending) return;
     setComment("");
     onClose();
   };
@@ -57,8 +85,9 @@ export const GoalCommentModal: React.FC<GoalCommentModalProps> = ({
           </div>
           <button
             type="button"
+            disabled={isPending}
             onClick={handleClose}
-            className="text-gray-400 hover:text-gray-600 p-1.5 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
+            className="text-gray-400 hover:text-gray-600 p-1.5 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer disabled:opacity-50"
           >
             <X className="w-5 h-5" />
           </button>
@@ -72,10 +101,12 @@ export const GoalCommentModal: React.FC<GoalCommentModalProps> = ({
             </label>
             <textarea
               id="goal-comment-textarea"
+              autoFocus
+              disabled={isPending}
               value={comment}
               onChange={(e) => setComment(e.target.value)}
               placeholder="Write your feedback, progress updates, or notes here..."
-              className="w-full min-h-[120px] p-3 text-sm text-gray-800 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 resize-none transition-all placeholder:text-gray-400"
+              className="w-full min-h-[120px] p-3 text-sm text-gray-800 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 resize-none transition-all placeholder:text-gray-400 disabled:bg-gray-50 disabled:cursor-not-allowed"
               maxLength={500}
             />
             <div className="flex justify-end items-center text-[11px] text-gray-400 px-1">
@@ -90,7 +121,7 @@ export const GoalCommentModal: React.FC<GoalCommentModalProps> = ({
               size="md"
               type="button"
               onClick={handleClose}
-              disabled={isSubmitting}
+              disabled={isPending}
               className="border-gray-200 text-gray-700 hover:bg-gray-50 px-4 h-10 text-xs font-medium cursor-pointer"
             >
               Cancel
@@ -100,8 +131,8 @@ export const GoalCommentModal: React.FC<GoalCommentModalProps> = ({
               bgColor="primary"
               size="md"
               type="submit"
-              loading={isSubmitting}
-              disabled={isSubmitting || !comment.trim()}
+              loading={isPending}
+              disabled={isPending || !comment.trim()}
               className="bg-blue-600 hover:bg-blue-700 text-white px-5 h-10 text-xs font-medium cursor-pointer"
             >
               Submit Comment
@@ -111,4 +142,6 @@ export const GoalCommentModal: React.FC<GoalCommentModalProps> = ({
       </div>
     </Modal>
   );
-};
+});
+
+GoalCommentModal.displayName = "GoalCommentModal";
