@@ -30,7 +30,9 @@ import type {
   MyPeerReviewsResponse,
   FeedbackFormResponse,
   SaveFeedbackPayload,
+  SaveFeedbackResponse,
   SubmitFeedbackPayload,
+  SubmitFeedbackResponse,
 } from "../types/goal";
 import FrappeAPI from "../utils/frappeAPI";
 
@@ -281,20 +283,20 @@ export const performanceService = {
     return response as FeedbackFormResponse;
   },
 
-  saveFeedback: async (payload: SaveFeedbackPayload): Promise<unknown> => {
+  saveFeedback: async (payload: SaveFeedbackPayload): Promise<SaveFeedbackResponse> => {
     const response = await FrappeAPI.callMethod(
       "cn_pms.cn_performance_management.api.feedback_api.save_feedback",
       payload as unknown as Record<string, unknown>,
     );
-    return throwIfUnsuccessful(response);
+    return throwIfUnsuccessful(response as SaveFeedbackResponse);
   },
 
-  submitFeedback: async (payload: SubmitFeedbackPayload): Promise<unknown> => {
+  submitFeedback: async (payload: SubmitFeedbackPayload): Promise<SubmitFeedbackResponse> => {
     const response = await FrappeAPI.callMethod(
       "cn_pms.cn_performance_management.api.feedback_api.submit_feedback",
       payload as unknown as Record<string, unknown>,
     );
-    return throwIfUnsuccessful(response);
+    return throwIfUnsuccessful(response as SubmitFeedbackResponse);
   },
 };
 

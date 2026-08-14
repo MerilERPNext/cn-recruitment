@@ -687,22 +687,21 @@ export interface FeedbackFormResponse {
 
 export interface FeedbackAnswer {
   id: string;
-  rating: number;
-  comment: string;
+  rating?: number | null;
+  comment?: string;
+}
+
+export interface FeedbackPayloadContent {
+  nomination: string;
+  answers: FeedbackAnswer[];
 }
 
 export interface SaveFeedbackPayload {
-  payload: {
-    nomination: string;
-    answers: FeedbackAnswer[];
-  };
+  payload: FeedbackPayloadContent;
 }
 
 export interface SubmitFeedbackPayload {
-  payload: {
-    nomination: string;
-    answers: FeedbackAnswer[];
-  };
+  payload: FeedbackPayloadContent;
 }
 
 export interface SaveFeedbackData {
