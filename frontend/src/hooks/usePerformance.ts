@@ -257,6 +257,8 @@ export const useAddGoalComment = ()  => {
     mutationFn:(payload)=>performanceService.addGoalComment(payload),
     onSuccess:()=>{
       queryClient.invalidateQueries({queryKey:PERFORMANCE_QUERY_KEYS.myGoals})
+      queryClient.invalidateQueries({ queryKey: ["performance", "goal-check-ins"]})
+      queryClient.invalidateQueries({ queryKey: ["performance", "goal-detail"] })
     }
   })
 }
