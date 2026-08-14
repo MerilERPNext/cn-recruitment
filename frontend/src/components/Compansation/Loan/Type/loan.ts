@@ -4,6 +4,7 @@ export interface Installment {
   loan_end_date: string
   loan_start_date: string
   principal: string
+  perquisite_amount: number
   opening_balance: number
   payment_date: string
   balance_loan_amount: number

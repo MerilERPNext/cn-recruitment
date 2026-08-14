@@ -412,6 +412,33 @@ class TestCampusAdditionalRound(FrappeTestCase):
 		finally:
 			self._panelists()
 
+	def test_the_board_shows_the_interview_s_own_interviewer(self):
+		"""The card used to resolve the panel NAME against the round's own roster. An
+		additional round is staffed from R1-EXTRA, and both rosters default an unnamed
+		panel to "Panel 1", so the board printed the ROUND's interviewer next to an
+		extra round taken by somebody else entirely.
+		"""
+		res = self._add(self.candidates[0], panel="Panel A")
+		extra_user = frappe.db.get_value("Employee", self.employees[0], "user_id")
+		round_user = frappe.db.get_value("Employee", self.employees[-1], "user_id")
+
+		rounds = {r["round_code"]: r for r in cd.get_rounds_overview(self.drive)["rounds"]}
+		extras = rounds[self.round_1]["extras"]
+		row = next(e for e in extras if e["interview"] == res["interview"])
+
+		shown = row.get("interviewers") or []
+		# whoever is actually on the interview
+		on_iv = [d.interviewer for d in
+		         frappe.get_doc("Interview", res["interview"]).interview_details]
+		self.assertEqual(len(on_iv), 1)
+		self.assertEqual(
+			sorted(shown),
+			sorted(frappe.db.get_value("User", u, "full_name") or u for u in on_iv))
+		self.assertIn(extra_user, on_iv)
+		if round_user != extra_user:
+			self.assertNotIn(
+				frappe.db.get_value("User", round_user, "full_name") or round_user, shown)
+
 	def test_the_rounds_own_panel_cannot_take_it(self):
 		"""The panel that judged R1 is rostered on R1, not R1-EXTRA — a second look is
 		staffed deliberately."""

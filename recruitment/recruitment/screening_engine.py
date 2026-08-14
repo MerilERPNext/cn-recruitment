@@ -26,7 +26,7 @@ STATUS_PASSED = "Shortlisted"
 STATUS_FAILED = "Rejected"
 
 # Statuses past which we should not auto-screen (already decided / moved on).
-TERMINAL_STATUSES = {"Shortlisted", "Interview", "Hold", "Approvals", "Accepted", "Rejected"}
+TERMINAL_STATUSES = {"Shortlisted", "Interview", "Hold", "Approvals", "Hired", "Accepted", "Rejected"}
 
 NUMERIC_OPERATORS = {">=", "<=", ">", "<"}
 

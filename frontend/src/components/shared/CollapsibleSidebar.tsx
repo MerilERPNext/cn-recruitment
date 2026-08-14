@@ -393,7 +393,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
           name: "Expense Summary",
           icon: FileSpreadsheet,
           href: "/webapp/expenses-app/expense-summary",
-          permissionKey: "ExpenseSummary",
+          permissionKey: "Expense Summary",
         },
         {
           name: "Expense Claims",

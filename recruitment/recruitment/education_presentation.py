@@ -30,6 +30,14 @@ STAGE_FIELD = "qualification"
 # row is meant to offer. Seeded, not hardcoded, so HR can add to them.
 COURSE_TYPES = ("Full Time", "Part Time")
 
+# Standard fields we must never retype: a fieldtype property setter on one of these
+# makes Frappe rewrite an erpnext column on every migrate. `class_per` was retyped
+# to Float before custom_gpa_percentage existed; the setter is removed here so the
+# column settles back to what erpnext declares and stays there.
+NEVER_RETYPE = ("class_per",)
+LEGACY_GPA_FIELD = "class_per"
+GPA_FIELD = "custom_gpa_percentage"
+
 # The education row, in display order.
 #   `columns`   -> also a grid column (the grid has ten units in total; the rest of
 #                  the fields open with the row's pencil).
@@ -59,10 +67,15 @@ FIELDS = [
 	{"fieldname": "custom_course_name", "label": "Course Name",
 	 "fieldtype": "Data"},
 	{"fieldname": "custom_registration_number", "label": "Registration No / Roll No"},
-	# A real number, so an eligibility rule can compare it ("GPA / Percentage ≥ 60")
-	# instead of comparing text.
-	{"fieldname": "class_per", "label": "GPA / Percentage", "columns": 2,
-	 "fieldtype": "Float"},
+	# OUR field, created as a number, rather than retyping erpnext's `class_per`.
+	# Changing the type of a standard field rewrites its column on every migrate —
+	# varchar to decimal and back, depending on which app's customisation synced
+	# last — and that ALTER fails the moment one row holds "First Class". `class_per`
+	# is left exactly as erpnext ships it (and hidden); what it held is copied here
+	# once, where it can be compared ("GPA / Percentage ≥ 60").
+	{"fieldname": "custom_gpa_percentage", "label": "GPA / Percentage", "columns": 2,
+	 "fieldtype": "Float",
+	 "description": "Marks as a number — 82 for 82%, 8.5 for a 8.5 CGPA."},
 	{"fieldname": "custom_start_date", "label": "Start Date"},
 	{"fieldname": "custom_completion_date", "label": "End Date"},
 	{"fieldname": "year_of_passing", "label": "Year of Passing", "columns": 2},
@@ -100,6 +113,46 @@ def _ensure(df, prop, value, property_type):
 		return False
 	_set(df.fieldname, prop, value, property_type)
 	return True
+
+
+def _drop_our_fieldtype_setters():
+	"""Take back any fieldtype we imposed on a standard field. Idempotent."""
+	dropped = []
+	for fieldname in NEVER_RETYPE:
+		for name in frappe.get_all("Property Setter", filters={
+			"doc_type": CHILD_DOCTYPE, "field_name": fieldname, "property": "fieldtype",
+		}, pluck="name"):
+			frappe.delete_doc("Property Setter", name, force=True, ignore_permissions=True)
+			dropped.append(fieldname)
+	return dropped
+
+
+def _backfill_gpa():
+	"""Copy what `class_per` holds into our own field, where it is a number.
+
+	Once only, and never over a value someone has already put in the new field. Text
+	that isn't a number ("First Class") is left behind in the hidden field rather
+	than being turned into a 0 that reads as a real mark.
+	"""
+	if not (frappe.db.has_column(CHILD_DOCTYPE, GPA_FIELD)
+	        and frappe.db.has_column(CHILD_DOCTYPE, LEGACY_GPA_FIELD)):
+		return 0
+	rows = frappe.db.sql(
+		f"""select name, `{LEGACY_GPA_FIELD}` as legacy from `tab{CHILD_DOCTYPE}`
+		    where ifnull(`{GPA_FIELD}`, 0) = 0
+		      and `{LEGACY_GPA_FIELD}` is not null and `{LEGACY_GPA_FIELD}` != ''""",
+		as_dict=True)
+	moved = 0
+	for row in rows:
+		try:
+			value = float(str(row.legacy).replace("%", "").replace(",", "").strip())
+		except (TypeError, ValueError):
+			continue
+		if not value:
+			continue
+		frappe.db.set_value(CHILD_DOCTYPE, row.name, GPA_FIELD, value, update_modified=False)
+		moved += 1
+	return moved
 
 
 def _ensure_course_types():
@@ -149,8 +202,9 @@ def apply_education_presentation():
 	if not meta.get_field(STAGE_FIELD):
 		return {"created": [], "hidden": 0}
 
+	dropped = _drop_our_fieldtype_setters()
 	created = _ensure_fields(meta)
-	if created:
+	if created or dropped:
 		frappe.clear_cache(doctype=CHILD_DOCTYPE)
 		meta = frappe.get_meta(CHILD_DOCTYPE)
 
@@ -193,7 +247,8 @@ def apply_education_presentation():
 		}, is_system_generated=False)
 		changed += 1
 
-	if changed or created:
+	moved = _backfill_gpa() if created else 0
+	if changed or created or dropped:
 		frappe.clear_cache(doctype=CHILD_DOCTYPE)
-	return {"created": created, "retyped": retyped, "hidden": hidden,
-	        "visible": present, "changed": changed}
+	return {"created": created, "retyped": retyped, "hidden": hidden, "visible": present,
+	        "changed": changed, "untyped": dropped, "gpa_backfilled": moved}

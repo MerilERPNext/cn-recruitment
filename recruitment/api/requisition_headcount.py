@@ -324,20 +324,22 @@ def _totals(by_region):
 # Storing it on the requisition
 # ---------------------------------------------------------------------------
 
-def _write_row(row_name, counts):
-    frappe.db.set_value(JOB_REQUISITION_REGION, row_name,
-                        {f: counts[f] for f in ROW_FIELDS}, update_modified=False)
+def _write_rows(doctype, updates):
+    """Apply ``{row name: {field: value}}`` in as few UPDATEs as possible.
 
-
-def _write_position_row(row_name, counts):
-    """A position row carries only the strength figure. The live-hiring numbers are
-    a requisition-level comparison, not a property of one budgeted seat, so they
-    stay on the parent rather than repeating down every row."""
-    if not frappe.get_meta(JOB_REQUISITION_POSITION_DETAIL).has_field(POSITION_ROW_FIELD):
-        return
-    frappe.db.set_value(JOB_REQUISITION_POSITION_DETAIL, row_name,
-                        {POSITION_ROW_FIELD: counts["active_employees"]},
-                        update_modified=False)
+    Rows sharing a value are written together — a lateral requisition with fifty
+    positions at three branches is three UPDATEs, not fifty. Writing per row made
+    this hook's cost scale with the size of the requisition, on every single save.
+    """
+    if not updates:
+        return 0
+    batches = {}
+    for row_name, values in updates.items():
+        batches.setdefault(tuple(sorted(values.items())), []).append(row_name)
+    for values, names in batches.items():
+        frappe.db.set_value(doctype, {"name": ["in", names]}, dict(values),
+                            update_modified=False)
+    return len(batches)
 
 
 def store_headcount(doc, method=None):
@@ -361,20 +363,28 @@ def _store_headcount(doc):
     axis, by_key = headcount_for(doc)
 
     if axis == AXIS_REGION:
+        updates = {}
         for row in (doc.get("custom_regions") or []):
             counts = by_key.get(row.region) or _zero()
-            _write_row(row.name, counts)
+            updates[row.name] = {f: counts[f] for f in ROW_FIELDS}
             for field in ROW_FIELDS:      # keep the loaded doc honest too
                 row.set(field, counts[field])
+        _write_rows(JOB_REQUISITION_REGION, updates)
     elif axis == AXIS_LOCATION:
         # One count per position row. Rows sharing a branch all show that branch's
         # number — the parent total is computed off the deduped keys below, so a
         # requisition with three positions at one branch does not triple-count it.
+        # A position row carries only the strength figure: the live-hiring numbers are
+        # a requisition-level comparison, not a property of one budgeted seat.
+        updates = {}
+        has_field = frappe.get_meta(JOB_REQUISITION_POSITION_DETAIL).has_field(
+            POSITION_ROW_FIELD)
         for row in (doc.get("custom_position_details") or []):
             counts = by_key.get(row.location) or _zero()
-            _write_position_row(row.name, counts)
-            if row.meta.has_field(POSITION_ROW_FIELD):
+            if has_field:
+                updates[row.name] = {POSITION_ROW_FIELD: counts["active_employees"]}
                 row.set(POSITION_ROW_FIELD, counts["active_employees"])
+        _write_rows(JOB_REQUISITION_POSITION_DETAIL, updates)
 
     total = _totals(by_key)
     meta = doc.meta

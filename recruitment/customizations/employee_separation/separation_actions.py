@@ -189,17 +189,7 @@ def apply_attendance_regularization_from_answers(variables=None, answers_var=Non
 			if att.docstatus != 1 or att.status != "Absent":
 				result["skipped"] += 1
 				continue
-			att.cancel()
-			present = frappe.new_doc("Attendance")
-			present.employee = att.employee
-			present.employee_name = att.employee_name
-			present.attendance_date = att.attendance_date
-			present.company = att.company
-			present.department = att.department
-			present.shift = att.shift
-			present.status = "Present"
-			present.insert(ignore_permissions=True)
-			present.submit()
+			frappe.db.set_value("Attendance", att_name, "status", "Present")
 			result["marked_present"] += 1
 		except Exception as e:
 			result["errors"].append(f"{att_name}: {e}")
@@ -235,17 +225,7 @@ def apply_attendance_regularization(variables=None, answers_var=None, bulk_pos_k
 			if att.docstatus != 1 or att.status != "Absent":
 				result["skipped"] += 1
 				continue
-			att.cancel()
-			present = frappe.new_doc("Attendance")
-			present.employee = att.employee
-			present.employee_name = att.employee_name
-			present.attendance_date = att.attendance_date
-			present.company = att.company
-			present.department = att.department
-			present.shift = att.shift
-			present.status = "Present"
-			present.insert(ignore_permissions=True)
-			present.submit()
+			frappe.db.set_value("Attendance", row.attendance, "status", "Present")
 			result["marked_present"] += 1
 		except Exception as e:
 			result["errors"].append(f"{row.attendance}: {e}")

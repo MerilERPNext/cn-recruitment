@@ -621,6 +621,24 @@ def prepare_interview(job_applicant, stage_name=None):
 # --------------------------------------------------------------------------- #
 # Auto-advance (called after Interview Feedback is submitted)
 # --------------------------------------------------------------------------- #
+def _blocked_by_pending_extra_round(job_applicant):
+	"""True while this candidate has a campus Additional Round awaiting a verdict.
+
+	Scoped to campus additional rounds — a lateral or referral candidate has none, so
+	this never touches the ordinary pipeline.
+	"""
+	try:
+		from recruitment.recruitment.doctype.campus_drive.campus_drive import (
+			pending_extra_rounds,
+		)
+
+		return bool(pending_extra_rounds([job_applicant]))
+	except Exception:
+		# A guard that cannot be evaluated must not silently stop the pipeline.
+		frappe.log_error(frappe.get_traceback(), "pending extra round check failed")
+		return False
+
+
 def advance_on_interview_result(interview_name):
 	"""Advance / reject the candidate when their interview concludes — but only
 	when their current stage is an Interview stage flagged ``auto``."""
@@ -635,6 +653,17 @@ def advance_on_interview_result(interview_name):
 			return
 		applicant = interview.get("job_applicant")
 		if not applicant:
+			return
+
+		# A campus candidate with an undecided Additional Round is held where they
+		# are. That second look is an open question about them, so nothing may carry
+		# them forward until it is answered — clearing it advances them, rejecting it
+		# rejects them, and either way it is that round's verdict that decides, not
+		# whichever other interview happens to conclude first.
+		#
+		# The extra round's OWN feedback never reaches here: auto_advance_stage skips
+		# campus extra rounds outright and hands them to advance_after_extra_round.
+		if _blocked_by_pending_extra_round(applicant):
 			return
 
 		doc = frappe.get_doc("Job Applicant", applicant)
@@ -787,7 +816,9 @@ def get_candidate_review(job_applicant):
 			"qualification": r.get("qualification"),
 			"school": r.get("school_univ"),
 			"year": r.get("year_of_passing"),
-			"score": r.get("class_per"),
+			# Our own numeric field, with the legacy text one behind it for rows
+			# recorded before it existed.
+			"score": r.get("custom_gpa_percentage") or r.get("class_per"),
 		}
 		for r in (doc.get("custom_educational_qualification") or [])
 	]

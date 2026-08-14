@@ -64,11 +64,6 @@ const EmployeeProfile: React.FC = () => {
   // specific reports. Actions alone don't gate the page, so enforce the page flag
   // here to block viewing a profile you're not permitted to see.
   const canViewProfilePage = isPageEnabled(userUiPermission, "Employee Profile");
-  // const canAttendanceAssignments = isActionEnabled(
-  //   userUiPermission,
-  //   "attendance_assignments",
-  //   "Employee Profile",
-  // );
   const canShowEmployeeStatus = isActionEnabled(
     userUiPermission,
     "show_employee_status",
@@ -499,20 +494,6 @@ const EmployeeProfile: React.FC = () => {
             </div>
             <div className="flex gap-2 mt-4 mx-2">
               {canAppreciate && <Appreciations />}
-              {/* {
-                canAttendanceAssignments && (
-                  <Button
-                    icon={<NotebookPen size={14} />}
-                    size="sm"
-                    variant="soft"
-                    onClick={() =>
-                      setIsAttendanceAssignmentsOpen(true)
-                    }
-                    className="text-[10px] font-bold uppercase tracking-wider"
-                  >
-                    Attendance Assignment
-                  </Button>
-                )} */}
               {canShowFutureTransactions && hasFutureTransactions && (
                 <Button
                   icon={<History size={14} />}
@@ -708,20 +689,6 @@ const EmployeeProfile: React.FC = () => {
                         </div>
 
                         <div className="flex items-center gap-2 mt-2">
-                          {/* {
-                            canAttendanceAssignments && (
-                              <Button
-                                icon={<NotebookPen size={14} />}
-                                size="sm"
-                                variant="soft"
-                                onClick={() =>
-                                  setIsAttendanceAssignmentsOpen(true)
-                                }
-                                className="uppercase tracking-wider h-full  px-4 py-2 font-medium "
-                              >
-                                Attendance Assignment
-                              </Button>
-                            )} */}
                           {canAppreciate && <Appreciations />}
                           {canShowAssignmentDetailsButton &&
                             <Button

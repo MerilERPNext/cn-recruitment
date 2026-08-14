@@ -47,7 +47,9 @@ class TestEducationPresentation(FrappeTestCase):
 		meta = self._meta()
 		for fieldname in ("custom_passing_year", "custom_month__year_of_passing",
 		                  "custom_max_gpapercentage", "custom_percentage_naukri",
-		                  "custom_education_degree_naukri", "level"):
+		                  "custom_education_degree_naukri", "level",
+		                  # erpnext's own GPA field: replaced by ours, kept for its data
+		                  "class_per"):
 			df = meta.get_field(fieldname)
 			if df:  # a site without that app simply doesn't have it
 				self.assertTrue(df.hidden, f"{fieldname} should be hidden")
@@ -72,9 +74,31 @@ class TestEducationPresentation(FrappeTestCase):
 		self.assertEqual(meta.get_field("custom_institute").fieldtype, "Link")
 		self.assertEqual(meta.get_field("custom_institute").options, "Institute")
 
-	def test_gpa_is_a_number(self):
-		"""So a rule can compare it — "GPA / Percentage ≥ 60" against text never was."""
-		self.assertEqual(self._meta().get_field("class_per").fieldtype, "Float")
+	def test_every_declared_type_is_applied(self):
+		"""Whatever FIELDS says a field must be, the doctype says too — that is the
+		whole point of re-asserting types here."""
+		meta = self._meta()
+		for spec in ep.FIELDS:
+			df = meta.get_field(spec["fieldname"])
+			if df and spec.get("fieldtype"):
+				self.assertEqual(df.fieldtype, spec["fieldtype"], spec["fieldname"])
+
+	def test_gpa_is_our_own_number_field(self):
+		"""Ours, created as a Float — retyping erpnext's `class_per` rewrote its column
+		on every migrate, and that ALTER fails as soon as one row holds "First Class"."""
+		self.assertEqual(self._meta().get_field(ep.GPA_FIELD).fieldtype, "Float")
+
+	def test_no_standard_field_carries_a_fieldtype_of_ours(self):
+		"""A fieldtype property setter on an erpnext field is what makes migrate try to
+		rewrite its column. There must be none."""
+		for fieldname in ep.NEVER_RETYPE:
+			self.assertFalse(frappe.db.exists("Property Setter", {
+				"doc_type": ep.CHILD_DOCTYPE, "field_name": fieldname, "property": "fieldtype"}),
+				f"{fieldname} still carries a fieldtype override")
+
+	def test_the_schema_matches_the_meta(self):
+		"""What migrate checks: nothing here should want to alter a column."""
+		frappe.db.updatedb(ep.CHILD_DOCTYPE)  # raises if it cannot align the table
 
 	def test_a_drifted_type_is_put_back(self):
 		"""Another app's customisation sync wipes a patch's fieldtype property setter;
@@ -112,6 +136,53 @@ class TestEducationPresentation(FrappeTestCase):
 		}
 		expected = {f["fieldname"] for f in ep.FIELDS if self._meta().get_field(f["fieldname"])}
 		self.assertEqual(offered, expected)
+
+	# ── auto-shortlist keeps working on the field that is actually filled ──
+
+	def test_no_rule_still_points_at_a_retired_gpa_field(self):
+		"""A rule naming a hidden field reads an empty value and quietly stops firing —
+		"GPA < 60 -> Knock out" would pass everyone. The patch re-points them."""
+		from recruitment.patches.repoint_gpa_eligibility_rules import RETIRED, TABLE
+
+		stale = [
+			r.name for r in frappe.get_all("Job Opening Eligibility Rule",
+			                               fields=["name", "field_name", "match_field"],
+			                               limit_page_length=0)
+			if any((r.field_name or "") in (old, f"{TABLE}::{old}")
+			       or (r.match_field or "") in (old, f"{TABLE}::{old}") for old in RETIRED)
+		]
+		self.assertEqual(stale, [], "these rules read a field nothing writes to any more")
+
+	def test_the_engine_reads_the_new_field(self):
+		"""End to end: a rule on GPA holds back the candidate who misses it and lets
+		the one who clears it through."""
+		from recruitment.recruitment.eligibility_engine import evaluate_eligibility
+
+		opening = frappe.get_doc({
+			"doctype": "Job Opening", "job_title": "_Test EP GPA Opening",
+			"company": frappe.get_all("Company", pluck="name")[0],
+			"designation": frappe.get_all("Designation", pluck="name")[0], "status": "Open",
+			"custom_eligibility_rules": [{
+				"field_name": f"{TABLE_FIELD}::{ep.GPA_FIELD}",
+				"operator": "<", "value": "60", "action": "Knock out"}],
+		})
+		opening.flags.ignore_mandatory = True
+		opening.insert(ignore_permissions=True)
+
+		outcomes = {}
+		for gpa in (82, 45):
+			applicant = frappe.get_doc({
+				"doctype": "Job Applicant", "applicant_name": f"EP GPA {gpa}",
+				"email_id": f"ep.gpa{gpa}@test.local", "status": "Open",
+				"job_title": opening.name,
+				TABLE_FIELD: [{"qualification": "Graduation", ep.GPA_FIELD: gpa}]})
+			applicant.flags.ignore_mandatory = True
+			applicant.insert(ignore_permissions=True)
+			evaluate_eligibility(applicant)
+			outcomes[gpa] = frappe.db.get_value("Job Applicant", applicant.name, "status")
+
+		self.assertEqual(outcomes[82], "Shortlisted")
+		self.assertEqual(outcomes[45], "Rejected")
 
 	def test_running_it_again_changes_nothing(self):
 		"""It runs on every migrate."""

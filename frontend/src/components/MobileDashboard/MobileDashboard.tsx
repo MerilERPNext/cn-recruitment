@@ -78,6 +78,15 @@ const MobileDashboard: React.FC = () => {
     }
   };
 
+  const handleGeoButtonClick = async () => {
+    const coords = await fetchLocation();
+    if (!coords) {
+      toast.error("Could not get location. Please enable location services and try again.");
+      return;
+    }
+    setGeoLocationModal(true);
+  };
+
   useEffect(() => {
     // Initial fetch with a fallback retry to handle potential native interface delay
     fetchLocation().then((coords) => {
@@ -560,9 +569,7 @@ const MobileDashboard: React.FC = () => {
                   variant="contain"
                   fullWidth
                   size="lg"
-                  onClick={() =>
-                    setGeoLocationModal(true)
-                  }
+                  onClick={handleGeoButtonClick}
                   disabled={
                     checkInCheckOutPending ||
                     !employeeShift?.shift ||

@@ -25,6 +25,7 @@ def get_pipeline_data():
                 "interview": 0,
                 "Hold": 0,
                 "Approvals": 0,
+                "hired": 0,
                 "accepted": 0,
                 "rejected": 0,
             }

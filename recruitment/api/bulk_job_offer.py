@@ -78,9 +78,34 @@ def create_job_offer_for_applicant(job_applicant):
 	job_offer.custom_employment_type = applicant.custom_employment_type
 	job_offer.offer_date = frappe.utils.today()
 	job_offer.insert(ignore_permissions=True)
-	frappe.db.set_value("Job Applicant", applicant.name, "status", "Open")
+	_mark_offer_stage(applicant.name, SUB_STATUS_TO_SEND)
 
 	return {"job_offer": job_offer.name, "already_existed": False}
+
+
+
+# The candidate is at the OFFER stage once an offer exists — not back at "Open",
+# which is what a brand-new application looks like and is how offered candidates
+# went missing from every "who is still in play" view. "Hired" is that stage; the
+# sub-status says how far the offer itself has got, and the candidate's own reply
+# moves them on to "Accepted" (advance_on_job_offer_outcome).
+OFFER_STATUS = "Hired"
+SUB_STATUS_TO_SEND = "Offer To Be Sent"
+SUB_STATUS_SENT = "Offer Sent"
+
+
+def _mark_offer_stage(applicant, sub_status):
+    """Put the candidate at the offer stage, without disturbing a decided one."""
+    from recruitment.api.hiring_stage import _ensure_sub_status_option
+
+    current = frappe.db.get_value("Job Applicant", applicant, "status")
+    if current in ("Accepted", "Rejected"):
+        # Already decided — an offer email going out again must not reopen them.
+        return
+    _ensure_sub_status_option(OFFER_STATUS, sub_status)
+    frappe.db.set_value("Job Applicant", applicant,
+                        {"status": OFFER_STATUS, "custom_substatus": sub_status},
+                        update_modified=False)
 
 
 @frappe.whitelist()
@@ -130,7 +155,7 @@ def create_bulk_job_offer(applicants):
             job_offer.offer_date = frappe.utils.today()
 
             job_offer.insert(ignore_permissions=True)
-            frappe.db.set_value("Job Applicant", applicant.name, "status", "Open")
+            _mark_offer_stage(applicant.name, SUB_STATUS_TO_SEND)
 
             created += 1
 
@@ -307,9 +332,7 @@ def send_bulk_job_offer(job_offers):
             # ----------------------------
             # Update Applicant
             # ----------------------------
-            applicant.flags.ignore_notify = True
-            applicant.status = "Open"
-            applicant.save(ignore_permissions=True)
+            _mark_offer_stage(applicant.name, SUB_STATUS_SENT)
 
             sent += 1
 
