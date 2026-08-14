@@ -74,11 +74,11 @@ export const TimesheetMetrics: React.FC<TimesheetMetricsProps> = ({
           <div className="flex items-center gap-2 pt-2 mt-2 border-t border-gray-100">
             <Typography variant="bodySmall" color="body1" className="font-semibold">Timesheet Status:</Typography>
             <Typography variant="caption" className={`px-2.5 py-1 rounded-xl font-semibold ${timesheetStatus === "Approved" ? "bg-green-50 text-green-700 border border-green-100" :
-              timesheetStatus === "Pending for Approval" ? "bg-amber-50 text-amber-700 border border-amber-100" :
+              timesheetStatus === "Submitted" || timesheetStatus === "Pending for Approval" ? "bg-amber-50 text-amber-700 border border-amber-100" :
                 timesheetStatus === "Rejected" ? "bg-red-50 text-red-700 border border-red-100" :
                   "bg-gray-50 text-gray-700 border border-gray-100"
               }`}>
-              {timesheetStatus}
+              {timesheetStatus === "Pending for Approval" ? "Submitted" : timesheetStatus}
             </Typography>
           </div>
         )}

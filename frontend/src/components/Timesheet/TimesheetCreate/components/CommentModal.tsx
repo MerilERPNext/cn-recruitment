@@ -46,7 +46,7 @@ export const CommentModal: React.FC<CommentModalProps> = ({
 
                 <div className="p-6 space-y-4">
                     <label className="block text-sm font-semibold text-gray-700">
-                        Description / Comment <span className="text-red-500">*</span>
+                        Description / Comment {showSubmitButton && <span className="text-red-500">*</span>}
                     </label>
                     <textarea
                         placeholder="Enter log comments here..."
