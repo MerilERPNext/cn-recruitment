@@ -80,6 +80,9 @@ const queryClient = useQueryClient()
   const headerDesignation = reviewFeedbackResponse?.designation || activeReview?.designation || "";
   const headerInitials = getInitials(headerSubjectName);
   const headerDueDays = reviewFeedbackResponse?.due_in_days ?? activeReview?.due_in_days;
+  const hasItems = Boolean(reviewFeedbackResponse?.items && reviewFeedbackResponse.items.length > 0);
+  const isSubmitted = Boolean(reviewFeedbackResponse?.locked || reviewFeedbackResponse?.status?.toLowerCase() === "submitted");
+
   const handelRatingDraft = () => {
     const formattAns = Object.entries(ratings).map(([id, item]) => ({
       id,
@@ -210,21 +213,21 @@ const queryClient = useQueryClient()
               <div className="mt-5 flex flex-col gap-5">
                 <div className="flex flex-col gap-3 pb-2 sm:flex-row sm:items-center sm:justify-between">
                   <Button
-                        onClick={() => handelRatingDraft()}
+                    onClick={() => handelRatingDraft()}
                     variant="outline"
                     bgColor="text"
                     size="md"
                     loading={saveFeedbackLoading}
-                    disabled={saveFeedbackLoading}
+                    disabled={saveFeedbackLoading || !hasItems || isSubmitted}
                     className="h-11 w-full justify-center border-gray-200 bg-white px-5 text-gray-700 hover:bg-gray-50 sm:w-auto"
                   >
                     Save Draft
                   </Button>
                   <Button
-                   
                     variant="contain"
                     bgColor="primary"
                     size="md"
+                    disabled={!hasItems || isSubmitted}
                     className="h-11 w-full justify-center bg-blue-600 px-6 text-white hover:bg-blue-700 sm:w-auto"
                   >
                     Submit Feedback
