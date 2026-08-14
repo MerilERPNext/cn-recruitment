@@ -131,11 +131,11 @@ const queryClient = useQueryClient()
                     <Typography variant="caption" className="text-gray-500 mb-1">You are giving peer feedback on</Typography>
                     <div className="flex flex-wrap items-center gap-3 mb-2">
                       <Typography variant="h3" className="text-gray-900 font-bold">
-                        {headerSubjectName} {headerDesignation ? `· ${headerDesignation}` : ''}
+                        {headerSubjectName ?? "-"} {headerDesignation ? `· ${headerDesignation}` : ''}
                       </Typography>
                       {reviewFeedbackResponse?.status && (
                         <Badge
-                          label={reviewFeedbackResponse.status}
+                          label={reviewFeedbackResponse.status ?? "-"}
                           variant={reviewFeedbackResponse.status.toLowerCase() === "draft" ? "warning" : "success"}
                           size="sm"
                         />
