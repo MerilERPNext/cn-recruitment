@@ -1,9 +1,7 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { Typography } from '../../../shared/atoms/Typography';
 import Badge from '../../../shared/Badge';
 import { FeedbackScaleOption } from '../../../../types/goal';
-
-
 
 export interface RatingCardProps {
   title: string;
@@ -18,7 +16,18 @@ export interface RatingCardProps {
   disabled?: boolean;
 }
 
-export const RatingCard: React.FC<RatingCardProps> = ({ title, description, required = false, value, onChange, comment, onCommentChange, weightage, scale=[], disabled = false }) => {
+export const RatingCard: React.FC<RatingCardProps> = memo(({
+  title,
+  description,
+  required = false,
+  value,
+  onChange,
+  comment,
+  onCommentChange,
+  weightage,
+  scale = [],
+  disabled = false,
+}) => {
   const selectedOption = scale.find(o => o.value === value);
 
   return (
@@ -96,4 +105,7 @@ export const RatingCard: React.FC<RatingCardProps> = ({ title, description, requ
       </div>
     </div>
   );
-};
+});
+
+RatingCard.displayName = "RatingCard";
+export default RatingCard;
