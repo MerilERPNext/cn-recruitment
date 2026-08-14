@@ -1,4 +1,4 @@
-import { lazy, useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Button from "../../shared/atoms/Button";
 import { Typography } from "../../shared/atoms/Typography";
 import type { PeerReviewItem } from "../../../types/goal";
@@ -6,35 +6,12 @@ import { PERFORMANCE_QUERY_KEYS, useGetFeedBackForm, useGetMyPeerReviews, useSav
 import Badge from "../../shared/Badge";
 import toast from "react-hot-toast";
 import { useQueryClient } from "@tanstack/react-query";
-
-const RatingCard = lazy(() =>
-  import("./components/RatingCard").then((m) => ({ default: m.RatingCard })),
-);
-const FeedbackRightSidebar = lazy(() =>
-  import("./components/FeedbackRightSidebar").then((m) => ({
-    default: m.FeedbackRightSidebar,
-  })),
-);
-const AnonymousInfoCard = lazy(() =>
-  import("./components/AnonymousInfoCard").then((m) => ({
-    default: m.AnonymousInfoCard,
-  })),
-);
-const PeerReviewSidebarSkeleton = lazy(() =>
-  import("./components/PeerReviewSidebarSkeleton").then((m) => ({
-    default: m.PeerReviewSidebarSkeleton,
-  })),
-);
-const FeedbackErrorCard = lazy(() =>
-  import("./components/FeedbackErrorCard").then((m) => ({
-    default: m.FeedbackErrorCard,
-  })),
-);
-const FeedbackFormSkeleton = lazy(() =>
-  import("./components/FeedbackFormSkeleton").then((m) => ({
-    default: m.FeedbackFormSkeleton,
-  })),
-);
+import { RatingCard } from "./components/RatingCard";
+import { FeedbackRightSidebar } from "./components/FeedbackRightSidebar";
+import { AnonymousInfoCard } from "./components/AnonymousInfoCard";
+import { PeerReviewSidebarSkeleton } from "./components/PeerReviewSidebarSkeleton";
+import { FeedbackErrorCard } from "./components/FeedbackErrorCard";
+import { FeedbackFormSkeleton } from "./components/FeedbackFormSkeleton";
 
 
 const getInitials = (name?: string) => {
@@ -62,7 +39,7 @@ const queryClient = useQueryClient()
   const activeReview: PeerReviewItem =
     openReviews.find((r) => r.nomination === activeNominationId) || openReviews[0];
   const { data: feedBackResponse, isLoading: feedbackLoading, error: feedbackErr, refetch: feedBackRefetch } = useGetFeedBackForm(activeNominationId)
-  const { mutate:saveFeedback,isPending:saveFeedbackLoading,error:saveFeedbackErr} = useSaveFeedback() 
+  const { mutate:saveFeedback,isPending:saveFeedbackLoading,error:saveFeedbackErr } = useSaveFeedback() 
   const reviewFeedbackResponse = feedBackResponse?.data
   const [ratings, setRatings] = useState<
     Record<string, { value: number; comment: string }>
@@ -72,7 +49,16 @@ const queryClient = useQueryClient()
   }, []);
 
   useEffect(() => {
-    if (apiReviews && apiReviews.length > 0 && !activeNominationId) {
+    if (!apiReviews?.length) {
+      setActiveNominationId("");
+      return;
+    }
+
+    const activeStillExists = apiReviews.some(
+      (review) => review.nomination === activeNominationId
+    );
+
+    if (!activeStillExists) {
       setActiveNominationId(apiReviews[0].nomination);
     }
   }, [apiReviews, activeNominationId]);
@@ -94,7 +80,7 @@ const queryClient = useQueryClient()
   const headerDesignation = reviewFeedbackResponse?.designation || activeReview?.designation || "";
   const headerInitials = getInitials(headerSubjectName);
   const headerDueDays = reviewFeedbackResponse?.due_in_days ?? activeReview?.due_in_days;
-  const handelRatingSubmit = () => {
+  const handelRatingDraft = () => {
     const formattAns = Object.entries(ratings).map(([id, item]) => ({
       id,
       rating: item.value,
@@ -216,7 +202,7 @@ const queryClient = useQueryClient()
                   <FeedbackErrorCard
                     title="Failed to save feedback draft"
                     error={saveFeedbackErr}
-                    onRetry={() => handelRatingSubmit()}
+                        onRetry={() => handelRatingDraft()}
                   />
                 </div>
               )}
@@ -224,7 +210,7 @@ const queryClient = useQueryClient()
               <div className="mt-5 flex flex-col gap-5">
                 <div className="flex flex-col gap-3 pb-2 sm:flex-row sm:items-center sm:justify-between">
                   <Button
-                    onClick={() => handelRatingSubmit()}
+                        onClick={() => handelRatingDraft()}
                     variant="outline"
                     bgColor="text"
                     size="md"
