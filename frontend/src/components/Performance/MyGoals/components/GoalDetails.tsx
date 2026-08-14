@@ -361,7 +361,7 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, onBack }) => {
                 )}
               </div>
 
-              <div className="space-y-4 sm:space-y-6 max-h-[180px] overflow-y-auto">
+              <div className="space-y-4 sm:space-y-6 max-h-[200px] overflow-y-auto">
                 {isEditingKRs ? (
                   <div className="space-y-4">
                     {editingKRs.map((kr) => (
@@ -531,7 +531,7 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, onBack }) => {
                   ))}
                 </div>
               ) : checkIns.length ? (
-                <div className="space-y-3  max-h-[150px]   overflow-y-auto">
+                <div className="space-y-3  max-h-[180px]   overflow-y-auto">
                   {checkIns.map((checkIn) => (
                     <CheckInItem key={checkIn.name} checkIn={checkIn} />
                   ))}

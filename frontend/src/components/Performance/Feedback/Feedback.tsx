@@ -1,38 +1,17 @@
-import { lazy, useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Button from "../../shared/atoms/Button";
 import { Typography } from "../../shared/atoms/Typography";
 import type { PeerReviewItem } from "../../../types/goal";
-import { useGetFeedBackForm, useGetMyPeerReviews } from "../../../hooks/usePerformance";
+import { PERFORMANCE_QUERY_KEYS, useGetFeedBackForm, useGetMyPeerReviews, useSaveFeedback, useSubmitFeedback } from "../../../hooks/usePerformance";
 import Badge from "../../shared/Badge";
-
-const RatingCard = lazy(() =>
-  import("./components/RatingCard").then((m) => ({ default: m.RatingCard })),
-);
-const FeedbackRightSidebar = lazy(() =>
-  import("./components/FeedbackRightSidebar").then((m) => ({
-    default: m.FeedbackRightSidebar,
-  })),
-);
-const AnonymousInfoCard = lazy(() =>
-  import("./components/AnonymousInfoCard").then((m) => ({
-    default: m.AnonymousInfoCard,
-  })),
-);
-const PeerReviewSidebarSkeleton = lazy(() =>
-  import("./components/PeerReviewSidebarSkeleton").then((m) => ({
-    default: m.PeerReviewSidebarSkeleton,
-  })),
-);
-const FeedbackErrorCard = lazy(() =>
-  import("./components/FeedbackErrorCard").then((m) => ({
-    default: m.FeedbackErrorCard,
-  })),
-);
-const FeedbackFormSkeleton = lazy(() =>
-  import("./components/FeedbackFormSkeleton").then((m) => ({
-    default: m.FeedbackFormSkeleton,
-  })),
-);
+import toast from "react-hot-toast";
+import { useQueryClient } from "@tanstack/react-query";
+import { RatingCard } from "./components/RatingCard";
+import { FeedbackRightSidebar } from "./components/FeedbackRightSidebar";
+import { AnonymousInfoCard } from "./components/AnonymousInfoCard";
+import { PeerReviewSidebarSkeleton } from "./components/PeerReviewSidebarSkeleton";
+import { FeedbackErrorCard } from "./components/FeedbackErrorCard";
+import { FeedbackFormSkeleton } from "./components/FeedbackFormSkeleton";
 
 
 const getInitials = (name?: string) => {
@@ -49,6 +28,7 @@ const getInitials = (name?: string) => {
 
 
 const Feedback = () => {
+const queryClient = useQueryClient()
   const { data: myPeerReviews, isLoading, error, refetch } = useGetMyPeerReviews();
 
   const apiReviews = myPeerReviews?.data?.reviews;
@@ -59,7 +39,8 @@ const Feedback = () => {
   const activeReview: PeerReviewItem =
     openReviews.find((r) => r.nomination === activeNominationId) || openReviews[0];
   const { data: feedBackResponse, isLoading: feedbackLoading, error: feedbackErr, refetch: feedBackRefetch } = useGetFeedBackForm(activeNominationId)
-
+  const { mutate:saveFeedback,isPending:saveFeedbackLoading,error:saveFeedbackErr } = useSaveFeedback() 
+  const { mutate:submitFeedback , isPending:submitfeedbackLoading , error:submitfeedbackErr} = useSubmitFeedback()
   const reviewFeedbackResponse = feedBackResponse?.data
   const [ratings, setRatings] = useState<
     Record<string, { value: number; comment: string }>
@@ -69,7 +50,16 @@ const Feedback = () => {
   }, []);
 
   useEffect(() => {
-    if (apiReviews && apiReviews.length > 0 && !activeNominationId) {
+    if (!apiReviews?.length) {
+      setActiveNominationId("");
+      return;
+    }
+
+    const activeStillExists = apiReviews.some(
+      (review) => review.nomination === activeNominationId
+    );
+
+    if (!activeStillExists) {
       setActiveNominationId(apiReviews[0].nomination);
     }
   }, [apiReviews, activeNominationId]);
@@ -91,9 +81,61 @@ const Feedback = () => {
   const headerDesignation = reviewFeedbackResponse?.designation || activeReview?.designation || "";
   const headerInitials = getInitials(headerSubjectName);
   const headerDueDays = reviewFeedbackResponse?.due_in_days ?? activeReview?.due_in_days;
-  const handelRatingSubmit = () => {
-    console.log(activeNominationId, ratings, 'rrrrrrrrrrrrrraaaaaaaaaaa')
-  }
+  const hasItems = Boolean(reviewFeedbackResponse?.items && reviewFeedbackResponse.items.length > 0);
+  const isSubmitted = Boolean(reviewFeedbackResponse?.locked || reviewFeedbackResponse?.status?.toLowerCase() === "submitted");
+
+  const isAnyLoading = saveFeedbackLoading || submitfeedbackLoading;
+
+  const handelRatingDraft = () => {
+    const formattAns = Object.entries(ratings).map(([id, item]) => ({
+      id,
+      rating: item.value,
+      comment: item.comment,
+    }));
+    saveFeedback(
+      {
+        payload: {
+          nomination: activeNominationId,
+          answers: formattAns,
+        },
+      },
+      {
+        onSuccess: (res) => {
+          toast.success(res?.message || "Draft saved successfully!");
+          queryClient.invalidateQueries({queryKey:PERFORMANCE_QUERY_KEYS.feedbackForm(activeNominationId)});
+          queryClient.invalidateQueries({queryKey:PERFORMANCE_QUERY_KEYS.myPeerReviews});
+        },
+        onError: (err) => {
+          toast.error(err?.message || "Failed to save draft.");
+        },
+      }
+    );
+  };
+  const handelSubmitFeedback = () => {
+    const formattAns = Object.entries(ratings).map(([id, item]) => ({
+      id,
+      rating: item.value,
+      comment: item.comment,
+    }));
+    submitFeedback(
+      {
+        payload: {
+          nomination: activeNominationId,
+          answers: formattAns,
+        },
+      },
+      {
+        onSuccess: (res) => {
+          toast.success(res?.message || "Feedback submitted successfully!");
+          queryClient.invalidateQueries({queryKey:PERFORMANCE_QUERY_KEYS.feedbackForm(activeNominationId)});
+          queryClient.invalidateQueries({queryKey:PERFORMANCE_QUERY_KEYS.myPeerReviews});
+        },
+        onError: (err) => {
+          toast.error(err?.message || "Failed to submit feedback.");
+        },
+      }
+    );
+  };
   return (
     <div className="min-h-full bg-[#f8fafc]  p-4 sm:p-1 font-sans">
       <div className="max-w-[1300px] mx-auto flex flex-col xl:flex-row gap-6">
@@ -117,11 +159,11 @@ const Feedback = () => {
                     <Typography variant="caption" className="text-gray-500 mb-1">You are giving peer feedback on</Typography>
                     <div className="flex flex-wrap items-center gap-3 mb-2">
                       <Typography variant="h3" className="text-gray-900 font-bold">
-                        {headerSubjectName} {headerDesignation ? `· ${headerDesignation}` : ''}
+                        {headerSubjectName ?? "-"} {headerDesignation ? `· ${headerDesignation}` : ''}
                       </Typography>
                       {reviewFeedbackResponse?.status && (
                         <Badge
-                          label={reviewFeedbackResponse.status}
+                          label={reviewFeedbackResponse.status ?? "-"}
                           variant={reviewFeedbackResponse.status.toLowerCase() === "draft" ? "warning" : "success"}
                           size="sm"
                         />
@@ -181,26 +223,42 @@ const Feedback = () => {
                       }
                       weightage={item.weightage}
                       scale={reviewFeedbackResponse?.scale ?? []}
+                      disabled={isSubmitted}
                     />
                   ))
                 )}
               </div>
 
+              {(saveFeedbackErr || submitfeedbackErr) && (
+                <div className="mt-4">
+                  <FeedbackErrorCard
+                    title={submitfeedbackErr ? "Failed to submit feedback" : "Failed to save feedback draft"}
+                    error={submitfeedbackErr || saveFeedbackErr}
+                    onRetry={() => (submitfeedbackErr ? handelSubmitFeedback() : handelRatingDraft())}
+                  />
+                </div>
+              )}
+
               <div className="mt-5 flex flex-col gap-5">
                 <div className="flex flex-col gap-3 pb-2 sm:flex-row sm:items-center sm:justify-between">
                   <Button
+                    onClick={() => handelRatingDraft()}
                     variant="outline"
                     bgColor="text"
                     size="md"
+                    loading={saveFeedbackLoading}
+                    disabled={isAnyLoading || !hasItems || isSubmitted}
                     className="h-11 w-full justify-center border-gray-200 bg-white px-5 text-gray-700 hover:bg-gray-50 sm:w-auto"
                   >
                     Save Draft
                   </Button>
                   <Button
-                    onClick={() => handelRatingSubmit()}
+                    onClick={() => handelSubmitFeedback()}
                     variant="contain"
                     bgColor="primary"
                     size="md"
+                    loading={submitfeedbackLoading}
+                    disabled={isAnyLoading || !hasItems || isSubmitted}
                     className="h-11 w-full justify-center bg-blue-600 px-6 text-white hover:bg-blue-700 sm:w-auto"
                   >
                     Submit Feedback

@@ -560,6 +560,9 @@ export interface GoalCheckIn {
   note: string;
   attachment: string | null;
   creation: string;
+  manager_comment:string | null;
+  manager_comment_by:string | null;
+  manager_comment_on:string |null
 }
 
 export interface SubmitGoalCheckInResponse {
@@ -687,21 +690,67 @@ export interface FeedbackFormResponse {
 
 export interface FeedbackAnswer {
   id: string;
-  rating: number;
-  comment: string;
+  rating?: number | null;
+  comment?: string;
+}
+
+export interface FeedbackPayloadContent {
+  nomination: string;
+  answers: FeedbackAnswer[];
 }
 
 export interface SaveFeedbackPayload {
-  payload: {
-    nomination: string;
-    answers: FeedbackAnswer[];
-  };
+  payload: FeedbackPayloadContent;
 }
 
 export interface SubmitFeedbackPayload {
-  payload: {
-    nomination: string;
-    answers: FeedbackAnswer[];
-  };
+  payload: FeedbackPayloadContent;
 }
+
+export interface SaveFeedbackData {
+  feedback: string;
+  status: string;
+}
+
+export interface SaveFeedbackResponse {
+  success: boolean;
+  message: string;
+  data: SaveFeedbackData;
+}
+
+export interface SubmitFeedbackData {
+  feedback: string;
+  status: string;
+}
+
+export interface SubmitFeedbackResponse {
+  success: boolean;
+  message: string;
+  data: SubmitFeedbackData;
+}
+
+export interface AddGoalCommentContent {
+  goal: string;
+  employee: string;
+  comment: string;
+}
+
+export interface AddGoalCommentPayload {
+  payload: AddGoalCommentContent;
+}
+
+export interface AddGoalCommentData {
+  check_in?: string;
+  goal?: string;
+  manager_comment?: string;
+  manager_comment_by?: string;
+}
+
+export interface AddGoalCommentResponse {
+  success: boolean;
+  message: string;
+  data?: AddGoalCommentData;
+}
+
+
 
