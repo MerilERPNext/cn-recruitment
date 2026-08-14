@@ -86,19 +86,6 @@ const queryClient = useQueryClient()
 
   const isAnyLoading = saveFeedbackLoading || submitfeedbackLoading;
 
-  const getErrorMessage = (err: any): string => {
-    if (!err) return "";
-    if (typeof err === "string") return err;
-    if (err.response?.data?.message?.data?.errors?.length) {
-      return err.response.data.message.data.errors.join(", ");
-    }
-    if (err.response?.data?.message?.message) {
-      return err.response.data.message.message;
-    }
-    if (err.message) return err.message;
-    return "An error occurred";
-  };
-
   const handelRatingDraft = () => {
     const formattAns = Object.entries(ratings).map(([id, item]) => ({
       id,
@@ -119,7 +106,7 @@ const queryClient = useQueryClient()
           queryClient.invalidateQueries({queryKey:PERFORMANCE_QUERY_KEYS.myPeerReviews});
         },
         onError: (err) => {
-          toast.error(getErrorMessage(err) || "Failed to save draft.");
+          toast.error(err?.message || "Failed to save draft.");
         },
       }
     );
@@ -144,7 +131,7 @@ const queryClient = useQueryClient()
           queryClient.invalidateQueries({queryKey:PERFORMANCE_QUERY_KEYS.myPeerReviews});
         },
         onError: (err) => {
-          toast.error(getErrorMessage(err) || "Failed to submit feedback.");
+          toast.error(err?.message || "Failed to submit feedback.");
         },
       }
     );
@@ -246,7 +233,7 @@ const queryClient = useQueryClient()
                 <div className="mt-4">
                   <FeedbackErrorCard
                     title={submitfeedbackErr ? "Failed to submit feedback" : "Failed to save feedback draft"}
-                    error={getErrorMessage(submitfeedbackErr || saveFeedbackErr)}
+                    error={submitfeedbackErr || saveFeedbackErr}
                     onRetry={() => (submitfeedbackErr ? handelSubmitFeedback() : handelRatingDraft())}
                   />
                 </div>
