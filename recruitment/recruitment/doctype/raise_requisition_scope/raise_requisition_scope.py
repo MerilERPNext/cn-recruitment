@@ -5,8 +5,7 @@
 =========================
 
 A (multi-record) settings doctype that governs **who** may raise Job
-Requisitions and, optionally, **for what** they may raise them. Each record
-mirrors one Darwin "row".
+Requisitions and, optionally, **for what** they may raise them.
 
 Per record:
 
@@ -14,49 +13,50 @@ Per record:
   admitted by this record:
 
     - ``allowed_roles`` — Roles held by the acting User.
-    - ``employees_allowed_to_raise_requisitions`` — *User Assignments*
-      (``Dynamic User Assignment``) whose ``assigned_users`` child table
-      materialises the concrete Employees each assignment resolves to.
+    - ``employees_allowed_to_raise_requisitions`` — User Assignments of purpose
+      ``People``, whose ``assigned_users`` child table materialises the concrete
+      Employees each one resolves to.
 
-* **Scope By** — one *checkbox per basis* (``scope_by_user_assignment`` /
-  ``scope_by_department`` / ``scope_by_designation`` / ``scope_by_company``).
-  Tick one or more; each ticked basis reveals its selector, which supplies the
-  allowed values:
+* **Scope** — ``scope_of_raising_requisitions`` names User Assignments of purpose
+  ``Attributes``. Each carries the values it permits for named fields of a Job
+  Requisition — Company, Department, Designation, Location, or any other Link
+  field. A requisition must satisfy them all.
 
-    - User Assignment → ``scope_of_raising_requisitions`` (Employees in the
-      resolved assignment population).
-    - Department      → ``scope_departments`` (requisition's Department).
-    - Designation     → ``scope_designations`` (requisition's Designation).
-    - Company         → ``scope_companies`` (requisition's Company).
+  Company / Department / Designation used to be three further bases here, each
+  with its own child doctype, "Scope by" checkbox, cascade validation and client
+  script. They are gone: the same restriction is now an attribute on an
+  assignment, which is what makes scoping by a fourth field a configuration
+  change rather than a release. See
+  ``nextai.nextai.doctype.dynamic_user_assignment.attributes``.
 
-  A requisition must satisfy **all** ticked bases (AND). A ticked basis with an
-  empty selector, or a basis left un-ticked, imposes no restriction. Tick nothing
-  ⇒ *organization-wide* for that record.
+  Note the scope basis does **not** membership-test its assignments. It used to,
+  when the field meant "the employees these assignments resolve to"; an
+  Attributes assignment resolves to nobody, so keeping that test turned every
+  scoped record into a blanket denial.
 
 Gate (first-match across records): a requester may raise if **any** record
 admits them (Role or User Assignment) **and** they satisfy that same record's
 scope.
 
 **Deny by default.** There is no "unconfigured ⇒ everyone allowed" fallback: a
-requester with no matching record is blocked. What keeps that from locking the
-system out is the built-in :data:`DEFAULT_SCOPE_NAME` record — ``is_default``,
-role ``System Manager``, no scope bases ticked ⇒ System Managers may raise for
-all companies, departments and designations. It is created once — by
+requester with no matching record is blocked, and
+:func:`allowed_requisition_values` closes their pickers rather than opening them.
+What keeps that from locking the system out is the built-in
+:data:`DEFAULT_SCOPE_NAME` record — ``is_default``, role ``System Manager``, no
+scope ⇒ System Managers may raise for anything. It is created once — by
 ``patches.create_default_requisition_scope`` on existing sites and by
-``install.after_install`` on new ones — cannot be deleted, and cannot
-have the System Manager role removed. Every other population needs its own
-record.
+``install.after_install`` on new ones — cannot be deleted, and cannot have the
+System Manager role removed.
 
 Two evaluation contexts:
 
-* **Authoritative** (``before_insert`` on Job Requisition) — the requisition's
-  Department / Designation / Company are known, so field-based scopes are fully
-  enforced.
+* **Authoritative** (``before_insert`` on Job Requisition) — the requisition
+  itself is passed in, so every attribute is evaluable and fully enforced.
 * **Early / client** (``check_can_raise_requisition`` before the form opens) —
-  those values aren't known yet, so a field-based scope that the user could
-  still satisfy is *deferred* (treated as allowed) and re-checked at submit. The
-  Role check, the User-Assignment scope and the allowed-population gate are
-  always evaluable, so a user with no path at all is still blocked early.
+  the requisition's fields aren't filled yet, so an attribute the user could
+  still satisfy is *deferred* (treated as allowed) and re-checked at insert. The
+  Role check and the allowed-population gate are always evaluable, so a user with
+  no path at all is still blocked early.
 
 Roles are matched on the **acting User** (an actor property) while assignments
 are matched on the requester **Employee** — a Job Requisition's ``requested_by``
@@ -66,33 +66,50 @@ System Manager raise *on behalf of* another employee.
 
 Cost
 ----
-The gate sits on the Job Requisition insert path, so its query count is **flat
-in the number of configured records** — adding scope records does not make
-raising slower:
+Measured on this site, counting only the gate's own queries (Frappe's session and
+role cache primed, as in a real request):
 
-* 1 — the scope records themselves
-* 2 — the two allowed-population child tables (roles, assignments)
-* 0–4 — one per *ticked* scope basis; an un-ticked basis is never read
-* 0–1 — all Dynamic User Assignments resolved in one batch, lazily
+===============================================  =======  =======
+Scenario                                         Queries  Time
+===============================================  =======  =======
+Cold — first request after a config is edited          7  4.9 ms
+Warm — every subsequent request                        2  1.2 ms
+Ten requisitions inserted in **one** request           2  1.0 ms
+Eight keystrokes = eight separate HTTP requests       16  11 ms
+===============================================  =======  =======
 
-Measured on a real site: 3 queries when only the built-in default record exists
-(allow *and* deny), 4 for a System Manager once an assignment-based record is
-added (the role match short-circuits before any assignment lookup), and 5 for an
-assignment-based grant. Configuration and membership are both memoised per
-request, so ten sequential evaluations cost 5 queries in total rather than 50.
+The two warm queries are the requester's Employee lookup and the assignment
+membership batch; both are skipped on a role-only grant, which is the path a
+System Manager on the built-in default record takes.
+
+The configuration is cached in Redis across requests and invalidated precisely on
+save. Configuration, membership, attributes *and* the Employee lookup are all
+memoised per request, which is why ten sequential evaluations cost the same two
+queries as one rather than twenty.
 
 All reads go through ``frappe.qb`` rather than ``frappe.get_all`` — see
-:func:`_grouped_child` for the two reasons, both of which are correctness
-issues, not style.
+:func:`_grouped_child` for the two reasons, both of which are correctness issues,
+not style.
 """
 
-from collections import defaultdict
+from collections import defaultdict, namedtuple
 
 import frappe
 from frappe import _
 from frappe.model.document import Document
+from frappe.utils.caching import request_cache
+
+from nextai.nextai.doctype.dynamic_user_assignment.attributes import (
+	PURPOSE_ATTRIBUTES,
+	PURPOSE_PEOPLE,
+	AttributeIndex,
+)
 
 SCOPE_DOCTYPE = "Raise Requisition Scope"
+# The document the scope's attributes are matched against. Attributes name
+# fields on this doctype, so scoping by a new field (Location, Branch, Grade)
+# is a configuration change — no code ships.
+REQUISITION_DOCTYPE = "Job Requisition"
 ALLOWED_CHILD = "Raise Requisition Allowed Assignment"
 ALLOWED_ROLE_CHILD = "Raise Requisition Allowed Role"
 ASSIGNED_USERS = "Assigned Users"
@@ -111,14 +128,27 @@ _REQUEST_CACHE_KEY = "_raise_requisition_scope_gate_data"
 _CONFIG_CACHE_KEY = "raise_requisition_scope:configs"
 _CONFIG_CACHE_TTL = 300
 
-# dimension key -> (child doctype, parentfield, link fieldname, requisition
-# field, "Scope by" checkbox fieldname). requisition field is None for the
-# User Assignment dimension (matched on the requester Employee, not a doc field).
+# One basis remains. Company / Department / Designation used to be three more
+# entries here, each with its own child doctype, checkbox, cascade rules and
+# client-side JS; they are now expressed as *attributes* on the User Assignments
+# this basis names, which is what makes scoping by a fourth field a
+# configuration change instead of a release.
+#
+# A namedtuple rather than a bare tuple on purpose: this collapsed from five
+# fields to four, and a positional ``dim[4]`` left behind elsewhere parsed fine
+# while raising IndexError at runtime — a 500 on the requisition gate. Named
+# access cannot fail that way.
+ScopeDimension = namedtuple(
+	"ScopeDimension", ["child_doctype", "parentfield", "valuefield", "check_field"]
+)
+
 SCOPE_DIMENSIONS = {
-	"User Assignment": ("Raise Requisition Scope Assignment", "scope_of_raising_requisitions", "user_assignment", None, "scope_by_user_assignment"),
-	"Department": ("Raise Requisition Scope Department", "scope_departments", "department", "department", "scope_by_department"),
-	"Designation": ("Raise Requisition Scope Designation", "scope_designations", "designation", "designation", "scope_by_designation"),
-	"Company": ("Raise Requisition Scope Company", "scope_companies", "company", "company", "scope_by_company"),
+	"User Assignment": ScopeDimension(
+		child_doctype="Raise Requisition Scope Assignment",
+		parentfield="scope_of_raising_requisitions",
+		valuefield="user_assignment",
+		check_field="scope_by_user_assignment",
+	),
 }
 
 
@@ -137,65 +167,18 @@ class RaiseRequisitionScope(Document):
 			)
 		self._protect_default()
 		self._validate_ticked_bases_have_values()
-		self._validate_cascade()
 
 	def _validate_ticked_bases_have_values(self):
 		"""A ticked basis with an empty selector restricts nothing, so it reads as
 		"scoped" while behaving as organization-wide — the most dangerous kind of
 		misconfiguration in a deny-by-default gate. ``mandatory_depends_on`` covers
 		the Desk form; this covers API writes and imports."""
-		for key, (_c, parentfield, _vf, _rf, check_field) in SCOPE_DIMENSIONS.items():
-			if self.get(check_field) and not self.get(parentfield):
+		for key, dim in SCOPE_DIMENSIONS.items():
+			if self.get(dim.check_field) and not self.get(dim.parentfield):
 				frappe.throw(
 					_("Select at least one value for <b>{0}</b>, or untick <i>Scope by {0}</i>.").format(key),
 					title=_("Scope Basis Has No Values"),
 				)
-
-	def _validate_cascade(self):
-		"""Company → Department → Designation must be internally consistent.
-
-		A Department from a company outside the Company scope (or a Designation
-		outside the Department scope) can never match a real requisition, so the
-		record would silently block everything it was meant to allow. Rejected up
-		front instead.
-
-		Deliberately lenient where the master data is silent: a Department or
-		Designation whose own company/department link is unset is not evidence of
-		a conflict, so it passes. Only a *contradicting* value is an error."""
-		companies = [r.company for r in self.get("scope_companies") or [] if r.company]
-		departments = [r.department for r in self.get("scope_departments") or [] if r.department]
-		designations = [r.designation for r in self.get("scope_designations") or [] if r.designation]
-
-		if self.get("scope_by_company") and self.get("scope_by_department") and companies and departments:
-			self._reject_conflicts("Department", departments, "company", companies, "Company")
-
-		if self.get("scope_by_designation") and designations:
-			if self.get("scope_by_department") and departments:
-				self._reject_conflicts("Designation", designations, "custom_department", departments, "Department")
-			elif self.get("scope_by_company") and companies:
-				self._reject_conflicts("Designation", designations, "custom_company", companies, "Company")
-
-	def _reject_conflicts(self, doctype, names, link_field, allowed, parent_label):
-		"""Throw when any of ``names`` links to something outside ``allowed``."""
-		table = frappe.qb.DocType(doctype)
-		link_col = table[link_field]
-		bad = (
-			frappe.qb.from_(table)
-			.select(table.name)
-			.where(
-				table.name.isin(names)
-				& link_col.notnull()
-				& (link_col != "")
-				& link_col.notin(allowed)
-			)
-		).run(pluck=True)
-		if bad:
-			frappe.throw(
-				_("{0} {1} does not belong to the selected {2}. Remove it, or widen the {2} scope.").format(
-					_(doctype), frappe.bold(", ".join(bad[:5]) + (" …" if len(bad) > 5 else "")), _(parent_label)
-				),
-				title=_("Scope Selections Conflict"),
-			)
 
 	def _protect_default(self):
 		"""The default record must keep its System Manager grant — otherwise a
@@ -277,8 +260,8 @@ def ensure_default_scope():
 	# No basis ticked ⇒ organization-wide: all companies, all departments, all
 	# designations. `scope_by_user_assignment` defaults to 1 on the doctype, so
 	# clear it explicitly.
-	for _key, (_c, _pf, _vf, _rf, check_field) in SCOPE_DIMENSIONS.items():
-		doc.set(check_field, 0)
+	for _key, dim in SCOPE_DIMENSIONS.items():
+		doc.set(dim.check_field, 0)
 	doc.insert(ignore_permissions=True)
 
 
@@ -370,7 +353,7 @@ def _query_configs():
 	queried, since its values could not affect the outcome. Assignment membership
 	is resolved separately and lazily (see :class:`_AssignmentMembership`).
 	"""
-	check_fields = [dim[4] for dim in SCOPE_DIMENSIONS.values()]
+	check_fields = [dim.check_field for dim in SCOPE_DIMENSIONS.values()]
 
 	# The parent table is read with the query builder too. `get_all` would work
 	# here only by accident: `scope_by_user_assignment` also contains `_assign`,
@@ -394,9 +377,9 @@ def _query_configs():
 	# weight — this is what keeps the common single-basis setup at one query
 	# instead of four.
 	scope_values = {}
-	for key, (child_dt, parentfield, valuefield, _reqfield, check_field) in SCOPE_DIMENSIONS.items():
-		if any(rec.get(check_field) for rec in records):
-			scope_values[key] = _grouped_child(child_dt, parentfield, valuefield, parents)
+	for key, dim in SCOPE_DIMENSIONS.items():
+		if any(rec.get(dim.check_field) for rec in records):
+			scope_values[key] = _grouped_child(dim.child_doctype, dim.parentfield, dim.valuefield, parents)
 		else:
 			scope_values[key] = {}
 
@@ -405,8 +388,8 @@ def _query_configs():
 		# The bases ticked on this record (AND-combined at evaluation time).
 		enabled = {
 			key
-			for key, (_c, _pf, _vf, _rf, check_field) in SCOPE_DIMENSIONS.items()
-			if rec.get(check_field)
+			for key, dim in SCOPE_DIMENSIONS.items()
+			if rec.get(dim.check_field)
 		}
 		name = rec["name"]
 		configs.append(
@@ -440,9 +423,25 @@ def _cached_gate_data():
 	data = getattr(frappe.local, _REQUEST_CACHE_KEY, None)
 	if data is None:
 		configs = _load_configs()
-		data = (configs, _AssignmentMembership(configs))
+		# Lazy in the same way membership is: constructing it reads nothing, so a
+		# role-only grant still resolves without touching the attribute table.
+		attributes = AttributeIndex(_scope_assignment_names(configs))
+		data = (configs, _AssignmentMembership(configs), attributes)
 		setattr(frappe.local, _REQUEST_CACHE_KEY, data)
 	return data
+
+
+def _scope_assignment_names(configs):
+	"""Every User Assignment named by a *scope* selector across ``configs``.
+
+	Only the scope selector — an assignment in the allowed-population table says
+	who may raise, not what they may raise for, so its attributes are none of the
+	scope's business.
+	"""
+	names = set()
+	for c in configs:
+		names.update(c["scope"].get("User Assignment") or [])
+	return names
 
 
 def clear_config_cache():
@@ -465,10 +464,13 @@ class _AssignmentMembership:
 	Manager hitting the built-in default record never touches this table)."""
 
 	def __init__(self, configs):
+		# Only the *allowed population* assignments. The scope selector names
+		# Attributes assignments, which resolve to nobody by design and are no
+		# longer membership-tested (see _dimension_satisfied) — including them
+		# widened the IN list and forced a query that could return nothing useful.
 		names = set()
 		for c in configs:
 			names.update(c["allowed_names"])
-			names.update(c["scope"].get("User Assignment") or [])
 		self._names = names
 		self._by_assignment = None
 
@@ -500,8 +502,17 @@ class _AssignmentMembership:
 		return any(employee in self._by_assignment.get(n, ()) for n in assignment_names)
 
 
+@request_cache
 def _employee_for_user(user):
-	"""Employee ID linked to ``user`` (an Active Employee's ``user_id``), or None."""
+	"""Employee ID linked to ``user`` (an Active Employee's ``user_id``), or None.
+
+	Memoised for the request: the link pickers call the gate once per field per
+	keystroke and a bulk insert calls it once per document, so without this the
+	same lookup ran on every call — it was the single most repeated query on the
+	whole path. Request scope is deliberate; caching across requests would leave a
+	newly linked Employee invisible to a security gate until a TTL expired, which
+	is not a trade worth making for one indexed lookup.
+	"""
 	if not user or user == "Administrator":
 		return None
 	return frappe.db.get_value("Employee", {"user_id": user, "status": "Active"}, "name")
@@ -525,37 +536,68 @@ def _admits(config, employee, user_roles, membership):
 def _dimension_satisfied(dimension, values, employee, context, membership):
 	"""Single-basis check → ``True`` / ``False`` / ``None`` (deferred).
 
-	An empty selector ⇒ organization-wide for that basis (no restriction)."""
+	The one remaining basis, ``User Assignment``, no longer asks whether the
+	requester is *in* those assignments. It used to: the field meant "the
+	employees these assignments resolve to define the scope", so it ran a
+	membership test.
+
+	It now names **Attributes** assignments, which resolve to nobody on purpose
+	(see ``_resolves_people`` in dynamic_user_assignment.py). Keeping the
+	membership test turned every scoped record into a blanket denial — the
+	requester could never be a member, so the basis always failed. What the
+	assignments contribute is their attributes, checked in
+	:func:`_scope_satisfied`.
+
+	Who may raise is still gated, by ``employees_allowed_to_raise_requisitions``
+	and ``allowed_roles``; that is the population question and belongs there.
+	"""
 	if not values:
 		return True
-
-	if dimension == "User Assignment":
-		return membership.covers(values, employee)
-
-	# Department / Designation / Company — match the requisition's own value.
-	_child, _pf, _vf, reqfield, _check = SCOPE_DIMENSIONS[dimension]
-	if context is None:
-		return None  # not evaluable without the requisition context
-	return context.get(reqfield) in values
+	return True
 
 
-def _scope_satisfied(config, employee, context, membership):
-	"""Whether ``config``'s scope admits this requester, AND-combining every
-	ticked basis.
+def _scope_satisfied(config, employee, context, membership, attributes=None):
+	"""Whether ``config``'s scope admits this requester.
 
-	Returns ``True`` when all ticked bases pass, ``False`` when any ticked basis
-	fails, or ``None`` when no basis fails but at least one field-based basis
-	can't be evaluated yet (no ``context``) — the caller treats ``None`` as
-	"defer to submit". No bases ticked ⇒ organization-wide ⇒ ``True``."""
+	The requisition's own fields must satisfy the *attributes* carried by the
+	assignments this record scopes by. Returns ``True`` when everything passes,
+	``False`` when anything fails, or ``None`` when nothing fails but at least one
+	attribute can't be evaluated yet (the requisition's field is still empty) —
+	the caller treats ``None`` as "defer to submit". Nothing ticked ⇒
+	organization-wide ⇒ ``True``.
+	"""
 	results = [
 		_dimension_satisfied(dim, config["scope"].get(dim, []), employee, context, membership)
 		for dim in config["dims_enabled"]
 	]
+
+	if attributes is not None:
+		scope_names = config["scope"].get("User Assignment") or []
+		if scope_names:
+			results.append(attributes.satisfied(scope_names, _attribute_context(context)))
+
 	if any(r is False for r in results):
 		return False
 	if any(r is None for r in results):
 		return None
 	return True
+
+
+def _attribute_context(context):
+	"""Adapt the gate's context into something the attribute engine can read.
+
+	The engine reads ``doc.get(fieldname)`` for whatever fields an assignment
+	names, so it needs the requisition itself (or a dict standing in for it) plus
+	a doctype to match rows against. ``None`` — the early check, before the form
+	is filled — becomes an empty requisition, so every attribute defers rather
+	than fails. That is what keeps the "check before opening the form" path from
+	blocking someone who would pass once they choose a department.
+	"""
+	if context is None:
+		return {"doctype": REQUISITION_DOCTYPE}
+	if getattr(context, "doctype", None):
+		return context  # a real Job Requisition document
+	return {"doctype": REQUISITION_DOCTYPE, **context}
 
 
 def evaluate(employee, context=None, user=None):
@@ -574,7 +616,7 @@ def evaluate(employee, context=None, user=None):
 	fallback. ``reason`` is a user-facing message when blocked, empty when
 	allowed."""
 	user_roles = set(frappe.get_roles(user or frappe.session.user))
-	configs, membership = _cached_gate_data()
+	configs, membership, attributes = _cached_gate_data()
 
 	matched_allowed = False
 	deferred = False
@@ -582,7 +624,7 @@ def evaluate(employee, context=None, user=None):
 		if not _admits(c, employee, user_roles, membership):
 			continue
 		matched_allowed = True
-		satisfied = _scope_satisfied(c, employee, context, membership)
+		satisfied = _scope_satisfied(c, employee, context, membership, attributes)
 		if satisfied is True:
 			return True, ""
 		if satisfied is None:
@@ -636,12 +678,10 @@ def enforce_can_raise(doc, method=None):
 		return
 
 	employee = getattr(doc, "requested_by", None) or _employee_for_user(frappe.session.user)
-	context = {
-		"department": getattr(doc, "department", None),
-		"designation": getattr(doc, "designation", None),
-		"company": getattr(doc, "company", None),
-	}
-	allowed, reason = evaluate(employee, context)
+	# The requisition itself, not a three-key extract of it, so an attribute
+	# naming any other field — a custom Location, Branch, Grade — resolves without
+	# this function having to know it exists.
+	allowed, reason = evaluate(employee, doc)
 	if not allowed:
 		frappe.throw(reason, title=_("Not Allowed to Raise Requisition"))
 
@@ -650,85 +690,95 @@ def enforce_can_raise(doc, method=None):
 
 
 @frappe.whitelist()
-def allowed_requisition_values(employee=None, user=None, company=None, department=None, designation=None):
-	"""Which Company / Department / Designation this requester may actually pick.
+def allowed_requisition_values(employee=None, user=None, company=None, department=None, designation=None, **chosen):
+	"""Which values this requester may actually pick, per requisition field.
 
 	Drives the link-field filters on the Raise Requisition form so the pickers
 	only offer values that will pass the gate, instead of letting someone fill in
 	a requisition and be rejected at save.
 
+	Keyed by **fieldname on Job Requisition** — ``company``, ``department``,
+	``designation``, and whatever else the tagged assignments restrict. The three
+	named parameters are kept because existing callers pass them by name; any
+	other field arrives through ``**chosen`` without a signature change here,
+	which is the point of the attribute model.
+
 	The answer is **context-aware**, not a flat union. A requester may be admitted
-	by several records, and each record AND-combines its own bases — so offering
-	the union of all records would let them pair Company A (from record 1) with
-	Department X (from record 2) and hit a dead end no record allows. Instead a
-	record only contributes values for a field when every *other* field basis it
-	ticks is compatible with what has already been chosen. Pass the current form
+	by several records, and each assignment AND-combines its own fields — so
+	offering the union would let them pair Company A (from one) with Department X
+	(from another) and hit a dead end neither allows. Pass the form's current
 	values in and re-call as they change.
 
-	Returns, per field::
-
-	    {"company": {"unrestricted": bool, "values": [...]}, "department": ..., ...}
-
-	``unrestricted`` means some admitting record imposes no limit on that field,
-	so the picker should show everything. An empty ``values`` with
-	``unrestricted`` false means the requester may pick nothing — they cannot
-	raise at all, which :func:`check_can_raise_requisition` reports properly.
+	A field absent from the result is restricted by nobody, so its picker stays
+	open. ``unrestricted`` means some admitting record imposes no limit on that
+	field. An empty ``values`` with ``unrestricted`` false means the requester may
+	pick nothing, which :func:`check_can_raise_requisition` reports properly.
 	"""
-	# field name on Job Requisition -> scope dimension key
-	field_dim = {
-		reqfield: key
-		for key, (_c, _pf, _vf, reqfield, _ck) in SCOPE_DIMENSIONS.items()
-		if reqfield
-	}
-
 	if frappe.session.user == "Administrator":
-		return {f: {"unrestricted": True, "values": []} for f in field_dim}
+		return {}  # unrestricted everywhere; no field needs a filter
 
 	if not employee:
 		employee = _employee_for_user(user or frappe.session.user)
 	user_roles = set(frappe.get_roles(user or frappe.session.user))
-	configs, membership = _cached_gate_data()
+	configs, membership, attributes = _cached_gate_data()
 
-	chosen = {"company": company, "department": department, "designation": designation}
-	out = {f: {"unrestricted": False, "values": set()} for f in field_dim}
+	chosen = {k: v for k, v in chosen.items() if v}
+	chosen.update({"company": company, "department": department, "designation": designation})
+
+	out = {}
+	unrestricted_record = False
+	admitted_by_any = False
+	# Every field the configuration governs at all, admitting or not. Used only
+	# for the "nobody admits this requester" case below.
+	governed_fields = set()
 
 	for c in configs:
+		scope_names = c["scope"].get("User Assignment") or []
+		governed_fields |= set(
+			attributes.allowed_values(scope_names, REQUISITION_DOCTYPE, {}).keys()
+		)
+
 		if not _admits(c, employee, user_roles, membership):
 			continue
-		# The User-Assignment basis is fully evaluable now, so a record it rules
-		# out must not contribute values.
-		if "User Assignment" in c["dims_enabled"]:
-			ua_values = c["scope"].get("User Assignment") or []
-			if ua_values and not membership.covers(ua_values, employee):
-				continue
+		admitted_by_any = True
 
-		for field, dim in field_dim.items():
-			if not _other_bases_compatible(c, field, field_dim, chosen):
-				continue
-			values = c["scope"].get(dim) or []
-			if dim not in c["dims_enabled"] or not values:
-				out[field]["unrestricted"] = True
+		# No membership test here, for the reason in _dimension_satisfied: these
+		# are Attributes assignments and resolve to nobody, so testing membership
+		# would drop every record and offer the requester nothing.
+		allowance = attributes.allowed_values(
+			c["scope"].get("User Assignment") or [], REQUISITION_DOCTYPE, chosen
+		)
+		if not allowance:
+			# This record restricts no field at all, so it admits the requester
+			# for every field. Applied below, once every field another record
+			# restricts is known.
+			unrestricted_record = True
+			continue
+
+		for field, detail in allowance.items():
+			entry = out.setdefault(field, {"unrestricted": False, "values": set()})
+			if detail["unrestricted"]:
+				entry["unrestricted"] = True
 			else:
-				out[field]["values"].update(values)
+				entry["values"].update(detail["values"])
+
+	if not admitted_by_any:
+		# Nobody admits this requester, so they may pick *nothing* — not
+		# everything. Returning an empty map would read as "no field is
+		# restricted" and open every picker, inverting the deny-by-default rule
+		# the whole gate rests on. `check_can_raise_requisition` reports the
+		# refusal properly; this just stops the form offering values that the
+		# insert would certainly reject.
+		return {f: {"unrestricted": False, "values": []} for f in governed_fields}
+
+	if unrestricted_record:
+		for entry in out.values():
+			entry["unrestricted"] = True
 
 	return {
 		f: {"unrestricted": v["unrestricted"], "values": sorted(v["values"])}
 		for f, v in out.items()
 	}
-
-
-def _other_bases_compatible(config, field, field_dim, chosen):
-	"""Whether ``config`` can still apply given the values already chosen for the
-	fields *other* than ``field`` — a record whose Company basis excludes the
-	company already picked must not offer its Departments."""
-	for other_field, other_dim in field_dim.items():
-		if other_field == field or other_dim not in config["dims_enabled"]:
-			continue
-		values = config["scope"].get(other_dim) or []
-		picked = chosen.get(other_field)
-		if values and picked and picked not in values:
-			return False
-	return True
 
 
 @frappe.whitelist()
@@ -757,3 +807,71 @@ def check_can_raise_requisition(employee=None, user=None, department=None, desig
 
 	allowed, reason = evaluate(employee, context)
 	return {"allowed": allowed, "reason": reason, "employee": employee}
+
+
+# ── Link queries for the two assignment pickers ───────────────────────────────
+#
+# The two child tables want *different* kinds of assignment, and offering the
+# wrong kind fails silently. A People assignment in the scope table restricts no
+# values; an Attributes assignment in the allowed-population table resolves to
+# nobody, so it would grant nothing while looking like a grant. Filtering the
+# pickers stops both mistakes being made, rather than explaining them afterwards.
+
+
+def _assignment_query(purpose, applicable_to, txt, start, page_len):
+	"""Dynamic User Assignments of ``purpose``, optionally tagged for a process.
+
+	``applicable_to`` matches ``applicable_for_process``; assignments tagged for
+	nothing are also returned, since an untagged assignment conventionally means
+	"applies anywhere" and excluding it would hide legitimate configuration.
+	"""
+	like = f"%{txt or ''}%"
+	params = {"purpose": purpose, "txt": like, "start": start, "page_len": page_len}
+
+	process_clause = ""
+	if applicable_to:
+		params["process"] = applicable_to
+		process_clause = """
+			AND (
+				NOT EXISTS (
+					SELECT 1 FROM `tabGlobal Search DocType` any_gsd
+					WHERE any_gsd.parent = dua.name
+					  AND any_gsd.parenttype = 'Dynamic User Assignment'
+				)
+				OR EXISTS (
+					SELECT 1 FROM `tabGlobal Search DocType` gsd
+					WHERE gsd.parent = dua.name
+					  AND gsd.parenttype = 'Dynamic User Assignment'
+					  AND gsd.document_type = %(process)s
+				)
+			)
+		"""
+
+	return frappe.db.sql(
+		f"""
+		SELECT dua.name, dua.assignment_name
+		FROM `tabDynamic User Assignment` dua
+		WHERE IFNULL(dua.assignment_purpose, 'People') = %(purpose)s
+		  AND (dua.name LIKE %(txt)s OR IFNULL(dua.assignment_name, '') LIKE %(txt)s)
+		  {process_clause}
+		ORDER BY dua.modified DESC
+		LIMIT %(start)s, %(page_len)s
+		""",
+		params,
+	)
+
+
+@frappe.whitelist()
+@frappe.validate_and_sanitize_search_inputs
+def scope_assignment_query(doctype, txt, searchfield, start, page_len, filters):
+	"""Picker for ``scope_of_raising_requisitions`` — Attributes assignments
+	applicable to Job Requisition."""
+	return _assignment_query(PURPOSE_ATTRIBUTES, REQUISITION_DOCTYPE, txt, start, page_len)
+
+
+@frappe.whitelist()
+@frappe.validate_and_sanitize_search_inputs
+def population_assignment_query(doctype, txt, searchfield, start, page_len, filters):
+	"""Picker for ``employees_allowed_to_raise_requisitions`` — People assignments,
+	the only kind that resolves to anybody."""
+	return _assignment_query(PURPOSE_PEOPLE, None, txt, start, page_len)

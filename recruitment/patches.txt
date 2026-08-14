@@ -37,3 +37,4 @@ recruitment.patches.seed_extra_round_types
 recruitment.patches.campus_drive_pay_permlevel
 recruitment.patches.add_requisition_headcount_fields
 recruitment.patches.add_job_requisition_print_format
+recruitment.patches.migrate_requisition_scope_to_attributes
