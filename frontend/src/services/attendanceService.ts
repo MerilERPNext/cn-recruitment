@@ -525,6 +525,25 @@ export const attendanceService = {
     }
   },
 
+  // Attendance Settings gate for editing From Time / To Time on an attendance
+  // request while approving it from the Team Attendance Requests page. When the
+  // setting is off the times stay read-only for the approver.
+  getTimeEditableWhileApproving: async (): Promise<boolean> => {
+    try {
+      const res = await FrappeAPI.callMethod("frappe.client.get_single_value", {
+        doctype: "Attendance Settings",
+        field: "time_editable_while_approving",
+      });
+      return Number(res) === 1;
+    } catch (error) {
+      console.error(
+        "📡 Error while reading Time Editable While Approving setting:",
+        error
+      );
+      return false;
+    }
+  },
+
   getPolicyForDate: async (
     filters: AllEventsAndAttendanceT
   ): Promise<string> => {
