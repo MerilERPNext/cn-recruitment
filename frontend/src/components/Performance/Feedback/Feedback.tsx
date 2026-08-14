@@ -2,8 +2,10 @@ import { lazy, useCallback, useEffect, useState } from "react";
 import Button from "../../shared/atoms/Button";
 import { Typography } from "../../shared/atoms/Typography";
 import type { PeerReviewItem } from "../../../types/goal";
-import { useGetFeedBackForm, useGetMyPeerReviews } from "../../../hooks/usePerformance";
+import { PERFORMANCE_QUERY_KEYS, useGetFeedBackForm, useGetMyPeerReviews, useSaveFeedback } from "../../../hooks/usePerformance";
 import Badge from "../../shared/Badge";
+import toast from "react-hot-toast";
+import { useQueryClient } from "@tanstack/react-query";
 
 const RatingCard = lazy(() =>
   import("./components/RatingCard").then((m) => ({ default: m.RatingCard })),
@@ -49,6 +51,7 @@ const getInitials = (name?: string) => {
 
 
 const Feedback = () => {
+const queryClient = useQueryClient()
   const { data: myPeerReviews, isLoading, error, refetch } = useGetMyPeerReviews();
 
   const apiReviews = myPeerReviews?.data?.reviews;
@@ -59,7 +62,7 @@ const Feedback = () => {
   const activeReview: PeerReviewItem =
     openReviews.find((r) => r.nomination === activeNominationId) || openReviews[0];
   const { data: feedBackResponse, isLoading: feedbackLoading, error: feedbackErr, refetch: feedBackRefetch } = useGetFeedBackForm(activeNominationId)
-
+  const { mutate:saveFeedback,isPending:saveFeedbackLoading,error:saveFeedbackErr} = useSaveFeedback() 
   const reviewFeedbackResponse = feedBackResponse?.data
   const [ratings, setRatings] = useState<
     Record<string, { value: number; comment: string }>
@@ -92,8 +95,30 @@ const Feedback = () => {
   const headerInitials = getInitials(headerSubjectName);
   const headerDueDays = reviewFeedbackResponse?.due_in_days ?? activeReview?.due_in_days;
   const handelRatingSubmit = () => {
-    console.log(activeNominationId, ratings, 'rrrrrrrrrrrrrraaaaaaaaaaa')
-  }
+    const formattAns = Object.entries(ratings).map(([id, item]) => ({
+      id,
+      rating: item.value,
+      comment: item.comment,
+    }));
+    saveFeedback(
+      {
+        payload: {
+          nomination: activeNominationId,
+          answers: formattAns,
+        },
+      },
+      {
+        onSuccess: (res) => {
+          toast.success(res?.message || "Draft saved successfully!");
+          queryClient.invalidateQueries({queryKey:PERFORMANCE_QUERY_KEYS.feedbackForm(activeNominationId)})
+
+        },
+        onError: (err) => {
+          toast.error(err?.message || "Failed to save draft.");
+        },
+      }
+    );
+  };
   return (
     <div className="min-h-full bg-[#f8fafc]  p-4 sm:p-1 font-sans">
       <div className="max-w-[1300px] mx-auto flex flex-col xl:flex-row gap-6">
@@ -186,18 +211,31 @@ const Feedback = () => {
                 )}
               </div>
 
+              {saveFeedbackErr && (
+                <div className="mt-4">
+                  <FeedbackErrorCard
+                    title="Failed to save feedback draft"
+                    error={saveFeedbackErr}
+                    onRetry={() => handelRatingSubmit()}
+                  />
+                </div>
+              )}
+
               <div className="mt-5 flex flex-col gap-5">
                 <div className="flex flex-col gap-3 pb-2 sm:flex-row sm:items-center sm:justify-between">
                   <Button
+                    onClick={() => handelRatingSubmit()}
                     variant="outline"
                     bgColor="text"
                     size="md"
+                    loading={saveFeedbackLoading}
+                    disabled={saveFeedbackLoading}
                     className="h-11 w-full justify-center border-gray-200 bg-white px-5 text-gray-700 hover:bg-gray-50 sm:w-auto"
                   >
                     Save Draft
                   </Button>
                   <Button
-                    onClick={() => handelRatingSubmit()}
+                   
                     variant="contain"
                     bgColor="primary"
                     size="md"
