@@ -30,6 +30,7 @@ import { useLoadingOverlay } from "../../../context/OverlayContext";
 import { TimesheetRow } from "./components/TimesheetRow";
 import { AttachmentCard } from "../../shared/molecules/AttachmentCard";
 import { CommentModal } from "./components/CommentModal";
+import { downloadTimesheetTemplate, parseTimesheetExcelFile } from "./utils/timesheetExcelUtils";
 
 
 export interface TimesheetRow {
@@ -84,7 +85,7 @@ const TimesheetCreate: React.FC = () => {
     logged_in_employee_details: true,
   });
   const employeeId = employeeDetails?.employee || "";
-  const company = employeeDetails?.company || "";
+  const company = employeeDetails?.company_name || "";
 
   // Weekly Timesheet Data Hook
   const { data: weeklyData, isLoading: isWeeklyLoading } = useWeeklyTimesheetData({
@@ -159,6 +160,49 @@ const TimesheetCreate: React.FC = () => {
   const [isFileModified, setIsFileModified] = useState<boolean>(false);
   const [submittedDatesList, setSubmittedDatesList] = useState<string[]>([]);
 
+  const allDisabledDays = useMemo(() => {
+    return Array.from(new Set([...weekOffDates, ...submittedDatesList, ...nonEditableDays]));
+  }, [weekOffDates, submittedDatesList, nonEditableDays]);
+
+  const dayStatusMap = useMemo(() => {
+    const map: Record<string, "Week Off" | "Draft" | "Submitted" | "Approved" | "Rejected"> = {};
+    daysOfWeek.forEach(day => {
+      const dateKey = format(day, "yyyy-MM-dd");
+      if (weekOffDates.includes(dateKey)) {
+        map[dateKey] = "Week Off";
+        return;
+      }
+      if (submittedDatesList.includes(dateKey)) {
+        map[dateKey] = "Submitted";
+        return;
+      }
+      const dayData = weeklyData?.days?.find(d => d.date === dateKey);
+      const records = dayData?.timesheet_records || [];
+
+      if (records.length === 0) {
+        return; // Day with no timesheet records has no status
+      }
+
+      // Check custom_timesheet_status directly from the timesheet records for this day
+      const hasApproved = records.some(r => r.custom_timesheet_status === "Approved");
+      const hasSubmitted = records.some(
+        r => r.custom_timesheet_status === "Pending for Approval" || (r.custom_timesheet_status as string) === "Submitted"
+      );
+      const hasRejected = records.some(r => r.custom_timesheet_status === "Rejected");
+
+      if (hasApproved) {
+        map[dateKey] = "Approved";
+      } else if (hasSubmitted) {
+        map[dateKey] = "Submitted";
+      } else if (hasRejected) {
+        map[dateKey] = "Rejected";
+      } else {
+        map[dateKey] = "Draft";
+      }
+    });
+    return map;
+  }, [daysOfWeek, weekOffDates, weeklyData, submittedDatesList]);
+
   const { uploadFiles } = useFileUploader();
 
   const hasChanges = useMemo(() => {
@@ -170,7 +214,7 @@ const TimesheetCreate: React.FC = () => {
   const hasSubmitPermission = isActionEnabled(uiPermission, "submit", "Timesheet");
   const hasCancelPermission = isActionEnabled(uiPermission, "cancel", "Timesheet");
 
-  const isGridEditable = timesheetStatus !== "Cancelled" && (hasSavePermission || hasSubmitPermission);
+  const isGridEditable = timesheetStatus !== "Approved" && (hasSavePermission || hasSubmitPermission);
 
   // Modal States
   const [commentModalConfig, setCommentModalConfig] = useState<{
@@ -231,15 +275,17 @@ const TimesheetCreate: React.FC = () => {
           allStatuses.add(approvalStatus);
         }
 
-        // A day is locked (non-editable) if any record is NOT "Draft"
-        if (approvalStatus && approvalStatus !== "Draft") {
+        // A day is locked (non-editable) if any record is NOT "Draft" and NOT "Rejected"
+        if (approvalStatus && approvalStatus !== "Draft" && approvalStatus !== "Rejected") {
           isDayLocked = true;
         }
 
         if (
-          ["Submitted", "Billed", "Cancelled"].includes(record.status || "") ||
-          record.docstatus === 1 ||
-          record.docstatus === 2
+          approvalStatus !== "Rejected" && (
+            ["Submitted", "Billed", "Cancelled"].includes(record.status || "") ||
+            record.docstatus === 1 ||
+            record.docstatus === 2
+          )
         ) {
           isDaySubmitted = true;
         }
@@ -547,6 +593,68 @@ const TimesheetCreate: React.FC = () => {
     }
   };
 
+  // Download Excel Template handler
+  const handleDownloadTemplate = () => {
+    try {
+      downloadTimesheetTemplate({
+        currentWeekStart,
+        currentWeekEnd,
+        daysOfWeek,
+        projectsData,
+        dayStatusMap,
+        disabledDays: allDisabledDays,
+      });
+      toast.success("Timesheet template downloaded successfully");
+    } catch (err) {
+      console.error("Failed to download timesheet template", err);
+      toast.error("Failed to download template");
+    }
+  };
+
+  // Process Excel File handler (used by file input and drag-and-drop)
+  const processExcelFile = async (file: File) => {
+    loadingOverlay.show("Reading and parsing Excel file...");
+    try {
+      const { rows, rowCount, skippedDisabledHours } = await parseTimesheetExcelFile({
+        file,
+        daysOfWeek,
+        existingRows: projectsData,
+        disabledDays: allDisabledDays,
+      });
+
+      loadingOverlay.hide();
+
+      if (rows.length > 0) {
+        setProjectsData(rows);
+        setValidationErrors({});
+        if (skippedDisabledHours) {
+          toast.success(`Imported ${rowCount} timesheet row${rowCount > 1 ? "s" : ""}. Disabled days (week-offs/submitted/locked) were not modified.`);
+        } else {
+          toast.success(`Successfully imported ${rowCount} timesheet row${rowCount > 1 ? "s" : ""} from Excel!`);
+        }
+      } else {
+        toast.error("No valid timesheet rows found in the uploaded file.");
+      }
+    } catch (err: unknown) {
+      loadingOverlay.hide();
+      console.error("Failed to upload/parse Excel file", err);
+      const msg = err instanceof Error ? err.message : "Failed to parse Excel file";
+      toast.error(msg);
+    }
+  };
+
+  // Upload and Parse Excel handler
+  const handleUploadExcel = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    await processExcelFile(files[0]);
+  };
+
+  // Drag and Drop Excel handler
+  const handleDropExcel = async (file: File) => {
+    await processExcelFile(file);
+  };
+
   // Add Blank Row handler
   const handleAddBlankRow = () => {
     const tempId = `new_row_${Date.now()}`;
@@ -843,10 +951,6 @@ const TimesheetCreate: React.FC = () => {
     return allDaysDisabled;
   }, [timesheetStatus, daysOfWeek, weekOffDates, submittedDatesList, nonEditableDays]);
 
-  const allDisabledDays = useMemo(() => {
-    return Array.from(new Set([...weekOffDates, ...submittedDatesList, ...nonEditableDays]));
-  }, [weekOffDates, submittedDatesList, nonEditableDays]);
-
   // Attachment upload simulation
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -863,7 +967,7 @@ const TimesheetCreate: React.FC = () => {
         <TimesheetHeader isReadOnly={isReadOnly} />
       }
       {/* Navigation and Summary stats */}
-      <div className="max-sm:p-0 p-6 max-sm:pb-2 space-y-6 max-w-[1600px] mx-auto w-full pb-24">
+      <div className="p-0 sm:p-6 space-y-6 w-full sm:pb-24 pb-2">
         <TimesheetTopBar
           currentWeekStart={currentWeekStart}
           currentWeekEnd={currentWeekEnd}
@@ -873,6 +977,9 @@ const TimesheetCreate: React.FC = () => {
           isReadOnly={isReadOnly}
           isGridEditable={isGridEditable}
           handleCopyLastWeek={handleCopyLastWeek}
+          handleDownloadTemplate={handleDownloadTemplate}
+          handleUploadExcel={handleUploadExcel}
+          handleDropExcel={handleDropExcel}
           timesheetStatus={timesheetStatus}
         />
 
@@ -918,6 +1025,7 @@ const TimesheetCreate: React.FC = () => {
                       </th>
                       {daysOfWeek.map((day) => {
                         const dateKey = format(day, "yyyy-MM-dd");
+                        const status = dayStatusMap[dateKey];
                         return (
                           <th
                             key={dateKey}
@@ -929,6 +1037,24 @@ const TimesheetCreate: React.FC = () => {
                             <div className="text-gray-500 text-xs font-semibold mt-0.5">
                               {format(day, "EEE").toUpperCase()}
                             </div>
+                            {status && (
+                              <div className="mt-1.5 flex justify-center">
+                                <span
+                                  className={`text-[10px] font-semibold px-2 py-0.5 rounded-md border ${status === "Week Off"
+                                    ? "bg-red-50 text-red-700 border-red-200"
+                                    : status === "Approved"
+                                      ? "bg-green-50 text-green-700 border-green-200"
+                                      : status === "Submitted"
+                                        ? "bg-amber-50 text-amber-700 border-amber-200"
+                                        : status === "Rejected"
+                                          ? "bg-red-50 text-red-700 border-red-200"
+                                          : "bg-gray-50 text-gray-600 border-gray-200"
+                                    }`}
+                                >
+                                  {status}
+                                </span>
+                              </div>
+                            )}
                           </th>
                         );
                       })}
@@ -1039,6 +1165,7 @@ const TimesheetCreate: React.FC = () => {
                           getRowTotal={getRowTotal}
                           handleDeleteRow={handleDeleteRow}
                           disabledDays={allDisabledDays}
+                          dayStatusMap={dayStatusMap}
                         />
                       );
                     })
@@ -1120,8 +1247,8 @@ const TimesheetCreate: React.FC = () => {
           label={`${commentModalConfig?.projectName} • ${commentModalConfig?.dayLabel}`}
           value={modalCommentText}
           onChange={(e) => setModalCommentText(e.target.value)}
-          disabled={isReadOnly || !isGridEditable}
-          showSubmitButton={!isReadOnly && isGridEditable}
+          disabled={isReadOnly || !isGridEditable || (commentModalConfig?.dateKey ? allDisabledDays.includes(commentModalConfig.dateKey) : false)}
+          showSubmitButton={!isReadOnly && isGridEditable && (commentModalConfig?.dateKey ? !allDisabledDays.includes(commentModalConfig.dateKey) : true)}
           handleSaveComment={() => {
             handleSaveComment(modalCommentText);
           }}
