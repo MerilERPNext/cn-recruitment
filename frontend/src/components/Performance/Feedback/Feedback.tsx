@@ -12,6 +12,7 @@ import { AnonymousInfoCard } from "./components/AnonymousInfoCard";
 import { PeerReviewSidebarSkeleton } from "./components/PeerReviewSidebarSkeleton";
 import { FeedbackErrorCard } from "./components/FeedbackErrorCard";
 import { FeedbackFormSkeleton } from "./components/FeedbackFormSkeleton";
+import { getPerformanceErrorMessage } from "../../../services/performanceService";
 
 const EMPTY_SCALE: FeedbackScaleOption[] = []
 
@@ -45,8 +46,8 @@ const Feedback = () => {
   );
 
   const { data: feedBackResponse, isLoading: feedbackLoading, error: feedbackErr, refetch: feedBackRefetch } = useGetFeedBackForm(activeNominationId)
-  const { mutate: saveFeedback, isPending: saveFeedbackLoading, error: saveFeedbackErr } = useSaveFeedback()
-  const { mutate: submitFeedback, isPending: submitfeedbackLoading, error: submitfeedbackErr } = useSubmitFeedback()
+  const { mutate: saveFeedback, isPending: saveFeedbackLoading } = useSaveFeedback()
+  const { mutate: submitFeedback, isPending: submitfeedbackLoading } = useSubmitFeedback()
   const reviewFeedbackResponse = feedBackResponse?.data
   const [ratings, setRatings] = useState<
     Record<string, { value: number; comment: string }>
@@ -112,7 +113,7 @@ const Feedback = () => {
           queryClient.invalidateQueries({ queryKey: PERFORMANCE_QUERY_KEYS.myPeerReviews });
         },
         onError: (err) => {
-          toast.error(err?.message || "Failed to save draft.");
+          toast.error(getPerformanceErrorMessage(err, "Failed to save draft."));
         },
       }
     );
@@ -137,7 +138,7 @@ const Feedback = () => {
           queryClient.invalidateQueries({ queryKey: PERFORMANCE_QUERY_KEYS.myPeerReviews });
         },
         onError: (err) => {
-          toast.error(err?.message || "Failed to submit feedback.");
+          toast.error(getPerformanceErrorMessage(err, "Failed to submit feedback."));
         },
       }
     );
@@ -236,16 +237,6 @@ const Feedback = () => {
                   ))
                 )}
               </div>
-
-              {(saveFeedbackErr || submitfeedbackErr) && (
-                <div className="mt-4">
-                  <FeedbackErrorCard
-                    title={submitfeedbackErr ? "Failed to submit feedback" : "Failed to save feedback draft"}
-                    error={submitfeedbackErr || saveFeedbackErr}
-                    onRetry={() => (submitfeedbackErr ? handelSubmitFeedback() : handelRatingDraft())}
-                  />
-                </div>
-              )}
 
               <div className="mt-5 flex flex-col gap-5">
                 <div className="flex flex-col gap-3 pb-2 sm:flex-row sm:items-center sm:justify-between">

@@ -63,8 +63,25 @@ export const getPerformanceErrorMessage = (
 
   if (typeof message === "string" && message.trim()) return message;
   if (message && typeof message === "object") {
-    const payload = message as { message?: unknown; error?: unknown; error_message?: unknown };
-    for (const value of [payload.message, payload.error_message, payload.error]) {
+    const payload = message as {
+      message?: unknown;
+      error?: unknown;
+      error_message?: unknown;
+      data?: { errors?: string[] };
+    };
+    const mainMsg =
+      typeof payload.message === "string" && payload.message.trim()
+        ? payload.message
+        : "";
+    const detailErrs =
+      Array.isArray(payload.data?.errors) && payload.data.errors.length > 0
+        ? payload.data.errors.join(", ")
+        : "";
+
+    if (mainMsg && detailErrs) return `${mainMsg} (${detailErrs})`;
+    if (mainMsg) return mainMsg;
+
+    for (const value of [payload.error_message, payload.error]) {
       if (typeof value === "string" && value.trim()) return value;
     }
   }
