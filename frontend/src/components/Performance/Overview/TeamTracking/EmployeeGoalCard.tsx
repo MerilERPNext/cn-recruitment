@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useCallback, useState } from "react";
 import toast from "react-hot-toast";
 import { ChevronDown, MessageSquare } from "lucide-react";
 import { Typography } from "../../../shared/atoms/Typography";
@@ -101,6 +101,9 @@ export const EmployeeGoalCard = React.memo(({
   const statusLower = (currentStatus || "").toLowerCase();
   const isPendingStatus = statusLower === "pending" || statusLower === "draft";
   const keyResults = goal?.key_results ?? [];
+  const handleCloseCommentModal = useCallback(() => {
+    setIsCommentModalOpen(false);
+  }, []);
 
   return (
     <>
@@ -215,12 +218,14 @@ export const EmployeeGoalCard = React.memo(({
         )}
       </Card>
 
-      <GoalCommentModal
-        isOpen={isCommentModalOpen}
-        onClose={() => setIsCommentModalOpen(false)}
-        employeeId={employeeId}
-        goal={goalIdentifier}
-      />
+      {isCommentModalOpen && (
+        <GoalCommentModal
+          isOpen={isCommentModalOpen}
+          onClose={handleCloseCommentModal}
+          employeeId={employeeId}
+          goal={goalIdentifier}
+        />
+      )}
     </>
   );
 });
