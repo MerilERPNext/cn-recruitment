@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Button from "../../shared/atoms/Button";
 import { Typography } from "../../shared/atoms/Typography";
 import type { PeerReviewItem } from "../../../types/goal";
@@ -32,8 +32,10 @@ const queryClient = useQueryClient()
   const { data: myPeerReviews, isLoading, error, refetch } = useGetMyPeerReviews();
 
   const apiReviews = myPeerReviews?.data?.reviews;
-  const openReviews: PeerReviewItem[] =
-    apiReviews && apiReviews.length > 0 ? apiReviews : [];
+  const openReviews: PeerReviewItem[] = useMemo(
+    () => (apiReviews && apiReviews.length > 0 ? apiReviews : []),
+    [apiReviews]
+  );
 
   const [activeNominationId, setActiveNominationId] = useState<string>(apiReviews?.[0]?.nomination ?? "");
   const activeReview: PeerReviewItem =
@@ -136,6 +138,18 @@ const queryClient = useQueryClient()
       }
     );
   };
+  const handleRatingChange = useCallback((id: string, val: number) => {
+    setRatings((prev) => ({
+      ...prev,
+      [id]: { ...(prev[id] || { comment: "" }), value: val },
+    }));
+  }, []);
+  const handleCommentChange = useCallback((id: string, val: string) => {
+    setRatings((prev) => ({
+      ...prev,
+      [id]: { ...(prev[id] || { value: 0 }), comment: val },
+    }));
+  }, []);
   return (
     <div className="min-h-full bg-[#f8fafc]  p-4 sm:p-1 font-sans">
       <div className="max-w-[1300px] mx-auto flex flex-col xl:flex-row gap-6">
@@ -208,19 +222,9 @@ const queryClient = useQueryClient()
                       title={item.title}
                       description={item.description}
                       value={ratings?.[item.id]?.value ?? item.rating ?? 0}
-                      onChange={(val) =>
-                        setRatings((prev) => ({
-                          ...(prev || {}),
-                          [item.id]: { ...((prev && prev[item.id]) || { comment: "" }), value: val },
-                        }))
-                      }
+                      onChange={(val) => handleRatingChange(item.id, val)}
                       comment={ratings?.[item.id]?.comment ?? item.comment ?? ""}
-                      onCommentChange={(val) =>
-                        setRatings((prev) => ({
-                          ...(prev || {}),
-                          [item.id]: { ...((prev && prev[item.id]) || { value: 0 }), comment: val },
-                        }))
-                      }
+                      onCommentChange={(val) => handleCommentChange(item.id, val)}
                       weightage={item.weightage}
                       scale={reviewFeedbackResponse?.scale ?? []}
                       disabled={isSubmitted}
