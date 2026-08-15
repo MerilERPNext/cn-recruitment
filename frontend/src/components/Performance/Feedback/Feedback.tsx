@@ -141,7 +141,7 @@ const Feedback = () => {
         },
       }
     );
-  }, [ratings, activeNominationId, saveFeedback, queryClient]);
+  }, [ratings, activeNominationId, submitFeedback, queryClient]);
   const handleRatingChange = useCallback((id: string, val: number) => {
     setRatings((prev) => ({
       ...prev,
