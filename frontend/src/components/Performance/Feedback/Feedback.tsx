@@ -29,7 +29,7 @@ export const getInitials = (name?: string) => {
 
 
 const Feedback = () => {
-const queryClient = useQueryClient()
+  const queryClient = useQueryClient()
   const { data: myPeerReviews, isLoading, error, refetch } = useGetMyPeerReviews();
 
   const apiReviews = myPeerReviews?.data?.reviews;
@@ -45,8 +45,8 @@ const queryClient = useQueryClient()
   );
 
   const { data: feedBackResponse, isLoading: feedbackLoading, error: feedbackErr, refetch: feedBackRefetch } = useGetFeedBackForm(activeNominationId)
-  const { mutate:saveFeedback,isPending:saveFeedbackLoading,error:saveFeedbackErr } = useSaveFeedback() 
-  const { mutate:submitFeedback , isPending:submitfeedbackLoading , error:submitfeedbackErr} = useSubmitFeedback()
+  const { mutate: saveFeedback, isPending: saveFeedbackLoading, error: saveFeedbackErr } = useSaveFeedback()
+  const { mutate: submitFeedback, isPending: submitfeedbackLoading, error: submitfeedbackErr } = useSubmitFeedback()
   const reviewFeedbackResponse = feedBackResponse?.data
   const [ratings, setRatings] = useState<
     Record<string, { value: number; comment: string }>
@@ -92,7 +92,7 @@ const queryClient = useQueryClient()
 
   const isAnyLoading = saveFeedbackLoading || submitfeedbackLoading;
 
-  const handelRatingDraft = () => {
+  const handelRatingDraft = useCallback(() => {
     const formattAns = Object.entries(ratings).map(([id, item]) => ({
       id,
       rating: item.value,
@@ -108,16 +108,16 @@ const queryClient = useQueryClient()
       {
         onSuccess: (res) => {
           toast.success(res?.message || "Draft saved successfully!");
-          queryClient.invalidateQueries({queryKey:PERFORMANCE_QUERY_KEYS.feedbackForm(activeNominationId)});
-          queryClient.invalidateQueries({queryKey:PERFORMANCE_QUERY_KEYS.myPeerReviews});
+          queryClient.invalidateQueries({ queryKey: PERFORMANCE_QUERY_KEYS.feedbackForm(activeNominationId) });
+          queryClient.invalidateQueries({ queryKey: PERFORMANCE_QUERY_KEYS.myPeerReviews });
         },
         onError: (err) => {
           toast.error(err?.message || "Failed to save draft.");
         },
       }
     );
-  };
-  const handelSubmitFeedback = () => {
+  }, [ratings, activeNominationId, saveFeedback, queryClient]);
+  const handelSubmitFeedback = useCallback(() => {
     const formattAns = Object.entries(ratings).map(([id, item]) => ({
       id,
       rating: item.value,
@@ -133,15 +133,15 @@ const queryClient = useQueryClient()
       {
         onSuccess: (res) => {
           toast.success(res?.message || "Feedback submitted successfully!");
-          queryClient.invalidateQueries({queryKey:PERFORMANCE_QUERY_KEYS.feedbackForm(activeNominationId)});
-          queryClient.invalidateQueries({queryKey:PERFORMANCE_QUERY_KEYS.myPeerReviews});
+          queryClient.invalidateQueries({ queryKey: PERFORMANCE_QUERY_KEYS.feedbackForm(activeNominationId) });
+          queryClient.invalidateQueries({ queryKey: PERFORMANCE_QUERY_KEYS.myPeerReviews });
         },
         onError: (err) => {
           toast.error(err?.message || "Failed to submit feedback.");
         },
       }
     );
-  };
+  }, [ratings, activeNominationId, saveFeedback, queryClient]);
   const handleRatingChange = useCallback((id: string, val: number) => {
     setRatings((prev) => ({
       ...prev,
