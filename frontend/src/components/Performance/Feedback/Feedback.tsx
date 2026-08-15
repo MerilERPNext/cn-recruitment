@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Button from "../../shared/atoms/Button";
 import { Typography } from "../../shared/atoms/Typography";
-import type { PeerReviewItem } from "../../../types/goal";
+import type { FeedbackScaleOption, PeerReviewItem } from "../../../types/goal";
 import { PERFORMANCE_QUERY_KEYS, useGetFeedBackForm, useGetMyPeerReviews, useSaveFeedback, useSubmitFeedback } from "../../../hooks/usePerformance";
 import Badge from "../../shared/Badge";
 import toast from "react-hot-toast";
@@ -13,8 +13,9 @@ import { PeerReviewSidebarSkeleton } from "./components/PeerReviewSidebarSkeleto
 import { FeedbackErrorCard } from "./components/FeedbackErrorCard";
 import { FeedbackFormSkeleton } from "./components/FeedbackFormSkeleton";
 
+const EMPTY_SCALE: FeedbackScaleOption[] = []
 
-const getInitials = (name?: string) => {
+export const getInitials = (name?: string) => {
   if (!name) return "??";
   const parts = name.trim().split(/\s+/).filter(Boolean);
   if (parts.length >= 2) {
@@ -38,8 +39,11 @@ const queryClient = useQueryClient()
   );
 
   const [activeNominationId, setActiveNominationId] = useState<string>(apiReviews?.[0]?.nomination ?? "");
-  const activeReview: PeerReviewItem =
-    openReviews.find((r) => r.nomination === activeNominationId) || openReviews[0];
+  const activeReview = useMemo(
+    () => openReviews.find((r) => r.nomination === activeNominationId) || openReviews[0],
+    [openReviews, activeNominationId]
+  );
+
   const { data: feedBackResponse, isLoading: feedbackLoading, error: feedbackErr, refetch: feedBackRefetch } = useGetFeedBackForm(activeNominationId)
   const { mutate:saveFeedback,isPending:saveFeedbackLoading,error:saveFeedbackErr } = useSaveFeedback() 
   const { mutate:submitFeedback , isPending:submitfeedbackLoading , error:submitfeedbackErr} = useSubmitFeedback()
@@ -226,7 +230,7 @@ const queryClient = useQueryClient()
                       comment={ratings?.[item.id]?.comment ?? item.comment ?? ""}
                       onCommentChange={(val) => handleCommentChange(item.id, val)}
                       weightage={item.weightage}
-                      scale={reviewFeedbackResponse?.scale ?? []}
+                      scale={reviewFeedbackResponse?.scale ?? EMPTY_SCALE}
                       disabled={isSubmitted}
                     />
                   ))
