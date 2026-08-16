@@ -25,7 +25,10 @@ export interface KeyResultCardItemProps {
 
 export const KeyResultCardItem: React.FC<KeyResultCardItemProps> = React.memo(
   ({ kr, index, className = "" }) => {
-    const achievement = kr.achievement ?? 0;
+    const achievement = Math.min(
+      100,
+      Math.max(0, Number(kr.achievement) || 0)
+    );
     const krStatus = kr.goal_status || kr.status;
 
     return (
