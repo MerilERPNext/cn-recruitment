@@ -157,3 +157,21 @@ export async function getOnboardingReviewActionsEnabled(): Promise<boolean> {
   });
   return Number(res) === 1;
 }
+
+/**
+ * Update onboarding details from ESS
+ */
+export async function updateOnboardingDetailsESS(
+  email: string,
+  data: any
+): Promise<any> {
+  const res = await FrappeAPI.callMethod(
+    "recruitment.api.employee_onboarding.update_onboarding_details_ess",
+    {
+      email,
+      data,
+      action: "save"
+    }
+  );
+  return res;
+}

@@ -86,7 +86,7 @@ export interface UseApprovalDataReturn {
   fieldStates: Record<string, FieldLocalState>;
   pageLoading: boolean;
   pageError: string | null;
-  loadData: () => Promise<void>;
+  loadData: (silent?: boolean) => Promise<void>;
   patchFieldState: (fieldname: string, patch: Partial<FieldLocalState>) => void;
   setFieldStates: React.Dispatch<React.SetStateAction<Record<string, FieldLocalState>>>;
 }
