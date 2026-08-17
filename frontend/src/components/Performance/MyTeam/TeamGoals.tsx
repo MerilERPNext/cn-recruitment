@@ -23,7 +23,7 @@ import { GoalDetailData, GoalStatus } from "./types";
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const statusVariant: Record<GoalStatus, BadgeVariant> = {
-  "On-track": "success",
+  "On-track": "success", 
   "At-risk": "warning",
   "Off-track": "danger",
 };
