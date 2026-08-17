@@ -61,6 +61,9 @@ export interface BackendTab {
 export interface JobRequisitionFormConfig {
   settings?: string;
   restrict_to_configured?: boolean;
+  // Recruitment Settings -> "Allow Hiring Manager Override in Requisition".
+  // 0/undefined means the Hiring Manager is fixed to the logged-in employee.
+  allow_hiring_manager_override?: number;
   tabs: BackendTab[];
   child_groups?: Record<string, any>;
 }

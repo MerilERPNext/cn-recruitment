@@ -774,6 +774,41 @@ function choose_offer_position(frm, opts) {
 }
 
 // ---------------------------------------------------------------------------
+// Retrigger Welcome Email — manually re-send the configured welcome / offer email
+// (Recruitment Settings -> job_offer_template) to the candidate. Direct top-level
+// button; only for a saved offer that has a linked Job Applicant.
+// ---------------------------------------------------------------------------
+frappe.ui.form.on("Job Offer", {
+    refresh(frm) {
+        if (frm.is_new() || !frm.doc.job_applicant) return;
+
+        frm.add_custom_button(__("Retrigger Welcome Email"), () => {
+            frappe.confirm(
+                __("Re-send the welcome email to {0}?", [
+                    frappe.utils.escape_html(frm.doc.applicant_name || frm.doc.job_applicant),
+                ]),
+                () => {
+                    frappe.call({
+                        method: "recruitment.api.bulk_job_offer.resend_welcome_email",
+                        args: { job_offer: frm.doc.name },
+                        freeze: true,
+                        freeze_message: __("Sending welcome email…"),
+                        callback: (r) => {
+                            if (!r.exc && r.message) {
+                                frappe.show_alert({
+                                    message: __("Welcome email sent to {0}", [r.message.email]),
+                                    indicator: "green",
+                                });
+                            }
+                        },
+                    });
+                }
+            );
+        });
+    },
+});
+
+// ---------------------------------------------------------------------------
 // Withdraw — pulls the offer back and releases its position to Open, which is
 // what lets a Filled requisition be archived again. Distinct from Rejected,
 // which means the candidate refused.

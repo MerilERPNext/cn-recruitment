@@ -40,19 +40,21 @@ export const EmployeeGoalsList = ({
     [hasEmpGoals, myGoalsResponse, sessionUserGoals]
   );
 
+  const targetEmployeeId = hasEmpGoals
+    ? (employeeId ?? currentEmployee?.name)
+    : currentEmployee?.name;
+
   const { mutate: employeCheckIn, isPending } = useEmployeeGoalsCheckIn();
   const [loadingGoalKey, setLoadingGoalKey] = useState<string | null>(null);
+  const [openGoalKey, setOpenGoalKey] = useState<string | null>(null);
 
   const submitCheckIns = useCallback(
     (goalKey: string) => {
       setLoadingGoalKey(goalKey);
-      const targetEmployeeId = hasEmpGoals
-        ? (employeeId ?? currentEmployee?.name ?? "")
-        : (currentEmployee?.name ?? "");
 
       employeCheckIn(
         {
-          employee: targetEmployeeId,
+          employee: targetEmployeeId ?? "",
           goal: goalKey,
         },
         {
@@ -68,7 +70,7 @@ export const EmployeeGoalsList = ({
         }
       );
     },
-    [employeCheckIn, hasEmpGoals, employeeId, currentEmployee]
+    [employeCheckIn, targetEmployeeId]
   );
 
   if (isLoading) {
@@ -91,16 +93,20 @@ export const EmployeeGoalsList = ({
 
   return (
     <div className="space-y-4 max-w-4xl mx-auto">
-      {goalsList.map((goal) => {
-        const goalIdentifier = goal?.goal_key || goal?.goal || goal?.name || "";
+      {goalsList.map((goal, idx) => {
+        const goalIdentifier = goal?.goal_key || goal?.goal || goal?.name || String(idx);
         const isGoalPending = isPending && loadingGoalKey === goalIdentifier;
+        const isExpanded = openGoalKey === goalIdentifier;
 
         return (
           <EmployeeGoalCard
             key={goalIdentifier}
             goal={goal}
+            employeeId={targetEmployeeId}
             isGoalPending={isGoalPending}
             onRequestCheckIn={submitCheckIns}
+            isExpanded={isExpanded}
+            onToggleExpand={() => setOpenGoalKey(isExpanded ? null : goalIdentifier)}
           />
         );
       })}

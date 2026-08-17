@@ -68,10 +68,9 @@ frappe.ui.form.on("Job Requisition", {
 // Only applied to NEW requisitions: the gate runs on insert, so an existing
 // document must stay editable even if the scope has since been narrowed,
 // otherwise its current values would become unselectable.
-// Fields the gate is *capable* of restricting. The server answers per fieldname
-// and only mentions fields some assignment actually restricts, so this list only
-// has to cover which pickers get a set_query installed — a field scoped later
-// (Location, Branch, Grade) needs adding here, and nothing else.
+// Fields whose pickers get a scope filter installed. The server answers per
+// fieldname and only mentions fields some assignment actually restricts, so a
+// field scoped later needs adding here and nothing else.
 const SCOPE_FILTERED_FIELDS = ["company", "department", "designation", "custom_location"];
 
 function apply_scope_field_filters(frm) {
@@ -379,9 +378,6 @@ function prompt_with_reason(frm, method, title, freeze_message, description) {
 }
 
 function apply_requisition_edit_locks(frm) {
-    if (frm.is_new()) {
-        return; // a brand-new requisition is always fully editable
-    }
     frappe.db
         .get_value("Recruitment Settings", "Recruitment Settings", [
             "disable_editing_requisition_initiation_form",
@@ -390,14 +386,20 @@ function apply_requisition_edit_locks(frm) {
         .then((r) => {
             const s = (r && r.message) || {};
 
-            // 1) Whole-form lock once the requisition exists.
-            if (cint(s.disable_editing_requisition_initiation_form)) {
+            // 1) Whole-form lock once the requisition exists. A brand-new
+            //    requisition is always editable, so this one only applies to a
+            //    saved document.
+            if (!frm.is_new() && cint(s.disable_editing_requisition_initiation_form)) {
                 frm.set_read_only();
                 frm.disable_save();
                 return; // everything is read-only; nothing else to toggle
             }
 
-            // 2) "Requested By" is locked unless hiring-manager override is allowed.
+            // 2) "Requested By" is locked unless hiring-manager override is
+            //    allowed — on a NEW requisition too, not only after it is saved.
+            //    Locking it only afterwards meant the setting had no effect at
+            //    the one moment it matters: choosing who the requisition is for.
+            //    The React form applies the same rule, so both agree.
             frm.set_df_property(
                 "requested_by",
                 "read_only",

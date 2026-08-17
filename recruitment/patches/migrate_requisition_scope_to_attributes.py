@@ -8,16 +8,15 @@ what lets a fourth field be scoped without a release.
 
 This patch carries existing configuration across. For each scope record that had
 any of the three bases ticked, it creates one Dynamic User Assignment of purpose
-``Attributes`` holding the same values as attributes on Job Requisition, and
-links it into ``scope_of_raising_requisitions``.
+``Attributes`` holding the same values as attributes on Job Requisition, and links
+it into ``scope_of_raising_requisitions``.
 
-Reads the old columns with raw SQL on purpose: the fields are already removed
-from the doctype JSON, so ``frappe.get_all`` would not return them, and on a site
-that has already migrated the columns may be gone entirely — hence the
-table/column existence checks.
+Reads the old columns with raw SQL on purpose: the fields are already removed from
+the doctype JSON, so ``frappe.get_all`` would not return them. Frappe does not
+drop columns when a field is removed, so they are still readable — the existence
+checks cover a site where they genuinely are not.
 
-Idempotent. Safe to run on a site that never configured a field-based scope,
-where it does nothing at all.
+Idempotent, and a no-op on a site that never configured a field-based scope.
 """
 
 import frappe
@@ -38,28 +37,25 @@ def execute():
 	if not frappe.db.table_exists("Raise Requisition Scope"):
 		return
 
-	scope_columns = {
-		row.Field if hasattr(row, "Field") else row[0]
-		for row in frappe.db.sql("DESC `tabRaise Requisition Scope`", as_dict=False)
-	}
-	legacy_checks = [
+	columns = {c[0] for c in frappe.db.sql("DESC `tabRaise Requisition Scope`", as_dict=False)}
+	checks = [
 		c
 		for c in ("scope_by_company", "scope_by_department", "scope_by_designation")
-		if c in scope_columns
+		if c in columns
 	]
-	if not legacy_checks:
-		# Columns already dropped by a later migration — nothing to carry.
-		return
+	if not checks:
+		return  # columns already gone; nothing to carry
 
 	records = frappe.db.sql(
-		"SELECT name, {} FROM `tabRaise Requisition Scope`".format(", ".join(f"`{c}`" for c in legacy_checks)),
+		"SELECT name, {} FROM `tabRaise Requisition Scope`".format(
+			", ".join(f"`{c}`" for c in checks)
+		),
 		as_dict=True,
 	)
 
 	for record in records:
-		if not any(record.get(c) for c in legacy_checks):
-			continue
-		_migrate_record(record["name"])
+		if any(record.get(c) for c in checks):
+			_migrate_record(record["name"])
 
 
 def _migrate_record(scope_name):
@@ -78,15 +74,14 @@ def _migrate_record(scope_name):
 	doc.assignment_purpose = PURPOSE_ATTRIBUTES
 	doc.target_type = "Employee"
 	doc.description = (
-		f"Created automatically from the Company / Department / Designation scope "
-		f"that used to live on Raise Requisition Scope '{scope_name}'."
+		"Created automatically from the Company / Department / Designation scope that "
+		f"used to live on Raise Requisition Scope '{scope_name}'."
 	)
 	doc.append("applicable_for_process", {"document_type": REQUISITION_DOCTYPE})
-	# The old bases were three independent lists AND-ed together, which is what
-	# "All fields must match" means here.
+	# The old bases were independent lists AND-ed together.
 	doc.attribute_match = "All fields must match (AND)"
-	# The old cascade validation ran when the values were first entered, so
-	# re-running it now could reject configuration that is already live. Carry it
+	# The old cascade check ran when the values were first entered, so re-running
+	# it now could reject configuration that is already live. Carry the values
 	# across as-is and let the administrator re-enable the check.
 	doc.validate_attribute_hierarchy = 0
 

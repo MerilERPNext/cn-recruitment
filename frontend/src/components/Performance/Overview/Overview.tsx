@@ -56,7 +56,7 @@ const Overview: React.FC = () => {
       <div className="mx-auto w-full min-w-0 flex flex-col flex-1">
         
         {/* Tab Navigation */}
-        <div className="border-b border-gray-200 px-4 sm:px-6 bg-white flex-shrink-0 overflow-x-auto pb-1">
+        <div className="sticky overflow-x-auto top-0 z-10 border-b border-gray-200 px-4 sm:px-6 bg-white flex-shrink-0 pb-1">
           <nav className="-mb-px flex space-x-8 min-w-max" aria-label="Tabs">
             {[
               { id: 'overview', name: 'Overview', path: '/webapp/performance-app/overview' },
@@ -64,7 +64,6 @@ const Overview: React.FC = () => {
               { id: 'skills', name: 'Skills', path: '/webapp/performance-app/skills' },
               { id: 'review', name: 'Review', path: '/webapp/performance-app/review' },
               { id: 'feedback', name: 'Feedback', path: '/webapp/performance-app/feedback' },
-              { id: 'team-tracking', name: 'Team Tracking', path: '/webapp/performance-app/team-tracking' },
             ].map((tab) => {
               const isActive = activeTab === tab.id;
               return (

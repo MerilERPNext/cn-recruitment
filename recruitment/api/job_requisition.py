@@ -524,6 +524,39 @@ def _enforce_config_mandatory(doc, payload):
         frappe.throw(_("Missing required fields: {0}").format(", ".join(missing)))
 
 
+def _normalize_temporal(df, value):
+	"""Coerce a Date / Datetime / Time payload value into the shape its column wants.
+
+	Browsers hand back full ISO timestamps — ``2026-08-31T00:00:00+05:30`` from a
+	date picker, or ``2026-08-31T18:30:00.000Z`` once ``toISOString()`` has been
+	through UTC — but ``expected_by`` and ``posting_date`` are **Date** columns.
+	Frappe does not coerce on assignment: ``doc.set()`` keeps the string verbatim,
+	so the raw timestamp reaches MariaDB and is silently truncated (or rejected,
+	depending on ``sql_mode``). Normalising here means the value stored is the day
+	the user actually picked.
+
+	The UTC case is the one that bites: ``2026-08-31T18:30:00.000Z`` *is*
+	1 September in Asia/Kolkata, so trusting the leading ``YYYY-MM-DD`` text would
+	be a silent off-by-one. ``getdate`` / ``get_datetime`` do the timezone-aware
+	parse instead of string-slicing.
+
+	Anything unparseable is passed through untouched, so the existing
+	"Invalid value for field X" error still reports the original input rather than
+	this helper swallowing it.
+	"""
+	if not df or not isinstance(value, str):
+		return value
+
+	try:
+		if df.fieldtype == "Date":
+			return frappe.utils.getdate(value)
+		if df.fieldtype == "Datetime":
+			return frappe.utils.get_datetime(value)
+	except Exception:
+		return value
+	return value
+
+
 def _apply_parent_fields(doc, payload):
     """Copy parent-level fields from payload onto the doc.
 
@@ -557,6 +590,7 @@ def _apply_parent_fields(doc, payload):
         value = payload.get(field)
         if value in (None, ""):
             continue
+        value = _normalize_temporal(df, value)
         try:
             doc.set(field, value)
         except Exception as exc:
@@ -1170,6 +1204,37 @@ def _sequence_key(fields, meta_seq):
     return (min(explicit) if explicit else _NO_EXPLICIT_ORDER, meta_seq)
 
 
+@frappe.request_cache
+def _is_hiring_manager_locked(fieldname):
+	"""Whether ``requested_by`` must render read-only for the current user.
+
+	Recruitment Settings → "Allow Hiring Manager Override in Requisition" decides
+	whether a requisition may be raised *on behalf of* somebody else. OFF (the
+	default) pins it to the logged-in employee; ON allows a System Manager or
+	Administrator to change it.
+
+	Answered here, on the form config, rather than in the React form: the
+	requisition wizard builds its fields straight from this payload's
+	``read_only``, so the rule lands in the one place both the wizard and any
+	future consumer already read. It also means changing the setting takes effect
+	on reload rather than needing a frontend rebuild.
+
+	Note this is presentation only — it stops the field being *offered*. The
+	server-side lock on changing ``requested_by`` still applies from the second
+	save onward (see ``_enforce_requested_by_lock``); at creation the value is
+	whatever the client sends.
+	"""
+	if fieldname != "requested_by":
+		return False
+	if frappe.utils.cint(
+		frappe.db.get_single_value("Recruitment Settings", "allow_hiring_manager_override")
+	):
+		# Override allowed — but still only for the roles that may act for others.
+		roles = set(frappe.get_roles())
+		return not roles.intersection({"System Manager", "Administrator"})
+	return True
+
+
 def _build_form_config(doc=None, hiring_type=None):
     """Meta-first tabs → sections → fields tree for the Job Requisition form,
     with the single settings doc's overrides applied. Parent fields come from
@@ -1251,6 +1316,12 @@ def _build_form_config(doc=None, hiring_type=None):
             "length": df.get("length") or 0,
             "order": int(ov.get("order") or 0) if ov else 0,
         }
+        if _is_hiring_manager_locked(df.fieldname):
+            # Applied after the override lookup on purpose: this is a policy
+            # switch, not a per-field presentation choice, so a settings-doc
+            # "Editable" override must not be able to unlock it.
+            entry["read_only"] = 1
+
         if doc is not None:
             entry["value"] = doc.get(df.fieldname)
 
@@ -1339,6 +1410,13 @@ def _build_form_config(doc=None, hiring_type=None):
         "restrict_to_configured": restrict,
         "basis_hiring_type": 1 if basis_hiring_type else 0,
         "hiring_type": hiring_type,
+        # Recruitment Settings -> "Allow Hiring Manager Override in Requisition".
+        # Carried on the config the form already fetches rather than through a
+        # second request, so the Hiring Manager field can be locked on first
+        # render instead of flickering from editable to disabled.
+        "allow_hiring_manager_override": frappe.utils.cint(
+            frappe.db.get_single_value("Recruitment Settings", "allow_hiring_manager_override")
+        ),
         "tabs": tabs,
         "child_groups": child_groups,
     }

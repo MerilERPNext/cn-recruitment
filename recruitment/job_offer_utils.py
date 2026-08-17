@@ -398,6 +398,29 @@ def job_offer_update(status, appl, token=None, reason=None, message=None):
                 commit=True,
             )
 
+        # Guarantee the Employee Onboarding is materialized on acceptance,
+        # independently of the Job Offer's docstatus. sync_job_offer_action_item
+        # (which normally creates the EO) is wired only to after_insert / on_submit /
+        # on_update_after_submit, so an offer still in draft (docstatus 0) when the
+        # candidate accepts never triggers it — the raw docstatus flip above fires no
+        # hooks either. Calling the same routine here mirrors exactly what the hook
+        # does; it is idempotent (re-uses an existing EO) and DPDP-aware (defers when
+        # consent is enforced), so it is safe even when the hook also runs. When DPDP
+        # consent is enabled the dedicated consent-submission flow creates the EO, so
+        # we skip here to avoid the pre-consent side effects.
+        if status == "Accepted" and not is_dpdp_consent_enabled():
+            try:
+                from recruitment.api.action_center import _sync_onboarding_action_for_applicant
+                candidate_email = frappe.db.get_value("Job Applicant", appl, "email_id")
+                if candidate_email:
+                    _sync_onboarding_action_for_applicant(appl, candidate_email)
+                    frappe.db.commit()
+            except Exception:
+                frappe.log_error(
+                    frappe.get_traceback(),
+                    "job_offer_update: ensure onboarding on accept failed",
+                )
+
         webform = frappe.db.get_single_value("Recruitment Settings", "employee_onboarding_webform") or ""
 
         # On acceptance, tell the portal whether the DPDP consent page must be
@@ -497,7 +520,10 @@ def get_job_offer_summary(appl, token=None):
             compensation["stipend"] = num(stipend)
             compensation["stipend_formatted"] = fmt(stipend)
         else:
-            fixed = flt(jo.get("custom_base_salary"))
+            # Fixed pay lives on `custom_total_fixed_pay` in the grade-based offer
+            # model; fall back to the legacy `custom_base_salary` for older offers
+            # that predate it (either field being unset resolves to 0).
+            fixed = flt(jo.get("custom_total_fixed_pay") or jo.get("custom_base_salary"))
             variable = flt(jo.get("custom_variable_incentive"))
             compensation["fixed"] = num(fixed)
             compensation["variable"] = num(variable)

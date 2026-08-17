@@ -212,6 +212,13 @@ export interface MyGoalsKeyResult {
   achievement: number;
   status?: string;
   goal_status?: string;
+  last_checkin_date?: string | null;
+  checkin_requested?: boolean;
+  checkin_due?: string | null;
+  is_locked?: boolean;
+  metric?: string | number | null;
+  target?: number;
+  target_type?: string;
 }
 
 export interface MyGoalsGoal {
@@ -553,6 +560,9 @@ export interface GoalCheckIn {
   note: string;
   attachment: string | null;
   creation: string;
+  manager_comment:string | null;
+  manager_comment_by:string | null;
+  manager_comment_on:string |null
 }
 
 export interface SubmitGoalCheckInResponse {
@@ -607,3 +617,140 @@ export interface PerformanceOverviewResponse {
   message: string;
   data: PerformanceOverviewData;
 }
+
+export interface PeerReviewItem {
+  nomination: string;
+  subject: string;
+  subject_name: string;
+  designation: string;
+  department: string;
+  process: string;
+  process_name: string;
+  basis: string;
+  status: string;
+  submitted: boolean;
+  due_date: string;
+  due_in_days: number;
+}
+
+export interface MyPeerReviewsData {
+  count: number;
+  pending: number;
+  reviews: PeerReviewItem[];
+}
+
+export interface MyPeerReviewsResponse {
+  success: boolean;
+  message: string;
+  data: MyPeerReviewsData;
+}
+
+export interface FeedbackScaleOption {
+  value: number;
+  label: string;
+}
+
+export interface FeedbackAnonymity {
+  threshold: number;
+  note: string;
+}
+
+export interface FeedbackFormItem {
+  id: string;
+  title: string;
+  description: string;
+  rating?: number | null;
+  comment?: string;
+  weightage:number
+}
+
+export interface FeedbackFormData {
+  nomination: string;
+  process: string;
+  basis: string;
+  subject: string;
+  subject_name: string;
+  designation: string;
+  department: string;
+  due_date: string;
+  due_in_days: number;
+  comment_mandatory: boolean;
+  anonymity: FeedbackAnonymity;
+  scale: FeedbackScaleOption[];
+  status:string;
+  locked:boolean
+  items?: FeedbackFormItem[];
+}
+
+export interface FeedbackFormResponse {
+  success: boolean;
+  message: string;
+  data: FeedbackFormData;
+}
+
+export interface FeedbackAnswer {
+  id: string;
+  rating?: number | null;
+  comment?: string;
+}
+
+export interface FeedbackPayloadContent {
+  nomination: string;
+  answers: FeedbackAnswer[];
+}
+
+export interface SaveFeedbackPayload {
+  payload: FeedbackPayloadContent;
+}
+
+export interface SubmitFeedbackPayload {
+  payload: FeedbackPayloadContent;
+}
+
+export interface SaveFeedbackData {
+  feedback: string;
+  status: string;
+}
+
+export interface SaveFeedbackResponse {
+  success: boolean;
+  message: string;
+  data: SaveFeedbackData;
+}
+
+export interface SubmitFeedbackData {
+  feedback: string;
+  status: string;
+}
+
+export interface SubmitFeedbackResponse {
+  success: boolean;
+  message: string;
+  data: SubmitFeedbackData;
+}
+
+export interface AddGoalCommentContent {
+  goal: string;
+  employee: string;
+  comment: string;
+}
+
+export interface AddGoalCommentPayload {
+  payload: AddGoalCommentContent;
+}
+
+export interface AddGoalCommentData {
+  check_in?: string;
+  goal?: string;
+  manager_comment?: string;
+  manager_comment_by?: string;
+}
+
+export interface AddGoalCommentResponse {
+  success: boolean;
+  message: string;
+  data?: AddGoalCommentData;
+}
+
+
+

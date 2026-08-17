@@ -112,6 +112,36 @@ def _lock_filled_portal_fields(doc, updated_fields):
         prow.approval_status = "Filled"
 
 
+def _snapshot_portal_values(doc, updated_fields):
+    """Refresh ONLY the `current_value` snapshot of the given portal rows from the
+    live doc values, leaving `approval_status` untouched (stays Pending/Rejected,
+    i.e. editable).
+
+    The approval read endpoint (`get_onboarding_fields_for_approval`) shows each
+    field's stored `current_value`, which is otherwise refreshed only on submit
+    (via `_lock_filled_portal_fields`). Calling this on the "save" path makes a
+    plain save visible to that endpoint immediately, without locking the field.
+    Mutates `doc` in place — the caller saves.
+    """
+    import json as _json
+    for prow in (doc.get("custom_candidate_portal_fields") or []):
+        if prow.fieldname not in updated_fields:
+            continue
+        ft = prow.get("fieldtype") or "Data"
+        live_val = doc.get(prow.fieldname)
+        if ft == "Table":
+            prow.current_value = _json.dumps(
+                [{k: str(v or "") for k, v in (r.as_dict() if hasattr(r, "as_dict") else r).items()
+                  if not k.startswith("_") and k not in {
+                      "doctype", "parent", "parenttype", "parentfield",
+                      "docstatus", "owner", "creation", "modified", "modified_by"
+                  }} for r in (live_val or [])],
+                ensure_ascii=False, default=str
+            )
+        else:
+            prow.current_value = str(live_val) if live_val is not None else ""
+
+
 def _is_concurrent_edit_error(err):
     """True for an optimistic-lock / concurrent-edit clash on save.
 
@@ -324,6 +354,216 @@ def update_onboarding_details(email, data, action="submit"):
     except Exception as e:
         frappe.db.rollback()
         frappe.log_error(message=frappe.get_traceback(), title="Employee Onboarding Update Failed")
+        frappe.local.response["http_status_code"] = 500
+        return {"status": "error", "code": 500, "message": str(e)}
+
+
+@frappe.whitelist()
+def update_onboarding_details_ess(email, data, action="submit"):
+    """Session-authenticated twin of `update_onboarding_details`, for internal
+    (HR / ESS) portals.
+
+    IDENTICAL request/response contract and behaviour to `update_onboarding_details`
+    — same params (`email`, `data`, `action`), same validation, same write path,
+    same JSON shape — with ONE difference: it is NOT gated by `@candidate_required`
+    / `enforce_candidate_identity` (which force a logout for anyone who is not a
+    logged-in candidate). Instead it runs as the logged-in session user and is
+    guarded by ordinary Employee Onboarding *write* permission. The candidate-facing
+    endpoint above is left exactly as-is.
+    """
+    frappe.has_permission(DOCTYPENAME, "write", throw=True)
+    frappe.local.response["http_status_code"] = 200
+
+    # Normalize the action flag; default/unknown -> "submit" (legacy behavior).
+    action = (action or "submit").strip().lower()
+    is_submit = action != "save"
+
+    if isinstance(data, str):
+        try:
+            data = frappe.parse_json(data)
+        except Exception:
+            frappe.local.response["http_status_code"] = 400
+            return {"status": "error", "code": 400, "message": "Invalid data format. Expected JSON."}
+
+    if not data or not isinstance(data, dict):
+        frappe.local.response["http_status_code"] = 400
+        return {"status": "error", "code": 400, "message": "Data must be a valid dictionary of fields to update."}
+
+    applicant_name = frappe.db.get_value(
+        "Job Applicant",
+        {"email_id": email},
+        "name",
+        order_by="modified desc",
+    )
+    if not applicant_name:
+        frappe.local.response["http_status_code"] = 404
+        return {"status": "error", "code": 404, "message": f"No Job Applicant found for {email}"}
+
+    onboarding_name = frappe.db.get_value(
+        "Employee Onboarding",
+        {"job_applicant": applicant_name, "docstatus": ("<", 2)},
+        "name",
+        order_by="creation desc",
+    )
+
+    if not onboarding_name:
+        pre_release = _get_active_pre_release(applicant_name)
+        if not pre_release:
+            frappe.local.response["http_status_code"] = 404
+            return {"status": "error", "code": 404, "message": f"No Employee Onboarding record or pending release found for {email}"}
+        from recruitment.api.candidate_portal import materialize_onboarding_from_applicant
+        onboarding_name = materialize_onboarding_from_applicant(applicant_name, prefill=data)
+
+    try:
+        # Apply the candidate's values — and, on submit, lock the filled fields —
+        # in a SINGLE save. Retry on a concurrent-edit clash (e.g. a double submit,
+        # or HR touching the same record) by re-fetching and re-applying instead of
+        # surfacing a 500. One save also avoids firing on_update hooks twice.
+        updated = []
+        for _attempt in range(3):
+            try:
+                doc = frappe.get_doc("Employee Onboarding", onboarding_name)
+
+                portal_rows, _ = _get_onboarding_portal_rows(doc)
+
+                # Only allow fields in Pending or Rejected state
+                _EDITABLE = frozenset({"Pending", "Rejected"})
+                allowed_map = {
+                    r.fieldname: r for r in portal_rows
+                    if not r.get("hidden")
+                    and not r.get("read_only")
+                    and (r.get("approval_status") or "Pending") in _EDITABLE
+                }
+
+                if not allowed_map:
+                    frappe.local.response["http_status_code"] = 400
+                    return {"status": "error", "code": 400, "message": "No editable portal fields available. All fields are under review or already approved."}
+
+                # Only validate mandatory constraint for fields actually being submitted.
+                # A candidate may update one rejected field at a time without needing to
+                # supply all other editable/mandatory fields in the same request.
+                submitted_keys = set(data.keys()) & set(allowed_map.keys())
+                missing = [
+                    allowed_map[fn].label or fn for fn in submitted_keys
+                    if is_submit and allowed_map[fn].get("is_mandatory") and data[fn] in (None, "", [])
+                ]
+                if missing:
+                    frappe.local.response["http_status_code"] = 422
+                    return {
+                        "status": "error",
+                        "code": 422,
+                        "message": "The following mandatory fields are missing: " + ", ".join(missing),
+                        "missing_fields": missing,
+                    }
+
+                if not submitted_keys:
+                    frappe.local.response["http_status_code"] = 400
+                    return {"status": "error", "code": 400, "message": "None of the submitted fields are editable. They may be approved, read-only, or hidden."}
+
+                meta_lookup = {f["fieldname"]: f for f in _read_onboarding_meta()}
+                updated = []
+
+                for fn, value in data.items():
+                    if fn not in allowed_map:
+                        continue
+
+                    meta = meta_lookup.get(fn, {})
+                    row = allowed_map[fn]
+                    fieldtype = (
+                        getattr(row, "fieldtype", None) or
+                        (row.get("fieldtype") if isinstance(row, dict) else None) or
+                        meta.get("fieldtype", "Data")
+                    )
+
+                    if fieldtype == "Table" and isinstance(value, list):
+                        doc.set(fn, [])
+                        for row_data in value:
+                            if not isinstance(row_data, dict):
+                                continue
+                            if not any(v not in (None, "", [], {}) for v in row_data.values()):
+                                continue
+                            doc.append(fn, row_data)
+                    else:
+                        doc.set(fn, value)
+
+                    updated.append(fn)
+
+                # Persist the portal `current_value` snapshot in the SAME save so the
+                # approval read endpoint (which shows current_value) reflects this
+                # write immediately. On submit the fields also lock (mark Filled);
+                # on save the snapshot is refreshed but the field stays editable.
+                if updated:
+                    if is_submit:
+                        _lock_filled_portal_fields(doc, updated)
+                    else:
+                        _snapshot_portal_values(doc, updated)
+
+                doc.save(ignore_permissions=True)
+                break
+            except Exception as _save_err:
+                if _is_concurrent_edit_error(_save_err) and _attempt < 2:
+                    frappe.db.rollback()
+                    continue
+                raise
+
+        # ── Post-save side effects (no further doc.save()) ────────────────────────
+        from recruitment.api.field_level_approval import _sync_overall_status
+        if is_submit and updated:
+            # Sync the candidate action-center item, then recompute boarding_status
+            # (flips to Submitted once no field is left Pending or Rejected).
+            try:
+                from recruitment.api.action_center import sync_onboarding_field_rejection_action
+                doc.reload()
+                sync_onboarding_field_rejection_action(doc)
+            except Exception:
+                frappe.log_error(frappe.get_traceback(), "Action Center Sync Failed (ESS Refill)")
+            doc.reload()
+            _sync_overall_status(doc)
+        elif updated:
+            # A save persists values but leaves fields Pending (editable); the
+            # count-based derivation can't move past Pending on its own, so nudge
+            # Pending -> In Process to reflect partial progress.
+            doc.reload()
+            _sync_overall_status(doc)
+            if (doc.get("boarding_status") or "Pending") == "Pending":
+                doc.db_set("boarding_status", "In Process", update_modified=False)
+
+        frappe.db.commit()
+
+        # Drop the cached copy so the immediately-following read (e.g. the approval
+        # panel refetch) sees this write straight away instead of a pre-update copy.
+        frappe.clear_document_cache(DOCTYPENAME, onboarding_name)
+
+        # Value-aware counts: a field with a value counts as "filled" whether it
+        # was just saved (still editable) or submitted, plus prefilled values
+        # resolved from the Job Applicant. boarding_status stays submit-based.
+        doc.reload()
+        portal_rows_now, _ = _get_onboarding_portal_rows(doc)
+        field_status_counts = _compute_candidate_field_counts(
+            portal_rows_now, doc, frappe.get_doc("Job Applicant", applicant_name)
+        )
+
+        return {
+            "status": "success",
+            "code": 200,
+            "message": (
+                "Employee Onboarding updated successfully. Fields are now pending HR review."
+                if is_submit
+                else "Progress saved. Fields remain editable."
+            ),
+            "data": {
+                "name": doc.name,
+                "job_applicant": doc.job_applicant,
+                "updated_fields": updated,
+                "action": "submit" if is_submit else "save",
+                "boarding_status": doc.get("boarding_status"),
+                "field_status_counts": field_status_counts,
+            },
+        }
+
+    except Exception as e:
+        frappe.db.rollback()
+        frappe.log_error(message=frappe.get_traceback(), title="Employee Onboarding Update Failed (ESS)")
         frappe.local.response["http_status_code"] = 500
         return {"status": "error", "code": 500, "message": str(e)}
 
