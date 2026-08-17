@@ -2,21 +2,13 @@ import { memo } from 'react';
 import { SquareCheck } from 'lucide-react';
 import { Typography } from '../../../shared/atoms/Typography';
 import type { PeerReviewItem } from '../../../../types/goal';
+import { getInitials } from '../../../../utils/helperUtils';
 
 export interface PeerReviewItemCardProps {
   review: PeerReviewItem;
   isActive: boolean;
   onSelectReview: (nominationId: string) => void;
 }
-
-const getInitials = (name?: string) => {
-  if (!name) return "??";
-  const parts = name.trim().split(" ");
-  if (parts.length >= 2) {
-    return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
-  }
-  return name.slice(0, 2).toUpperCase();
-};
 
 export const PeerReviewItemCard = memo<PeerReviewItemCardProps>(({
   review,

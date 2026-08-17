@@ -2,6 +2,7 @@ import React from 'react';
 import { Typography } from '../../../shared/atoms/Typography';
 import Badge from '../../../shared/Badge';
 import type { PeerReviewItem } from '../../../../types/goal';
+import { getInitials } from '../../../../utils/helperUtils';
 
 interface FeedbackHeaderCardProps {
   activeReview?: PeerReviewItem | {
@@ -14,15 +15,6 @@ interface FeedbackHeaderCardProps {
     due_in_days?: number;
   };
 }
-
-const getInitials = (name?: string) => {
-  if (!name) return "??";
-  const parts = name.trim().split(" ");
-  if (parts.length >= 2) {
-    return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
-  }
-  return name.slice(0, 2).toUpperCase();
-};
 
 export const FeedbackHeaderCard: React.FC<FeedbackHeaderCardProps> = ({ activeReview }) => {
   const name = (activeReview as PeerReviewItem)?.subject_name || (activeReview as any)?.name || "Peer";

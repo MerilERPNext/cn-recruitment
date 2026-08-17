@@ -3,24 +3,13 @@ import { ChevronDown, Users, CheckCircle2 } from "lucide-react";
 import { Typography } from "../../../shared/atoms/Typography";
 import type { PeerReviewItem } from "../../../../types/goal";
 import { PeerReviewItemCard } from "./PeerReviewItemCard";
+import { getInitials } from "../../../../utils/helperUtils";
 
 export interface PeerReviewMobileDropdownProps {
   openReviews: PeerReviewItem[];
   activeNominationId?: string;
   onSelectReview: (nominationId: string) => void;
 }
-
-const getInitials = (name?: string) => {
-  if (!name) return "??";
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  if (parts.length >= 2) {
-    return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
-  }
-  if (parts.length === 1) {
-    return parts[0].slice(0, 2).toUpperCase();
-  }
-  return "??";
-};
 
 export const PeerReviewMobileDropdown = memo<PeerReviewMobileDropdownProps>(({
   openReviews = [],
