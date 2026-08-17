@@ -162,7 +162,23 @@ const Feedback = () => {
     <div className="min-h-full bg-[#f8fafc]  p-4 sm:p-1 font-sans">
       <div className="max-w-[1300px] mx-auto flex flex-col xl:flex-row gap-6">
         <div className="flex-1 flex flex-col min-w-0">
-          {!isDesktop &&  <PeerReviewMobileDropdown openReviews={openReviews} onSelectReview={handleSelectReview} activeNominationId={activeNominationId} />}
+          {!isDesktop && (
+            isLoading ? (
+              <div className="mb-4">
+                <PeerReviewSidebarSkeleton />
+              </div>
+            ) : error ? (
+              <div className="mb-4">
+                <FeedbackErrorCard error={error} onRetry={() => refetch()} />
+              </div>
+            ) : (
+              <PeerReviewMobileDropdown
+                openReviews={openReviews}
+                activeNominationId={activeNominationId}
+                onSelectReview={handleSelectReview}
+              />
+            )
+          )}
           {feedbackLoading ? (
             <FeedbackFormSkeleton />
           ) : feedbackErr ? (
