@@ -56,6 +56,7 @@ const InlineFormRow = memo(({ row, handleConfigureRow, formSchema }: InlineFormR
   );
 }, (prevProps, nextProps) => {
   return (
+    prevProps.row.id === nextProps.row.id &&
     prevProps.row.project === nextProps.row.project &&
     prevProps.row.task === nextProps.row.task &&
     prevProps.row.isBillable === nextProps.row.isBillable
@@ -80,6 +81,7 @@ export interface TimesheetRowProps {
   getRowTotal: (row: TimesheetRowType) => number;
   handleDeleteRow: (rowId: string) => void;
   disabledDays?: string[];
+  dayStatusMap?: Record<string, string>;
 }
 
 export const TimesheetRow: React.FC<TimesheetRowProps> = ({
@@ -97,7 +99,8 @@ export const TimesheetRow: React.FC<TimesheetRowProps> = ({
   handleOpenComment,
   getRowTotal,
   handleDeleteRow,
-  disabledDays = []
+  disabledDays = [],
+  dayStatusMap = {}
 }) => {
   const { isDesktop } = useScreenSize();
 
@@ -150,6 +153,7 @@ export const TimesheetRow: React.FC<TimesheetRowProps> = ({
                 const hasComment = !!cell.description;
                 const hoursError = validationErrors[`${row.id}_${dateKey}_hours`];
                 const commentError = validationErrors[`${row.id}_${dateKey}_comment`];
+                const status = dayStatusMap[dateKey];
                 return (
                   <div key={dateKey} className="flex flex-col items-center">
                     <div className="text-[10px] font-bold text-gray-700 leading-tight">{format(day, "d")}</div>
@@ -178,12 +182,29 @@ export const TimesheetRow: React.FC<TimesheetRowProps> = ({
                     />
                     <button
                       onClick={() => handleOpenComment(row.id, dateKey, projName, format(day, "EEE, dd MMM"))}
-                      disabled={disabledDays.includes(dateKey)}
+                      disabled={(isReadOnly || !isGridEditable || disabledDays.includes(dateKey)) && !hasComment}
                       className={`mt-1 text-[9px] font-bold transition-all w-full py-0.5 rounded border disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-0.5 ${commentError ? 'border-red-500 text-red-500 bg-red-50' : (hasComment ? "text-primary hover:text-primary-600 border-transparent bg-primary/10" : "text-gray-400 hover:text-gray-600 border-transparent")}`}
                     >
                       <span>{hasComment ? "★" : "+"}</span>
                       {cell.hours > 0 && <span className="text-red-500">*</span>}
                     </button>
+                    {status && (
+                      <span
+                        className={`text-[8px] font-semibold px-0.5 py-0.5 rounded mt-1 border leading-none text-center w-full truncate ${
+                          status === "Week Off"
+                            ? "bg-red-50 text-red-700 border-red-200"
+                            : status === "Approved"
+                            ? "bg-green-50 text-green-700 border-green-200"
+                            : status === "Submitted"
+                            ? "bg-amber-50 text-amber-700 border-amber-200"
+                            : status === "Rejected"
+                            ? "bg-red-50 text-red-700 border-red-200"
+                            : "bg-gray-50 text-gray-600 border-gray-200"
+                        }`}
+                      >
+                        {status}
+                      </span>
+                    )}
                   </div>
                 );
               })}
@@ -309,7 +330,7 @@ export const TimesheetRow: React.FC<TimesheetRowProps> = ({
                         projName,
                         format(day, "EEE, dd MMM")
                       )}
-                      disabled={disabledDays.includes(dateKey)}
+                      disabled={(isReadOnly || !isGridEditable || disabledDays.includes(dateKey)) && !hasComment}
                       className={`text-[10px] font-bold transition-all px-2 py-0.5 rounded border disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-0.5 ${commentError ? 'border-red-500 text-red-500 bg-red-50' :
                         (hasComment ? "text-primary hover:text-primary-600 border-transparent" : "text-gray-400 hover:text-gray-600 border-transparent")
                         }`}

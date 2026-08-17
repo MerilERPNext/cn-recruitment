@@ -40,6 +40,10 @@ export const EmployeeGoalsList = ({
     [hasEmpGoals, myGoalsResponse, sessionUserGoals]
   );
 
+  const targetEmployeeId = hasEmpGoals
+    ? (employeeId ?? currentEmployee?.name)
+    : currentEmployee?.name;
+
   const { mutate: employeCheckIn, isPending } = useEmployeeGoalsCheckIn();
   const [loadingGoalKey, setLoadingGoalKey] = useState<string | null>(null);
   const [openGoalKey, setOpenGoalKey] = useState<string | null>(null);
@@ -47,13 +51,10 @@ export const EmployeeGoalsList = ({
   const submitCheckIns = useCallback(
     (goalKey: string) => {
       setLoadingGoalKey(goalKey);
-      const targetEmployeeId = hasEmpGoals
-        ? (employeeId ?? currentEmployee?.name ?? "")
-        : (currentEmployee?.name ?? "");
 
       employeCheckIn(
         {
-          employee: targetEmployeeId,
+          employee: targetEmployeeId ?? "",
           goal: goalKey,
         },
         {
@@ -69,7 +70,7 @@ export const EmployeeGoalsList = ({
         }
       );
     },
-    [employeCheckIn, hasEmpGoals, employeeId, currentEmployee]
+    [employeCheckIn, targetEmployeeId]
   );
 
   if (isLoading) {
@@ -101,6 +102,7 @@ export const EmployeeGoalsList = ({
           <EmployeeGoalCard
             key={goalIdentifier}
             goal={goal}
+            employeeId={targetEmployeeId}
             isGoalPending={isGoalPending}
             onRequestCheckIn={submitCheckIns}
             isExpanded={isExpanded}

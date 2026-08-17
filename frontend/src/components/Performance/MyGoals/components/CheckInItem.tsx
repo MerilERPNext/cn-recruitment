@@ -1,14 +1,40 @@
 import React, { memo } from 'react';
-import { Paperclip, ExternalLink } from 'lucide-react';
+import { Paperclip, ExternalLink, MessageSquare } from 'lucide-react';
 import { Typography } from '../../../shared/atoms/Typography';
 import type { GoalCheckIn, GoalCheckInSentiment } from '../../../../types/goal';
 
 const dateFormatter = new Intl.DateTimeFormat('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
+const dateTimeFormatter = new Intl.DateTimeFormat('en-US', {
+  day: 'numeric',
+  month: 'short',
+  year: 'numeric',
+  hour: 'numeric',
+  minute: '2-digit',
+  hour12: true,
+});
+
+const parseDateString = (value: string): Date | null => {
+  if (!value) return null;
+  const trimmed = value.trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+    const [year, month, day] = trimmed.split('-').map(Number);
+    return new Date(year, month - 1, day);
+  }
+  const formattedStr = trimmed.includes(' ') ? trimmed.replace(' ', 'T') : trimmed;
+  const date = new Date(formattedStr);
+  return Number.isNaN(date.getTime()) ? null : date;
+};
 
 export const formatCheckInDate = (value?: string) => {
   if (!value) return '-';
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? value : dateFormatter.format(date);
+  const date = parseDateString(value);
+  return date ? dateFormatter.format(date) : value;
+};
+
+export const formatCheckInDateTime = (value?: string) => {
+  if (!value) return '-';
+  const date = parseDateString(value);
+  return date ? dateTimeFormatter.format(date) : value;
 };
 
 export const sentimentStyles: Record<GoalCheckInSentiment, { active: string; dot: string }> = {
@@ -22,6 +48,8 @@ export interface CheckInItemProps {
 }
 
 export const CheckInItem: React.FC<CheckInItemProps> = memo(({ checkIn }) => {
+  const hasManagerComment = Boolean(checkIn.manager_comment && checkIn.manager_comment.trim());
+
   return (
     <div className="rounded-lg border border-gray-100 p-2.5 bg-gray-50/40 hover:border-gray-200 transition-colors">
       <div className="flex items-start justify-between gap-2">
@@ -66,6 +94,29 @@ export const CheckInItem: React.FC<CheckInItemProps> = memo(({ checkIn }) => {
           <ExternalLink className="h-3 w-3" />
         </a>
       )}
+      {hasManagerComment && (
+        <div className="mt-2.5 rounded-lg border border-blue-100 bg-blue-50/60 p-2.5 text-xs">
+          <div className="flex items-center justify-between gap-2 mb-1">
+            <span className="font-semibold text-blue-900 inline-flex items-center gap-1">
+              <MessageSquare className="h-3 w-3 text-blue-600" />
+              Manager Comment
+            </span>
+            {checkIn.manager_comment_on && (
+              <span className="text-[10px] text-blue-500 font-medium">
+                {formatCheckInDateTime(checkIn.manager_comment_on)}
+              </span>
+            )}
+          </div>
+          <p className="whitespace-pre-wrap break-words [word-break:break-word] text-gray-700 text-xs">
+            {checkIn.manager_comment}
+          </p>
+          {checkIn.manager_comment_by && (
+            <span className="mt-1 block text-[10px] text-gray-500">
+              — {checkIn.manager_comment_by}
+            </span>
+          )}
+        </div>
+      )}
     </div>
   );
 });
@@ -73,3 +124,4 @@ export const CheckInItem: React.FC<CheckInItemProps> = memo(({ checkIn }) => {
 CheckInItem.displayName = 'CheckInItem';
 
 export default CheckInItem;
+
