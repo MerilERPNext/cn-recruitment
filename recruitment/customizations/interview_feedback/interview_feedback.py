@@ -103,10 +103,39 @@ def record_region_suggestion(doc, method=None):
 
 def auto_advance_stage(doc, method):
     """After feedback updates the Interview's verdict, let the Hiring Workflow
-    auto-advance / reject the candidate (only for stages flagged ``auto``)."""
+    auto-advance / reject the candidate (only for stages flagged ``auto``).
+
+    A campus ADDITIONAL ROUND is deliberately left alone here — it is handed on by
+    ``campus_drive.advance_after_extra_round`` instead, and the two must not both act.
+
+    They disagree about where the candidate should land, because they anchor on
+    different things. This one advances from wherever the candidate is PARKED; the
+    campus one anchors on the ROUND the extra hangs off. An extra round is only ever
+    given to someone who already cleared that round, so they are normally parked one
+    stage further on already — and this hook, running first, advanced them one stage
+    beyond THAT. A second look at Technical Round 1 was pushing candidates from HR
+    Round to Job Offer, skipping HR Round entirely, and they vanished from the round
+    they were supposed to appear in.
+    """
     from recruitment.api.hiring_stage import advance_on_interview_result
 
+    if _is_campus_extra_round(doc.interview):
+        return
+
     advance_on_interview_result(doc.interview)
+
+
+def _is_campus_extra_round(interview):
+    """True for a campus additional round. The reason is what marks one as extra —
+    the same test ``advance_after_extra_round`` uses, so the two can never disagree
+    about which interviews belong to it."""
+    if not interview:
+        return False
+    row = frappe.db.get_value(
+        "Interview", interview,
+        ["custom_campus_drive", "custom_extra_interview_reason"], as_dict=True,
+    )
+    return bool(row and row.custom_campus_drive and row.custom_extra_interview_reason)
 
 
 @frappe.whitelist()

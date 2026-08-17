@@ -265,10 +265,11 @@ def get_application_fields(opening, email=None, campus_invite=None):
     return fields
 
 
-# Candidate Registration column -> Job Applicant fieldname. `middle_name` is collected
-# by the TPO but Job Applicant has no field for it, so it is deliberately not mapped.
+# Candidate Registration column -> Job Applicant fieldname. Every part of the name is
+# carried across separately; the full name is derived from them, never typed.
 _REGISTRATION_PREFILL = {
     "applicant_name": "first_name",
+    "custom_applicant_middle_name": "middle_name",
     "custom_applicant_last_name": "last_name",
     "email_id": "email_id",
     "phone_number": "mobile_number",
@@ -615,12 +616,12 @@ def submit_invite_application(campus_invite, job_opening, email, form_data=None)
         doc.email_id = candidate_email
         doc.job_title = opening
         doc.status = SUBMIT_STATUS
-        # The campus form captures first name in applicant_name and surname in
-        # custom_applicant_last_name — store the FULL name in applicant_name so the
-        # candidate shows with their complete name everywhere (JA list, campus drive).
-        _last = doc.get("custom_applicant_last_name")
-        if _last and _last.strip() and _last.strip().lower() not in (doc.applicant_name or "").lower():
-            doc.applicant_name = f"{(doc.applicant_name or '').strip()} {_last.strip()}".strip()
+        # The name parts are stored EXACTLY as the candidate typed them —
+        # applicant_name is the first name and nothing else. This used to be
+        # overwritten with the whole name so lists would show something complete,
+        # which is what produced "Neha Iyer Iyer" wherever the surname was joined on
+        # again. The display name is the derived custom_full_name (set on validate by
+        # recruitment.api.applicant_name), which is also the doctype's title.
         source = _common.source_value_for(CHANNEL)
         if source and not doc.get("source"):
             doc.source = source

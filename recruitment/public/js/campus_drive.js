@@ -163,12 +163,30 @@ function cdRenderRounds(frm) {
 		cdAddCandidateInterview(frm, $(this).attr("data-rd-extra"), () => cdRenderRounds(frm));
 	});
 	// Open an additional round's interview — where its feedback and verdict live.
+	// Open the Job Offer a candidate already has, straight from the round card.
+	$root.on("click", "[data-offer-doc]", function (e) {
+		e.preventDefault();
+		e.stopPropagation();
+		frappe.set_route("Form", "Job Offer", $(this).attr("data-offer-doc"));
+	});
+
 	$root.on("click", "[data-rd-interview]", function () {
 		frappe.set_route("Form", "Interview", $(this).attr("data-rd-interview"));
 	});
 	// Assign candidates across panels -> creates their Interview records
 	$root.on("click", "[data-rd-assign]", function () {
 		cdAssignPanels(frm, $(this).attr("data-rd-assign"), () => cdRenderRounds(frm));
+	});
+
+	// HR picks the interviewer per candidate.
+	$root.on("click", "[data-rd-manual]", function () {
+		cdAssignManually(frm, $(this).attr("data-rd-manual"), () => cdRenderRounds(frm));
+	});
+
+	// An interviewer takes waiting candidates for themselves. Only rendered for
+	// someone already on the round's roster; the server checks it again anyway.
+	$root.on("click", "[data-rd-take]", function () {
+		cdTakeCandidates(frm, $(this).attr("data-rd-take"), () => cdRenderRounds(frm));
 	});
 	// Read-only view of the panels and each candidate's interview status
 	$root.on("click", "[data-rd-open]", function () {
@@ -596,6 +614,21 @@ function cdDrawRounds($root, frm, data) {
 					title="${__("Divide waiting candidates across this round's panels and create their interviews")}">${
 					r.interviews ? __("Assign More") : __("Assign to Panels")
 				}</button>
+				<button class="btn btn-xs btn-default cd-rd-btn" data-rd-manual="${esc(r.round_code)}"
+					title="${__("Choose the interviewer for each candidate yourself")}">${__(
+					"Assign Manually"
+				)}</button>
+				${
+					(r.panels || []).some((p) =>
+						(p.interviewers || []).some((i) => i.user === frappe.session.user)
+					)
+						? `<button class="btn btn-xs btn-default cd-rd-btn" data-rd-take="${esc(
+								r.round_code
+						  )}" title="${__("Take waiting candidates onto your own panel")}">${__(
+								"Take Candidates"
+						  )}</button>`
+						: ""
+				}
 				${r.interviews ? `<button class="btn btn-xs btn-default cd-rd-btn" data-rd-open="${esc(
 					r.round_code)}">${__("View Panels")}</button>` : ""}
 				<button class="btn btn-xs btn-default cd-rd-btn" data-rd-more="${esc(r.round_code)}"
@@ -671,7 +704,7 @@ function cdDrawRounds($root, frm, data) {
 				)}</span>
 					<span class="cd-pill">${esc(e.panel || __("no panel"))}</span>
 					<span class="cd-rd-extra-who">${esc(
-						cdRoundPanelWho(r, e.panel).join(", ") || "—"
+						(e.interviewers || []).join(", ") || "—"
 					)}</span>
 					<span class="cd-rd-extra-when">${esc(e.scheduled_on || "")}</span>
 					${verdict(e)}
@@ -800,19 +833,37 @@ function cdMountTerminal(frm, hostEl, roundCode, kind) {
 			const rows = cands
 				.map((c) => {
 					const flagged = !!c[cfg.flag];
-					const locked = flagged && cfg.lock_flagged;
-					return `<tr>
+					// An undecided second look outranks everything: the panel is still
+					// being asked to judge this candidate, so neither an offer nor a
+					// pre-offer may go out. Locked here AND refused server-side.
+					const waiting = c.pending_extra_round;
+					const locked = waiting || (flagged && cfg.lock_flagged);
+					// When the flag carries the document it refers to, the pill opens it.
+					// "Offer exists" with no way to reach the offer is a dead end — HR
+					// then has to go and find it in the Job Offer list by hand.
+					const doc = c.job_offer;
+					const flaggedPill = doc
+						? `<a class="cd-pill cd-pill-green cd-pill-link" data-offer-doc="${esc(
+								doc
+						  )}" title="${esc(
+								__("Open {0}{1}", [doc, c.job_offer_status ? ` · ${c.job_offer_status}` : ""])
+						  )}">${cfg.flagged_pill()} ↗</a>`
+						: `<span class="cd-pill cd-pill-green">${cfg.flagged_pill()}</span>`;
+					const state = waiting
+						? `<span class="cd-pill cd-pill-fail" title="${esc(waiting)}">${__(
+								"Additional Round pending"
+						  )}</span>`
+						: flagged
+						? flaggedPill
+						: `<span class="cd-pill">${__("Ready")}</span>`;
+					return `<tr${waiting ? ' class="cd-row-blocked"' : ""}>
 					<td><input type="checkbox" class="cd-offer-pick" data-name="${esc(c.name)}" ${
 						locked ? "disabled" : ""
-					} ${flagged ? "" : "checked"}></td>
+					} ${flagged || waiting ? "" : "checked"}></td>
 					<td class="cd-pick-name">${esc(c.applicant_name || c.name)}</td>
 					<td class="text-muted">${esc(c.institute || "—")}</td>
 					<td class="text-muted">${esc(c.designation || "—")}</td>
-					<td>${
-						flagged
-							? `<span class="cd-pill cd-pill-green">${cfg.flagged_pill()}</span>`
-							: `<span class="cd-pill">${__("Ready")}</span>`
-					}</td>
+					<td>${state}</td>
 				</tr>`;
 				})
 				.join("");
@@ -877,6 +928,245 @@ function cdMountTerminal(frm, hostEl, roundCode, kind) {
 // the status. Reuses cdScheduleRound (date + candidate pick + deals across panels).
 function cdAssignPanels(frm, roundCode, done) {
 	cdScheduleRound(frm, roundCode, done);
+}
+
+// ---------------------------------------------------------------------------
+// Assigning by hand.
+//
+// "Assign to Panels" deals the waiting candidates across the round's interviewers
+// automatically. These two are the manual routes to the SAME single-interviewer
+// interview, because two different people need one:
+//
+//   cdAssignManually  — HR chooses the interviewer for each candidate.
+//   cdTakeCandidates  — an interviewer takes candidates for themselves. The server
+//                       books the session user, never a passed-in name, so this can
+//                       only ever pull work the person was already eligible for.
+// ---------------------------------------------------------------------------
+
+function cdAssignManually(frm, roundCode, done) {
+	frappe.call({
+		method:
+			"recruitment.recruitment.doctype.campus_drive.campus_drive.get_round_assignment_options",
+		args: { campus_drive: frm.doc.name, round_code: roundCode },
+		callback: (r) => cdManualDialog(frm, roundCode, r.message || {}, done),
+	});
+}
+
+function cdManualDialog(frm, roundCode, opts, done) {
+	const esc = (s) => frappe.utils.escape_html(String(s == null ? "" : s));
+	const candidates = opts.candidates || [];
+	const interviewers = opts.interviewers || [];
+
+	if (!candidates.length) {
+		frappe.msgprint({
+			title: __("Nobody is waiting"),
+			indicator: "orange",
+			message: __("Every candidate at stage {0} already has an interview on this round.", [
+				opts.stage || roundCode,
+			]),
+		});
+		return;
+	}
+	if (!interviewers.length) {
+		frappe.msgprint({
+			title: __("No interviewers on this round"),
+			indicator: "orange",
+			message: __("Add rows to Round Panelists with Round Code {0}, then try again.", [
+				`<b>${esc(roundCode)}</b>`,
+			]),
+		});
+		return;
+	}
+
+	// One row per waiting candidate, each with its own interviewer picker. Leaving a
+	// row blank leaves that candidate waiting — a half-assigned round is normal (30
+	// today, the rest tomorrow), so it must not be an error.
+	const options =
+		`<option value="">${__("— leave waiting —")}</option>` +
+		interviewers
+			.map(
+				(i) =>
+					`<option value="${esc(i.user)}">${esc(i.name)} · ${esc(i.panel)}</option>`
+			)
+			.join("");
+
+	const rows = candidates
+		.map(
+			(c) => `<tr>
+				<td class="cd-gd-cand">${cdAvatar(c.applicant_name || c.name, cdColorFor(c.name))}
+					<span>${esc(c.applicant_name || c.name)}</span></td>
+				<td class="text-muted">${esc(c.region_name || c.region || "")}</td>
+				<td><select class="cd-input cd-ma-pick" data-ma-applicant="${esc(
+					c.name
+				)}">${options}</select></td>
+			</tr>`
+		)
+		.join("");
+
+	const d = new frappe.ui.Dialog({
+		title: __("Assign candidates — {0}", [roundCode]),
+		size: "large",
+		fields: [
+			{
+				fieldname: "scheduled_on",
+				label: __("Interview date"),
+				fieldtype: "Date",
+				reqd: 1,
+				default: frappe.datetime.get_today(),
+			},
+			{ fieldname: "body", fieldtype: "HTML" },
+		],
+		primary_action_label: __("Create Interviews"),
+		primary_action(v) {
+			const picks = {};
+			d.fields_dict.body.$wrapper.find(".cd-ma-pick").each(function () {
+				const user = $(this).val();
+				if (user) picks[$(this).attr("data-ma-applicant")] = user;
+			});
+			const chosen = Object.keys(picks);
+			if (!chosen.length) {
+				frappe.msgprint(__("Pick an interviewer for at least one candidate."));
+				return;
+			}
+			d.hide();
+			frappe.dom.freeze(__("Creating interviews…"));
+			// One call per interviewer: the endpoint books a named person, so the
+			// picks are grouped by whoever was chosen.
+			const byUser = {};
+			chosen.forEach((a) => (byUser[picks[a]] = byUser[picks[a]] || []).push(a));
+			const calls = Object.keys(byUser).map((user) =>
+				frappe.call({
+					method:
+						"recruitment.recruitment.doctype.campus_drive.campus_drive.assign_round_interviewer",
+					args: {
+						campus_drive: frm.doc.name,
+						round_code: roundCode,
+						interviewer: user,
+						applicants: byUser[user],
+						scheduled_on: v.scheduled_on,
+					},
+				})
+			);
+			Promise.all(calls)
+				.then((res) => {
+					frappe.dom.unfreeze();
+					const made = res.reduce((n, r) => n + (((r || {}).message || {}).created || 0), 0);
+					frappe.show_alert({
+						message: __("{0} interview(s) created.", [made]),
+						indicator: "green",
+					});
+					if (done) done();
+					frm.reload_doc();
+				})
+				.catch(() => frappe.dom.unfreeze());
+		},
+	});
+
+	d.fields_dict.body.$wrapper.html(`
+		<div class="cd-ma-hint text-muted">${__(
+			"One interviewer per candidate. Leave a row blank to keep that candidate waiting."
+		)}</div>
+		<table class="table table-sm cd-ma-table">
+			<thead><tr>
+				<th>${__("Candidate")}</th><th>${__("Region")}</th><th>${__("Interviewer")}</th>
+			</tr></thead>
+			<tbody>${rows}</tbody>
+		</table>`);
+	d.show();
+}
+
+function cdTakeCandidates(frm, roundCode, done) {
+	frappe.call({
+		method:
+			"recruitment.recruitment.doctype.campus_drive.campus_drive.get_round_assignment_options",
+		args: { campus_drive: frm.doc.name, round_code: roundCode },
+		callback: (r) => {
+			const opts = r.message || {};
+			const me = frappe.session.user;
+			const mine = (opts.interviewers || []).find((i) => i.user === me);
+			if (!mine) {
+				frappe.msgprint({
+					title: __("You are not on this round"),
+					indicator: "orange",
+					message: __("Only interviewers rostered on round {0} can take candidates.", [
+						roundCode,
+					]),
+				});
+				return;
+			}
+			const candidates = opts.candidates || [];
+			if (!candidates.length) {
+				frappe.msgprint({
+					title: __("Nobody is waiting"),
+					indicator: "orange",
+					message: __("Every candidate at this stage already has an interview."),
+				});
+				return;
+			}
+			const d = new frappe.ui.Dialog({
+				title: __("Take candidates — {0}", [roundCode]),
+				fields: [
+					{
+						fieldname: "who",
+						fieldtype: "HTML",
+						options: `<div class="text-muted">${__(
+							"They will be booked with you ({0}), one interview each.",
+							[frappe.utils.escape_html(mine.name)]
+						)}</div>`,
+					},
+					{
+						fieldname: "scheduled_on",
+						label: __("Interview date"),
+						fieldtype: "Date",
+						reqd: 1,
+						default: frappe.datetime.get_today(),
+					},
+					{
+						fieldname: "applicants",
+						label: __("Candidates"),
+						fieldtype: "MultiSelectPills",
+						reqd: 1,
+						get_data: () =>
+							candidates.map((c) => ({
+								value: c.name,
+								description: c.applicant_name || c.name,
+							})),
+					},
+				],
+				primary_action_label: __("Take them"),
+				primary_action(v) {
+					const picked = (v.applicants || []).filter(Boolean);
+					if (!picked.length) {
+						frappe.msgprint(__("Pick at least one candidate."));
+						return;
+					}
+					d.hide();
+					frappe.dom.freeze(__("Creating interviews…"));
+					frappe.call({
+						method:
+							"recruitment.recruitment.doctype.campus_drive.campus_drive.claim_round_candidates",
+						args: {
+							campus_drive: frm.doc.name,
+							round_code: roundCode,
+							applicants: picked,
+							scheduled_on: v.scheduled_on,
+						},
+						callback: (res) => {
+							frappe.dom.unfreeze();
+							const m = res.message || {};
+							frappe.show_alert({
+								message: __("{0} interview(s) created for you.", [m.created || 0]),
+								indicator: "green",
+							});
+							if (done) done();
+							frm.reload_doc();
+						},
+					}).catch(() => frappe.dom.unfreeze());
+				},
+			});
+			d.show();
+		},
+	});
 }
 
 // Read-only panel view: each panel, its interviewers, and its candidates with their
@@ -1041,42 +1331,65 @@ function cdGdBind($root, frm) {
 		frappe.set_route("Form", "Job Applicant", $(this).attr("data-gd-applicant"));
 	});
 
-	// generate groups
-	$root.on("click", "[data-gd-generate]", function () {
+	// Group NEW candidates (default) — existing groups, finished or not, are left alone.
+	// "Regroup" redoes only the groups that have not run; Completed ones are frozen and
+	// survive either way, which is what stops a finished GD being run twice.
+	$root.on("click", "[data-gd-generate], [data-gd-regroup]", function () {
+		const rebuild = $(this).is("[data-gd-regroup]") ? 1 : 0;
 		const size = parseInt($root.find("[data-gd-size]").val(), 10);
 		const round = cdGdRoundOf($root, frm);
 		const splitBy = $root.find("[data-gd-split]").val() || "drive";
+		const autoPanel = $root.find("[data-gd-autopanel]").is(":checked") ? 1 : 0;
 		if (!size || size < 2) {
 			frappe.msgprint(__("Enter a group size of 2 or more."));
 			return;
 		}
 		const go = () => {
-			frappe.dom.freeze(__("Building groups…"));
+			frappe.dom.freeze(rebuild ? __("Regrouping…") : __("Building groups…"));
 			cdGdCall("generate_gd_groups", {
 				campus_drive: drive,
 				round_code: round,
 				group_size: size,
 				split_by: splitBy,
+				rebuild: rebuild,
+				assign_panels: autoPanel,
 			})
 				.then((m) => {
 					frappe.dom.unfreeze();
 					if (!m) return;
 					cdGdState.open = null;
-					frappe.show_alert({
-						message: __("{0} groups created for {1} candidates across {2} role(s).", [
-							m.groups,
-							m.candidates,
-							m.roles,
-						]) + (m.panels ? " " + __("Panels assigned: {0}.", [m.panels]) : ""),
-						indicator: "green",
-					});
+					const parts = [
+						__("{0} group(s) created for {1} candidate(s).", [m.groups, m.candidates]),
+					];
+					if (m.frozen_groups)
+						parts.push(__("{0} completed group(s) left untouched.", [m.frozen_groups]));
+					if (m.already_grouped)
+						parts.push(__("{0} candidate(s) were already grouped.", [m.already_grouped]));
+					parts.push(
+						m.panels_assigned
+							? __("Panels assigned automatically.")
+							: __("No panels assigned — set them on each group.")
+					);
+					frappe.show_alert({ message: parts.join(" "), indicator: "green" });
 					frm.reload_doc();
 				})
 				.catch(() => frappe.dom.unfreeze());
 		};
-		if ((frm.doc.gd_groups || []).some((g) => g.round_code === round)) {
+		// Only a Regroup needs confirming — it rebuilds groups that have not run.
+		// Grouping new candidates adds to the round and changes nothing existing, so
+		// asking about it every time trains people to click through the dialog.
+		const existing = (frm.doc.gd_groups || []).filter((g) => g.round_code === round);
+		if (rebuild && existing.length) {
+			const frozen = existing.filter((g) => g.group_status === "Completed").length;
 			frappe.confirm(
-				__("This replaces the existing groups for round {0}. Continue?", [round]),
+				__("This rebuilds the {0} group(s) on round {1} that have not run yet.", [
+					existing.length - frozen,
+					round,
+				]) +
+					(frozen
+						? " " +
+						  __("{0} completed group(s) and their candidates are not touched.", [frozen])
+						: ""),
 				go
 			);
 		} else {
@@ -1373,12 +1686,22 @@ function cdGdDraw($root, frm) {
 			</select>
 			<label class="cd-gd-lbl">${__("Group size")}</label>
 			<input type="number" min="2" class="cd-input cd-input-num" data-gd-size value="${defaultSize}">
-			<button class="btn btn-primary btn-sm" data-gd-generate>${
-				groups.length ? __("Re-generate Groups") : __("Create Groups")
-			}</button>
+			<label class="cd-gd-lbl cd-gd-check" title="${__(
+				"Off: groups are created without a panel, for you to assign by hand afterwards"
+			)}">
+				<input type="checkbox" data-gd-autopanel checked> ${__("Auto-assign panels")}
+			</label>
+			<button class="btn btn-primary btn-sm" data-gd-generate title="${
+				groups.length
+					? __("Group the candidates who are not in a group yet. Existing groups are left alone.")
+					: __("Build the groups for this round")
+			}">${groups.length ? __("Group New Candidates") : __("Create Groups")}</button>
 			${
 				groups.length
-					? `<button class="btn btn-sm btn-default" data-gd-panels title="${__(
+					? `<button class="btn btn-sm btn-default" data-gd-regroup title="${__(
+							"Redo the groups that have not run yet. Completed groups are never touched."
+					  )}">${__("Regroup")}</button>
+					<button class="btn btn-sm btn-default" data-gd-panels title="${__(
 							"Deal this round's panels across the groups again"
 					  )}">${__("Assign Panels")}</button>
 					<button class="btn btn-sm btn-default" data-gd-push title="${__(
@@ -2007,6 +2330,14 @@ function cdInjectStyles() {
 .cd-rd-who{display:flex;gap:4px;flex-wrap:wrap}
 .cd-rd-warn{font-size:11px;color:#B45309;background:rgba(245,158,11,.13);border-radius:8px;padding:7px 10px;margin-bottom:10px}
 .cd-rd-btn{margin-left:6px}
+.cd-row-blocked{opacity:.62}
+.cd-pill-link{cursor:pointer;text-decoration:none}
+.cd-pill-link:hover{filter:brightness(.94);text-decoration:underline}
+.cd-ma-hint{margin-bottom:8px;font-size:12px}
+.cd-ma-table td{vertical-align:middle}
+.cd-ma-table .cd-input{width:100%}
+.cd-gd-check{display:inline-flex;align-items:center;gap:5px;cursor:pointer;white-space:nowrap}
+.cd-gd-check input{margin:0}
 .cd-rd-extra{margin-top:-6px;margin-left:22px;border-style:dashed}
 .cd-rd-extra-title{font-size:13px}
 .cd-rd-extra-list{display:flex;flex-direction:column;gap:6px}
