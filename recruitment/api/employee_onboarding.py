@@ -112,6 +112,36 @@ def _lock_filled_portal_fields(doc, updated_fields):
         prow.approval_status = "Filled"
 
 
+def _snapshot_portal_values(doc, updated_fields):
+    """Refresh ONLY the `current_value` snapshot of the given portal rows from the
+    live doc values, leaving `approval_status` untouched (stays Pending/Rejected,
+    i.e. editable).
+
+    The approval read endpoint (`get_onboarding_fields_for_approval`) shows each
+    field's stored `current_value`, which is otherwise refreshed only on submit
+    (via `_lock_filled_portal_fields`). Calling this on the "save" path makes a
+    plain save visible to that endpoint immediately, without locking the field.
+    Mutates `doc` in place — the caller saves.
+    """
+    import json as _json
+    for prow in (doc.get("custom_candidate_portal_fields") or []):
+        if prow.fieldname not in updated_fields:
+            continue
+        ft = prow.get("fieldtype") or "Data"
+        live_val = doc.get(prow.fieldname)
+        if ft == "Table":
+            prow.current_value = _json.dumps(
+                [{k: str(v or "") for k, v in (r.as_dict() if hasattr(r, "as_dict") else r).items()
+                  if not k.startswith("_") and k not in {
+                      "doctype", "parent", "parenttype", "parentfield",
+                      "docstatus", "owner", "creation", "modified", "modified_by"
+                  }} for r in (live_val or [])],
+                ensure_ascii=False, default=str
+            )
+        else:
+            prow.current_value = str(live_val) if live_val is not None else ""
+
+
 def _is_concurrent_edit_error(err):
     """True for an optimistic-lock / concurrent-edit clash on save.
 
@@ -458,10 +488,15 @@ def update_onboarding_details_ess(email, data, action="submit"):
 
                     updated.append(fn)
 
-                # On submit, lock the filled portal fields (mark Filled + snapshot
-                # value) BEFORE saving so values and statuses persist in one write.
-                if is_submit and updated:
-                    _lock_filled_portal_fields(doc, updated)
+                # Persist the portal `current_value` snapshot in the SAME save so the
+                # approval read endpoint (which shows current_value) reflects this
+                # write immediately. On submit the fields also lock (mark Filled);
+                # on save the snapshot is refreshed but the field stays editable.
+                if updated:
+                    if is_submit:
+                        _lock_filled_portal_fields(doc, updated)
+                    else:
+                        _snapshot_portal_values(doc, updated)
 
                 doc.save(ignore_permissions=True)
                 break
@@ -494,6 +529,10 @@ def update_onboarding_details_ess(email, data, action="submit"):
                 doc.db_set("boarding_status", "In Process", update_modified=False)
 
         frappe.db.commit()
+
+        # Drop the cached copy so the immediately-following read (e.g. the approval
+        # panel refetch) sees this write straight away instead of a pre-update copy.
+        frappe.clear_document_cache(DOCTYPENAME, onboarding_name)
 
         # Value-aware counts: a field with a value counts as "filled" whether it
         # was just saved (still editable) or submitted, plus prefilled values
