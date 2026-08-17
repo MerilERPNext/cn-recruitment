@@ -30,7 +30,7 @@ const OverviewStats: React.FC<OverviewStatsProps> = ({ isCompact, stats }) => {
           <div>
             <Typography
               variant="h2"
-              className={`${stat.valueColor} mb-1 text-2xl font-bold leading-none`}
+              className={`text-blue-600 mb-1 text-2xl font-bold leading-none`}
             >
               {stat.value}
             </Typography>
