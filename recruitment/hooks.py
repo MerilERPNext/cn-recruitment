@@ -431,9 +431,15 @@ doc_events = {
             "recruitment.recruitment.referral_reward_engine.generate_referral_reward_on_employee",
         ],
         "before_save": "recruitment.recruitment.employee_confirmation_hooks.calculate_final_confirmation_date",
-        # Keep the User's "Is Alumni Employee" flag in sync with status == "Left"
-        # (only sets that checkbox; never touches Employee.status or User.enabled).
-        "on_update": "recruitment.recruitment.alumni_portal.sync_alumni_flag",
+        "on_update": [
+            # Keep the User's "Is Alumni Employee" flag in sync with status == "Left"
+            # (only sets that checkbox; never touches Employee.status or User.enabled).
+            "recruitment.recruitment.alumni_portal.sync_alumni_flag",
+            # Switch the primary account on a real status transition: disable the
+            # company-email User and provision/restore the personal-email Alumni
+            # User (and the reverse when the employee rejoins).
+            "recruitment.recruitment.alumni_user_switch.handle_employee_status_change",
+        ],
     },
     "Job Applicant": {
         "before_insert": "recruitment.customizations.ta_duplicity_check.check_duplicity",

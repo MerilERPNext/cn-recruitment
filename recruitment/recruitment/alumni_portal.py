@@ -218,11 +218,20 @@ def portal_login(email: str, password: str) -> dict:
 
 @frappe.whitelist(allow_guest=True, methods=["GET"])
 def get_alumni_context() -> dict:
-    """Validate/restore an Alumni Portal session. 401 guest, 403 non-alumni."""
+    """Validate/restore an Alumni Portal session.
+
+    A guest is a normal, expected answer to "is anyone signed in?", not an
+    error, so it returns HTTP 200 with ``success: False`` — the client already
+    branches on that flag. Only a signed-in NON-alumnus is a real authorization
+    failure and still returns 403.
+    """
     user = frappe.session.user
     if user == "Guest":
-        frappe.local.response["http_status_code"] = 401
-        return {"success": False, "message": _("Authentication required.")}
+        return {
+            "success": False,
+            "authenticated": False,
+            "message": _("Authentication required."),
+        }
     if not is_alumni_employee(user):
         frappe.local.response["http_status_code"] = 403
         return {"success": False, "message": _("Not authorized for the Alumni Portal.")}
@@ -508,6 +517,37 @@ def _require_alumni_session() -> str:
     return user
 
 
+def alumni_employee_name(user: str | None = None) -> str | None:
+    """Employee record for an alumni session, as a docname.
+
+    Once an employee leaves, `alumni_user_switch` disables the company-email User
+    and the alumnus signs in with their personal email — which is NOT the
+    Employee's `user_id`. Resolution order:
+
+        1. `Employee.custom_alumni_user`  — the link written at switch time
+        2. `Employee.user_id`             — still-active employees, and any
+                                            alumnus who never had the switch run
+        3. `Employee.personal_email`      — fallback for records provisioned
+                                            before the link field existed
+
+    Returns None when no Employee matches.
+    """
+    user = user or frappe.session.user
+    if not user or user == "Guest":
+        return None
+
+    if frappe.get_meta("Employee").get_field("custom_alumni_user"):
+        emp = frappe.db.get_value("Employee", {"custom_alumni_user": user}, "name")
+        if emp:
+            return emp
+
+    emp = frappe.db.get_value("Employee", {"user_id": user}, "name")
+    if emp:
+        return emp
+
+    return frappe.db.get_value("Employee", {"personal_email": user}, "name")
+
+
 def _d(v):
     """Serialize a date/datetime to string (or None)."""
     return str(v) if v else None
@@ -566,7 +606,7 @@ def get_alumni_profile() -> dict:
         "employee": None,
     }
 
-    emp_name = frappe.db.get_value("Employee", {"user_id": user}, "name")
+    emp_name = alumni_employee_name(user)
     if emp_name:
         # (output key, Employee fieldname). "employee_id" is the docname;
         # "preferred_email" maps to core's misspelled `prefered_email`.
@@ -659,7 +699,7 @@ def update_alumni_profile(**kwargs) -> dict:
     Employee validate/on_update hooks run — existing HRMS behaviour is untouched.
     """
     user = _require_alumni_session()
-    emp_name = frappe.db.get_value("Employee", {"user_id": user}, "name")
+    emp_name = alumni_employee_name(user)
     if not emp_name:
         frappe.local.response["http_status_code"] = 400
         return {"success": False, "message": _("No employee record is linked to your account.")}
@@ -707,34 +747,85 @@ def update_alumni_profile(**kwargs) -> dict:
     }
 
 
+# Notification Log is shared with ESS/HR, so an alumnus' inbox otherwise fills
+# with Expense Claim, Loan Application, Leave, ToDo and HR-approval alerts they
+# can neither see nor act on. Only doctypes the Alumni Portal itself surfaces
+# are returned — the same allowlist idea the alumni_guard applies to endpoints.
+_ALUMNI_NOTIFICATION_DOCTYPES = ("Notice", "HD Ticket", "HD Ticket Comment")
+
+
+def _alumni_notification_filter(user: str) -> tuple[str, dict]:
+    """SQL predicate limiting Notification Log to alumni-relevant rows.
+
+    Notice rows carry the extra condition that the Notice is flagged for the
+    Alumni Portal, mirroring `get_alumni_notices` — without it, ESS-only notices
+    leak in through the notification list.
+    """
+    where = [
+        "nl.for_user = %(user)s",
+        "nl.document_type IN %(doctypes)s",
+    ]
+    params = {"user": user, "doctypes": _ALUMNI_NOTIFICATION_DOCTYPES}
+
+    # Schema-drift safe: only constrain on the flag where the column exists.
+    if frappe.db.has_column("Notice", "show_in_alumni_portal"):
+        where.append(
+            """(
+                nl.document_type != 'Notice'
+                OR EXISTS (
+                    SELECT 1 FROM `tabNotice` n
+                    WHERE n.name = nl.document_name
+                      AND n.show_in_alumni_portal = 1
+                )
+            )"""
+        )
+
+    return " AND ".join(where), params
+
+
+def _alumni_notification_count(user: str, unread_only: bool = False) -> int:
+    where, params = _alumni_notification_filter(user)
+    if unread_only:
+        where += " AND nl.`read` = 0"
+    row = frappe.db.sql(
+        f"SELECT COUNT(*) FROM `tabNotification Log` nl WHERE {where}", params
+    )
+    return int(row[0][0]) if row else 0
+
+
 @frappe.whitelist(methods=["GET"])
 def get_alumni_notifications(limit=20, start=0, only_unread=0) -> dict:
     """The logged-in alumnus's notifications (from Notification Log).
 
-    Returns the notifications, the total, and the unread count. `only_unread=1`
-    restricts the list to unread; `limit`/`start` paginate.
+    Restricted to notifications the Alumni Portal actually surfaces (see
+    `_ALUMNI_NOTIFICATION_DOCTYPES`); ESS/HR notifications are never returned.
+    `only_unread=1` restricts the list to unread; `limit`/`start` paginate.
     """
     user = _require_alumni_session()
 
-    filters = {"for_user": user}
+    where, params = _alumni_notification_filter(user)
     if frappe.utils.cint(only_unread):
-        filters["read"] = 0
+        where += " AND nl.`read` = 0"
 
-    notifications = frappe.get_all(
-        "Notification Log",
-        filters=filters,
-        fields=[
-            "name", "subject", "email_content", "type", "document_type",
-            "document_name", "read", "from_user", "creation",
-        ],
-        order_by="creation desc",
-        start=frappe.utils.cint(start),
-        page_length=frappe.utils.cint(limit) or 20,
+    params["limit"] = frappe.utils.cint(limit) or 20
+    params["start"] = frappe.utils.cint(start)
+
+    notifications = frappe.db.sql(
+        f"""
+        SELECT nl.name, nl.subject, nl.email_content, nl.type, nl.document_type,
+               nl.document_name, nl.`read`, nl.from_user, nl.creation
+        FROM `tabNotification Log` nl
+        WHERE {where}
+        ORDER BY nl.creation DESC
+        LIMIT %(limit)s OFFSET %(start)s
+        """,
+        params,
+        as_dict=True,
     )
     return {
         "success": True,
-        "unread_count": frappe.db.count("Notification Log", {"for_user": user, "read": 0}),
-        "total": frappe.db.count("Notification Log", {"for_user": user}),
+        "unread_count": _alumni_notification_count(user, unread_only=True),
+        "total": _alumni_notification_count(user),
         "notifications": notifications,
     }
 
@@ -744,20 +835,33 @@ def mark_alumni_notification_read(name: str = None, mark_all=0) -> dict:
     """Mark one notification (by `name`) or all (`mark_all=1`) read for this alumnus."""
     user = _require_alumni_session()
 
+    # Scope both paths to the same rows the list returns, so "mark all" never
+    # silently touches ESS notifications and the badge always matches the list.
+    where, params = _alumni_notification_filter(user)
+
     if frappe.utils.cint(mark_all):
         frappe.db.sql(
-            "UPDATE `tabNotification Log` SET `read` = 1 WHERE for_user = %s AND `read` = 0",
-            user,
+            f"""
+            UPDATE `tabNotification Log` nl
+            SET nl.`read` = 1
+            WHERE {where} AND nl.`read` = 0
+            """,
+            params,
         )
     elif name:
-        # Only allow marking one's own notification.
-        if frappe.db.get_value("Notification Log", name, "for_user") == user:
+        # Only one's own notification, and only one the portal actually shows.
+        params["name"] = name
+        row = frappe.db.sql(
+            f"SELECT nl.name FROM `tabNotification Log` nl WHERE {where} AND nl.name = %(name)s",
+            params,
+        )
+        if row:
             frappe.db.set_value("Notification Log", name, "read", 1, update_modified=False)
     frappe.db.commit()
 
     return {
         "success": True,
-        "unread_count": frappe.db.count("Notification Log", {"for_user": user, "read": 0}),
+        "unread_count": _alumni_notification_count(user, unread_only=True),
     }
 
 
@@ -1449,7 +1553,7 @@ def get_alumni_documents(category=None, year=None, search=None, limit=200, start
     Stats + filter_options are always computed across ALL the user's documents.
     """
     user = _require_alumni_session()
-    emp = frappe.db.get_value("Employee", {"user_id": user}, "name")
+    emp = alumni_employee_name(user)
     if not emp:
         return {
             "success": True,
@@ -1469,7 +1573,7 @@ def download_alumni_document(name: str) -> None:
     namespace endpoint verifies ownership then streams the file.
     """
     user = _require_alumni_session()
-    emp = frappe.db.get_value("Employee", {"user_id": user}, "name")
+    emp = alumni_employee_name(user)
     doc = frappe.db.get_value(
         "Employee Documents", name, ["employee", "file_name"], as_dict=True
     )
@@ -1519,7 +1623,7 @@ _REFERRAL_SOURCE = "Employee Referral"
 def _alumni_referrer_employee(user: str) -> "frappe._dict":
     """Employee (name, employee_name) linked to the alumnus, or raise 400."""
     emp = frappe.db.get_value(
-        "Employee", {"user_id": user}, ["name", "employee_name"], as_dict=True
+        "Employee", alumni_employee_name(user) or "", ["name", "employee_name"], as_dict=True
     )
     if not emp:
         frappe.local.response["http_status_code"] = 400
@@ -2106,3 +2210,581 @@ def sync_alumni_flag(doc, method: str | None = None) -> None:
         frappe.db.set_value(
             "User", doc.user_id, ALUMNI_FLAG, desired, update_modified=False
         )
+
+
+# ── Company branding / details ────────────────────────────────────────────────
+# Name, logo and profile of the company an alumnus belonged to, for the Alumni
+# Portal header, footer and "About" section.
+
+# Company fields surfaced to the portal (all read-only, none sensitive).
+_ALUMNI_COMPANY_FIELDS = (
+    "name",
+    "company_name",
+    "abbr",
+    "company_logo",
+    "company_description",
+    "website",
+    "email",
+    "phone_no",
+    "domain",
+    "country",
+    "date_of_establishment",
+)
+
+
+def _resolve_alumni_company() -> str | None:
+    """Company for the current caller.
+
+    An alumni session resolves to the company on their own Employee record; a
+    guest (login / landing page) falls back to the site's default company so the
+    portal can still render branding before sign-in.
+
+    The company is never taken from a request parameter — that would let anyone
+    enumerate company records through a guest endpoint.
+    """
+    user = frappe.session.user
+    if user and user != "Guest":
+        emp_for_company = alumni_employee_name(user)
+        company = (
+            frappe.db.get_value("Employee", emp_for_company, "company")
+            if emp_for_company
+            else None
+        )
+        if company:
+            return company
+
+    return frappe.db.get_single_value("Global Defaults", "default_company") or (
+        frappe.db.get_value("Company", {}, "name")
+    )
+
+
+def _company_address(company: str) -> dict | None:
+    """Primary address linked to the company, if one is set."""
+    name = frappe.db.sql(
+        """
+        SELECT dl.parent
+        FROM `tabDynamic Link` dl
+        JOIN `tabAddress` a ON a.name = dl.parent
+        WHERE dl.link_doctype = 'Company' AND dl.link_name = %(company)s
+              AND dl.parenttype = 'Address'
+        ORDER BY a.is_primary_address DESC, a.modified DESC
+        LIMIT 1
+        """,
+        {"company": company},
+    )
+    if not name:
+        return None
+
+    addr = frappe.db.get_value(
+        "Address",
+        name[0][0],
+        ["address_line1", "address_line2", "city", "state", "country", "pincode"],
+        as_dict=True,
+    )
+    if not addr:
+        return None
+
+    addr["display"] = ", ".join(
+        str(v).strip()
+        for v in (
+            addr.get("address_line1"),
+            addr.get("address_line2"),
+            addr.get("city"),
+            addr.get("state"),
+            addr.get("pincode"),
+            addr.get("country"),
+        )
+        if v and str(v).strip()
+    )
+    return addr
+
+
+@frappe.whitelist(allow_guest=True, methods=["GET"])
+def get_alumni_company() -> dict:
+    """Company name, logo and details for the Alumni Portal.
+
+    Resolves the company from the signed-in alumnus's Employee record, falling
+    back to the site's default company for guests so the login and landing pages
+    can render the same branding.
+
+    ``description`` is the raw HTML from the Company's "About Company" field;
+    ``description_text`` is the same content stripped to plain text.
+    """
+    company = _resolve_alumni_company()
+    if not company:
+        return {"success": True, "company": None}
+
+    doc = frappe.db.get_value(
+        "Company", company, list(_ALUMNI_COMPANY_FIELDS), as_dict=True
+    )
+    if not doc:
+        return {"success": True, "company": None}
+
+    # Fall back to the site logo when the company has none of its own, so the
+    # portal header is never blank.
+    logo = doc.get("company_logo") or frappe.db.get_single_value(
+        "Website Settings", "app_logo"
+    )
+
+    description = doc.get("company_description") or ""
+    established = doc.get("date_of_establishment")
+
+    return {
+        "success": True,
+        "company": {
+            "name": doc["name"],
+            "company_name": doc.get("company_name") or doc["name"],
+            "abbr": doc.get("abbr") or "",
+            "logo": logo or "",
+            # Absolute URL, for clients that cannot resolve a site-relative path.
+            "logo_url": frappe.utils.get_url(logo) if logo else "",
+            "description": description,
+            "description_text": frappe.utils.strip_html_tags(description).strip(),
+            "website": doc.get("website") or "",
+            "email": doc.get("email") or "",
+            "phone": doc.get("phone_no") or "",
+            "domain": doc.get("domain") or "",
+            "country": doc.get("country") or "",
+            "established_on": _d(established),
+            "established_year": established.year if established else None,
+            "address": _company_address(company),
+        },
+    }
+
+
+# ── Alumni Todo manager ───────────────────────────────────────────────────────
+# The portal's Todo page reads its list through cn_todo_manager's own whitelisted
+# APIs (those are session-scoped and allowlisted in alumni_guard), but writing a
+# ToDo and reading ToDo Settings would need `/api/resource/*`, which the guard
+# blocks outright for alumni sessions.
+#
+# Going through the alumni namespace instead — the same pattern as
+# `download_alumni_document` — keeps that blanket block intact and makes the
+# ownership rule explicit here rather than relying on a framework hook.
+
+# Fields an alumnus may change on their own ToDo. `allocated_to` is deliberately
+# absent: reassigning work to another user is not an alumni capability.
+_ALUMNI_TODO_WRITABLE_FIELDS = ("status", "priority", "date")
+
+# Only the flags the portal UI actually reads. ToDo Settings grants write access
+# to role "All" with no controller check, so it is never exposed for writing.
+_ALUMNI_TODO_SETTINGS_FIELDS = (
+    "enable_pagination",
+    "default_page_size",
+    "max_page_size",
+    "allow_attachments_in_todos",
+    "show_external_action_buttons",
+    "allow_redirection_to_reference_doctypes",
+    "hide_priority_flag",
+    "hide_assignee_in_my_todo",
+    "show_team_todos",
+    "show_delegate_task",
+    "show_go_to_doctype",
+)
+
+
+def _loadable_todo_notifications() -> list[dict] | None:
+    """The enabled ToDo Notifications Frappe can actually import.
+
+    A Notification with ``is_standard`` is backed by a Python module whose path
+    is derived from the record's NAME (``modules.utils.get_doc_module`` ->
+    ``<app>.<module>.notification.<scrub(name)>``). This site has a record whose
+    email SUBJECT was saved as its name — "URGENT: Task Escalated to High
+    Priority - {{ doc.name }}" — which scrubs to an invalid module path, so
+    loading it raises ModuleNotFoundError on **every** ToDo save, site-wide.
+
+    That record is an orphan duplicate: a correctly named twin, "Task Escalated
+    to High Priority", already exists, is enabled, and has a real module folder.
+
+    Disabling the bad record would be a site-wide change that also alters ESS, so
+    instead this returns the list in the shape ``Document.run_notifications``
+    builds for ``flags.notifications``, with the unloadable entries dropped.
+    Seeding that flag skips only the broken records, only for that one save —
+    every healthy notification still fires as normal.
+
+    Detection is by shape rather than by hardcoded name, so any other malformed
+    record is covered and cleaning up the data later makes this a silent no-op.
+    """
+    try:
+        rows = frappe.get_all(
+            "Notification",
+            filters={"enabled": 1, "document_type": "ToDo"},
+            fields=["name", "event", "method"],
+        )
+    except Exception:
+        # Never let this guard break the update it exists to protect. Returning
+        # None leaves Frappe to build the list itself, i.e. current behaviour.
+        return None
+
+    # scrub() only lowercases and swaps " "/"-" for "_", so a name that is not an
+    # identifier afterwards cannot be a module path segment.
+    keep = [r for r in rows if frappe.scrub(r["name"]).isidentifier()]
+
+    dropped = [r["name"] for r in rows if r not in keep]
+    if dropped:
+        frappe.logger("alumni_portal").warning(
+            f"Skipping ToDo Notification(s) with an unloadable module path: {dropped}"
+        )
+
+    return keep
+
+
+@frappe.whitelist(methods=["GET", "POST"])
+def get_alumni_todo_settings() -> dict:
+    """The ToDo Settings flags the portal UI needs, read-only."""
+    _require_alumni_session()
+
+    values = (
+        frappe.db.get_value(
+            "ToDo Settings", "ToDo Settings", _ALUMNI_TODO_SETTINGS_FIELDS, as_dict=True
+        )
+        or {}
+    )
+    # cint every value. ToDo Settings is a Single, so its values live in
+    # `tabSingles` as TEXT and come back as strings — and "0" is TRUTHY in
+    # JavaScript, which silently turns every one of these flags ON in the UI.
+    # All eleven fields are Check or Int, so the cast is total.
+    return {
+        "success": True,
+        "settings": {
+            k: frappe.utils.cint(values.get(k)) for k in _ALUMNI_TODO_SETTINGS_FIELDS
+        },
+    }
+
+
+@frappe.whitelist(methods=["POST"])
+def update_alumni_todo(name: str, status=None, priority=None, date=None) -> dict:
+    """Update one of the caller's own ToDos.
+
+    Backs the inline status / priority / due-date controls. Only a ToDo the
+    alumnus is the assignee of, or raised themselves, can be touched — the same
+    rule Frappe's own `ToDo.has_permission` applies, asserted here so the check
+    does not depend on the request arriving through the resource API.
+    """
+    _require_own_todo(name)
+
+    incoming = {"status": status, "priority": priority, "date": date}
+    patch = {f: incoming[f] for f in _ALUMNI_TODO_WRITABLE_FIELDS if incoming[f] is not None}
+    if not patch:
+        frappe.local.response["http_status_code"] = 400
+        frappe.throw(_("Nothing to update."))
+
+    # Through the document API, not frappe.db.set_value: ToDo.on_update keeps the
+    # referenced document's `_assign` in step, which a direct DB write skips.
+    doc = frappe.get_doc("ToDo", name)
+    for field, value in patch.items():
+        doc.set(field, value)
+
+    # Frappe only builds this list when the flag is unset, and _save() does not
+    # clear it — so seeding it with the loadable alerts keeps this single save
+    # alive without changing the notification setup for anyone else.
+    doc.flags.notifications = _loadable_todo_notifications()
+
+    doc.save(ignore_permissions=True)
+    frappe.db.commit()
+
+    return {
+        "success": True,
+        "todo": {"name": doc.name, **{f: doc.get(f) for f in _ALUMNI_TODO_WRITABLE_FIELDS}},
+    }
+
+
+# ── Alumni Todo: detail, comments, attachments, activity ──────────────────────
+# The reference Task Manager reads all of this through generic endpoints —
+# /api/resource/Comment, /api/resource/File, frappe.desk.form.load.getdoc,
+# frappe.client.get_list, upload_file, frappe.desk.form.utils.add_comment.
+# alumni_guard blocks every one of those for an alumni session, so each is
+# mirrored here, scoped to a ToDo the caller actually owns.
+
+# Everything the detail drawer and the list row need from a ToDo.
+_ALUMNI_TODO_FIELDS = (
+    "name", "custom_subject", "description", "status", "priority",
+    "date", "custom_due_datetime", "allocated_to", "assigned_by", "owner",
+    "creation", "modified", "custom_todo_type", "custom_dynamic_route",
+    "reference_type", "reference_name", "custom_approval_type",
+    "custom_doctype_actions", "custom_funnel_task",
+    "custom_open_chatnext_assistant_on_action", "custom_redirect_only",
+    "custom_allow_revoke", "custom_reminders", "custom_remainders",
+)
+
+
+def _existing_todo_fields() -> list[str]:
+    """`_ALUMNI_TODO_FIELDS` narrowed to columns this site actually has.
+
+    The cn_todo_manager custom fields vary between installs — this site has
+    `custom_remainders` but not `custom_reminders`, and selecting a missing
+    column raises OperationalError 1054.
+
+    Checked against the DB rather than the meta on purpose: a field can exist in
+    the doctype definition while its column has never been synced (true for
+    `custom_reminders` here), and meta would happily hand back a name that then
+    fails in SQL.
+    """
+    return [
+        f for f in _ALUMNI_TODO_FIELDS if f == "name" or frappe.db.has_column("ToDo", f)
+    ]
+
+
+def _require_own_todo(name: str) -> tuple[str, dict]:
+    """Assert the session owns ``name`` and return ``(user, todo_row)``.
+
+    Ownership is ``allocated_to`` or ``assigned_by`` — the same rule Frappe's
+    own ``ToDo.has_permission`` applies. A missing ToDo and someone else's ToDo
+    give the identical 403 so the endpoint cannot be used to probe for names.
+    """
+    user = _require_alumni_session()
+
+    if not name:
+        frappe.local.response["http_status_code"] = 400
+        frappe.throw(_("A todo is required."))
+
+    row = frappe.db.get_value(
+        "ToDo", name, ["name", "allocated_to", "assigned_by"], as_dict=True
+    )
+    if not row or user not in (row.get("allocated_to"), row.get("assigned_by")):
+        frappe.local.response["http_status_code"] = 403
+        frappe.throw(_("Not authorized for this todo."), frappe.PermissionError)
+
+    return user, row
+
+
+@frappe.whitelist(methods=["GET", "POST"])
+def get_alumni_todo(name: str) -> dict:
+    """One ToDo in full, for the detail drawer.
+
+    Replaces ``frappe.desk.form.load.getdoc``. Returns only the fields the UI
+    reads rather than the whole document, so nothing incidental leaks.
+    """
+    _require_own_todo(name)
+
+    todo = frappe.db.get_value("ToDo", name, _existing_todo_fields(), as_dict=True) or {}
+    for field in ("creation", "modified", "date", "custom_due_datetime"):
+        todo[field] = _d(todo.get(field))
+
+    return {"success": True, "todo": todo}
+
+
+@frappe.whitelist(methods=["GET", "POST"])
+def get_alumni_todo_comments(name: str) -> dict:
+    """Comments on a ToDo, oldest first. Replaces a Comment list query."""
+    _require_own_todo(name)
+
+    rows = frappe.get_all(
+        "Comment",
+        filters={
+            "reference_doctype": "ToDo",
+            "reference_name": name,
+            "comment_type": "Comment",
+        },
+        fields=["name", "content", "comment_email", "comment_by", "creation"],
+        order_by="creation asc",
+    )
+    for row in rows:
+        row["creation"] = _d(row.get("creation"))
+
+    return {"success": True, "comments": rows}
+
+
+@frappe.whitelist(methods=["POST"])
+def add_alumni_todo_comment(name: str, content: str) -> dict:
+    """Add a comment to one's own ToDo. Replaces frappe.desk.form.utils.add_comment."""
+    user, _row = _require_own_todo(name)
+
+    content = (content or "").strip()
+    if not content:
+        frappe.local.response["http_status_code"] = 400
+        frappe.throw(_("A comment cannot be empty."))
+
+    full_name = frappe.db.get_value("User", user, "full_name") or user
+    comment = frappe.get_doc(
+        {
+            "doctype": "Comment",
+            "comment_type": "Comment",
+            "reference_doctype": "ToDo",
+            "reference_name": name,
+            "content": content,
+            "comment_email": user,
+            "comment_by": full_name,
+        }
+    ).insert(ignore_permissions=True)
+    frappe.db.commit()
+
+    return {
+        "success": True,
+        "comment": {
+            "name": comment.name,
+            "content": comment.content,
+            "comment_email": comment.comment_email,
+            "comment_by": comment.comment_by,
+            "creation": _d(comment.creation),
+        },
+    }
+
+
+@frappe.whitelist(methods=["GET", "POST"])
+def get_alumni_todo_attachments(name: str) -> dict:
+    """Files attached to a ToDo. Replaces a File list query."""
+    _require_own_todo(name)
+
+    rows = frappe.get_all(
+        "File",
+        filters={"attached_to_doctype": "ToDo", "attached_to_name": name},
+        fields=["name", "file_name", "file_url", "file_size", "is_private", "creation"],
+        order_by="creation desc",
+    )
+    for row in rows:
+        row["creation"] = _d(row.get("creation"))
+
+    return {"success": True, "attachments": rows}
+
+
+@frappe.whitelist(methods=["POST"])
+def upload_alumni_todo_attachment(todo: str) -> dict:
+    """Attach an uploaded file to one's own ToDo.
+
+    Accepts ``multipart/form-data`` with the file in ``file``, mirroring
+    `upload_alumni_ticket_attachment`. Honours the `allow_attachments_in_todos`
+    setting, so the portal cannot bypass a switched-off feature.
+    """
+    _require_own_todo(todo)
+
+    if not frappe.db.get_single_value("ToDo Settings", "allow_attachments_in_todos"):
+        frappe.local.response["http_status_code"] = 403
+        return {"success": False, "message": _("Attachments are disabled.")}
+
+    uploaded = None
+    if getattr(frappe, "request", None) and getattr(frappe.request, "files", None):
+        uploaded = frappe.request.files.get("file") or frappe.request.files.get("attachment")
+
+    if not uploaded:
+        frappe.local.response["http_status_code"] = 400
+        return {"success": False, "message": _("No file was provided.")}
+
+    from frappe.utils.file_manager import save_file
+
+    saved = save_file(
+        uploaded.filename or "attachment",
+        uploaded.stream.read(),
+        "ToDo",
+        todo,
+        is_private=1,
+    )
+    frappe.db.commit()
+
+    return {
+        "success": True,
+        "attachment": {
+            "name": saved.name,
+            "file_name": saved.file_name,
+            "file_url": saved.file_url,
+            "file_size": saved.file_size,
+            "is_private": saved.is_private,
+        },
+    }
+
+
+@frappe.whitelist(methods=["POST"])
+def delete_alumni_todo_attachment(todo: str, file_name: str) -> dict:
+    """Remove an attachment from one's own ToDo.
+
+    ``file_name`` is the File docname. It must already be attached to ``todo``,
+    so a File belonging to any other document can never be deleted here.
+    """
+    _require_own_todo(todo)
+
+    owned = frappe.db.exists(
+        "File",
+        {"name": file_name, "attached_to_doctype": "ToDo", "attached_to_name": todo},
+    )
+    if not owned:
+        frappe.local.response["http_status_code"] = 403
+        frappe.throw(_("Not authorized for this file."), frappe.PermissionError)
+
+    frappe.delete_doc("File", file_name, ignore_permissions=True, delete_permanently=False)
+    frappe.db.commit()
+    return {"success": True}
+
+
+@frappe.whitelist(methods=["GET", "POST"])
+def get_alumni_todo_activity(name: str) -> dict:
+    """Change history for a ToDo, newest first. Replaces a Version list query."""
+    _require_own_todo(name)
+
+    rows = frappe.get_all(
+        "Version",
+        filters={"ref_doctype": "ToDo", "docname": name},
+        fields=["name", "owner", "creation", "data"],
+        order_by="creation desc",
+        limit=50,
+    )
+
+    activity = []
+    for row in rows:
+        try:
+            changed = frappe.parse_json(row.get("data") or "{}").get("changed") or []
+        except Exception:
+            changed = []
+        activity.append(
+            {
+                "name": row["name"],
+                "owner": row["owner"],
+                "creation": _d(row.get("creation")),
+                # [fieldname, old, new] triples, as Frappe stores them.
+                "changed": [
+                    {"field": c[0], "from": c[1], "to": c[2]}
+                    for c in changed
+                    if isinstance(c, (list, tuple)) and len(c) >= 3
+                ],
+            }
+        )
+
+    return {"success": True, "activity": activity}
+
+
+@frappe.whitelist(methods=["POST"])
+def create_alumni_todo(
+    subject: str, description=None, priority=None, date=None
+) -> dict:
+    """Create a personal todo for the caller.
+
+    Backs the inline "type a title and press enter" create in the search bar.
+    Replaces ``POST /api/resource/ToDo``, which alumni_guard blocks.
+
+    The new ToDo is always allocated to the caller and carries no
+    reference_type/reference_name — an alumnus can only raise work for
+    themselves, never assign it to another user or attach it to an arbitrary
+    document.
+    """
+    user = _require_alumni_session()
+
+    subject = (subject or "").strip()
+    if not subject:
+        frappe.local.response["http_status_code"] = 400
+        frappe.throw(_("A title is required."))
+
+    if priority and priority not in ("Low", "Medium", "High"):
+        priority = None
+
+    doc = frappe.get_doc(
+        {
+            "doctype": "ToDo",
+            "custom_subject": subject,
+            # The reference app stores the title as Quill markup so the editor
+            # round-trips it; matched here so both apps render identically.
+            "description": (description or "").strip()
+            or f'<div class="ql-editor"><p>{frappe.utils.escape_html(subject)}</p></div>',
+            "allocated_to": user,
+            "assigned_by": user,
+            "status": "Open",
+            "priority": priority or "Medium",
+            "date": date or frappe.utils.nowdate(),
+        }
+    )
+    doc.flags.notifications = _loadable_todo_notifications()
+    doc.insert(ignore_permissions=True)
+    frappe.db.commit()
+
+    return {
+        "success": True,
+        "todo": frappe.db.get_value("ToDo", doc.name, _existing_todo_fields(), as_dict=True),
+    }
