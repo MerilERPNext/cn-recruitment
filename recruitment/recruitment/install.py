@@ -51,6 +51,8 @@ def after_migrate():
     backfill_employee_alumni_mirror()
     ensure_alumni_employee_request_workflow()
     ensure_alumni_hd_category_field()
+    ensure_alumni_todo_type_field()
+    ensure_alumni_todo_form_field()
     ensure_notice_portal_fields()
     ensure_education_presentation()
     ensure_tpo_email_templates()
@@ -170,6 +172,81 @@ def ensure_alumni_hd_category_field():
         frappe.clear_cache(doctype="HD Category")
     except Exception:
         frappe.logger("recruitment").warning("ensure_alumni_hd_category_field: skipped")
+
+
+def ensure_alumni_todo_form_field():
+    """Add `Todo Type.custom_alumni_form` — the form the portal renders.
+
+    There is no link from a ToDo (or Todo Type) to a Microapp Form Widget: the
+    ChatNext form is resolved at runtime from the Funnel node, which the Alumni
+    Portal cannot reach. This gives the portal a form it can render directly,
+    configured per Todo Type alongside the visibility flag.
+
+    Owned by this app as a Custom Field, so cn_todo_manager is untouched.
+    Idempotent.
+    """
+    if frappe.get_meta("Todo Type").get_field("custom_alumni_form"):
+        return
+    try:
+        from frappe.custom.doctype.custom_field.custom_field import create_custom_field
+
+        create_custom_field(
+            "Todo Type",
+            {
+                "fieldname": "custom_alumni_form",
+                "label": "Alumni Portal Form",
+                "fieldtype": "Link",
+                "options": "Microapp Form Widget",
+                "insert_after": "custom_show_in_alumni_portal",
+                "depends_on": "eval:doc.custom_show_in_alumni_portal",
+                "description": (
+                    "Form shown with todos of this type in the Alumni Portal. "
+                    "Leave empty for no form."
+                ),
+                "module": "Recruitment",
+            },
+            ignore_validate=True,
+        )
+        frappe.clear_cache(doctype="Todo Type")
+    except Exception:
+        frappe.logger("recruitment").warning("ensure_alumni_todo_form_field: skipped")
+
+
+def ensure_alumni_todo_type_field():
+    """Add `Todo Type.custom_show_in_alumni_portal` — the Alumni Portal gate.
+
+    A Custom Field owned by this app rather than an edit to cn_todo_manager's
+    doctype JSON, so the Todo Manager app stays untouched and a `bench update`
+    cannot overwrite it.
+
+    Opt-IN by design: a Todo Type is invisible to the Alumni Portal until
+    someone ticks this. New types added by other teams therefore cannot leak
+    into the portal by default. Idempotent.
+    """
+    if frappe.get_meta("Todo Type").get_field("custom_show_in_alumni_portal"):
+        return
+    try:
+        from frappe.custom.doctype.custom_field.custom_field import create_custom_field
+
+        create_custom_field(
+            "Todo Type",
+            {
+                "fieldname": "custom_show_in_alumni_portal",
+                "label": "Show in Alumni Portal",
+                "fieldtype": "Check",
+                "default": "0",
+                "insert_after": "is_active",
+                "description": (
+                    "When ticked, todos of this type are visible in the Alumni "
+                    "Portal. Leave unticked to keep them out of it."
+                ),
+                "module": "Recruitment",
+            },
+            ignore_validate=True,
+        )
+        frappe.clear_cache(doctype="Todo Type")
+    except Exception:
+        frappe.logger("recruitment").warning("ensure_alumni_todo_type_field: skipped")
 
 
 def ensure_alumni_user_link_field():

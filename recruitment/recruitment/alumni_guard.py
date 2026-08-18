@@ -67,9 +67,40 @@ _ALUMNI_METHOD_ALLOWLIST = {
     # through the normal Manager + Workflow flow; assignments that already
     # belonged to the company account are deliberately left there. All three
     # filter on frappe.session.user.
-    "cn_todo_manager.chatnext_todo_manager.api.todo_api.get_todo_list",
-    "cn_todo_manager.chatnext_todo_manager.api.todo_api.get_todo_categories",
+    # get_todo_list / get_todo_categories are deliberately NOT here. They ignore
+    # Todo Type.custom_show_in_alumni_portal, so reaching them directly would
+    # bypass the portal's category gate. The portal calls
+    # alumni_portal.get_alumni_todo_list / get_alumni_todo_categories, which
+    # apply the filter server-side before delegating to them.
+    # show_team_todos only answers a boolean, so it exposes no todo data.
     "cn_todo_manager.chatnext_todo_manager.api.todo_api.show_team_todos",
+    # ── ChatNext assistant runtime ───────────────────────────────────────────
+    # The assistant is a Frappe asset bundle: once opened it talks to nextai
+    # directly from the browser, so these have to be reachable or the modal
+    # renders and then fails on every call.
+    #
+    # The action that OPENS it is not here — that goes through
+    # alumni_portal.submit_alumni_todo_action, which checks ToDo ownership
+    # before delegating. nextai's own select_event_from_options stays blocked:
+    # it calls set_funnel_user() and reads the ToDo with ignore_permissions, so
+    # it performs no caller authorisation at all.
+    #
+    # KNOWN WEAKENING: these are session-scoped, not owner-scoped. Anyone
+    # holding a valid session id can drive that conversation, so the session id
+    # is the capability. Accepted deliberately to run the assistant client-side;
+    # revisit if the portal is ever served as a Frappe page, where none of this
+    # allowlisting would be needed.
+    "nextai.get_csrf_token.get_csrf_token",
+    "nextai.core_handshake.check",
+    "nextai.core_handshake.initiate",
+    "nextai.funnel.doctype.funnel.funnel_user.check",
+    "nextai.funnel.doctype.funnel.funnel_user.handshake",
+    "nextai.nextai.doctype.chatnext_settings.chatnext_settings.is_assistant_enabled",
+    "nextai.funnel.doctype.funnel_task.assistant_api.get_assistant_messages",
+    "nextai.funnel.doctype.funnel_task.triggers.chatnext_assistant_trigger.add_user_message",
+    "nextai.funnel.doctype.funnel_task.triggers.chatnext_assistant_trigger.submit_form",
+    "nextai.funnel.doctype.funnel_task.triggers.chatnext_assistant_trigger.on_complete_ui_action",
+    "nextai.funnel.doctype.funnel_task.triggers.chatnext_assistant_trigger.create_new_conversation",
 }
 
 _MSG_API_BLOCKED = "This API is not available for Alumni users."
