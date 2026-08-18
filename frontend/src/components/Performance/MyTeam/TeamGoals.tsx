@@ -16,9 +16,12 @@ import { Typography } from "../../shared/atoms/Typography";
 import Badge, { type BadgeVariant } from "../../shared/Badge";
 import Modal from "../../shared/Modal";
 
+import CardTable from "../../shared/CardTable";
+import DataListView from "../../DataListView";
 import Avatar from "../../shared/Avatar";
 import { APPROVAL_GOALS, GOAL_DETAIL, TEAM_MEMBERS } from "./mockData";
 import { GoalDetailData, GoalStatus } from "./types";
+import type { FrappePageResponse } from "../../../types/frappe";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -40,6 +43,9 @@ const statusSummary = [
   { label: "4 Off-track", variant: "danger" as BadgeVariant },
 ];
 
+const APPROVAL_TABLE_TITLES = ["", "Goal & Employee", "Weightage", "Status", "Actions"];
+const APPROVAL_TABLE_COLUMN_WIDTHS = ["40px", "minmax(0, 1fr)", "120px", "110px", "260px"];
+
 const getInitialsBg = (initials: string) => {
   const map: Record<string, string> = {
     PM: "bg-purple-100 text-purple-700",
@@ -48,6 +54,158 @@ const getInitialsBg = (initials: string) => {
     MS: "bg-orange-100 text-orange-700",
   };
   return map[initials] || "bg-gray-200 text-gray-700";
+};
+
+const GoalApprovalItem: React.FC<{
+  goal: any;
+  checked: boolean;
+  onToggleCheck: () => void;
+  onClick: () => void;
+}> = ({ goal, checked, onToggleCheck, onClick }) => {
+  const { isDesktop } = useScreenSize();
+
+  if (isDesktop) {
+    return (
+      <div
+        onClick={onClick}
+        className="grid gap-4 px-6 py-4 border-t border-gray-100 hover:bg-slate-50 transition-colors cursor-pointer items-center bg-white"
+        style={{ gridTemplateColumns: APPROVAL_TABLE_COLUMN_WIDTHS.join(" ") }}
+      >
+        <div onClick={(e) => e.stopPropagation()} className="flex items-center justify-center">
+          <input
+            aria-label={`Select ${goal.title}`}
+            type="checkbox"
+            checked={checked}
+            onChange={onToggleCheck}
+            className="h-4 w-4 rounded border-gray-300 text-blue-500 accent-blue-500 focus:ring-blue-500 cursor-pointer"
+          />
+        </div>
+
+        <div className="min-w-0">
+          <div className="mb-1 flex flex-wrap items-center gap-2">
+            <Badge label={goal.type} variant="purple" size="sm" />
+            <Avatar
+              name={goal.employeeName}
+              fontSize="text-xs"
+              size="h-8 w-8"
+              avatarBgColor={getInitialsBg(goal.employeeInitials).split(" ")[0]}
+              avatarTextColor={getInitialsBg(goal.employeeInitials).split(" ")[1]}
+            />
+            <Typography variant="caption" className="text-gray-600">
+              {goal.employeeName}
+            </Typography>
+            {goal.warning && (
+              <span className="inline-flex items-center gap-1 rounded-md bg-red-50 px-2 py-0.5 text-xs font-medium text-red-600">
+                <AlertCircle className="h-3 w-3" />
+                {goal.warning}
+              </span>
+            )}
+          </div>
+          <Typography variant="bodySmall" className="font-semibold text-gray-900 truncate">
+            {goal.title}
+          </Typography>
+          <Typography variant="caption" className="text-gray-500">
+            Submitted {goal.submittedAgo}
+          </Typography>
+        </div>
+
+        <div className="text-center">
+          <Typography
+            variant="bodySmall"
+            className={`font-bold ${goal.weightage > 30 ? "text-red-600" : "text-gray-900"}`}
+          >
+            {goal.weightage}%
+          </Typography>
+        </div>
+
+        <div className="text-center">
+          <span className="inline-flex items-center rounded-md bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700">
+            Submitted
+          </span>
+        </div>
+
+        <div className="flex items-center justify-end gap-2" onClick={(e) => e.stopPropagation()}>
+          <Button variant="outline" bgColor="text" size="sm" className="bg-white px-2.5 text-xs">
+            Send back
+          </Button>
+          <Button variant="outline" bgColor="error" size="sm" className="px-2.5 text-xs">
+            Reject
+          </Button>
+          <Button variant="contain" bgColor="success" size="sm" className="px-2.5 text-xs" onClick={onClick}>
+            Approve
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <article
+      onClick={onClick}
+      className="border border-slate-200 bg-white rounded-xl p-4 shadow-sm space-y-3 cursor-pointer hover:border-slate-300 transition-colors mb-3"
+    >
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2 min-w-0" onClick={(e) => e.stopPropagation()}>
+          <input
+            aria-label={`Select ${goal.title}`}
+            type="checkbox"
+            checked={checked}
+            onChange={onToggleCheck}
+            className="h-4 w-4 rounded border-gray-300 text-blue-500 accent-blue-500 focus:ring-blue-500 cursor-pointer"
+          />
+          <Avatar
+            name={goal.employeeName}
+            fontSize="text-xs"
+            size="h-7 w-7"
+            avatarBgColor={getInitialsBg(goal.employeeInitials).split(" ")[0]}
+            avatarTextColor={getInitialsBg(goal.employeeInitials).split(" ")[1]}
+          />
+          <Typography variant="bodySmall" className="font-semibold text-slate-900 truncate">
+            {goal.employeeName}
+          </Typography>
+        </div>
+        <div className="flex items-center gap-1.5 shrink-0">
+          <Badge label={goal.type} variant="purple" size="sm" />
+          <span className="inline-flex items-center rounded-md bg-amber-50 px-2.5 py-0.5 text-xs font-semibold text-amber-700">
+            Submitted
+          </span>
+        </div>
+      </div>
+
+      <div>
+        <Typography variant="bodySmall" className="font-bold text-slate-900 break-words mb-1">
+          {goal.title}
+        </Typography>
+        <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
+          <span>Submitted {goal.submittedAgo}</span>
+          <span className="font-semibold text-slate-700">
+            Weightage:{" "}
+            <span className={goal.weightage > 30 ? "text-red-600 font-bold" : "text-slate-900"}>
+              {goal.weightage}%
+            </span>
+          </span>
+        </div>
+        {goal.warning && (
+          <div className="mt-2 inline-flex items-center gap-1 rounded-md bg-red-50 px-2 py-1 text-xs font-medium text-red-600">
+            <AlertCircle className="h-3.5 w-3.5" />
+            {goal.warning}
+          </div>
+        )}
+      </div>
+
+      <div className="flex items-center gap-2 pt-2 border-t border-slate-100" onClick={(e) => e.stopPropagation()}>
+        <Button variant="outline" bgColor="text" size="sm" className="flex-1 bg-white text-xs py-1.5">
+          Send back
+        </Button>
+        <Button variant="outline" bgColor="error" size="sm" className="flex-1 text-xs py-1.5">
+          Reject
+        </Button>
+        <Button variant="contain" bgColor="success" size="sm" className="flex-1 text-xs py-1.5" onClick={onClick}>
+          Approve
+        </Button>
+      </div>
+    </article>
+  );
 };
 
 // ─── Goal Detail Modal ────────────────────────────────────────────────────────
@@ -328,6 +486,27 @@ const TeamGoals: React.FC = () => {
     });
   };
 
+  const fetchApprovalGoals = React.useCallback(async (): Promise<FrappePageResponse> => {
+    return {
+      data: APPROVAL_GOALS as unknown as FrappePageResponse["data"],
+      totalCount: APPROVAL_GOALS.length,
+      hasNextPage: false,
+      pages: [],
+    };
+  }, []);
+
+  const ItemComponent = React.useCallback(
+    ({ item }: { item: any }) => (
+      <GoalApprovalItem
+        goal={item}
+        checked={checkedGoals.has(item.id)}
+        onToggleCheck={() => toggleCheck(item.id)}
+        onClick={() => handleGoalClick(item)}
+      />
+    ),
+    [checkedGoals],
+  );
+
 
 
   return (
@@ -435,122 +614,44 @@ const TeamGoals: React.FC = () => {
             </div>
           </div>
 
-          <div className={isCompact ? "space-y-3 bg-slate-50/60 p-3 sm:p-4" : "divide-y divide-gray-100"}>
-            {APPROVAL_GOALS.map((goal) => (
-              <article
-                key={goal.id}
-                onClick={() => handleGoalClick(goal)}
-                className={`grid cursor-pointer gap-4 transition-colors hover:bg-gray-50 ${
-                  isCompact
-                    ? "grid-cols-[auto_1fr] rounded-xl border border-slate-200 bg-white p-4 shadow-sm"
-                    : "grid-cols-[auto_minmax(0,1fr)_120px_110px_260px] items-center px-5 py-4"
-                }`}
-              >
-                <label
-                  className={`flex h-4 w-4 items-start justify-center`}
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <input
-                    aria-label={`Select ${goal.title}`}
-                    type="checkbox"
-                    checked={checkedGoals.has(goal.id)}
-                    onChange={() => toggleCheck(goal.id)}
-                    className="h-4 w-4 rounded border-gray-300 text-blue-500 accent-blue-500 focus:ring-blue-500 cursor-pointer"
-                  />
-                </label>
-
-                <div className="min-w-0">
-                  <div className="mb-1 flex flex-wrap items-center gap-2">
-                    <Badge label={goal.type} variant="purple" size="sm" />
-                    <Avatar
-                      name={goal.employeeName}
-                      fontSize="text-xs"
-                      size="h-8 w-8"
-                      avatarBgColor={
-                        getInitialsBg(goal.employeeInitials).split(" ")[0]
-                      }
-                      avatarTextColor={
-                        getInitialsBg(goal.employeeInitials).split(" ")[1]
-                      }
-                    />
-                    <Typography variant="caption" className="text-gray-600">
-                      {goal.employeeName}
-                    </Typography>
-                    {goal.warning && (
-                      <span className="inline-flex items-center gap-1 rounded-md bg-red-50 px-2 py-0.5 text-xs font-medium text-red-600">
-                        <AlertCircle className="h-3 w-3" />
-                        {goal.warning}
-                      </span>
-                    )}
-                  </div>
-                  <Typography
-                    variant="bodySmall"
-                    className={`font-semibold text-gray-900 ${isCompact ? "break-words" : "truncate"}`}
-                  >
-                    {goal.title}
-                  </Typography>
-                  <Typography variant="caption" className="text-gray-500">
-                    Submitted {goal.submittedAgo}
-                  </Typography>
-                </div>
-
-                <div className={isCompact ? "col-start-2 rounded-lg bg-slate-50 p-3" : ""}>
-                  <Typography
-                    variant="label"
-                    className="mb-0.5 block font-semibold uppercase text-slate-500"
-                  >
-                    Weightage
-                  </Typography>
-                  <Typography
-                    variant="bodyMedium"
-                    className={`font-bold ${goal.weightage > 30 ? "text-red-600" : "text-gray-900"}`}
-                  >
-                    {goal.weightage}%
-                  </Typography>
-                </div>
-
-                <div className={isCompact ? "col-start-2" : ""}>
-                  <span className="inline-flex items-center rounded-md bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700">
-                    Submitted
-                  </span>
-                </div>
-
-                <div
-                  className={`flex flex-wrap gap-2 ${isCompact ? "col-span-2 justify-center sm:col-start-2" : "justify-end"}`}
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <Button
-                    variant="outline"
-                    bgColor="text"
-                    size="sm"
-                    className={
-                      isCompact
-                        ? "min-w-24 flex-1 bg-white sm:flex-none"
-                        : "bg-white"
-                    }
-                  >
-                    Send back
-                  </Button>
-                  <Button
-                    variant="outline"
-                    bgColor="error"
-                    size="sm"
-                    className={isCompact ? "min-w-24 flex-1 sm:flex-none" : ""}
-                  >
-                    Reject
-                  </Button>
-                  <Button
-                    variant="contain"
-                    bgColor="success"
-                    size="sm"
-                    className={isCompact ? "min-w-24 flex-1 sm:flex-none" : ""}
-                  >
-                    Approve
-                  </Button>
-                </div>
-              </article>
-            ))}
-          </div>
+          {isCompact ? (
+            <div className="space-y-3 border-t border-slate-100 bg-slate-50/60 p-3 sm:p-4">
+              <DataListView
+                queryKey="team-approval-goals-mobile"
+                fetchFunction={fetchApprovalGoals}
+                isSearch={false}
+                showPagination={false}
+                showRefreshButton={false}
+                pageSize={APPROVAL_GOALS.length}
+                infiniteScroll={false}
+                loadMorePagination={false}
+                enableUrlParams={false}
+                getItemKey={(item: any) => item.id}
+                ItemComponent={ItemComponent}
+              />
+            </div>
+          ) : (
+            <CardTable
+              titles={APPROVAL_TABLE_TITLES}
+              columnWidths={APPROVAL_TABLE_COLUMN_WIDTHS}
+            >
+              <div className="w-full min-w-[1080px]">
+                <DataListView
+                  queryKey="team-approval-goals"
+                  fetchFunction={fetchApprovalGoals}
+                  isSearch={false}
+                  showPagination={false}
+                  showRefreshButton={false}
+                  pageSize={APPROVAL_GOALS.length}
+                  infiniteScroll={false}
+                  loadMorePagination={false}
+                  enableUrlParams={false}
+                  getItemKey={(item: any) => item.id}
+                  ItemComponent={ItemComponent}
+                />
+              </div>
+            </CardTable>
+          )}
         </section>
 
         {/* All Team Goals Section */}
