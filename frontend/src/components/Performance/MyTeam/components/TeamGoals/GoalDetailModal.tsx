@@ -8,21 +8,13 @@ import Modal from "../../../../shared/Modal";
 import Avatar from "../../../../shared/Avatar";
 import { GoalDetailData } from "../../types";
 
+import { getInitials } from "../../../../../utils/helperUtils";
+
 interface GoalDetailModalProps {
   goal: GoalDetailData;
   onClose: () => void;
   onApprove: () => void;
 }
-
-const getInitialsBg = (initials: string) => {
-  const map: Record<string, string> = {
-    PM: "bg-purple-100 text-purple-700",
-    KI: "bg-blue-100 text-blue-700",
-    AB: "bg-green-100 text-green-700",
-    MS: "bg-orange-100 text-orange-700",
-  };
-  return map[initials] || "bg-gray-200 text-gray-700";
-};
 
 export const GoalDetailModal: React.FC<GoalDetailModalProps> = ({
   goal,
@@ -72,15 +64,11 @@ export const GoalDetailModal: React.FC<GoalDetailModalProps> = ({
             </Typography>
             <div className="flex items-center gap-2">
               <Avatar
-                name={goal.employeeName}
+                name={goal.employeeName || getInitials(goal.employeeName)}
                 fontSize="text-xs"
                 size="h-8 w-8"
-                avatarBgColor={
-                  getInitialsBg(goal.employeeInitials).split(" ")[0]
-                }
-                avatarTextColor={
-                  getInitialsBg(goal.employeeInitials).split(" ")[1]
-                }
+                avatarBgColor="bg-blue-50"
+                avatarTextColor="text-blue-600"
               />
               <Typography variant="bodySmall" className="text-gray-500">
                 {goal.employeeName} · {goal.designation} · submitted{" "}

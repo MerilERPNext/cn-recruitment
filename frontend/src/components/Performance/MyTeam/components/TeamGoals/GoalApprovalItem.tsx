@@ -22,15 +22,6 @@ export const APPROVAL_TABLE_COLUMN_WIDTHS = [
   "minmax(260px, 1.8fr)",
 ];
 
-const getInitialsBg = (initials: string) => {
-  const map: Record<string, string> = {
-    PM: "bg-purple-100 text-purple-700",
-    KI: "bg-blue-100 text-blue-700",
-    AB: "bg-green-100 text-green-700",
-    MS: "bg-orange-100 text-orange-700",
-  };
-  return map[initials] || "bg-gray-200 text-gray-700";
-};
 
 interface GoalApprovalItemProps {
   goal: any;
@@ -71,8 +62,8 @@ export const GoalApprovalItem: React.FC<GoalApprovalItemProps> = ({
               name={goal.employeeName}
               fontSize="text-xs"
               size="h-8 w-8"
-              avatarBgColor={getInitialsBg(goal.employeeInitials).split(" ")[0]}
-              avatarTextColor={getInitialsBg(goal.employeeInitials).split(" ")[1]}
+              avatarBgColor="bg-blue-50"
+              avatarTextColor="text-blue-600"
             />
             <Typography variant="caption" className="text-gray-600">
               {goal.employeeName}
@@ -142,8 +133,8 @@ export const GoalApprovalItem: React.FC<GoalApprovalItemProps> = ({
             name={goal.employeeName}
             fontSize="text-xs"
             size="h-7 w-7"
-            avatarBgColor={getInitialsBg(goal.employeeInitials).split(" ")[0]}
-            avatarTextColor={getInitialsBg(goal.employeeInitials).split(" ")[1]}
+            avatarBgColor="bg-blue-50"
+            avatarTextColor="text-blue-600"
           />
           <Typography variant="bodySmall" className="font-semibold text-slate-900 truncate">
             {goal.employeeName}

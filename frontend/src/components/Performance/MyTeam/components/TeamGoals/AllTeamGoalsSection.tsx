@@ -6,6 +6,8 @@ import Avatar from "../../../../shared/Avatar";
 import { useScreenSize } from "../../../../../hooks/useScreenSize";
 import { GoalStatus } from "../../types";
 
+import { getInitials } from "../../../../../utils/helperUtils";
+
 const statusVariant: Record<GoalStatus, BadgeVariant> = {
   "On-track": "success",
   "At-risk": "warning",
@@ -23,16 +25,6 @@ const statusSummary = [
   { label: "10 At-risk", variant: "warning" as BadgeVariant },
   { label: "4 Off-track", variant: "danger" as BadgeVariant },
 ];
-
-const getInitialsBg = (initials: string) => {
-  const map: Record<string, string> = {
-    PM: "bg-purple-100 text-purple-700",
-    KI: "bg-blue-100 text-blue-700",
-    AB: "bg-green-100 text-green-700",
-    MS: "bg-orange-100 text-orange-700",
-  };
-  return map[initials] || "bg-gray-200 text-gray-700";
-};
 
 interface AllTeamGoalsSectionProps {
   totalGoals: number;
@@ -112,15 +104,11 @@ export const AllTeamGoalsSection: React.FC<AllTeamGoalsSectionProps> = ({
               >
                 <div className="flex min-w-0 flex-1 items-start gap-3 sm:items-center">
                   <Avatar
-                    name={member.name}
+                    name={member.name || getInitials(member.name)}
                     size="h-8 w-8"
                     fontSize="text-xs"
-                    avatarBgColor={
-                      getInitialsBg(member.initials).split(" ")[0]
-                    }
-                    avatarTextColor={
-                      getInitialsBg(member.initials).split(" ")[1]
-                    }
+                    avatarBgColor="bg-blue-50"
+                    avatarTextColor="text-blue-600"
                   />
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
