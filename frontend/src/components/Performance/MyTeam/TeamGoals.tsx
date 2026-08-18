@@ -118,10 +118,12 @@ const GoalApprovalItem: React.FC<{
           </Typography>
         </div>
 
-        <div className="text-center">
-          <span className="inline-flex items-center rounded-md bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700">
-            Submitted
-          </span>
+        <div className="flex justify-center">
+          <Badge
+            label={goal.status ?? "Submitted"}
+            variant={(goal.status || "Submitted").toLowerCase() === "draft" ? "warning" : "success"}
+            size="sm"
+          />
         </div>
 
         <div className="flex items-center justify-end gap-2" onClick={(e) => e.stopPropagation()}>
@@ -166,9 +168,11 @@ const GoalApprovalItem: React.FC<{
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
           <Badge label={goal.type} variant="purple" size="sm" />
-          <span className="inline-flex items-center rounded-md bg-amber-50 px-2.5 py-0.5 text-xs font-semibold text-amber-700">
-            Submitted
-          </span>
+          <Badge
+            label={goal.status ?? "Submitted"}
+            variant={(goal.status || "Submitted").toLowerCase() === "draft" ? "warning" : "success"}
+            size="sm"
+          />
         </div>
       </div>
 
