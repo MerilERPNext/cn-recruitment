@@ -433,11 +433,29 @@ def get_job_offer_print_preview_url(job_offer):
 
 
 @frappe.whitelist(allow_guest=True)
-def download_job_offer_pdf(appl, token=None):
-    """Download Job Offer PDF for a given applicant — guest, token-gated."""
+def download_job_offer_pdf(appl, token=None, separate=None):
+    """Download Job Offer PDF for a given applicant — guest, token-gated.
+
+    Default (``separate`` omitted / falsy): unchanged — streams ONE PDF file (all
+    configured letters merged into a single document when there is more than one),
+    exactly as before. Existing callers are unaffected.
+
+    Opt-in (``separate`` truthy, e.g. ``&separate=1``): returns JSON instead, with
+    each letter as its own base64 PDF, so the portal can show / download the letters
+    individually (e.g. a trainee letter AND a permanent offer letter mapped to the
+    same Employment Type)::
+
+        {"jo_id": "...", "count": 2, "letters": [
+            {"index": 0, "print_format": "Intern Offer Letter",
+             "filename": "HR-OFF-... - Intern Offer Letter.pdf", "pdf_base64": "..."},
+            ...
+        ]}
+    """
     if not appl:
         frappe.throw("Missing applicant parameter")
     _authorize_offer(appl, token, "read")
+
+    want_separate = cint(separate) if separate is not None else 0
 
     original_user = frappe.session.user
     frappe.set_user("Administrator")
@@ -452,7 +470,31 @@ def download_job_offer_pdf(appl, token=None):
 
         jo_doc = frappe.get_doc("Job Offer", jo_id)
 
-        # Document Template (when enabled) or Print Format (default).
+        # Opt-in: return every letter separately as base64 JSON.
+        if want_separate:
+            import base64
+
+            # Same source of truth as the merged/email paths, so the letters here are
+            # exactly the ones the candidate is sent — just kept separate.
+            documents = get_job_offer_pdfs(jo_doc) or []
+            # Print-format names in the same order, to label each letter (best-effort;
+            # a Document-Template render collapses to a single doc with no format name).
+            formats = get_job_offer_print_formats(jo_doc)
+
+            letters = []
+            for idx, (pdf_bytes, filename) in enumerate(documents):
+                if not pdf_bytes:
+                    continue
+                letters.append({
+                    "index": idx,
+                    "print_format": formats[idx] if idx < len(formats) else None,
+                    "filename": filename,
+                    "pdf_base64": base64.b64encode(pdf_bytes).decode(),
+                })
+
+            return {"jo_id": jo_id, "count": len(letters), "letters": letters}
+
+        # Default (unchanged): single merged PDF streamed as a file.
         pdf_content, filename = get_job_offer_pdf(jo_doc)
 
         frappe.local.response.filename = filename
@@ -460,6 +502,7 @@ def download_job_offer_pdf(appl, token=None):
         frappe.local.response.type = "pdf"
     finally:
         frappe.set_user(original_user)
+
 
 @frappe.whitelist(allow_guest=True)
 def preview_job_offer_html(appl, token=None):
@@ -661,8 +704,21 @@ def get_job_offer_summary(appl, token=None):
             precision = 0 if v == int(v) else 2
             return fmt_money(v, precision=precision)
 
+        # --- Compensation: driven by what's actually on the offer ---------------
+        # Populate the stipend and/or the fixed/variable/total fields based on which
+        # amounts are present, independent of role. Normally only one set is filled
+        # (a stipend for a trainee, or fixed pay for an employee); a Trainee sent BOTH
+        # a stipend letter and a fixed-pay letter simply has both filled, so the UI
+        # shows whichever section(s) are non-null. When nothing is filled the role
+        # default keeps the original shape (stipend for Intern, else fixed).
+        stipend_val = flt(stipend)
+        fixed_val = flt(jo.get("custom_total_fixed_pay") or jo.get("custom_base_salary"))
+        variable_val = flt(jo.get("custom_variable_incentive"))
+        has_stipend = stipend_val > 0
+        has_fixed = fixed_val > 0 or variable_val > 0
+
         compensation = {
-            "compensation_type": "stipend" if is_intern else "fixed_variable",
+            "compensation_type": None,
             "stipend": None,
             "fixed": None,
             "variable": None,
@@ -674,26 +730,50 @@ def get_job_offer_summary(appl, token=None):
             "total_formatted": None,
         }
 
-        if is_intern:
-            compensation["stipend"] = num(stipend)
-            compensation["stipend_formatted"] = fmt(stipend)
+        if has_stipend:
+            compensation["stipend"] = num(stipend_val)
+            compensation["stipend_formatted"] = fmt(stipend_val)
+        if has_fixed:
+            compensation["fixed"] = num(fixed_val)
+            compensation["variable"] = num(variable_val)
+            compensation["total"] = num(fixed_val + variable_val)
+            compensation["fixed_formatted"] = fmt(fixed_val)
+            compensation["variable_formatted"] = fmt(variable_val)
+            compensation["total_formatted"] = fmt(fixed_val + variable_val)
+
+        # Nothing filled -> fall back to the original role-based default so the
+        # response shape and values are unchanged for those offers.
+        if not has_stipend and not has_fixed:
+            if is_intern:
+                compensation["stipend"] = num(stipend_val)
+                compensation["stipend_formatted"] = fmt(stipend_val)
+            else:
+                compensation["fixed"] = num(fixed_val)
+                compensation["variable"] = num(variable_val)
+                compensation["total"] = num(fixed_val + variable_val)
+                compensation["fixed_formatted"] = fmt(fixed_val)
+                compensation["variable_formatted"] = fmt(variable_val)
+                compensation["total_formatted"] = fmt(fixed_val + variable_val)
+
+        # Hint for the UI: "both" when a stipend AND fixed pay are present (the
+        # trainee dual-letter case), else the single kind as before.
+        if has_stipend and has_fixed:
+            compensation["compensation_type"] = "both"
+        elif has_stipend:
+            compensation["compensation_type"] = "stipend"
+        elif has_fixed:
+            compensation["compensation_type"] = "fixed_variable"
         else:
-            # Fixed pay lives on `custom_total_fixed_pay` in the grade-based offer
-            # model; fall back to the legacy `custom_base_salary` for older offers
-            # that predate it (either field being unset resolves to 0).
-            fixed = flt(jo.get("custom_total_fixed_pay") or jo.get("custom_base_salary"))
-            variable = flt(jo.get("custom_variable_incentive"))
-            compensation["fixed"] = num(fixed)
-            compensation["variable"] = num(variable)
-            compensation["total"] = num(fixed + variable)
-            compensation["fixed_formatted"] = fmt(fixed)
-            compensation["variable_formatted"] = fmt(variable)
-            compensation["total_formatted"] = fmt(fixed + variable)
+            compensation["compensation_type"] = "stipend" if is_intern else "fixed_variable"
+
+        duration_display = (
+            f"{duration} Month{'s' if int(duration) != 1 else ''}" if duration else None
+        )
 
         return {
             "applicant_name": f"{jo.get('applicant_name') or ''} {jo.get('applicant_last_name') or ''}".strip(),
             "designation": designation_name or "Intern",
-            "duration_display": f"{duration} Month{'s' if int(duration) != 1 else ''}" if duration else None,
+            "duration_display": duration_display,
             "expected_doj_display": formatdate(expected_doj) if expected_doj else None,
             "expiry_display": expiry_display,
             "employment_type": employment_type,
