@@ -45,8 +45,10 @@ def get_context(context):
             # as an embedded PDF, otherwise the Print Format HTML (unchanged).
             import base64
             from recruitment.job_offer_utils import (
-                get_job_offer_print_format,
+                get_job_offer_pdf,
+                get_job_offer_print_formats,
                 get_job_offer_document_template,
+                render_job_offer_html,
                 render_job_offer_via_document_template,
             )
 
@@ -69,8 +71,25 @@ def get_context(context):
             # Fall back to the Print Format HTML if the template is off or the
             # render failed (already logged inside the helper).
             if not context.use_document_template:
-                pf = get_job_offer_print_format(context.doc)
-                context.print = frappe.get_print('Job Offer', context.doc, print_format=pf)
+                formats = get_job_offer_print_formats(context.doc)
+                if len(formats) > 1:
+                    # An Employment Type mapped to several letters (a Management
+                    # Trainee gets the trainee letter and the permanent offer
+                    # letter) cannot be shown as raw HTML without their
+                    # stylesheets colliding, so the candidate reads the same
+                    # merged PDF they are sent.
+                    pdf_bytes, _fname = get_job_offer_pdf(context.doc)
+                    if pdf_bytes:
+                        context.use_document_template = 1
+                        context.offer_pdf_data_uri = (
+                            'data:application/pdf;base64,'
+                            + base64.b64encode(pdf_bytes).decode()
+                        )
+
+            if not context.use_document_template:
+                context.print = render_job_offer_html(
+                    context.doc, formats[0] if formats else None
+                )
 
             # Fetch Job Offer fields for sidebar (only fields that exist)
             jo_meta = frappe.get_meta('Job Offer')

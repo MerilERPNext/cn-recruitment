@@ -66,17 +66,23 @@ def _resolve_offer_employment_type(job_offer):
     return None
 
 
-def get_job_offer_print_format(job_offer=None):
-    """Resolve which Job Offer Print Format to use.
+def get_job_offer_print_formats(job_offer=None):
+    """Resolve every Job Offer Print Format an offer should be sent with, in order.
 
-    Picks the print format mapped to the offer's Employment Type in
-    Recruitment Settings (`job_offer_print_format_mapping`) — read from the Job
-    Offer, falling back to the linked Job Applicant. Falls back to the single
-    `job_offer_print_format` default when there is no matching row.
+    Recruitment Settings' `job_offer_print_format_mapping` may carry more than
+    one row for the same Employment Type, and all of them apply: a Management
+    Trainee, for instance, is sent both the trainee letter and the permanent
+    offer letter. Rows are returned in table order, so the row order in the
+    settings decides the order of the attachments.
 
-    Backward compatible by design: an empty mapping table resolves to the exact
-    same value as before. Never raises — on any error it degrades to the default
-    (or None / Frappe default) so existing render / download paths keep working.
+    The Employment Type is read from the Job Offer, falling back to the linked
+    Job Applicant. Falls back to the single `job_offer_print_format` default
+    when no row matches.
+
+    Backward compatible by design: a mapping table with at most one row per
+    Employment Type resolves to exactly what it did before. Never raises — on
+    any error it degrades to the default so render / download paths keep
+    working.
 
     `job_offer` may be a Job Offer name (str) or a Job Offer doc; if omitted,
     only the default is returned.
@@ -87,23 +93,39 @@ def get_job_offer_print_format(job_offer=None):
         settings = None
 
     default_pf = (getattr(settings, "job_offer_print_format", None) or None) if settings else None
+    fallback = [default_pf] if default_pf else []
 
     if not job_offer or not settings:
-        return default_pf
+        return fallback
 
     try:
         employment_type = _resolve_offer_employment_type(job_offer)
         if not employment_type:
-            return default_pf
+            return fallback
 
+        formats = []
         for row in (settings.get("job_offer_print_format_mapping") or []):
             if row.employment_type == employment_type and row.print_format:
-                return row.print_format
+                if row.print_format not in formats:
+                    formats.append(row.print_format)
+        if formats:
+            return formats
     except Exception:
         # Any unexpected issue -> safe default, never break rendering.
         pass
 
-    return default_pf
+    return fallback
+
+
+def get_job_offer_print_format(job_offer=None):
+    """The offer's primary Job Offer Print Format, or None.
+
+    The single-format view of ``get_job_offer_print_formats`` — the first
+    mapped row. Used where only one document can be shown, such as the
+    print-view URL behind the desk 'Preview Offer Letter' button.
+    """
+    formats = get_job_offer_print_formats(job_offer)
+    return formats[0] if formats else None
 
 
 def get_job_offer_document_template(job_offer=None):
@@ -235,12 +257,21 @@ def render_job_offer_via_document_template(job_offer, template_name):
         return None, None
 
 
-def get_job_offer_pdf(job_offer):
-    """Return ``(pdf_bytes, filename)`` for a Job Offer using the configured
-    source: a Document Template when the toggle is on and one resolves,
-    otherwise the Print Format (existing behaviour).
+# How long a rendered offer PDF is reused for. Short, because it only exists to
+# stop repeat views re-spawning wkhtmltopdf; correctness comes from the key.
+OFFER_PDF_CACHE_TTL = 5 * 60
 
-    Central helper so the email / download / bulk flows share one decision.
+
+def get_job_offer_pdfs(job_offer):
+    """Return ``[(pdf_bytes, filename), ...]`` — every letter this offer is sent with.
+
+    The source is the configured one: a Document Template when the toggle is on
+    and one resolves (always a single document, since a template is an explicit
+    override of the print-format path), otherwise the Print Formats mapped to
+    the offer's Employment Type. That mapping is what makes a Management Trainee
+    receive two letters — the trainee letter and the permanent offer letter.
+
+    Central helper so the email / download / preview flows share one decision.
     ``job_offer`` may be a Job Offer name (str) or doc.
     """
     jo_name = job_offer if isinstance(job_offer, str) else job_offer.get("name")
@@ -250,14 +281,129 @@ def get_job_offer_pdf(job_offer):
     if template_name:
         pdf_bytes, filename = render_job_offer_via_document_template(job_offer, template_name)
         if pdf_bytes:
-            return pdf_bytes, filename
+            return [(pdf_bytes, filename)]
         # Render failed — fall through to the Print Format path (already logged).
 
-    pf = get_job_offer_print_format(job_offer)
-    pdf_bytes = frappe.get_print(
-        "Job Offer", jo_name, doc=jo_doc, print_format=pf, as_pdf=True
-    )
-    return pdf_bytes, f"{jo_name}.pdf"
+    formats = get_job_offer_print_formats(job_offer) or [None]
+    single = len(formats) == 1
+
+    documents = []
+    for pf in formats:
+        pdf_bytes = frappe.get_print(
+            "Job Offer", jo_name, doc=jo_doc, print_format=pf, as_pdf=True
+        )
+        # One letter keeps the plain filename it has always had; several are
+        # named after their format so the candidate can tell them apart.
+        filename = f"{jo_name}.pdf" if single or not pf else f"{jo_name} - {pf}.pdf"
+        documents.append((pdf_bytes, filename))
+
+    return documents
+
+
+def get_job_offer_pdf(job_offer):
+    """Return ``(pdf_bytes, filename)`` for a Job Offer as a single document.
+
+    Every configured letter, merged into one PDF when there is more than one, so
+    callers that can only hand over a single file (the candidate's download, the
+    preview panes) still give the candidate everything that was sent.
+
+    Rendering costs one wkhtmltopdf subprocess per letter, and the preview and
+    portal paths that call this are repeatable — ``preview_job_offer_html`` is a
+    guest endpoint — so the result is cached briefly. The cache key carries the
+    Job Offer's and every print format's ``modified`` stamp, so editing either
+    the offer or a letter invalidates it instead of serving a stale document.
+    Only a saved name is cached; passing a doc renders fresh, which is what the
+    send path does.
+    """
+    cache_key = _offer_pdf_cache_key(job_offer) if isinstance(job_offer, str) else None
+    if cache_key:
+        cached = frappe.cache.get_value(cache_key)
+        if cached:
+            return cached["pdf"], cached["filename"]
+
+    documents = get_job_offer_pdfs(job_offer)
+    if not documents:
+        return None, None
+
+    jo_name = job_offer if isinstance(job_offer, str) else job_offer.get("name")
+    if len(documents) == 1:
+        pdf_bytes, filename = documents[0]
+    else:
+        pdf_bytes, filename = merge_pdfs(documents), f"{jo_name}.pdf"
+
+    if cache_key and pdf_bytes:
+        frappe.cache.set_value(
+            cache_key,
+            {"pdf": pdf_bytes, "filename": filename},
+            expires_in_sec=OFFER_PDF_CACHE_TTL,
+        )
+
+    return pdf_bytes, filename
+
+
+def _offer_pdf_cache_key(jo_name):
+    """Cache key for a Job Offer's merged PDF, versioned on everything that can
+    change what the PDF looks like. Returns None if the version cannot be read,
+    which simply disables caching for that call."""
+    import hashlib
+
+    try:
+        stamps = [str(frappe.db.get_value("Job Offer", jo_name, "modified"))]
+        for pf in get_job_offer_print_formats(jo_name):
+            stamps.append(str(frappe.get_cached_value("Print Format", pf, "modified")))
+    except Exception:
+        return None
+
+    digest = hashlib.sha1("|".join([jo_name] + stamps).encode()).hexdigest()
+    return f"job_offer_pdf::{digest}"
+
+
+def render_job_offer_html(job_offer, print_format=None):
+    """Render an offer letter as HTML for a browser rather than for a PDF.
+
+    ``frappe.get_print`` stamps ``form_dict.pdf_generator`` whether or not a PDF
+    is actually being produced, and a print format cannot tell the difference at
+    render time. Formats that compensate for a PDF engine's quirks — the
+    HomeFirst letters scale themselves up for an unpatched-Qt wkhtmltopdf — would
+    therefore apply that compensation to on-screen HTML too. Pre-setting the
+    marker to something that is not a PDF generator tells them this render is
+    screen-bound.
+    """
+    previous = frappe.local.form_dict.get("pdf_generator")
+    frappe.local.form_dict.pdf_generator = "screen"
+    try:
+        return frappe.get_print("Job Offer", job_offer, print_format=print_format)
+    finally:
+        if previous is None:
+            frappe.local.form_dict.pop("pdf_generator", None)
+        else:
+            frappe.local.form_dict.pdf_generator = previous
+
+
+def merge_pdfs(documents):
+    """Concatenate ``[(pdf_bytes, filename), ...]`` into one PDF's bytes.
+
+    Falls back to the first document if merging fails, so a download can never
+    break on a malformed page tree.
+    """
+    import io
+
+    try:
+        from pypdf import PdfReader, PdfWriter
+
+        writer = PdfWriter()
+        for pdf_bytes, _filename in documents:
+            for page in PdfReader(io.BytesIO(pdf_bytes)).pages:
+                writer.add_page(page)
+        merged = io.BytesIO()
+        writer.write(merged)
+        return merged.getvalue()
+    except Exception:
+        frappe.log_error(
+            title="Job Offer PDF merge failed",
+            message=frappe.get_traceback(),
+        )
+        return documents[0][0]
 
 
 @frappe.whitelist()
@@ -347,10 +493,22 @@ def preview_job_offer_html(appl, token=None):
                 )
                 return {"html": html, "jo_id": jo_id}
 
-        pf = get_job_offer_print_format(jo_id)
+        formats = get_job_offer_print_formats(jo_id)
 
-        # Exact same call your Jinja route makes on line 37 — just no as_pdf.
-        html = frappe.get_print("Job Offer", jo_id, print_format=pf)
+        # More than one letter cannot be shown as raw HTML without their
+        # stylesheets colliding, so the candidate is shown the same merged PDF
+        # the download gives them.
+        if len(formats) > 1:
+            import base64
+            pdf_bytes, _fname = get_job_offer_pdf(jo_id)
+            data_uri = "data:application/pdf;base64," + base64.b64encode(pdf_bytes).decode()
+            html = (
+                f'<iframe src="{data_uri}" style="width:100%; height:85vh; '
+                f'border:1px solid #ddd;" title="Offer Letter"></iframe>'
+            )
+            return {"html": html, "jo_id": jo_id}
+
+        html = render_job_offer_html(jo_id, formats[0] if formats else None)
         return {"html": html, "jo_id": jo_id}
     finally:
         frappe.set_user(original_user)
@@ -627,10 +785,22 @@ def get_offer_letter_preview_html(job_offer):
                 "html": f'<iframe src="{data_uri}" style="width:100%;height:78vh;border:1px solid #e0e0e0;border-radius:6px;" title="Offer Letter Preview"></iframe>',
                 "source": "template",
             }
-    # Fall back to the Print Format preview.
+    # Fall back to the Print Format preview.  When the Employment Type is mapped
+    # to several letters the preview shows all of them, merged, so it matches
+    # what the candidate is actually sent.
+    formats = get_job_offer_print_formats(job_offer)
+    if len(formats) > 1:
+        import base64
+        pdf_bytes, _fn = get_job_offer_pdf(job_offer)
+        data_uri = "data:application/pdf;base64," + base64.b64encode(pdf_bytes).decode()
+        return {
+            "html": f'<iframe src="{data_uri}" style="width:100%;height:78vh;border:1px solid #e0e0e0;border-radius:6px;" title="Offer Letter Preview"></iframe>',
+            "source": "print_format",
+        }
+
     from urllib.parse import urlencode
     params = {"doctype": "Job Offer", "name": job_offer, "trigger_print": 0, "no_letterhead": 0}
-    pf = get_job_offer_print_format(job_offer)
+    pf = formats[0] if formats else None
     if pf:
         params["format"] = pf
     url = "/printview?" + urlencode(params)
@@ -659,15 +829,19 @@ def send_job_offer(job_offer_url, candidate, mail_id,company,designation):
     settings = frappe.get_doc("Recruitment Settings")
     job_offer_temp = settings.job_offer_template
 
-    # Document Template (when enabled) or Print Format (default).
-    output_pdf, filename = get_job_offer_pdf(jo_doc)
-    pdf_attachment = {
-        "fname": filename,  # Name of the file
-        "fcontent": output_pdf,  # Byte content of the file
-        "content_type": "application/pdf",  # Content type of the file
-    }
+    # Document Template (when enabled) or Print Format(s). An Employment Type
+    # mapped to more than one print format is sent one attachment per letter —
+    # Management Trainees get the trainee letter and the permanent offer letter.
+    pdf_attachments = [
+        {
+            "fname": filename,  # Name of the file
+            "fcontent": output_pdf,  # Byte content of the file
+            "content_type": "application/pdf",  # Content type of the file
+        }
+        for output_pdf, filename in get_job_offer_pdfs(jo_doc)
+    ]
     frappe.sendmail(
-        attachments=[pdf_attachment],
+        attachments=pdf_attachments,
         recipients=[mail_id],
         subject=frappe.render_template(
             frappe.db.get_value("Email Template", job_offer_temp, "subject"),
