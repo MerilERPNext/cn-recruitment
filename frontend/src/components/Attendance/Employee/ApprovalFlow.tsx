@@ -65,6 +65,16 @@ const ApprovalFlow = ({ doctype, docname }: ApprovalFlowProps) => {
 
   if (!data || !data.has_approval_flow || !data.stages?.length) return null;
 
+  const rejectedIndex = data.stages.findIndex(
+    (stage) => stage.status?.toLowerCase() === "rejected",
+  );
+  const visibleStages =
+    rejectedIndex !== -1
+      ? data.stages.slice(0, rejectedIndex + 1)
+      : data.stages;
+
+  if (!visibleStages.length) return null;
+
   return (
     <div className="pt-4 border-t border-gray-100">
       <Typography variant="subheading" className="font-semibold mb-1">
@@ -82,8 +92,8 @@ const ApprovalFlow = ({ doctype, docname }: ApprovalFlowProps) => {
       )}
 
       <div className="flex flex-col">
-        {data.stages.map((stage, idx) => {
-          const isLast = idx === data.stages.length - 1;
+        {visibleStages.map((stage, idx) => {
+          const isLast = idx === visibleStages.length - 1;
           const isCommentOpen = !!openComments[idx];
 
           return (
