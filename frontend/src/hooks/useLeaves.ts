@@ -21,6 +21,7 @@ import type {
   AttendanceStatusResponse,
   LeaveDateRangeResponse,
   LeaveHistoryItem,
+  LeaveSettings,
 } from "../types/leaves";
 import toast from "react-hot-toast";
 import { errorResponseFormater } from "../utils/errorResponseFormater";
@@ -614,4 +615,13 @@ export const useGetLeaveHistory = (year: string) => {
     staleTime: 5 * 60 * 1000,
   });
 };
+
+export const useLeaveSettings = () => {
+  return useQuery<LeaveSettings>({
+    queryKey: ["leave-settings"],
+    queryFn: () => leaveService.getLeaveSettings(),
+    staleTime: 5 * 60 * 1000,
+  });
+};
+
 
