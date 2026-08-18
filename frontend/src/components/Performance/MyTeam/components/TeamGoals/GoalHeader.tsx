@@ -70,7 +70,7 @@ export const GoalHeader: React.FC<GoalHeaderProps> = ({
           </Button>
         </div>
       </div>
-      <div className="grid grid-cols-3 gap-2 p-4 sm:p-5">
+      <div className="grid max-w-xl grid-cols-3 gap-2 p-4 sm:p-5">
         {[
           { icon: Target, label: "Goals", value: totalGoals },
           { icon: Users, label: "Reportees", value: totalReportees },

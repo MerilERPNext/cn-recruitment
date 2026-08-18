@@ -53,14 +53,12 @@ const TeamGoals: React.FC = () => {
       }`}
     >
       <div className="mx-auto w-full space-y-4 sm:space-y-5">
-        {/* Page Header */}
         <GoalHeader
           totalGoals={totalGoals}
           totalReportees={totalReportees}
           pendingApproval={pendingApproval}
         />
 
-        {/* Approval Queue Section */}
         <ApprovalQueueSection
           goals={APPROVAL_GOALS}
           checkedGoals={checkedGoals}
@@ -68,7 +66,6 @@ const TeamGoals: React.FC = () => {
           onGoalClick={handleGoalClick}
         />
 
-        {/* All Team Goals Section */}
         <AllTeamGoalsSection
           totalGoals={totalGoals}
           members={TEAM_MEMBERS}
@@ -76,7 +73,6 @@ const TeamGoals: React.FC = () => {
         />
       </div>
 
-      {/* Goal Detail Modal */}
       {selectedGoal && (
         <GoalDetailModal
           goal={selectedGoal}
