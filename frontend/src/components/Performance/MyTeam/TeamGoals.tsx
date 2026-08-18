@@ -3,7 +3,6 @@ import {
   ChevronRight,
   CornerDownRight,
   Plus,
-  Sparkles,
   Target,
   Users,
   Weight,
@@ -24,7 +23,7 @@ import { GoalDetailData, GoalStatus } from "./types";
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const statusVariant: Record<GoalStatus, BadgeVariant> = {
-  "On-track": "success",
+  "On-track": "success", 
   "At-risk": "warning",
   "Off-track": "danger",
 };
@@ -399,7 +398,6 @@ const TeamGoals: React.FC = () => {
             } border-b border-amber-100 bg-amber-50 px-4 py-4 sm:px-5`}
           >
             <div className="flex min-w-0 items-start gap-3 sm:items-center">
-              <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-amber-700 sm:mt-0" />
               <Typography
                 variant="bodySmall"
                 className="min-w-0 font-semibold text-amber-900"

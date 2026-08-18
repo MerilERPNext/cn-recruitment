@@ -5,7 +5,10 @@ import OverviewStats from "./components/TeamOverview/OverviewStats";
 import TeamTable from "./components/TeamOverview/TeamTable";
 import { OVERVIEW_STATS, OVERVIEW_TEAM_MEMBERS } from "./mockData";
 
-const TeamOverviewContent: React.FC<{ isCompact: boolean }> = ({ isCompact }) => {
+const TeamOverview: React.FC = () => {
+  const { isMobile, isTablet } = useScreenSize();
+  const isCompact = isMobile || isTablet;
+
   return (
     <div className="space-y-4 sm:space-y-5">
       <HeroCard isCompact={isCompact} />
@@ -13,13 +16,6 @@ const TeamOverviewContent: React.FC<{ isCompact: boolean }> = ({ isCompact }) =>
       <TeamTable isCompact={isCompact} members={OVERVIEW_TEAM_MEMBERS} />
     </div>
   );
-};
-
-const TeamOverview: React.FC = () => {
-  const { isMobile, isTablet } = useScreenSize();
-  const isCompact = isMobile || isTablet;
-
-  return <TeamOverviewContent isCompact={isCompact} />;
 };
 
 export default TeamOverview;
