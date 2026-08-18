@@ -16,6 +16,8 @@ import {
   approveOnboardingForm,
   getOnboardingReviewActionsEnabled,
 } from "../../../services/employeeOnboardingService";
+import { updateOnboardingDetailsESS } from "../../../services/employeeOnboardingService";
+import { useEmployeeOnboardingDetail } from "../../../hooks/useOnboardingFlow";
 import { useNavigate } from "react-router-dom";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -120,6 +122,7 @@ interface FieldRowProps {
   onApprove: () => void;
   onReject: (comment: string) => void;
   onCommentChange: (val: string) => void;
+  onUpdateValue: (fieldname: string, newValue: any) => Promise<void>;
 }
 
 /**
@@ -134,11 +137,20 @@ function FieldRow({
   onApprove,
   onReject,
   onCommentChange,
+  onUpdateValue,
 }: FieldRowProps) {
   const val = displayValue(field.current_value);
 
   const [pendingReject, setPendingReject] = useState(false);
   const [localComment, setLocalComment] = useState(state.comment || "");
+  const [isEditing, setIsEditing] = useState(false);
+  const [editValue, setEditValue] = useState<any>(
+    field.fieldtype === "Table" && field.current_value 
+      ? JSON.stringify(field.current_value, null, 2) 
+      : (field.current_value || "")
+  );
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
 
   const handleCommentChange = (v: string) => {
     setLocalComment(v);
@@ -170,6 +182,33 @@ function FieldRow({
     setPendingReject(false);
   };
 
+  const handleUpdateClick = () => {
+    setShowConfirm(true);
+  };
+
+  const handleConfirmUpdate = async () => {
+    setIsUpdating(true);
+    try {
+      let finalValue = editValue;
+      if (field.fieldtype === "Table") {
+        try {
+          finalValue = JSON.parse(editValue);
+        } catch (e) {
+          alert("Invalid JSON format for table data.");
+          setIsUpdating(false);
+          return;
+        }
+      }
+      await onUpdateValue(field.fieldname, finalValue);
+      setIsEditing(false);
+      setShowConfirm(false);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
   const canSubmitReject = localComment.trim().length > 0;
 
   return (
@@ -191,9 +230,57 @@ function FieldRow({
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 flex-wrap">
           <span className="text-sm font-medium text-gray-800">{field.label}</span>
+          {!isEditing && (
+            <button onClick={() => setIsEditing(true)} className="text-xs text-primary-500 hover:underline">Edit</button>
+          )}
         </div>
 
-        {field.fieldtype === "Table" ? (
+        {isEditing ? (
+          <div className="mt-2 space-y-2">
+            <textarea
+              className="w-full text-xs px-2.5 py-1.5 border rounded-lg bg-white text-gray-700 resize-y outline-none focus:ring-1 border-gray-200 focus:border-primary-400 focus:ring-primary-100"
+              rows={field.fieldtype === "Table" ? 5 : 2}
+              value={editValue}
+              onChange={(e) => setEditValue(e.target.value)}
+            />
+            <div className="flex gap-2 items-center">
+              <button
+                onClick={handleUpdateClick}
+                className="px-3 py-1 text-xs font-medium rounded-lg bg-primary-600 text-white hover:bg-primary-700 transition-colors"
+              >
+                Update
+              </button>
+              <button
+                onClick={() => setIsEditing(false)}
+                className="px-3 py-1 text-xs font-medium rounded-lg border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+            {showConfirm && (
+              <div className="rounded-xl border px-4 py-3 space-y-2 bg-yellow-50 border-yellow-200 mt-2">
+                <p className="text-xs font-semibold text-gray-700">Confirm Update</p>
+                <p className="text-xs text-gray-500">Are you sure you want to update this field?</p>
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleConfirmUpdate}
+                    disabled={isUpdating}
+                    className="px-3 py-1.5 text-xs font-medium rounded-lg text-white bg-primary-600 hover:bg-primary-700 transition-colors disabled:opacity-40"
+                  >
+                    {isUpdating ? "Updating..." : "Yes, Update"}
+                  </button>
+                  <button
+                    onClick={() => setShowConfirm(false)}
+                    disabled={isUpdating}
+                    className="px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        ) : field.fieldtype === "Table" ? (
   <ChildTable
     fields={field.child_fields}
     rows={Array.isArray(field.current_value) ? field.current_value : []}
@@ -450,7 +537,7 @@ function PendingRejectBanner({
 export default function OnboardingFieldApproval() {
   // ── Onboarding name from URL ──
   const onboardingName = getOnboardingNameFromUrl();
- 
+  const { data: onboardingDetailResponse } = useEmployeeOnboardingDetail(onboardingName);
 
   // ── Selected fields state (multi-checkbox) ──
   const [selectedFields, setSelectedFields] = useState<Set<string>>(new Set());
@@ -980,6 +1067,21 @@ export default function OnboardingFieldApproval() {
                     onCommentChange={(val) =>
                       patchFieldState(field.fieldname, { comment: val })
                     }
+                    onUpdateValue={async (fieldname, newValue) => {
+                      const identifier = onboardingDetailResponse?.data?.job_applicant || onboardingDetailResponse?.data?.header?.email;
+                      if (!identifier) {
+                        showToast("Job applicant/email not found. Cannot update.", "error");
+                        throw new Error("No identifier found");
+                      }
+                      try {
+                        await updateOnboardingDetailsESS(identifier, { [fieldname]: newValue });
+                        showToast("Updated successfully", "success");
+                        loadData(true);
+                      } catch (e: any) {
+                        showToast(`Failed to update: ${e.message || "Unknown error"}`, "error");
+                        throw e;
+                      }
+                    }}
                   />
                 );
               })}

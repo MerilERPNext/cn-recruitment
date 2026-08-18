@@ -77,12 +77,14 @@ export function useApprovalData(onboardingName: string): UseApprovalDataReturn {
   const [pageLoading, setPageLoading] = useState(false);
   const [pageError, setPageError] = useState<string | null>(null);
 
-  const loadData = useCallback(async () => {
-    setPageLoading(true);
+  const loadData = useCallback(async (silent: boolean = false) => {
+    if (!silent) setPageLoading(true);
     setPageError(null);
-    setAllFields([]);
-    setSections({});
-    setFieldStates({});
+    if (!silent) {
+      setAllFields([]);
+      setSections({});
+      setFieldStates({});
+    }
 
     try {
       const fields = await fetchApprovalFields(onboardingName);
@@ -93,12 +95,21 @@ export function useApprovalData(onboardingName: string): UseApprovalDataReturn {
 
       setAllFields(fields);
       setSections(buildSections(fields));
-      setFieldStates(buildInitialFieldStates(fields));
+      
+      if (silent) {
+        setFieldStates((prev) => {
+          const newStates = buildInitialFieldStates(fields);
+          // Only add new states, preserve existing ones to avoid losing local modifications
+          return { ...newStates, ...prev };
+        });
+      } else {
+        setFieldStates(buildInitialFieldStates(fields));
+      }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Unexpected error occurred.";
       setPageError(message);
     } finally {
-      setPageLoading(false);
+      if (!silent) setPageLoading(false);
     }
   }, [onboardingName]);
 
