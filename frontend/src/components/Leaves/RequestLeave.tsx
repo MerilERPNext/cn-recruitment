@@ -24,6 +24,7 @@ import {
   useGetLeaveRequestFields,
   useGetNumberOfLeaveDays,
   useGetLeaveDateRange,
+  useLeaveSettings,
 } from "../../hooks/useLeaves";
 import { useLoggedInUser } from "../../hooks/useLoggedInUser";
 import { useRequiredFields } from "../../hooks/useRequiredFields";
@@ -63,6 +64,7 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
     currentEmployee?.name,
     today,
   );
+  const { data: leaveSettings } = useLeaveSettings();
   const { uploadFiles, loading: isUploadingFiles } = useFileUploader();
   const [formData, setFormData] = useState<FormSubmissionData>({});
 
@@ -568,7 +570,9 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
           return att;
         }),
       );
-      onCancel?.();
+      if (!leaveSettings?.enable_modal_collaps) {
+        onCancel?.();
+      }
       // Use showToast so partial-success responses (some days created, some
       // failed) render separate success + error toasts automatically.
       errorResponseFormater(
@@ -602,6 +606,7 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
     currentAttachments,
     uploadFiles,
     isAttachmentMandatory,
+    leaveSettings?.enable_modal_collaps,
   ]);
 
   const leaveForm = useMemo(
