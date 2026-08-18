@@ -506,13 +506,22 @@ export const useProgramValues = (programName?: string) => {
 };
 
 // ─── Panel form (program's attached Microapp Form Widget) ─────────────────────
-// A program may reference a Microapp Form Widget via
-// `attach_form_for_panel_members`. This hook resolves that link and returns the
-// widget's form.io schema (`custom_form_data`) so the active-program panel can
-// render the form. Pure resource-API reads — no custom backend method needed.
+// A program may attach a Microapp Form Widget through either of two links:
+//
+//   attach_form_for_nomination      — the form the NOMINATOR fills in, shown on
+//                                     the active-program panel below the fields
+//   attach_form_for_panel_members   — the form panel members fill in while voting
+//
+// This hook resolves whichever is set and returns the widget's form.io schema
+// (`custom_form_data`) for the panel to render. Nomination wins when both are
+// configured, since this panel belongs to the nominator; falling back to the
+// panel-members link keeps programs that already rely on it working unchanged.
+// Pure resource-API reads — no custom backend method needed.
 export type PanelForm = {
   widget: string;
   label: string;
+  /** Which program field the form came from. */
+  source: "nomination" | "panel_members";
   /** Parsed form.io schema ({ components: [...] }). */
   schema: { components?: unknown[] } | null;
 };
@@ -522,14 +531,22 @@ export const usePanelForm = (programName?: string) => {
     queryKey: ["recognition", "panel-form", programName],
     enabled: !!programName,
     queryFn: async () => {
-      // 1. Read the program's attached form widget link.
+      // 1. Read both attached-form links in one call.
       const program = (await FrappeAPI.getDocument(
         "Recognition Program",
         programName as string,
-        ["attach_form_for_panel_members"],
-      )) as { attach_form_for_panel_members?: string | null };
-      const widgetName = program?.attach_form_for_panel_members;
+        ["attach_form_for_nomination", "attach_form_for_panel_members"],
+      )) as {
+        attach_form_for_nomination?: string | null;
+        attach_form_for_panel_members?: string | null;
+      };
+
+      const nomination = program?.attach_form_for_nomination;
+      const widgetName = nomination || program?.attach_form_for_panel_members;
       if (!widgetName) return null;
+      const source: PanelForm["source"] = nomination
+        ? "nomination"
+        : "panel_members";
 
       // 2. Read the widget's form.io schema + label.
       const widget = (await FrappeAPI.getDocument(
@@ -551,7 +568,12 @@ export const usePanelForm = (programName?: string) => {
         }
       }
 
-      return { widget: widget.name, label: widget.label || widget.name, schema };
+      return {
+        widget: widget.name,
+        label: widget.label || widget.name,
+        source,
+        schema,
+      };
     },
   });
 };

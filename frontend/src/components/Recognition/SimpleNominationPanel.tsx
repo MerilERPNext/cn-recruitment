@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Form } from "@tsed/react-formio";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { Typography } from "../shared/atoms/Typography";
@@ -18,6 +18,8 @@ import Button from "../shared/atoms/Button";
 import RecognitionCcFields from "./RecognitionCcFields";
 import { useGetUiPermission } from "../../hooks/userUiPermission";
 import { isActionEnabled } from "../../utils/uiPermission";
+import { getRequiredKeys } from "../../utils/formioUtils";
+import type { FormIOComponent } from "../../types/formio";
 import toast from "react-hot-toast";
 
 // Local YYYY-MM-DD for the date input default.
@@ -91,18 +93,36 @@ export const SimpleNominationPanel: React.FC<SimpleNominationPanelProps> = ({
       prev.includes(v) ? prev.filter((x) => x !== v) : [...prev, v],
     );
 
-  // Optional form attached to the program (attach_form_for_panel_members).
-  // Shown below the fields on click when the program has one configured.
+  // Optional form attached to the program — `attach_form_for_nomination`, or
+  // `attach_form_for_panel_members` when only that one is set. Shown below the
+  // fields on click when the program has one configured.
   const { data: panelForm } = usePanelForm(awardName);
   const hasPanelForm = !!panelForm?.schema?.components?.length;
   const [showPanelForm, setShowPanelForm] = useState(false);
   const [panelFormData, setPanelFormData] = useState<Record<string, unknown>>({});
+  // formio reports validity on every change. Seeded from the schema so a form
+  // with required fields blocks submit even before it has been opened — the
+  // section is collapsed by default, so `onChange` may never have fired.
+  const [panelFormValid, setPanelFormValid] = useState(true);
   // Render the attached form without its built-in Submit button — the panel's
   // single Submit triggers both the appreciation and this form's data.
   const panelFormSchema = useMemo(
     () => stripSubmitButtons(panelForm?.schema as FormioSchema),
     [panelForm?.schema],
   );
+  const panelFormRequiredKeys = useMemo(
+    () =>
+      getRequiredKeys(
+        (panelFormSchema?.components ?? []) as unknown as FormIOComponent[],
+      ),
+    [panelFormSchema],
+  );
+
+  // A form with no required field is valid as-is; one with required fields
+  // starts invalid until formio says otherwise.
+  useEffect(() => {
+    setPanelFormValid(panelFormRequiredKeys.length === 0);
+  }, [panelFormRequiredKeys]);
 
   // Eligible receivers the current employee may nominate within this program.
   const { data: currentUser } = useCurrentEmployeeDetails({
@@ -170,6 +190,16 @@ export const SimpleNominationPanel: React.FC<SimpleNominationPanelProps> = ({
       );
       return;
     }
+    // The attached form is part of this submission, so its required fields are
+    // as mandatory as the panel's own. Reveal it rather than failing silently —
+    // it is collapsed by default and the user may not know it is there.
+    if (hasPanelForm && !panelFormValid) {
+      setShowPanelForm(true);
+      toast.error(
+        `Please complete all required fields in "${panelForm?.label || "the attached form"}".`,
+      );
+      return;
+    }
     if (submitting) return;
 
     setSubmitting(true);
@@ -203,6 +233,8 @@ export const SimpleNominationPanel: React.FC<SimpleNominationPanelProps> = ({
         setCcEmails([]);
         setPanelFormData({});
         setShowPanelForm(false);
+        setPanelFormData({});
+        setPanelFormValid(panelFormRequiredKeys.length === 0);
         onSuccess();
       } else {
         toast.error(res?.message || "Failed to submit appreciation");
@@ -358,7 +390,8 @@ export const SimpleNominationPanel: React.FC<SimpleNominationPanelProps> = ({
           onChangeEmails={setCcEmails}
         />
 
-        {/* Optional program-attached form for panel members. Revealed on click. */}
+        {/* The program's attached Microapp Form Widget. Revealed on click; its
+            answers ride along with the appreciation as `custom_form_data`. */}
         {hasPanelForm && (
           <div>
             <button
@@ -382,6 +415,9 @@ export const SimpleNominationPanel: React.FC<SimpleNominationPanelProps> = ({
                   submission={{ data: panelFormData }}
                   onChange={(change: any) => {
                     if (change?.data) setPanelFormData(change.data);
+                    if (typeof change?.isValid === "boolean") {
+                      setPanelFormValid(change.isValid);
+                    }
                   }}
                 />
               </div>

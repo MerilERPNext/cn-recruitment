@@ -46,6 +46,7 @@ def after_migrate():
     ensure_offer_compensation()
     ensure_alumni_employee_field()
     ensure_alumni_employee_employee_field()
+    ensure_alumni_user_link_field()
     backfill_alumni_flag()
     backfill_employee_alumni_mirror()
     ensure_alumni_employee_request_workflow()
@@ -169,6 +170,41 @@ def ensure_alumni_hd_category_field():
         frappe.clear_cache(doctype="HD Category")
     except Exception:
         frappe.logger("recruitment").warning("ensure_alumni_hd_category_field: skipped")
+
+
+def ensure_alumni_user_link_field():
+    """Add the read-only `Employee.custom_alumni_user` Link field.
+
+    Stores the personal-email User provisioned when the Employee leaves, so the
+    Alumni Portal can resolve Employee <-> alumni User without guessing from
+    `personal_email` (which may change, or be shared between records).
+    Maintained by recruitment.recruitment.alumni_user_switch. Idempotent.
+    """
+    if frappe.get_meta("Employee").get_field("custom_alumni_user"):
+        return
+    try:
+        from frappe.custom.doctype.custom_field.custom_field import create_custom_field
+
+        create_custom_field(
+            "Employee",
+            {
+                "fieldname": "custom_alumni_user",
+                "label": "Alumni User",
+                "fieldtype": "Link",
+                "options": "User",
+                "read_only": 1,
+                "insert_after": "custom_is_alumni_employee",
+                "description": (
+                    "Personal-email User account used for the Alumni Portal. "
+                    "Created automatically when the employee leaves."
+                ),
+                "module": "Recruitment",
+            },
+            ignore_validate=True,
+        )
+        frappe.clear_cache(doctype="Employee")
+    except Exception:
+        frappe.logger("recruitment").warning("ensure_alumni_user_link_field: skipped")
 
 
 def ensure_alumni_employee_field():
