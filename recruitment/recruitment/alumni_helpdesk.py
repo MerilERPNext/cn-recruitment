@@ -28,6 +28,7 @@ from recruitment.recruitment.alumni_portal import (
     _alumni_email,
     _require_alumni_session,
 )
+from recruitment.recruitment.utils import as_administrator
 
 
 # ── HD Categories & Subcategories ────────────────────────────────────────────
@@ -394,13 +395,13 @@ def _as_system_user():
     Only for helpdesk calls whose own permission check assumes an HD role. The
     caller MUST have already authorised the request (e.g. via
     `_validate_ticket_ownership`); this never widens *which* ticket is returned.
+
+    Delegates to `as_administrator`, which restores the whole session rather
+    than just the user — see there for why a bare `set_user` pair logs the
+    caller out.
     """
-    original = frappe.session.user
-    try:
-        frappe.set_user("Administrator")
+    with as_administrator():
         yield
-    finally:
-        frappe.set_user(original)
 
 
 def _validate_ticket_ownership(ticket_id: str):

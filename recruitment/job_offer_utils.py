@@ -6,6 +6,7 @@ from frappe.utils import cint
 from frappe.utils import formatdate, now_datetime, time_diff_in_hours, flt, fmt_money
 
 from recruitment.recruitment.link_token import OFFER_SCOPE, offer_token, require_token
+from recruitment.recruitment.utils import as_administrator
 
 
 def is_dpdp_consent_enabled():
@@ -457,9 +458,7 @@ def download_job_offer_pdf(appl, token=None, separate=None):
 
     want_separate = cint(separate) if separate is not None else 0
 
-    original_user = frappe.session.user
-    frappe.set_user("Administrator")
-    try:
+    with as_administrator():
         jo_id = frappe.db.get_value("Job Offer", {
             "job_applicant": appl,
             "docstatus": ["!=", 2],
@@ -500,8 +499,6 @@ def download_job_offer_pdf(appl, token=None, separate=None):
         frappe.local.response.filename = filename
         frappe.local.response.filecontent = pdf_content
         frappe.local.response.type = "pdf"
-    finally:
-        frappe.set_user(original_user)
 
 
 @frappe.whitelist(allow_guest=True)
@@ -511,9 +508,7 @@ def preview_job_offer_html(appl, token=None):
         frappe.throw("Missing applicant parameter")
     _authorize_offer(appl, token, "read")
 
-    original_user = frappe.session.user
-    frappe.set_user("Administrator")
-    try:
+    with as_administrator():
         jo_id = frappe.db.get_value("Job Offer", {
             "job_applicant": appl,
             "docstatus": ["!=", 2],
@@ -553,8 +548,6 @@ def preview_job_offer_html(appl, token=None):
 
         html = render_job_offer_html(jo_id, formats[0] if formats else None)
         return {"html": html, "jo_id": jo_id}
-    finally:
-        frappe.set_user(original_user)
 
 @frappe.whitelist(allow_guest=True)
 def get_job_offer_status(appl, token=None):
