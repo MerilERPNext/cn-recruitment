@@ -20,6 +20,7 @@ import type {
   UseSectionNavReturn,
   UseToastReturn,
 } from "../types/onboarding";
+import { errorResponseFormater } from "../utils/errorResponseFormater";
 
 // ─── Utility: Build section map from flat field list ──────────────────────────
 
@@ -168,8 +169,7 @@ export function useApprovalActions(
         showToast(`"${fieldname}" ${status.toLowerCase()}`, "success");
       } catch (err: unknown) {
         patchFieldState(fieldname, { loading: false });
-        const msg = err instanceof Error ? err.message : "Request failed";
-        showToast(`Error: ${msg}`, "error");
+        errorResponseFormater(err, "Request failed", { showToast: true });
       }
     },
     [onboardingName, patchFieldState, showToast, refetchOnboardingList]
@@ -199,8 +199,7 @@ export function useApprovalActions(
         );
       } catch (err: unknown) {
         fieldnames.forEach((fn) => patchFieldState(fn, { loading: false }));
-        const msg = err instanceof Error ? err.message : "Request failed";
-        showToast(`Error: ${msg}`, "error");
+        errorResponseFormater(err, "Request failed", { showToast: true });
       }
     },
     [onboardingName, patchFieldState, showToast, refetchOnboardingList]
@@ -219,8 +218,7 @@ export function useApprovalActions(
         refetchOnboardingList();
         showToast(`Section "${sectionName}" ${status.toLowerCase()}`, "success");
       } catch (err: unknown) {
-        const msg = err instanceof Error ? err.message : "Request failed";
-        showToast(`Error: ${msg}`, "error");
+        errorResponseFormater(err, "Request failed", { showToast: true });
       }
     },
     [onboardingName, sections, patchFieldState, showToast, refetchOnboardingList]
@@ -245,8 +243,7 @@ export function useApprovalActions(
       refetchOnboardingList();
       showToast("All pending fields approved", "success");
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Request failed";
-      showToast(`Error: ${msg}`, "error");
+      errorResponseFormater(err, "Request failed", { showToast: true });
     }
   }, [onboardingName, setFieldStates, showToast, refetchOnboardingList]);
 

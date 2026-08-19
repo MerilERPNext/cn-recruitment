@@ -19,6 +19,7 @@ import {
 import { updateOnboardingDetailsESS } from "../../../services/employeeOnboardingService";
 import { useEmployeeOnboardingDetail } from "../../../hooks/useOnboardingFlow";
 import { useNavigate } from "react-router-dom";
+import { errorResponseFormater } from "../../../utils/errorResponseFormater";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -581,7 +582,7 @@ export default function OnboardingFieldApproval() {
     setFieldStates,
   } = useApprovalData(onboardingName);
 
-  const { singleAction, bulkSelectedAction, sectionAction } =
+  const { singleAction, bulkSelectedAction, sectionAction, bulkApproveAllPending } =
     useApprovalActions(onboardingName, sections, patchFieldState, setFieldStates, showToast);
 
   const secKeys = Object.keys(sections);
@@ -643,13 +644,7 @@ export default function OnboardingFieldApproval() {
     if (approveAllRemainingLoading || secKeys.length === 0) return;
     setApproveAllRemainingLoading(true);
     try {
-      for (const sec of secKeys) {
-        await sectionAction(sec, "Approved");
-      }
-      showToast("All remaining fields approved", "success");
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Request failed";
-      showToast(`Error: ${msg}`, "error");
+      await bulkApproveAllPending();
     } finally {
       setApproveAllRemainingLoading(false);
     }
@@ -720,8 +715,7 @@ export default function OnboardingFieldApproval() {
         "success"
       );
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Request failed";
-      showToast(`Error: ${msg}`, "error");
+      errorResponseFormater(err, "Request failed", { showToast: true });
     } finally {
       setSendBackLoading(false);
     }
@@ -738,8 +732,7 @@ export default function OnboardingFieldApproval() {
       }
       showToast("Onboarding form approved", "success");
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Request failed";
-      showToast(`Error: ${msg}`, "error");
+      errorResponseFormater(err, "Request failed", { showToast: true });
     } finally {
       setApproveFormLoading(false);
     }
