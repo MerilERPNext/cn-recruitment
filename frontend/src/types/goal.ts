@@ -758,7 +758,7 @@ export interface TeamOverviewStage {
   stage_type: string;
   start_date: string;
   end_date: string;
-  lock_date: string;
+  lock_date?: string | null;
   enabled: number;
 }
 
