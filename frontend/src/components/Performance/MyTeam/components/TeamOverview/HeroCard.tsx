@@ -149,7 +149,7 @@ const HeroCard: React.FC<HeroCardProps> = ({ isCompact }) => {
         {steps.length > 0 ? (
           <div className="flex items-center gap-0 overflow-x-auto pb-1 scrollbar-hide">
             {steps.map((step, idx) => (
-              <React.Fragment key={step.label}>
+              <React.Fragment key={`${step.n}-${step.label}-${idx}`}>
                 {idx > 0 && <div className="h-px w-5 md:w-8 lg:w-10 shrink-0 bg-gray-200 mx-1.5 md:mx-2 lg:mx-3" />}
                 <div
                   className={`flex items-center gap-2 shrink-0 ${!step.done && !step.active ? "opacity-40" : ""}`}
