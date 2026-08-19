@@ -752,5 +752,66 @@ export interface AddGoalCommentResponse {
   data?: AddGoalCommentData;
 }
 
+export interface TeamOverviewStage {
+  sequence: number;
+  stage_name: string;
+  stage_type: string;
+  start_date: string;
+  end_date: string;
+  lock_date: string;
+  enabled: number;
+}
+
+export interface TeamOverviewCards {
+  goals_pending_approval: number;
+  employees_pending_approval: number;
+  team_avg_progress: number;
+  expected_progress: number;
+  off_track_goals: number;
+  off_track_employees: number;
+  checkins_due: number;
+  checkins_overdue: number;
+  no_plan_yet: number;
+  on_track_employees: number;
+}
+
+export interface TeamOverviewRules {
+  off_track_tolerance: number;
+  stale_checkin_days: number;
+  include_indirect: number;
+}
+
+export interface TeamOverviewData {
+  framework: string;
+  cycle_name: string;
+  status: string;
+  start_date: string;
+  end_date: string;
+  methodology: string;
+  description: string | null;
+  company: string;
+  stages: TeamOverviewStage[];
+  current_stage: string | null;
+  locks_on: string | null;
+  days_remaining: number;
+  manager: string;
+  manager_name: string;
+  team_size: number;
+  cards: TeamOverviewCards;
+  rules: TeamOverviewRules;
+}
+
+export interface TeamOverviewParams {
+  manager?: string;
+}
+
+export interface TeamOverviewResponse {
+  success: boolean;
+  message: string;
+  data: TeamOverviewData;
+}
+
+
+
 
 
