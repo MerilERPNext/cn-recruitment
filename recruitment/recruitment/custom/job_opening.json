@@ -5109,7 +5109,7 @@
    "in_list_view": 0,
    "in_preview": 0,
    "in_standard_filter": 0,
-   "insert_after": "custom_default_employment_type",
+   "insert_after": "custom_position_details_section",
    "is_system_generated": 1,
    "is_virtual": 0,
    "label": "Hiring Type",

@@ -296,7 +296,6 @@ OFFER_REQUIRED_BEFORE_SEND = (
 _EMPLOYMENT_TYPE_SOURCES = (
 	("Job Applicant", "job_applicant", "custom_employment_type"),
 	("Job Opening", "job_title", "employment_type"),
-	("Job Opening", "job_title", "custom_employment_type"),
 )
 
 

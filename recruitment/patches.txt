@@ -42,3 +42,4 @@ recruitment.patches.drop_expected_doj_mandatory_again
 recruitment.patches.move_region_locations_to_branch
 recruitment.patches.repoint_gpa_eligibility_rules
 recruitment.patches.migrate_requisition_scope_to_attributes
+recruitment.patches.merge_job_opening_employment_type

@@ -97,7 +97,8 @@ def get_context(context):
             # template ever rendered it and the field went with the Salary
             # Breakup section (recruitment.patches.delete_job_offer_salary_breakup).
             jo_wanted = ['designation', 'company', 'applicant_name', 'offer_date',
-                         'custom_jo_expiry_date', 'job_applicant']
+                         'custom_jo_expiry_date', 'job_applicant', 'custom_stipend',
+                         'custom_duration', 'custom_expected_doj']
             jo_existing = [f for f in jo_wanted if jo_meta.has_field(f)]
             jo_fields = frappe.db.get_value('Job Offer', context.doc, jo_existing, as_dict=True) or {}
 
@@ -125,11 +126,17 @@ def get_context(context):
             if ja_existing:
                 ja_fields = frappe.db.get_value('Job Applicant', ja_id, ja_existing, as_dict=True) or {}
 
-            context.expected_doj = ja_fields.get('custom_expected_doj')
+            # Stipend, duration and expected DOJ each live on the Job Offer too
+            # (seeded from the applicant but editable there), so the offer's
+            # figure wins over the applicant's whenever HR has set one --
+            # otherwise the portal would show the candidate different terms than
+            # the letter they are signing, which renders the Job Offer's values.
+            context.expected_doj = jo_fields.get('custom_expected_doj') or ja_fields.get('custom_expected_doj')
             context.expected_doj_display = formatdate(context.expected_doj) if context.expected_doj else ''
-            context.duration = ja_fields.get('duration') or ''
-            context.stipend = ja_fields.get('stipend')
-            context.stipend_display = fmt_money(ja_fields.get('stipend'), currency='INR') if ja_fields.get('stipend') else ''
+            context.duration = jo_fields.get('custom_duration') or ja_fields.get('duration') or ''
+            stipend = jo_fields.get('custom_stipend') or ja_fields.get('stipend')
+            context.stipend = stipend
+            context.stipend_display = fmt_money(stipend, currency='INR') if stipend else ''
             context.region = ja_fields.get('region') or ''
             context.manager_name = ja_fields.get('manager_name') or ''
 
