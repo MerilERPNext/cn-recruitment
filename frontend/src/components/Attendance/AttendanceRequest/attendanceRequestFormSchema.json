@@ -257,7 +257,7 @@
             "custom": "valid = !(data.request_type === 'Attendance Adjustment' && data.enable_time_type_selection === true) || !!input;",
             "customMessage": "Time Type is required"
           },
-          "customConditional": "show = data.request_type === 'Attendance Adjustment' && data.enable_time_type_selection === true;",
+          "customConditional": "show = data.request_type === 'Attendance Adjustment';",
           "data": {
             "values": [
               {
