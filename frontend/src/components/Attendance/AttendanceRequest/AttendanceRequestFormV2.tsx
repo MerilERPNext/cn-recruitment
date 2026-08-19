@@ -370,6 +370,29 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
           requestTypeField.data.values = filteredValues;
         }
 
+        // Inject enable_time_type_selection from the attendance policy API
+        // into the hidden field's defaultValue so that every schema rebuild
+        // starts with the correct value and Formio's customConditional /
+        // validate expressions on time_type_selection see it immediately.
+        const isTimeTypeRequired =
+          !!(reqValidationmutation.data as any)?.enable_time_type_selection ||
+          !!(attendanceRequestAttachmentsMandatory as any)?.enable_time_type_selection;
+        const enableTimeTypeComp = panel.components.find(
+          (comp: SchemaComponent) => comp.key === "enable_time_type_selection",
+        );
+        if (enableTimeTypeComp) {
+          enableTimeTypeComp.defaultValue = isTimeTypeRequired;
+        }
+
+        const timeTypeCompInSchema = panel.components.find(
+          (comp: SchemaComponent) => comp.key === "time_type_selection",
+        );
+        if (timeTypeCompInSchema) {
+          timeTypeCompInSchema.label = isTimeTypeRequired
+            ? "Time Type <span class='show-req-astrik field-required'></span>"
+            : "Time Type";
+        }
+
         // Remove dataSrc from company field to allow manual control
         const companyField = panel.components.find(
           (comp: SchemaComponent) => comp.key === "company",
@@ -558,6 +581,11 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
         isForOthers: isForOthers,
         currentEmployeeId: currentEmployee?.employee || "",
         currentUserId: currentEmployee?.user_id || "",
+        enable_time_type_selection: !!(
+          (attendanceRequestAttachmentsMandatory as any)
+            ?.enable_time_type_selection ||
+          (reqValidationmutation?.data as any)?.enable_time_type_selection
+        ),
       },
     }),
     // only recompute if these meaningful inputs change:
@@ -568,6 +596,7 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
       currentEmployee?.user_id,
       isForOthers,
       attendanceRequestAttachmentsMandatory,
+      reqValidationmutation?.data,
     ],
   );
   // Update hidden fields when isForOthers or currentEmployee changes
@@ -728,7 +757,8 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
     if (enableTimeTypeSelectionComp) {
       enableTimeTypeSelectionComp.setValue(
         !!(attendanceRequestAttachmentsMandatory as any)
-          ?.enable_time_type_selection,
+          ?.enable_time_type_selection ||
+          !!(reqValidationmutation?.data as any)?.enable_time_type_selection,
       );
     }
     const showOnlySingleDateFieldComp = instance.getComponent(

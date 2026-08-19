@@ -13,6 +13,7 @@ import { IoMdCloudUpload } from "react-icons/io";
 import RequisitionReviewStep from "./RequisitionReviewStep";
 import PositionColumnCopyButtons from "./PositionColumnCopyButtons";
 import BulkResumeUploadModal, { type UploadedResume } from "./BulkResumeUploadModal";
+import FormEmployeeHoverLayer from "./FormEmployeeHoverLayer";
 import "../../formio.custom.css";
 
 // ---------------------------------------------------------------------------
@@ -231,6 +232,7 @@ function generateFormioComponent(field: BackendField, inGrid = false): any {
     customClass: required && !inGrid ? "required-field" : undefined,
     disabled: field.read_only || isPositionFunctionalArea ? true : undefined,
     validate: { required: isPositionFunctionalArea ? false : required },
+    validateOn: "blur",
     ...(field.default !== undefined && field.default !== "" ? { defaultValue: field.default } : {}),
   };
 
@@ -656,12 +658,25 @@ const RequisitionFormV2 = () => {
   const [isBusy, setIsBusy] = useState(false);
   const [jobDetailsPreviewOpen, setJobDetailsPreviewOpen] = useState(false);
   const [jobDetailsPreview, setJobDetailsPreview] = useState<{ loading: boolean; title: string; source: string; html: string; payload?: any }>({
-    loading: false, title: "", source: "", html: ""
+loading: false, title: "", source: "", html: ""
   });
+  const [jdSource, setJdSource] = useState<string>("");
   
   const formInstanceRef = useRef<any>(null);
   const formContainerRef = useRef<HTMLDivElement>(null);
   const tabBarRef = useRef<HTMLDivElement>(null);
+
+  const resolveEmployeeId = useCallback(
+    (fieldKey: string, rowIndex: number | null): string | undefined => {
+      const data: any = formDataRef.current;
+      if (rowIndex != null) {
+        return data?.positions?.[rowIndex]?.[fieldKey];
+      }
+      return data?.[fieldKey];
+    },
+    []
+  );
+
   const prefilledJdKeyRef = useRef<string>("");
 
   const formSubmission = useMemo(
@@ -806,6 +821,8 @@ const RequisitionFormV2 = () => {
         const html = jd?.description_html || jd?.description || "";
         const prefill = jd?.prefill || {};
         const noJd = jd?.source === "none" || !html;
+
+        setJdSource(jd?.source || "");
 
         if (!noJd || Object.keys(prefill).length > 0) {
           setFormData((prev: any) => {
@@ -989,6 +1006,23 @@ const RequisitionFormV2 = () => {
           : {}),
       })),
     }));
+    setFormSyncTick((tick) => tick + 1);
+  }, []);
+
+  const setAllVacancyType = useCallback((type: "New" | "Replacement") => {
+    setFormData((current) => {
+      const newPositions = (current.positions || []).map((pos: any) => ({
+        ...pos,
+        vacancy_type: type,
+        ...(type === "New" ? { replacement_for: "" } : {}),
+      }));
+      return {
+        ...current,
+        positions: newPositions,
+        number_of_new_positions: newPositions.filter((p: any) => p.vacancy_type === "New").length,
+        number_of_replacement_positions: newPositions.filter((p: any) => p.vacancy_type === "Replacement").length,
+      };
+    });
     setFormSyncTick((tick) => tick + 1);
   }, []);
 
@@ -1634,7 +1668,15 @@ const RequisitionFormV2 = () => {
                   </div>
                 </div>
               )}
-              <div ref={formContainerRef}>
+              <div ref={formContainerRef} className="relative">
+                {/job details/i.test(steps[currentTab] || "") && jdSource === "none" && (
+                  <div className="mb-4 flex items-center gap-2 p-3 bg-yellow-50 border border-yellow-400 rounded-lg text-yellow-800 text-sm">
+                    <i className="fa fa-exclamation-triangle text-yellow-600 text-base flex-shrink-0" />
+                    <span>
+                      There is no Job Description tagged to this designation. Please contact your HR Admin to configure the Job Description.
+                    </span>
+                  </div>
+                )}
                 <Form
                   form={schemas[currentTab]}
                   submission={formSubmission}
@@ -1644,11 +1686,68 @@ const RequisitionFormV2 = () => {
                     formInstanceRef.current = instance;
                   }}
                 />
+                <FormEmployeeHoverLayer
+                  containerRef={formContainerRef}
+                  resolveEmployeeId={resolveEmployeeId}
+                />
                 {/position/i.test(steps[currentTab] || "") && hasPositionCounts && (
-                  <PositionColumnCopyButtons
-                    containerRef={formContainerRef}
-                    onCopyColumn={copyColumnToAllPositions}
-                  />
+                  <>
+                    <PositionColumnCopyButtons
+                      containerRef={formContainerRef}
+                      onCopyColumn={copyColumnToAllPositions}
+                      getPositions={() => formDataRef.current.positions || []}
+                    />
+                    {(() => {
+                      const positions: any[] = formDataRef.current.positions || [];
+                      const total = positions.length;
+                      const newCount = positions.filter((p) => p?.vacancy_type === "New").length;
+                      const replacementCount = positions.filter(
+                        (p) => p?.vacancy_type === "Replacement"
+                      ).length;
+                      return (
+                        <div className="mt-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3 px-4 py-2 border rounded-md bg-gray-50 text-sm">
+                          <div className="flex items-center gap-4 flex-wrap">
+                            <span className="font-semibold text-gray-800">
+                              {total} Total positions
+                            </span>
+                            <span className="flex items-center gap-1 text-gray-700">
+                              <span className="w-2 h-2 rounded-full bg-green-500"></span>
+                              <span className="font-semibold">{newCount}</span>
+                              <span className="text-gray-500">New</span>
+                            </span>
+                            <span className="flex items-center gap-1 text-gray-700">
+                              <span className="w-2 h-2 rounded-full bg-orange-500"></span>
+                              <span className="font-semibold">{replacementCount}</span>
+                              <span className="text-gray-500">Replacement</span>
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-gray-500 text-xs uppercase tracking-wide">
+                              Set all to
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => setAllVacancyType("New")}
+                              disabled={total === 0}
+                              className="flex items-center gap-1 px-3 py-1 border border-green-500 text-green-700 rounded-lg text-xs hover:bg-green-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              <span className="w-2 h-2 rounded-full bg-green-500"></span>
+                              New
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setAllVacancyType("Replacement")}
+                              disabled={total === 0}
+                              className="flex items-center gap-1 px-3 py-1 border border-orange-500 text-orange-700 rounded-lg text-xs hover:bg-orange-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              <span className="w-2 h-2 rounded-full bg-orange-500"></span>
+                              Replacement
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })()}
+                  </>
                 )}
 
                 {/other details/i.test(steps[currentTab] || "") && hasQualifications && (
@@ -1900,7 +1999,7 @@ const RequisitionFormV2 = () => {
                               url.split("?")[0].split("#")[0].split("/").pop() || "";
                             try {
                               return decodeURIComponent(base);
-                            } catch {
+                            } catch (e) {
                               return base;
                             }
                           })),

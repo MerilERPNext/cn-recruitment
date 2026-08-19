@@ -183,42 +183,44 @@ export const EmployeeGoalCard = React.memo(({
               )}
             </Button>
 
-            {keyResults.length > 0 && (
-              <button
-                type="button"
-                onClick={handleToggle}
-                className="p-1.5 rounded-full border border-gray-300 hover:border-blue-400 hover:bg-blue-50 text-gray-500 transition-colors flex items-center justify-center shrink-0 cursor-pointer"
-                aria-label={isExpanded ? "Collapse Key Results" : "Expand Key Results"}
-              >
-                <ChevronDown
-                  className={`w-4 h-4 transition-transform duration-200 ${
-                    isExpanded ? "rotate-180 text-blue-600" : ""
-                  }`}
-                />
-              </button>
-            )}
+            <button
+              type="button"
+              onClick={handleToggle}
+              className="p-1.5 rounded-full border border-gray-300 hover:border-blue-400 hover:bg-blue-50 text-gray-500 transition-colors flex items-center justify-center shrink-0 cursor-pointer"
+              aria-label={isExpanded ? "Collapse Key Results" : "Expand Key Results"}
+            >
+              <ChevronDown
+                className={`w-4 h-4 transition-transform duration-200 ${
+                  isExpanded ? "rotate-180 text-blue-600" : ""
+                }`}
+              />
+            </button>
           </div>
         </div>
 
-        {keyResults.length > 0 && (
-          <div
-            className={`grid transition-[grid-template-rows] duration-300 ease-in-out ${
-              isExpanded ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
-            }`}
-          >
-            <div className="overflow-hidden">
-              <div className="pt-3.5 mt-3 border-t border-gray-100 space-y-2">
-                {keyResults.map((kr: MyGoalsKeyResult, idx: number) => (
+        <div
+          className={`grid transition-[grid-template-rows] duration-300 ease-in-out ${
+            isExpanded ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
+          }`}
+        >
+          <div className="overflow-hidden">
+            <div className="pt-3.5 mt-3 border-t border-gray-100 space-y-2">
+              {keyResults.length > 0 ? (
+                keyResults.map((kr: MyGoalsKeyResult, idx: number) => (
                   <KeyResultCardItem
                     key={kr.goal_key || kr.title || idx}
                     kr={kr}
                     index={idx}
                   />
-                ))}
-              </div>
+                ))
+              ) : (
+                <div className="p-3 text-center text-xs sm:text-sm text-gray-500 font-medium bg-slate-50/80 border border-slate-100 rounded-lg">
+                  No key result found
+                </div>
+              )}
             </div>
           </div>
-        )}
+        </div>
       </Card>
 
       {isCommentModalOpen && (

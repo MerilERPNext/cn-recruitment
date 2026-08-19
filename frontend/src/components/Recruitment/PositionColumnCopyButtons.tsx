@@ -10,24 +10,22 @@ const COPY_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13"
  * datagrid. Clicking it copies that column's value (the first filled row) into
  * every position row — handled by `onCopyColumn(fieldKey)` in RequisitionForm.
  *
- * Form.io owns the table DOM, so the buttons are injected via DOM and re-applied
- * after every grid redraw (MutationObserver). Scoped to the `positions` grid
- * only; the nested Cost Center table and Position Number column are skipped.
+ * It also styles the position number column cells with a colored left-border
+ * (green for New, orange for Replacement).
  */
 export default function PositionColumnCopyButtons({
   containerRef,
   onCopyColumn,
+  getPositions,
 }: {
   containerRef: RefObject<HTMLElement | null>;
   onCopyColumn: (fieldKey: string) => void;
+  getPositions?: () => any[];
 }) {
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
 
-    // Derive the field key for a body cell from its input's name attribute,
-    // e.g. name="data[positions][0][location]" → "location". For the nested
-    // cost center column the first captured key is "cost_center_allocations".
     const keyOfCell = (td: HTMLElement): string | null => {
       const named = td.querySelector("[name]") as HTMLElement | null;
       const name = named?.getAttribute("name") || "";
@@ -57,11 +55,11 @@ export default function PositionColumnCopyButtons({
         const btn = document.createElement("button");
         btn.type = "button";
         btn.className = "col-copy-btn";
-        btn.title = "Copy this column's value to all rows";
+        btn.title = "Make all same (Copy to all rows)";
         btn.setAttribute("data-field", key);
         btn.innerHTML = COPY_SVG;
         btn.style.cssText =
-          "margin-left:6px;border:none;background:transparent;cursor:pointer;color:#6b7280;display:inline-flex;vertical-align:middle;padding:0;";
+          "margin-left:6px;border:none;background:transparent;cursor:pointer;color:#3b82f6;display:inline-flex;vertical-align:middle;padding:0;transition:color 0.2s;";
         btn.addEventListener("click", (e) => {
           e.preventDefault();
           e.stopPropagation();
@@ -69,11 +67,26 @@ export default function PositionColumnCopyButtons({
         });
         th.appendChild(btn);
       });
+
+      // Color the position number inputs based on vacancy type
+      const bodyRows = Array.from(table.querySelectorAll(":scope > tbody > tr")) as HTMLElement[];
+      const positions = getPositions ? getPositions() : [];
+      
+      bodyRows.forEach((tr, idx) => {
+        const input = tr.querySelector(".formio-component-position_number input") as HTMLElement;
+        if (input && positions[idx]) {
+          const vType = positions[idx].vacancy_type;
+          if (vType === "Replacement") {
+            input.style.setProperty("border-left", "4px solid #f97316", "important");
+          } else if (vType === "New") {
+            input.style.setProperty("border-left", "4px solid #22c55e", "important");
+          } else {
+            input.style.removeProperty("border-left");
+          }
+        }
+      });
     };
 
-    // Coalesce the burst of DOM mutations from a grid update (N rows × selects)
-    // into a single inject per animation frame. Without this, injecting per
-    // mutation is very slow when the table has many rows.
     let scheduled = 0;
     const scheduleInject = () => {
       if (scheduled) return;
@@ -90,7 +103,7 @@ export default function PositionColumnCopyButtons({
       observer.disconnect();
       if (scheduled) cancelAnimationFrame(scheduled);
     };
-  }, [containerRef, onCopyColumn]);
+  }, [containerRef, onCopyColumn, getPositions]);
 
   return null;
 }

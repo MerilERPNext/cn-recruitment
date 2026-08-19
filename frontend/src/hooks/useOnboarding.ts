@@ -13,13 +13,14 @@ import type {
   ApprovalStatus,
   FieldLocalState,
   SectionEntry,
-  Toast,
   ToastType,
   UseApprovalActionsReturn,
   UseApprovalDataReturn,
   UseSectionNavReturn,
   UseToastReturn,
 } from "../types/onboarding";
+import { errorResponseFormater } from "../utils/errorResponseFormater";
+import { toast as hotToast } from "react-hot-toast";
 
 // ─── Utility: Build section map from flat field list ──────────────────────────
 
@@ -53,19 +54,20 @@ function buildInitialFieldStates(
 // ─── useToast ─────────────────────────────────────────────────────────────────
 
 export function useToast(): UseToastReturn {
-  const [toast, setToast] = useState<Toast | null>(null);
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
   const showToast = useCallback(
-    (msg: string, type: ToastType = "success",) => {
-      setToast({ msg, type });
-      if (timerRef.current) clearTimeout(timerRef.current);
-      timerRef.current = setTimeout(() => setToast(null), 2800);
+    (msg: string, type: ToastType = "success") => {
+      if (type === "success") {
+        hotToast.success(msg);
+      } else if (type === "error") {
+        hotToast.error(msg);
+      } else {
+        hotToast(msg);
+      }
     },
     []
   );
 
-  return { toast, showToast };
+  return { showToast };
 }
 
 // ─── useApprovalData ──────────────────────────────────────────────────────────
@@ -168,8 +170,7 @@ export function useApprovalActions(
         showToast(`"${fieldname}" ${status.toLowerCase()}`, "success");
       } catch (err: unknown) {
         patchFieldState(fieldname, { loading: false });
-        const msg = err instanceof Error ? err.message : "Request failed";
-        showToast(`Error: ${msg}`, "error");
+        errorResponseFormater(err, "Request failed", { showToast: true });
       }
     },
     [onboardingName, patchFieldState, showToast, refetchOnboardingList]
@@ -199,8 +200,7 @@ export function useApprovalActions(
         );
       } catch (err: unknown) {
         fieldnames.forEach((fn) => patchFieldState(fn, { loading: false }));
-        const msg = err instanceof Error ? err.message : "Request failed";
-        showToast(`Error: ${msg}`, "error");
+        errorResponseFormater(err, "Request failed", { showToast: true });
       }
     },
     [onboardingName, patchFieldState, showToast, refetchOnboardingList]
@@ -219,8 +219,7 @@ export function useApprovalActions(
         refetchOnboardingList();
         showToast(`Section "${sectionName}" ${status.toLowerCase()}`, "success");
       } catch (err: unknown) {
-        const msg = err instanceof Error ? err.message : "Request failed";
-        showToast(`Error: ${msg}`, "error");
+        errorResponseFormater(err, "Request failed", { showToast: true });
       }
     },
     [onboardingName, sections, patchFieldState, showToast, refetchOnboardingList]
@@ -245,8 +244,7 @@ export function useApprovalActions(
       refetchOnboardingList();
       showToast("All pending fields approved", "success");
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Request failed";
-      showToast(`Error: ${msg}`, "error");
+      errorResponseFormater(err, "Request failed", { showToast: true });
     }
   }, [onboardingName, setFieldStates, showToast, refetchOnboardingList]);
 

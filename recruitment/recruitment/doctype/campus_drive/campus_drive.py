@@ -6,6 +6,8 @@ from frappe import _
 from frappe.model.document import Document
 
 from recruitment.recruitment.campus_helpers import (
+	draft_drive_institutes,
+	live_drive_institutes,
 	sync_drive_applicant_links,
 	validate_unique_job_openings,
 )
@@ -13,6 +15,7 @@ from recruitment.recruitment.campus_workflow import (
 	apply_to_drive as apply_workflow_to_drive,
 	apply_to_openings as apply_workflow_to_openings,
 )
+from recruitment.recruitment.doctype.campus_invite.campus_invite import get_invite_institutes
 
 # Round types that need an interview panel / GD grouping in the reference portal.
 PANEL_ROUND_TYPES = {"Group Discussion", "Technical", "HR"}
@@ -25,6 +28,7 @@ class CampusDrive(Document):
 		self._validate_drive_window()
 		self._apply_lifecycle_status()
 		self._sync_campus_invites()
+		self._validate_participating_institutes()
 		validate_unique_job_openings(self, table_fieldname="linked_job_openings")
 		self._set_registration_defaults()
 		# After the invites are in: the rounds are built from the workflow named in
@@ -58,14 +62,21 @@ class CampusDrive(Document):
 			self.drive_status = target
 
 	def _sync_campus_invites(self):
-		"""Merge each linked Campus Invite's Institute and Job Openings into
-		participating_institutes / linked_job_openings. Additive and idempotent:
-		existing rows are kept and never duplicated, so this is safe to run on
-		every save regardless of whether the client already fetched them."""
+		"""Merge each linked Campus Invite's Job Openings into linked_job_openings.
+		Additive and idempotent: existing rows are kept and never duplicated, so this
+		is safe to run on every save regardless of whether the client already fetched
+		them.
+
+		Participating Institutes are deliberately NOT pulled in. An invite carries
+		several colleges and HR splits them into drives by candidate count — a
+		200-candidate college runs on its own, two 100s are merged — so which colleges
+		this drive covers is a decision, not a copy. HR picks them from the invites'
+		institutes (see `drive_institute_query`), and `_validate_participating_institutes`
+		keeps that choice honest.
+		"""
 		if not self.campus_invites:
 			return
 
-		known_institutes = {row.institute for row in (self.participating_institutes or []) if row.institute}
 		known_openings = {row.job_opening for row in (self.linked_job_openings or []) if row.job_opening}
 
 		added = False
@@ -73,13 +84,6 @@ class CampusDrive(Document):
 			if not invite_row.campus_invite:
 				continue
 			invite = frappe.get_doc("Campus Invite", invite_row.campus_invite)
-
-			# An invite can carry several institutes — bring them all in.
-			for institute_row in invite.institutes or []:
-				if institute_row.institute and institute_row.institute not in known_institutes:
-					self.append("participating_institutes", {"institute": institute_row.institute})
-					known_institutes.add(institute_row.institute)
-					added = True
 
 			for opening in invite.job_openings or []:
 				if opening.job_opening and opening.job_opening not in known_openings:
@@ -112,6 +116,77 @@ class CampusDrive(Document):
 		# next save.
 		if added:
 			self._validate_links()
+
+	def _validate_participating_institutes(self):
+		"""The colleges this drive runs: each invited, each listed once, none already
+		running elsewhere.
+
+		The last rule is the point of the whole arrangement. A college's registration
+		closes when its drive goes live, so a college may belong to only ONE live drive
+		per invite — otherwise "closed by DRV-A" and "still being planned on DRV-B"
+		would both be true of the same college and its TPO would get contradictory
+		answers. Colleges on a Draft drive are still free: HR routinely builds two draft
+		drives and moves a college between them while sizing the batches.
+		"""
+		rows = [row for row in (self.participating_institutes or []) if row.institute]
+		if not rows:
+			return
+
+		seen = {}
+		for row in rows:
+			if row.institute in seen:
+				frappe.throw(
+					_("Institute {0} is listed twice (rows {1} and {2}). Each college runs once "
+					  "on a drive.").format(frappe.bold(row.institute), seen[row.institute], row.idx),
+					title=_("Duplicate Institute"),
+				)
+			seen[row.institute] = row.idx
+
+		invites = _drive_invites(self)
+		if not invites:
+			return
+
+		# Only the colleges these invites actually invited may be run by this drive —
+		# the invite is what the candidates are registered against.
+		invited = set()
+		for invite in invites:
+			invited.update(get_invite_institutes(invite))
+		stray = [i for i in seen if i not in invited]
+		if stray:
+			frappe.throw(
+				_("Institute(s) {0} are not invited on this drive's Campus Invite(s) {1}. "
+				  "Add them to the invite first, or remove them here.").format(
+					frappe.bold(", ".join(stray)), frappe.bold(", ".join(invites))),
+				title=_("Institute Not Invited"),
+			)
+
+		taken = live_drive_institutes(invites, exclude_drive=self.name)
+		clashes = [i for i in seen if i in taken]
+		if clashes:
+			frappe.throw(
+				_("{0} already running on a live drive: {1}. Pick the colleges that have not "
+				  "been scheduled yet.").format(
+					_("Institutes") if len(clashes) > 1 else _("Institute"),
+					frappe.bold(", ".join(f"{i} → {taken[i]}" for i in clashes)),
+				),
+				title=_("College Already Scheduled"),
+			)
+
+		# Two DRAFT drives holding the same college is allowed — that is how HR shuffles
+		# colleges while sizing the batches. But both drafts go live by the calendar, not
+		# by a save, so nothing re-checks them at that moment: say it now, while there is
+		# still a draft to fix.
+		drafted = draft_drive_institutes(invites, exclude_drive=self.name)
+		overlap = [i for i in seen if i in drafted]
+		if overlap:
+			frappe.msgprint(
+				_("{0} also on draft drive(s): {1}. Only one drive can run a college — drop it "
+				  "from the other before both windows open.").format(
+					_("Institutes") if len(overlap) > 1 else _("Institute"),
+					frappe.bold(", ".join(f"{i} → {drafted[i]}" for i in overlap)),
+				),
+				title=_("Also on Another Draft Drive"), indicator="orange",
+			)
 
 	def on_update(self):
 		# Point this drive's candidates at it. Runs on every save (after the invite
@@ -277,9 +352,14 @@ def _qr_png_bytes(data):
 
 
 @frappe.whitelist()
-def get_campus_invite_details(campus_invite):
-	"""Return the Institutes and Job Openings of a Campus Invite so the client can
-	instantly fetch them into the Campus Drive's institute / opening tables."""
+def get_campus_invite_details(campus_invite, campus_drive=None):
+	"""What a Campus Invite brings to a drive: its Job Openings (copied in) and its
+	Institutes split into the ones still free and the ones already running.
+
+	Openings are fetched into the drive automatically — every college on the invite is
+	hiring for the same roles. Institutes are only REPORTED, because HR chooses which
+	of them this drive covers; `taken` is what the picker must not offer.
+	"""
 	invite = frappe.get_doc("Campus Invite", campus_invite)
 	openings = []
 	for row in (invite.job_openings or []):
@@ -289,11 +369,55 @@ def get_campus_invite_details(campus_invite):
 			"job_opening": row.job_opening,
 			"job_title": frappe.db.get_value("Job Opening", row.job_opening, "job_title"),
 		})
+
+	# An invite can carry several institutes.
+	institutes = [row.institute for row in (invite.institutes or []) if row.institute]
+	taken = live_drive_institutes([campus_invite], exclude_drive=campus_drive)
 	return {
-		# An invite can carry several institutes.
-		"institutes": [row.institute for row in (invite.institutes or []) if row.institute],
+		"institutes": institutes,
+		"available_institutes": [i for i in institutes if i not in taken],
+		"taken_institutes": [{"institute": i, "campus_drive": taken[i]}
+		                     for i in institutes if i in taken],
 		"job_openings": openings,
 	}
+
+
+@frappe.whitelist()
+@frappe.validate_and_sanitize_search_inputs
+def drive_institute_query(doctype, txt, searchfield, start, page_len, filters):
+	"""Link-field query for Campus Drive -> Participating Institutes.
+
+	Offers only the colleges this drive may still run: invited on one of its Campus
+	Invites, active, and not already frozen by another live drive. Filtering the
+	picker is what makes "the remaining three" the obvious choice — the server check
+	in `_validate_participating_institutes` is the one that actually enforces it.
+	"""
+	filters = filters or {}
+	invites = filters.get("campus_invites") or []
+	if isinstance(invites, str):
+		invites = frappe.parse_json(invites) or []
+	invites = [i for i in dict.fromkeys(invites) if i]
+	if not invites:
+		return []
+
+	invited = []
+	for invite in invites:
+		invited.extend(get_invite_institutes(invite))
+	taken = live_drive_institutes(invites, exclude_drive=filters.get("campus_drive"))
+	available = [i for i in dict.fromkeys(invited) if i not in taken]
+	if not available:
+		return []
+
+	return frappe.get_all(
+		"Institute",
+		filters={"name": ["in", available], "is_active": 1},
+		or_filters=[["name", "like", f"%{txt}%"], ["institute_name", "like", f"%{txt}%"]] if txt else None,
+		fields=["name", "institute_name"],
+		order_by="institute_name asc",
+		start=start,
+		page_length=page_len,
+		as_list=True,
+	)
 
 
 def _ja_status_options():

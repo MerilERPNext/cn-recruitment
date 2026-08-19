@@ -29,6 +29,11 @@ app_include_js = [
 	# because a doctype's *_list.js is evaluated after doctype_list_js resolves,
 	# which is too late for the lists that build on it. Bump ?v= when it changes.
 	"/assets/recruitment/js/list_column_engine.js?v=3",
+	# Multi-value list filters: two "Institute Equals …" rows are ANDed by Frappe
+	# and can never both match, so a second value empties the list. This folds
+	# repeated `=` on one field into a single `in`. Global for the same reason as
+	# the column engine — the *_list.js files build on it. Bump ?v= when it changes.
+	"/assets/recruitment/js/list_filter_multi.js?v=1",
 ]
 
 add_to_apps_screen = [

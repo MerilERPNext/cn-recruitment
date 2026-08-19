@@ -134,9 +134,7 @@ const Requisition = () => {
       case "approved":
       case "approved active":
       case "open":
-      case "approved draft":
         return "bg-green-100 text-green-700";
-      case "approval pending":
       case "approval pending":
         return "bg-yellow-100 text-yellow-700";
       case "draft":
@@ -190,7 +188,7 @@ const Requisition = () => {
       if (key === "status") {
         return (
           <div className="flex justify-center items-center">
-            {String(value || "").toLowerCase() === "pending" ? (
+            {String(value || "").toLowerCase().includes("pending") ? (
               <AllocatedToTooltip users={item?.approval_allocation} title="Pending With" position="left">
                 <Badge label={String(value || "--")} backgroundColor={getStatusColor(String(value || ""))} />
               </AllocatedToTooltip>
@@ -256,7 +254,7 @@ const Requisition = () => {
           </div>
 
           <div className="flex justify-center items-center">
-            {status?.toLowerCase() === "pending" ? (
+            {status?.toLowerCase().includes("pending") ? (
               <AllocatedToTooltip
                 users={item?.approval_allocation}
                 title="Pending With"
@@ -423,7 +421,7 @@ const Requisition = () => {
                 {designation}
               </Typography>
             </div>
-            {status?.toLowerCase() === "pending" ? (
+            {status?.toLowerCase().includes("pending") ? (
               <AllocatedToTooltip
                 users={item?.approval_allocation}
                 title="Pending With"
@@ -559,16 +557,6 @@ const Requisition = () => {
       label: "Status",
       fieldtype: "Select",
       options: ["Draft", "Approval Pending", "Approved Draft", "Approved Active", "Rejected", "Auto Archived", "Archived", "On Hold", "Cancelled"],
-    },
-    {
-      fieldname: "department",
-      label: "Department",
-      fieldtype: "Data",
-    },
-    {
-      fieldname: "designation",
-      label: "Designation",
-      fieldtype: "Data",
     },
   ];
 
@@ -778,7 +766,7 @@ const Requisition = () => {
                   <Typography variant="bodySmall" className="text-gray-500 text-xs mb-0.5">
                     Status
                   </Typography>
-                  {selectedRequisition?.status?.toLowerCase() === "pending" ? (
+                  {selectedRequisition?.status?.toLowerCase().includes("pending") ? (
                     <AllocatedToTooltip
                       users={selectedRequisition?.approval_allocation}
                       title="Pending With"

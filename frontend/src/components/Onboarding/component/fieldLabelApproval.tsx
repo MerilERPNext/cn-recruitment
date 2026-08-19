@@ -19,6 +19,7 @@ import {
 import { updateOnboardingDetailsESS } from "../../../services/employeeOnboardingService";
 import { useEmployeeOnboardingDetail } from "../../../hooks/useOnboardingFlow";
 import { useNavigate } from "react-router-dom";
+import { errorResponseFormater } from "../../../utils/errorResponseFormater";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -568,7 +569,7 @@ export default function OnboardingFieldApproval() {
 
   // ── Hooks ──
   const { isDesktop } = useScreenSize();
-  const { toast, showToast } = useToast();
+  const { showToast } = useToast();
 
   const {
     allFields,
@@ -581,7 +582,7 @@ export default function OnboardingFieldApproval() {
     setFieldStates,
   } = useApprovalData(onboardingName);
 
-  const { singleAction, bulkSelectedAction, sectionAction } =
+  const { singleAction, bulkSelectedAction, sectionAction, bulkApproveAllPending } =
     useApprovalActions(onboardingName, sections, patchFieldState, setFieldStates, showToast);
 
   const secKeys = Object.keys(sections);
@@ -643,13 +644,7 @@ export default function OnboardingFieldApproval() {
     if (approveAllRemainingLoading || secKeys.length === 0) return;
     setApproveAllRemainingLoading(true);
     try {
-      for (const sec of secKeys) {
-        await sectionAction(sec, "Approved");
-      }
-      showToast("All remaining fields approved", "success");
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Request failed";
-      showToast(`Error: ${msg}`, "error");
+      await bulkApproveAllPending();
     } finally {
       setApproveAllRemainingLoading(false);
     }
@@ -720,8 +715,7 @@ export default function OnboardingFieldApproval() {
         "success"
       );
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Request failed";
-      showToast(`Error: ${msg}`, "error");
+      errorResponseFormater(err, "Request failed", { showToast: true });
     } finally {
       setSendBackLoading(false);
     }
@@ -738,8 +732,7 @@ export default function OnboardingFieldApproval() {
       }
       showToast("Onboarding form approved", "success");
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Request failed";
-      showToast(`Error: ${msg}`, "error");
+      errorResponseFormater(err, "Request failed", { showToast: true });
     } finally {
       setApproveFormLoading(false);
     }
@@ -1125,20 +1118,7 @@ export default function OnboardingFieldApproval() {
         )}
       </main>
 
-      {/* ── Toast ── */}
-      {toast && (
-        <div
-          className={`fixed top-5 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-xl text-xs font-medium border shadow-lg transition-all ${
-            toast.type === "error" || toast.msg === "reject"
-              ? "bg-error-50 text-error-600 border-error-200"
-              : toast.type === "info"
-              ? "bg-primary-50 text-primary-700 border-primary-200"
-              : "bg-success-50 text-success-600 border-success-200"
-          }`}
-        >
-          {toast.msg}
-        </div>
-      )}
+
     </div>
   );
 }

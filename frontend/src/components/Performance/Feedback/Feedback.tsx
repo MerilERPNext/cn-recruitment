@@ -13,24 +13,16 @@ import { PeerReviewSidebarSkeleton } from "./components/PeerReviewSidebarSkeleto
 import { FeedbackErrorCard } from "./components/FeedbackErrorCard";
 import { FeedbackFormSkeleton } from "./components/FeedbackFormSkeleton";
 import { getPerformanceErrorMessage } from "../../../services/performanceService";
+import { useScreenSize } from "../../../hooks/useScreenSize";
+import PeerReviewMobileDropdown from "./components/PeerReviewMobileDropdown";
+import { getInitials } from "../../../utils/helperUtils";
 
 const EMPTY_SCALE: FeedbackScaleOption[] = []
-
-export const getInitials = (name?: string) => {
-  if (!name) return "??";
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  if (parts.length >= 2) {
-    return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
-  }
-  if (parts.length === 1) {
-    return parts[0].slice(0, 2).toUpperCase();
-  }
-  return "??";
-};
 
 
 const Feedback = () => {
   const queryClient = useQueryClient()
+  const {isDesktop } = useScreenSize()
   const { data: myPeerReviews, isLoading, error, refetch } = useGetMyPeerReviews();
 
   const apiReviews = myPeerReviews?.data?.reviews;
@@ -159,6 +151,23 @@ const Feedback = () => {
     <div className="min-h-full bg-[#f8fafc]  p-4 sm:p-1 font-sans">
       <div className="max-w-[1300px] mx-auto flex flex-col xl:flex-row gap-6">
         <div className="flex-1 flex flex-col min-w-0">
+          {!isDesktop && (
+            isLoading ? (
+              <div className="mb-4">
+                <PeerReviewSidebarSkeleton />
+              </div>
+            ) : error ? (
+              <div className="mb-4">
+                <FeedbackErrorCard error={error} onRetry={() => refetch()} />
+              </div>
+            ) : (
+              <PeerReviewMobileDropdown
+                openReviews={openReviews}
+                activeNominationId={activeNominationId}
+                onSelectReview={handleSelectReview}
+              />
+            )
+          )}
           {feedbackLoading ? (
             <FeedbackFormSkeleton />
           ) : feedbackErr ? (
@@ -273,16 +282,20 @@ const Feedback = () => {
             title="YOUR FEEDBACK IS ANONYMOUS"
             note={reviewFeedbackResponse?.anonymity?.note}
           />
-          {isLoading ? (
-            <PeerReviewSidebarSkeleton />
-          ) : error ? (
-            <FeedbackErrorCard error={error} onRetry={() => refetch()} />
-          ) : (
-            <FeedbackRightSidebar
-              openReviews={openReviews}
-              activeNominationId={activeNominationId}
-              onSelectReview={handleSelectReview}
-            />
+          {isDesktop && (
+            <>
+              {isLoading ? (
+                <PeerReviewSidebarSkeleton />
+              ) : error ? (
+                <FeedbackErrorCard error={error} onRetry={() => refetch()} />
+              ) : (
+                <FeedbackRightSidebar
+                  openReviews={openReviews}
+                  activeNominationId={activeNominationId}
+                  onSelectReview={handleSelectReview}
+                />
+              )}
+            </>
           )}
         </div>
       </div>

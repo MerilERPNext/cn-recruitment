@@ -73,10 +73,6 @@ export interface ApiConfig {
   authToken: string;
 }
 
-export interface Toast {
-  msg: string;
-  type: ToastType;
-}
 
 // ─── Hook Return Types ────────────────────────────────────────────────────────
 
@@ -114,7 +110,6 @@ export interface UseApprovalActionsReturn {
 }
 
 export interface UseToastReturn {
-  toast: Toast | null;
   showToast: (msg: string, type?: ToastType) => void;
 }
 

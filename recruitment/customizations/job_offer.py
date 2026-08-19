@@ -289,6 +289,14 @@ OFFER_REQUIRED_BEFORE_SEND = (
 	("custom_expected_doj", "Expected DOJ"),
 )
 
+# A Trainee is sent two letters — the Management Trainee one and the permanent one
+# — and they start on different days, so the traineeship's own date is required
+# too. Guessing it from Expected DOJ is what this field exists to stop.
+TRAINEE_EMPLOYMENT_TYPE = "Trainee"
+TRAINEE_REQUIRED_BEFORE_SEND = (
+	("custom_trainee_doj", "Management Trainee Joining Date"),
+)
+
 # Where an employment type can be found, best source first. The offer's own
 # fetch_from only reads the Job Applicant, so an applicant who never had one (every
 # campus candidate — nothing in the application form asks) left the field blank with
@@ -296,7 +304,6 @@ OFFER_REQUIRED_BEFORE_SEND = (
 _EMPLOYMENT_TYPE_SOURCES = (
 	("Job Applicant", "job_applicant", "custom_employment_type"),
 	("Job Opening", "job_title", "employment_type"),
-	("Job Opening", "job_title", "custom_employment_type"),
 )
 
 
@@ -338,8 +345,12 @@ def validate_offer_is_complete(doc, method=None):
 	last thing agreed. Blocking every save would stop HR recording the rest of it —
 	blocking the SEND is what actually matters.
 	"""
+	required = list(OFFER_REQUIRED_BEFORE_SEND)
+	if _is_trainee_offer(doc):
+		required.extend(TRAINEE_REQUIRED_BEFORE_SEND)
+
 	missing = [
-		label for field, label in OFFER_REQUIRED_BEFORE_SEND
+		label for field, label in required
 		if doc.meta.get_field(field) and not doc.get(field)
 	]
 	if not missing:
@@ -349,10 +360,26 @@ def validate_offer_is_complete(doc, method=None):
 		_("Fill in {0} before sending this offer.<br><br>"
 		  "The offer decides how this person is hired: <b>Employee Type</b> drives their "
 		  "salary structure and statutory treatment, and <b>Expected DOJ</b> is the date "
-		  "onboarding is planned around. An offer sent without them has to be withdrawn "
-		  "and re-issued.").format(", ".join(frappe.bold(m) for m in missing)),
+		  "onboarding is planned around. A Trainee is also sent the Management Trainee "
+		  "letter, which starts on its own <b>Management Trainee Joining Date</b>. An "
+		  "offer sent without them has to be withdrawn and re-issued.").format(
+			", ".join(frappe.bold(m) for m in missing)),
 		title=_("Offer is incomplete"),
 	)
+
+
+def _is_trainee_offer(doc):
+	"""Whether this offer is for a Trainee, by the Employment Type's readable name.
+
+	Compared on the name rather than the link value because Employment Type is
+	autonamed (``EMPTYPE_.#``), so the id differs from site to site.
+	"""
+	employment_type = doc.get("custom_employment_type")
+	if not employment_type:
+		return False
+
+	name = frappe.db.get_value("Employment Type", employment_type, "employee_type_name")
+	return (name or "").strip().casefold() == TRAINEE_EMPLOYMENT_TYPE.casefold()
 
 
 @frappe.whitelist()
