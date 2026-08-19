@@ -55,8 +55,14 @@ const HeroCard: React.FC<HeroCardProps> = ({ isCompact }) => {
     {
       label: "NO PLAN YET",
       value: cards ? String(cards.no_plan_yet) : "0",
-      sub: cards ? `${cards.on_track_employees} on-track` : "0 on-track",
+      sub: "Without goals",
       valueColor: "text-slate-600",
+    },
+    {
+      label: "ON-TRACK EMPLOYEES",
+      value: cards ? String(cards.on_track_employees) : "0",
+      sub: `of ${overview?.team_size ?? 0} reportees`,
+      valueColor: "text-green-600",
     },
   ];
 
@@ -83,8 +89,8 @@ const HeroCard: React.FC<HeroCardProps> = ({ isCompact }) => {
                 pulse={{ show: true, color: "bg-blue-600" }}
               />
               <Typography variant="bodySmall" className="break-words text-gray-500">
-                {formatDate(overview?.start_date) || "1 Jan 2026"} &rarr; {formatDate(overview?.end_date) || "31 Dec 2026"}{" "}
-                &middot; {overview?.company || "India Tech"}
+                {formatDate(overview?.start_date) || "No date found"} &rarr; {formatDate(overview?.end_date) || "No date found"}{" "}
+                &middot; {overview?.company || "-"}
               </Typography>
             </div>
             <Typography variant="h3" className="break-words text-xl leading-tight sm:text-2xl font-bold text-slate-900">
