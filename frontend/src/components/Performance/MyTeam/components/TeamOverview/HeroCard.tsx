@@ -10,13 +10,7 @@ import OverviewStats from "./OverviewStats";
 import { formatDate } from "../../../Overview/component/OverviewHeader";
 import HeroCardSkeleton from "./HeroCardSkeleton";
 
-const fallbackSteps = [
-  { n: 1, label: "Goal Setting", done: true, active: false },
-  { n: 2, label: "Self-Review", done: false, active: true },
-  { n: 3, label: "Manager Review", done: false, active: false },
-  { n: 4, label: "Calibration", done: false, active: false },
-  { n: 5, label: "Released", done: false, active: false },
-];
+
 
 interface HeroCardProps {
   isCompact: boolean;
@@ -68,7 +62,7 @@ const HeroCard: React.FC<HeroCardProps> = ({ isCompact }) => {
   ], [cards, overview?.team_size]);
 
   const steps = useMemo(() => {
-    if (!overview?.stages || overview.stages.length === 0) return fallbackSteps;
+    if (!overview?.stages || overview.stages.length === 0) return [];
 
     const currentStageSeq = overview.stages.find(
       (s) => s.stage_name === overview.current_stage
@@ -115,10 +109,10 @@ const HeroCard: React.FC<HeroCardProps> = ({ isCompact }) => {
               </Typography>
             </div>
             <Typography variant="h3" className="break-words text-xl leading-tight sm:text-2xl font-bold text-slate-900">
-              {overview?.cycle_name || "FY26 Annual Performance Cycle"}
+              {overview?.cycle_name || "-"}
             </Typography>
             <Typography variant="bodySmall" className="mt-1 block break-words text-gray-500">
-              Your team &middot; {overview?.team_size ?? "-"} reportees &middot; {overview?.company || "India Tech BU"}
+              Your team &middot; {overview?.team_size ?? "-"} reportees &middot; {overview?.company || "-"}
             </Typography>
           </div>
 
@@ -152,34 +146,40 @@ const HeroCard: React.FC<HeroCardProps> = ({ isCompact }) => {
           </div>
         </div>
 
-        <div className="flex items-center gap-0 overflow-x-auto pb-1 scrollbar-hide">
-          {steps.map((step, idx) => (
-            <React.Fragment key={step.label}>
-              {idx > 0 && <div className="h-px w-5 md:w-8 lg:w-10 shrink-0 bg-gray-200 mx-1.5 md:mx-2 lg:mx-3" />}
-              <div
-                className={`flex items-center gap-2 shrink-0 ${!step.done && !step.active ? "opacity-40" : ""}`}
-              >
-                {step.done ? (
-                  <div className="w-5 h-5 rounded-full bg-green-500 text-white flex items-center justify-center shrink-0">
-                    <Check className="w-3 h-3" />
-                  </div>
-                ) : (
-                  <div
-                    className={`w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${step.active ? "bg-[#1a73e8] text-white" : "bg-gray-100 text-gray-500"}`}
-                  >
-                    {step.n}
-                  </div>
-                )}
-                <Typography
-                  variant="caption"
-                  className={`whitespace-nowrap font-medium text-[11px] ${step.active ? "text-[#1a73e8] font-bold" : step.done ? "text-green-600 font-bold" : "text-gray-500"}`}
+        {steps.length > 0 ? (
+          <div className="flex items-center gap-0 overflow-x-auto pb-1 scrollbar-hide">
+            {steps.map((step, idx) => (
+              <React.Fragment key={step.label}>
+                {idx > 0 && <div className="h-px w-5 md:w-8 lg:w-10 shrink-0 bg-gray-200 mx-1.5 md:mx-2 lg:mx-3" />}
+                <div
+                  className={`flex items-center gap-2 shrink-0 ${!step.done && !step.active ? "opacity-40" : ""}`}
                 >
-                  {step.label}
-                </Typography>
-              </div>
-            </React.Fragment>
-          ))}
-        </div>
+                  {step.done ? (
+                    <div className="w-5 h-5 rounded-full bg-green-500 text-white flex items-center justify-center shrink-0">
+                      <Check className="w-3 h-3" />
+                    </div>
+                  ) : (
+                    <div
+                      className={`w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${step.active ? "bg-[#1a73e8] text-white" : "bg-gray-100 text-gray-500"}`}
+                    >
+                      {step.n}
+                    </div>
+                  )}
+                  <Typography
+                    variant="caption"
+                    className={`whitespace-nowrap font-medium text-[11px] ${step.active ? "text-[#1a73e8] font-bold" : step.done ? "text-green-600 font-bold" : "text-gray-500"}`}
+                  >
+                    {step.label}
+                  </Typography>
+                </div>
+              </React.Fragment>
+            ))}
+          </div>
+        ) : (
+          <div className="py-2 text-left text-xs text-gray-400 font-medium">
+            No active cycle stages configured.
+          </div>
+        )}
       </section>
 
       <OverviewStats isCompact={isCompact} stats={stats} />
