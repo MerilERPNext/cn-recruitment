@@ -111,7 +111,7 @@ const TeamTable: React.FC<TeamTableProps> = ({ isCompact }) => {
             </Typography>
           </div>
         </div>
-        <div className={`flex items-center gap-3 ${isCompact ? "flex-wrap w-full" : ""}`}>
+        <div className={`flex items-center gap-2.5 ${isCompact ? "flex-wrap w-full" : ""}`}>
           <div className={`relative ${isCompact ? "w-full" : "w-48 sm:w-56"}`}>
             <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-400" />
             <input
@@ -135,21 +135,23 @@ const TeamTable: React.FC<TeamTableProps> = ({ isCompact }) => {
             value={selectedStatus}
             onChange={handleStatusChange}
             options={statusOptions}
-            position="bottom-right"
-            className={isCompact ? "flex-1" : ""}
+            position="bottom-left"
+            className={isCompact ? "flex-1" : "w-auto"}
+            menuClassName="min-w-[160px] w-auto max-w-[200px]"
           />
           <CustomDropdown
             value={selectedSort}
             onChange={handleSortChange}
             options={SORT_OPTIONS}
-            position="bottom-right"
-            className={isCompact ? "flex-1" : ""}
+            position="bottom-left"
+            className={isCompact ? "flex-1" : "w-auto"}
+            menuClassName="min-w-[170px] w-auto max-w-[220px]"
           />
           <Button
             variant="contain"
             bgColor="primary"
             disabled={overdueCount === 0}
-            className={`${isCompact ? "w-full" : "px-4 py-2"} justify-center rounded-lg bg-[#1a73e8] text-xs font-semibold hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed`}
+            className={`${isCompact ? "w-full" : "px-3.5 py-2"} justify-center rounded-lg bg-[#1a73e8] text-xs font-semibold hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed`}
           >
             Nudge {overdueCount} overdue
           </Button>
