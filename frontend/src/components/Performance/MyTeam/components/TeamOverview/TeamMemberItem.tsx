@@ -1,5 +1,4 @@
-import { ArrowRight, Check } from "lucide-react";
-import Button from "../../../../shared/atoms/Button";
+import { Check, Eye, FileCheck, Plus } from "lucide-react";
 import Avatar from "../../../../shared/Avatar";
 import Badge from "../../../../shared/Badge";
 import { Typography } from "../../../../shared/atoms/Typography";
@@ -46,26 +45,51 @@ const ToneBadge = ({ label, tone }: { label: string; tone?: string }) => {
 };
 
 const ActionButton = ({ actions }: { actions?: string[] }) => {
-  if (actions?.includes("approve_goals")) {
-    return (
-      <Button variant="contain" bgColor="primary" size="sm" fullWidth>
-        Review <ArrowRight className="w-3 h-3 ml-1" />
-      </Button>
-    );
-  }
-
-  if (actions?.includes("request_checkin")) {
-    return (
-      <Button variant="contain" bgColor="primary" size="sm" fullWidth>
-        Nudge
-      </Button>
-    );
-  }
+  if (!actions || actions.length === 0) return null;
 
   return (
-    <Button variant="outline" bgColor="primary" size="sm" fullWidth className="border-blue-200">
-      View
-    </Button>
+    <div className="flex items-center justify-center gap-1.5">
+      {actions.map((act) => {
+        if (act === "approve_goals") {
+          return (
+            <button
+              key={act}
+              type="button"
+              title="Review & Approve Goals"
+              className="inline-flex items-center justify-center h-8 w-8 rounded-lg bg-blue-600 text-white shadow-sm transition-all hover:bg-blue-700 active:scale-95"
+            >
+              <FileCheck className="h-4 w-4" />
+            </button>
+          );
+        }
+      
+        if (act === "create_plan" || act === "add_goals") {
+          return (
+            <button
+              key={act}
+              type="button"
+              title="Create Goal Plan"
+              className="inline-flex items-center justify-center h-8 w-8 rounded-lg bg-emerald-600 text-white shadow-sm transition-all hover:bg-emerald-700 active:scale-95"
+            >
+              <Plus className="h-4 w-4" />
+            </button>
+          );
+        }
+        if (act === "view_goals") {
+          return (
+            <button
+              key={act}
+              type="button"
+              title="View Goals"
+              className="inline-flex items-center justify-center h-8 w-8 rounded-lg border border-slate-200 bg-white text-slate-600 shadow-sm transition-all hover:border-slate-300 hover:bg-slate-100 hover:text-slate-900 active:scale-95"
+            >
+              <Eye className="h-4 w-4" />
+            </button>
+          );
+        }
+    
+      })}
+    </div>
   );
 };
 
@@ -231,7 +255,7 @@ export const TeamMemberItem = ({ item: m }: { item: TeamMemberItemType }) => {
         )}
       </div>
       <div className="whitespace-nowrap text-center">
-        <div className="mx-auto w-24">
+        <div className="flex justify-center">
           <ActionButton actions={m.actions} />
         </div>
       </div>
