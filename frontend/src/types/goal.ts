@@ -811,7 +811,90 @@ export interface TeamOverviewResponse {
   data: TeamOverviewData;
 }
 
+export interface TeamMemberItem {
+  employee: string;
+  employee_name: string;
+  initials: string;
+  image: string | null;
+  designation: string;
+  department: string;
+  tenure_years: number;
+  goal_plan: string | null;
+  plan_status: string;
+  goal_count: number;
+  goals_pending_approval: number;
+  progress: number;
+  score: number;
+  expected_progress: number;
+  off_track_count: number;
+  behind_schedule_count: number;
+  stale_checkin_count: number;
+  checkin_requested: boolean;
+  checkin_requested_count: number;
+  checkin_overdue: boolean;
+  last_checkin_date: string | null;
+  days_since_checkin: number | null;
+  status: string;
+  status_label: string;
+  status_tone: string;
+  actions: string[];
+}
 
+export interface TeamMembersSummary {
+  total: number;
+  no_plan: number;
+  pending_approval: number;
+  off_track: number;
+  checkin_due: number;
+  on_track: number;
+}
 
+export interface TeamMembersRules {
+  off_track_tolerance: number;
+  stale_checkin_days: number;
+  include_indirect: number;
+}
 
+export interface TeamMembersData {
+  manager: string;
+  members: TeamMemberItem[];
+  count: number;
+  matched: number;
+  total: number;
+  start: number;
+  limit: number;
+  has_more: boolean;
+  summary: TeamMembersSummary;
+  filters: string[];
+  rules: TeamMembersRules;
+}
 
+export type TeamMembersStatusFilter =
+  | "all"
+  | "no_plan"
+  | "pending_approval"
+  | "off_track"
+  | "checkin_due"
+  | "on_track";
+
+export type TeamMembersSortOption =
+  | "progress"
+  | "progress_desc"
+  | "name"
+  | "checkin"
+  | "off_track";
+
+export interface TeamMembersParams {
+  manager?: string;
+  status?: TeamMembersStatusFilter;
+  sort?: TeamMembersSortOption;
+  search?: string;
+  limit?: number;
+  start?: number;
+}
+
+export interface TeamMembersResponse {
+  success: boolean;
+  message: string;
+  data: TeamMembersData;
+}
