@@ -36,6 +36,8 @@ import type {
   AddGoalCommentPayload,
   AddGoalCommentResponse,
   TeamOverviewResponse,
+  TeamMembersParams,
+  TeamMembersResponse,
 } from "../types/goal";
 import FrappeAPI from "../utils/frappeAPI";
 
@@ -331,6 +333,13 @@ export const performanceService = {
       manager ? { manager } : undefined,
     );
     return res as TeamOverviewResponse;
+  },
+  getTeamMembers: async (params?: TeamMembersParams): Promise<TeamMembersResponse> => {
+    const response = await FrappeAPI.getMethod(
+      "cn_pms.cn_performance_management.api.team_api.get_team_members",
+      params as Record<string, unknown> | undefined,
+    );
+    return response as TeamMembersResponse;
   },
 
 };

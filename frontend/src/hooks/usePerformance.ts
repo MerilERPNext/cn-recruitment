@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient, type UseQueryResult } from "@tanstack/react-query";
-import type { DeleteGoalsPayload, GoalActionResponse, GoalFormConfig, GoalPlanId, GoalPlanResponse, GoalsRequest, GoalSubmitResponse, Message, MyGoalsResponse, ReferenceGoalsParams, ReferenceGoalsResponse, GoalRepositoryResponse, SaveGoalsPayload, SubmitSelectedGoalsPayload, CascadeGoalsParams, CascadeGoalsResponse, GoalDetailResponse, GoalCheckInsResponse, SubmitGoalCheckInPayload, SubmitGoalCheckInResponse, PerformanceOverviewResponse, RequestCheckInPayload, RequestCheckInResponse, MyPeerReviewsResponse, FeedbackFormResponse, SaveFeedbackResponse, SaveFeedbackPayload, SubmitFeedbackPayload, SubmitFeedbackResponse, AddGoalCommentPayload, AddGoalCommentResponse, TeamOverviewResponse } from "../types/goal";
+import type { DeleteGoalsPayload, GoalActionResponse, GoalFormConfig, GoalPlanId, GoalPlanResponse, GoalsRequest, GoalSubmitResponse, Message, MyGoalsResponse, ReferenceGoalsParams, ReferenceGoalsResponse, GoalRepositoryResponse, SaveGoalsPayload, SubmitSelectedGoalsPayload, CascadeGoalsParams, CascadeGoalsResponse, GoalDetailResponse, GoalCheckInsResponse, SubmitGoalCheckInPayload, SubmitGoalCheckInResponse, PerformanceOverviewResponse, RequestCheckInPayload, RequestCheckInResponse, MyPeerReviewsResponse, FeedbackFormResponse, SaveFeedbackResponse, SaveFeedbackPayload, SubmitFeedbackPayload, SubmitFeedbackResponse, AddGoalCommentPayload, AddGoalCommentResponse, TeamOverviewResponse, TeamMembersResponse, TeamMembersParams } from "../types/goal";
 import { performanceService } from "../services/performanceService";
 import { queryClient } from "../providers/QueryProvider";
 interface PerformanceQueryKey {
@@ -16,6 +16,7 @@ interface PerformanceQueryKey {
   goalCheckIns: (goalId: string) => ["performance", "goal-check-ins", string];
   overview: ["performance", "overview"];
   teamOverview: (manager?: string) => ["performance", "team-overview", string | undefined];
+  teamMembers: (params?: TeamMembersParams) => ["performance", "team-members", TeamMembersParams | undefined];
   myPeerReviews: ["performance", "my-peer-reviews"];
   feedbackForm: (nomination: string) => ["performance", "feedback-form", string];
 }
@@ -32,6 +33,7 @@ export const PERFORMANCE_QUERY_KEYS: PerformanceQueryKey = {
   goalCheckIns: (goalId: string) => ["performance", "goal-check-ins", goalId] as const,
   overview: ["performance", "overview"] as const,
   teamOverview: (manager?: string) => ["performance", "team-overview", manager] as const,
+  teamMembers: (params?: TeamMembersParams) => ["performance", "team-members", params],
   myPeerReviews: ["performance", "my-peer-reviews"] as const,
   feedbackForm: (nomination: string) => ["performance", "feedback-form", nomination] as const,
 };
@@ -278,5 +280,11 @@ export const useGetTeamOverview = (manager?: string): UseQueryResult<TeamOvervie
   useQuery<TeamOverviewResponse, Error>({
     queryKey: PERFORMANCE_QUERY_KEYS.teamOverview(manager),
     queryFn: () => performanceService.getTeamOverview(manager),
+    staleTime: 5 * 60 * 1000,
+  });
+export const useGetTeamMembers = (params?: TeamMembersParams): UseQueryResult<TeamMembersResponse, Error> =>
+  useQuery<TeamMembersResponse, Error>({
+    queryKey: PERFORMANCE_QUERY_KEYS.teamMembers(params),
+    queryFn: () => performanceService.getTeamMembers(params),
     staleTime: 5 * 60 * 1000,
   });
