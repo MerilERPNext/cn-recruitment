@@ -61,12 +61,12 @@ const HeroCard: React.FC<HeroCardProps> = ({ isCompact }) => {
         </div>
       </div>
 
-      <div className="flex items-center justify-between gap-1 overflow-x-auto pt-4 border-t border-slate-100 scrollbar-hide">
+      <div className="flex items-center gap-0 overflow-x-auto pb-1 scrollbar-hide">
         {steps.map((step, idx) => (
           <React.Fragment key={step.label}>
-            {idx > 0 && <div className="h-px min-w-[12px] max-w-[36px] flex-1 bg-gray-200 mx-1 sm:mx-2 shrink-0" />}
+            {idx > 0 && <div className="h-px w-5 md:w-8 lg:w-10 shrink-0 bg-gray-200 mx-1.5 md:mx-2 lg:mx-3" />}
             <div
-              className={`flex items-center gap-1.5 sm:gap-2 shrink-0 ${!step.done && !step.active ? "opacity-40" : ""}`}
+              className={`flex items-center gap-2 shrink-0 ${!step.done && !step.active ? "opacity-40" : ""}`}
             >
               {step.done ? (
                 <div className="w-5 h-5 rounded-full bg-green-500 text-white flex items-center justify-center shrink-0">
@@ -81,7 +81,7 @@ const HeroCard: React.FC<HeroCardProps> = ({ isCompact }) => {
               )}
               <Typography
                 variant="caption"
-                className={`whitespace-nowrap font-medium text-[11px] sm:text-xs ${step.active ? "text-[#1a73e8] font-bold" : step.done ? "text-green-600 font-bold" : "text-gray-500"}`}
+                className={`whitespace-nowrap font-medium text-[11px] ${step.active ? "text-[#1a73e8] font-bold" : step.done ? "text-green-600 font-bold" : "text-gray-500"}`}
               >
                 {step.label}
               </Typography>
