@@ -141,8 +141,7 @@ export const EmployeeGoalCard = React.memo(({
             </div>
           </div>
 
-          <div className="flex items-center justify-between sm:justify-end shrink-0 w-full sm:w-auto gap-2 pt-1 sm:pt-0">
-           
+          <div className="flex items-center flex-wrap sm:flex-nowrap justify-start sm:justify-end shrink-0 w-full sm:w-auto gap-2 pt-2 sm:pt-0">
             <Button
               variant="subtle"
               bgColor="primary"
@@ -151,7 +150,7 @@ export const EmployeeGoalCard = React.memo(({
                 e.stopPropagation();
                 setIsCommentModalOpen(true);
               }}
-              className="font-medium text-xs px-3.5 py-1.5 rounded-lg border border-blue-100 text-blue-700 bg-blue-50/80 hover:bg-blue-100 hover:border-blue-200 transition-all flex items-center gap-1.5 shadow-xs cursor-pointer"
+              className="font-medium text-[11px] sm:text-xs px-2.5 sm:px-3.5 py-1.5 rounded-lg border border-blue-100 text-blue-700 bg-blue-50/80 hover:bg-blue-100 hover:border-blue-200 transition-all flex items-center justify-center gap-1 sm:gap-1.5 shadow-2xs cursor-pointer shrink-0 whitespace-nowrap"
             >
               <MessageSquare className="w-3.5 h-3.5 text-blue-600 shrink-0" />
               Comment
@@ -159,7 +158,7 @@ export const EmployeeGoalCard = React.memo(({
             <Button
               variant="outline"
               disabled={isGoalPending}
-              className={`font-medium text-xs px-3.5 py-1.5 rounded-lg transition-all shadow-xs flex items-center gap-1.5 ${
+              className={`font-medium text-[11px] sm:text-xs px-2.5 sm:px-3.5 py-1.5 rounded-lg transition-all shadow-2xs flex items-center justify-center gap-1 sm:gap-1.5 shrink-0 whitespace-nowrap ${
                 isPendingStatus
                   ? "border-gray-200 text-gray-400 bg-gray-50 opacity-60 cursor-not-allowed"
                   : "border-blue-200 text-blue-600 hover:bg-blue-50 hover:border-blue-300 disabled:opacity-60 disabled:cursor-not-allowed"
@@ -176,7 +175,7 @@ export const EmployeeGoalCard = React.memo(({
               {isGoalPending ? (
                 <>
                   <span className="w-3.5 h-3.5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin shrink-0" />
-                  Requesting Check in...
+                  Requesting...
                 </>
               ) : (
                 "Request Check in"
@@ -186,11 +185,11 @@ export const EmployeeGoalCard = React.memo(({
             <button
               type="button"
               onClick={handleToggle}
-              className="p-1.5 rounded-full border border-gray-300 hover:border-blue-400 hover:bg-blue-50 text-gray-500 transition-colors flex items-center justify-center shrink-0 cursor-pointer"
+              className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg border border-gray-200 sm:border-gray-300 hover:border-blue-400 hover:bg-blue-50 text-gray-500 transition-colors flex items-center justify-center shrink-0 cursor-pointer"
               aria-label={isExpanded ? "Collapse Key Results" : "Expand Key Results"}
             >
               <ChevronDown
-                className={`w-4 h-4 transition-transform duration-200 ${
+                className={`w-3.5 h-3.5 sm:w-4 sm:h-4 transition-transform duration-200 ${
                   isExpanded ? "rotate-180 text-blue-600" : ""
                 }`}
               />
