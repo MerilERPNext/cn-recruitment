@@ -375,7 +375,8 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
         // starts with the correct value and Formio's customConditional /
         // validate expressions on time_type_selection see it immediately.
         const isTimeTypeRequired =
-          !!(reqValidationmutation.data as any)?.enable_time_type_selection;
+          !!(reqValidationmutation.data as any)?.enable_time_type_selection ||
+          !!(attendanceRequestAttachmentsMandatory as any)?.enable_time_type_selection;
         const enableTimeTypeComp = panel.components.find(
           (comp: SchemaComponent) => comp.key === "enable_time_type_selection",
         );
@@ -580,6 +581,11 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
         isForOthers: isForOthers,
         currentEmployeeId: currentEmployee?.employee || "",
         currentUserId: currentEmployee?.user_id || "",
+        enable_time_type_selection: !!(
+          (attendanceRequestAttachmentsMandatory as any)
+            ?.enable_time_type_selection ||
+          (reqValidationmutation?.data as any)?.enable_time_type_selection
+        ),
       },
     }),
     // only recompute if these meaningful inputs change:
@@ -590,6 +596,7 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
       currentEmployee?.user_id,
       isForOthers,
       attendanceRequestAttachmentsMandatory,
+      reqValidationmutation?.data,
     ],
   );
   // Update hidden fields when isForOthers or currentEmployee changes
@@ -744,51 +751,15 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
     // Push the Attendance Adjustment specific config flags into the hidden
     // fields so customConditional/validate expressions (which read off `data`)
     // can react to them.
-    // enable_time_type_selection comes from the attendance policy API
-    // (reqValidationmutation.data), NOT from attendanceRequestAttachmentsMandatory.
     const enableTimeTypeSelectionComp = instance.getComponent(
       "enable_time_type_selection",
     );
-    const isTimeTypeRequired = !!(reqValidationmutation.data as any)
-      ?.enable_time_type_selection;
     if (enableTimeTypeSelectionComp) {
-      enableTimeTypeSelectionComp.setValue(isTimeTypeRequired);
-    }
-
-    // Directly set validate.required on the time_type_selection component and
-    // toggle the field-required CSS class on its label so the asterisk from
-    // the existing .show-req-astrik .field-required::after rule shows/hides
-    // immediately. Formio Logic triggers are unreliable for hidden-field-driven
-    // changes because setValue with noUpdateEvent skips Logic re-evaluation.
-    const timeTypeComp = instance.getComponent("time_type_selection") as any;
-    if (timeTypeComp) {
-      const targetLabel = isTimeTypeRequired
-        ? "Time Type <span class='show-req-astrik field-required'></span>"
-        : "Time Type";
-
-      if (timeTypeComp.component) {
-        timeTypeComp.component.label = targetLabel;
-        if (!timeTypeComp.component.validate) {
-          timeTypeComp.component.validate = {};
-        }
-        timeTypeComp.component.validate.required = isTimeTypeRequired;
-      }
-      timeTypeComp.label = targetLabel;
-
-      // Also update the rendered label element's innerHTML directly
-      try {
-        const labelEl = timeTypeComp.element?.querySelector("label");
-        if (labelEl) {
-          labelEl.innerHTML = targetLabel;
-          if (isTimeTypeRequired) {
-            labelEl.classList.add("field-required");
-          } else {
-            labelEl.classList.remove("field-required");
-          }
-        }
-      } catch {
-        // non-fatal DOM manipulation
-      }
+      enableTimeTypeSelectionComp.setValue(
+        !!(attendanceRequestAttachmentsMandatory as any)
+          ?.enable_time_type_selection ||
+          !!(reqValidationmutation?.data as any)?.enable_time_type_selection,
+      );
     }
     const showOnlySingleDateFieldComp = instance.getComponent(
       "show_only_single_date_field",
@@ -930,7 +901,6 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
     isFormReady,
     forActionType,
     requestTypeChanged,
-    reqValidationmutation.data,
   ]);
 
   // const formatTime = (date: Date | string | undefined): string | undefined => {

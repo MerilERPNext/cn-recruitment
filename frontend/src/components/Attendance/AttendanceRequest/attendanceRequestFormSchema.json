@@ -245,7 +245,7 @@
           "redrawOn": "allowed_from_date"
         },
         {
-          "label": "Time Type",
+          "label": "Time Type <span class='show-req-astrik field-required'></span>",
           "errorLabel": "Time Type",
           "key": "time_type_selection",
           "type": "select",
@@ -257,7 +257,7 @@
             "custom": "valid = !(data.request_type === 'Attendance Adjustment' && data.enable_time_type_selection === true) || !!input;",
             "customMessage": "Time Type is required"
           },
-          "customConditional": "show = data.request_type === 'Attendance Adjustment';",
+          "customConditional": "show = data.request_type === 'Attendance Adjustment' && data.enable_time_type_selection === true;",
           "data": {
             "values": [
               {

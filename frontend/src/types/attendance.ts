@@ -201,7 +201,7 @@ export interface AttendanceRequestValidations {
   out_duty_requests: number;
   short_leave_requests: number;
   is_mandatory: boolean;
-  enable_time_type_selection: number;
+  enable_time_type_selection?: boolean;
 }
 
 export interface RequestCardProps {
