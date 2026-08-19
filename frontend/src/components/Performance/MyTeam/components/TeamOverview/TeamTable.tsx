@@ -1,9 +1,10 @@
 import React, { useMemo, useState } from "react";
-import { AlertCircle, Loader2 } from "lucide-react";
+import { AlertCircle, Loader2, Search } from "lucide-react";
 import Button from "../../../../shared/atoms/Button";
 import CardTable from "../../../../shared/CardTable";
 import CustomDropdown from "../../../../shared/CustomDropdown";
 import { Typography } from "../../../../shared/atoms/Typography";
+import useDebounce from "../../../../../hooks/useDebounce";
 import { useGetTeamMembers } from "../../../../../hooks/usePerformance";
 import type { TeamMembersSortOption, TeamMembersStatusFilter } from "../../../../../types/goal";
 import { TeamMemberItem, TEAM_TABLE_COLUMN_WIDTHS } from "./TeamMemberItem";
@@ -51,10 +52,13 @@ interface TeamTableProps {
 const TeamTable: React.FC<TeamTableProps> = ({ isCompact }) => {
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
   const [selectedSort, setSelectedSort] = useState<string>("progress");
+  const [searchQuery, setSearchQuery] = useState<string>("");
+  const debouncedSearch = useDebounce(searchQuery, 300);
 
   const { data: teamMembersData, isLoading, error } = useGetTeamMembers({
     status: selectedStatus as TeamMembersStatusFilter,
     sort: selectedSort as TeamMembersSortOption,
+    search: debouncedSearch,
   });
 
   const members = teamMembersData?.data?.members || [];
@@ -91,6 +95,16 @@ const TeamTable: React.FC<TeamTableProps> = ({ isCompact }) => {
           </div>
         </div>
         <div className={`flex items-center gap-3 ${isCompact ? "flex-wrap w-full" : ""}`}>
+          <div className={`relative ${isCompact ? "w-full" : "w-48 sm:w-56"}`}>
+            <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-400" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search employee..."
+              className="h-9 w-full rounded-lg border border-gray-200 bg-white pl-8 pr-3 text-xs text-gray-800 placeholder-gray-400 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+            />
+          </div>
           <CustomDropdown
             value={selectedStatus}
             onChange={(event) => setSelectedStatus(event.target.value)}
