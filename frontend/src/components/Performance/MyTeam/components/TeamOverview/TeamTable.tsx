@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { AlertCircle, Search, X } from "lucide-react";
 import Button from "../../../../shared/atoms/Button";
 import CardTable from "../../../../shared/CardTable";
@@ -54,17 +54,29 @@ const TeamTable: React.FC<TeamTableProps> = ({ isCompact }) => {
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
   const [selectedSort, setSelectedSort] = useState<string>("progress");
   const [searchQuery, setSearchQuery] = useState<string>("");
-  const debouncedSearch = useDebounce(searchQuery, 300);
+  const [page, setPage] = useState<number>(1);
+  const limit = 20;
 
-  const { data: teamMembersData, isLoading, error, refetch } = useGetTeamMembers({
+  const debouncedSearch = useDebounce(searchQuery, 300);
+  const start = (page - 1) * limit;
+
+  useEffect(() => {
+    setPage(1);
+  }, [selectedStatus, selectedSort, debouncedSearch]);
+
+  const { data: teamMembersData, isLoading, isFetching, error, refetch } = useGetTeamMembers({
     status: selectedStatus as TeamMembersStatusFilter,
     sort: selectedSort as TeamMembersSortOption,
     search: debouncedSearch,
+    start,
+    limit,
   });
 
   const members = teamMembersData?.data?.members || [];
   const totalCount = teamMembersData?.data?.total ?? members.length;
   const overdueCount = teamMembersData?.data?.summary?.checkin_due ?? 0;
+  const totalPages = Math.ceil(totalCount / limit) || 1;
+  const hasMore = teamMembersData?.data?.has_more ?? false;
 
   const handleStatusChange = useCallback((event: React.ChangeEvent<HTMLSelectElement>) => {
     setSelectedStatus(event.target.value);
@@ -200,6 +212,39 @@ const TeamTable: React.FC<TeamTableProps> = ({ isCompact }) => {
             ))}
           </div>
         </CardTable>
+      )}
+
+      {totalCount > 0 && (
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-slate-100 px-4 py-3 sm:px-6 bg-white">
+          <Typography variant="caption" className="text-slate-500">
+            Showing <span className="font-semibold text-slate-700">{start + 1}</span> to{" "}
+            <span className="font-semibold text-slate-700">{Math.min(start + limit, totalCount)}</span> of{" "}
+            <span className="font-semibold text-slate-700">{totalCount}</span> reportees
+          </Typography>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={page === 1 || isFetching}
+              onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
+              className="border-slate-200 text-slate-700 hover:bg-slate-50 disabled:opacity-40"
+            >
+              Previous
+            </Button>
+            <Typography variant="caption" className="font-semibold text-slate-700 px-2">
+              Page {page} of {totalPages}
+            </Typography>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={(!hasMore && page >= totalPages) || isFetching}
+              onClick={() => setPage((prev) => prev + 1)}
+              className="border-slate-200 text-slate-700 hover:bg-slate-50 disabled:opacity-40"
+            >
+              Next
+            </Button>
+          </div>
+        </div>
       )}
     </section>
   );
