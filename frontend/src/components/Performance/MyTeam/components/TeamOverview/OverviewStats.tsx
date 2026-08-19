@@ -44,4 +44,4 @@ const OverviewStats: React.FC<OverviewStatsProps> = ({ isCompact, stats }) => {
   );
 };
 
-export default OverviewStats;
+export default React.memo(OverviewStats);

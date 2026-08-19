@@ -1,5 +1,5 @@
-import { ArrowRight, Check } from "lucide-react";
-import React from "react";
+import { ArrowRight, Check, AlertCircle } from "lucide-react";
+import React, { useMemo } from "react";
 import Button from "../../../../shared/atoms/Button";
 import { Typography } from "../../../../shared/atoms/Typography";
 import Badge from "../../../../shared/Badge";
@@ -8,6 +8,7 @@ import { useNavigate } from "react-router-dom";
 import { useGetTeamOverview } from "../../../../../hooks/usePerformance";
 import OverviewStats from "./OverviewStats";
 import { formatDate } from "../../../Overview/component/OverviewHeader";
+import HeroCardSkeleton from "./HeroCardSkeleton";
 
 const fallbackSteps = [
   { n: 1, label: "Goal Setting", done: true, active: false },
@@ -23,11 +24,11 @@ interface HeroCardProps {
 
 const HeroCard: React.FC<HeroCardProps> = ({ isCompact }) => {
   const navigate = useNavigate();
-  const { data: teamOverviewData } = useGetTeamOverview();
+  const { data: teamOverviewData, isLoading, error } = useGetTeamOverview();
   const overview = teamOverviewData?.data;
   const cards = overview?.cards;
 
-  const stats = [
+  const stats = useMemo(() => [
     {
       label: "GOALS PENDING APPROVAL",
       value: cards ? String(cards.goals_pending_approval) : "0",
@@ -64,16 +65,36 @@ const HeroCard: React.FC<HeroCardProps> = ({ isCompact }) => {
       sub: `of ${overview?.team_size ?? 0} reportees`,
       valueColor: "text-green-600",
     },
-  ];
+  ], [cards, overview?.team_size]);
 
-  const steps = overview?.stages && overview.stages.length > 0
-    ? overview.stages.map((st) => ({
-        n: st.sequence,
-        label: st.stage_name,
-        done: st.sequence < (overview.stages.find((s) => s.stage_name === overview.current_stage)?.sequence ?? 1),
-        active: st.stage_name === overview.current_stage,
-      }))
-    : fallbackSteps;
+  const steps = useMemo(() => {
+    if (!overview?.stages || overview.stages.length === 0) return fallbackSteps;
+
+    const currentStageSeq = overview.stages.find(
+      (s) => s.stage_name === overview.current_stage
+    )?.sequence ?? 1;
+    return overview.stages.map((st) => ({
+      n: st.sequence,
+      label: st.stage_name,
+      done: st.sequence < currentStageSeq,
+      active: st.stage_name === overview.current_stage,
+    }));
+  }, [overview?.stages, overview?.current_stage]);
+
+  const formattedStartDate = useMemo(() => formatDate(overview?.start_date), [overview?.start_date]);
+  const formattedEndDate = useMemo(() => formatDate(overview?.end_date), [overview?.end_date]);
+
+  if (isLoading) return <HeroCardSkeleton isCompact={isCompact} />;
+  if (error) return (
+    <div className="rounded-xl border border-red-200 bg-red-50 p-4 sm:p-5 text-red-700 flex items-center justify-between gap-4">
+      <div className="flex items-center gap-3">
+        <AlertCircle className="w-5 h-5 shrink-0 text-red-600" />
+        <Typography variant="bodySmall" className="font-medium text-red-700">
+          Failed to load team overview data. {error?.message}
+        </Typography>
+      </div>
+    </div>
+  );
 
   return (
     <div className="space-y-4 sm:space-y-5">
@@ -89,7 +110,7 @@ const HeroCard: React.FC<HeroCardProps> = ({ isCompact }) => {
                 pulse={{ show: true, color: "bg-blue-600" }}
               />
               <Typography variant="bodySmall" className="break-words text-gray-500">
-                {formatDate(overview?.start_date) || "No date found"} &rarr; {formatDate(overview?.end_date) || "No date found"}{" "}
+                {formattedStartDate || "No date found"} &rarr; {formattedEndDate || "No date found"}{" "}
                 &middot; {overview?.company || "-"}
               </Typography>
             </div>
@@ -97,7 +118,7 @@ const HeroCard: React.FC<HeroCardProps> = ({ isCompact }) => {
               {overview?.cycle_name || "FY26 Annual Performance Cycle"}
             </Typography>
             <Typography variant="bodySmall" className="mt-1 block break-words text-gray-500">
-              Your team &middot; {overview?.team_size ?? 8} reportees &middot; {overview?.company || "India Tech BU"}
+              Your team &middot; {overview?.team_size ?? "-"} reportees &middot; {overview?.company || "India Tech BU"}
             </Typography>
           </div>
 
@@ -166,5 +187,6 @@ const HeroCard: React.FC<HeroCardProps> = ({ isCompact }) => {
   );
 };
 
-export default HeroCard;
+export default React.memo(HeroCard);
+
 
