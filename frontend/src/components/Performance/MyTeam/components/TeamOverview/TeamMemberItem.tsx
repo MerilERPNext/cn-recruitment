@@ -4,7 +4,7 @@ import Avatar from "../../../../shared/Avatar";
 import Badge from "../../../../shared/Badge";
 import { Typography } from "../../../../shared/atoms/Typography";
 import { useScreenSize } from "../../../../../hooks/useScreenSize";
-import { OverviewTeamMember } from "../../types";
+import type { TeamMemberItem as TeamMemberItemType } from "../../../../../types/goal";
 
 export const TEAM_TABLE_COLUMN_WIDTHS = [
   "minmax(260px, 2fr)",
@@ -22,61 +22,31 @@ const getProgressColor = (progress: number) => {
   return "bg-red-500";
 };
 
-const SelfBadge = ({ status }: { status: string }) => {
-  if (status === "Done")
-    return (
-      <Badge
-        label="Done"
-        variant="success"
-        size="sm"
-        pulse={{ show: false }}
-        icon={<Check className="w-3 h-3" />}
-      />
-    );
-  if (status === "Pending")
-    return (
-      <Badge
-        label="Pending"
-        variant="warning"
-        size="sm"
-        pulse={{ show: false }}
-      />
-    );
-  if (status === "Overdue")
-    return (
-      <Badge
-        label="Overdue"
-        variant="danger"
-        size="sm"
-        pulse={{ show: false }}
-      />
-    );
-  return null;
-};
+const ToneBadge = ({ label, tone }: { label: string; tone?: string }) => {
+  if (!label) return <Typography variant="caption" className="text-gray-400">—</Typography>;
 
-const ReviewBadge = ({ status }: { status: string }) => {
-  if (status === "Done")
-    return (
-      <Badge
-        label="Done"
-        variant="success"
-        size="sm"
-        pulse={{ show: false }}
-        icon={<Check className="w-3 h-3" />}
-      />
-    );
+  let variant: "success" | "warning" | "danger" | "default" = "default";
+  if (tone === "warning" || label.toLowerCase().includes("pending") || label.toLowerCase().includes("draft")) {
+    variant = "warning";
+  } else if (tone === "success" || label.toLowerCase().includes("approved") || label.toLowerCase().includes("done")) {
+    variant = "success";
+  } else if (tone === "danger" || label.toLowerCase().includes("overdue") || label.toLowerCase().includes("off")) {
+    variant = "danger";
+  }
+
   return (
     <Badge
-      label="Not started"
-      backgroundColor="bg-gray-100"
-      textColor="text-gray-500"
+      label={label}
+      variant={variant}
       size="sm"
+      pulse={{ show: false }}
+      icon={variant === "success" ? <Check className="w-3 h-3" /> : undefined}
     />
   );
 };
 
-const TeamMemberAction = ({ action }: { action: string }) => {
-  if (action === "Review") {
+const ActionButton = ({ actions }: { actions?: string[] }) => {
+  if (actions?.includes("approve_goals")) {
     return (
       <Button variant="contain" bgColor="primary" size="sm" fullWidth>
         Review <ArrowRight className="w-3 h-3 ml-1" />
@@ -84,7 +54,7 @@ const TeamMemberAction = ({ action }: { action: string }) => {
     );
   }
 
-  if (action === "Nudge") {
+  if (actions?.includes("request_checkin")) {
     return (
       <Button variant="contain" bgColor="primary" size="sm" fullWidth>
         Nudge
@@ -92,25 +62,24 @@ const TeamMemberAction = ({ action }: { action: string }) => {
     );
   }
 
-  if (action === "View") {
-    return (
-      <Button
-        variant="outline"
-        bgColor="primary"
-        size="sm"
-        fullWidth
-        className="border-blue-200"
-      >
-        View
-      </Button>
-    );
-  }
-
-  return null;
+  return (
+    <Button variant="outline" bgColor="primary" size="sm" fullWidth className="border-blue-200">
+      View
+    </Button>
+  );
 };
 
-export const TeamMemberItem = ({ item: m }: { item: OverviewTeamMember }) => {
+export const TeamMemberItem = ({ item: m }: { item: TeamMemberItemType }) => {
   const { isDesktop } = useScreenSize();
+
+  const name = m.employee_name || m.employee;
+  const designation = m.designation || "-";
+  const tenure = `${m.tenure_years ?? 0} yrs`;
+  const goalCount = m.goal_count ?? 0;
+  const progress = m.progress ?? 0;
+  const planStatus = m.status_label || m.plan_status;
+  const reviewStatus = m.plan_status === "Approved" ? "Approved" : m.status === "pending_approval" ? "Pending" : "Not started";
+  const score = m.score > 0 ? String(m.score) : null;
 
   if (!isDesktop) {
     return (
@@ -118,7 +87,7 @@ export const TeamMemberItem = ({ item: m }: { item: OverviewTeamMember }) => {
         <div className="flex min-w-0 items-start justify-between gap-3">
           <div className="flex min-w-0 items-start gap-3">
             <Avatar
-              name={m.name}
+              name={name}
               fontSize="text-xs"
               size="h-9 w-9"
               avatarBgColor="bg-blue-50"
@@ -126,10 +95,10 @@ export const TeamMemberItem = ({ item: m }: { item: OverviewTeamMember }) => {
             />
             <div className="min-w-0">
               <Typography variant="mobileCardTitle" className="break-words">
-                {m.name}
+                {name}
               </Typography>
               <Typography variant="mobileCardSubtitle" className="block">
-                {m.role} · {m.tenure}
+                {designation} · {tenure}
               </Typography>
             </div>
           </div>
@@ -137,7 +106,7 @@ export const TeamMemberItem = ({ item: m }: { item: OverviewTeamMember }) => {
             variant="label"
             className="shrink-0 rounded-full bg-slate-100 px-2.5 py-1 font-semibold text-slate-600"
           >
-            {m.goals} goals
+            {goalCount} goals
           </Typography>
         </div>
 
@@ -147,13 +116,13 @@ export const TeamMemberItem = ({ item: m }: { item: OverviewTeamMember }) => {
               Progress
             </Typography>
             <Typography variant="caption" className="font-semibold text-slate-700">
-              {m.progress}%
+              {progress}%
             </Typography>
           </div>
           <div className="h-2 overflow-hidden rounded-md bg-slate-200">
             <div
-              className={`h-full rounded-md ${getProgressColor(m.progress)}`}
-              style={{ width: `${m.progress}%` }}
+              className={`h-full rounded-md ${getProgressColor(progress)}`}
+              style={{ width: `${progress}%` }}
             />
           </div>
         </div>
@@ -163,13 +132,13 @@ export const TeamMemberItem = ({ item: m }: { item: OverviewTeamMember }) => {
             <Typography variant="mobileCardLabel" className="block">
               Self
             </Typography>
-            <SelfBadge status={m.self} />
+            <ToneBadge label={planStatus} tone={m.status_tone} />
           </div>
           <div className="min-w-0">
             <Typography variant="mobileCardLabel" className="block">
               My Review
             </Typography>
-            <ReviewBadge status={m.review} />
+            <ToneBadge label={reviewStatus} />
           </div>
         </div>
 
@@ -178,9 +147,9 @@ export const TeamMemberItem = ({ item: m }: { item: OverviewTeamMember }) => {
             <Typography variant="mobileCardLabel" className="block">
               Last Rating
             </Typography>
-            {m.lastRating ? (
-              <Typography variant="caption" className={`font-bold ${m.ratingText}`}>
-                {m.lastRating}
+            {score ? (
+              <Typography variant="caption" className="font-bold text-blue-600">
+                {score}
               </Typography>
             ) : (
               <Typography variant="caption" className="text-slate-400">
@@ -189,7 +158,7 @@ export const TeamMemberItem = ({ item: m }: { item: OverviewTeamMember }) => {
             )}
           </div>
           <div className="w-28 shrink-0">
-            <TeamMemberAction action={m.action} />
+            <ActionButton actions={m.actions} />
           </div>
         </div>
       </article>
@@ -204,7 +173,7 @@ export const TeamMemberItem = ({ item: m }: { item: OverviewTeamMember }) => {
       <div className="min-w-0">
         <div className="flex min-w-0 items-center gap-3">
           <Avatar
-            name={m.name}
+            name={name}
             fontSize="text-xs"
             size="h-8 w-8"
             avatarBgColor="bg-blue-50"
@@ -215,17 +184,17 @@ export const TeamMemberItem = ({ item: m }: { item: OverviewTeamMember }) => {
               variant="bodySmall"
               className="block truncate font-semibold text-gray-900"
             >
-              {m.name}
+              {name}
             </Typography>
             <Typography variant="caption" className="block truncate text-gray-500">
-              {m.role} · {m.tenure}
+              {designation} · {tenure}
             </Typography>
           </div>
         </div>
       </div>
       <div className="flex justify-center">
         <Typography variant="caption" className="text-gray-500">
-          <span className="font-semibold text-gray-900">{m.goals}</span> goals
+          <span className="font-semibold text-gray-900">{goalCount}</span> goals
         </Typography>
       </div>
       <div className="flex flex-col items-center">
@@ -233,27 +202,27 @@ export const TeamMemberItem = ({ item: m }: { item: OverviewTeamMember }) => {
           variant="caption"
           className="mb-1 block font-medium text-gray-600"
         >
-          {m.progress}%
+          {progress}%
         </Typography>
         <div className="flex items-center w-[130px]">
           <div className="h-1.5 flex-1 overflow-hidden rounded-md bg-gray-100">
             <div
-              className={`h-full rounded-md ${getProgressColor(m.progress)}`}
-              style={{ width: `${m.progress}%` }}
+              className={`h-full rounded-md ${getProgressColor(progress)}`}
+              style={{ width: `${progress}%` }}
             />
           </div>
         </div>
       </div>
       <div className="flex justify-center whitespace-nowrap">
-        <SelfBadge status={m.self} />
+        <ToneBadge label={planStatus} tone={m.status_tone} />
       </div>
       <div className="flex justify-center whitespace-nowrap">
-        <ReviewBadge status={m.review} />
+        <ToneBadge label={reviewStatus} />
       </div>
       <div className="flex justify-center whitespace-nowrap">
-        {m.lastRating ? (
-          <Typography variant="caption" className={`font-bold ${m.ratingText}`}>
-            {m.lastRating}
+        {score ? (
+          <Typography variant="caption" className="font-bold text-blue-600">
+            {score}
           </Typography>
         ) : (
           <Typography variant="caption" className="text-gray-400">
@@ -263,7 +232,7 @@ export const TeamMemberItem = ({ item: m }: { item: OverviewTeamMember }) => {
       </div>
       <div className="whitespace-nowrap text-center">
         <div className="mx-auto w-24">
-          <TeamMemberAction action={m.action} />
+          <ActionButton actions={m.actions} />
         </div>
       </div>
     </div>

@@ -1,11 +1,11 @@
-import React from "react";
+import React, { useMemo, useState } from "react";
+import { AlertCircle, Loader2 } from "lucide-react";
 import Button from "../../../../shared/atoms/Button";
 import CardTable from "../../../../shared/CardTable";
 import CustomDropdown from "../../../../shared/CustomDropdown";
-import DataListView from "../../../../DataListView";
 import { Typography } from "../../../../shared/atoms/Typography";
-import { OverviewTeamMember } from "../../types";
-import type { FrappePageResponse } from "../../../../../types/frappe";
+import { useGetTeamMembers } from "../../../../../hooks/usePerformance";
+import type { TeamMembersSortOption, TeamMembersStatusFilter } from "../../../../../types/goal";
 import { TeamMemberItem, TEAM_TABLE_COLUMN_WIDTHS } from "./TeamMemberItem";
 
 const TEAM_TABLE_TITLES = [
@@ -18,35 +18,56 @@ const TEAM_TABLE_TITLES = [
   "Action",
 ];
 
-const STATUS_OPTIONS = [
-  { label: "All status", value: "all" },
-  { label: "Done", value: "done" },
-  { label: "Pending", value: "pending" },
-  { label: "Overdue", value: "overdue" },
+const FILTER_LABEL_MAP: Record<string, string> = {
+  all: "All status",
+  no_plan: "No plan",
+  pending_approval: "Pending approval",
+  off_track: "Off track",
+  checkin_due: "Check-in due",
+  on_track: "On track",
+};
+
+const DEFAULT_FILTERS = [
+  "all",
+  "no_plan",
+  "pending_approval",
+  "off_track",
+  "checkin_due",
+  "on_track",
 ];
 
 const SORT_OPTIONS = [
   { label: "Sort: progress", value: "progress" },
+  { label: "Sort: progress desc", value: "progress_desc" },
   { label: "Sort: name", value: "name" },
-  { label: "Sort: rating", value: "rating" },
+  { label: "Sort: check-in", value: "checkin" },
+  { label: "Sort: off-track", value: "off_track" },
 ];
 
 interface TeamTableProps {
   isCompact: boolean;
-  members: OverviewTeamMember[];
 }
 
-const TeamTable: React.FC<TeamTableProps> = ({ isCompact, members }) => {
-  const [selectedStatus, setSelectedStatus] = React.useState("all");
-  const [selectedSort, setSelectedSort] = React.useState("progress");
-  const fetchMembers = React.useCallback(async (): Promise<FrappePageResponse> => {
-    return {
-      data: members as unknown as FrappePageResponse["data"],
-      totalCount: members.length,
-      hasNextPage: false,
-      pages: [],
-    };
-  }, [members]);
+const TeamTable: React.FC<TeamTableProps> = ({ isCompact }) => {
+  const [selectedStatus, setSelectedStatus] = useState<string>("all");
+  const [selectedSort, setSelectedSort] = useState<string>("progress");
+
+  const { data: teamMembersData, isLoading, error } = useGetTeamMembers({
+    status: selectedStatus as TeamMembersStatusFilter,
+    sort: selectedSort as TeamMembersSortOption,
+  });
+
+  const members = teamMembersData?.data?.members || [];
+  const totalCount = teamMembersData?.data?.total ?? members.length;
+  const overdueCount = teamMembersData?.data?.summary?.checkin_due ?? 0;
+
+  const statusOptions = useMemo(() => {
+    const filterList = teamMembersData?.data?.filters || DEFAULT_FILTERS;
+    return filterList.map((f) => ({
+      label: FILTER_LABEL_MAP[f] || f.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
+      value: f,
+    }));
+  }, [teamMembersData?.data?.filters]);
 
   return (
     <section className="overflow-hidden rounded-xl border border-slate-200 bg-white pt-4 shadow-sm">
@@ -58,7 +79,7 @@ const TeamTable: React.FC<TeamTableProps> = ({ isCompact, members }) => {
             variant="label"
             className="flex h-7 w-7 items-center justify-center rounded-full bg-blue-50 font-bold text-blue-600"
           >
-            8
+            {totalCount}
           </Typography>
           <div className="min-w-0">
             <Typography variant="bodySmall" className="font-semibold text-slate-950">
@@ -73,7 +94,7 @@ const TeamTable: React.FC<TeamTableProps> = ({ isCompact, members }) => {
           <CustomDropdown
             value={selectedStatus}
             onChange={(event) => setSelectedStatus(event.target.value)}
-            options={STATUS_OPTIONS}
+            options={statusOptions}
             position="bottom-right"
             className={isCompact ? "flex-1" : ""}
           />
@@ -89,26 +110,32 @@ const TeamTable: React.FC<TeamTableProps> = ({ isCompact, members }) => {
             bgColor="primary"
             className={`${isCompact ? "w-full" : "px-4 py-2"} justify-center rounded-lg bg-[#1a73e8] text-xs font-semibold hover:bg-blue-600`}
           >
-            Nudge 2 overdue
+            Nudge {overdueCount} overdue
           </Button>
         </div>
       </div>
 
-      {isCompact ? (
+      {isLoading ? (
+        <div className="flex items-center justify-center py-12 text-slate-500">
+          <Loader2 className="w-5 h-5 animate-spin mr-2" />
+          <Typography variant="bodySmall">Loading team members...</Typography>
+        </div>
+      ) : error ? (
+        <div className="m-4 rounded-lg border border-red-200 bg-red-50 p-4 text-red-700 flex items-center gap-3">
+          <AlertCircle className="w-5 h-5 shrink-0 text-red-600" />
+          <Typography variant="bodySmall">
+            Failed to load team members. {error?.message}
+          </Typography>
+        </div>
+      ) : members.length === 0 ? (
+        <div className="py-12 text-center text-slate-400">
+          <Typography variant="bodySmall">No team members found.</Typography>
+        </div>
+      ) : isCompact ? (
         <div className="space-y-3 border-t border-slate-100 bg-slate-50/60 p-3 sm:p-4">
-          <DataListView<OverviewTeamMember>
-            queryKey="team-overview-members-mobile"
-            fetchFunction={fetchMembers}
-            isSearch={false}
-            showPagination={false}
-            showRefreshButton={false}
-            pageSize={members.length}
-            infiniteScroll={false}
-            loadMorePagination={false}
-            enableUrlParams={false}
-            getItemKey={(item) => item.id}
-            ItemComponent={({ item }) => <TeamMemberItem item={item} />}
-          />
+          {members.map((member) => (
+            <TeamMemberItem key={member.employee} item={member} />
+          ))}
         </div>
       ) : (
         <CardTable
@@ -116,19 +143,9 @@ const TeamTable: React.FC<TeamTableProps> = ({ isCompact, members }) => {
           columnWidths={TEAM_TABLE_COLUMN_WIDTHS}
         >
           <div className="w-full min-w-[1080px]">
-            <DataListView<OverviewTeamMember>
-              queryKey="team-overview-members"
-              fetchFunction={fetchMembers}
-              isSearch={false}
-              showPagination={false}
-              showRefreshButton={false}
-              pageSize={members.length}
-              infiniteScroll={false}
-              loadMorePagination={false}
-              enableUrlParams={false}
-              getItemKey={(item) => item.id}
-              ItemComponent={({ item }) => <TeamMemberItem item={item} />}
-            />
+            {members.map((member) => (
+              <TeamMemberItem key={member.employee} item={member} />
+            ))}
           </div>
         </CardTable>
       )}
