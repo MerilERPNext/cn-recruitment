@@ -170,11 +170,7 @@ const TeamTable: React.FC<TeamTableProps> = ({ isCompact }) => {
         </div>
       </div>
 
-      {isLoading ? (
-        <div className="p-4 border-t border-slate-100">
-          <CardSkeleton rows={4} />
-        </div>
-      ) : error ? (
+      {error ? (
         <div className="m-4 rounded-lg border border-red-200 bg-red-50 p-4 text-red-700 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0">
             <AlertCircle className="w-5 h-5 shrink-0 text-red-600" />
@@ -191,15 +187,19 @@ const TeamTable: React.FC<TeamTableProps> = ({ isCompact }) => {
             Retry
           </Button>
         </div>
-      ) : members.length === 0 ? (
-        <div className="py-12 text-center text-slate-400 border-t border-slate-100">
-          <Typography variant="bodySmall">No team members found matching your search/filters.</Typography>
-        </div>
       ) : isCompact ? (
         <div className="space-y-3 border-t border-slate-100 bg-slate-50/60 p-3 sm:p-4">
-          {members.map((member) => (
-            <TeamMemberItem key={member.employee} item={member} />
-          ))}
+          {isLoading ? (
+            <CardSkeleton rows={4} />
+          ) : members.length === 0 ? (
+            <div className="py-12 text-center text-slate-400">
+              <Typography variant="bodySmall">No team members found matching your search/filters.</Typography>
+            </div>
+          ) : (
+            members.map((member) => (
+              <TeamMemberItem key={member.employee} item={member} />
+            ))
+          )}
         </div>
       ) : (
         <CardTable
@@ -207,9 +207,19 @@ const TeamTable: React.FC<TeamTableProps> = ({ isCompact }) => {
           columnWidths={TEAM_TABLE_COLUMN_WIDTHS}
         >
           <div className="w-full min-w-[1080px]">
-            {members.map((member) => (
-              <TeamMemberItem key={member.employee} item={member} />
-            ))}
+            {isLoading ? (
+              <div className="p-4">
+                <CardSkeleton rows={4} />
+              </div>
+            ) : members.length === 0 ? (
+              <div className="py-12 text-center text-slate-400">
+                <Typography variant="bodySmall">No team members found matching your search/filters.</Typography>
+              </div>
+            ) : (
+              members.map((member) => (
+                <TeamMemberItem key={member.employee} item={member} />
+              ))
+            )}
           </div>
         </CardTable>
       )}
