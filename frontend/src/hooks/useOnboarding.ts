@@ -13,7 +13,6 @@ import type {
   ApprovalStatus,
   FieldLocalState,
   SectionEntry,
-  Toast,
   ToastType,
   UseApprovalActionsReturn,
   UseApprovalDataReturn,
@@ -21,6 +20,7 @@ import type {
   UseToastReturn,
 } from "../types/onboarding";
 import { errorResponseFormater } from "../utils/errorResponseFormater";
+import { toast as hotToast } from "react-hot-toast";
 
 // ─── Utility: Build section map from flat field list ──────────────────────────
 
@@ -54,19 +54,20 @@ function buildInitialFieldStates(
 // ─── useToast ─────────────────────────────────────────────────────────────────
 
 export function useToast(): UseToastReturn {
-  const [toast, setToast] = useState<Toast | null>(null);
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
   const showToast = useCallback(
-    (msg: string, type: ToastType = "success",) => {
-      setToast({ msg, type });
-      if (timerRef.current) clearTimeout(timerRef.current);
-      timerRef.current = setTimeout(() => setToast(null), 2800);
+    (msg: string, type: ToastType = "success") => {
+      if (type === "success") {
+        hotToast.success(msg);
+      } else if (type === "error") {
+        hotToast.error(msg);
+      } else {
+        hotToast(msg);
+      }
     },
     []
   );
 
-  return { toast, showToast };
+  return { showToast };
 }
 
 // ─── useApprovalData ──────────────────────────────────────────────────────────
