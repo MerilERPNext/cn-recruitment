@@ -1,9 +1,10 @@
-import React, { useMemo, useState } from "react";
-import { AlertCircle, Loader2, Search } from "lucide-react";
+import React, { useCallback, useMemo, useState } from "react";
+import { AlertCircle, Search, X } from "lucide-react";
 import Button from "../../../../shared/atoms/Button";
 import CardTable from "../../../../shared/CardTable";
 import CustomDropdown from "../../../../shared/CustomDropdown";
 import { Typography } from "../../../../shared/atoms/Typography";
+import { CardSkeleton } from "../../../../shared/molecules/Skeletons/TableSkeleton";
 import useDebounce from "../../../../../hooks/useDebounce";
 import { useGetTeamMembers } from "../../../../../hooks/usePerformance";
 import type { TeamMembersSortOption, TeamMembersStatusFilter } from "../../../../../types/goal";
@@ -55,7 +56,7 @@ const TeamTable: React.FC<TeamTableProps> = ({ isCompact }) => {
   const [searchQuery, setSearchQuery] = useState<string>("");
   const debouncedSearch = useDebounce(searchQuery, 300);
 
-  const { data: teamMembersData, isLoading, error } = useGetTeamMembers({
+  const { data: teamMembersData, isLoading, error, refetch } = useGetTeamMembers({
     status: selectedStatus as TeamMembersStatusFilter,
     sort: selectedSort as TeamMembersSortOption,
     search: debouncedSearch,
@@ -64,6 +65,22 @@ const TeamTable: React.FC<TeamTableProps> = ({ isCompact }) => {
   const members = teamMembersData?.data?.members || [];
   const totalCount = teamMembersData?.data?.total ?? members.length;
   const overdueCount = teamMembersData?.data?.summary?.checkin_due ?? 0;
+
+  const handleStatusChange = useCallback((event: React.ChangeEvent<HTMLSelectElement>) => {
+    setSelectedStatus(event.target.value);
+  }, []);
+
+  const handleSortChange = useCallback((event: React.ChangeEvent<HTMLSelectElement>) => {
+    setSelectedSort(event.target.value);
+  }, []);
+
+  const handleSearchChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(event.target.value);
+  }, []);
+
+  const handleClearSearch = useCallback(() => {
+    setSearchQuery("");
+  }, []);
 
   const statusOptions = useMemo(() => {
     const filterList = teamMembersData?.data?.filters || DEFAULT_FILTERS;
@@ -100,21 +117,30 @@ const TeamTable: React.FC<TeamTableProps> = ({ isCompact }) => {
             <input
               type="text"
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={handleSearchChange}
               placeholder="Search employee..."
-              className="h-9 w-full rounded-lg border border-gray-200 bg-white pl-8 pr-3 text-xs text-gray-800 placeholder-gray-400 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+              className="h-9 w-full rounded-lg border border-gray-200 bg-white pl-8 pr-8 text-xs text-gray-800 placeholder-gray-400 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
             />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={handleClearSearch}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            )}
           </div>
           <CustomDropdown
             value={selectedStatus}
-            onChange={(event) => setSelectedStatus(event.target.value)}
+            onChange={handleStatusChange}
             options={statusOptions}
             position="bottom-right"
             className={isCompact ? "flex-1" : ""}
           />
           <CustomDropdown
             value={selectedSort}
-            onChange={(event) => setSelectedSort(event.target.value)}
+            onChange={handleSortChange}
             options={SORT_OPTIONS}
             position="bottom-right"
             className={isCompact ? "flex-1" : ""}
@@ -122,7 +148,8 @@ const TeamTable: React.FC<TeamTableProps> = ({ isCompact }) => {
           <Button
             variant="contain"
             bgColor="primary"
-            className={`${isCompact ? "w-full" : "px-4 py-2"} justify-center rounded-lg bg-[#1a73e8] text-xs font-semibold hover:bg-blue-600`}
+            disabled={overdueCount === 0}
+            className={`${isCompact ? "w-full" : "px-4 py-2"} justify-center rounded-lg bg-[#1a73e8] text-xs font-semibold hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed`}
           >
             Nudge {overdueCount} overdue
           </Button>
@@ -130,20 +157,29 @@ const TeamTable: React.FC<TeamTableProps> = ({ isCompact }) => {
       </div>
 
       {isLoading ? (
-        <div className="flex items-center justify-center py-12 text-slate-500">
-          <Loader2 className="w-5 h-5 animate-spin mr-2" />
-          <Typography variant="bodySmall">Loading team members...</Typography>
+        <div className="p-4 border-t border-slate-100">
+          <CardSkeleton rows={4} />
         </div>
       ) : error ? (
-        <div className="m-4 rounded-lg border border-red-200 bg-red-50 p-4 text-red-700 flex items-center gap-3">
-          <AlertCircle className="w-5 h-5 shrink-0 text-red-600" />
-          <Typography variant="bodySmall">
-            Failed to load team members. {error?.message}
-          </Typography>
+        <div className="m-4 rounded-lg border border-red-200 bg-red-50 p-4 text-red-700 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <AlertCircle className="w-5 h-5 shrink-0 text-red-600" />
+            <Typography variant="bodySmall" className="truncate">
+              Failed to load team members. {error?.message}
+            </Typography>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => refetch()}
+            className="shrink-0 border-red-200 text-red-700 hover:bg-red-100"
+          >
+            Retry
+          </Button>
         </div>
       ) : members.length === 0 ? (
-        <div className="py-12 text-center text-slate-400">
-          <Typography variant="bodySmall">No team members found.</Typography>
+        <div className="py-12 text-center text-slate-400 border-t border-slate-100">
+          <Typography variant="bodySmall">No team members found matching your search/filters.</Typography>
         </div>
       ) : isCompact ? (
         <div className="space-y-3 border-t border-slate-100 bg-slate-50/60 p-3 sm:p-4">
@@ -167,4 +203,4 @@ const TeamTable: React.FC<TeamTableProps> = ({ isCompact }) => {
   );
 };
 
-export default TeamTable;
+export default React.memo(TeamTable);

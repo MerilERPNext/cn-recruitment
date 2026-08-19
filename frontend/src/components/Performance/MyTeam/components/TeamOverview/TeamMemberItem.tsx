@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { Check, Eye, FileCheck, Plus } from "lucide-react";
 import Avatar from "../../../../shared/Avatar";
 import Badge from "../../../../shared/Badge";
@@ -87,13 +88,13 @@ const ActionButton = ({ actions }: { actions?: string[] }) => {
             </button>
           );
         }
-    
+        return null;
       })}
     </div>
   );
 };
 
-export const TeamMemberItem = ({ item: m }: { item: TeamMemberItemType }) => {
+export const TeamMemberItem = memo(({ item: m }: { item: TeamMemberItemType }) => {
   const { isDesktop } = useScreenSize();
 
   const name = m.employee_name || m.employee;
@@ -261,6 +262,6 @@ export const TeamMemberItem = ({ item: m }: { item: TeamMemberItemType }) => {
       </div>
     </div>
   );
-};
+});
 
 export default TeamMemberItem;
