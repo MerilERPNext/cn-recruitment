@@ -1,9 +1,11 @@
 import frappe
 import json
+
+from frappe import _
 from  hrms.payroll.doctype.salary_slip import salary_slip
 from frappe.model.mapper import get_mapped_doc
 from frappe.utils import cint
-from frappe.utils import formatdate, now_datetime, time_diff_in_hours, flt, fmt_money
+from frappe.utils import escape_html, formatdate, now_datetime, time_diff_in_hours, flt, fmt_money
 
 from recruitment.recruitment.link_token import OFFER_SCOPE, offer_token, require_token
 from recruitment.recruitment.utils import as_administrator
@@ -37,11 +39,16 @@ def _resolve_offer_employment_type(job_offer):
     """Employment Type (Link id) driving the offer print-format / document-template
     / compensation logic.
 
-    Prefers the value stored on the Job Offer itself, falling back to the linked
-    Job Applicant. This makes the mapping work even when the Employment Type was
-    set directly on the Job Offer (or is missing on the Job Applicant).
+    Read from the Job Offer, then the linked Job Applicant, then the Job Opening
+    the candidate applied to — the same order
+    `recruitment.customizations.job_offer.set_employment_type` writes it in at
+    submit. The opening matters most for a DRAFT: the offer's own value is
+    fetched from the applicant and `set_employment_type` only runs at submit, so
+    an offer being previewed has nothing on it yet and the letters would resolve
+    to none — leaving the preview to fall back to the doctype's default format
+    and show the candidate's offer as an unrelated letter.
 
-    Accepts a Job Offer name (str), a dict, or a doc. Returns None when neither
+    Accepts a Job Offer name (str), a dict, or a doc. Returns None when nothing
     carries a value. Never raises — callers degrade to their safe default.
     """
     try:
@@ -58,10 +65,16 @@ def _resolve_offer_employment_type(job_offer):
 
         if jo_et:
             return jo_et
-        if job_applicant:
-            return frappe.db.get_value(
-                "Job Applicant", job_applicant, "custom_employment_type"
-            )
+        if not job_applicant:
+            return None
+
+        applicant_et, opening = frappe.db.get_value(
+            "Job Applicant", job_applicant, ["custom_employment_type", "job_title"]
+        ) or (None, None)
+        if applicant_et:
+            return applicant_et
+        if opening:
+            return frappe.db.get_value("Job Opening", opening, "employment_type")
     except Exception:
         pass
     return None
@@ -671,11 +684,11 @@ def get_job_offer_summary(appl, token=None):
 
         # --- Compensation: dynamic by Employment Type -----------------------
         # Employment Type (custom_employment_type -> Employment Type Link) is read
-        # from the Job Offer, falling back to the linked Job Applicant. Resolve it
-        # to its title ("Intern", "Employee", ...). Only Intern carries a single
-        # Stipend; every
-        # other type carries Fixed (Base) + Variable (Variable Incentive) + Total.
-        # Raw numeric amounts are returned as-is — formatting is done on the UI.
+        # from the Job Offer, then the Job Applicant, then the Job Opening (see
+        # _resolve_offer_employment_type). Resolve it to its title ("Intern",
+        # "Employee", ...). Only Intern carries a single Stipend; every other type
+        # carries Fixed (Base) + Variable (Variable Incentive) + Total. Raw numeric
+        # amounts are returned as-is — formatting is done on the UI.
         employment_type = None
         et_id = _resolve_offer_employment_type(jo)
         if et_id:
@@ -858,18 +871,44 @@ def get_offer_letter_preview_html(job_offer):
                 "html": f'<iframe src="{data_uri}" style="width:100%;height:78vh;border:1px solid #e0e0e0;border-radius:6px;" title="Offer Letter Preview"></iframe>',
                 "source": "template",
             }
-    # Fall back to the Print Format preview.  When the Employment Type is mapped
-    # to several letters the preview shows all of them, merged, so it matches
-    # what the candidate is actually sent.
+    # Fall back to the Print Format preview.  An Employment Type mapped to several
+    # letters gets one pane per letter rather than a single merged document: a
+    # Management Trainee is sent the trainee letter AND the permanent offer letter
+    # as two separate attachments, and a preview that glues them into one PDF
+    # misrepresents that — you cannot see where one ends, and saving from the
+    # viewer hands you both stapled together under one name.  One PDF per pane
+    # keeps the preview honest and lets each be read, printed and saved alone.
     formats = get_job_offer_print_formats(job_offer)
     if len(formats) > 1:
         import base64
-        pdf_bytes, _fn = get_job_offer_pdf(job_offer)
-        data_uri = "data:application/pdf;base64," + base64.b64encode(pdf_bytes).decode()
-        return {
-            "html": f'<iframe src="{data_uri}" style="width:100%;height:78vh;border:1px solid #e0e0e0;border-radius:6px;" title="Offer Letter Preview"></iframe>',
-            "source": "print_format",
-        }
+
+        panes = []
+        for idx, (pdf_bytes, filename) in enumerate(get_job_offer_pdfs(job_offer) or []):
+            if not pdf_bytes:
+                continue
+            label = formats[idx] if idx < len(formats) else filename
+            data_uri = "data:application/pdf;base64," + base64.b64encode(pdf_bytes).decode()
+            panes.append(
+                f'<div class="ol-letter">'
+                f'<div class="ol-letter-head">'
+                f'<span class="ol-letter-no">{idx + 1} / {len(formats)}</span>'
+                f'<span class="ol-letter-name">{escape_html(label)}</span>'
+                f'</div>'
+                f'<iframe src="{data_uri}" style="width:100%;height:78vh;border:1px solid #e0e0e0;'
+                f'border-top:none;border-radius:0 0 6px 6px;" title="{escape_html(label)}"></iframe>'
+                f'</div>'
+            )
+
+        if panes:
+            return {
+                "html": (
+                    '<div class="ol-letters">'
+                    f'<div class="ol-letters-note">{_("This offer is sent as {0} separate letters.").format(len(panes))}</div>'
+                    + "".join(panes)
+                    + "</div>"
+                ),
+                "source": "print_format",
+            }
 
     from urllib.parse import urlencode
     params = {"doctype": "Job Offer", "name": job_offer, "trigger_print": 0, "no_letterhead": 0}
@@ -1002,7 +1041,6 @@ def make_salary_slip(
         target_doc,
         postprocess,
         ignore_child_tables=True,
-        #ignore_permissions=ignore_permissions,
         cached=True,
     )
     total_amount = 0
@@ -1014,7 +1052,5 @@ def make_salary_slip(
         for j in doc.deductions:
             self.append("custom_deduction",{'component':j.salary_component,'amount':j.amount})
             total+=j.amount
-        # self.custom_total_earnings=total_amount
-        # self.custom_total_deductions=total
         return doc
         

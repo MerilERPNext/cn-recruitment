@@ -42,7 +42,8 @@
    "options": "Region"
   },
   {
-   "description": "Last day a TPO may register candidates against this invite. Leave blank for no deadline. HR can still register after it, and can extend the date.",
+   "allow_on_submit": 1,
+   "description": "Last day a TPO may register candidates against this invite. Leave blank for no deadline. Editable after submit \u2014 HR can extend it for the institutes whose drive has not gone live yet. HR can still register after it.",
    "fieldname": "registration_expiry_date",
    "fieldtype": "Date",
    "label": "Registration Expiry Date"

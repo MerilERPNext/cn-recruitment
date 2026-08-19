@@ -101,10 +101,19 @@ function cdSetQueries(frm) {
 		filters: { docstatus: 1, status: ["!=", "Completed"] },
 	}));
 
-	// Institutes normally arrive from the invites; if one is added by hand, at least
-	// keep it to colleges that are still active.
+	// HR chooses which of the invites' colleges this drive runs — sized by candidate
+	// count, so a big college goes on its own and two small ones are merged. The picker
+	// offers only what is still schedulable: invited on one of this drive's invites,
+	// active, and not already frozen by another LIVE drive (a college's registration
+	// closes when its drive goes live, so it can belong to only one).
 	frm.set_query("institute", "participating_institutes", () => ({
-		filters: { is_active: 1 },
+		query: "recruitment.recruitment.doctype.campus_drive.campus_drive.drive_institute_query",
+		filters: {
+			campus_invites: (frm.doc.campus_invites || [])
+				.map((r) => r.campus_invite)
+				.filter(Boolean),
+			campus_drive: frm.is_new() ? null : frm.doc.name,
+		},
 	}));
 }
 

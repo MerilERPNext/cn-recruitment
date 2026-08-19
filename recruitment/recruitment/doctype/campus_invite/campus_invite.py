@@ -5,7 +5,10 @@ import frappe
 from frappe import _
 from frappe.model.document import Document
 
-from recruitment.recruitment.campus_helpers import validate_unique_job_openings
+from recruitment.recruitment.campus_helpers import (
+	locked_institutes_for_invite,
+	validate_unique_job_openings,
+)
 from recruitment.recruitment.tpo_access import PRIMARY_TPO_ROLE, provision_tpo_user
 
 
@@ -57,6 +60,61 @@ class CampusInvite(Document):
 		self.set("tpo_contacts", [])
 		for contact in tpo_contacts_for_institutes(self.institute_names):
 			self.append("tpo_contacts", contact)
+
+	def on_update_after_submit(self):
+		# Registration Expiry Date is allow_on_submit: the deadline is the one thing HR
+		# needs to move on a sent invite (a college asks for more time, a drive slips).
+		self._validate_expiry_change()
+
+	def _validate_expiry_change(self):
+		"""Guard an expiry date edited on a submitted invite.
+
+		Only meaningful for the institutes still waiting for a drive — a college whose
+		drive has gone live is closed by the drive itself and no date brings it back.
+		So the edit is refused outright once every institute on the invite is live, and
+		otherwise HR is told exactly which colleges the new date applies to.
+		"""
+		from frappe.utils import formatdate, getdate, nowdate
+
+		before = self.get_doc_before_save()
+		old = before and before.registration_expiry_date
+		new = self.registration_expiry_date
+		if str(old or "") == str(new or ""):
+			return
+
+		locked = locked_institutes_for_invite(self.name)
+		invited = self.institute_names
+		still_open = [i for i in invited if i not in locked]
+
+		if invited and not still_open:
+			frappe.throw(
+				_(
+					"Every institute on this invite is already running a live campus drive "
+					"({0}). Their registration is closed by the drive, so the deadline can no "
+					"longer be changed."
+				).format(frappe.bold(", ".join(f"{i} → {locked[i]}" for i in invited))),
+				title=_("Drives Already Live"),
+			)
+
+		# A deadline in the past would close the remaining colleges retroactively — the
+		# opposite of why this field is editable. Clearing it (no deadline) is fine.
+		if new and getdate(new) < getdate(nowdate()):
+			frappe.throw(
+				_("{0} is in the past. Set the Registration Expiry Date to today or later.").format(
+					frappe.bold(formatdate(new))
+				),
+				title=_("Deadline in the Past"),
+			)
+
+		if locked:
+			frappe.msgprint(
+				_("Deadline updated for {0}. {1} already have a live drive — their "
+				  "registration stays closed.").format(
+					frappe.bold(", ".join(still_open)),
+					frappe.bold(", ".join(i for i in invited if i in locked)),
+				),
+				title=_("Applies to the institutes still open"), indicator="orange",
+			)
 
 	def on_submit(self):
 		self._invite_tpos()

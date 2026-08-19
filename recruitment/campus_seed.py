@@ -973,6 +973,7 @@ def create_walkthrough_drive(drive_name="Campus Drive 2026 - Walkthrough"):
     for i in invites:
         doc.append("campus_invites", {"campus_invite": i.name,
                                       "campus_invite_name": i.campus_invite_name})
+    _append_available_institutes(doc, [i.name for i in invites])
     doc.insert(ignore_permissions=True)
     frappe.db.commit()
 
@@ -983,7 +984,7 @@ def create_walkthrough_drive(drive_name="Campus Drive 2026 - Walkthrough"):
     _log(f"  campus invites merged ({len(doc.campus_invites)}):")
     for r in doc.campus_invites:
         _log(f"      {r.campus_invite}  {r.campus_invite_name}")
-    _log(f"  participating institutes auto-pulled ({len(doc.participating_institutes)}):")
+    _log(f"  participating institutes ({len(doc.participating_institutes)}):")
     for r in doc.participating_institutes:
         _log(f"      {r.institute}")
     _log(f"  linked job openings auto-pulled ({len(doc.linked_job_openings)}):")
@@ -995,6 +996,28 @@ def create_walkthrough_drive(drive_name="Campus Drive 2026 - Walkthrough"):
             "invites": len(doc.campus_invites),
             "institutes": len(doc.participating_institutes),
             "openings": len(doc.linked_job_openings)}
+
+
+def _append_available_institutes(doc, invites):
+    """Put the invites' colleges on a drive explicitly.
+
+    Campus Drive no longer copies them in: HR picks which colleges a drive runs,
+    because the drives are sized by candidate count. A seed wants the whole set, so
+    it asks for it — skipping any college a live drive has already claimed, which is
+    what the drive's own validation would refuse.
+    """
+    from recruitment.recruitment.campus_helpers import live_drive_institutes
+    from recruitment.recruitment.doctype.campus_invite.campus_invite import get_invite_institutes
+
+    taken = live_drive_institutes(invites)
+    seen = set()
+    for invite in invites:
+        for institute in get_invite_institutes(invite):
+            if institute in seen or institute in taken:
+                continue
+            seen.add(institute)
+            doc.append("participating_institutes", {"institute": institute})
+    return sorted(seen)
 
 
 def create_region_drives():
@@ -1040,6 +1063,7 @@ def create_region_drives():
         for i in by_region[region]:
             doc.append("campus_invites", {"campus_invite": i.name,
                                           "campus_invite_name": i.campus_invite_name})
+        _append_available_institutes(doc, [i.name for i in by_region[region]])
         doc.insert(ignore_permissions=True)
         made.append((doc.name, drive_name, "created"))
     frappe.db.commit()

@@ -9,7 +9,8 @@ the Actions menu.
 
 This endpoint supplies only the bits the table can't get from Frappe's standard
 list query:
-  - tab_counts      : status group counts for the top tabs (All + each status)
+  - tab_counts      : status group counts for the top tabs (All + each status),
+                      honouring every active list filter except status
   - status_options  : status field options (drive the tabs), from doctype meta
   - stats           : per-opening aggregates for the *visible* rows (passed in
                       via `names`) — total applicants, pipeline stage counts,
@@ -23,6 +24,8 @@ import json
 
 import frappe
 from frappe.utils import cint, getdate, today
+
+from recruitment.api.list_filters import normalize_count_filters
 
 
 PIPELINE_STAGES = (
@@ -60,8 +63,13 @@ def _status_options():
 
 
 @frappe.whitelist()
-def get_job_openings_with_stats(names=None):
-	"""Return tab counts + status options, plus per-opening stats for `names`."""
+def get_job_openings_with_stats(names=None, filters=None):
+	"""Return tab counts + status options, plus per-opening stats for `names`.
+
+	Tab counts honour ALL of the list view's active filters (company, department,
+	designation, …) EXCEPT status — so each tab shows how many of the *currently
+	filtered* openings sit in that status, and the numbers match the visible rows.
+	"""
 
 	status_options = _status_options()
 
@@ -70,7 +78,8 @@ def get_job_openings_with_stats(names=None):
 	# the SQL-function-in-fields aggregate that Frappe v16 rejects. ---
 	# `pluck` returns a flat list of values instead of a dict per row — same single
 	# query, without the per-row dict building.
-	statuses = frappe.get_list("Job Opening", pluck="status", limit_page_length=0)
+	scoped = normalize_count_filters(filters)
+	statuses = frappe.get_list("Job Opening", filters=scoped, pluck="status", limit_page_length=0)
 	tab_counts = {"All": len(statuses)}
 	for opt in status_options:
 		tab_counts[opt] = 0

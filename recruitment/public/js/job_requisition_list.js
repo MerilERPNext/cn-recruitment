@@ -470,7 +470,14 @@
 			$result.append($host);
 		}
 		const data = listview.data || [];
-		if (!data.length) { $host.html(""); return; }  // let Frappe's native no-result show
+		if (!data.length) {
+			// Nothing matched — let Frappe's native no-result block show, but still
+			// refresh the tabs so they don't stay frozen on the previous filter's
+			// numbers while the list underneath is empty.
+			$host.html("");
+			fetchAux();
+			return;
+		}
 
 		const cols = recruitment.list_columns;
 		$host.html(`
@@ -486,13 +493,35 @@
 		if (typeof listview.set_rows_as_checked === "function") {
 			try { listview.set_rows_as_checked(); } catch (e) { /* noop */ }
 		}
+		fetchAux();
 	}
 
+	// Active list filters EXCEPT status — the tabs count per status, so status must
+	// not pre-filter. Everything else (company, department, designation, …) must
+	// apply so the tab counts match the visible, filtered rows.
+	//
+	// Read through `get_filters_for_args()`, not `filter_area.get()`: that is the
+	// same accessor the row query uses, so repeated `=` on one field arrives here
+	// already folded into an `in` (see list_filter_multi.js).
+	function countFilters() {
+		const raw =
+			(_listview &&
+				typeof _listview.get_filters_for_args === "function" &&
+				_listview.get_filters_for_args()) ||
+			[];
+		return raw
+			.filter((f) => Array.isArray(f) && f[1] && f[1] !== "status")
+			.map((f) => [f[1], f[2], f[3]]);
+	}
+
+	let _auxToken = 0;
 	function fetchAux() {
+		const token = ++_auxToken;
 		frappe.call({
 			method: "recruitment.api.job_requisition_list.get_job_requisitions_with_stats",
-			args: {},
+			args: { filters: JSON.stringify(countFilters()) },
 			callback: (r) => {
+				if (token !== _auxToken) return;   // a newer filter change already won
 				const msg = (r && r.message) || {};
 				state.tabCounts = msg.tab_counts || {};
 				state.statusOptions = msg.status_options || [];
@@ -504,8 +533,11 @@
 	function syncActiveTabFromFilters(listview) {
 		try {
 			const filters = (listview.filter_area && listview.filter_area.get()) || [];
-			const f = filters.find((arr) => arr && arr[1] === "status" && arr[2] === "=");
-			state.activeTab = f && f[3] ? f[3] : "All";
+			// Several statuses filtered at once matches no single tab — the list is
+			// showing a union, so leave "All" highlighted instead of picking one.
+			const on_status = filters.filter((arr) => arr && arr[1] === "status" && arr[2] === "=");
+			state.activeTab =
+				on_status.length === 1 && on_status[0][3] ? on_status[0][3] : "All";
 		} catch (e) { state.activeTab = "All"; }
 	}
 
@@ -525,6 +557,11 @@
 	}
 
 	function installRenderOverride(listview) {
+		// Repeated `=` filters on one field (two Institutes, two Departments, …)
+		// are ANDed by Frappe and match nothing; fold them into a single `in`.
+		// Guarded so a missing/stale list_filter_multi.js degrades to the old
+		// behaviour instead of taking the whole rendered table down with it.
+		recruitment.filters && recruitment.filters.install(listview);
 		if (listview._jr_render_patched) return;
 		listview._jr_render_patched = true;
 		listview.render_list = function () { renderTableInto(this); };
