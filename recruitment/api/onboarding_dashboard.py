@@ -2,6 +2,7 @@ import frappe
 from recruitment.api.candidate_auth import candidate_required, enforce_candidate_identity
 from recruitment.api.candidate_portal import (
     _compute_candidate_field_counts,
+    _dpdp_consent_pending,
     _get_active_pre_release,
     _get_onboarding_portal_rows,
     _iter_onboarding_contact_users,
@@ -29,6 +30,12 @@ def get_dashboard(email):
             return _error_response("email is required.", 400)
         enforce_candidate_identity(email=email)
 
+        # Project-specific gate — a NO-OP for every other site. `_dpdp_consent_pending`
+        # returns False unless DPDP consent is BOTH enabled AND enforced for this site
+        # (DPDP Act Settings) and the candidate has not yet given it. In that one case
+        # onboarding hasn't effectively started, so onboarding_status is reported False.
+        consent_pending = _dpdp_consent_pending(email)
+
         row = frappe.db.get_value(
             DOCTYPENAME,
             {"job_applicant": email, "docstatus": ("<", 2)},
@@ -51,7 +58,7 @@ def get_dashboard(email):
                         "work_location": None,
                         "work_location_details": None,
                         "key_contacts": [],
-                        "onboarding_status": True,
+                        "onboarding_status": (False if consent_pending else True),
                         "form_completion": {
                             "total_fields": 0,
                             "filled_fields": 0,
@@ -86,7 +93,10 @@ def get_dashboard(email):
         # true  : Employee Onboarding record exists
         # true  : No record yet but Job Applicant status is "Accepted"
         # false : Neither condition is met
-        onboarding_status = True  # we already have a record at this point
+        # false : DPDP consent is required for this site but not yet given (no-op
+        #         elsewhere — see consent_pending above).
+        onboarding_status = not consent_pending  # record exists, but a pending DPDP
+        #         consent means onboarding hasn't effectively started.
 
         # ── Form Completion (live, value-aware) ───────────────────────────────
         # Use the SAME source of truth as the candidate form page instead of the
