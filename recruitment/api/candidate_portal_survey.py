@@ -10,6 +10,9 @@ ACTION_CENTER_URL = "/action-center"
 SURVEY_URL_TEMPLATE = "/survey?appl={applicant}"
 JOB_OFFER_URL_TEMPLATE = "/job_offer?appl={applicant}"
 ONBOARDING_URL_TEMPLATE = "/onboarding?appl={applicant}"
+# DPDP consent page. Project-specific: only ever used when DPDP consent is both
+# enabled AND enforced for the site (otherwise the routing never points here).
+DPDP_CONSENT_URL_TEMPLATE = "/job_offer/consent?appl={applicant}"
 
 # Logical step keys. The order/label/enabled of these steps is configured per site
 # in Candidate Portal Auth Settings -> Post-Login Flow (the `post_login_flow` table).
@@ -99,6 +102,17 @@ def get_post_login_route():
 
     if step in (JOB_OFFER_STEP, ONBOARDING_STEP):
         return {"survey_required": False, "redirect_url": _step_url(step, applicant_name), **flow}
+
+    # DPDP consent gate — project-specific, NO-OP for every other site. When DPDP
+    # consent is enabled AND enforced for this site and the candidate has not given
+    # it yet (e.g. they cancelled it), land them on the consent page instead of the
+    # action center. `_dpdp_consent_pending` returns False unless DPDP is enabled,
+    # enforced and unconsented, so nothing changes for sites that don't use it. This
+    # runs only after survey/offer/onboarding steps are done (the case that would
+    # otherwise fall through to the action center).
+    from recruitment.api.candidate_portal import _dpdp_consent_pending
+    if _dpdp_consent_pending(applicant_name):
+        return {"survey_required": False, "redirect_url": _dpdp_consent_url(applicant_name), **flow}
 
     return {"survey_required": False, "redirect_url": ACTION_CENTER_URL, **flow}
 
@@ -297,6 +311,15 @@ def _step_url(step, applicant_name):
     if step == ONBOARDING_STEP:
         return ONBOARDING_URL_TEMPLATE.format(applicant=applicant_name)
     return ACTION_CENTER_URL
+
+
+def _dpdp_consent_url(applicant_name):
+    """Consent-page URL for the candidate, token-gated like the offer page.
+
+    /job_offer/consent?appl=<applicant>&token=<offer_token>. Only used when DPDP
+    consent is enforced and still pending (see get_post_login_route)."""
+    from recruitment.recruitment.link_token import offer_token
+    return DPDP_CONSENT_URL_TEMPLATE.format(applicant=applicant_name) + "&token=" + offer_token(applicant_name)
 
 
 # ---------------------------------------------------------------------------
