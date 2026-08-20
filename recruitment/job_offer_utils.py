@@ -35,6 +35,35 @@ def _authorize_offer(appl, token, ptype="read"):
     require_token(OFFER_SCOPE, appl, token)
 
 
+def _candidate_owns_applicant(appl):
+    """True when the current Candidate Portal session owns Job Applicant ``appl``.
+
+    Resolves the candidate straight from their portal session cookie (endpoints that
+    are not wrapped by ``@candidate_required`` don't have ``frappe.local.candidate``
+    populated) and checks ownership the same way ``enforce_candidate_identity`` does:
+    the session email equals ``appl`` or the Job Applicant's ``email_id``.
+
+    Non-throwing — returns False for guests / non-candidate sessions, so callers can
+    safely fall back to the existing token / permission gate.
+    """
+    try:
+        from recruitment.api.candidate_auth import _get_session_cookie, _get_active_session
+
+        cookie = _get_session_cookie()
+        if not cookie:
+            return False
+        session = _get_active_session(cookie)
+        email = ((session.candidate if session else "") or "").strip().lower()
+        if not email:
+            return False
+        if (appl or "").strip().lower() == email:
+            return True
+        applicant_email = frappe.db.get_value("Job Applicant", appl, "email_id")
+        return bool(applicant_email and applicant_email.strip().lower() == email)
+    except Exception:
+        return False
+
+
 def _resolve_offer_employment_type(job_offer):
     """Employment Type (Link id) driving the offer print-format / document-template
     / compensation logic.
@@ -467,7 +496,13 @@ def download_job_offer_pdf(appl, token=None, separate=None):
     """
     if not appl:
         frappe.throw("Missing applicant parameter")
-    _authorize_offer(appl, token, "read")
+    # Desk/HR and the token-gated offer accept/reject page keep working exactly as
+    # before. Additionally, a logged-in candidate downloading THEIR OWN offer is
+    # allowed WITHOUT a link token — the candidate dashboard fetches this PDF after
+    # login and has no offer token to pass. Any other caller still needs the token
+    # (or Job Offer permission), so this does not open the endpoint up.
+    if not _candidate_owns_applicant(appl):
+        _authorize_offer(appl, token, "read")
 
     want_separate = cint(separate) if separate is not None else 0
 
