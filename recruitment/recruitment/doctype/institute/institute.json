@@ -1,7 +1,7 @@
 {
  "actions": [],
  "allow_rename": 1,
- "autoname": "format:INST-{####}",
+ "autoname": "field:institute_name",
  "creation": "2026-07-03 00:00:00.000000",
  "doctype": "DocType",
  "engine": "InnoDB",
@@ -200,7 +200,7 @@
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "Institute",
- "naming_rule": "Expression",
+ "naming_rule": "By fieldname",
  "owner": "Administrator",
  "permissions": [
   {

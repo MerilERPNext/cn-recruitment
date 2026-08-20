@@ -45,3 +45,4 @@ recruitment.patches.migrate_requisition_scope_to_attributes
 recruitment.patches.merge_job_opening_employment_type
 recruitment.patches.add_trainee_joining_date
 recruitment.patches.backfill_applicant_employment_type
+recruitment.patches.rename_institutes_by_name

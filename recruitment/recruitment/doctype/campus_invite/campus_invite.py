@@ -4,6 +4,7 @@
 import frappe
 from frappe import _
 from frappe.model.document import Document
+from frappe.utils import escape_html, formatdate
 
 from recruitment.recruitment.campus_helpers import (
 	locked_institutes_for_invite,
@@ -45,6 +46,23 @@ def tpo_contacts_for_institutes(institutes):
 	return deduped
 
 
+def _bullets(rows):
+	"""A `<ul>` of colleges, each optionally naming the drive that locked it.
+
+	`rows` is an iterable of ``(institute, campus_drive_or_None)``. Kept as a
+	helper so the two messages below list colleges the same way — the point of
+	both is to say plainly WHICH colleges are affected, which a comma-run of ids
+	never managed.
+	"""
+	items = []
+	for institute, drive in rows:
+		label = escape_html(str(institute))
+		if drive:
+			label += " — " + _("drive {0} is already live").format(escape_html(str(drive)))
+		items.append(f"<li>{label}</li>")
+	return "<ul>" + "".join(items) + "</ul>" if items else ""
+
+
 class CampusInvite(Document):
 	def validate(self):
 		self._sync_tpo_contacts_from_institutes()
@@ -74,7 +92,7 @@ class CampusInvite(Document):
 		So the edit is refused outright once every institute on the invite is live, and
 		otherwise HR is told exactly which colleges the new date applies to.
 		"""
-		from frappe.utils import formatdate, getdate, nowdate
+		from frappe.utils import getdate, nowdate
 
 		before = self.get_doc_before_save()
 		old = before and before.registration_expiry_date
@@ -89,11 +107,17 @@ class CampusInvite(Document):
 		if invited and not still_open:
 			frappe.throw(
 				_(
-					"Every institute on this invite is already running a live campus drive "
-					"({0}). Their registration is closed by the drive, so the deadline can no "
-					"longer be changed."
-				).format(frappe.bold(", ".join(f"{i} → {locked[i]}" for i in invited))),
-				title=_("Drives Already Live"),
+					"Every college on this invite has already started its campus drive, so "
+					"there is no registration left for a deadline to apply to:"
+				)
+				+ _bullets((i, locked[i]) for i in invited)
+				+ "<p>"
+				+ _(
+					"Once a drive goes live it decides who can still register, not this "
+					"date. To reopen a college, work on its drive."
+				)
+				+ "</p>",
+				title=_("Every Drive Is Already Live"),
 			)
 
 		# A deadline in the past would close the remaining colleges retroactively — the
@@ -107,13 +131,31 @@ class CampusInvite(Document):
 			)
 
 		if locked:
+			applied = still_open
+			skipped = [(i, locked[i]) for i in invited if i in locked]
+			headline = (
+				_("Registration now closes on {0} for {1} of the {2} colleges on this invite:").format(
+					frappe.bold(formatdate(new)), frappe.bold(len(applied)), frappe.bold(len(invited))
+				)
+				if new
+				else _("Registration has no deadline now for {0} of the {1} colleges on this invite:").format(
+					frappe.bold(len(applied)), frappe.bold(len(invited))
+				)
+			)
 			frappe.msgprint(
-				_("Deadline updated for {0}. {1} already have a live drive — their "
-				  "registration stays closed.").format(
-					frappe.bold(", ".join(still_open)),
-					frappe.bold(", ".join(i for i in invited if i in locked)),
-				),
-				title=_("Applies to the institutes still open"), indicator="orange",
+				"<p>" + headline + "</p>"
+				+ _bullets((i, None) for i in applied)
+				+ "<p>"
+				# Deliberately not "the college"/"their drive": one skipped college and
+				# several read the same way here, so the sentence never has to agree.
+				+ _(
+					"It does not apply below, where the drive has already started — a live "
+					"drive decides its own registration:"
+				)
+				+ "</p>"
+				+ _bullets(skipped),
+				title=_("Deadline Changed for Some Colleges"),
+				indicator="orange",
 			)
 
 	def on_submit(self):
