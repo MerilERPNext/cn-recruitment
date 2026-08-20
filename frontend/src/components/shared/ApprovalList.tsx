@@ -351,7 +351,7 @@ const ApprovalList = ({
   const batchActionMutation = useActionOnAttendanceRequest();
 
   const handleBulkActionClick = (action: "Approve" | "Reject") => {
-    if (["Approve", "Reject"].includes(action) && ["Leave Application", "Attendance Request", "Expense Claim"].includes(doctype)) {
+    if (["Approve", "Reject"].includes(action) && ["Leave Application", "Attendance Request", "Expense Claim", "Loan Application", "Employee Advance"].includes(doctype)) {
       let isMandatory = true;
       if (doctype === "Leave Application" && action === "Reject") {
         isMandatory = isLeaveRejectionMandatory?.message ?? true;
@@ -622,10 +622,66 @@ const ApprovalList = ({
         isOpen={showBulkCommentModal}
         isPending={isCommentSaving}
         type={pendingBulkAction === "Approve" ? "approval" : "rejection"}
-        title={pendingBulkAction === "Approve" ? "Approval Comment" : "Rejection Comment"}
-        description={`Please add a comment before ${pendingBulkAction === "Approve" ? "approving" : "rejecting"} these requests.`}
-        label={`${pendingBulkAction === "Approve" ? "APPROVAL" : "REJECTION"} COMMENT *`}
-        placeholder={`Enter ${pendingBulkAction === "Approve" ? "approval" : "rejection"} comment...`}
+        title={
+          pendingBulkAction === "Approve"
+            ? selectedIds.length > 1
+              ? "Bulk Approval Comment"
+              : "Approval Comment"
+            : selectedIds.length > 1
+              ? "Bulk Rejection Reason"
+              : "Rejection Reason"
+        }
+        description={
+          pendingBulkAction === "Approve"
+            ? `Please add a comment before approving ${
+                selectedIds.length > 1
+                  ? `these ${selectedIds.length} requests`
+                  : "this request"
+              }.`
+            : `Please add a reason before rejecting ${
+                selectedIds.length > 1
+                  ? `these ${selectedIds.length} requests`
+                  : "this request"
+              }.`
+        }
+        label={
+          pendingBulkAction === "Approve"
+            ? "APPROVAL COMMENT *"
+            : "REJECTION REASON *"
+        }
+        placeholder={
+          pendingBulkAction === "Approve"
+            ? "Enter approval comment..."
+            : "Enter rejection reason..."
+        }
+        confirmTitle={
+          pendingBulkAction === "Approve"
+            ? selectedIds.length > 1
+              ? `Confirm Approval (${selectedIds.length})`
+              : "Confirm Approval"
+            : selectedIds.length > 1
+              ? `Confirm Rejection (${selectedIds.length})`
+              : "Confirm Rejection"
+        }
+        confirmMessage={
+          pendingBulkAction === "Approve"
+            ? selectedIds.length > 1
+              ? `Are you sure you want to approve all ${selectedIds.length} selected requests?`
+              : "Are you sure you want to approve this request?"
+            : selectedIds.length > 1
+              ? `Are you sure you want to reject all ${selectedIds.length} selected requests?`
+              : "Are you sure you want to reject this request?"
+        }
+        confirmButtonLabel={
+          pendingBulkAction === "Approve"
+            ? selectedIds.length > 1
+              ? `Approve All (${selectedIds.length})`
+              : "Approve"
+            : selectedIds.length > 1
+              ? `Reject All (${selectedIds.length})`
+              : "Reject"
+        }
+        cancelButtonLabel="Cancel"
         todo_id={selectedIds[0]}
         onCancel={handleCancelBulkComment}
         onSave={handleSaveBulkComment}
