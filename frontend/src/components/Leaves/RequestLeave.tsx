@@ -570,7 +570,7 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
           return att;
         }),
       );
-      if (!leaveSettings?.enable_modal_collaps) {
+      if (leaveSettings?.enable_modal_collaps) {
         onCancel?.();
       }
       // Use showToast so partial-success responses (some days created, some
