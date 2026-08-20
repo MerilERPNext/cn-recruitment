@@ -544,6 +544,25 @@ export const attendanceService = {
     }
   },
 
+  // Attendance Settings resource API fetcher
+  getAttendanceSettings: async (
+  ): Promise<{ enable_approval_confirm_modal: number, enable_rejection_confirm_modal: number } | null> => {
+    try {
+      const res = (await FrappeAPI.getDocument(
+        "Attendance Settings",
+        "Attendance Settings",
+        [
+          "enable_approval_confirm_modal",
+          "enable_rejection_confirm_modal",
+        ]
+      )) as { enable_approval_confirm_modal: number, enable_rejection_confirm_modal: number } | undefined;
+      return res || null;
+    } catch (error) {
+      console.error("📡 Error while reading Attendance Settings:", error);
+      return null;
+    }
+  },
+
   getPolicyForDate: async (
     filters: AllEventsAndAttendanceT
   ): Promise<string> => {
