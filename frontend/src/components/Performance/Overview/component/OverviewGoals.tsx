@@ -73,7 +73,7 @@ const OverviewGoals: React.FC = () => {
           </div>
         </header>
 
-        <div aria-label="Goals Cards" className="space-y-3 sm:space-y-4">
+        <div aria-label="Goals Cards" className="space-y-3 max-w-3xl max-h-[300px] overflow-y-auto  sm:space-y-4">
           {topGoals.length === 0 ? (
             <div className="flex items-center justify-center py-8 text-center rounded-lg border border-dashed border-slate-200 bg-white">
               <Typography variant="bodySmall" className="text-slate-500 font-medium">

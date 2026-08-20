@@ -14,16 +14,16 @@ const steps = [
   { n: 4, label: "Calibration", done: false },
   { n: 5, label: "Released", done: false },
 ];
-
+export const formatDate = (date?: string) => date
+  ? new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(`${date}T00:00:00`))
+  : '';
 const OverviewHeader = () => {
   const { isMobile, isTablet } = useScreenSize();
   const navigate = useNavigate();
   const isCompact = isMobile || isTablet;
   const { data: overviewResponse } = usePerformanceOverview();
   const overview = overviewResponse?.data;
-  const formatDate = (date?: string) => date
-    ? new Intl.DateTimeFormat(undefined, { month: 'short', year: 'numeric' }).format(new Date(`${date}T00:00:00`))
-    : '';
+
   return (
      <article aria-label="Cycle Information" className="min-w-0 rounded-xl border border-gray-100 bg-white p-4 shadow-sm sm:p-6">
               <div aria-label="Cycle Details" className="mb-5 flex min-w-0 flex-col justify-between gap-4 sm:mb-8 lg:flex-row lg:items-end">
