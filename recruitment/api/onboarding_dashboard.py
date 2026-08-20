@@ -67,6 +67,16 @@ def get_dashboard(email):
         # they have submitted it. Both False for non-DPDP sites (see helper). Used to
         # show a "complete DPDP consent" action when required and not yet submitted.
         dpdp_required, dpdp_submitted = _dpdp_consent_flags(email)
+        # Consent page URL for the UI's "complete DPDP consent" action — reuses the
+        # same token-gated URL the post-login router builds. Only when DPDP applies;
+        # None everywhere else. Guarded so it can never break the dashboard.
+        dpdp_consent_url = None
+        if dpdp_required:
+            try:
+                from recruitment.api.candidate_portal_survey import _dpdp_consent_url
+                dpdp_consent_url = _dpdp_consent_url(email)
+            except Exception:
+                dpdp_consent_url = None
 
         row = frappe.db.get_value(
             DOCTYPENAME,
@@ -93,6 +103,7 @@ def get_dashboard(email):
                         "onboarding_status": (False if consent_pending else True),
                         "dpdp_consent_required": dpdp_required,
                         "dpdp_consent_submitted": dpdp_submitted,
+                        "dpdp_consent_url": dpdp_consent_url,
                         "form_completion": {
                             "total_fields": 0,
                             "filled_fields": 0,
@@ -115,6 +126,7 @@ def get_dashboard(email):
                     "onboarding_status": False,
                     "dpdp_consent_required": dpdp_required,
                     "dpdp_consent_submitted": dpdp_submitted,
+                    "dpdp_consent_url": dpdp_consent_url,
                     "form_completion": {
                         "total_fields": 0,
                         "filled_fields": 0,
@@ -231,6 +243,7 @@ def get_dashboard(email):
             "onboarding_status": onboarding_status,
             "dpdp_consent_required": dpdp_required,
             "dpdp_consent_submitted": dpdp_submitted,
+            "dpdp_consent_url": dpdp_consent_url,
             "form_completion": form_completion,
             "onboarding_stage": onboarding_stage,
         }
