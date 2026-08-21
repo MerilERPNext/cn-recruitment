@@ -348,7 +348,7 @@ export const performanceService = {
       "cn_pms.cn_performance_management.api.team_goal_api.get_team_goals",
       params as Record<string, unknown> | undefined,
     );
-    return response as TeamGoalsResponse;
+    return throwIfUnsuccessful(response as TeamGoalsResponse);
   },
 
 };

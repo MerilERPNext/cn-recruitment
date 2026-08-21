@@ -1,19 +1,22 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useScreenSize } from "../../../hooks/useScreenSize";
-import { APPROVAL_GOALS, GOAL_DETAIL, TEAM_MEMBERS } from "./mockData";
+import { APPROVAL_GOALS, GOAL_DETAIL } from "./mockData";
 import { GoalDetailData } from "./types";
 import { GoalHeader } from "./components/TeamGoals/GoalHeader";
 import { ApprovalQueueSection } from "./components/TeamGoals/ApprovalQueueSection";
 import { AllTeamGoalsSection } from "./components/TeamGoals/AllTeamGoalsSection";
 import { GoalDetailModal } from "./components/TeamGoals/GoalDetailModal";
 import { useGetTeamGoals } from "../../../hooks/usePerformance";
+import { getPerformanceErrorMessage } from "../../../services/performanceService";
+import { TeamGoalsHeaderSkeleton, TeamGoalsListSkeleton } from "./components/TeamGoals/TeamGoalsSkeleton";
+import { TeamGoalsError } from "./components/TeamGoals/TeamGoalsError";
 
 const TeamGoals: React.FC = () => {
   const navigate = useNavigate();
   const { isMobile } = useScreenSize();
-   const {data:teamGoals , isLoading , error} = useGetTeamGoals()
-  const card = teamGoals?.data?.cards
+  const { data: teamGoals, isLoading, error, refetch } = useGetTeamGoals();
+  const card = teamGoals?.data?.cards;
   const [checkedGoals, setCheckedGoals] = useState<Set<string>>(
     new Set(APPROVAL_GOALS.filter((g) => g.checked).map((g) => g.id))
   );
@@ -37,8 +40,6 @@ const TeamGoals: React.FC = () => {
   };
 
   const totalGoals = 32;
-  const totalReportees = 8;
-  const pendingApproval = APPROVAL_GOALS.length;
 
   const toggleCheck = (id: string) => {
     setCheckedGoals((prev) => {
@@ -55,9 +56,16 @@ const TeamGoals: React.FC = () => {
       }`}
     >
       <div className="mx-auto w-full space-y-4 sm:space-y-5">
-        <GoalHeader
-          card={card}
-        />
+        {isLoading ? (
+          <TeamGoalsHeaderSkeleton />
+        ) : error ? (
+          <TeamGoalsError
+            message={getPerformanceErrorMessage(error, "Failed to load team goals")}
+            onRetry={() => refetch()}
+          />
+        ) : (
+          <GoalHeader card={card} />
+        )}
 
         <ApprovalQueueSection
           goals={APPROVAL_GOALS}
@@ -66,13 +74,16 @@ const TeamGoals: React.FC = () => {
           onGoalClick={handleGoalClick}
         />
 
-        <AllTeamGoalsSection
-          totalGoals={card?.goals ?? totalGoals}
-          groups={teamGoals?.data?.groups}
-          health={teamGoals?.data?.health}
-          members={TEAM_MEMBERS}
-          onGoalClick={handleGoalClick}
-        />
+        {isLoading ? (
+          <TeamGoalsListSkeleton />
+        ) : error ? null : (
+          <AllTeamGoalsSection
+            totalGoals={card?.goals ?? totalGoals}
+            groups={teamGoals?.data?.groups}
+            health={teamGoals?.data?.health}
+            onGoalClick={handleGoalClick}
+          />
+        )}
       </div>
 
       {selectedGoal && (
@@ -87,3 +98,4 @@ const TeamGoals: React.FC = () => {
 };
 
 export default TeamGoals;
+
