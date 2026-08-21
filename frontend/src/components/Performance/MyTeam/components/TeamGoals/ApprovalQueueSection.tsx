@@ -56,7 +56,7 @@ export const ApprovalQueueSection: React.FC<ApprovalQueueSectionProps> = ({
               variant="caption"
               className="shrink-0 text-amber-800"
             >
-              - {autoApproveNote}
+              -{autoApproveNote}
             </Typography>
           )}
         </div>
