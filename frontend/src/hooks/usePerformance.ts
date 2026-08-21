@@ -17,6 +17,7 @@ interface PerformanceQueryKey {
   overview: ["performance", "overview"];
   teamOverview: (manager?: string) => ["performance", "team-overview", string | undefined];
   teamMembers: (params?: TeamMembersParams) => ["performance", "team-members", TeamMembersParams | undefined];
+  teamGoals: (params?: TeamGoalsParams) => ["performance", "team-goals", TeamGoalsParams | undefined];
   myPeerReviews: ["performance", "my-peer-reviews"];
   feedbackForm: (nomination: string) => ["performance", "feedback-form", string];
 }
@@ -34,6 +35,7 @@ export const PERFORMANCE_QUERY_KEYS: PerformanceQueryKey = {
   overview: ["performance", "overview"] as const,
   teamOverview: (manager?: string) => ["performance", "team-overview", manager] as const,
   teamMembers: (params?: TeamMembersParams) => ["performance", "team-members", params],
+  teamGoals: (params?: TeamGoalsParams) => ["performance", "team-goals", params],
   myPeerReviews: ["performance", "my-peer-reviews"] as const,
   feedbackForm: (nomination: string) => ["performance", "feedback-form", nomination] as const,
 };
@@ -290,7 +292,7 @@ export const useGetTeamMembers = (params?: TeamMembersParams): UseQueryResult<Te
   });
 export const useGetTeamGoals = (params?: TeamGoalsParams): UseQueryResult<TeamGoalsResponse, Error> =>
   useQuery<TeamGoalsResponse, Error>({
-    queryKey: PERFORMANCE_QUERY_KEYS.teamMembers(params),
+    queryKey: PERFORMANCE_QUERY_KEYS.teamGoals(params),
     queryFn: () => performanceService.getTeamGoals(params),
     staleTime: 5 * 60 * 1000,
   });
