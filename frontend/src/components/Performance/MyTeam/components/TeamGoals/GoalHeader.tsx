@@ -78,29 +78,20 @@ export const GoalHeader: React.FC<GoalHeaderProps> = React.memo(({ card: propCar
           </Button>
         </div>
       </div>
-      <div className="grid max-w-xl grid-cols-3 gap-2 p-4 sm:p-5">
+      <div className="flex flex-wrap items-center gap-2.5 px-4 py-3 sm:px-5 border-t border-slate-100 bg-slate-50/50">
         {[
-          { icon: Target, label: "Goals", value: card?.goals ?? 0 },
-          { icon: Users, label: "Reportees", value: card?.reportees ?? 0 },
-          { icon: Weight, label: "Pending", value: card?.pending_approval ?? 0 },
-        ].map(({ icon: Icon, label, value }) => (
-          <div
+          { icon: Target, label: "Goals", value: card?.goals ?? 0, bg: "bg-blue-50 text-blue-700 border-blue-200" },
+          { icon: Users, label: "Reportees", value: card?.reportees ?? 0, bg: "bg-indigo-50 text-indigo-700 border-indigo-200" },
+          { icon: Weight, label: "Pending", value: card?.pending_approval ?? 0, bg: "bg-amber-50 text-amber-800 border-amber-200" },
+        ].map(({ icon: Icon, label, value, bg }) => (
+          <span
             key={label}
-            className="min-w-0 rounded-lg border border-slate-100 bg-slate-50 px-2.5 py-2 sm:px-3"
+            className={`inline-flex items-center gap-1.5 rounded-md border px-3 py-1 text-xs font-semibold ${bg}`}
           >
-            <div className="flex items-center gap-1.5 text-slate-500">
-              <Icon className="h-3.5 w-3.5 shrink-0" />
-              <Typography variant="caption" className="truncate text-slate-500">
-                {label}
-              </Typography>
-            </div>
-            <Typography
-              variant="bodySmall"
-              className="mt-1 block font-semibold text-slate-950"
-            >
-              {value}
-            </Typography>
-          </div>
+            <Icon className="h-3.5 w-3.5 shrink-0" />
+            <span>{label}:</span>
+            <span className="font-bold">{value}</span>
+          </span>
         ))}
       </div>
     </header>
