@@ -99,7 +99,7 @@ export const EmployeeApprovalItem: React.FC<EmployeeApprovalItemProps> = memo(({
               type="button"
               variant="outline"
               size="sm"
-              className="border-amber-300 text-amber-800 hover:bg-amber-50"
+              className="border-amber-300 text-amber-800 bg-amber-50/50 hover:bg-amber-100/80 active:bg-amber-200"
             >
               <Undo2 className="h-3.5 w-3.5 mr-1 text-amber-600" />
               Send Back Plan
@@ -109,10 +109,10 @@ export const EmployeeApprovalItem: React.FC<EmployeeApprovalItemProps> = memo(({
             <Button
               type="button"
               variant="outline"
-              bgColor="error"
               size="sm"
+              className="border-red-300 text-red-700 bg-red-50/50 hover:bg-red-100/80 active:bg-red-200"
             >
-              <X className="h-3.5 w-3.5 mr-1" />
+              <X className="h-3.5 w-3.5 mr-1 text-red-600" />
               Reject Plan
             </Button>
           )}
@@ -120,10 +120,10 @@ export const EmployeeApprovalItem: React.FC<EmployeeApprovalItemProps> = memo(({
             <Button
               type="button"
               variant="contain"
-              bgColor="success"
               size="sm"
+              className="border border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-700 active:bg-emerald-800 shadow-xs"
             >
-              <Check className="h-3.5 w-3.5 mr-1" />
+              <Check className="h-3.5 w-3.5 mr-1 text-white" />
               Approve Plan
             </Button>
           )}

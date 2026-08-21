@@ -195,7 +195,7 @@ export const ApprovalQueueSection: React.FC<ApprovalQueueSectionProps> = ({
           <Typography variant="bodySmall">No goals pending approval.</Typography>
         </div>
       ) : isPlanAction && byEmployeeList.length > 0 ? (
-        <div className="p-3 sm:p-4 space-y-3 bg-slate-50/60 max-h-[500px] overflow-y-auto">
+        <div className="p-3 sm:p-4 pr-2 sm:pr-3 space-y-3 bg-slate-50/60 max-h-[500px] overflow-y-auto">
           {byEmployeeList.map((empGroup: ApprovalQueueByEmployee) => (
             <EmployeeApprovalItem
               key={empGroup.employee}
