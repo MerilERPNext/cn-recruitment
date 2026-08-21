@@ -169,10 +169,9 @@ export const ApprovalQueueSection: React.FC<ApprovalQueueSectionProps> = ({
         </div>
       </div>
 
-      {/* Queue Content */}
       {queueLoading ? (
         <div className="p-4">
-          <CardSkeleton rows={4} />
+          <CardSkeleton rows={2} />
         </div>
       ) : error ? (
         <div className="m-4 rounded-lg border border-red-200 bg-red-50 p-4 text-red-700 flex items-center justify-between gap-3">
@@ -227,7 +226,6 @@ export const ApprovalQueueSection: React.FC<ApprovalQueueSectionProps> = ({
           })}
         </div>
       ) : (
-        /* plan_action === false: Flat Queue List (Desktop CardTable View) */
         <CardTable
           titles={APPROVAL_TABLE_TITLES}
           columnWidths={APPROVAL_TABLE_COLUMN_WIDTHS}
