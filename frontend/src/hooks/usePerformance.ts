@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient, type UseQueryResult } from "@tanstack/react-query";
-import type { DeleteGoalsPayload, GoalActionResponse, GoalFormConfig, GoalPlanId, GoalPlanResponse, GoalsRequest, GoalSubmitResponse, Message, MyGoalsResponse, ReferenceGoalsParams, ReferenceGoalsResponse, GoalRepositoryResponse, SaveGoalsPayload, SubmitSelectedGoalsPayload, CascadeGoalsParams, CascadeGoalsResponse, GoalDetailResponse, GoalCheckInsResponse, SubmitGoalCheckInPayload, SubmitGoalCheckInResponse, PerformanceOverviewResponse, RequestCheckInPayload, RequestCheckInResponse, MyPeerReviewsResponse, FeedbackFormResponse, SaveFeedbackResponse, SaveFeedbackPayload, SubmitFeedbackPayload, SubmitFeedbackResponse, AddGoalCommentPayload, AddGoalCommentResponse, TeamOverviewResponse, TeamMembersResponse, TeamMembersParams, TeamGoalsParams, TeamGoalsResponse } from "../types/goal";
+import type { DeleteGoalsPayload, GoalActionResponse, GoalFormConfig, GoalPlanId, GoalPlanResponse, GoalsRequest, GoalSubmitResponse, Message, MyGoalsResponse, ReferenceGoalsParams, ReferenceGoalsResponse, GoalRepositoryResponse, SaveGoalsPayload, SubmitSelectedGoalsPayload, CascadeGoalsParams, CascadeGoalsResponse, GoalDetailResponse, GoalCheckInsResponse, SubmitGoalCheckInPayload, SubmitGoalCheckInResponse, PerformanceOverviewResponse, RequestCheckInPayload, RequestCheckInResponse, MyPeerReviewsResponse, FeedbackFormResponse, SaveFeedbackResponse, SaveFeedbackPayload, SubmitFeedbackPayload, SubmitFeedbackResponse, AddGoalCommentPayload, AddGoalCommentResponse, TeamOverviewResponse, TeamMembersResponse, TeamMembersParams, TeamGoalsParams, TeamGoalsResponse, ApprovalQueueParams, ApprovalQueueResponse } from "../types/goal";
 import { performanceService } from "../services/performanceService";
 import { queryClient } from "../providers/QueryProvider";
 interface PerformanceQueryKey {
@@ -18,6 +18,7 @@ interface PerformanceQueryKey {
   teamOverview: (manager?: string) => ["performance", "team-overview", string | undefined];
   teamMembers: (params?: TeamMembersParams) => ["performance", "team-members", TeamMembersParams | undefined];
   teamGoals: (params?: TeamGoalsParams) => ["performance", "team-goals", TeamGoalsParams | undefined];
+  approvalQueue: (params?: ApprovalQueueParams) => ["performance", "approval-queue", ApprovalQueueParams | undefined];
   myPeerReviews: ["performance", "my-peer-reviews"];
   feedbackForm: (nomination: string) => ["performance", "feedback-form", string];
 }
@@ -36,6 +37,7 @@ export const PERFORMANCE_QUERY_KEYS: PerformanceQueryKey = {
   teamOverview: (manager?: string) => ["performance", "team-overview", manager] as const,
   teamMembers: (params?: TeamMembersParams) => ["performance", "team-members", params],
   teamGoals: (params?: TeamGoalsParams) => ["performance", "team-goals", params],
+  approvalQueue: (params?: ApprovalQueueParams) => ["performance", "approval-queue", params],
   myPeerReviews: ["performance", "my-peer-reviews"] as const,
   feedbackForm: (nomination: string) => ["performance", "feedback-form", nomination] as const,
 };
@@ -294,5 +296,11 @@ export const useGetTeamGoals = (params?: TeamGoalsParams): UseQueryResult<TeamGo
   useQuery<TeamGoalsResponse, Error>({
     queryKey: PERFORMANCE_QUERY_KEYS.teamGoals(params),
     queryFn: () => performanceService.getTeamGoals(params),
+    staleTime: 5 * 60 * 1000,
+  });
+export const useGetApprovelQueue = (params?: ApprovalQueueParams): UseQueryResult<ApprovalQueueResponse, Error> =>
+  useQuery<ApprovalQueueResponse, Error>({
+    queryKey: PERFORMANCE_QUERY_KEYS.approvalQueue(params),
+    queryFn: () => performanceService.getApprovalQueue(params),
     staleTime: 5 * 60 * 1000,
   });

@@ -40,6 +40,8 @@ import type {
   TeamMembersResponse,
   TeamGoalsParams,
   TeamGoalsResponse,
+  ApprovalQueueParams,
+  ApprovalQueueResponse,
 } from "../types/goal";
 import FrappeAPI from "../utils/frappeAPI";
 
@@ -349,6 +351,13 @@ export const performanceService = {
       params as Record<string, unknown> | undefined,
     );
     return throwIfUnsuccessful(response as TeamGoalsResponse);
+  },
+  getApprovalQueue: async (params?: ApprovalQueueParams): Promise<ApprovalQueueResponse> => {
+    const response = await FrappeAPI.getMethod(
+      "cn_pms.cn_performance_management.api.team_goal_api.get_approval_queue",
+      params as Record<string, unknown> | undefined,
+    );
+    return throwIfUnsuccessful(response as ApprovalQueueResponse);
   },
 
 };
