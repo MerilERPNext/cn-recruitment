@@ -172,11 +172,11 @@ export const AllTeamGoalsSection: React.FC<AllTeamGoalsSectionProps> = ({
                 >
                   <div className="overflow-hidden">
                     <div
-                      className={
+                      className={`max-h-[290px] overflow-y-auto ${
                         isCompact
                           ? "space-y-2 bg-slate-50/60 p-3"
                           : "divide-y divide-gray-50 px-4 py-2"
-                      }
+                      }`}
                     >
                       {group.goals && group.goals.length > 0 ? (
                         group.goals.map((goal) => (
