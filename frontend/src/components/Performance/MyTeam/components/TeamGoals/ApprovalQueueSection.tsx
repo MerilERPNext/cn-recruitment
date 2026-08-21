@@ -138,7 +138,7 @@ export const ApprovalQueueSection: React.FC<ApprovalQueueSectionProps> = ({
           titles={APPROVAL_TABLE_TITLES}
           columnWidths={APPROVAL_TABLE_COLUMN_WIDTHS}
         >
-          <div className="w-full min-w-[1080px]">
+          <div className="w-full">
             {queueItems.map((item: any) => {
               const itemId = item.goal || item.goal_key || item.id || item.employee;
               return (

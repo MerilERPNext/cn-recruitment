@@ -11,17 +11,17 @@ export const APPROVAL_TABLE_TITLES = [
   "Goal & Employee",
   "Weightage",
   "Status",
-  "Send Back",
+  "Auto Approve On",
   "Action",
 ];
 
 export const APPROVAL_TABLE_COLUMN_WIDTHS = [
   "minmax(40px, 0.3fr)",
-  "minmax(320px, 2.5fr)",
-  "minmax(120px, 1fr)",
-  "minmax(120px, 1fr)",
-  "minmax(100px, 0.7fr)",
-  "minmax(130px, 0.9fr)",
+  "minmax(280px, 3.5fr)",
+  "minmax(120px, 1.2fr)",
+  "minmax(110px, 1fr)",
+  "minmax(130px, 1.1fr)",
+  "minmax(130px, 1.1fr)",
 ];
 
 interface GoalApprovalItemProps {
@@ -31,12 +31,34 @@ interface GoalApprovalItemProps {
   onClick: () => void;
 }
 
-/** Reusable icon-button action bar for approval queue items (View, Approve, Reject based on goal.actions) */
+const getFlagStyles = (tone?: string) => {
+  switch (tone) {
+    case "danger":
+      return "bg-red-50 text-red-600 border-red-200";
+    case "warning":
+      return "bg-amber-50 text-amber-700 border-amber-200";
+    case "info":
+      return "bg-blue-50 text-blue-600 border-blue-200";
+    case "success":
+      return "bg-emerald-50 text-emerald-700 border-emerald-200";
+    default:
+      return "bg-slate-50 text-slate-600 border-slate-200";
+  }
+};
+
+const getWeightageColor = (weightage: number) => {
+  if (weightage > 30) return "bg-red-500";
+  if (weightage >= 20) return "bg-blue-500";
+  return "bg-indigo-500";
+};
+
+/** Reusable icon-button action bar for approval queue items (View, Approve, Reject, Send Back based on goal.actions) */
 const ApprovalActionButton = ({ goal, onClick }: { goal: ApprovalQueueItem; onClick: () => void }) => {
   const actions: string[] = goal.actions || [];
   const canView = actions.length === 0 || actions.includes("view");
   const canApprove = actions.includes("approve");
   const canReject = actions.includes("reject");
+  const canSendBack = actions.includes("send_back");
 
   return (
     <div className="flex items-center justify-center gap-1.5">
@@ -73,31 +95,16 @@ const ApprovalActionButton = ({ goal, onClick }: { goal: ApprovalQueueItem; onCl
           <X className="h-4 w-4" />
         </button>
       )}
-    </div>
-  );
-};
-
-/** Send Back icon button — rendered in its own column conditionally based on goal.actions */
-const SendBackButton = ({ goal }: { goal: ApprovalQueueItem }) => {
-  const actions: string[] = goal.actions || [];
-  const canSendBack = actions.includes("send_back");
-
-  if (!canSendBack) {
-    return (
-      <div className="flex items-center justify-center text-slate-300 text-xs">—</div>
-    );
-  }
-
-  return (
-    <div className="flex items-center justify-center">
-      <button
-        type="button"
-        title="Send Back"
-        onClick={(e) => e.stopPropagation()}
-        className="inline-flex items-center justify-center h-8 w-8 rounded-lg border border-slate-200 bg-white text-slate-600 shadow-sm transition-all hover:border-amber-300 hover:bg-amber-50 hover:text-amber-700 active:scale-95"
-      >
-        <Undo2 className="h-4 w-4" />
-      </button>
+      {canSendBack && (
+        <button
+          type="button"
+          title="Send Back"
+          onClick={(e) => e.stopPropagation()}
+          className="inline-flex items-center justify-center h-8 w-8 rounded-lg border border-slate-200 bg-white text-slate-600 shadow-sm transition-all hover:border-amber-300 hover:bg-amber-50 hover:text-amber-700 active:scale-95"
+        >
+          <Undo2 className="h-4 w-4" />
+        </button>
+      )}
     </div>
   );
 };
@@ -111,10 +118,13 @@ export const GoalApprovalItem: React.FC<GoalApprovalItemProps> = ({
   const { isDesktop } = useScreenSize();
 
   const empName = goal.employee_name || goal.employee || "Employee";
+  const initials = goal.initials;
   const methodology = goal.methodology || "OKR";
-  const submittedAgo = goal.submitted_ago || "";
+  const submittedAgo = goal.submitted_ago || "-";
+  const submittedOn = goal.submitted_on || "-";
+  const autoApproveOn = goal.auto_approve_on || "-";
   const statusLabel = goal.status_label || "-";
-  const flagWarning = goal.flags && goal.flags.length > 0 ? goal.flags[0].label : undefined;
+  const flags = goal.flags || [];
   const statusTone = goal.status_tone;
 
   const getStatusVariant = () => {
@@ -150,33 +160,44 @@ export const GoalApprovalItem: React.FC<GoalApprovalItemProps> = ({
               avatarBgColor="bg-blue-50"
               avatarTextColor="text-blue-600"
             />
-            <Typography variant="caption" className="text-gray-600">
-              {empName}
+            <Typography variant="caption" className="text-gray-600 font-medium">
+              {empName} 
             </Typography>
-            {flagWarning && (
-              <span className="inline-flex items-center gap-1 rounded-md bg-red-50 px-2 py-0.5 text-xs font-medium text-red-600">
-                <AlertCircle className="h-3 w-3" />
-                {flagWarning}
+            {flags.map((flag) => (
+              <span
+                key={flag.key || flag.label}
+                className={`inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-xs font-medium ${getFlagStyles(flag.tone)}`}
+              >
+                <AlertCircle className="h-3 w-3 shrink-0" />
+                {flag.label}
               </span>
-            )}
+            ))}
           </div>
           <Typography variant="bodySmall" className="font-semibold text-gray-900 truncate">
             {goal.title}
           </Typography>
-          {submittedAgo && (
-            <Typography variant="caption" className="text-gray-500">
-              Submitted {submittedAgo}
+          {(submittedAgo || (submittedOn && submittedOn !== "-")) && (
+            <Typography variant="caption" className="text-gray-500 block truncate mt-0.5">
+              Submitted {submittedAgo ? submittedAgo : ""}{submittedAgo && submittedOn && submittedOn !== "-" ? " • " : ""}{submittedOn && submittedOn !== "-" ? submittedOn : ""}
             </Typography>
           )}
         </div>
 
-        <div className="text-center">
+        <div className="flex flex-col items-center justify-center">
           <Typography
             variant="bodySmall"
             className={`font-bold ${goal.weightage > 30 ? "text-red-600" : "text-gray-900"}`}
           >
             {goal.weightage}%
           </Typography>
+          <div className="mt-1 flex items-center w-24">
+            <div className="h-2 flex-1 overflow-hidden rounded-md bg-gray-100">
+              <div
+                className={`h-full rounded-md ${getWeightageColor(goal.weightage)}`}
+                style={{ width: `${Math.min(100, Math.max(0, goal.weightage))}%` }}
+              />
+            </div>
+          </div>
         </div>
 
         <div className="flex justify-center">
@@ -187,7 +208,15 @@ export const GoalApprovalItem: React.FC<GoalApprovalItemProps> = ({
           />
         </div>
 
-        <SendBackButton goal={goal} />
+        <div className="text-center whitespace-nowrap">
+          {autoApproveOn && autoApproveOn !== "-" ? (
+            <Typography variant="caption" className="font-semibold text-amber-900 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-md inline-block">
+              {autoApproveOn}
+            </Typography>
+          ) : (
+            <Typography variant="caption" className="text-gray-400">—</Typography>
+          )}
+        </div>
 
         <div className="whitespace-nowrap text-center">
           <div className="flex justify-center">
@@ -220,7 +249,7 @@ export const GoalApprovalItem: React.FC<GoalApprovalItemProps> = ({
             avatarTextColor="text-blue-600"
           />
           <Typography variant="bodySmall" className="font-semibold text-slate-900 truncate">
-            {empName}
+            {empName} {initials ? `(${initials})` : ""}
           </Typography>
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
@@ -238,24 +267,43 @@ export const GoalApprovalItem: React.FC<GoalApprovalItemProps> = ({
           {goal.title}
         </Typography>
         <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
-          {submittedAgo && <span>Submitted {submittedAgo}</span>}
-          <span className="font-semibold text-slate-700">
+          {(submittedAgo || (submittedOn && submittedOn !== "-")) && (
+            <span>Submitted {submittedAgo ? submittedAgo : ""}{submittedAgo && submittedOn && submittedOn !== "-" ? " • " : ""}{submittedOn && submittedOn !== "-" ? submittedOn : ""}</span>
+          )}
+          <span className="font-semibold text-slate-700 flex items-center gap-1.5">
             Weightage:{" "}
             <span className={goal.weightage > 30 ? "text-red-600 font-bold" : "text-slate-900"}>
               {goal.weightage}%
             </span>
+            <span className="inline-block h-1.5 w-16 overflow-hidden rounded-md bg-gray-100">
+              <span
+                className={`block h-full rounded-md ${getWeightageColor(goal.weightage)}`}
+                style={{ width: `${Math.min(100, Math.max(0, goal.weightage))}%` }}
+              />
+            </span>
           </span>
         </div>
-        {flagWarning && (
-          <div className="mt-2 inline-flex items-center gap-1 rounded-md bg-red-50 px-2 py-1 text-xs font-medium text-red-600">
-            <AlertCircle className="h-3.5 w-3.5" />
-            {flagWarning}
+        {autoApproveOn && autoApproveOn !== "-" && (
+          <div className="mt-1 text-xs text-amber-800 font-medium">
+            Auto Approve On: <span className="font-semibold">{autoApproveOn}</span>
+          </div>
+        )}
+        {flags.length > 0 && (
+          <div className="mt-2 flex flex-wrap items-center gap-1.5">
+            {flags.map((flag) => (
+              <span
+                key={flag.key || flag.label}
+                className={`inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-xs font-medium ${getFlagStyles(flag.tone)}`}
+              >
+                <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+                {flag.label}
+              </span>
+            ))}
           </div>
         )}
       </div>
 
-      <div className="flex items-center justify-between gap-3 pt-2 border-t border-slate-100" onClick={(e) => e.stopPropagation()}>
-        <SendBackButton goal={goal} />
+      <div className="flex items-center justify-end gap-3 pt-2 border-t border-slate-100" onClick={(e) => e.stopPropagation()}>
         <ApprovalActionButton goal={goal} onClick={onClick} />
       </div>
     </article>
