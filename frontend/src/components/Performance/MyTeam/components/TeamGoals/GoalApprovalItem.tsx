@@ -1,7 +1,6 @@
 import React from "react";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, Check, Eye, Undo2, X } from "lucide-react";
 import { useScreenSize } from "../../../../../hooks/useScreenSize";
-import Button from "../../../../shared/atoms/Button";
 import { Typography } from "../../../../shared/atoms/Typography";
 import Badge from "../../../../shared/Badge";
 import Avatar from "../../../../shared/Avatar";
@@ -11,7 +10,8 @@ export const APPROVAL_TABLE_TITLES = [
   "Goal & Employee",
   "Weightage",
   "Status",
-  "Actions",
+  "Send Back",
+  "Action",
 ];
 
 export const APPROVAL_TABLE_COLUMN_WIDTHS = [
@@ -19,7 +19,8 @@ export const APPROVAL_TABLE_COLUMN_WIDTHS = [
   "minmax(320px, 2.5fr)",
   "minmax(120px, 1fr)",
   "minmax(120px, 1fr)",
-  "minmax(260px, 1.8fr)",
+  "minmax(100px, 0.7fr)",
+  "minmax(130px, 0.9fr)",
 ];
 
 
@@ -30,6 +31,57 @@ interface GoalApprovalItemProps {
   onClick: () => void;
 }
 
+/** Reusable icon-button action bar for approval queue items (View, Approve, Reject) */
+const ApprovalActionButton = ({ onClick }: { onClick: () => void }) => {
+  return (
+    <div className="flex items-center justify-center gap-1.5">
+      <button
+        type="button"
+        title="View Goal"
+        onClick={(e) => {
+          e.stopPropagation();
+          onClick();
+        }}
+        className="inline-flex items-center justify-center h-8 w-8 rounded-lg border border-slate-200 bg-white text-slate-600 shadow-sm transition-all hover:border-slate-300 hover:bg-slate-100 hover:text-slate-900 active:scale-95"
+      >
+        <Eye className="h-4 w-4" />
+      </button>
+      <button
+        type="button"
+        title="Approve Goal"
+        onClick={(e) => e.stopPropagation()}
+        className="inline-flex items-center justify-center h-8 w-8 rounded-lg bg-emerald-600 text-white shadow-sm transition-all hover:bg-emerald-700 active:scale-95"
+      >
+        <Check className="h-4 w-4" />
+      </button>
+      <button
+        type="button"
+        title="Reject Goal"
+        onClick={(e) => e.stopPropagation()}
+        className="inline-flex items-center justify-center h-8 w-8 rounded-lg bg-red-500 text-white shadow-sm transition-all hover:bg-red-600 active:scale-95"
+      >
+        <X className="h-4 w-4" />
+      </button>
+    </div>
+  );
+};
+
+/** Send Back icon button — rendered in its own column */
+const SendBackButton = () => {
+  return (
+    <div className="flex items-center justify-center">
+      <button
+        type="button"
+        title="Send Back"
+        onClick={(e) => e.stopPropagation()}
+        className="inline-flex items-center justify-center h-8 w-8 rounded-lg border border-slate-200 bg-white text-slate-600 shadow-sm transition-all hover:border-amber-300 hover:bg-amber-50 hover:text-amber-700 active:scale-95"
+      >
+        <Undo2 className="h-4 w-4" />
+      </button>
+    </div>
+  );
+};
+
 export const GoalApprovalItem: React.FC<GoalApprovalItemProps> = ({
   goal,
   checked,
@@ -37,6 +89,19 @@ export const GoalApprovalItem: React.FC<GoalApprovalItemProps> = ({
   onClick,
 }) => {
   const { isDesktop } = useScreenSize();
+
+  const empName = goal.employee_name || goal.employeeName || goal.employee || "Employee";
+  const methodology = goal.methodology || goal.type || "OKR";
+  const submittedAgo = goal.submitted_ago || goal.submittedAgo || "";
+  const statusLabel = goal.status_label || goal.status || "Submitted";
+  const flagWarning = goal.warning || (goal.flags && goal.flags.length > 0 ? goal.flags[0].label : undefined);
+  const statusTone = goal.status_tone;
+
+  const getStatusVariant = () => {
+    if (statusTone === "warning" || statusLabel.toLowerCase() === "draft") return "warning";
+    if (statusTone === "danger") return "danger";
+    return "success";
+  };
 
   if (isDesktop) {
     return (
@@ -57,30 +122,32 @@ export const GoalApprovalItem: React.FC<GoalApprovalItemProps> = ({
 
         <div className="min-w-0">
           <div className="mb-1 flex flex-wrap items-center gap-2">
-            <Badge label={goal.type} variant="purple" size="sm" />
+            <Badge label={methodology} variant="purple" size="sm" />
             <Avatar
-              name={goal.employeeName}
+              name={empName}
               fontSize="text-xs"
               size="h-8 w-8"
               avatarBgColor="bg-blue-50"
               avatarTextColor="text-blue-600"
             />
             <Typography variant="caption" className="text-gray-600">
-              {goal.employeeName}
+              {empName}
             </Typography>
-            {goal.warning && (
+            {flagWarning && (
               <span className="inline-flex items-center gap-1 rounded-md bg-red-50 px-2 py-0.5 text-xs font-medium text-red-600">
                 <AlertCircle className="h-3 w-3" />
-                {goal.warning}
+                {flagWarning}
               </span>
             )}
           </div>
           <Typography variant="bodySmall" className="font-semibold text-gray-900 truncate">
             {goal.title}
           </Typography>
-          <Typography variant="caption" className="text-gray-500">
-            Submitted {goal.submittedAgo}
-          </Typography>
+          {submittedAgo && (
+            <Typography variant="caption" className="text-gray-500">
+              Submitted {submittedAgo}
+            </Typography>
+          )}
         </div>
 
         <div className="text-center">
@@ -94,22 +161,18 @@ export const GoalApprovalItem: React.FC<GoalApprovalItemProps> = ({
 
         <div className="flex justify-center">
           <Badge
-            label={goal.status ?? "Submitted"}
-            variant={(goal.status || "Submitted").toLowerCase() === "draft" ? "warning" : "success"}
+            label={statusLabel}
+            variant={getStatusVariant()}
             size="sm"
           />
         </div>
 
-        <div className="flex items-center justify-end gap-2" onClick={(e) => e.stopPropagation()}>
-          <Button variant="outline" bgColor="text" size="sm" className="bg-white px-2.5 text-xs">
-            Send back
-          </Button>
-          <Button variant="outline" bgColor="error" size="sm" className="px-2.5 text-xs">
-            Reject
-          </Button>
-          <Button variant="contain" bgColor="success" size="sm" className="px-2.5 text-xs" onClick={onClick}>
-            Approve
-          </Button>
+        <SendBackButton />
+
+        <div className="whitespace-nowrap text-center">
+          <div className="flex justify-center">
+            <ApprovalActionButton onClick={onClick} />
+          </div>
         </div>
       </div>
     );
@@ -130,21 +193,21 @@ export const GoalApprovalItem: React.FC<GoalApprovalItemProps> = ({
             className="h-4 w-4 rounded border-gray-300 text-blue-500 accent-blue-500 focus:ring-blue-500 cursor-pointer"
           />
           <Avatar
-            name={goal.employeeName}
+            name={empName}
             fontSize="text-xs"
             size="h-7 w-7"
             avatarBgColor="bg-blue-50"
             avatarTextColor="text-blue-600"
           />
           <Typography variant="bodySmall" className="font-semibold text-slate-900 truncate">
-            {goal.employeeName}
+            {empName}
           </Typography>
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
-          <Badge label={goal.type} variant="purple" size="sm" />
+          <Badge label={methodology} variant="purple" size="sm" />
           <Badge
-            label={goal.status ?? "Submitted"}
-            variant={(goal.status || "Submitted").toLowerCase() === "draft" ? "warning" : "success"}
+            label={statusLabel}
+            variant={getStatusVariant()}
             size="sm"
           />
         </div>
@@ -155,7 +218,7 @@ export const GoalApprovalItem: React.FC<GoalApprovalItemProps> = ({
           {goal.title}
         </Typography>
         <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
-          <span>Submitted {goal.submittedAgo}</span>
+          {submittedAgo && <span>Submitted {submittedAgo}</span>}
           <span className="font-semibold text-slate-700">
             Weightage:{" "}
             <span className={goal.weightage > 30 ? "text-red-600 font-bold" : "text-slate-900"}>
@@ -163,27 +226,21 @@ export const GoalApprovalItem: React.FC<GoalApprovalItemProps> = ({
             </span>
           </span>
         </div>
-        {goal.warning && (
+        {flagWarning && (
           <div className="mt-2 inline-flex items-center gap-1 rounded-md bg-red-50 px-2 py-1 text-xs font-medium text-red-600">
             <AlertCircle className="h-3.5 w-3.5" />
-            {goal.warning}
+            {flagWarning}
           </div>
         )}
       </div>
 
-      <div className="flex items-center gap-2 pt-2 border-t border-slate-100" onClick={(e) => e.stopPropagation()}>
-        <Button variant="outline" bgColor="text" size="sm" className="flex-1 bg-white text-xs py-1.5">
-          Send back
-        </Button>
-        <Button variant="outline" bgColor="error" size="sm" className="flex-1 text-xs py-1.5">
-          Reject
-        </Button>
-        <Button variant="contain" bgColor="success" size="sm" className="flex-1 text-xs py-1.5" onClick={onClick}>
-          Approve
-        </Button>
+      <div className="flex items-center justify-between gap-3 pt-2 border-t border-slate-100" onClick={(e) => e.stopPropagation()}>
+        <SendBackButton />
+        <ApprovalActionButton onClick={onClick} />
       </div>
     </article>
   );
 };
 
 export default GoalApprovalItem;
+

@@ -1,10 +1,12 @@
 import React from "react";
+import { AlertCircle } from "lucide-react";
 import Button from "../../../../shared/atoms/Button";
 import CardTable from "../../../../shared/CardTable";
-import DataListView from "../../../../DataListView";
 import { Typography } from "../../../../shared/atoms/Typography";
 import { useScreenSize } from "../../../../../hooks/useScreenSize";
-import type { FrappePageResponse } from "../../../../../types/frappe";
+import { useGetApprovelQueue } from "../../../../../hooks/usePerformance";
+import { CardSkeleton } from "../../../../shared/molecules/Skeletons/TableSkeleton";
+import { getPerformanceErrorMessage } from "../../../../../services/performanceService";
 import {
   GoalApprovalItem,
   APPROVAL_TABLE_TITLES,
@@ -12,29 +14,28 @@ import {
 } from "./GoalApprovalItem";
 
 interface ApprovalQueueSectionProps {
-  goals: any[];
   checkedGoals: Set<string>;
   onToggleCheck: (id: string) => void;
   onGoalClick: (goal: any) => void;
 }
 
 export const ApprovalQueueSection: React.FC<ApprovalQueueSectionProps> = ({
-  goals,
   checkedGoals,
   onToggleCheck,
   onGoalClick,
 }) => {
   const { isMobile, isTablet } = useScreenSize();
   const isCompact = isMobile || isTablet;
+  const { data: approvalQueueResponse, isLoading: queueLoading, error, refetch } = useGetApprovelQueue();
 
-  const fetchApprovalGoals = React.useCallback(async (): Promise<FrappePageResponse> => {
-    return {
-      data: goals as unknown as FrappePageResponse["data"],
-      totalCount: goals.length,
-      hasNextPage: false,
-      pages: [],
-    };
-  }, [goals]);
+  const queueData = approvalQueueResponse?.data;
+  const queueItems = queueData?.queue || [];
+  const count = queueData?.count ?? queueItems.length ?? "-";
+  const autoApproveNote = queueData?.auto_approve_note ?? "-";
+  const bulkActions = queueData?.bulk_actions || [];
+  const showRejectAll = bulkActions.some((act: string) => act.includes("reject"));
+  const showApproveAll = bulkActions.some((act: string) => act.includes("approve"));
+  const hasBulkAction = showRejectAll || showApproveAll;
 
   return (
     <section className="overflow-hidden rounded-xl border border-amber-100 bg-white shadow-sm">
@@ -48,14 +49,14 @@ export const ApprovalQueueSection: React.FC<ApprovalQueueSectionProps> = ({
             variant="bodySmall"
             className="min-w-0 font-semibold text-amber-900"
           >
-            Approval Queue — {goals.length} goals awaiting you
+            Approval Queue — {count} goals awaiting you
           </Typography>
-          {!isMobile && (
+          {!isMobile && autoApproveNote && (
             <Typography
               variant="caption"
               className="shrink-0 text-amber-800"
             >
-              - auto-approve in 2 days if no action
+              - {autoApproveNote}
             </Typography>
           )}
         </div>
@@ -64,47 +65,73 @@ export const ApprovalQueueSection: React.FC<ApprovalQueueSectionProps> = ({
             isCompact ? "w-full flex-col sm:w-auto sm:flex-row" : "items-center"
           }`}
         >
-          <Button
-            variant="outline"
-            bgColor="error"
-            size="sm"
-            className={isCompact ? "w-full sm:w-fit" : ""}
-          >
-            Reject all
-          </Button>
-          <Button
-            variant="contain"
-            bgColor="success"
-            size="sm"
-            className={isCompact ? "w-full sm:w-fit" : ""}
-          >
-            Approve all
-          </Button>
+          {showRejectAll && (
+            <Button
+              variant="outline"
+              bgColor="error"
+              size="sm"
+              className={isCompact ? "w-full sm:w-fit" : ""}
+            >
+              Reject all
+            </Button>
+          )}
+          {showApproveAll && (
+            <Button
+              variant="contain"
+              bgColor="success"
+              size="sm"
+              className={isCompact ? "w-full sm:w-fit" : ""}
+            >
+              Approve all
+            </Button>
+          )}
+          {!hasBulkAction && (
+            <Typography variant="caption" className="text-amber-800 font-medium italic">
+              No action
+            </Typography>
+          )}
         </div>
       </div>
 
-      {isCompact ? (
+      {queueLoading ? (
+        <div className="p-4">
+          <CardSkeleton rows={4} />
+        </div>
+      ) : error ? (
+        <div className="m-4 rounded-lg border border-red-200 bg-red-50 p-4 text-red-700 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <AlertCircle className="w-5 h-5 shrink-0 text-red-600" />
+            <Typography variant="bodySmall" className="truncate">
+              Failed to load approval queue. {getPerformanceErrorMessage(error, "An unexpected error occurred.")}
+            </Typography>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => refetch()}
+            className="shrink-0 border-red-200 text-red-700 hover:bg-red-100"
+          >
+            Retry
+          </Button>
+        </div>
+      ) : queueItems.length === 0 ? (
+        <div className="py-12 text-center text-slate-400">
+          <Typography variant="bodySmall">No goals pending approval.</Typography>
+        </div>
+      ) : isCompact ? (
         <div className="space-y-3 border-t border-slate-100 bg-slate-50/60 p-3 sm:p-4">
-          <DataListView
-            queryKey="team-approval-goals-mobile"
-            fetchFunction={fetchApprovalGoals}
-            isSearch={false}
-            showPagination={false}
-            showRefreshButton={false}
-            pageSize={goals.length}
-            infiniteScroll={false}
-            loadMorePagination={false}
-            enableUrlParams={false}
-            getItemKey={(item: any) => item.id}
-            ItemComponent={({ item }: { item: any }) => (
+          {queueItems.map((item: any) => {
+            const itemId = item.goal || item.goal_key || item.id || item.employee;
+            return (
               <GoalApprovalItem
+                key={itemId}
                 goal={item}
-                checked={checkedGoals.has(item.id)}
-                onToggleCheck={() => onToggleCheck(item.id)}
+                checked={checkedGoals.has(itemId)}
+                onToggleCheck={() => onToggleCheck(itemId)}
                 onClick={() => onGoalClick(item)}
               />
-            )}
-          />
+            );
+          })}
         </div>
       ) : (
         <CardTable
@@ -112,26 +139,18 @@ export const ApprovalQueueSection: React.FC<ApprovalQueueSectionProps> = ({
           columnWidths={APPROVAL_TABLE_COLUMN_WIDTHS}
         >
           <div className="w-full min-w-[1080px]">
-            <DataListView
-              queryKey="team-approval-goals"
-              fetchFunction={fetchApprovalGoals}
-              isSearch={false}
-              showPagination={false}
-              showRefreshButton={false}
-              pageSize={goals.length}
-              infiniteScroll={false}
-              loadMorePagination={false}
-              enableUrlParams={false}
-              getItemKey={(item: any) => item.id}
-              ItemComponent={({ item }: { item: any }) => (
+            {queueItems.map((item: any) => {
+              const itemId = item.goal || item.goal_key || item.id || item.employee;
+              return (
                 <GoalApprovalItem
+                  key={itemId}
                   goal={item}
-                  checked={checkedGoals.has(item.id)}
-                  onToggleCheck={() => onToggleCheck(item.id)}
+                  checked={checkedGoals.has(itemId)}
+                  onToggleCheck={() => onToggleCheck(itemId)}
                   onClick={() => onGoalClick(item)}
                 />
-              )}
-            />
+              );
+            })}
           </div>
         </CardTable>
       )}
