@@ -18,6 +18,9 @@ export interface SelectedGoalDetail extends TeamGoalItem {
 interface TeamGoalDetailModalProps {
   goal: SelectedGoalDetail;
   onClose: () => void;
+  onApprove?: () => void;
+  onSendBack?: () => void;
+  onReject?: () => void;
 }
 
 const getHealthBadgeVariant = (tone?: string, health?: string): BadgeVariant => {
@@ -30,6 +33,9 @@ const getHealthBadgeVariant = (tone?: string, health?: string): BadgeVariant => 
 export const TeamGoalDetailModal: React.FC<TeamGoalDetailModalProps> = ({
   goal,
   onClose,
+  onApprove,
+  onSendBack,
+  onReject,
 }) => {
   const { isMobile } = useScreenSize();
 
@@ -190,10 +196,36 @@ export const TeamGoalDetailModal: React.FC<TeamGoalDetailModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end gap-3 border-t border-slate-100 bg-slate-50/50 p-4">
-          <Button variant="outline" size="sm" onClick={onClose}>
-            Close
-          </Button>
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 bg-white px-6 py-4">
+          <Typography variant="caption" className="text-slate-400">
+            Auto-approves in 2 days
+          </Typography>
+          <div className="flex flex-wrap items-center gap-3">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onSendBack || onClose}
+              className="border-slate-200 text-slate-700 hover:bg-slate-50"
+            >
+              Send back
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onReject || onClose}
+              className="border-red-200 text-red-600 hover:bg-red-50"
+            >
+              Reject
+            </Button>
+            <Button
+              variant="contain"
+              size="sm"
+              onClick={onApprove || onClose}
+              className="bg-emerald-100 text-emerald-700 hover:bg-emerald-200 border-none font-semibold shadow-none"
+            >
+              Approve goal
+            </Button>
+          </div>
         </div>
       </div>
     </Modal>
