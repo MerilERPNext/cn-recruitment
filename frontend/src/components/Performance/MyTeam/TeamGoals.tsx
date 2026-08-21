@@ -7,13 +7,11 @@ import { GoalHeader } from "./components/TeamGoals/GoalHeader";
 import { ApprovalQueueSection } from "./components/TeamGoals/ApprovalQueueSection";
 import { AllTeamGoalsSection } from "./components/TeamGoals/AllTeamGoalsSection";
 import { GoalDetailModal } from "./components/TeamGoals/GoalDetailModal";
-import { useGetTeamGoals } from "../../../hooks/usePerformance";
 
 const TeamGoals: React.FC = () => {
   const navigate = useNavigate();
   const { isMobile } = useScreenSize();
-   const {data:teamGoals , isLoading , error} = useGetTeamGoals()
-  const card = teamGoals?.data?.cards
+
   const [checkedGoals, setCheckedGoals] = useState<Set<string>>(
     new Set(APPROVAL_GOALS.filter((g) => g.checked).map((g) => g.id))
   );
@@ -56,7 +54,9 @@ const TeamGoals: React.FC = () => {
     >
       <div className="mx-auto w-full space-y-4 sm:space-y-5">
         <GoalHeader
-          card={card}
+          totalGoals={totalGoals}
+          totalReportees={totalReportees}
+          pendingApproval={pendingApproval}
         />
 
         <ApprovalQueueSection
@@ -67,9 +67,7 @@ const TeamGoals: React.FC = () => {
         />
 
         <AllTeamGoalsSection
-          totalGoals={card?.goals ?? totalGoals}
-          groups={teamGoals?.data?.groups}
-          health={teamGoals?.data?.health}
+          totalGoals={totalGoals}
           members={TEAM_MEMBERS}
           onGoalClick={handleGoalClick}
         />
