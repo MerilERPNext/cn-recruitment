@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, Search } from "lucide-react";
 import { Typography } from "../../../../shared/atoms/Typography";
 import Badge, { type BadgeVariant } from "../../../../shared/Badge";
 import Avatar from "../../../../shared/Avatar";
 import { useScreenSize } from "../../../../../hooks/useScreenSize";
 import { getInitials } from "../../../../../utils/helperUtils";
+import Button from "../../../../shared/atoms/Button";
 import type { TeamGoalGroup, TeamGoalsHealth } from "../../../../../types/goal";
 import TeamGoalDetailModal, { type SelectedGoalDetail } from "./TeamGoalDetailModal";
 import TeamGoalRow from "./TeamGoalRow";
@@ -13,19 +14,36 @@ interface AllTeamGoalsSectionProps {
   totalGoals?: number;
   groups?: TeamGoalGroup[];
   health?: TeamGoalsHealth;
+  count?: number;
+  matched?: number;
+  start?: number;
+  limit?: number;
+  hasMore?: boolean;
+  searchValue?: string;
+  onSearchChange?: (val: string) => void;
   onGoalClick?: (goal: any) => void;
+  onPageChange?: (page: number) => void;
 }
 
 export const AllTeamGoalsSection: React.FC<AllTeamGoalsSectionProps> = ({
   totalGoals = 0,
   groups = [],
   health,
+  count,
+  matched,
+  start = 0,
+  limit = 10,
+  hasMore = false,
+  searchValue = "",
+  onSearchChange,
+  onPageChange,
 }) => {
   const { isMobile, isTablet } = useScreenSize();
   const isCompact = isMobile || isTablet;
 
   const [expandedMembers, setExpandedMembers] = useState<Set<string>>(new Set());
   const [selectedGoalDetail, setSelectedGoalDetail] = useState<SelectedGoalDetail | null>(null);
+  const [page, setPage] = useState<number>(1);
 
   // Auto-expand first employee with goals on initial load
   useEffect(() => {
@@ -48,6 +66,36 @@ export const AllTeamGoalsSection: React.FC<AllTeamGoalsSectionProps> = ({
   const handleCloseModal = useCallback(() => {
     setSelectedGoalDetail(null);
   }, []);
+
+  const totalReporteesCount = matched ?? count ?? groups.length;
+  const pageSize = limit > 0 ? limit : 10;
+  const totalPages = Math.max(1, Math.ceil(totalReporteesCount / pageSize));
+
+  // Determine displayed groups based on pagination
+  const displayedGroups = useMemo(() => {
+    if (groups.length > pageSize) {
+      const startIndex = (page - 1) * pageSize;
+      return groups.slice(startIndex, startIndex + pageSize);
+    }
+    return groups;
+  }, [groups, page, pageSize]);
+
+  const startItem = totalReporteesCount === 0 ? 0 : start + (page - 1) * pageSize + 1;
+  const endItem = Math.min(start + page * pageSize, totalReporteesCount);
+
+  const handlePrevPage = () => {
+    const newPage = Math.max(page - 1, 1);
+    setPage(newPage);
+    onPageChange?.(newPage);
+  };
+
+  const handleNextPage = () => {
+    if (page < totalPages || hasMore) {
+      const newPage = page + 1;
+      setPage(newPage);
+      onPageChange?.(newPage);
+    }
+  };
 
   const statusSummary = useMemo(
     () =>
@@ -86,25 +134,33 @@ export const AllTeamGoalsSection: React.FC<AllTeamGoalsSectionProps> = ({
             Approved & in progress · grouped by reportee
           </Typography>
         </div>
-        <div
-          className={`flex flex-wrap gap-2 ${
-            isCompact ? "w-full" : "shrink-0 justify-end"
-          }`}
-        >
-          {statusSummary.map((item) => (
-            <Badge
-              key={item.label}
-              label={item.label}
-              variant={item.variant}
-              size="sm"
+        <div className={`flex flex-wrap items-center gap-3 ${isCompact ? "w-full flex-col sm:flex-row" : "shrink-0 justify-end"}`}>
+          <div className="relative w-full sm:w-[220px]">
+            <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Search employee..."
+              value={searchValue}
+              onChange={(e) => onSearchChange?.(e.target.value)}
+              className="w-full rounded-lg border border-slate-200 bg-white py-1.5 pl-8 pr-3 text-xs text-slate-800 placeholder-slate-400 transition-colors focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
             />
-          ))}
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {statusSummary.map((item) => (
+              <Badge
+                key={item.label}
+                label={item.label}
+                variant={item.variant}
+                size="sm"
+              />
+            ))}
+          </div>
         </div>
       </header>
 
       <div className="space-y-3">
-        {groups.length > 0 ? (
-          groups.map((group) => {
+        {displayedGroups.length > 0 ? (
+          displayedGroups.map((group) => {
             const isExpanded = expandedMembers.has(group.employee);
             return (
               <article
@@ -207,6 +263,39 @@ export const AllTeamGoalsSection: React.FC<AllTeamGoalsSectionProps> = ({
           </div>
         )}
       </div>
+
+      {totalReporteesCount > 0 && (
+        <div className="mt-4 flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-slate-100 pt-4 px-2 bg-white">
+          <Typography variant="caption" className="text-slate-500">
+            Showing <span className="font-semibold text-slate-700">{startItem}</span> to{" "}
+            <span className="font-semibold text-slate-700">{endItem}</span> of{" "}
+            <span className="font-semibold text-slate-700">{totalReporteesCount}</span> reportees
+          </Typography>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={page === 1}
+              onClick={handlePrevPage}
+              className="border-slate-200 text-slate-700 hover:bg-slate-50 disabled:opacity-40"
+            >
+              Previous
+            </Button>
+            <Typography variant="caption" className="font-semibold text-slate-700 px-2">
+              Page {page} of {totalPages}
+            </Typography>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={page >= totalPages && !hasMore}
+              onClick={handleNextPage}
+              className="border-slate-200 text-slate-700 hover:bg-slate-50 disabled:opacity-40"
+            >
+              Next
+            </Button>
+          </div>
+        </div>
+      )}
 
       {selectedGoalDetail && (
         <TeamGoalDetailModal
