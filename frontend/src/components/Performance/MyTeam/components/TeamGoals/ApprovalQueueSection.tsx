@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { AlertCircle } from "lucide-react";
 import Button from "../../../../shared/atoms/Button";
 import CardTable from "../../../../shared/CardTable";
@@ -7,11 +7,13 @@ import { useScreenSize } from "../../../../../hooks/useScreenSize";
 import { useGetApprovelQueue } from "../../../../../hooks/usePerformance";
 import { CardSkeleton } from "../../../../shared/molecules/Skeletons/TableSkeleton";
 import { getPerformanceErrorMessage } from "../../../../../services/performanceService";
+import type { ApprovalQueueByEmployee, ApprovalQueueItem } from "../../../../../types/goal";
 import {
   GoalApprovalItem,
   APPROVAL_TABLE_TITLES,
   APPROVAL_TABLE_COLUMN_WIDTHS,
 } from "./GoalApprovalItem";
+import EmployeeApprovalItem from "./EmployeeApprovalItem";
 
 interface ApprovalQueueSectionProps {
   checkedGoals: Set<string>;
@@ -28,8 +30,26 @@ export const ApprovalQueueSection: React.FC<ApprovalQueueSectionProps> = ({
   const isCompact = isMobile || isTablet;
   const { data: approvalQueueResponse, isLoading: queueLoading, error, refetch } = useGetApprovelQueue();
 
+  // All accordions are closed by default (empty set)
+  const [expandedEmployees, setExpandedEmployees] = useState<Set<string>>(new Set());
+
+  const toggleExpand = (empId: string) => {
+    setExpandedEmployees((prev) => {
+      const next = new Set(prev);
+      if (next.has(empId)) {
+        next.delete(empId);
+      } else {
+        next.add(empId);
+      }
+      return next;
+    });
+  };
+
   const queueData = approvalQueueResponse?.data;
-  const queueItems = queueData?.queue || [];
+  const queueItems: ApprovalQueueItem[] = queueData?.queue || [];
+  const byEmployeeList: ApprovalQueueByEmployee[] = queueData?.by_employee || [];
+  const isPlanAction = Boolean(queueData?.plan_action);
+
   const count = queueData?.count ?? queueItems.length ?? "-";
   const autoApproveNote = queueData?.auto_approve_note ?? "-";
   const bulkActions = queueData?.bulk_actions || [];
@@ -39,6 +59,7 @@ export const ApprovalQueueSection: React.FC<ApprovalQueueSectionProps> = ({
 
   return (
     <section className="overflow-hidden rounded-xl border border-amber-100 bg-white shadow-sm">
+      {/* Banner Header */}
       <div
         className={`flex ${
           isCompact ? "flex-col gap-3" : "items-center justify-between"
@@ -51,12 +72,12 @@ export const ApprovalQueueSection: React.FC<ApprovalQueueSectionProps> = ({
           >
             Approval Queue — {count} goals awaiting you
           </Typography>
-          {!isMobile && autoApproveNote && (
+          {!isMobile && autoApproveNote && autoApproveNote !== "-" && (
             <Typography
               variant="caption"
               className="shrink-0 text-amber-800"
             >
-              -{autoApproveNote}
+              - {autoApproveNote}
             </Typography>
           )}
         </div>
@@ -93,6 +114,7 @@ export const ApprovalQueueSection: React.FC<ApprovalQueueSectionProps> = ({
         </div>
       </div>
 
+      {/* Queue Content */}
       {queueLoading ? (
         <div className="p-4">
           <CardSkeleton rows={4} />
@@ -114,14 +136,32 @@ export const ApprovalQueueSection: React.FC<ApprovalQueueSectionProps> = ({
             Retry
           </Button>
         </div>
-      ) : queueItems.length === 0 ? (
+      ) : queueItems.length === 0 && byEmployeeList.length === 0 ? (
         <div className="py-12 text-center text-slate-400">
           <Typography variant="bodySmall">No goals pending approval.</Typography>
         </div>
+      ) : isPlanAction && byEmployeeList.length > 0 ? (
+        /* plan_action === true: Smooth Collapsible Employee Dropdowns (All Closed Initially) */
+        <div className="divide-y divide-slate-200">
+          {byEmployeeList.map((empGroup: ApprovalQueueByEmployee) => (
+            <EmployeeApprovalItem
+              key={empGroup.employee}
+              empGroup={empGroup}
+              queueItems={queueItems}
+              isExpanded={expandedEmployees.has(empGroup.employee)}
+              onToggleExpand={toggleExpand}
+              checkedGoals={checkedGoals}
+              onToggleCheck={onToggleCheck}
+              onGoalClick={onGoalClick}
+              isCompact={isCompact}
+            />
+          ))}
+        </div>
       ) : isCompact ? (
+        /* plan_action === false: Flat Queue List (Compact View) */
         <div className="space-y-3 border-t border-slate-100 bg-slate-50/60 p-3 sm:p-4">
-          {queueItems.map((item) => {
-            const itemId = item.goal || item.goal_key  || item.employee;
+          {queueItems.map((item: ApprovalQueueItem) => {
+            const itemId = item.goal || item.goal_key || item.employee;
             return (
               <GoalApprovalItem
                 key={itemId}
@@ -134,13 +174,14 @@ export const ApprovalQueueSection: React.FC<ApprovalQueueSectionProps> = ({
           })}
         </div>
       ) : (
+        /* plan_action === false: Flat Queue List (Desktop CardTable View) */
         <CardTable
           titles={APPROVAL_TABLE_TITLES}
           columnWidths={APPROVAL_TABLE_COLUMN_WIDTHS}
         >
           <div className="w-full">
-            {queueItems.map((item: any) => {
-              const itemId = item.goal || item.goal_key || item.id || item.employee;
+            {queueItems.map((item: ApprovalQueueItem) => {
+              const itemId = item.goal || item.goal_key || item.employee;
               return (
                 <GoalApprovalItem
                   key={itemId}
