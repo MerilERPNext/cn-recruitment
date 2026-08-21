@@ -26,13 +26,13 @@ export const TeamGoalGroupCard: React.FC<TeamGoalGroupCardProps> = React.memo(({
     <article className="overflow-hidden rounded-xl border border-slate-200">
       <button
         type="button"
-        aria-label={`${isExpanded ? "Collapse" : "Expand"} ${group.employee_name} goals`}
+        aria-label={`${isExpanded ? "Collapse" : "Expand"} ${group?.employee_name ?? "employee"} goals`}
         onClick={() => onToggle(group.employee)}
         className="flex w-full items-start justify-between gap-3 bg-blue-50/70 px-4 py-3 text-left transition-colors hover:bg-blue-50 sm:items-center"
       >
         <div className="flex min-w-0 flex-1 items-start gap-3 sm:items-center">
           <Avatar
-            name={group.employee_name || getInitials(group.employee_name)}
+            name={group?.employee_name || getInitials(group?.employee_name || "")}
             size="h-8 w-8"
             fontSize="text-xs"
             avatarBgColor="bg-blue-50"
@@ -44,14 +44,14 @@ export const TeamGoalGroupCard: React.FC<TeamGoalGroupCardProps> = React.memo(({
                 variant="bodySmall"
                 className="font-semibold text-slate-950"
               >
-                {group.employee_name}
+                {group?.employee_name ?? "-"}
               </Typography>
               <Typography
                 variant="caption"
                 className="text-slate-500"
               >
-                {group.designation} · {group.goal_count} goals ·{" "}
-                {group.avg_progress}% avg
+                {group?.designation ? `${group.designation} · ` : ""}
+                {group?.goal_count ?? 0} goals · {group?.avg_progress ?? 0}% avg
               </Typography>
             </div>
             {isCompact && (
@@ -59,11 +59,13 @@ export const TeamGoalGroupCard: React.FC<TeamGoalGroupCardProps> = React.memo(({
                 <div className="h-1.5 w-28 overflow-hidden rounded-md bg-blue-100">
                   <div
                     className="h-full rounded-md bg-blue-500"
-                    style={{ width: `${group.avg_progress}%` }}
+                    style={{
+                      width: `${Math.min(100, Math.max(0, group?.avg_progress ?? 0))}%`,
+                    }}
                   />
                 </div>
                 <span className="text-xs font-semibold text-blue-700">
-                  {group.avg_progress}%
+                  {group?.avg_progress ?? 0}%
                 </span>
               </div>
             )}
@@ -91,14 +93,14 @@ export const TeamGoalGroupCard: React.FC<TeamGoalGroupCardProps> = React.memo(({
                 : "divide-y divide-gray-50 px-4 py-2"
             }`}
           >
-            {group.goals && group.goals.length > 0 ? (
+            {group?.goals && group.goals.length > 0 ? (
               group.goals.map((goal) => (
                 <TeamGoalRow
                   key={goal.goal_key || goal.goal}
                   goal={goal}
-                  employeeName={group.employee_name}
-                  employeeInitials={group.initials}
-                  designation={group.designation}
+                  employeeName={group?.employee_name ?? "-"}
+                  employeeInitials={group?.initials ?? ""}
+                  designation={group?.designation}
                   isCompact={isCompact}
                   onSelect={onSelectGoal}
                 />
