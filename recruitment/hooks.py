@@ -432,6 +432,12 @@ doc_events = {
             # eligibility conditions from Campus Eligibility Settings onto it.
             "recruitment.recruitment.eligibility_engine.apply_default_eligibility_rules",
         ],
+        # Tell an external recruiter the opening is theirs to work on. Both events
+        # so a recruiter added to an existing opening is mailed too; sent once per
+        # recruiter per posting row (Job Opening Posting Channel.notified_recruiters),
+        # and only while Recruitment Settings says so.
+        "after_insert": "recruitment.recruitment.external_recruiter_mailers.notify_assigned_recruiters",
+        "on_update": "recruitment.recruitment.external_recruiter_mailers.notify_assigned_recruiters",
     },
     "Employee": {
         "before_insert": "recruitment.customizations.job_applicant.validate_blacklist_employee",

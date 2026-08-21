@@ -181,14 +181,23 @@ class CampusInvite(Document):
 
 		institutes = self.institute_names
 		for contact in recipients:
-			# Creates/syncs the Desk User (TPO role only, single TPO workspace) and
-			# emails a "set your password" link, using the template configured in
-			# Campus Settings -> TPO Set Password Email Template.
+			# Creates/syncs the Desk User (TPO role only, single TPO workspace).
+			#
+			# No mail from here in the normal case: the Institute welcome email is
+			# where a TPO is told about their account, and it already carries the
+			# set-password link. Mailing again on submit is what gave the same
+			# person two emails about one login.
+			#
+			# The exception is a TPO with no User yet — an institute recorded before
+			# the welcome mail provisioned accounts, or one whose welcome failed.
+			# Handing them Desk access in silence would leave them locked out with
+			# no idea an account exists, so that case still gets the mail.
+			email = (contact.email or "").strip().lower()
 			provision_tpo_user(
 				email=contact.email,
 				full_name=contact.contact_name,
 				enabled=True,
-				send_email=True,
+				send_email=not frappe.db.exists("User", email),
 			)
 			# Reflect the invite on every invited Institute row carrying this email.
 			frappe.db.set_value(
@@ -199,8 +208,8 @@ class CampusInvite(Document):
 			)
 
 		# The drive invitation itself, to every TPO contact of the invited institutes.
-		# Separate from the set-password mail above: that one is about their login,
-		# this one is about the drive — and it is configurable (Campus Settings).
+		# This is the only mail a submit normally sends, and it is about the drive,
+		# not about anyone's login — it is configurable (Campus Settings).
 		from recruitment.recruitment.tpo_mailers import send_campus_invite
 
 		send_campus_invite(self)
