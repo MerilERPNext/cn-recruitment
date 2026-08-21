@@ -30,12 +30,10 @@ export const ApprovalQueueSection: React.FC<ApprovalQueueSectionProps> = ({
   const { isMobile, isTablet } = useScreenSize();
   const isCompact = isMobile || isTablet;
 
-  // Pagination & Filter state
   const [status, setStatus] = useState<string>("pending");
   const [start, setStart] = useState<number>(0);
   const [customLimit] = useState<number | undefined>(undefined);
 
-  // All accordions are closed by default (empty set)
   const [expandedEmployees, setExpandedEmployees] = useState<Set<string>>(new Set());
 
   const toggleExpand = (empId: string) => {
@@ -70,10 +68,8 @@ export const ApprovalQueueSection: React.FC<ApprovalQueueSectionProps> = ({
   const showApproveAll = bulkActions.some((act: string) => act.includes("approve"));
   const hasBulkAction = showRejectAll || showApproveAll;
 
-  // Dynamic limit returned by backend API
   const backendLimit = queueData?.limit || 50;
 
-  // Filter options mapping for reusable Select component
   const filterOptions = useMemo(() => {
     return filters.map((filterKey: string) => ({
       label:
@@ -91,7 +87,6 @@ export const ApprovalQueueSection: React.FC<ApprovalQueueSectionProps> = ({
     );
   }, [filterOptions, status]);
 
-  // Pagination math using backend limit
   const totalMatched = queueData?.matched ?? queueData?.count ?? (isPlanAction ? byEmployeeList.length : queueItems.length);
   const pageStart = start;
   const pageEnd = Math.min(start + backendLimit, totalMatched);
@@ -100,7 +95,6 @@ export const ApprovalQueueSection: React.FC<ApprovalQueueSectionProps> = ({
 
   return (
     <section className="overflow-hidden rounded-xl border border-amber-100 bg-white shadow-sm">
-      {/* Banner Header */}
       <div
         className={`flex ${
           isCompact ? "flex-col gap-3" : "items-center justify-between"
@@ -128,7 +122,6 @@ export const ApprovalQueueSection: React.FC<ApprovalQueueSectionProps> = ({
             isCompact ? "w-full flex-col sm:w-auto sm:flex-row sm:items-center" : "items-center"
           }`}
         >
-          {/* Status Filter Dropdown next to Reject/Approve all buttons */}
           {filterOptions.length > 0 && (
             <Select
               options={filterOptions}
@@ -247,7 +240,6 @@ export const ApprovalQueueSection: React.FC<ApprovalQueueSectionProps> = ({
         </CardTable>
       )}
 
-      {/* Pagination Footer */}
       {!queueLoading && !error && (queueItems.length > 0 || byEmployeeList.length > 0) && (
         <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 border-t border-slate-200 bg-white">
           <Typography variant="caption" className="text-slate-500">
