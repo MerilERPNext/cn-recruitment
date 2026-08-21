@@ -21,7 +21,7 @@ export const TeamGoalsError: React.FC<TeamGoalsErrorProps> = ({
       <Typography variant="bodySmall" className="text-slate-600 mb-4 max-w-md mx-auto">
         {message}
       </Typography>
-      
+
     </div>
   );
 };

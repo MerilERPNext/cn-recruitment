@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { ChevronRight, CornerDownRight } from "lucide-react";
 import { Typography } from "../../../../shared/atoms/Typography";
 import Badge, { type BadgeVariant } from "../../../../shared/Badge";
@@ -49,25 +49,34 @@ export const AllTeamGoalsSection: React.FC<AllTeamGoalsSectionProps> = ({
     }
   }, [groups]);
 
-  const toggleMember = (id: string) => {
+  const toggleMember = useCallback((id: string) => {
     setExpandedMembers((prev) => {
       const next = new Set(prev);
       next.has(id) ? next.delete(id) : next.add(id);
       return next;
     });
-  };
+  }, []);
 
-  const statusSummary = health
-    ? [
-        { label: `${health.on_track} On-track`, variant: "success" as BadgeVariant },
-        { label: `${health.at_risk} At-risk`, variant: "warning" as BadgeVariant },
-        { label: `${health.off_track} Off-track`, variant: "danger" as BadgeVariant },
-      ]
-    : [
-        { label: "0 On-track", variant: "success" as BadgeVariant },
-        { label: "0 At-risk", variant: "warning" as BadgeVariant },
-        { label: "0 Off-track", variant: "danger" as BadgeVariant },
-      ];
+  const handleCloseModal = useCallback(() => {
+    setSelectedGoalDetail(null);
+  }, []);
+
+  const statusSummary = useMemo(
+    () =>
+      health
+        ? [
+          { label: `${health.on_track} On-track`, variant: "success" as BadgeVariant },
+          { label: `${health.at_risk} At-risk`, variant: "warning" as BadgeVariant },
+          { label: `${health.off_track} Off-track`, variant: "danger" as BadgeVariant },
+        ]
+        : [
+          { label: "0 On-track", variant: "success" as BadgeVariant },
+          { label: "0 At-risk", variant: "warning" as BadgeVariant },
+          { label: "0 Off-track", variant: "danger" as BadgeVariant },
+        ],
+    [health]
+  );
+
 
   return (
     <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
@@ -293,7 +302,7 @@ export const AllTeamGoalsSection: React.FC<AllTeamGoalsSectionProps> = ({
       {selectedGoalDetail && (
         <TeamGoalDetailModal
           goal={selectedGoalDetail}
-          onClose={() => setSelectedGoalDetail(null)}
+          onClose={handleCloseModal}
         />
       )}
     </section>
