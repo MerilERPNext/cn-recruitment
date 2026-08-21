@@ -38,8 +38,6 @@ import type {
   TeamOverviewResponse,
   TeamMembersParams,
   TeamMembersResponse,
-  TeamGoalsParams,
-  TeamGoalsResponse,
 } from "../types/goal";
 import FrappeAPI from "../utils/frappeAPI";
 
@@ -342,13 +340,6 @@ export const performanceService = {
       params as Record<string, unknown> | undefined,
     );
     return response as TeamMembersResponse;
-  },
-  getTeamGoals: async (params?: TeamGoalsParams): Promise<TeamGoalsResponse> => {
-    const response = await FrappeAPI.getMethod(
-      "cn_pms.cn_performance_management.api.team_goal_api.get_team_goals",
-      params as Record<string, unknown> | undefined,
-    );
-    return response as TeamGoalsResponse;
   },
 
 };
