@@ -210,7 +210,7 @@ export const GoalApprovalItem: React.FC<GoalApprovalItemProps> = ({
 
         <div className="text-center whitespace-nowrap">
           {autoApproveOn && autoApproveOn !== "-" ? (
-            <Typography variant="caption" className="font-semibold text-amber-900 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-md inline-block">
+            <Typography variant="caption" className="font-medium text-slate-600">
               {autoApproveOn}
             </Typography>
           ) : (
@@ -284,8 +284,8 @@ export const GoalApprovalItem: React.FC<GoalApprovalItemProps> = ({
           </span>
         </div>
         {autoApproveOn && autoApproveOn !== "-" && (
-          <div className="mt-1 text-xs text-amber-800 font-medium">
-            Auto Approve On: <span className="font-semibold">{autoApproveOn}</span>
+          <div className="mt-1 text-xs text-slate-500 font-medium">
+            Auto Approve On: <span className="text-slate-700 font-medium">{autoApproveOn}</span>
           </div>
         )}
         {flags.length > 0 && (
