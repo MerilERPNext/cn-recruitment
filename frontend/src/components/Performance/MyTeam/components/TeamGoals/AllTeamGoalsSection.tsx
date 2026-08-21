@@ -157,39 +157,47 @@ export const AllTeamGoalsSection: React.FC<AllTeamGoalsSectionProps> = ({
                     </div>
                   </div>
                   <ChevronRight
-                    className={`mt-2 h-4 w-4 shrink-0 text-slate-500 transition-transform sm:mt-0 ${
-                      isExpanded ? "rotate-90" : ""
+                    className={`mt-2 h-4 w-4 shrink-0 text-slate-500 transition-transform duration-300 ease-in-out sm:mt-0 ${
+                      isExpanded ? "rotate-90 text-blue-600" : ""
                     }`}
                   />
                 </button>
 
-                {isExpanded && (
-                  <div
-                    className={
-                      isCompact
-                        ? "space-y-2 bg-slate-50/60 p-3"
-                        : "divide-y divide-gray-50 px-4 py-2"
-                    }
-                  >
-                    {group.goals && group.goals.length > 0 ? (
-                      group.goals.map((goal) => (
-                        <TeamGoalRow
-                          key={goal.goal_key || goal.goal}
-                          goal={goal}
-                          employeeName={group.employee_name}
-                          employeeInitials={group.initials}
-                          designation={group.designation}
-                          isCompact={isCompact}
-                          onSelect={setSelectedGoalDetail}
-                        />
-                      ))
-                    ) : (
-                      <div className="px-4 py-3 text-xs italic text-slate-400">
-                        No goals assigned yet.
-                      </div>
-                    )}
+                <div
+                  className={`grid transition-[grid-template-rows,opacity] duration-300 ease-in-out ${
+                    isExpanded
+                      ? "grid-rows-[1fr] opacity-100"
+                      : "grid-rows-[0fr] opacity-0"
+                  }`}
+                >
+                  <div className="overflow-hidden">
+                    <div
+                      className={
+                        isCompact
+                          ? "space-y-2 bg-slate-50/60 p-3"
+                          : "divide-y divide-gray-50 px-4 py-2"
+                      }
+                    >
+                      {group.goals && group.goals.length > 0 ? (
+                        group.goals.map((goal) => (
+                          <TeamGoalRow
+                            key={goal.goal_key || goal.goal}
+                            goal={goal}
+                            employeeName={group.employee_name}
+                            employeeInitials={group.initials}
+                            designation={group.designation}
+                            isCompact={isCompact}
+                            onSelect={setSelectedGoalDetail}
+                          />
+                        ))
+                      ) : (
+                        <div className="px-4 py-3 text-xs italic text-slate-400">
+                          No goals assigned yet.
+                        </div>
+                      )}
+                    </div>
                   </div>
-                )}
+                </div>
               </article>
             );
           })
