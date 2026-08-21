@@ -75,7 +75,7 @@ export const TeamGoalDetailModal: React.FC<TeamGoalDetailModalProps> = ({
         <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-6">
           {/* Goal Title & Employee Info */}
           <div>
-            <Typography variant="h3" className="font-bold text-slate-950 mb-2">
+            <Typography variant="h3" className="font-bold text-slate-950 mb-2 break-words">
               {goal.title}
             </Typography>
             <div className="flex items-center gap-2.5">
@@ -135,8 +135,8 @@ export const TeamGoalDetailModal: React.FC<TeamGoalDetailModalProps> = ({
               <Typography variant="bodySmall" className="font-semibold text-slate-900 mb-1.5 block">
                 Description
               </Typography>
-              <div className="rounded-xl border border-slate-200/80 bg-slate-50/50 p-4">
-                <Typography variant="bodySmall" className="text-slate-700 leading-relaxed">
+              <div className="rounded-xl border border-slate-200/80 bg-slate-50/50 p-4 overflow-hidden">
+                <Typography variant="bodySmall" className="text-slate-700 leading-relaxed break-words whitespace-pre-wrap">
                   {goal.description}
                 </Typography>
               </div>
