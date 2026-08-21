@@ -197,21 +197,33 @@ export const AllTeamGoalsSection: React.FC<AllTeamGoalsSectionProps> = ({
                                 : "grid-cols-[minmax(0,1fr)_280px] items-center py-3"
                             }`}
                           >
-                            <div className="flex min-w-0 items-center gap-3">
-                              <CornerDownRight className="h-4 w-4 shrink-0 text-slate-300" />
+                            <div className="flex min-w-0 items-start gap-3">
+                              <CornerDownRight className="mt-1 h-4 w-4 shrink-0 text-slate-300" />
                               <Badge
                                 label={goal.methodology || "OKR"}
                                 variant="purple"
                                 size="sm"
                               />
-                              <Typography
-                                variant="bodySmall"
-                                className={`min-w-0 text-slate-700 ${
-                                  isCompact ? "break-words" : "truncate"
-                                }`}
-                              >
-                                {goal.title}
-                              </Typography>
+                              <div className="min-w-0 flex-1">
+                                <Typography
+                                  variant="bodySmall"
+                                  className={`min-w-0 font-medium text-slate-900 ${
+                                    isCompact ? "break-words" : "truncate"
+                                  }`}
+                                >
+                                  {goal.title}
+                                </Typography>
+                                {goal.description && (
+                                  <Typography
+                                    variant="caption"
+                                    className={`mt-0.5 block min-w-0 text-slate-500 ${
+                                      isCompact ? "break-words" : "truncate"
+                                    }`}
+                                  >
+                                    {goal.description}
+                                  </Typography>
+                                )}
+                              </div>
                             </div>
                             <div className="flex min-w-0 items-center gap-3">
                               <div className="flex flex-1 flex-col gap-1 min-w-[120px]">
