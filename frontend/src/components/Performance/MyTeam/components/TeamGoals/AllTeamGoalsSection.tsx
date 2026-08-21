@@ -6,6 +6,7 @@ import Avatar from "../../../../shared/Avatar";
 import { useScreenSize } from "../../../../../hooks/useScreenSize";
 import { getInitials } from "../../../../../utils/helperUtils";
 import type { TeamGoalGroup, TeamGoalsHealth } from "../../../../../types/goal";
+import TeamGoalDetailModal, { type SelectedGoalDetail } from "./TeamGoalDetailModal";
 
 const getHealthBadgeVariant = (tone?: string, health?: string): BadgeVariant => {
   if (tone === "danger" || health === "off_track") return "danger";
@@ -24,19 +25,19 @@ interface AllTeamGoalsSectionProps {
   totalGoals?: number;
   groups?: TeamGoalGroup[];
   health?: TeamGoalsHealth;
-  onGoalClick: (goal: any) => void;
+  onGoalClick?: (goal: any) => void;
 }
 
 export const AllTeamGoalsSection: React.FC<AllTeamGoalsSectionProps> = ({
   totalGoals = 0,
   groups = [],
   health,
-  onGoalClick,
 }) => {
   const { isMobile, isTablet } = useScreenSize();
   const isCompact = isMobile || isTablet;
 
   const [expandedMembers, setExpandedMembers] = useState<Set<string>>(new Set());
+  const [selectedGoalDetail, setSelectedGoalDetail] = useState<SelectedGoalDetail | null>(null);
 
   // Auto-expand first employee with goals on initial load
   useEffect(() => {
@@ -177,14 +178,15 @@ export const AllTeamGoalsSection: React.FC<AllTeamGoalsSectionProps> = ({
                       group.goals.map((goal) => (
                         <div
                           key={goal.goal_key || goal.goal}
-                          onClick={() =>
-                            onGoalClick({
+                          onClick={() => {
+                            const selected: SelectedGoalDetail = {
                               ...goal,
-                              id: goal.goal_key || goal.goal,
                               employeeName: group.employee_name,
                               employeeInitials: group.initials,
-                            })
-                          }
+                              designation: group.designation,
+                            };
+                            setSelectedGoalDetail(selected);
+                          }}
                           className={`grid cursor-pointer gap-3 transition-colors hover:bg-slate-50 ${
                             isCompact
                               ? "grid-cols-1 rounded-lg border border-slate-100 bg-white p-3 shadow-sm"
@@ -287,6 +289,13 @@ export const AllTeamGoalsSection: React.FC<AllTeamGoalsSectionProps> = ({
           </div>
         )}
       </div>
+
+      {selectedGoalDetail && (
+        <TeamGoalDetailModal
+          goal={selectedGoalDetail}
+          onClose={() => setSelectedGoalDetail(null)}
+        />
+      )}
     </section>
   );
 };

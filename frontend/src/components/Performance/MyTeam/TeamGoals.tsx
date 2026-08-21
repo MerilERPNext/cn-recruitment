@@ -15,7 +15,7 @@ import { TeamGoalsError } from "./components/TeamGoals/TeamGoalsError";
 const TeamGoals: React.FC = () => {
   const navigate = useNavigate();
   const { isMobile } = useScreenSize();
-  const { data: teamGoals, isLoading, error, refetch } = useGetTeamGoals();
+  const { data: teamGoals, isLoading, error } = useGetTeamGoals();
   const card = teamGoals?.data?.cards;
   const [checkedGoals, setCheckedGoals] = useState<Set<string>>(
     new Set(APPROVAL_GOALS.filter((g) => g.checked).map((g) => g.id))
@@ -39,7 +39,6 @@ const TeamGoals: React.FC = () => {
     navigate("/webapp/performance-app/team-goals/assign-goal");
   };
 
-  const totalGoals = 32;
 
   const toggleCheck = (id: string) => {
     setCheckedGoals((prev) => {
@@ -79,7 +78,6 @@ const TeamGoals: React.FC = () => {
             totalGoals={card?.goals}
             groups={teamGoals?.data?.groups}
             health={teamGoals?.data?.health}
-            onGoalClick={handleGoalClick}
           />
         )}
       </div>
