@@ -197,8 +197,8 @@ export const TeamGoalDetailModal: React.FC<TeamGoalDetailModalProps> = ({
 
         {/* Footer */}
         <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 bg-white px-6 py-4">
-          <Typography variant="caption" className="text-slate-400">
-            Auto-approves in 2 days
+          <Typography variant="caption" className="text-slate-500 font-medium">
+            {goal.goal ? `Goal ID: ${goal.goal}` : "Team Goal Details"}
           </Typography>
           <div className="flex flex-wrap items-center gap-3">
             <Button

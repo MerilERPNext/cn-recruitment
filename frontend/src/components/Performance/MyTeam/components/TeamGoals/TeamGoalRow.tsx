@@ -100,7 +100,7 @@ export const TeamGoalRow: React.FC<TeamGoalRowProps> = React.memo(({
                 <div
                   className="absolute top-0 bottom-0 left-0 bg-slate-300/70 rounded-md"
                   style={{
-                    width: `${Math.min(100, goal.expected_progress)}%`,
+                    width: `${Math.min(100, Math.max(0, goal.expected_progress))}%`,
                   }}
                   title={`Expected: ${goal.expected_progress}%`}
                 />
@@ -120,7 +120,7 @@ export const TeamGoalRow: React.FC<TeamGoalRowProps> = React.memo(({
           </div>
         </div>
         <Badge
-          label={goal.health_label || goal.health}
+          label={goal.health_label || goal.health || "-"}
           variant={getHealthBadgeVariant(goal.health_tone, goal.health)}
           size="sm"
         />
