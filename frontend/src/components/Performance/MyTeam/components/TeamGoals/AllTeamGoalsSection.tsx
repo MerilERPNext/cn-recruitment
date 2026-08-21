@@ -93,7 +93,7 @@ export const AllTeamGoalsSection: React.FC<AllTeamGoalsSectionProps> = () => {
   };
 
   const handleNextPage = () => {
-    if (page < totalPages || hasMore) {
+    if (hasMore) {
       setPage((prev) => prev + 1);
     }
   };
@@ -215,7 +215,7 @@ export const AllTeamGoalsSection: React.FC<AllTeamGoalsSectionProps> = () => {
             <Button
               variant="outline"
               size="sm"
-              disabled={page >= totalPages && !hasMore}
+              disabled={!hasMore}
               onClick={handleNextPage}
               className="border-slate-200 text-slate-700 hover:bg-slate-50 disabled:opacity-40"
             >
