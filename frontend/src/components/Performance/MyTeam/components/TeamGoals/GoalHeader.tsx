@@ -4,16 +4,27 @@ import Button from "../../../../shared/atoms/Button";
 import { Typography } from "../../../../shared/atoms/Typography";
 import { useScreenSize } from "../../../../../hooks/useScreenSize";
 import { TeamGoalsCards } from "../../../../../types/goal";
+import { useGetTeamGoals } from "../../../../../hooks/usePerformance";
+import { TeamGoalsHeaderSkeleton } from "./TeamGoalsSkeleton";
 
 interface GoalHeaderProps {
-  card: TeamGoalsCards | undefined
+  card?: TeamGoalsCards | undefined;
 }
 
-export const GoalHeader: React.FC<GoalHeaderProps> = ({
-  card
-}) => {
+export const GoalHeader: React.FC<GoalHeaderProps> = React.memo(({ card: propCard }) => {
   const { isMobile, isTablet } = useScreenSize();
   const isCompact = isMobile || isTablet;
+  const { data, isLoading, error } = useGetTeamGoals();
+
+  if (isLoading) {
+    return <TeamGoalsHeaderSkeleton />;
+  }
+
+  if (error) {
+    return null;
+  }
+
+  const card = propCard || data?.data?.cards;
 
   return (
     <header className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
@@ -69,9 +80,9 @@ export const GoalHeader: React.FC<GoalHeaderProps> = ({
       </div>
       <div className="grid max-w-xl grid-cols-3 gap-2 p-4 sm:p-5">
         {[
-          { icon: Target, label: "Goals", value: card?.goals },
-          { icon: Users, label: "Reportees", value: card?.reportees },
-          { icon: Weight, label: "Pending", value: card?.pending_approval },
+          { icon: Target, label: "Goals", value: card?.goals ?? 0 },
+          { icon: Users, label: "Reportees", value: card?.reportees ?? 0 },
+          { icon: Weight, label: "Pending", value: card?.pending_approval ?? 0 },
         ].map(({ icon: Icon, label, value }) => (
           <div
             key={label}
@@ -94,6 +105,6 @@ export const GoalHeader: React.FC<GoalHeaderProps> = ({
       </div>
     </header>
   );
-};
+});
 
 export default GoalHeader;

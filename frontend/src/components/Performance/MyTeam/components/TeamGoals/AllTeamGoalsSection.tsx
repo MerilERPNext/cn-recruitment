@@ -9,6 +9,9 @@ import Button from "../../../../shared/atoms/Button";
 import type { TeamGoalGroup, TeamGoalsHealth } from "../../../../../types/goal";
 import TeamGoalDetailModal, { type SelectedGoalDetail } from "./TeamGoalDetailModal";
 import TeamGoalRow from "./TeamGoalRow";
+import { TeamGoalsListSkeleton } from "./TeamGoalsSkeleton";
+import { TeamGoalsError } from "./TeamGoalsError";
+import { getPerformanceErrorMessage } from "../../../../../services/performanceService";
 
 interface AllTeamGoalsSectionProps {
   totalGoals?: number;
@@ -20,6 +23,8 @@ interface AllTeamGoalsSectionProps {
   limit?: number;
   hasMore?: boolean;
   searchValue?: string;
+  isLoading?: boolean;
+  error?: unknown;
   onSearchChange?: (val: string) => void;
   onGoalClick?: (goal: any) => void;
   onPageChange?: (page: number) => void;
@@ -35,6 +40,8 @@ export const AllTeamGoalsSection: React.FC<AllTeamGoalsSectionProps> = ({
   limit = 10,
   hasMore = false,
   searchValue = "",
+  isLoading = false,
+  error,
   onSearchChange,
   onPageChange,
 }) => {
@@ -159,7 +166,13 @@ export const AllTeamGoalsSection: React.FC<AllTeamGoalsSectionProps> = ({
       </header>
 
       <div className="space-y-3">
-        {displayedGroups.length > 0 ? (
+        {isLoading ? (
+          <TeamGoalsListSkeleton />
+        ) : error ? (
+          <TeamGoalsError
+            message={getPerformanceErrorMessage(error, "Failed to load team goals")}
+          />
+        ) : displayedGroups.length > 0 ? (
           displayedGroups.map((group) => {
             const isExpanded = expandedMembers.has(group.employee);
             return (

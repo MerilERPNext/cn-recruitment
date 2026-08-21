@@ -9,9 +9,7 @@ import { ApprovalQueueSection } from "./components/TeamGoals/ApprovalQueueSectio
 import { AllTeamGoalsSection } from "./components/TeamGoals/AllTeamGoalsSection";
 import { GoalDetailModal } from "./components/TeamGoals/GoalDetailModal";
 import { useGetTeamGoals } from "../../../hooks/usePerformance";
-import { getPerformanceErrorMessage } from "../../../services/performanceService";
-import { TeamGoalsHeaderSkeleton, TeamGoalsListSkeleton } from "./components/TeamGoals/TeamGoalsSkeleton";
-import { TeamGoalsError } from "./components/TeamGoals/TeamGoalsError";
+
 
 const TeamGoals: React.FC = () => {
   const navigate = useNavigate();
@@ -69,11 +67,7 @@ const TeamGoals: React.FC = () => {
         }`}
     >
       <div className="mx-auto w-full space-y-4 sm:space-y-5">
-        {isLoading ? (
-          <TeamGoalsHeaderSkeleton />
-        ) : error ? null : (
-          <GoalHeader card={card} />
-        )}
+        <GoalHeader />
 
         <ApprovalQueueSection
           goals={APPROVAL_GOALS}
@@ -82,27 +76,21 @@ const TeamGoals: React.FC = () => {
           onGoalClick={handleGoalClick}
         />
 
-        {isLoading ? (
-          <TeamGoalsListSkeleton />
-        ) : error ? (
-          <TeamGoalsError
-            message={getPerformanceErrorMessage(error, "Failed to load team goals")}
-          />
-        ) : (
-          <AllTeamGoalsSection
-            totalGoals={card?.goals}
-            groups={teamGoals?.data?.groups}
-            health={teamGoals?.data?.health}
-            count={teamGoals?.data?.count}
-            matched={teamGoals?.data?.matched}
-            start={teamGoals?.data?.start}
-            limit={teamGoals?.data?.limit}
-            hasMore={teamGoals?.data?.has_more}
-            searchValue={searchQuery}
-            onSearchChange={setSearchQuery}
-            onPageChange={(newPage) => setPage(newPage)}
-          />
-        )}
+        <AllTeamGoalsSection
+          isLoading={isLoading}
+          error={error}
+          totalGoals={card?.goals}
+          groups={teamGoals?.data?.groups}
+          health={teamGoals?.data?.health}
+          count={teamGoals?.data?.count}
+          matched={teamGoals?.data?.matched}
+          start={teamGoals?.data?.start}
+          limit={teamGoals?.data?.limit}
+          hasMore={teamGoals?.data?.has_more}
+          searchValue={searchQuery}
+          onSearchChange={setSearchQuery}
+          onPageChange={(newPage) => setPage(newPage)}
+        />
       </div>
 
       {selectedGoal && (
