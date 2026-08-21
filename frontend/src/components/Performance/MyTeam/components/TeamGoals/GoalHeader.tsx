@@ -3,17 +3,14 @@ import { Plus, Target, Users, Weight } from "lucide-react";
 import Button from "../../../../shared/atoms/Button";
 import { Typography } from "../../../../shared/atoms/Typography";
 import { useScreenSize } from "../../../../../hooks/useScreenSize";
+import { TeamGoalsCards } from "../../../../../types/goal";
 
 interface GoalHeaderProps {
-  totalGoals: number;
-  totalReportees: number;
-  pendingApproval: number;
+  card: TeamGoalsCards | undefined
 }
 
 export const GoalHeader: React.FC<GoalHeaderProps> = ({
-  totalGoals,
-  totalReportees,
-  pendingApproval,
+  card
 }) => {
   const { isMobile, isTablet } = useScreenSize();
   const isCompact = isMobile || isTablet;
@@ -36,8 +33,8 @@ export const GoalHeader: React.FC<GoalHeaderProps> = ({
             variant="bodySmall"
             className="mt-1 block break-words text-slate-500"
           >
-            {totalGoals} goals across {totalReportees} reportees ·{" "}
-            {pendingApproval} pending your approval
+            {card?.goals ?? "-"} goals across {card?.reportees ?? "-"} reportees ·{" "}
+            {card?.pending_approval ?? "-"} pending your approval
           </Typography>
         </div>
         <div
@@ -72,9 +69,9 @@ export const GoalHeader: React.FC<GoalHeaderProps> = ({
       </div>
       <div className="grid max-w-xl grid-cols-3 gap-2 p-4 sm:p-5">
         {[
-          { icon: Target, label: "Goals", value: totalGoals },
-          { icon: Users, label: "Reportees", value: totalReportees },
-          { icon: Weight, label: "Pending", value: pendingApproval },
+          { icon: Target, label: "Goals", value: card?.goals },
+          { icon: Users, label: "Reportees", value: card?.reportees },
+          { icon: Weight, label: "Pending", value: card?.pending_approval },
         ].map(({ icon: Icon, label, value }) => (
           <div
             key={label}
