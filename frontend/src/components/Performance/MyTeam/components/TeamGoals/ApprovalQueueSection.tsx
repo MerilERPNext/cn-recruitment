@@ -1,8 +1,9 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { AlertCircle } from "lucide-react";
 import Button from "../../../../shared/atoms/Button";
 import CardTable from "../../../../shared/CardTable";
 import { Typography } from "../../../../shared/atoms/Typography";
+import { Select } from "../../../../shared/atoms/Select";
 import { useScreenSize } from "../../../../../hooks/useScreenSize";
 import { useGetApprovelQueue } from "../../../../../hooks/usePerformance";
 import { CardSkeleton } from "../../../../shared/molecules/Skeletons/TableSkeleton";
@@ -28,7 +29,11 @@ export const ApprovalQueueSection: React.FC<ApprovalQueueSectionProps> = ({
 }) => {
   const { isMobile, isTablet } = useScreenSize();
   const isCompact = isMobile || isTablet;
-  const { data: approvalQueueResponse, isLoading: queueLoading, error, refetch } = useGetApprovelQueue();
+
+  // Pagination & Filter state
+  const [status, setStatus] = useState<string>("pending");
+  const [start, setStart] = useState<number>(0);
+  const [customLimit] = useState<number | undefined>(undefined);
 
   // All accordions are closed by default (empty set)
   const [expandedEmployees, setExpandedEmployees] = useState<Set<string>>(new Set());
@@ -45,10 +50,18 @@ export const ApprovalQueueSection: React.FC<ApprovalQueueSectionProps> = ({
     });
   };
 
+  const { data: approvalQueueResponse, isLoading: queueLoading, error, refetch } = useGetApprovelQueue({
+    status,
+    start,
+    limit: customLimit,
+  });
+
   const queueData = approvalQueueResponse?.data;
   const queueItems: ApprovalQueueItem[] = queueData?.queue || [];
   const byEmployeeList: ApprovalQueueByEmployee[] = queueData?.by_employee || [];
   const isPlanAction = Boolean(queueData?.plan_action);
+  const filters: string[] = queueData?.filters || ["pending", "all", "approved", "rejected", "sent_back"];
+  const hasMore = Boolean(queueData?.has_more);
 
   const count = queueData?.count ?? queueItems.length ?? "-";
   const autoApproveNote = queueData?.auto_approve_note ?? "-";
@@ -57,13 +70,41 @@ export const ApprovalQueueSection: React.FC<ApprovalQueueSectionProps> = ({
   const showApproveAll = bulkActions.some((act: string) => act.includes("approve"));
   const hasBulkAction = showRejectAll || showApproveAll;
 
+  // Dynamic limit returned by backend API
+  const backendLimit = queueData?.limit || 50;
+
+  // Filter options mapping for reusable Select component
+  const filterOptions = useMemo(() => {
+    return filters.map((filterKey: string) => ({
+      label:
+        filterKey === "sent_back"
+          ? "Sent Back"
+          : filterKey.charAt(0).toUpperCase() + filterKey.slice(1),
+      value: filterKey,
+    }));
+  }, [filters]);
+
+  const currentOption = useMemo(() => {
+    return (
+      filterOptions.find((opt) => opt.value === status) ||
+      filterOptions[0] || { label: "Pending", value: "pending" }
+    );
+  }, [filterOptions, status]);
+
+  // Pagination math using backend limit
+  const totalMatched = queueData?.matched ?? queueData?.count ?? (isPlanAction ? byEmployeeList.length : queueItems.length);
+  const pageStart = start;
+  const pageEnd = Math.min(start + backendLimit, totalMatched);
+  const currentPage = Math.floor(start / backendLimit) + 1;
+  const totalPages = Math.ceil(totalMatched / backendLimit) || 1;
+
   return (
     <section className="overflow-hidden rounded-xl border border-amber-100 bg-white shadow-sm">
       {/* Banner Header */}
       <div
         className={`flex ${
           isCompact ? "flex-col gap-3" : "items-center justify-between"
-        } border-b border-amber-100 bg-amber-50 px-4 py-4 sm:px-5`}
+        } border-b border-amber-100 bg-amber-50 px-4 py-3 sm:px-5`}
       >
         <div className="flex min-w-0 items-start gap-3 sm:items-center">
           <Typography
@@ -81,11 +122,25 @@ export const ApprovalQueueSection: React.FC<ApprovalQueueSectionProps> = ({
             </Typography>
           )}
         </div>
+
         <div
           className={`flex gap-3 ${
-            isCompact ? "w-full flex-col sm:w-auto sm:flex-row" : "items-center"
+            isCompact ? "w-full flex-col sm:w-auto sm:flex-row sm:items-center" : "items-center"
           }`}
         >
+          {/* Status Filter Dropdown next to Reject/Approve all buttons */}
+          {filterOptions.length > 0 && (
+            <Select
+              options={filterOptions}
+              value={currentOption}
+              onChange={(selectedOption) => {
+                setStatus(selectedOption.value);
+                setStart(0);
+              }}
+              className="w-36"
+            />
+          )}
+
           {showRejectAll && (
             <Button
               variant="outline"
@@ -192,6 +247,43 @@ export const ApprovalQueueSection: React.FC<ApprovalQueueSectionProps> = ({
             })}
           </div>
         </CardTable>
+      )}
+
+      {/* Pagination Footer */}
+      {!queueLoading && !error && (queueItems.length > 0 || byEmployeeList.length > 0) && (
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 border-t border-slate-200 bg-white">
+          <Typography variant="caption" className="text-slate-500">
+            Showing <span className="font-semibold text-slate-900">{totalMatched > 0 ? pageStart + 1 : 0}</span> to{" "}
+            <span className="font-semibold text-slate-900">{pageEnd}</span> of{" "}
+            <span className="font-semibold text-slate-900">{totalMatched}</span> {isPlanAction ? "reportees" : "items"}
+          </Typography>
+
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={pageStart === 0}
+              onClick={() => setStart((prev) => Math.max(0, prev - backendLimit))}
+              className="px-3 py-1 text-xs font-medium border-slate-200 text-slate-600 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-50"
+            >
+              Previous
+            </Button>
+
+            <Typography variant="caption" className="font-semibold text-slate-700 px-2">
+              Page {currentPage} of {totalPages}
+            </Typography>
+
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={!hasMore && pageEnd >= totalMatched}
+              onClick={() => setStart((prev) => prev + backendLimit)}
+              className="px-3 py-1 text-xs font-medium border-slate-200 text-slate-600 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-50"
+            >
+              Next
+            </Button>
+          </div>
+        </div>
       )}
     </section>
   );
