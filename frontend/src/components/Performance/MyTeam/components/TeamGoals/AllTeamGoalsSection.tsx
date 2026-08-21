@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
-import { ChevronRight, CornerDownRight } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import { Typography } from "../../../../shared/atoms/Typography";
 import Badge, { type BadgeVariant } from "../../../../shared/Badge";
 import Avatar from "../../../../shared/Avatar";
@@ -7,19 +7,7 @@ import { useScreenSize } from "../../../../../hooks/useScreenSize";
 import { getInitials } from "../../../../../utils/helperUtils";
 import type { TeamGoalGroup, TeamGoalsHealth } from "../../../../../types/goal";
 import TeamGoalDetailModal, { type SelectedGoalDetail } from "./TeamGoalDetailModal";
-
-const getHealthBadgeVariant = (tone?: string, health?: string): BadgeVariant => {
-  if (tone === "danger" || health === "off_track") return "danger";
-  if (tone === "warning" || health === "at_risk") return "warning";
-  if (tone === "success" || health === "on_track") return "success";
-  return "default";
-};
-
-const getHealthBarColor = (tone?: string, health?: string): string => {
-  if (tone === "danger" || health === "off_track") return "bg-red-500";
-  if (tone === "warning" || health === "at_risk") return "bg-amber-500";
-  return "bg-blue-500";
-};
+import TeamGoalRow from "./TeamGoalRow";
 
 interface AllTeamGoalsSectionProps {
   totalGoals?: number;
@@ -185,102 +173,15 @@ export const AllTeamGoalsSection: React.FC<AllTeamGoalsSectionProps> = ({
                   >
                     {group.goals && group.goals.length > 0 ? (
                       group.goals.map((goal) => (
-                        <div
+                        <TeamGoalRow
                           key={goal.goal_key || goal.goal}
-                          onClick={() => {
-                            const selected: SelectedGoalDetail = {
-                              ...goal,
-                              employeeName: group.employee_name,
-                              employeeInitials: group.initials,
-                              designation: group.designation,
-                            };
-                            setSelectedGoalDetail(selected);
-                          }}
-                          className={`grid cursor-pointer gap-3 transition-colors hover:bg-slate-50 ${
-                            isCompact
-                              ? "grid-cols-1 rounded-lg border border-slate-100 bg-white p-3 shadow-sm"
-                              : "grid-cols-[minmax(0,1fr)_280px] items-center py-3"
-                          }`}
-                        >
-                          <div className="flex min-w-0 items-start gap-3">
-                            <CornerDownRight className="mt-1 h-4 w-4 shrink-0 text-slate-300" />
-                            <Badge
-                              label={goal.methodology || "OKR"}
-                              variant="purple"
-                              size="sm"
-                            />
-                            <div className="min-w-0 flex-1">
-                              <Typography
-                                variant="bodySmall"
-                                className={`min-w-0 font-medium text-slate-900 ${
-                                  isCompact ? "break-words" : "truncate"
-                                }`}
-                              >
-                                {goal.title}
-                              </Typography>
-                              {goal.description && (
-                                <Typography
-                                  variant="caption"
-                                  className={`mt-0.5 block min-w-0 text-slate-500 ${
-                                    isCompact ? "break-words" : "truncate"
-                                  }`}
-                                >
-                                  {goal.description}
-                                </Typography>
-                              )}
-                            </div>
-                          </div>
-                          <div className="flex min-w-0 items-center gap-3">
-                            <div className="flex flex-1 flex-col gap-1 min-w-[120px]">
-                              <div className="flex items-center justify-between text-xs">
-                                <span className="font-semibold text-slate-700">
-                                  {goal.achievement ?? 0}%
-                                </span>
-                                {goal.expected_progress !== undefined &&
-                                  goal.expected_progress !== null && (
-                                    <span className="text-[11px] font-medium text-slate-500">
-                                      Expected: {goal.expected_progress}%
-                                    </span>
-                                  )}
-                              </div>
-                              <div className="relative h-2 w-full overflow-hidden rounded-md bg-slate-200">
-                                {goal.expected_progress !== undefined &&
-                                  goal.expected_progress !== null && (
-                                    <div
-                                      className="absolute top-0 bottom-0 left-0 bg-slate-300/70 rounded-md"
-                                      style={{
-                                        width: `${Math.min(
-                                          100,
-                                          goal.expected_progress
-                                        )}%`,
-                                      }}
-                                      title={`Expected: ${goal.expected_progress}%`}
-                                    />
-                                  )}
-                                <div
-                                  className={`relative h-full rounded-md ${getHealthBarColor(
-                                    goal.health_tone,
-                                    goal.health
-                                  )}`}
-                                  style={{
-                                    width: `${Math.min(
-                                      100,
-                                      Math.max(0, goal.achievement || 0)
-                                    )}%`,
-                                  }}
-                                />
-                              </div>
-                            </div>
-                            <Badge
-                              label={goal.health_label || goal.health}
-                              variant={getHealthBadgeVariant(
-                                goal.health_tone,
-                                goal.health
-                              )}
-                              size="sm"
-                            />
-                          </div>
-                        </div>
+                          goal={goal}
+                          employeeName={group.employee_name}
+                          employeeInitials={group.initials}
+                          designation={group.designation}
+                          isCompact={isCompact}
+                          onSelect={setSelectedGoalDetail}
+                        />
                       ))
                     ) : (
                       <div className="px-4 py-3 text-xs italic text-slate-400">
