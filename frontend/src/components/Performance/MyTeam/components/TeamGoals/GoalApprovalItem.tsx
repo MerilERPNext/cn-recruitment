@@ -4,6 +4,7 @@ import { useScreenSize } from "../../../../../hooks/useScreenSize";
 import { Typography } from "../../../../shared/atoms/Typography";
 import Badge from "../../../../shared/Badge";
 import Avatar from "../../../../shared/Avatar";
+import type { ApprovalQueueItem } from "../../../../../types/goal";
 
 export const APPROVAL_TABLE_TITLES = [
   "",
@@ -23,51 +24,70 @@ export const APPROVAL_TABLE_COLUMN_WIDTHS = [
   "minmax(130px, 0.9fr)",
 ];
 
-
 interface GoalApprovalItemProps {
-  goal: any;
+  goal: ApprovalQueueItem;
   checked: boolean;
   onToggleCheck: () => void;
   onClick: () => void;
 }
 
-/** Reusable icon-button action bar for approval queue items (View, Approve, Reject) */
-const ApprovalActionButton = ({ onClick }: { onClick: () => void }) => {
+/** Reusable icon-button action bar for approval queue items (View, Approve, Reject based on goal.actions) */
+const ApprovalActionButton = ({ goal, onClick }: { goal: ApprovalQueueItem; onClick: () => void }) => {
+  const actions: string[] = goal.actions || [];
+  const canView = actions.length === 0 || actions.includes("view");
+  const canApprove = actions.includes("approve");
+  const canReject = actions.includes("reject");
+
   return (
     <div className="flex items-center justify-center gap-1.5">
-      <button
-        type="button"
-        title="View Goal"
-        onClick={(e) => {
-          e.stopPropagation();
-          onClick();
-        }}
-        className="inline-flex items-center justify-center h-8 w-8 rounded-lg border border-slate-200 bg-white text-slate-600 shadow-sm transition-all hover:border-slate-300 hover:bg-slate-100 hover:text-slate-900 active:scale-95"
-      >
-        <Eye className="h-4 w-4" />
-      </button>
-      <button
-        type="button"
-        title="Approve Goal"
-        onClick={(e) => e.stopPropagation()}
-        className="inline-flex items-center justify-center h-8 w-8 rounded-lg bg-emerald-600 text-white shadow-sm transition-all hover:bg-emerald-700 active:scale-95"
-      >
-        <Check className="h-4 w-4" />
-      </button>
-      <button
-        type="button"
-        title="Reject Goal"
-        onClick={(e) => e.stopPropagation()}
-        className="inline-flex items-center justify-center h-8 w-8 rounded-lg bg-red-500 text-white shadow-sm transition-all hover:bg-red-600 active:scale-95"
-      >
-        <X className="h-4 w-4" />
-      </button>
+      {canView && (
+        <button
+          type="button"
+          title="View Goal"
+          onClick={(e) => {
+            e.stopPropagation();
+            onClick();
+          }}
+          className="inline-flex items-center justify-center h-8 w-8 rounded-lg border border-slate-200 bg-white text-slate-600 shadow-sm transition-all hover:border-slate-300 hover:bg-slate-100 hover:text-slate-900 active:scale-95"
+        >
+          <Eye className="h-4 w-4" />
+        </button>
+      )}
+      {canApprove && (
+        <button
+          type="button"
+          title="Approve Goal"
+          onClick={(e) => e.stopPropagation()}
+          className="inline-flex items-center justify-center h-8 w-8 rounded-lg bg-emerald-600 text-white shadow-sm transition-all hover:bg-emerald-700 active:scale-95"
+        >
+          <Check className="h-4 w-4" />
+        </button>
+      )}
+      {canReject && (
+        <button
+          type="button"
+          title="Reject Goal"
+          onClick={(e) => e.stopPropagation()}
+          className="inline-flex items-center justify-center h-8 w-8 rounded-lg bg-red-500 text-white shadow-sm transition-all hover:bg-red-600 active:scale-95"
+        >
+          <X className="h-4 w-4" />
+        </button>
+      )}
     </div>
   );
 };
 
-/** Send Back icon button — rendered in its own column */
-const SendBackButton = () => {
+/** Send Back icon button — rendered in its own column conditionally based on goal.actions */
+const SendBackButton = ({ goal }: { goal: ApprovalQueueItem }) => {
+  const actions: string[] = goal.actions || [];
+  const canSendBack = actions.includes("send_back");
+
+  if (!canSendBack) {
+    return (
+      <div className="flex items-center justify-center text-slate-300 text-xs">—</div>
+    );
+  }
+
   return (
     <div className="flex items-center justify-center">
       <button
@@ -90,11 +110,11 @@ export const GoalApprovalItem: React.FC<GoalApprovalItemProps> = ({
 }) => {
   const { isDesktop } = useScreenSize();
 
-  const empName = goal.employee_name || goal.employeeName || goal.employee || "Employee";
-  const methodology = goal.methodology || goal.type || "OKR";
-  const submittedAgo = goal.submitted_ago || goal.submittedAgo || "";
-  const statusLabel = goal.status_label || goal.status || "Submitted";
-  const flagWarning = goal.warning || (goal.flags && goal.flags.length > 0 ? goal.flags[0].label : undefined);
+  const empName = goal.employee_name || goal.employee || "Employee";
+  const methodology = goal.methodology || "OKR";
+  const submittedAgo = goal.submitted_ago || "";
+  const statusLabel = goal.status_label || "-";
+  const flagWarning = goal.flags && goal.flags.length > 0 ? goal.flags[0].label : undefined;
   const statusTone = goal.status_tone;
 
   const getStatusVariant = () => {
@@ -167,11 +187,11 @@ export const GoalApprovalItem: React.FC<GoalApprovalItemProps> = ({
           />
         </div>
 
-        <SendBackButton />
+        <SendBackButton goal={goal} />
 
         <div className="whitespace-nowrap text-center">
           <div className="flex justify-center">
-            <ApprovalActionButton onClick={onClick} />
+            <ApprovalActionButton goal={goal} onClick={onClick} />
           </div>
         </div>
       </div>
@@ -235,12 +255,11 @@ export const GoalApprovalItem: React.FC<GoalApprovalItemProps> = ({
       </div>
 
       <div className="flex items-center justify-between gap-3 pt-2 border-t border-slate-100" onClick={(e) => e.stopPropagation()}>
-        <SendBackButton />
-        <ApprovalActionButton onClick={onClick} />
+        <SendBackButton goal={goal} />
+        <ApprovalActionButton goal={goal} onClick={onClick} />
       </div>
     </article>
   );
 };
 
 export default GoalApprovalItem;
-
