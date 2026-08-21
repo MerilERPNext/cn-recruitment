@@ -51,19 +51,13 @@ const TeamGoals: React.FC = () => {
 
   return (
     <main
-      className={`min-h-full overflow-y-auto overflow-x-hidden bg-[#f6f8fb] font-sans ${
-        isMobile ? "px-3 py-4" : "p-1"
-      }`}
+      className={`min-h-full overflow-y-auto overflow-x-hidden bg-[#f6f8fb] font-sans ${isMobile ? "px-3 py-4" : "p-1"
+        }`}
     >
       <div className="mx-auto w-full space-y-4 sm:space-y-5">
         {isLoading ? (
           <TeamGoalsHeaderSkeleton />
-        ) : error ? (
-          <TeamGoalsError
-            message={getPerformanceErrorMessage(error, "Failed to load team goals")}
-            onRetry={() => refetch()}
-          />
-        ) : (
+        ) : error ? null : (
           <GoalHeader card={card} />
         )}
 
@@ -76,9 +70,13 @@ const TeamGoals: React.FC = () => {
 
         {isLoading ? (
           <TeamGoalsListSkeleton />
-        ) : error ? null : (
+        ) : error ? (
+          <TeamGoalsError
+            message={getPerformanceErrorMessage(error, "Failed to load team goals")}
+          />
+        ) : (
           <AllTeamGoalsSection
-            totalGoals={card?.goals ?? totalGoals}
+            totalGoals={card?.goals}
             groups={teamGoals?.data?.groups}
             health={teamGoals?.data?.health}
             onGoalClick={handleGoalClick}
