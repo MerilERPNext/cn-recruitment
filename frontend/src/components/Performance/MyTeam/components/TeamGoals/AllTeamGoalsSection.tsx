@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
-import { ChevronRight, Search } from "lucide-react";
+import { ChevronRight, Search, X } from "lucide-react";
 import { Typography } from "../../../../shared/atoms/Typography";
 import Badge, { type BadgeVariant } from "../../../../shared/Badge";
 import Avatar from "../../../../shared/Avatar";
@@ -52,7 +52,6 @@ export const AllTeamGoalsSection: React.FC<AllTeamGoalsSectionProps> = ({
   const [selectedGoalDetail, setSelectedGoalDetail] = useState<SelectedGoalDetail | null>(null);
   const [page, setPage] = useState<number>(1);
 
-  // Auto-expand first employee with goals on initial load
   useEffect(() => {
     if (groups && groups.length > 0) {
       const firstWithGoals = groups.find((g) => g.goal_count > 0) || groups[0];
@@ -78,7 +77,6 @@ export const AllTeamGoalsSection: React.FC<AllTeamGoalsSectionProps> = ({
   const pageSize = limit > 0 ? limit : 10;
   const totalPages = Math.max(1, Math.ceil(totalReporteesCount / pageSize));
 
-  // Determine displayed groups based on pagination
   const displayedGroups = useMemo(() => {
     if (groups.length > pageSize) {
       const startIndex = (page - 1) * pageSize;
@@ -142,15 +140,24 @@ export const AllTeamGoalsSection: React.FC<AllTeamGoalsSectionProps> = ({
           </Typography>
         </div>
         <div className={`flex flex-wrap items-center gap-3 ${isCompact ? "w-full flex-col sm:flex-row" : "shrink-0 justify-end"}`}>
-          <div className="relative w-full sm:w-[220px]">
-            <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
+          <div className={`relative ${isCompact ? "w-full" : "w-48 sm:w-56"}`}>
+            <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-400" />
             <input
               type="text"
-              placeholder="Search employee..."
               value={searchValue}
               onChange={(e) => onSearchChange?.(e.target.value)}
-              className="w-full rounded-lg border border-slate-200 bg-white py-1.5 pl-8 pr-3 text-xs text-slate-800 placeholder-slate-400 transition-colors focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              placeholder="Search employee..."
+              className="h-9 w-full rounded-lg border border-gray-200 bg-white pl-8 pr-8 text-xs text-gray-800 placeholder-gray-400 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
             />
+            {searchValue && (
+              <button
+                type="button"
+                onClick={() => onSearchChange?.("")}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            )}
           </div>
           <div className="flex flex-wrap gap-2">
             {statusSummary.map((item) => (
@@ -166,7 +173,7 @@ export const AllTeamGoalsSection: React.FC<AllTeamGoalsSectionProps> = ({
       </header>
 
       <div className="space-y-3">
-        {isLoading ? (
+        {!isLoading ? (
           <TeamGoalsListSkeleton />
         ) : error ? (
           <TeamGoalsError
