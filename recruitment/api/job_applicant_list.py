@@ -21,6 +21,8 @@ import json
 
 import frappe
 
+from recruitment.api.list_filters import normalize_count_filters
+
 
 def _avatar_initials(name):
 	parts = [p for p in (name or "").replace("@", " ").split() if p]
@@ -32,31 +34,6 @@ def _avatar_initials(name):
 def _status_options():
 	status_field = frappe.get_meta("Job Applicant").get_field("status")
 	return [s.strip() for s in (status_field.options or "").split("\n") if s and s.strip()]
-
-
-def _normalize_count_filters(filters):
-	"""Turn the list view's active filters into a get_list filter list, dropping any
-	`status` condition (the tabs count PER status, so status must not pre-filter) and
-	normalizing both [doctype, field, op, value] and [field, op, value] shapes."""
-	if isinstance(filters, str):
-		try:
-			filters = json.loads(filters)
-		except (ValueError, TypeError):
-			filters = []
-	out = []
-	for f in filters or []:
-		if not isinstance(f, (list, tuple)):
-			continue
-		if len(f) == 4:
-			field, op, val = f[1], f[2], f[3]
-		elif len(f) == 3:
-			field, op, val = f[0], f[1], f[2]
-		else:
-			continue
-		if not field or field == "status":
-			continue
-		out.append([field, op, val])
-	return out
 
 
 @frappe.whitelist()
@@ -72,7 +49,7 @@ def get_job_applicants_with_stats(job_opening=None, owners=None, filters=None):
 
 	# All active list filters except status, plus the scoped opening (back-compat when
 	# the opening arrives only as the job_opening arg and not as a live filter).
-	scoped = _normalize_count_filters(filters)
+	scoped = normalize_count_filters(filters)
 	if job_opening and not any(f[0] == "job_title" for f in scoped):
 		scoped.append(["job_title", "=", job_opening])
 

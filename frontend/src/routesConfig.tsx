@@ -574,9 +574,9 @@ const Requisition = lazyWithRetry(
   () => import("./components/Recruitment/Requisition"),
   "Requisition",
 );
-const RequisitionForm = lazyWithRetry(
-  () => import("./components/Recruitment/RequisitionForm"),
-  "RequisitionForm",
+const RequisitionFormV2 = lazyWithRetry(
+  () => import("./components/Recruitment/RequisitionFormV2"),
+  "RequisitionFormV2",
 );
 const RequisitionDetailPage = lazyWithRetry(
   () => import("./components/Recruitment/RequisitionDetailPage"),
@@ -1154,7 +1154,7 @@ export const routesConfig: AppRoute[] = [
       {
         path: "expense-summary",
         element: <ExpenseSummary />,
-        permissionKey: "ExpenseSummary",
+        permissionKey: "Expense Summary",
       },
     ],
   },
@@ -1361,12 +1361,17 @@ export const routesConfig: AppRoute[] = [
       },
       {
         path: "requisition/new",
-        element: <RequisitionForm />,
+        element: <RequisitionFormV2 />,
         permissionKey: "Requisitions",
       },
       {
         path: "requisition/edit",
-        element: <RequisitionForm />,
+        element: <RequisitionFormV2 />,
+        permissionKey: "Requisitions",
+      },
+      {
+        path: "requisition/v2",
+        element: <RequisitionFormV2 />,
         permissionKey: "Requisitions",
       },
       {
@@ -1548,11 +1553,7 @@ export const routesConfig: AppRoute[] = [
             element: <Feedback />,
             permissionKey: "Feedback",
           },
-          {
-            path: "team-tracking",
-            element: <TeamTracking />,
-            permissionKey: "Overview",
-          },
+         
           {
             path: "skills",
             element: <SkillsAndProficiency />,
@@ -1565,6 +1566,11 @@ export const routesConfig: AppRoute[] = [
           },
 
         ]
+      },
+      {
+        path: "team-tracking",
+        element: <TeamTracking />,
+        permissionKey: "Team Tracking",
       },
       {
         path: "",

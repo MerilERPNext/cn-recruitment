@@ -49,6 +49,29 @@ _ALUMNI_GLOBAL_ALLOWLIST = {
     "frappe.ping",
 }
 
+# Individual methods that live OUTSIDE the alumni namespaces but which the Alumni
+# Portal legitimately calls.
+#
+# Listed one method at a time rather than by namespace prefix on purpose: adding
+# a function to one of these modules must never silently widen what an alumni
+# session can reach. Every entry below is session-scoped — it reads or writes
+# only the calling user's own data.
+_ALUMNI_METHOD_ALLOWLIST = {
+    # Alumni access requests. Both are `allow_guest`, and the portal calls them
+    # before sign-in, but an already-approved alumnus polls their own request
+    # status from inside the portal — which is an alumni session, hence blocked
+    # without this.
+    "recruitment.api.alumni_request.create_alumni_employee_request",
+    "recruitment.api.alumni_request.get_alumni_request_status",
+    # Alumni Todo manager. Work for an alumnus is raised against the alumni User
+    # through the normal Manager + Workflow flow; assignments that already
+    # belonged to the company account are deliberately left there. All three
+    # filter on frappe.session.user.
+    "cn_todo_manager.chatnext_todo_manager.api.todo_api.get_todo_list",
+    "cn_todo_manager.chatnext_todo_manager.api.todo_api.get_todo_categories",
+    "cn_todo_manager.chatnext_todo_manager.api.todo_api.show_team_todos",
+}
+
 _MSG_API_BLOCKED = "This API is not available for Alumni users."
 _MSG_LOGIN_BLOCKED = "Alumni users can only access the Alumni Portal."
 
@@ -111,7 +134,7 @@ def _is_allowed_for_alumni(kind: str, command: str) -> bool:
         return False
     if any(command.startswith(ns) for ns in ALUMNI_NAMESPACES):
         return True
-    return command in _ALUMNI_GLOBAL_ALLOWLIST
+    return command in _ALUMNI_GLOBAL_ALLOWLIST or command in _ALUMNI_METHOD_ALLOWLIST
 
 
 # ── The hook ──────────────────────────────────────────────────────────────────

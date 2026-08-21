@@ -279,6 +279,109 @@ def set_requisition_and_pay(doc, method=None):
 			doc.set(target, value)
 
 
+# The two things an offer cannot go out without. Employment Type decides which
+# salary structure and statutory treatment the hire falls under; Expected DOJ is the
+# date onboarding, the joining kit and the reporting manager all plan around. Neither
+# is guessable after the fact, and an offer that reaches the candidate without them
+# has to be withdrawn and re-issued.
+OFFER_REQUIRED_BEFORE_SEND = (
+	("custom_employment_type", "Employee Type"),
+	("custom_expected_doj", "Expected DOJ"),
+)
+
+# A Trainee is sent two letters — the Management Trainee one and the permanent one
+# — and they start on different days, so the traineeship's own date is required
+# too. Guessing it from Expected DOJ is what this field exists to stop.
+TRAINEE_EMPLOYMENT_TYPE = "Trainee"
+TRAINEE_REQUIRED_BEFORE_SEND = (
+	("custom_trainee_doj", "Management Trainee Joining Date"),
+)
+
+# Where an employment type can be found, best source first. The offer's own
+# fetch_from only reads the Job Applicant, so an applicant who never had one (every
+# campus candidate — nothing in the application form asks) left the field blank with
+# no indication of why.
+_EMPLOYMENT_TYPE_SOURCES = (
+	("Job Applicant", "job_applicant", "custom_employment_type"),
+	("Job Opening", "job_title", "employment_type"),
+)
+
+
+def set_employment_type(doc, method=None):
+	"""``before_submit``: fill Employee Type from the candidate, then the opening.
+
+	Runs at SEND, not on every save. A draft is left exactly as HR typed it — nothing
+	is written into an offer that is still being negotiated — and the value is derived
+	at the one moment it has to be right. Ordered ahead of
+	``validate_offer_is_complete`` in hooks.py, so the check never rejects an offer for
+	a value that could have been derived a line earlier.
+
+	Only fills when empty, so a type HR has chosen by hand is never overwritten.
+	"""
+	field = "custom_employment_type"
+	if not doc.meta.get_field(field) or doc.get(field):
+		return
+
+	applicant = doc.get("job_applicant")
+	if not applicant:
+		return
+	opening = frappe.db.get_value("Job Applicant", applicant, "job_title")
+
+	for doctype, source, column in _EMPLOYMENT_TYPE_SOURCES:
+		key = applicant if doctype == "Job Applicant" else opening
+		if not key or not frappe.get_meta(doctype).has_field(column):
+			continue
+		value = frappe.db.get_value(doctype, key, column)
+		if value:
+			doc.set(field, value)
+			return
+
+
+def validate_offer_is_complete(doc, method=None):
+	"""``before_submit``: refuse an offer that is missing what onboarding needs.
+
+	Checked on submit rather than made a mandatory field, deliberately: an offer is
+	drafted, negotiated and costed over several saves, and a joining date is often the
+	last thing agreed. Blocking every save would stop HR recording the rest of it —
+	blocking the SEND is what actually matters.
+	"""
+	required = list(OFFER_REQUIRED_BEFORE_SEND)
+	if _is_trainee_offer(doc):
+		required.extend(TRAINEE_REQUIRED_BEFORE_SEND)
+
+	missing = [
+		label for field, label in required
+		if doc.meta.get_field(field) and not doc.get(field)
+	]
+	if not missing:
+		return
+
+	frappe.throw(
+		_("Fill in {0} before sending this offer.<br><br>"
+		  "The offer decides how this person is hired: <b>Employee Type</b> drives their "
+		  "salary structure and statutory treatment, and <b>Expected DOJ</b> is the date "
+		  "onboarding is planned around. A Trainee is also sent the Management Trainee "
+		  "letter, which starts on its own <b>Management Trainee Joining Date</b>. An "
+		  "offer sent without them has to be withdrawn and re-issued.").format(
+			", ".join(frappe.bold(m) for m in missing)),
+		title=_("Offer is incomplete"),
+	)
+
+
+def _is_trainee_offer(doc):
+	"""Whether this offer is for a Trainee, by the Employment Type's readable name.
+
+	Compared on the name rather than the link value because Employment Type is
+	autonamed (``EMPTYPE_.#``), so the id differs from site to site.
+	"""
+	employment_type = doc.get("custom_employment_type")
+	if not employment_type:
+		return False
+
+	name = frappe.db.get_value("Employment Type", employment_type, "employee_type_name")
+	return (name or "").strip().casefold() == TRAINEE_EMPLOYMENT_TYPE.casefold()
+
+
 @frappe.whitelist()
 def get_requisition_defaults(job_applicant):
 	"""What the Job Offer form should prefill once a candidate is chosen.

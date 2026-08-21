@@ -91,12 +91,42 @@ function card_html(drive, index) {
 					: ""
 			}
 
+			${closed_note(drive)}
+
 			<div class="tpo-drive-actions">
-				<button class="btn btn-primary btn-sm" data-action="add-candidates" data-index="${index}">
-					${__("Add Candidates")}
-				</button>
+				${
+					drive.registration_closed
+						? `<button class="btn btn-default btn-sm" disabled>${__(
+								"Registration Closed"
+						  )}</button>`
+						: `<button class="btn btn-primary btn-sm" data-action="add-candidates" data-index="${index}">
+								${__("Add Candidates")}
+							</button>`
+				}
 			</div>
 		</div>`;
+}
+
+/**
+ * Why this college can no longer register — the two reasons are not the same thing.
+ *
+ * A passed deadline is HR's to extend. A live drive is not: once the drive for this
+ * college has been scheduled and gone live its candidate list is frozen, even though
+ * the very same invite is still open for the other colleges on it (their drives have
+ * not been created yet). Saying which one it is stops the TPO asking for an extension
+ * that would not help them.
+ */
+function closed_note(drive) {
+	if (!drive.registration_closed) {
+		return "";
+	}
+	const message =
+		drive.closed_reason === "drive_live"
+			? __("Your campus drive has been scheduled and is live, so registration is closed. Contact the recruitment team if a candidate still needs to be added.")
+			: __("The registration deadline ({0}) has passed. Contact the recruitment team if you need it extended.", [
+					frappe.datetime.str_to_user(drive.registration_expiry_date),
+			  ]);
+	return `<div class="tpo-closed-note">${message}</div>`;
 }
 
 function add_candidates(drive) {

@@ -2,6 +2,7 @@ import frappe
 from recruitment.api.candidate_auth import candidate_required, enforce_candidate_identity
 from recruitment.api.candidate_portal import (
     _compute_candidate_field_counts,
+    _dpdp_consent_pending,
     _get_active_pre_release,
     _get_onboarding_portal_rows,
     _iter_onboarding_contact_users,
@@ -20,6 +21,34 @@ def _error_response(message, status_code=400):
     return {"success": False, "message": message, "data": {}}
 
 
+def _dpdp_consent_flags(email):
+    """(required, submitted) for DPDP consent — a safe NO-OP when the feature is off.
+
+    required  : DPDP consent is enabled AND enforced for this site, so the candidate
+                must give it before onboarding. False for every non-DPDP site.
+    submitted : the candidate has an accepted DPDP consent log (consent given).
+
+    The UI should show a "complete consent" action only when required and not
+    submitted. Never raises — any missing setting / doctype degrades to
+    (False, False), so sites that don't use DPDP behave exactly as today.
+    """
+    try:
+        from frappe.utils import cint
+        from recruitment.job_offer_utils import is_dpdp_consent_enabled
+
+        if not is_dpdp_consent_enabled():
+            return False, False
+        required = bool(cint(frappe.db.get_single_value("DPDP Act Settings", "enforce_before_onboarding")))
+        given = frappe.db.get_value(
+            "Job Applicant DPDP Consent Log",
+            {"job_applicant": email, "docstatus": 1, "consent_given": 1},
+            "name",
+        )
+        return required, bool(given)
+    except Exception:
+        return False, False
+
+
 
 
 @candidate_required
@@ -28,6 +57,26 @@ def get_dashboard(email):
         if not email:
             return _error_response("email is required.", 400)
         enforce_candidate_identity(email=email)
+
+        # Project-specific gate — a NO-OP for every other site. `_dpdp_consent_pending`
+        # returns False unless DPDP consent is BOTH enabled AND enforced for this site
+        # (DPDP Act Settings) and the candidate has not yet given it. In that one case
+        # onboarding hasn't effectively started, so onboarding_status is reported False.
+        consent_pending = _dpdp_consent_pending(email)
+        # Flags for the UI: whether DPDP consent applies to this candidate and whether
+        # they have submitted it. Both False for non-DPDP sites (see helper). Used to
+        # show a "complete DPDP consent" action when required and not yet submitted.
+        dpdp_required, dpdp_submitted = _dpdp_consent_flags(email)
+        # Consent page URL for the UI's "complete DPDP consent" action — reuses the
+        # same token-gated URL the post-login router builds. Only when DPDP applies;
+        # None everywhere else. Guarded so it can never break the dashboard.
+        dpdp_consent_url = None
+        if dpdp_required:
+            try:
+                from recruitment.api.candidate_portal_survey import _dpdp_consent_url
+                dpdp_consent_url = _dpdp_consent_url(email)
+            except Exception:
+                dpdp_consent_url = None
 
         row = frappe.db.get_value(
             DOCTYPENAME,
@@ -51,7 +100,10 @@ def get_dashboard(email):
                         "work_location": None,
                         "work_location_details": None,
                         "key_contacts": [],
-                        "onboarding_status": True,
+                        "onboarding_status": (False if consent_pending else True),
+                        "dpdp_consent_required": dpdp_required,
+                        "dpdp_consent_submitted": dpdp_submitted,
+                        "dpdp_consent_url": dpdp_consent_url,
                         "form_completion": {
                             "total_fields": 0,
                             "filled_fields": 0,
@@ -72,6 +124,9 @@ def get_dashboard(email):
                     "work_location_details": None,
                     "key_contacts": [],
                     "onboarding_status": False,
+                    "dpdp_consent_required": dpdp_required,
+                    "dpdp_consent_submitted": dpdp_submitted,
+                    "dpdp_consent_url": dpdp_consent_url,
                     "form_completion": {
                         "total_fields": 0,
                         "filled_fields": 0,
@@ -86,7 +141,10 @@ def get_dashboard(email):
         # true  : Employee Onboarding record exists
         # true  : No record yet but Job Applicant status is "Accepted"
         # false : Neither condition is met
-        onboarding_status = True  # we already have a record at this point
+        # false : DPDP consent is required for this site but not yet given (no-op
+        #         elsewhere — see consent_pending above).
+        onboarding_status = not consent_pending  # record exists, but a pending DPDP
+        #         consent means onboarding hasn't effectively started.
 
         # ── Form Completion (live, value-aware) ───────────────────────────────
         # Use the SAME source of truth as the candidate form page instead of the
@@ -183,6 +241,9 @@ def get_dashboard(email):
             "key_contacts": key_contacts,
             # ── New fields ──────────────────────────────────────────────────
             "onboarding_status": onboarding_status,
+            "dpdp_consent_required": dpdp_required,
+            "dpdp_consent_submitted": dpdp_submitted,
+            "dpdp_consent_url": dpdp_consent_url,
             "form_completion": form_completion,
             "onboarding_stage": onboarding_stage,
         }

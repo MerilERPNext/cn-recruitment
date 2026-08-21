@@ -29,6 +29,11 @@ app_include_js = [
 	# because a doctype's *_list.js is evaluated after doctype_list_js resolves,
 	# which is too late for the lists that build on it. Bump ?v= when it changes.
 	"/assets/recruitment/js/list_column_engine.js?v=3",
+	# Multi-value list filters: two "Institute Equals …" rows are ANDed by Frappe
+	# and can never both match, so a second value empties the list. This folds
+	# repeated `=` on one field into a single `in`. Global for the same reason as
+	# the column engine — the *_list.js files build on it. Bump ?v= when it changes.
+	"/assets/recruitment/js/list_filter_multi.js?v=1",
 ]
 
 add_to_apps_screen = [
@@ -113,6 +118,11 @@ doctype_js = {
         "public/js/interview.js",
         # Trims the form down to what a panel member needs (panel-only users).
         "public/js/interview_panel_view.js",
+        # "Submit Feedback" opens the Interview Feedback FORM instead of HRMS's
+        # dialog — the dialog skips the Region Recommendation / Work Location
+        # sections, which only exist on the form. Must load AFTER hrms's own
+        # interview.js (it is, being a hooks entry) so the override sticks.
+        "public/js/interview_feedback_route.js",
     ],
     "Interview Feedback": ["public/js/interview_feedback.js"],
     "User": ["public/js/user.js"],
@@ -310,6 +320,16 @@ doc_events = {
         ]
     },
     "Job Offer": {
+        # Nothing here touches a DRAFT. An offer is negotiated over several saves and
+        # the joining date is often the last thing agreed, so saving is never blocked
+        # or rewritten — everything below happens at the moment the offer is SENT.
+        #
+        # Order matters: fill Employee Type first, then check what is still missing,
+        # so the check never rejects an offer for a value it could have derived.
+        "before_submit": [
+            "recruitment.customizations.job_offer.set_employment_type",
+            "recruitment.customizations.job_offer.validate_offer_is_complete",
+        ],
         "validate": [
             "recruitment.customizations.job_applicant.validation_blacklist_on_doctypes",
             # Hiring Lead Permission Settings (change designation at offer stage).
@@ -388,6 +408,10 @@ doc_events = {
     },
     "Job Opening": {
         "validate": [
+            # An opening raised from a requisition inherits its recruiter — without
+            # one the opening belongs to nobody. Creation only, and on every path
+            # (the Desk mapper, the web app's Resource API call, an import).
+            "recruitment.customizations.job_requisition.require_recruiter_on_new_opening",
             # Enforce Recruitment Settings -> Job Posting Settings
             # (mandatory Job Description, no posting without linked positions).
             "recruitment.customizations.job_opening_settings.validate_job_posting_settings",
@@ -408,6 +432,12 @@ doc_events = {
             # eligibility conditions from Campus Eligibility Settings onto it.
             "recruitment.recruitment.eligibility_engine.apply_default_eligibility_rules",
         ],
+        # Tell an external recruiter the opening is theirs to work on. Both events
+        # so a recruiter added to an existing opening is mailed too; sent once per
+        # recruiter per posting row (Job Opening Posting Channel.notified_recruiters),
+        # and only while Recruitment Settings says so.
+        "after_insert": "recruitment.recruitment.external_recruiter_mailers.notify_assigned_recruiters",
+        "on_update": "recruitment.recruitment.external_recruiter_mailers.notify_assigned_recruiters",
     },
     "Employee": {
         "before_insert": "recruitment.customizations.job_applicant.validate_blacklist_employee",
@@ -417,9 +447,15 @@ doc_events = {
             "recruitment.recruitment.referral_reward_engine.generate_referral_reward_on_employee",
         ],
         "before_save": "recruitment.recruitment.employee_confirmation_hooks.calculate_final_confirmation_date",
-        # Keep the User's "Is Alumni Employee" flag in sync with status == "Left"
-        # (only sets that checkbox; never touches Employee.status or User.enabled).
-        "on_update": "recruitment.recruitment.alumni_portal.sync_alumni_flag",
+        "on_update": [
+            # Keep the User's "Is Alumni Employee" flag in sync with status == "Left"
+            # (only sets that checkbox; never touches Employee.status or User.enabled).
+            "recruitment.recruitment.alumni_portal.sync_alumni_flag",
+            # Switch the primary account on a real status transition: disable the
+            # company-email User and provision/restore the personal-email Alumni
+            # User (and the reverse when the employee rejoins).
+            "recruitment.recruitment.alumni_user_switch.handle_employee_status_change",
+        ],
     },
     "Job Applicant": {
         "before_insert": "recruitment.customizations.ta_duplicity_check.check_duplicity",
@@ -430,8 +466,19 @@ doc_events = {
             # for applications created after the drive was set up.
             "recruitment.recruitment.campus_helpers.set_applicant_drive_from_invite",
         ],
-        # Hiring Lead Permission Settings (update candidate source).
-        "validate": "recruitment.customizations.hiring_lead_permissions.validate_job_applicant_hiring_lead_edits",
+        "validate": [
+            # Hiring Lead Permission Settings (update candidate source).
+            "recruitment.customizations.hiring_lead_permissions.validate_job_applicant_hiring_lead_edits",
+            # Rebuild custom_full_name from the name parts. The parts are what the
+            # candidate typed (first / middle / surname, each in its own field); the
+            # full name is derived here and is the doctype's title, so nothing else
+            # ever has to join them — which is what produced "Neha Iyer Iyer".
+            "recruitment.api.applicant_name.set_full_name",
+            # A region change unsettles where the candidate would be posted: the
+            # branch on them belongs to the region they are leaving, so it is
+            # cleared and the next panel picks one in the new region.
+            "recruitment.api.interview_work_location.clear_location_on_region_change",
+        ],
         # Place a new applicant on the linked opening's first hiring stage
         # (no-op unless the Hiring Workflow feature is enabled).
         "after_insert": "recruitment.api.hiring_stage.seed_first_stage",

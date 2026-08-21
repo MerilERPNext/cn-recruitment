@@ -384,6 +384,10 @@ _ONBOARDING_FIELD_ALIASES = {
     "department":               [("applicant", "custom_department"), ("applicant", "custom_division_finalized")],
     "custom_work_location":     [("applicant", "custom_location")],
     "custom_nationality":       [("applicant", "country")],
+    # Resume: carry the Job Applicant's uploaded file URL onto the onboarding. Routed
+    # through the alias list (not the same-name pass) because Attach is intentionally
+    # excluded from the by-value copy; here it's a deliberate, curated one.
+    "custom_resume_attachment": [("applicant", "resume_attachment")],
 }
 
 

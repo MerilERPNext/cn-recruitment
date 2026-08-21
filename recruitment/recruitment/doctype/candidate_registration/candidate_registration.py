@@ -14,6 +14,14 @@ from recruitment.recruitment.tpo_access import PRIMARY_TPO_ROLE
 # to the institute mapped to their login.
 INSTITUTE_CHOOSER_ROLES = {"System Manager", "HR Manager"}
 
+# The email every registered candidate gets is configured in Campus Settings ->
+# Candidate Registration Email Template. Its wording is HomeFirst's and lives in
+# ``homefirst_customs.email_templates``.
+#
+# Jinja vars passed to it: full_name, first_name, registration_link, deadline,
+# institute, campus_invite, email_id, doc. `registration_link` already carries the
+# invite id, so the candidate never has to choose a drive.
+
 # Mobile numbers are Indian campus numbers — exactly ten digits once the usual
 # formatting (spaces, hyphens, brackets, a +91 / 0 prefix) is taken off.
 MOBILE_DIGITS = 10
@@ -57,9 +65,19 @@ def get_tpo_institute(user=None, campus_invite=None):
 		return None
 
 	if campus_invite:
+		from recruitment.recruitment.campus_helpers import locked_institutes_for_invite
+
 		invited = set(get_invite_institutes(campus_invite))
 		matching = [i for i in primaries if i in invited]
-		return matching[0] if matching else None
+		if not matching:
+			return None
+		# A TPO can be Primary at several colleges on one invite, and HR schedules those
+		# colleges into separate drives. Resolve to one that can still be registered
+		# against, so a TPO with a live drive at college A is not blocked from adding
+		# candidates for college B. Falls back to the first match when all are closed —
+		# the lock check then reports which drive closed it, rather than "no institute".
+		open_matches = [i for i in matching if i not in locked_institutes_for_invite(campus_invite)]
+		return (open_matches or matching)[0]
 
 	return primaries[0] if len(primaries) == 1 else None
 
@@ -80,10 +98,16 @@ class CandidateRegistration(Document):
 		self._lock_invite_for_tpo()
 		self._apply_tpo_institute()
 		self._validate_institute_on_invite()
+		# After the institute is settled: the deadline above closes the invite for
+		# everyone at once, this closes one college as soon as its drive goes live.
+		self._validate_institute_not_on_live_drive()
 		self._validate_candidates()
 
 	def _validate_registration_window(self, invite):
 		"""A TPO may not register candidates once the invite's deadline has passed.
+
+		This is the invite-wide gate, and it applies to every institute on the invite
+		at once. The per-college gate is `_validate_institute_not_on_live_drive`.
 
 		Registration otherwise trickles in for weeks after a drive, against a college
 		list HR has already worked through. The date is the invite's own
@@ -175,6 +199,41 @@ class CandidateRegistration(Document):
 					", ".join(invited),
 				)
 			)
+
+	def _validate_institute_not_on_live_drive(self):
+		"""A college stops registering the moment its own campus drive goes live.
+
+		The invite's deadline is one date for four colleges, but the drives are not:
+		HR sizes them by candidate count (a 200-candidate college gets its own drive,
+		two 100s get merged), so the colleges are scheduled at different times. Closing
+		on the drive rather than the date is what lets the scheduled college's list
+		freeze while the rest keep registering against the same invite.
+
+		A Draft drive does not count — HR is still assembling it, and the college may
+		well end up on a different one. HR itself is warned rather than blocked, same as
+		with the deadline: they are the ones who add a candidate the college missed.
+		"""
+		if not (self.campus_invite and self.institute):
+			return
+
+		from recruitment.recruitment.campus_helpers import locked_institutes_for_invite
+
+		drive = locked_institutes_for_invite(self.campus_invite).get(self.institute)
+		if not drive:
+			return
+
+		if is_tpo_only():
+			frappe.throw(
+				_("The campus drive for {0} ({1}) is already live, so registration for your "
+				  "college is closed. Please contact the recruitment team if a candidate still "
+				  "needs to be added.").format(_safe(self.institute), _safe(drive)),
+				title=_("Registration Closed — Drive Live"),
+			)
+		frappe.msgprint(
+			_("{0} is already on the live drive {1}. You are adding candidates after its "
+			  "registration closed — TPOs cannot.").format(_safe(self.institute), _safe(drive)),
+			title=_("Drive already live"), indicator="orange",
+		)
 
 	def _validate_candidates(self):
 		"""Ten-digit mobiles, and no email/mobile repeated inside this batch.
@@ -313,10 +372,22 @@ class CandidateRegistration(Document):
 		if not recipients:
 			frappe.throw(_("Add at least one candidate with an Email ID."))
 
+		# One lookup for the whole batch: the date is the drive's, not each
+		# candidate's, and a college submits a hundred rows at a time.
+		deadline = self._registration_deadline()
 		for candidate in recipients:
-			self._send_to_candidate(template_name, candidate)
+			self._send_to_candidate(template_name, candidate, deadline)
 
-	def _send_to_candidate(self, template_name, candidate):
+	def _registration_deadline(self):
+		"""The drive's Registration Expiry Date, formatted, or None when it has none."""
+		if not self.campus_invite:
+			return None
+		expiry = frappe.db.get_value(
+			"Campus Invite", self.campus_invite, "registration_expiry_date"
+		)
+		return frappe.utils.formatdate(expiry) if expiry else None
+
+	def _send_to_candidate(self, template_name, candidate, deadline=None):
 		"""Best effort: a bad address / SMTP issue for one candidate is logged and
 		must not block the rest or roll back the submit."""
 		from frappe.email.doctype.email_template.email_template import get_email_template
@@ -345,6 +416,8 @@ class CandidateRegistration(Document):
 			# use {{ registration_link }}. The invite is carried in the link — the
 			# candidate never chooses it.
 			"registration_link": campus_registration_link(candidate.email_id, self.campus_invite),
+			# The date the student is being asked to work to, off the Campus Invite.
+			"deadline": deadline,
 		}
 		try:
 			rendered = get_email_template(template_name, context)

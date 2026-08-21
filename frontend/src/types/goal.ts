@@ -212,6 +212,13 @@ export interface MyGoalsKeyResult {
   achievement: number;
   status?: string;
   goal_status?: string;
+  last_checkin_date?: string | null;
+  checkin_requested?: boolean;
+  checkin_due?: string | null;
+  is_locked?: boolean;
+  metric?: string | number | null;
+  target?: number;
+  target_type?: string;
 }
 
 export interface MyGoalsGoal {
@@ -553,6 +560,9 @@ export interface GoalCheckIn {
   note: string;
   attachment: string | null;
   creation: string;
+  manager_comment:string | null;
+  manager_comment_by:string | null;
+  manager_comment_on:string |null
 }
 
 export interface SubmitGoalCheckInResponse {
@@ -606,4 +616,285 @@ export interface PerformanceOverviewResponse {
   success: boolean;
   message: string;
   data: PerformanceOverviewData;
+}
+
+export interface PeerReviewItem {
+  nomination: string;
+  subject: string;
+  subject_name: string;
+  designation: string;
+  department: string;
+  process: string;
+  process_name: string;
+  basis: string;
+  status: string;
+  submitted: boolean;
+  due_date: string;
+  due_in_days: number;
+}
+
+export interface MyPeerReviewsData {
+  count: number;
+  pending: number;
+  reviews: PeerReviewItem[];
+}
+
+export interface MyPeerReviewsResponse {
+  success: boolean;
+  message: string;
+  data: MyPeerReviewsData;
+}
+
+export interface FeedbackScaleOption {
+  value: number;
+  label: string;
+}
+
+export interface FeedbackAnonymity {
+  threshold: number;
+  note: string;
+}
+
+export interface FeedbackFormItem {
+  id: string;
+  title: string;
+  description: string;
+  rating?: number | null;
+  comment?: string;
+  weightage:number
+}
+
+export interface FeedbackFormData {
+  nomination: string;
+  process: string;
+  basis: string;
+  subject: string;
+  subject_name: string;
+  designation: string;
+  department: string;
+  due_date: string;
+  due_in_days: number;
+  comment_mandatory: boolean;
+  anonymity: FeedbackAnonymity;
+  scale: FeedbackScaleOption[];
+  status:string;
+  locked:boolean
+  items?: FeedbackFormItem[];
+}
+
+export interface FeedbackFormResponse {
+  success: boolean;
+  message: string;
+  data: FeedbackFormData;
+}
+
+export interface FeedbackAnswer {
+  id: string;
+  rating?: number | null;
+  comment?: string;
+}
+
+export interface FeedbackPayloadContent {
+  nomination: string;
+  answers: FeedbackAnswer[];
+}
+
+export interface SaveFeedbackPayload {
+  payload: FeedbackPayloadContent;
+}
+
+export interface SubmitFeedbackPayload {
+  payload: FeedbackPayloadContent;
+}
+
+export interface SaveFeedbackData {
+  feedback: string;
+  status: string;
+}
+
+export interface SaveFeedbackResponse {
+  success: boolean;
+  message: string;
+  data: SaveFeedbackData;
+}
+
+export interface SubmitFeedbackData {
+  feedback: string;
+  status: string;
+}
+
+export interface SubmitFeedbackResponse {
+  success: boolean;
+  message: string;
+  data: SubmitFeedbackData;
+}
+
+export interface AddGoalCommentContent {
+  goal: string;
+  employee: string;
+  comment: string;
+}
+
+export interface AddGoalCommentPayload {
+  payload: AddGoalCommentContent;
+}
+
+export interface AddGoalCommentData {
+  check_in?: string;
+  goal?: string;
+  manager_comment?: string;
+  manager_comment_by?: string;
+}
+
+export interface AddGoalCommentResponse {
+  success: boolean;
+  message: string;
+  data?: AddGoalCommentData;
+}
+
+export interface TeamOverviewStage {
+  sequence: number;
+  stage_name: string;
+  stage_type: string;
+  start_date: string;
+  end_date: string;
+  lock_date?: string | null;
+  enabled: number;
+}
+
+export interface TeamOverviewCards {
+  goals_pending_approval: number;
+  employees_pending_approval: number;
+  team_avg_progress: number;
+  expected_progress: number;
+  off_track_goals: number;
+  off_track_employees: number;
+  checkins_due: number;
+  checkins_overdue: number;
+  no_plan_yet: number;
+  on_track_employees: number;
+}
+
+export interface TeamOverviewRules {
+  off_track_tolerance: number;
+  stale_checkin_days: number;
+  include_indirect: number;
+}
+
+export interface TeamOverviewData {
+  framework: string;
+  cycle_name: string;
+  status: string;
+  start_date: string;
+  end_date: string;
+  methodology: string;
+  description: string | null;
+  company: string;
+  stages: TeamOverviewStage[];
+  current_stage: string | null;
+  locks_on: string | null;
+  days_remaining: number;
+  manager: string;
+  manager_name: string;
+  team_size: number;
+  cards: TeamOverviewCards;
+  rules: TeamOverviewRules;
+}
+
+export interface TeamOverviewParams {
+  manager?: string;
+}
+
+export interface TeamOverviewResponse {
+  success: boolean;
+  message: string;
+  data: TeamOverviewData;
+}
+
+export interface TeamMemberItem {
+  employee: string;
+  employee_name: string;
+  initials: string;
+  image: string | null;
+  designation: string;
+  department: string;
+  tenure_years: number;
+  goal_plan: string | null;
+  plan_status: string;
+  goal_count: number;
+  goals_pending_approval: number;
+  progress: number;
+  score: number;
+  expected_progress: number;
+  off_track_count: number;
+  behind_schedule_count: number;
+  stale_checkin_count: number;
+  checkin_requested: boolean;
+  checkin_requested_count: number;
+  checkin_overdue: boolean;
+  last_checkin_date: string | null;
+  days_since_checkin: number | null;
+  status: string;
+  status_label: string;
+  status_tone: string;
+  actions: string[];
+}
+
+export interface TeamMembersSummary {
+  total: number;
+  no_plan: number;
+  pending_approval: number;
+  off_track: number;
+  checkin_due: number;
+  on_track: number;
+}
+
+export interface TeamMembersRules {
+  off_track_tolerance: number;
+  stale_checkin_days: number;
+  include_indirect: number;
+}
+
+export interface TeamMembersData {
+  manager: string;
+  members: TeamMemberItem[];
+  count: number;
+  matched: number;
+  total: number;
+  start: number;
+  limit: number;
+  has_more: boolean;
+  summary: TeamMembersSummary;
+  filters: string[];
+  rules: TeamMembersRules;
+}
+
+export type TeamMembersStatusFilter =
+  | "all"
+  | "no_plan"
+  | "pending_approval"
+  | "off_track"
+  | "checkin_due"
+  | "on_track";
+
+export type TeamMembersSortOption =
+  | "progress"
+  | "progress_desc"
+  | "name"
+  | "checkin"
+  | "off_track";
+
+export interface TeamMembersParams {
+  manager?: string;
+  status?: TeamMembersStatusFilter;
+  sort?: TeamMembersSortOption;
+  search?: string;
+  limit?: number;
+  start?: number;
+}
+
+export interface TeamMembersResponse {
+  success: boolean;
+  message: string;
+  data: TeamMembersData;
 }

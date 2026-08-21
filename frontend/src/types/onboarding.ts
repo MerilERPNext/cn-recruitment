@@ -73,10 +73,6 @@ export interface ApiConfig {
   authToken: string;
 }
 
-export interface Toast {
-  msg: string;
-  type: ToastType;
-}
 
 // ─── Hook Return Types ────────────────────────────────────────────────────────
 
@@ -86,7 +82,7 @@ export interface UseApprovalDataReturn {
   fieldStates: Record<string, FieldLocalState>;
   pageLoading: boolean;
   pageError: string | null;
-  loadData: () => Promise<void>;
+  loadData: (silent?: boolean) => Promise<void>;
   patchFieldState: (fieldname: string, patch: Partial<FieldLocalState>) => void;
   setFieldStates: React.Dispatch<React.SetStateAction<Record<string, FieldLocalState>>>;
 }
@@ -114,7 +110,6 @@ export interface UseApprovalActionsReturn {
 }
 
 export interface UseToastReturn {
-  toast: Toast | null;
   showToast: (msg: string, type?: ToastType) => void;
 }
 

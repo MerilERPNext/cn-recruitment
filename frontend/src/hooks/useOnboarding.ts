@@ -13,13 +13,14 @@ import type {
   ApprovalStatus,
   FieldLocalState,
   SectionEntry,
-  Toast,
   ToastType,
   UseApprovalActionsReturn,
   UseApprovalDataReturn,
   UseSectionNavReturn,
   UseToastReturn,
 } from "../types/onboarding";
+import { errorResponseFormater } from "../utils/errorResponseFormater";
+import { toast as hotToast } from "react-hot-toast";
 
 // ─── Utility: Build section map from flat field list ──────────────────────────
 
@@ -53,19 +54,20 @@ function buildInitialFieldStates(
 // ─── useToast ─────────────────────────────────────────────────────────────────
 
 export function useToast(): UseToastReturn {
-  const [toast, setToast] = useState<Toast | null>(null);
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
   const showToast = useCallback(
-    (msg: string, type: ToastType = "success",) => {
-      setToast({ msg, type });
-      if (timerRef.current) clearTimeout(timerRef.current);
-      timerRef.current = setTimeout(() => setToast(null), 2800);
+    (msg: string, type: ToastType = "success") => {
+      if (type === "success") {
+        hotToast.success(msg);
+      } else if (type === "error") {
+        hotToast.error(msg);
+      } else {
+        hotToast(msg);
+      }
     },
     []
   );
 
-  return { toast, showToast };
+  return { showToast };
 }
 
 // ─── useApprovalData ──────────────────────────────────────────────────────────
@@ -77,12 +79,14 @@ export function useApprovalData(onboardingName: string): UseApprovalDataReturn {
   const [pageLoading, setPageLoading] = useState(false);
   const [pageError, setPageError] = useState<string | null>(null);
 
-  const loadData = useCallback(async () => {
-    setPageLoading(true);
+  const loadData = useCallback(async (silent: boolean = false) => {
+    if (!silent) setPageLoading(true);
     setPageError(null);
-    setAllFields([]);
-    setSections({});
-    setFieldStates({});
+    if (!silent) {
+      setAllFields([]);
+      setSections({});
+      setFieldStates({});
+    }
 
     try {
       const fields = await fetchApprovalFields(onboardingName);
@@ -93,12 +97,21 @@ export function useApprovalData(onboardingName: string): UseApprovalDataReturn {
 
       setAllFields(fields);
       setSections(buildSections(fields));
-      setFieldStates(buildInitialFieldStates(fields));
+      
+      if (silent) {
+        setFieldStates((prev) => {
+          const newStates = buildInitialFieldStates(fields);
+          // Only add new states, preserve existing ones to avoid losing local modifications
+          return { ...newStates, ...prev };
+        });
+      } else {
+        setFieldStates(buildInitialFieldStates(fields));
+      }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Unexpected error occurred.";
       setPageError(message);
     } finally {
-      setPageLoading(false);
+      if (!silent) setPageLoading(false);
     }
   }, [onboardingName]);
 
@@ -157,8 +170,7 @@ export function useApprovalActions(
         showToast(`"${fieldname}" ${status.toLowerCase()}`, "success");
       } catch (err: unknown) {
         patchFieldState(fieldname, { loading: false });
-        const msg = err instanceof Error ? err.message : "Request failed";
-        showToast(`Error: ${msg}`, "error");
+        errorResponseFormater(err, "Request failed", { showToast: true });
       }
     },
     [onboardingName, patchFieldState, showToast, refetchOnboardingList]
@@ -188,8 +200,7 @@ export function useApprovalActions(
         );
       } catch (err: unknown) {
         fieldnames.forEach((fn) => patchFieldState(fn, { loading: false }));
-        const msg = err instanceof Error ? err.message : "Request failed";
-        showToast(`Error: ${msg}`, "error");
+        errorResponseFormater(err, "Request failed", { showToast: true });
       }
     },
     [onboardingName, patchFieldState, showToast, refetchOnboardingList]
@@ -208,8 +219,7 @@ export function useApprovalActions(
         refetchOnboardingList();
         showToast(`Section "${sectionName}" ${status.toLowerCase()}`, "success");
       } catch (err: unknown) {
-        const msg = err instanceof Error ? err.message : "Request failed";
-        showToast(`Error: ${msg}`, "error");
+        errorResponseFormater(err, "Request failed", { showToast: true });
       }
     },
     [onboardingName, sections, patchFieldState, showToast, refetchOnboardingList]
@@ -234,8 +244,7 @@ export function useApprovalActions(
       refetchOnboardingList();
       showToast("All pending fields approved", "success");
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Request failed";
-      showToast(`Error: ${msg}`, "error");
+      errorResponseFormater(err, "Request failed", { showToast: true });
     }
   }, [onboardingName, setFieldStates, showToast, refetchOnboardingList]);
 

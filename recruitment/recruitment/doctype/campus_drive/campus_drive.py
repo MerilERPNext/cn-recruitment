@@ -1,8 +1,13 @@
+import re
+from collections import Counter
+
 import frappe
 from frappe import _
 from frappe.model.document import Document
 
 from recruitment.recruitment.campus_helpers import (
+	draft_drive_institutes,
+	live_drive_institutes,
 	sync_drive_applicant_links,
 	validate_unique_job_openings,
 )
@@ -10,10 +15,61 @@ from recruitment.recruitment.campus_workflow import (
 	apply_to_drive as apply_workflow_to_drive,
 	apply_to_openings as apply_workflow_to_openings,
 )
+from recruitment.recruitment.doctype.campus_invite.campus_invite import get_invite_institutes
 
 # Round types that need an interview panel / GD grouping in the reference portal.
 PANEL_ROUND_TYPES = {"Group Discussion", "Technical", "HR"}
 GD_ROUND_TYPES = {"Group Discussion"}
+
+# How an interview is held. The drive carries the default (Campus Drive → Drive
+# Type) because a campus visit is normally one or the other for the whole drive;
+# the interview keeps its own copy so HR can switch a single one — a panelist
+# joining remotely, a candidate who could not travel.
+INTERVIEW_MODES = ("On-Site", "Online")
+# The Interview field holding it. Labelled "Mode of Interview" — NOT the stock
+# `interview_type` Link, which is the round/skill template.
+INTERVIEW_MODE_FIELD = "custom_interview_type"
+
+
+def _safe(value):
+	"""Bold, HTML-escaped. `frappe.bold` does not escape and `throw` / `msgprint`
+	render HTML — and an Institute's name IS free text now that it is also the record
+	name. Mirrors `candidate_registration._safe`."""
+	from frappe.utils import escape_html
+
+	return frappe.bold(escape_html(str(value or "")))
+
+
+def _safe_list(values):
+	"""One bold, escaped, comma-separated run of `values`."""
+	from frappe.utils import escape_html
+
+	return frappe.bold(", ".join(escape_html(str(v or "")) for v in values))
+
+
+def _drive_mode(campus_drive):
+	"""This drive's default interview mode (Campus Drive → Drive Type)."""
+	return frappe.db.get_value("Campus Drive", campus_drive, "drive_type") or INTERVIEW_MODES[0]
+
+
+def _resolve_mode(campus_drive, mode=None):
+	"""The mode to stamp on an interview: HR's override, else the drive's own."""
+	mode = (mode or "").strip()
+	if not mode:
+		return _drive_mode(campus_drive)
+	if mode not in INTERVIEW_MODES:
+		frappe.throw(
+			_("{0} is not a valid mode. Choose one of: {1}.").format(
+				frappe.bold(mode), ", ".join(INTERVIEW_MODES)),
+			title=_("Invalid Mode of Interview"),
+		)
+	return mode
+
+
+def _set_interview_mode(iv, mode):
+	"""Stamp the mode, if this site carries the field."""
+	if mode and iv.meta.has_field(INTERVIEW_MODE_FIELD):
+		iv.set(INTERVIEW_MODE_FIELD, mode)
 
 
 class CampusDrive(Document):
@@ -22,6 +78,7 @@ class CampusDrive(Document):
 		self._validate_drive_window()
 		self._apply_lifecycle_status()
 		self._sync_campus_invites()
+		self._validate_participating_institutes()
 		validate_unique_job_openings(self, table_fieldname="linked_job_openings")
 		self._set_registration_defaults()
 		# After the invites are in: the rounds are built from the workflow named in
@@ -55,14 +112,21 @@ class CampusDrive(Document):
 			self.drive_status = target
 
 	def _sync_campus_invites(self):
-		"""Merge each linked Campus Invite's Institute and Job Openings into
-		participating_institutes / linked_job_openings. Additive and idempotent:
-		existing rows are kept and never duplicated, so this is safe to run on
-		every save regardless of whether the client already fetched them."""
+		"""Merge each linked Campus Invite's Job Openings into linked_job_openings.
+		Additive and idempotent: existing rows are kept and never duplicated, so this
+		is safe to run on every save regardless of whether the client already fetched
+		them.
+
+		Participating Institutes are deliberately NOT pulled in. An invite carries
+		several colleges and HR splits them into drives by candidate count — a
+		200-candidate college runs on its own, two 100s are merged — so which colleges
+		this drive covers is a decision, not a copy. HR picks them from the invites'
+		institutes (see `drive_institute_query`), and `_validate_participating_institutes`
+		keeps that choice honest.
+		"""
 		if not self.campus_invites:
 			return
 
-		known_institutes = {row.institute for row in (self.participating_institutes or []) if row.institute}
 		known_openings = {row.job_opening for row in (self.linked_job_openings or []) if row.job_opening}
 
 		added = False
@@ -70,13 +134,6 @@ class CampusDrive(Document):
 			if not invite_row.campus_invite:
 				continue
 			invite = frappe.get_doc("Campus Invite", invite_row.campus_invite)
-
-			# An invite can carry several institutes — bring them all in.
-			for institute_row in invite.institutes or []:
-				if institute_row.institute and institute_row.institute not in known_institutes:
-					self.append("participating_institutes", {"institute": institute_row.institute})
-					known_institutes.add(institute_row.institute)
-					added = True
 
 			for opening in invite.job_openings or []:
 				if opening.job_opening and opening.job_opening not in known_openings:
@@ -109,6 +166,77 @@ class CampusDrive(Document):
 		# next save.
 		if added:
 			self._validate_links()
+
+	def _validate_participating_institutes(self):
+		"""The colleges this drive runs: each invited, each listed once, none already
+		running elsewhere.
+
+		The last rule is the point of the whole arrangement. A college's registration
+		closes when its drive goes live, so a college may belong to only ONE live drive
+		per invite — otherwise "closed by DRV-A" and "still being planned on DRV-B"
+		would both be true of the same college and its TPO would get contradictory
+		answers. Colleges on a Draft drive are still free: HR routinely builds two draft
+		drives and moves a college between them while sizing the batches.
+		"""
+		rows = [row for row in (self.participating_institutes or []) if row.institute]
+		if not rows:
+			return
+
+		seen = {}
+		for row in rows:
+			if row.institute in seen:
+				frappe.throw(
+					_("Institute {0} is listed twice (rows {1} and {2}). Each college runs once "
+					  "on a drive.").format(_safe(row.institute), seen[row.institute], row.idx),
+					title=_("Duplicate Institute"),
+				)
+			seen[row.institute] = row.idx
+
+		invites = _drive_invites(self)
+		if not invites:
+			return
+
+		# Only the colleges these invites actually invited may be run by this drive —
+		# the invite is what the candidates are registered against.
+		invited = set()
+		for invite in invites:
+			invited.update(get_invite_institutes(invite))
+		stray = [i for i in seen if i not in invited]
+		if stray:
+			frappe.throw(
+				_("Institute(s) {0} are not invited on this drive's Campus Invite(s) {1}. "
+				  "Add them to the invite first, or remove them here.").format(
+					_safe_list(stray), _safe_list(invites)),
+				title=_("Institute Not Invited"),
+			)
+
+		taken = live_drive_institutes(invites, exclude_drive=self.name)
+		clashes = [i for i in seen if i in taken]
+		if clashes:
+			frappe.throw(
+				_("{0} already running on a live drive: {1}. Pick the colleges that have not "
+				  "been scheduled yet.").format(
+					_("Institutes") if len(clashes) > 1 else _("Institute"),
+					_safe_list(f"{i} → {taken[i]}" for i in clashes),
+				),
+				title=_("College Already Scheduled"),
+			)
+
+		# Two DRAFT drives holding the same college is allowed — that is how HR shuffles
+		# colleges while sizing the batches. But both drafts go live by the calendar, not
+		# by a save, so nothing re-checks them at that moment: say it now, while there is
+		# still a draft to fix.
+		drafted = draft_drive_institutes(invites, exclude_drive=self.name)
+		overlap = [i for i in seen if i in drafted]
+		if overlap:
+			frappe.msgprint(
+				_("{0} also on draft drive(s): {1}. Only one drive can run a college — drop it "
+				  "from the other before both windows open.").format(
+					_("Institutes") if len(overlap) > 1 else _("Institute"),
+					_safe_list(f"{i} → {drafted[i]}" for i in overlap),
+				),
+				title=_("Also on Another Draft Drive"), indicator="orange",
+			)
 
 	def on_update(self):
 		# Point this drive's candidates at it. Runs on every save (after the invite
@@ -274,9 +402,14 @@ def _qr_png_bytes(data):
 
 
 @frappe.whitelist()
-def get_campus_invite_details(campus_invite):
-	"""Return the Institutes and Job Openings of a Campus Invite so the client can
-	instantly fetch them into the Campus Drive's institute / opening tables."""
+def get_campus_invite_details(campus_invite, campus_drive=None):
+	"""What a Campus Invite brings to a drive: its Job Openings (copied in) and its
+	Institutes split into the ones still free and the ones already running.
+
+	Openings are fetched into the drive automatically — every college on the invite is
+	hiring for the same roles. Institutes are only REPORTED, because HR chooses which
+	of them this drive covers; `taken` is what the picker must not offer.
+	"""
 	invite = frappe.get_doc("Campus Invite", campus_invite)
 	openings = []
 	for row in (invite.job_openings or []):
@@ -286,11 +419,55 @@ def get_campus_invite_details(campus_invite):
 			"job_opening": row.job_opening,
 			"job_title": frappe.db.get_value("Job Opening", row.job_opening, "job_title"),
 		})
+
+	# An invite can carry several institutes.
+	institutes = [row.institute for row in (invite.institutes or []) if row.institute]
+	taken = live_drive_institutes([campus_invite], exclude_drive=campus_drive)
 	return {
-		# An invite can carry several institutes.
-		"institutes": [row.institute for row in (invite.institutes or []) if row.institute],
+		"institutes": institutes,
+		"available_institutes": [i for i in institutes if i not in taken],
+		"taken_institutes": [{"institute": i, "campus_drive": taken[i]}
+		                     for i in institutes if i in taken],
 		"job_openings": openings,
 	}
+
+
+@frappe.whitelist()
+@frappe.validate_and_sanitize_search_inputs
+def drive_institute_query(doctype, txt, searchfield, start, page_len, filters):
+	"""Link-field query for Campus Drive -> Participating Institutes.
+
+	Offers only the colleges this drive may still run: invited on one of its Campus
+	Invites, active, and not already frozen by another live drive. Filtering the
+	picker is what makes "the remaining three" the obvious choice — the server check
+	in `_validate_participating_institutes` is the one that actually enforces it.
+	"""
+	filters = filters or {}
+	invites = filters.get("campus_invites") or []
+	if isinstance(invites, str):
+		invites = frappe.parse_json(invites) or []
+	invites = [i for i in dict.fromkeys(invites) if i]
+	if not invites:
+		return []
+
+	invited = []
+	for invite in invites:
+		invited.extend(get_invite_institutes(invite))
+	taken = live_drive_institutes(invites, exclude_drive=filters.get("campus_drive"))
+	available = [i for i in dict.fromkeys(invited) if i not in taken]
+	if not available:
+		return []
+
+	return frappe.get_all(
+		"Institute",
+		filters={"name": ["in", available], "is_active": 1},
+		or_filters=[["name", "like", f"%{txt}%"], ["institute_name", "like", f"%{txt}%"]] if txt else None,
+		fields=["name", "institute_name"],
+		order_by="institute_name asc",
+		start=start,
+		page_length=page_len,
+		as_list=True,
+	)
 
 
 def _ja_status_options():
@@ -448,7 +625,30 @@ def get_drive_breakdown(campus_drive):
 # ---------------------------------------------------------------------------
 
 GD_POOL_STATUS = "Shortlisted"
+
+# Parked, not in play: a Hold is an eligibility knock-out, and a rejection or an
+# acceptance is decided. None of them is waiting for the next round, none may be
+# scheduled into one, and none belongs in a round's "waiting" count — which is what
+# put held candidates in front of HR as if they were still to be interviewed.
+PARKED_STATUSES = ("Rejected", "Accepted", "Hold")
 DEFAULT_GD_GROUP_SIZE = 5
+
+# A group whose results have been pushed. Frozen: never regrouped, re-numbered or
+# re-pooled, and its candidates are never offered a GD again. Set by
+# apply_gd_results — the moment the GD actually finished.
+GD_FROZEN_STATUS = "Completed"
+
+
+def _highest_group_no(group_names):
+	"""The largest N across "Group N" names, so new groups continue the numbering
+	instead of restarting at 1 — "Group 3" must not come to mean a different set of
+	people than it did this morning."""
+	highest = 0
+	for name in group_names or []:
+		match = re.search(r"(\d+)\s*$", str(name or ""))
+		if match:
+			highest = max(highest, int(match.group(1)))
+	return highest
 
 # Interview statuses that mean "candidate appeared, awaiting the panel's verdict".
 # Sites may use "Appeared" and/or the stock "Under Review"; both count as awaiting.
@@ -543,6 +743,11 @@ def _gd_pools(applicants, split_by, role_titles):
 def _gd_panel_picker(panels):
 	"""Deal panels across groups round-robin, so every panel gets a fair share.
 
+	ONE panel takes ONE group. A panel that is already judging a group is not given a
+	second one until every other eligible panel has one — which is what keeps a single
+	interviewer on a single GD instead of two of them sitting in on the same one while
+	the next group waits.
+
 	A panel tagged with a role only takes that role's groups; an untagged panel takes
 	any group. Groups facing the same choice of panels share one cursor, so they spread
 	instead of piling onto the first panel.
@@ -561,10 +766,13 @@ def _gd_panel_picker(panels):
 
 
 @frappe.whitelist()
-def generate_gd_groups(campus_drive, round_code=None, group_size=None, split_by="drive"):
+def generate_gd_groups(campus_drive, round_code=None, group_size=None, split_by="drive",
+                       rebuild=0, assign_panels=1):
 	"""Build Group Discussion groups for a drive and store them on the drive.
 
-	Pool  : Shortlisted Job Applicants on the drive's campus invites.
+	Pool  : Shortlisted Job Applicants on the drive's campus invites who are NOT
+	        already in a group for this round. A GD is sat once — a candidate who has
+	        already been grouped is never pulled back in.
 	Split : one of GD_SPLIT_MODES — ``"drive"`` (default) pools EVERY candidate on the
 	        drive together, so one group can hold candidates from several roles (3 RSM +
 	        3 CSM in a group of 6) — a GD panel judges communication, not the role.
@@ -573,13 +781,34 @@ def generate_gd_groups(campus_drive, round_code=None, group_size=None, split_by=
 	        splits by both — for a drive that runs one college's role-wise GDs at a time.
 	Mix   : whatever a pool still spans (roles, institutes) is dealt round-robin.
 	Sizes : balanced, so no undersized group is left behind.
-	Panels: this round's panels are dealt across the groups, so each group knows which
-	        interviewers take its GD. Re-deal later with ``assign_gd_panels``.
 
-	Regenerating replaces the existing groups for that round only.
+	COMPLETED GROUPS ARE FROZEN
+	---------------------------
+	Pushing a group's results marks it ``Completed`` (see ``apply_gd_results``). A
+	Completed group and its members are never rebuilt, re-numbered or re-pooled — that
+	GD happened, and its candidates have already moved on or been rejected.
+
+	This is why running it again is safe. It used to wipe every group for the round and
+	re-pool every Shortlisted candidate, so generating groups for three late arrivals
+	re-created the whole hall and pushed candidates who had already finished back
+	through the flow.
+
+	``rebuild``
+	    0 (default) — ADD ONLY. Existing groups stay exactly as they are; only
+	    candidates who are in no group yet are grouped, appended after the last group.
+	    This is what you want for late arrivals.
+	    1 — redo the groups that have NOT been run yet (anything not Completed) and
+	    group the ungrouped with them. Frozen groups are still untouched.
+
+	``assign_panels``
+	    1 (default) — deal this round's interviewers across the new groups as they are
+	    created. 0 — leave them unassigned for HR to set by hand afterwards
+	    (``set_gd_group_panel`` / ``assign_gd_panels``).
 	"""
 	if split_by not in GD_SPLIT_MODES:
 		frappe.throw(_("{0} is not a valid grouping.").format(split_by))
+	rebuild = int(rebuild or 0)
+	assign_panels = int(assign_panels if assign_panels is not None else 1)
 	doc = frappe.get_doc("Campus Drive", campus_drive)
 
 	# --- resolve the GD round ---
@@ -611,6 +840,22 @@ def generate_gd_groups(campus_drive, round_code=None, group_size=None, split_by=
 	if not invite_names:
 		frappe.throw(_("Add at least one Campus Invite to the drive first."))
 
+	# Groups already on this round, split by whether they are frozen. A Completed group
+	# is one whose results have been pushed: it is history, and neither it nor its
+	# candidates may be touched again.
+	frozen_groups = [g for g in (doc.gd_groups or [])
+	                 if g.round_code == code and g.group_status == GD_FROZEN_STATUS]
+	open_groups = [g for g in (doc.gd_groups or [])
+	               if g.round_code == code and g.group_status != GD_FROZEN_STATUS]
+	frozen_names = {g.group_name for g in frozen_groups}
+
+	round_members = [m for m in (doc.gd_group_members or []) if m.round_code == code]
+	frozen_member_rows = [m for m in round_members if m.group_name in frozen_names]
+	# Who must not be pooled again. On a rebuild only the frozen groups hold their
+	# candidates back; on an add-only run everyone already grouped is held back.
+	spoken_for = {m.job_applicant for m in
+	              (frozen_member_rows if rebuild else round_members) if m.job_applicant}
+
 	applicants = frappe.get_all(
 		"Job Applicant",
 		filters={"custom_campus_invite": ["in", invite_names], "status": GD_POOL_STATUS},
@@ -618,7 +863,20 @@ def generate_gd_groups(campus_drive, round_code=None, group_size=None, split_by=
 		        "custom_institute as institute", "job_title as job_opening"],
 		order_by="name asc",
 	)
+	already = len(applicants)
+	applicants = [a for a in applicants if a.name not in spoken_for]
 	if not applicants:
+		if already:
+			# Everyone is already grouped — the common case when someone clicks
+			# Generate a second time. Say so instead of rebuilding the hall.
+			frappe.throw(
+				_("Every {0} candidate on this drive is already in a group for {1}. "
+				  "Groups are only created for candidates who have not been grouped yet — "
+				  "add the new candidates to the drive first, or use Regroup to redo the "
+				  "groups that have not run.").format(frappe.bold(GD_POOL_STATUS),
+				                                      frappe.bold(code)),
+				title=_("Nothing new to group"),
+			)
 		frappe.throw(
 			_("No {0} candidates found on this drive's campus invites.").format(frappe.bold(GD_POOL_STATUS))
 		)
@@ -636,16 +894,25 @@ def generate_gd_groups(campus_drive, round_code=None, group_size=None, split_by=
 	} if by_role else {}
 
 	pools = _gd_pools(applicants, split_by, role_titles)
-	# Whoever is on this round's panel roster judges the GDs — dealt across the groups
-	# below so each group shows its interviewers.
+	# One interviewer takes one GD. The roster is dealt PER GROUP, not per panel, so a
+	# second interviewer is free for the next group rather than sitting in on this one.
 	panels, missing_user = _panels_for_round(doc, code)
-	pick_panel = _gd_panel_picker(panels)
+	pick_panel = _gd_panel_picker(panels) if assign_panels else (lambda role: None)
 
-	# Drop this round's previous groups; leave any other round's rows untouched.
-	doc.set("gd_groups", [g for g in (doc.gd_groups or []) if g.round_code != code])
-	doc.set("gd_group_members", [m for m in (doc.gd_group_members or []) if m.round_code != code])
+	# Keep the groups that must survive: the frozen ones always, and on an add-only run
+	# the not-yet-run ones too. Other rounds' rows are never touched.
+	keep_groups = frozen_groups if rebuild else frozen_groups + open_groups
+	keep_names = {g.group_name for g in keep_groups}
+	doc.set("gd_groups", [g for g in (doc.gd_groups or []) if g.round_code != code]
+	        + list(keep_groups))
+	doc.set("gd_group_members",
+	        [m for m in (doc.gd_group_members or []) if m.round_code != code]
+	        + [m for m in round_members if m.group_name in keep_names])
 
-	group_no, made_groups, made_members = 0, 0, 0
+	# Continue the numbering rather than restarting at 1 — "Group 3" must not come to
+	# mean a different set of people than it did this morning.
+	group_no = _highest_group_no(keep_names)
+	made_groups, made_members = 0, 0
 	for (role, role_title, institute, ordered) in pools:
 		cursor = 0
 		for count in _balanced_group_sizes(len(ordered), size):
@@ -691,6 +958,13 @@ def generate_gd_groups(campus_drive, round_code=None, group_size=None, split_by=
 		"split_by": split_by,
 		"panels": len(panels),
 		"missing_user": missing_user,
+		# What was left alone, so the UI can say "3 new groups, 7 kept" rather than
+		# leaving HR to wonder whether the finished ones were rebuilt.
+		"rebuild": bool(rebuild),
+		"panels_assigned": bool(assign_panels),
+		"frozen_groups": len(frozen_groups),
+		"kept_groups": len(keep_names),
+		"already_grouped": len(spoken_for),
 	}
 
 
@@ -712,6 +986,28 @@ def _gd_guard(campus_drive):
 	# answer a permission question, on every button click.
 	if not frappe.has_permission("Campus Drive", "write"):
 		frappe.throw(_("Not permitted to update this Campus Drive."), frappe.PermissionError)
+
+
+def _assert_group_open(campus_drive, round_code, group_name):
+	"""Refuse to change a group whose results have already been pushed.
+
+	Once a GD is pushed its candidates have moved on (or been rejected) on the strength
+	of those marks. Editing attendance or a verdict afterwards would leave the group
+	saying one thing and the pipeline another, with nothing to reconcile them.
+	"""
+	status = frappe.db.get_value(
+		GD_GROUP_DT,
+		{"parent": campus_drive, "parenttype": "Campus Drive",
+		 "round_code": round_code, "group_name": group_name},
+		"group_status",
+	)
+	if status == GD_FROZEN_STATUS:
+		frappe.throw(
+			_("{0} is completed — its results have already been pushed and its "
+			  "candidates have moved on. A completed group cannot be changed.")
+			.format(frappe.bold(group_name)),
+			title=_("Group is completed"),
+		)
 
 
 def _gd_member_row(campus_drive, row_name):
@@ -750,6 +1046,7 @@ def set_gd_member_field(campus_drive, row_name, field, value):
 
 	_gd_guard(campus_drive)
 	row = _gd_member_row(campus_drive, row_name)
+	_assert_group_open(campus_drive, row.round_code, row.group_name)
 	frappe.db.set_value(GD_MEMBER_DT, row.name, field, value, update_modified=False)
 	frappe.db.commit()
 	return {"row": row.name, "field": field, "value": value}
@@ -761,6 +1058,7 @@ def bulk_gd_attendance(campus_drive, round_code, group_name, value):
 	if value not in ("Pending", "Present", "Absent"):
 		frappe.throw(_("{0} is not a valid attendance value.").format(value))
 	_gd_guard(campus_drive)
+	_assert_group_open(campus_drive, round_code, group_name)
 	rows = frappe.get_all(GD_MEMBER_DT, filters={
 		"parent": campus_drive, "parenttype": "Campus Drive",
 		"round_code": round_code, "group_name": group_name}, pluck="name")
@@ -791,6 +1089,7 @@ def set_gd_group_panel(campus_drive, round_code, group_name, panel=None):
 	"""Put one GD group in the hands of a panel (or clear it) — the panel that shows
 	on the group card, so its interviewers know which GD they take."""
 	_gd_guard(campus_drive)
+	_assert_group_open(campus_drive, round_code, group_name)
 	panel = (panel or "").strip() or None
 	doc = _drive_lite(campus_drive)
 	if panel and panel not in _panels_for_round(doc, round_code)[0]:
@@ -838,6 +1137,10 @@ def move_gd_member(campus_drive, row_name, target_group):
 	row = _gd_member_row(campus_drive, row_name)
 	if target_group == row.group_name:
 		return {"moved": False}
+	# Neither end may be a finished group: moving someone out rewrites a pushed
+	# result, moving someone in adds them to a GD that has already happened.
+	_assert_group_open(campus_drive, row.round_code, row.group_name)
+	_assert_group_open(campus_drive, row.round_code, target_group)
 
 	grp = frappe.db.get_value(GD_GROUP_DT, {
 		"parent": campus_drive, "parenttype": "Campus Drive",
@@ -1077,6 +1380,14 @@ def _panels_for_round(doc, round_code, emp_users=None):
 	``role`` and ``region`` are both optional tags taken off the panelist rows: blank
 	means "covers everything". A drive that sets neither behaves exactly as it always
 	has, which is why existing drives need no migration.
+
+	A panel is its NAME **within its role and region**, not the name alone. Rows that
+	share a name but name different regions are different panels — Karnataka's
+	"Panel 1" and Maharashtra's "Panel 1" are two panels, and merging them put both
+	regions' interviewers on one interview: the transferred candidate got the panel
+	they were moved to AND the one they were moved away from. Where a name is reused
+	it is qualified for display ("Panel 1 · Maharashtra"), because that label is what
+	the interview stores and the board groups by.
 	"""
 	rows = [p for p in (doc.round_panelists or []) if p.round_code == round_code and p.panelist]
 	if not rows:
@@ -1090,18 +1401,29 @@ def _panels_for_round(doc, round_code, emp_users=None):
 		if not user:
 			missing.append(r.panelist)
 			continue
-		key = r.panel_name or "Panel 1"
+		key = (r.panel_name or "Panel 1", r.job_opening or None, r.get("region") or None)
 		if key not in panels:
-			panels[key] = {"users": [], "role": r.job_opening or None,
-			               "region": r.get("region") or None}
+			panels[key] = {"users": [], "role": key[1], "region": key[2]}
 			order.append(key)
 		if user not in panels[key]["users"]:
 			panels[key]["users"].append(user)
-		if r.job_opening and not panels[key]["role"]:
-			panels[key]["role"] = r.job_opening
-		if r.get("region") and not panels[key]["region"]:
-			panels[key]["region"] = r.get("region")
-	return {k: panels[k] for k in order}, missing
+
+	# Same name, different role/region -> qualify the label so the two are tellable
+	# apart wherever a panel is shown or stored.
+	seen = Counter(key[0] for key in order)
+	out = {}
+	for key in order:
+		name, role, region = key
+		label = name
+		if seen[name] > 1:
+			tag = region or role
+			label = f"{name} · {tag}" if tag else name
+			# Two unqualified rows of the same name would still collide; number them.
+			suffix = 2
+			while label in out:
+				label, suffix = f"{name} · {tag or ''} {suffix}".strip(), suffix + 1
+		out[label] = panels[key]
+	return out, missing
 
 
 # Job Applicant columns the region resolver reads, in the order it prefers them.
@@ -1269,7 +1591,8 @@ def _terminal_round_pool(campus_drive, round_code):
 
 	return stage, frappe.get_all(
 		"Job Applicant",
-		filters={"custom_campus_invite": ["in", invites], "custom_current_stage": stage},
+		filters={"custom_campus_invite": ["in", invites], "custom_current_stage": stage,
+		         "status": ["not in", PARKED_STATUSES]},
 		fields=["name", "applicant_name", "custom_applicant_last_name",
 		        "custom_institute as institute", "job_title as job_opening",
 		        "designation", "status"],
@@ -1289,21 +1612,91 @@ def _candidate_card(r, **extra):
 	return card
 
 
+# An additional round that has not reached a verdict. Anything other than Cleared or
+# Rejected is still undecided — Pending, Under Review, Appeared, and any status a site
+# adds — so the list is what a verdict IS, not what it is not.
+EXTRA_ROUND_DECIDED = ("Cleared", "Rejected")
+
+
+def pending_extra_rounds(job_applicants):
+	"""``{job applicant: interview}`` for anyone whose additional round is undecided.
+
+	A second look that has not concluded is exactly that: not concluded. Offering the
+	candidate anyway makes the round pointless — the panel is still being asked for a
+	verdict on somebody who has already been hired.
+	"""
+	names = [n for n in dict.fromkeys(job_applicants or []) if n]
+	if not names:
+		return {}
+	rows = frappe.get_all(
+		"Interview",
+		filters={
+			"job_applicant": ["in", names],
+			"custom_campus_drive": ["is", "set"],
+			"custom_extra_interview_reason": ["is", "set"],
+			"status": ["not in", EXTRA_ROUND_DECIDED],
+			"docstatus": ["<", 2],
+		},
+		fields=["name", "job_applicant", "status"],
+		order_by="creation asc",
+	)
+	return {r.job_applicant: r.name for r in rows}
+
+
+def _assert_no_pending_extra_round(job_applicants, action):
+	"""Refuse a terminal action for anyone still sitting an additional round."""
+	pending = pending_extra_rounds(job_applicants)
+	if not pending:
+		return
+	names = _applicant_full_names(list(pending))
+	listed = ", ".join(
+		f"{frappe.bold(names.get(ja) or ja)} ({pending[ja]})" for ja in sorted(pending)
+	)
+	frappe.throw(
+		_("{0} still has an Additional Round waiting for a verdict, so {1} cannot be "
+		  "done yet. Record the panel's verdict on that round first — clearing it "
+		  "moves them on, rejecting it rejects them.").format(listed, action),
+		title=_("Additional Round not decided"),
+	)
+
+
 @frappe.whitelist()
 def get_offer_candidates(campus_drive, round_code):
 	"""Candidates who have reached an Offer round's stage — i.e. cleared everything
 	before it — so HR can select them and raise Job Offers straight from the drive.
-	Flags anyone who already has a Job Offer so they aren't offered twice.
+
+	Flags anyone who already has a Job Offer so they aren't offered twice, and anyone
+	whose Additional Round has not been decided — offering them would settle a
+	candidate the panel is still being asked to judge.
 	"""
 	stage, rows = _terminal_round_pool(campus_drive, round_code)
 	names = [r.name for r in rows]
-	with_offer = set(frappe.get_all(
-		"Job Offer", filters={"job_applicant": ["in", names or [""]], "docstatus": ["!=", 2]},
-		pluck="job_applicant")) if names else set()
+	# The offer's NAME, not just "there is one" — the board links straight to it, so
+	# HR can open what was actually sent instead of hunting for it in the Job Offer
+	# list. Newest first: an amended offer supersedes the one it replaced.
+	with_offer = {}
+	if names:
+		for row in frappe.get_all(
+			"Job Offer",
+			filters={"job_applicant": ["in", names], "docstatus": ["!=", 2]},
+			fields=["name", "job_applicant", "status"],
+			order_by="creation desc",
+		):
+			with_offer.setdefault(row.job_applicant, row)
+	pending = pending_extra_rounds(names)
 
 	return {
 		"stage": stage,
-		"candidates": [_candidate_card(r, has_offer=r.name in with_offer) for r in rows],
+		"candidates": [
+			_candidate_card(
+				r,
+				has_offer=r.name in with_offer,
+				job_offer=(with_offer.get(r.name) or {}).get("name"),
+				job_offer_status=(with_offer.get(r.name) or {}).get("status"),
+				pending_extra_round=pending.get(r.name),
+			)
+			for r in rows
+		],
 	}
 
 
@@ -1338,6 +1731,9 @@ def create_offers_for_candidates(campus_drive, applicants):
 	from recruitment.api.bulk_job_offer import create_bulk_job_offer
 
 	_gd_guard(campus_drive)
+	if isinstance(applicants, str):
+		applicants = frappe.parse_json(applicants)
+	_assert_no_pending_extra_round(applicants, _("a Job Offer"))
 	return create_bulk_job_offer(applicants)
 
 
@@ -1349,6 +1745,9 @@ def send_pre_offers_for_candidates(campus_drive, applicants):
 	from recruitment.api.action_center import send_bulk_pre_offer
 
 	_gd_guard(campus_drive)
+	if isinstance(applicants, str):
+		applicants = frappe.parse_json(applicants)
+	_assert_no_pending_extra_round(applicants, _("the pre-offer form"))
 	return send_bulk_pre_offer(applicants)
 
 
@@ -1373,7 +1772,8 @@ def get_round_pool(campus_drive, round_code):
 
 	pool = frappe.get_all(
 		"Job Applicant",
-		filters={"custom_campus_invite": ["in", invites], "custom_current_stage": stage},
+		filters={"custom_campus_invite": ["in", invites], "custom_current_stage": stage,
+		         "status": ["not in", PARKED_STATUSES]},
 		fields=["name", "applicant_name", "custom_applicant_last_name",
 		        "custom_institute as institute", "job_title as job_opening", "designation",
 		        *_REGION_FIELDS],
@@ -1396,9 +1796,17 @@ def get_round_pool(campus_drive, round_code):
 		         "docstatus": ["<", 2]},
 		pluck="job_applicant",
 	))
+	# Anyone whose Additional Round has not been decided is held out of the schedulable
+	# pool — but reported, not hidden. A candidate silently missing from a round is the
+	# thing HR cannot debug; one listed as "held, second look pending" explains itself.
+	held = pending_extra_rounds([p.name for p in pool])
 	return {
 		"stage": stage,
-		"pool": [p for p in pool if p.name not in already],
+		"pool": [p for p in pool if p.name not in already and p.name not in held],
+		"held": [
+			{**p, "pending_extra_round": held[p.name]}
+			for p in pool if p.name in held and p.name not in already
+		],
 		# Counted off the interviews, not off the stage-filtered pool: a candidate
 		# given an EXTRA interview on this round sits at some other stage, so counting
 		# via the pool made them vanish from the round entirely — the round showed
@@ -1409,11 +1817,22 @@ def get_round_pool(campus_drive, round_code):
 
 @frappe.whitelist()
 def schedule_round_interviews(campus_drive, round_code, scheduled_on=None,
-                              from_time=None, to_time=None, applicants=None):
+                              from_time=None, to_time=None, applicants=None,
+                              assignments=None, mode=None):
 	"""Bulk-create Interviews for everyone waiting at this round's stage.
 
-	Candidates are dealt to panels round-robin. Panels tagged with a role only take
-	that role's candidates (per-role scheduling); untagged panels take anyone.
+	ONE interviewer per interview. Candidates are dealt round-robin across the round's
+	individual interviewers — the second candidate goes to the second interviewer, not
+	to the same one — so an interview never carries two people. Panels tagged with a
+	role only take that role's candidates (per-role scheduling); untagged panels take
+	anyone.
+
+	``assignments`` is the manual route: ``{job applicant: interviewer}`` for the
+	candidates HR wants to place by hand. Named candidates go to the named interviewer,
+	everyone else is dealt automatically, so a round can be part-assigned.
+
+	``mode`` overrides the drive's Drive Type for this batch — an otherwise on-site
+	drive running one round over video, say. Omit it to use the drive's own.
 	"""
 	from recruitment.api.hiring_stage import _ensure_interview_round
 
@@ -1435,6 +1854,8 @@ def schedule_round_interviews(campus_drive, round_code, scheduled_on=None,
 			msg += " " + _("These employees have no linked User account: {0}").format(", ".join(missing))
 		frappe.throw(msg)
 
+	mode = _resolve_mode(campus_drive, mode)
+
 	data = get_round_pool(campus_drive, round_code)
 	pool = data["pool"]
 
@@ -1445,6 +1866,9 @@ def schedule_round_interviews(campus_drive, round_code, scheduled_on=None,
 		if isinstance(applicants, str):
 			applicants = frappe.parse_json(applicants)
 		wanted = {a for a in (applicants or []) if a}
+		# Named explicitly, so say why rather than dropping them from the result:
+		# they were asked for by name and must not just vanish.
+		_assert_no_pending_extra_round(sorted(wanted), _("scheduling this round"))
 		pool = [p for p in pool if p.name in wanted]
 		if not pool:
 			frappe.throw(_("None of the selected candidates are still waiting at stage {0}.")
@@ -1457,21 +1881,45 @@ def schedule_round_interviews(campus_drive, round_code, scheduled_on=None,
 	home_regions = _drive_home_regions(doc)
 	_assert_region_panels(panels, pool, round_code, home_regions)
 
+	# Explicit HR assignment: {job applicant: interviewer user}. Whatever is named here
+	# overrides the automatic deal for that candidate; everyone else is dealt normally,
+	# so a partly-assigned round is fine.
+	by_applicant = assignments
+	if isinstance(by_applicant, str):
+		by_applicant = frappe.parse_json(by_applicant)
+	by_applicant = {k: v for k, v in (by_applicant or {}).items() if k and v}
+	roster_users, panel_of_user = set(), {}
+	for pname, v in panels.items():
+		for u in v["users"]:
+			roster_users.add(u)
+			panel_of_user.setdefault(u, pname)
+
 	interview_round = _ensure_interview_round(stage)
 	autofill = _interview_autofill_defaults()  # computed ONCE, reused for every row
 	created, skipped, cursor, bucket_cache = [], [], {}, {}
 
 	def _buckets_for(region):
-		"""(by_role, general) for the panels serving `region`. Cached per region —
-		a drive has a handful of regions but can have hundreds of candidates."""
+		"""(by_role, general) INTERVIEWER SLOTS for the panels serving `region`.
+
+		A slot is one ``(panel, interviewer)`` pair, not a panel. ONE interviewer takes
+		ONE interview: flattening the roster to individuals is what makes the next
+		candidate go to the next person, instead of every member of a panel being put
+		on the same interview and then all of them having to file feedback on it.
+
+		Cached per region — a drive has a handful of regions but can have hundreds of
+		candidates.
+		"""
 		if region not in bucket_cache:
 			serving = _panels_serving_region(panels, region, home_regions)
 			# Panels that name a role serve only that role; the rest are general-purpose.
-			by_role = {}
+			by_role, general = {}, []
 			for k, v in serving.items():
+				slots = [(k, u) for u in v["users"]]
 				if v["role"]:
-					by_role.setdefault(v["role"], []).append(k)
-			bucket_cache[region] = (by_role, [k for k, v in serving.items() if not v["role"]])
+					by_role.setdefault(v["role"], []).extend(slots)
+				else:
+					general.extend(slots)
+			bucket_cache[region] = (by_role, general)
 		return bucket_cache[region]
 
 	for cand in pool:
@@ -1496,8 +1944,20 @@ def schedule_round_interviews(campus_drive, round_code, scheduled_on=None,
 		# panel and pile everyone onto it whenever panels are untagged.
 		bucket = tuple(choices)
 		i = cursor.get(bucket, 0)
-		panel_name = choices[i % len(choices)]
+		panel_name, interviewer = choices[i % len(choices)]
 		cursor[bucket] = i + 1
+
+		# HR may name the interviewer for a specific candidate; that always wins over
+		# the round-robin. Anyone named must still be on this round's roster, so a
+		# stale form cannot post an interview to somebody who is not on the panel.
+		chosen = by_applicant.get(cand.name)
+		if chosen:
+			if chosen not in roster_users:
+				skipped.append({"applicant": cand.name,
+				                "reason": f"{chosen} is not on round {round_code}'s panel"})
+				continue
+			interviewer = chosen
+			panel_name = panel_of_user.get(chosen) or panel_name
 
 		try:
 			iv = frappe.new_doc("Interview")
@@ -1509,11 +1969,15 @@ def schedule_round_interviews(campus_drive, round_code, scheduled_on=None,
 			iv.from_time = from_time or DEFAULT_DAY_START
 			iv.to_time = to_time or DEFAULT_DAY_END
 			iv.status = "Pending"
-			for user in panels[panel_name]["users"]:
-				iv.append("interview_details", {"interviewer": user})
+			# Exactly one interviewer. Two on an interview means two feedbacks and a
+			# majority verdict, which is what was making the hiring workflow ambiguous.
+			iv.append("interview_details", {"interviewer": interviewer})
 			iv.custom_campus_drive = campus_drive
 			iv.custom_campus_round_code = round_code
 			iv.custom_interview_panel = panel_name
+			# Before the defaults: the autofill's generic "On-Site" guess must not win
+			# over the drive's actual Drive Type.
+			_set_interview_mode(iv, mode)
 			_apply_interview_defaults(iv, autofill)
 			iv.flags.ignore_permissions = True
 			iv.insert(ignore_permissions=True)
@@ -1523,21 +1987,221 @@ def schedule_round_interviews(campus_drive, round_code, scheduled_on=None,
 
 	frappe.db.commit()
 	return {
-		"round_code": round_code, "stage": stage, "scheduled_on": date,
+		"round_code": round_code, "stage": stage, "scheduled_on": date, "mode": mode,
 		"created": len(created), "skipped": skipped[:10], "skipped_count": len(skipped),
 		"panels": list(panels),
 	}
 
 
+# ---------------------------------------------------------------------------
+# Assigning a candidate to an interviewer, by hand
+#
+# Two routes to the same record, because two different people need it:
+#   * HR picks the interviewer for a candidate (assign_round_interviewer)
+#   * an interviewer takes candidates for themselves (claim_round_candidates)
+#
+# Both create the SAME single-interviewer Interview the automatic deal creates, so a
+# hand-placed candidate is not a second class of record with its own rules.
+# ---------------------------------------------------------------------------
+
+def _round_roster(campus_drive, round_code):
+	"""``({user: panel}, missing)`` for everyone rostered on this round."""
+	doc = _drive_lite(campus_drive)
+	panels, missing = _panels_for_round(doc, round_code)
+	by_user = {}
+	for panel_name, v in panels.items():
+		for user in v["users"]:
+			by_user.setdefault(user, panel_name)
+	return by_user, missing
+
+
+@frappe.whitelist()
+def get_round_assignment_options(campus_drive, round_code):
+	"""Who is waiting, and who could take them — for the manual assignment picker."""
+	frappe.has_permission("Campus Drive", "read", doc=campus_drive, throw=True)
+	pool = get_round_pool(campus_drive, round_code)
+	by_user, missing = _round_roster(campus_drive, round_code)
+	names = {
+		u.name: (u.full_name or u.name)
+		for u in frappe.get_all("User", filters={"name": ["in", list(by_user) or [""]]},
+		                        fields=["name", "full_name"])
+	} if by_user else {}
+	return {
+		"round_code": round_code,
+		"stage": pool.get("stage"),
+		"candidates": pool.get("pool") or [],
+		"interviewers": [
+			{"user": u, "name": names.get(u, u), "panel": p} for u, p in by_user.items()
+		],
+		"missing_user": missing,
+		"already_scheduled": pool.get("already_scheduled", 0),
+		"modes": list(INTERVIEW_MODES),
+		"drive_mode": _drive_mode(campus_drive),
+	}
+
+
+@frappe.whitelist()
+def assign_round_interviewer(campus_drive, round_code, interviewer, applicants,
+                             scheduled_on=None, from_time=None, to_time=None, mode=None):
+	"""HR: put these candidates in front of THIS interviewer.
+
+	Thin wrapper over the bulk scheduler so a hand-placed interview is built exactly
+	like a dealt one — same round, same defaults, same single-interviewer rule.
+	"""
+	_gd_guard(campus_drive)
+	if isinstance(applicants, str):
+		applicants = frappe.parse_json(applicants)
+	applicants = [a for a in (applicants or []) if a]
+	if not applicants:
+		frappe.throw(_("Pick at least one candidate."))
+	if not interviewer:
+		frappe.throw(_("Pick the interviewer who will take them."))
+
+	by_user, _missing = _round_roster(campus_drive, round_code)
+	if interviewer not in by_user:
+		frappe.throw(
+			_("{0} is not on round {1}'s panel. Add them to Round Panelists first.")
+			.format(frappe.bold(interviewer), frappe.bold(round_code))
+		)
+
+	return schedule_round_interviews(
+		campus_drive, round_code, scheduled_on=scheduled_on,
+		from_time=from_time, to_time=to_time, applicants=applicants,
+		assignments={a: interviewer for a in applicants}, mode=mode,
+	)
+
+
+@frappe.whitelist()
+def claim_round_candidates(campus_drive, round_code, applicants, scheduled_on=None,
+                          from_time=None, to_time=None):
+	"""Interviewer: take these waiting candidates onto my own panel.
+
+	The interviewer is the session user, never a parameter — otherwise this would be a
+	way to book someone else's diary. They must already be rostered on the round, so
+	claiming can only ever pull work an interviewer was eligible for anyway.
+	"""
+	user = frappe.session.user
+	by_user, _missing = _round_roster(campus_drive, round_code)
+	if user not in by_user:
+		frappe.throw(
+			_("You are not on round {0}'s panel, so there is nothing here to take.")
+			.format(frappe.bold(round_code)),
+			frappe.PermissionError,
+		)
+	if isinstance(applicants, str):
+		applicants = frappe.parse_json(applicants)
+	applicants = [a for a in (applicants or []) if a]
+	if not applicants:
+		frappe.throw(_("Pick at least one candidate to take."))
+
+	# Deliberately NOT _gd_guard: an interviewer has no write permission on the drive,
+	# and the only thing being created is an Interview naming themselves.
+	return schedule_round_interviews(
+		campus_drive, round_code, scheduled_on=scheduled_on,
+		from_time=from_time, to_time=to_time, applicants=applicants,
+		assignments={a: user for a in applicants},
+	)
+
+
+# Statuses past the point of moving: the interview has already produced its verdict.
+_CONCLUDED_INTERVIEW_STATUSES = ("Cleared", "Rejected")
+
+
+@frappe.whitelist()
+def reassign_round_interview(campus_drive, interview, interviewer=None, mode=None):
+	"""Move a scheduled interview to a different interviewer (and/or switch its mode).
+
+	Panels are dealt round-robin, but they do not finish round-robin — one panelist
+	gets three quick candidates and is free while another is still on their first. HR
+	needs to hand the next candidate to whoever is free, and before this the only way
+	was to cancel the interview and re-deal it.
+
+	Refused once the interview has produced anything: a submitted feedback belongs to
+	the person who gave it, and a Cleared/Rejected interview has already moved the
+	candidate on. Those are re-run as an Additional Round, not quietly re-pointed.
+	"""
+	_gd_guard(campus_drive)
+	if not interview:
+		frappe.throw(_("Pick the interview to move."))
+
+	iv = frappe.get_doc("Interview", interview)
+	if iv.get("custom_campus_drive") != campus_drive:
+		frappe.throw(
+			_("Interview {0} does not belong to this campus drive.").format(frappe.bold(interview))
+		)
+	if iv.docstatus == 2:
+		frappe.throw(_("Interview {0} is cancelled.").format(frappe.bold(interview)))
+
+	round_code = iv.get("custom_campus_round_code")
+	if frappe.db.exists("Interview Feedback", {"interview": interview, "docstatus": 1}):
+		frappe.throw(
+			_("Feedback has already been submitted on {0}, so it can no longer be moved. Give "
+			  "this candidate an Additional Round instead.").format(frappe.bold(interview)),
+			title=_("Feedback Already In"),
+		)
+	if iv.status in _CONCLUDED_INTERVIEW_STATUSES:
+		frappe.throw(
+			_("Interview {0} is already {1}. A concluded interview cannot be moved.").format(
+				frappe.bold(interview), frappe.bold(iv.status)),
+			title=_("Interview Concluded"),
+		)
+
+	was_who = [d.interviewer for d in (iv.interview_details or []) if d.interviewer]
+	was_mode = iv.get(INTERVIEW_MODE_FIELD)
+	changed = []
+
+	if interviewer:
+		by_user, _missing = _round_roster(campus_drive, round_code)
+		if interviewer not in by_user:
+			frappe.throw(
+				_("{0} is not on round {1}'s panel. Add them to Round Panelists first.")
+				.format(frappe.bold(interviewer), frappe.bold(round_code))
+			)
+		if was_who != [interviewer]:
+			# Replaced, not appended: one interviewer per interview is what keeps the
+			# verdict unambiguous (see schedule_round_interviews).
+			iv.set("interview_details", [])
+			iv.append("interview_details", {"interviewer": interviewer})
+			iv.custom_interview_panel = by_user[interviewer]
+			changed.append(_("interviewer {0} → {1}").format(
+				", ".join(was_who) or _("nobody"), interviewer))
+
+	if mode:
+		mode = _resolve_mode(campus_drive, mode)
+		if mode != was_mode:
+			_set_interview_mode(iv, mode)
+			changed.append(_("mode {0} → {1}").format(was_mode or _("unset"), mode))
+
+	if not changed:
+		return {"interview": interview, "changed": False}
+
+	iv.flags.ignore_permissions = True
+	iv.save(ignore_permissions=True)
+	# Audit trail on the interview itself — a candidate moved between panelists is
+	# exactly the kind of thing someone asks about afterwards.
+	iv.add_comment("Info", _("Reassigned from the campus drive: {0}.").format("; ".join(changed)))
+	frappe.db.commit()
+	return {
+		"interview": interview, "changed": True, "detail": "; ".join(changed),
+		"interviewer": interviewer or (was_who[0] if was_who else None),
+		"mode": iv.get(INTERVIEW_MODE_FIELD),
+	}
+
+
 @frappe.whitelist()
 def get_round_interviews(campus_drive, round_code):
-	"""Read-only panel view for an interview round: each panel with its interviewers
-	and the candidates assigned to it, showing each candidate's INTERVIEW status.
+	"""Panel view for an interview round: each panel with its interviewers and the
+	candidates assigned to it, showing each candidate's INTERVIEW status.
 
 	Panel assignment creates one standard Interview per candidate (see
 	schedule_round_interviews), stamped with the panel name. Feedback is given on
 	those Interview records and the verdict advances the candidate automatically —
-	the drive only displays the outcome, it never marks Pass/Fail itself.
+	the drive never marks Pass/Fail itself.
+
+	What it DOES let HR do is move a candidate to another interviewer
+	(`reassign_round_interview`), so every row carries who currently holds it and
+	whether it can still be moved, and every interviewer carries their live load —
+	panels finish at different speeds, and the point is to spot who is free.
 	"""
 	doc = _drive_lite(campus_drive)
 	panels, missing = _panels_for_round(doc, round_code)
@@ -1550,17 +2214,19 @@ def get_round_interviews(campus_drive, round_code):
 		                        fields=["name", "full_name"])
 	} if users else {}
 
+	mode_field = ("custom_interview_type as mode"
+	              if frappe.get_meta("Interview").has_field(INTERVIEW_MODE_FIELD) else None)
 	ivs = frappe.get_all(
 		"Interview",
 		filters={"custom_campus_drive": campus_drive, "custom_campus_round_code": round_code,
 		         "docstatus": ["<", 2]},
 		fields=["name", "job_applicant", "status", "custom_interview_panel as panel",
-		        "scheduled_on"],
+		        "scheduled_on"] + ([mode_field] if mode_field else []),
 		limit_page_length=0,
 	)
 	iv_names = [i.name for i in ivs]
 	applicant_name = _applicant_full_names([i.job_applicant for i in ivs])
-	got, expected = {}, {}
+	got, expected, holder = {}, {}, {}
 	if iv_names:
 		for f in frappe.get_all("Interview Feedback",
 		                        filters={"interview": ["in", iv_names], "docstatus": 1},
@@ -1568,11 +2234,23 @@ def get_round_interviews(campus_drive, round_code):
 			got[f.interview] = got.get(f.interview, 0) + 1
 		for de in frappe.get_all("Interview Detail",
 		                         filters={"parent": ["in", iv_names], "parenttype": "Interview"},
-		                         fields=["parent"], limit_page_length=0):
+		                         fields=["parent", "interviewer"], order_by="parent asc, idx asc",
+		                         limit_page_length=0):
 			expected[de.parent] = expected.get(de.parent, 0) + 1
+			# One interviewer per interview is the rule, so the first row IS the holder.
+			if de.interviewer and de.parent not in holder:
+				holder[de.parent] = de.interviewer
 
+	# Live load per interviewer: what is still on their plate vs what they are through
+	# with. This is what tells HR whose queue to top up.
+	load = {}
 	by_panel = {}
 	for i in ivs:
+		who = holder.get(i.name)
+		done = bool(got.get(i.name)) or i.status in _CONCLUDED_INTERVIEW_STATUSES
+		if who:
+			bucket = load.setdefault(who, {"done": 0, "pending": 0})
+			bucket["done" if done else "pending"] += 1
 		by_panel.setdefault(i.panel or "", []).append({
 			"interview": i.name,
 			"job_applicant": i.job_applicant,
@@ -1581,6 +2259,12 @@ def get_round_interviews(campus_drive, round_code):
 			"scheduled_on": str(i.scheduled_on) if i.scheduled_on else None,
 			"feedback_got": got.get(i.name, 0),
 			"feedback_expected": expected.get(i.name, 0),
+			"interviewer": who,
+			"interviewer_name": names.get(who, who) if who else None,
+			"mode": i.get("mode"),
+			# Mirrors reassign_round_interview's own refusals, so the UI only offers
+			# Reassign where the server would actually allow it.
+			"can_reassign": not done,
 		})
 
 	out = []
@@ -1595,8 +2279,17 @@ def get_round_interviews(campus_drive, round_code):
 		if panel_name not in panels:
 			out.append({"panel": panel_name or "(unassigned)", "role": None,
 			            "interviewers": [], "candidates": rows})
+	# Flat roster for the reassign picker: every rostered interviewer on this round,
+	# whichever panel they sit on, with their load.
+	roster = []
+	for panel_name, v in panels.items():
+		for user in v["users"]:
+			stats = load.get(user) or {"done": 0, "pending": 0}
+			roster.append({"user": user, "name": names.get(user, user), "panel": panel_name,
+			               "done": stats["done"], "pending": stats["pending"]})
 	return {"round_code": round_code, "panels": out, "missing_user": missing,
-	        "total_interviews": len(ivs)}
+	        "total_interviews": len(ivs), "roster": roster,
+	        "modes": list(INTERVIEW_MODES), "drive_mode": _drive_mode(campus_drive)}
 
 
 def _gd_group_scope(groups):
@@ -1667,10 +2360,15 @@ def apply_gd_results(campus_drive, round_code, groups=None):
 		)
 
 	passed = failed = skipped = pending = 0
+	# A GD verdict must not carry someone past an Additional Round that is still open.
+	held = pending_extra_rounds([r.job_applicant for r in rows])
 	stage_cache = {}  # opening -> stages; the pool shares only a handful of openings
 	for r in rows:
 		if not r.job_applicant or r.result not in ("Pass", "Fail"):
 			pending += 1
+			continue
+		if r.job_applicant in held:
+			skipped += 1
 			continue
 		try:
 			ja = frappe.get_doc("Job Applicant", r.job_applicant)
@@ -1713,10 +2411,39 @@ def apply_gd_results(campus_drive, round_code, groups=None):
 			skipped += 1
 			frappe.log_error(frappe.get_traceback(), f"Campus GD result push failed for {r.job_applicant}: {e}")
 
+	# The GD is over for these groups: freeze them. A frozen group is never regrouped,
+	# re-numbered or re-pooled, and its candidates are never offered a GD again — which
+	# is what stops "generate groups" for three late arrivals from re-creating the whole
+	# hall and running finished candidates through the flow a second time.
+	frozen = _freeze_gd_groups(campus_drive, round_code,
+	                           wanted or sorted({r.group_name for r in rows}))
+
 	frappe.db.commit()
 	return {"advanced": passed, "rejected": failed, "skipped": skipped,
 	        "pending": pending, "total": len(rows), "groups": wanted,
+	        "frozen": frozen,
 	        "gd_stage": gd_stage, "moved_to": None if not gd_stage else "stage after " + gd_stage}
+
+
+def _freeze_gd_groups(campus_drive, round_code, group_names):
+	"""Mark the pushed groups Completed. Written with db.set_value so pushing results
+	never bumps the drive's `modified` stamp under an open form."""
+	names = [g for g in dict.fromkeys(group_names or []) if g]
+	if not names:
+		return []
+	rows = frappe.get_all(
+		GD_GROUP_DT,
+		filters={"parent": campus_drive, "parenttype": "Campus Drive",
+		         "round_code": round_code, "group_name": ["in", names]},
+		fields=["name", "group_name", "group_status"],
+	)
+	frozen = []
+	for row in rows:
+		if row.group_status != GD_FROZEN_STATUS:
+			frappe.db.set_value(GD_GROUP_DT, row.name, "group_status", GD_FROZEN_STATUS,
+			                    update_modified=False)
+		frozen.append(row.group_name)
+	return frozen
 
 
 @frappe.whitelist()
@@ -1809,15 +2536,15 @@ def get_rounds_overview(campus_drive):
 			limit_page_length=0,
 		):
 			s = r.stage or ""
+			if r.status in PARKED_STATUSES:
+				# Knocked out on eligibility, rejected or already accepted: parked on
+				# purpose. Not waiting for this round, not stuck at its stage, and not
+				# somebody a panel has to be found for.
+				continue
 			stage_applicants.setdefault(s, set()).add(r.name)
-			if r.status not in ("Rejected", "Accepted", "Hold"):
-				stage_regions.setdefault(s, {}).setdefault(
-					_effective_region(r, invite_regions), []).append(r.name)
-			# "Hold" candidates were deliberately knocked out (eligibility not met);
-			# like Rejected/Accepted they are parked on purpose, so they must not
-			# count toward the "stuck at a stage no round covers" health warning.
-			if r.status not in ("Rejected", "Accepted", "Hold"):
-				stage_active[s] = stage_active.get(s, 0) + 1
+			stage_regions.setdefault(s, {}).setdefault(
+				_effective_region(r, invite_regions), []).append(r.name)
+			stage_active[s] = stage_active.get(s, 0) + 1
 
 	# Interviews this drive created, with their feedback progress. The extra-round
 	# columns ride along on the same rows — the additional rounds are drawn from these,
@@ -1862,15 +2589,34 @@ def get_rounds_overview(campus_drive):
 
 	# Additional rounds, per round: one candidate each, so they get their own card
 	# under the round they were added to instead of hiding inside its totals.
+	all_users = set()
 	extras_by_round = {}
 	extra_rows = [i for i in iv_rows if i.extra_reason]
 	extra_names = _applicant_full_names([i.job_applicant for i in extra_rows])
+	# WHO is on the interview, read off the interview itself. The board used to look
+	# the panel name up in the ROUND's panel list, which can never match: an
+	# additional round is staffed from its own roster (R3 -> R3-EXTRA), so the lookup
+	# silently fell through and the card showed the wrong people (or none). Reading
+	# the interviewers directly also means the card shows the truth after someone
+	# edits the interview, rather than re-deriving it from a roster that has moved on.
+	extra_interviewers = {}
+	if extra_rows:
+		for d in frappe.get_all(
+			"Interview Detail",
+			filters={"parenttype": "Interview", "parent": ["in", [i.name for i in extra_rows]]},
+			fields=["parent", "interviewer"], order_by="idx asc",
+		):
+			if d.interviewer:
+				extra_interviewers.setdefault(d.parent, []).append(d.interviewer)
 	for i in extra_rows:
+		users = extra_interviewers.get(i.name, [])
+		all_users.update(users)
 		extras_by_round.setdefault(i.code or "", []).append({
 			"interview": i.name,
 			"job_applicant": i.job_applicant,
 			"applicant_name": extra_names.get(i.job_applicant, i.job_applicant),
 			"panel": i.panel,
+			"interviewer_users": users,
 			"status": i.status,
 			"reason": i.extra_reason,
 			"scheduled_on": str(i.scheduled_on)[:10] if i.scheduled_on else None,
@@ -1878,7 +2624,6 @@ def get_rounds_overview(campus_drive):
 		})
 
 	role_titles = {r.job_opening: r.job_title for r in (doc.linked_job_openings or [])}
-	all_users = set()
 	panels_by_round = {}
 	emp_users = _employee_user_map(doc)  # one Employee query for the whole drive
 	for r in (doc.rounds or []):
@@ -1891,6 +2636,12 @@ def get_rounds_overview(campus_drive):
 		for u in frappe.get_all("User", filters={"name": ["in", list(all_users)]},
 		                        fields=["name", "full_name"])
 	} if all_users else {}
+
+	# Resolve the extra rounds' interviewers to display names now that the lookup is
+	# built, so the board prints who is actually on the interview.
+	for rows in extras_by_round.values():
+		for e in rows:
+			e["interviewers"] = [names.get(u, u) for u in e.pop("interviewer_users", [])]
 
 	empty_stat = {"total": 0, "cleared": 0, "rejected": 0, "awaiting": 0, "pending": 0,
 	              "scheduled": set()}
@@ -2263,7 +3014,7 @@ def _assert_cleared_this_round(campus_drive, round_code, job_applicant):
 @frappe.whitelist()
 def add_candidate_interview(campus_drive, job_applicant, scheduled_on, round_code=None,
                             panel=None, panel_round=None, from_time=None, to_time=None,
-                            reason=None):
+                            reason=None, mode=None):
 	"""Give ONE candidate an additional round on top of this round — a second look at a
 	borderline candidate, a re-test after a weak showing.
 
@@ -2359,6 +3110,8 @@ def add_candidate_interview(campus_drive, job_applicant, scheduled_on, round_cod
 	if panel:
 		iv.custom_interview_panel = panel
 	iv.custom_extra_interview_reason = (reason or "").strip() or None
+	# Before the defaults, so the drive's Drive Type wins over the autofill's guess.
+	_set_interview_mode(iv, _resolve_mode(campus_drive, mode))
 	_apply_interview_defaults(iv, _interview_autofill_defaults())
 	iv.insert(ignore_permissions=True)
 	_record_extra_interview_on_workflow(ja.name, stage_name, iv.name, round_code, reason)

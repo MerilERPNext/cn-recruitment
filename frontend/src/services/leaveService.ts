@@ -14,6 +14,7 @@ import type {
   PolicyQuestionsResponse,
   TeamRequest,
   LeaveDateRangeResponse,
+  LeaveSettings,
 } from "../types/leaves";
 import { HolidayApiResponse } from "../types/leaves";
 import type { LeaveBalanceResponse, HolidayGroup } from "../types/leaves";
@@ -522,4 +523,15 @@ export const leaveService = {
     );
     return response as LeaveHistoryItem[];
   },
+
+  getLeaveSettings: async (): Promise<LeaveSettings> => {
+    const response = await FrappeAPI.getDocument(
+      "Leave Settings",
+      "Leave Settings",
+      ["enable_modal_collaps"],
+    );
+    return response as LeaveSettings;
+  },
 };
+
+

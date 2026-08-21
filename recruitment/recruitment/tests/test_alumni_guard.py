@@ -63,6 +63,38 @@ class TestAlumniGuard(FrappeTestCase):
         self.assertFalse(allow("resource", "Salary Slip"))
         self.assertFalse(allow("other", "/app"))
 
+    def test_portal_endpoints_outside_the_namespaces_are_allowed(self):
+        """The Alumni Portal calls a few methods that are not in its namespaces.
+
+        Regression guard for "This API is not available for Alumni users." — the
+        portal's access-request flow and Todo manager live in other modules and
+        were rejected by the hook before reaching their own permission checks.
+        """
+        allow = g._is_allowed_for_alumni
+        for method in (
+            "recruitment.api.alumni_request.create_alumni_employee_request",
+            "recruitment.api.alumni_request.get_alumni_request_status",
+            "cn_todo_manager.chatnext_todo_manager.api.todo_api.get_todo_list",
+            "cn_todo_manager.chatnext_todo_manager.api.todo_api.get_todo_categories",
+            "cn_todo_manager.chatnext_todo_manager.api.todo_api.show_team_todos",
+        ):
+            self.assertTrue(allow("method", method), f"{method} must be reachable")
+
+    def test_the_extra_grant_is_per_method_not_per_namespace(self):
+        """Siblings of the allowed methods stay blocked.
+
+        The allowlist is deliberately method-by-method, so a new function added
+        to those modules cannot silently become alumni-reachable.
+        """
+        allow = g._is_allowed_for_alumni
+        for method in (
+            "cn_todo_manager.chatnext_todo_manager.api.todo_api.get_team_members",
+            "cn_todo_manager.chatnext_todo_manager.api.todo_api.get_todo_type_approval_config",
+            "cn_todo_manager.chatnext_todo_manager.api.delegation_api.get_pending_delegations",
+            "recruitment.api.employee.get_employee",
+        ):
+            self.assertFalse(allow("method", method), f"{method} must stay blocked")
+
     # ── the hook ──
     def _run(self, user: str, path: str):
         frappe.set_user(user)

@@ -1,6 +1,7 @@
 import frappe
+from frappe import _
 from frappe.model.mapper import get_mapped_doc
-from frappe.utils import format_duration, time_diff_in_seconds
+from frappe.utils import format_duration, get_link_to_form, time_diff_in_seconds
 
 from hrms.hr.doctype.job_requisition.job_requisition import JobRequisition
 
@@ -81,6 +82,45 @@ def _to_number(value):
         return None
 
 
+
+RECRUITER_FIELD = "custom_assign_to_recruiter"
+
+
+def _requisition_recruiter(job_requisition):
+	return frappe.db.get_value("Job Requisition", job_requisition, RECRUITER_FIELD) \
+		if job_requisition else None
+
+
+def assert_recruiter_assigned(job_requisition):
+	"""A requisition without a recruiter cannot become a job opening.
+
+	The recruiter is who owns the opening once it is live — they seed its hiring
+	team, and every candidate that arrives is theirs to work. An opening created
+	without one belongs to nobody, which is only noticed when applications start
+	piling up unattended.
+	"""
+	if not job_requisition or _requisition_recruiter(job_requisition):
+		return
+	frappe.throw(
+		_("{0} has no recruiter assigned, so its job opening would belong to nobody. "
+		  "Set <b>Assign to Recruiter</b> on the requisition and try again.").format(
+			get_link_to_form("Job Requisition", job_requisition)),
+		title=_("Assign a recruiter first"),
+	)
+
+
+def require_recruiter_on_new_opening(doc, method=None):
+	"""Job Opening `validate` — the same rule, wherever the opening is created from.
+
+	The Desk button goes through make_job_opening below, but the web app builds the
+	opening straight through the Resource API, so the rule has to live on the target
+	doctype as well or that path walks straight past it. Creation only: a requisition
+	losing its recruiter later must not block edits to an opening already running.
+	"""
+	if doc.is_new():
+		assert_recruiter_assigned(doc.get("job_requisition"))
+
+
 @frappe.whitelist()
 def make_job_opening(source_name, target_doc=None):
     """Create a Job Opening from a Job Requisition, carrying across every field
@@ -102,6 +142,10 @@ def make_job_opening(source_name, target_doc=None):
     Derived values are computed defensively — a malformed source value is skipped
     rather than raised, so the mapping never breaks the "Create Job Opening" action.
     """
+
+    # Checked before anything is mapped, so the Desk button says it straight away
+    # rather than after the form has been filled in.
+    assert_recruiter_assigned(source_name)
 
     def set_missing_values(source, target):
         target.job_title = source.designation

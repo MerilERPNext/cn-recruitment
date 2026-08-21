@@ -116,16 +116,16 @@ const OverviewSidebar: React.FC = () => {
       <Modal isOpen={isCheckInModalOpen} onClose={() => setIsCheckInModalOpen(false)} size="md" className="sm:rounded-2xl">
         <div className="flex flex-col">
           {/* Modal Header */}
-          <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
-            <div className="flex items-center gap-2.5">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
+          <div className="flex items-center justify-between border-b border-gray-100 px-4 py-3.5 sm:px-5 sm:py-4">
+            <div className="flex min-w-0 items-center gap-2.5">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
                 <Target className="h-4 w-4" />
               </div>
-              <Typography variant="h4" className="font-bold text-gray-900">Select a Goal to Check In</Typography>
+              <Typography variant="h4" className="font-bold text-gray-900 text-sm sm:text-base leading-tight">Select a Goal to Check In</Typography>
             </div>
             <button
               onClick={() => setIsCheckInModalOpen(false)}
-              className="flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
               aria-label="Close modal"
             >
               <X className="h-4 w-4" />
@@ -133,7 +133,7 @@ const OverviewSidebar: React.FC = () => {
           </div>
 
           {/* Modal Body */}
-          <div className="max-h-[60vh] overflow-y-auto p-4 sm:p-5">
+          <div className="max-h-[70vh] sm:max-h-[60vh] overflow-y-auto p-3 sm:p-5">
             {isLoading ? (
               <div className="flex items-center justify-center py-12">
                 <div className="flex flex-col items-center gap-3">
@@ -150,7 +150,7 @@ const OverviewSidebar: React.FC = () => {
                 </div>
               </div>
             ) : (
-              <div className="space-y-2">
+              <div className="space-y-2.5 sm:space-y-3">
                 {allGoals.map((goal) => (
                   <button
                     key={goal.goal_key || goal.name}
@@ -158,28 +158,30 @@ const OverviewSidebar: React.FC = () => {
                       setIsCheckInModalOpen(false);
                       navigate(`/webapp/performance-app/my-goals/${goal.goal_key || goal.name}`);
                     }}
-                    className="flex w-full items-center gap-3 rounded-xl border border-gray-100 p-3 text-left transition-all hover:border-blue-200 hover:bg-blue-50/50 hover:shadow-sm sm:p-4"
+                    className="group flex w-full flex-col gap-2.5 rounded-xl border border-gray-100 bg-white p-3.5 text-left transition-all hover:border-blue-200 hover:bg-blue-50/50 hover:shadow-sm sm:flex-row sm:items-center sm:justify-between sm:p-4"
                   >
-                    <div className="flex min-w-0 flex-1 items-start gap-3">
+                    <div className="flex min-w-0 flex-1 items-start gap-2.5 sm:gap-3">
                       <div className="mt-0.5 shrink-0">
                         <Badge label={goal.goal_type} variant="purple" size="sm" />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <Typography variant="bodySmall" className="mb-1 block break-words font-semibold text-gray-900">{goal.title}</Typography>
-                        <Typography variant="caption" className="block break-words text-gray-500">
+                        <Typography variant="bodySmall" className="font-semibold text-gray-900 leading-snug break-words">
+                          {goal.title}
+                        </Typography>
+                        <Typography variant="caption" className="mt-0.5 block text-xs text-gray-500 break-words">
                           Weightage <span className="font-semibold text-gray-700">{goal.weightage}%</span>
                           {goal.department_title && <> &middot; {goal.department_title}</>}
                         </Typography>
                       </div>
                     </div>
-                    <div className="flex shrink-0 items-center gap-3">
+                    <div className="flex shrink-0 items-center justify-between gap-3 pt-2 border-t border-gray-100/60 sm:border-t-0 sm:pt-0 sm:justify-end">
                       <Badge
                         label={goal.status}
                         variant={getStatusVariant(goal.status)}
                         size="sm"
                         pulse={{ show: true }}
                       />
-                      <ChevronRight className="h-4 w-4 text-gray-400" />
+                      <ChevronRight className="h-4 w-4 shrink-0 text-gray-400 transition-colors group-hover:text-blue-500" />
                     </div>
                   </button>
                 ))}

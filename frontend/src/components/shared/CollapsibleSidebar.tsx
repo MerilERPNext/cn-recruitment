@@ -393,7 +393,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
           name: "Expense Summary",
           icon: FileSpreadsheet,
           href: "/webapp/expenses-app/expense-summary",
-          permissionKey: "ExpenseSummary",
+          permissionKey: "Expense Summary",
         },
         {
           name: "Expense Claims",
@@ -486,6 +486,17 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
             "/webapp/performance-app/team-check-ins",
             "/webapp/performance-app/team-goals/assign-goal",
             "/webapp/performance-app/team-reviews/team-pre-release-preview",
+          ],
+        },
+        {
+          name: "Team Tracking",
+          icon: Users,
+          href: "/webapp/performance-app/team-tracking",
+          permissionKey: "Team Tracking",
+
+          // tabRoutes: ["/webapp/performance-app/team-pre-release-preview", "/webapp/performance-app/team-goals/assign-goal"],
+          tabRoutes: [
+            "/webapp/performance-app/team-tracking",
           ],
         },
 

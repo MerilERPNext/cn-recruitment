@@ -170,6 +170,22 @@
 	font-size: var(--text-sm);
 }
 
+/* --- registration closed -------------------------------------------------
+
+   Shown on the card in place of a save-time error: registration closes per
+   college (the invite's deadline, or that college's own drive going live), so a
+   TPO has to be able to read the reason off the card. */
+
+.tpo-closed-note {
+	padding: 8px 10px;
+	border-radius: var(--border-radius);
+	border-left: 3px solid var(--orange-400, #f59e0b);
+	background: var(--bg-orange, rgba(245, 158, 11, 0.08));
+	color: var(--text-color);
+	font-size: var(--text-sm);
+	line-height: 1.5;
+}
+
 /* --- openings ------------------------------------------------------------ */
 
 .tpo-chip {

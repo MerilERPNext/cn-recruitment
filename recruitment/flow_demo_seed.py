@@ -362,6 +362,12 @@ def _make_drive(m, *, name, invite, start, end, owner="Administrator"):
     doc.drive_end_date = end
     inv_label = frappe.db.get_value("Campus Invite", invite, "campus_invite_name")
     doc.append("campus_invites", {"campus_invite": invite, "campus_invite_name": inv_label})
+    # Colleges are HR's pick on a real drive (they size drives by candidate count), so
+    # the drive no longer copies them off the invite — the seed states them.
+    from recruitment.recruitment.doctype.campus_invite.campus_invite import get_invite_institutes
+
+    for institute in get_invite_institutes(invite):
+        doc.append("participating_institutes", {"institute": institute})
     for rname, rtype, stage in DRIVE_ROUNDS:
         row = {"round_name": rname, "round_type": rtype}
         if stage:

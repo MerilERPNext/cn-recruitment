@@ -130,6 +130,18 @@ export const useTimeEditableWhileApproving = (
   });
 };
 
+// Attendance Settings doc containing approval/rejection flags and other settings
+export const useAttendanceSettings = (
+  options?: { enabled?: boolean; }
+) => {
+  return useQuery({
+    queryKey: ["attendance-settings", "{enable_rejection_confirm_modal, enable_approval_confirm_modal}"],
+    queryFn: () => attendanceService.getAttendanceSettings(),
+    enabled: options?.enabled ?? true,
+    ...defaultQueryOptions,
+  });
+};
+
 export const useUserMicroApps = (
   filters?: string
 ): UseQueryResult<any, Error> => {

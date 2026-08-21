@@ -46,6 +46,56 @@ def _job_offer_email_context(job_offer, applicant):
         "support_email": _get_support_email(),
     }
 
+
+@frappe.whitelist()
+def resend_welcome_email(job_offer):
+    """Re-send the welcome / offer email for a single Job Offer to its candidate.
+
+    Manual "Retrigger Welcome Email" action from the Job Offer form. Uses the
+    Email Template configured in Recruitment Settings (`job_offer_template`) and
+    the SAME context builder as the bulk / single offer send, so the content and
+    template variables never drift between paths. Unlike `send_bulk_job_offer`
+    this is an explicit re-send: it does not skip already-responded candidates and
+    does not overwrite the offer's `email_status` bookkeeping.
+    """
+    frappe.has_permission("Job Offer", "write", throw=True)
+
+    offer = frappe.get_doc("Job Offer", job_offer)
+    if not offer.job_applicant:
+        frappe.throw(_("This Job Offer has no linked Job Applicant."))
+
+    applicant = frappe.get_doc("Job Applicant", offer.job_applicant)
+    email = (offer.get("applicant_email") or applicant.get("email_id") or "").strip()
+    if not email:
+        frappe.throw(_("The candidate has no email address."))
+    if not validate_email_address(email, throw=False):
+        frappe.throw(_("The candidate's email address is invalid: {0}").format(email))
+
+    template_name = frappe.db.get_single_value("Recruitment Settings", "job_offer_template")
+    if not template_name:
+        frappe.throw(
+            _("No welcome email template configured. Set 'Job Offer Template' in Recruitment Settings.")
+        )
+
+    context = _job_offer_email_context(offer, applicant)
+    subject_t = frappe.db.get_value("Email Template", template_name, "subject") or ""
+    message_t = frappe.db.get_value("Email Template", template_name, "response_html") or ""
+    subject = frappe.render_template(subject_t, context)
+    message = frappe.render_template(message_t, context)
+
+    frappe.sendmail(
+        recipients=[email],
+        subject=subject,
+        message=message,
+        reference_doctype="Job Offer",
+        reference_name=offer.name,
+        args=context,
+        now=True,
+    )
+
+    return {"status": "ok", "email": email}
+
+
 @frappe.whitelist()
 def create_job_offer_for_applicant(job_applicant):
 	"""Create a single Job Offer from a Job Applicant (used by the Offer stage of
@@ -78,9 +128,34 @@ def create_job_offer_for_applicant(job_applicant):
 	job_offer.custom_employment_type = applicant.custom_employment_type
 	job_offer.offer_date = frappe.utils.today()
 	job_offer.insert(ignore_permissions=True)
-	frappe.db.set_value("Job Applicant", applicant.name, "status", "Open")
+	_mark_offer_stage(applicant.name, SUB_STATUS_TO_SEND)
 
 	return {"job_offer": job_offer.name, "already_existed": False}
+
+
+
+# The candidate is at the OFFER stage once an offer exists — not back at "Open",
+# which is what a brand-new application looks like and is how offered candidates
+# went missing from every "who is still in play" view. "Hired" is that stage; the
+# sub-status says how far the offer itself has got, and the candidate's own reply
+# moves them on to "Accepted" (advance_on_job_offer_outcome).
+OFFER_STATUS = "Hired"
+SUB_STATUS_TO_SEND = "Offer To Be Sent"
+SUB_STATUS_SENT = "Offer Sent"
+
+
+def _mark_offer_stage(applicant, sub_status):
+    """Put the candidate at the offer stage, without disturbing a decided one."""
+    from recruitment.api.hiring_stage import _ensure_sub_status_option
+
+    current = frappe.db.get_value("Job Applicant", applicant, "status")
+    if current in ("Accepted", "Rejected"):
+        # Already decided — an offer email going out again must not reopen them.
+        return
+    _ensure_sub_status_option(OFFER_STATUS, sub_status)
+    frappe.db.set_value("Job Applicant", applicant,
+                        {"status": OFFER_STATUS, "custom_substatus": sub_status},
+                        update_modified=False)
 
 
 @frappe.whitelist()
@@ -130,7 +205,7 @@ def create_bulk_job_offer(applicants):
             job_offer.offer_date = frappe.utils.today()
 
             job_offer.insert(ignore_permissions=True)
-            frappe.db.set_value("Job Applicant", applicant.name, "status", "Open")
+            _mark_offer_stage(applicant.name, SUB_STATUS_TO_SEND)
 
             created += 1
 
@@ -307,9 +382,7 @@ def send_bulk_job_offer(job_offers):
             # ----------------------------
             # Update Applicant
             # ----------------------------
-            applicant.flags.ignore_notify = True
-            applicant.status = "Open"
-            applicant.save(ignore_permissions=True)
+            _mark_offer_stage(applicant.name, SUB_STATUS_SENT)
 
             sent += 1
 

@@ -27,6 +27,17 @@ import type {
   PerformanceOverviewResponse,
   RequestCheckInPayload,
   RequestCheckInResponse,
+  MyPeerReviewsResponse,
+  FeedbackFormResponse,
+  SaveFeedbackPayload,
+  SaveFeedbackResponse,
+  SubmitFeedbackPayload,
+  SubmitFeedbackResponse,
+  AddGoalCommentPayload,
+  AddGoalCommentResponse,
+  TeamOverviewResponse,
+  TeamMembersParams,
+  TeamMembersResponse,
 } from "../types/goal";
 import FrappeAPI from "../utils/frappeAPI";
 
@@ -55,8 +66,25 @@ export const getPerformanceErrorMessage = (
 
   if (typeof message === "string" && message.trim()) return message;
   if (message && typeof message === "object") {
-    const payload = message as { message?: unknown; error?: unknown; error_message?: unknown };
-    for (const value of [payload.message, payload.error_message, payload.error]) {
+    const payload = message as {
+      message?: unknown;
+      error?: unknown;
+      error_message?: unknown;
+      data?: { errors?: string[] };
+    };
+    const mainMsg =
+      typeof payload.message === "string" && payload.message.trim()
+        ? payload.message
+        : "";
+    const detailErrs =
+      Array.isArray(payload.data?.errors) && payload.data.errors.length > 0
+        ? payload.data.errors.join(", ")
+        : "";
+
+    if (mainMsg && detailErrs) return `${mainMsg} (${detailErrs})`;
+    if (mainMsg) return mainMsg;
+
+    for (const value of [payload.error_message, payload.error]) {
       if (typeof value === "string" && value.trim()) return value;
     }
   }
@@ -262,6 +290,58 @@ export const performanceService = {
     );
     return response as PerformanceOverviewResponse;
   },
+  getMyPeerReviews: async (): Promise<MyPeerReviewsResponse> => {
+    const response = await FrappeAPI.getMethod(
+      "cn_pms.cn_performance_management.api.feedback_api.get_my_peer_reviews",
+    );
+    return response as MyPeerReviewsResponse;
+  },
+
+  getFeedbackForm: async (nomination: string): Promise<FeedbackFormResponse> => {
+    const response = await FrappeAPI.getMethod(
+      "cn_pms.cn_performance_management.api.feedback_api.get_feedback_form",
+      { nomination },
+    );
+    return response as FeedbackFormResponse;
+  },
+
+  saveFeedback: async (payload: SaveFeedbackPayload): Promise<SaveFeedbackResponse> => {
+    const response = await FrappeAPI.callMethod(
+      "cn_pms.cn_performance_management.api.feedback_api.save_feedback",
+      payload as unknown as Record<string, unknown>,
+    );
+    return throwIfUnsuccessful(response as SaveFeedbackResponse);
+  },
+
+  submitFeedback: async (payload: SubmitFeedbackPayload): Promise<SubmitFeedbackResponse> => {
+    const response = await FrappeAPI.callMethod(
+      "cn_pms.cn_performance_management.api.feedback_api.submit_feedback",
+      payload as unknown as Record<string, unknown>,
+    );
+    return throwIfUnsuccessful(response as SubmitFeedbackResponse);
+  },
+  addGoalComment: async (payload: AddGoalCommentPayload): Promise<AddGoalCommentResponse> => {
+    const response = await FrappeAPI.callMethod(
+      "cn_pms.cn_performance_management.api.goal_api.add_checkin_comment",
+      payload as unknown as Record<string, unknown>,
+    );
+    return throwIfUnsuccessful(response as AddGoalCommentResponse);
+  },
+  getTeamOverview: async (manager?: string): Promise<TeamOverviewResponse> => {
+    const res = await FrappeAPI.getMethod(
+      "cn_pms.cn_performance_management.api.team_api.get_team_overview",
+      manager ? { manager } : undefined,
+    );
+    return res as TeamOverviewResponse;
+  },
+  getTeamMembers: async (params?: TeamMembersParams): Promise<TeamMembersResponse> => {
+    const response = await FrappeAPI.getMethod(
+      "cn_pms.cn_performance_management.api.team_api.get_team_members",
+      params as Record<string, unknown> | undefined,
+    );
+    return response as TeamMembersResponse;
+  },
+
 };
 
 

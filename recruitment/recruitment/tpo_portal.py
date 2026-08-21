@@ -16,6 +16,7 @@ from collections import Counter
 
 import frappe
 
+from recruitment.recruitment.campus_helpers import live_drive_institutes
 from recruitment.recruitment.doctype.candidate_registration.candidate_registration import (
 	is_tpo_only,
 )
@@ -28,6 +29,10 @@ def get_my_campus_drives():
 	For a TPO these are the submitted, not-yet-finished Campus Invites carrying
 	their email. Each drive carries the openings it is hiring for and how many
 	candidates the caller has put on it so far.
+
+	An invite stays on the list once the caller's college has been scheduled — the
+	registered counts are still theirs to look at — but comes back flagged
+	``registration_closed`` so the card drops its "Add Candidates" button.
 	"""
 	# get_list, not get_all: get_all sets ignore_permissions and would hand every
 	# TPO every college's drives. The scoping lives in campus_invite_query, which
@@ -50,6 +55,10 @@ def get_my_campus_drives():
 	openings = _openings_by_invite(names)
 	registered = _registration_stats(names)
 	institutes_by_invite = _institutes_by_invite(names)
+	# A college stops registering when its own campus drive goes live, which happens at
+	# a different time for each college on the invite. Resolved here so the card can say
+	# so up front, rather than the TPO meeting it as an error on save.
+	locked_by_invite = {n: live_drive_institutes([n]) for n in names}
 	# The colleges this TPO is Primary at don't change per invite — resolve them once
 	# and intersect in memory, rather than asking the same question per drive.
 	my_institutes = set(_primary_institutes(frappe.session.user)) if tpo_only else set()
@@ -62,10 +71,18 @@ def get_my_campus_drives():
 		# as an error when they try to save a registration.
 		expiry = invite.registration_expiry_date
 		invited = institutes_by_invite.get(invite.name) or []
+		locked = locked_by_invite.get(invite.name) or {}
 		# Which of the TPO's own colleges this drive resolves to (they can be Primary
 		# at more than one). Same answer get_tpo_institute gives, without a query
 		# per drive.
 		mine = [i for i in invited if i in my_institutes] if tpo_only else []
+		# The colleges this caller can still register for. A TPO is closed only when
+		# EVERY college of theirs on this invite has a live drive — one live drive must
+		# not silence a second college that is still waiting for one.
+		scope = mine if tpo_only else invited
+		still_open = [i for i in scope if i not in locked]
+		past_deadline = bool(expiry and getdate(expiry) < today)
+		drive_live = bool(scope) and not still_open
 		drives.append(
 			{
 				"name": invite.name,
@@ -73,11 +90,17 @@ def get_my_campus_drives():
 				"region": invite.region,
 				"status": invite.status,
 				"registration_expiry_date": str(expiry) if expiry else None,
-				"registration_closed": bool(expiry and getdate(expiry) < today),
+				"registration_closed": past_deadline or drive_live,
+				# Which of the two gates closed it, so the card can explain itself: a
+				# deadline is something HR can extend, a live drive is not.
+				"closed_reason": "drive_live" if drive_live else ("deadline" if past_deadline else None),
 				# Not shown on the card, but kept so the caller can tell which
 				# college a drive resolves to for them.
-				"institute": mine[0] if mine else None,
+				"institute": (still_open or mine or [None])[0] if tpo_only else None,
 				"institutes": invited,
+				"open_institutes": still_open,
+				"locked_institutes": [{"institute": i, "campus_drive": locked[i]}
+				                      for i in scope if i in locked],
 				"openings": openings.get(invite.name) or [],
 				"candidate_count": stats.get("candidates", 0),
 				"registration_count": stats.get("registrations", 0),

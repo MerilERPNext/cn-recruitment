@@ -383,7 +383,7 @@ const MyGoals: React.FC<MyGoalsProps> = ({ onCreateGoal, onSelectGoal }) => {
                       navigate(`/webapp/performance-app/my-goals/${getGoalId(goal)}`);
                     }
                   }}
-                  className="relative z-10 min-w-0 cursor-pointer overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition-all hover:border-blue-300 hover:shadow-md"
+                  className="relative z-5 min-w-0 cursor-pointer overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition-all hover:border-blue-300 hover:shadow-md"
                 >
                   {!isCompact && (
                     <div className="absolute left-[-28px] top-12 h-px w-[28px] bg-slate-200" />

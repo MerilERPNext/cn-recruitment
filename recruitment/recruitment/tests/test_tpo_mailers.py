@@ -1,5 +1,9 @@
 """Tests for the two TPO emails: institute welcome, and campus invite.
 
+The welcome is also the TPO's account mail — it provisions their Desk user and
+carries the set-password link — so the Campus Invite submit no longer sends a
+second "set your password" mail to someone who already has an account.
+
 Both are configuration-driven (Campus Settings toggles + Email Templates), so what
 is pinned here is exactly that: who gets each mail, that nobody is mailed twice,
 that a toggle or a missing template silences it, and that a mail failure never
@@ -20,6 +24,7 @@ from recruitment.recruitment import tpo_mailers as tm
 
 PREFIX = "_Test Mail"
 PRIMARY = "primary.tpo@mailtest.local"
+INVITE_SUBJECT = "Campus Recruitment Drive"
 ASSISTANT = "asst.tpo@mailtest.local"
 
 
@@ -162,24 +167,79 @@ class TestTpoMailers(FrappeTestCase):
 		institute = self._institute()
 		self.sent.clear()
 		self._invite(institute).submit()
-		invited = self._recipients("Campus drive invitation")
+		invited = self._recipients(INVITE_SUBJECT)
 		self.assertEqual(sorted(invited), sorted([PRIMARY, ASSISTANT]))
 
-	def test_the_set_password_mail_is_still_sent_separately(self):
-		"""Two different mails: one about the drive, one about their login."""
+	def test_each_contact_gets_their_own_mail_greeting_them_by_name(self):
+		"""One send per contact — a shared render could only say "Dear TPO"."""
 		institute = self._institute()
 		self.sent.clear()
 		self._invite(institute).submit()
-		self.assertTrue(self._recipients("Set your password"))
-		self.assertTrue(self._recipients("Campus drive invitation"))
+		invite_mails = [
+			kw for kw in self.sent if INVITE_SUBJECT in (kw.get("subject") or "")
+		]
+		self.assertEqual(len(invite_mails), 2, "one mail each, not one to both")
+		by_recipient = {kw["recipients"][0]: kw.get("message") or "" for kw in invite_mails}
+		self.assertIn("Dear Primary Person", by_recipient[PRIMARY])
+		self.assertIn("Dear Assistant Person", by_recipient[ASSISTANT])
+
+	def test_the_invite_carries_the_tpo_portal_link(self):
+		institute = self._institute()
+		self.sent.clear()
+		self._invite(institute).submit()
+		message = next(
+			kw["message"] for kw in self.sent if INVITE_SUBJECT in (kw.get("subject") or "")
+		)
+		self.assertIn("/app/tpo-space", message)
+
+	def test_the_deadline_is_stated_when_the_invite_has_one(self):
+		institute = self._institute()
+		self.sent.clear()
+		invite = self._invite(institute)
+		invite.registration_expiry_date = "2026-11-30"
+		invite.submit()
+		message = next(
+			kw["message"] for kw in self.sent if INVITE_SUBJECT in (kw.get("subject") or "")
+		)
+		self.assertIn(frappe.utils.formatdate("2026-11-30"), message)
+
+	def test_no_deadline_reads_as_a_sentence_not_as_None(self):
+		"""The field is optional; "by None" in a mail to a college is not recoverable."""
+		institute = self._institute()
+		self.sent.clear()
+		self._invite(institute).submit()
+		message = next(
+			kw["message"] for kw in self.sent if INVITE_SUBJECT in (kw.get("subject") or "")
+		)
+		self.assertNotIn("None", message)
+		self.assertIn("at the earliest", message)
+
+	def test_no_set_password_mail_when_the_tpo_already_has_an_account(self):
+		"""The welcome mail provisioned them and carried the link — submitting an
+		invite must not write to the same person about the same login again."""
+		institute = self._institute()
+		self.assertTrue(frappe.db.exists("User", PRIMARY), "welcome should provision")
+		self.sent.clear()
+		self._invite(institute).submit()
+		self.assertEqual(self._recipients("Set your password"), [])
+		self.assertTrue(self._recipients(INVITE_SUBJECT))
+
+	def test_a_tpo_with_no_account_still_gets_a_set_password_mail(self):
+		"""An institute recorded before the welcome provisioned accounts, or one
+		whose welcome failed. Desk access nobody is told about is worse than a
+		second email."""
+		institute = self._institute()
+		frappe.delete_doc("User", PRIMARY, force=True, ignore_permissions=True)
+		self.sent.clear()
+		self._invite(institute).submit()
+		self.assertEqual(self._recipients("Set your password"), [PRIMARY])
 
 	def test_the_invite_toggle_silences_only_the_invite_mail(self):
 		institute = self._institute()
 		self._config(invite=0)
 		self.sent.clear()
 		self._invite(institute).submit()
-		self.assertEqual(self._recipients("Campus drive invitation"), [])
-		self.assertTrue(self._recipients("Set your password"), "the login mail is separate")
+		self.assertEqual(self._recipients(INVITE_SUBJECT), [])
 
 	def test_a_missing_invite_template_does_not_block_the_submit(self):
 		institute = self._institute()
@@ -188,7 +248,7 @@ class TestTpoMailers(FrappeTestCase):
 		invite = self._invite(institute)
 		invite.submit()  # must not raise
 		self.assertEqual(invite.docstatus, 1)
-		self.assertEqual(self._recipients("Campus drive invitation"), [])
+		self.assertEqual(self._recipients(INVITE_SUBJECT), [])
 
 	def _invite(self, institute):
 		doc = frappe.get_doc({
@@ -214,7 +274,20 @@ class TestTpoMailers(FrappeTestCase):
 		self.assertTrue(self.sent)
 		message = self.sent[0].get("message") or ""
 		self.assertIn(institute.institute_name, message)
-		self.assertIn(institute.institute_name, self.sent[0].get("subject") or "")
+
+	def test_the_welcome_mail_carries_the_set_password_link(self):
+		"""It is the only mail the TPO gets, so the link has to be in it."""
+		self._institute()
+		self.assertTrue(self.sent)
+		message = self.sent[0].get("message") or ""
+		self.assertIn("/update-password?key=", message)
+		self.assertIn(PRIMARY, message, "the login email is stated")
+
+	def test_the_welcome_mail_provisions_the_tpo_desk_user(self):
+		self._institute()
+		self.assertTrue(frappe.db.exists("User", PRIMARY))
+		roles = frappe.get_all("Has Role", filters={"parent": PRIMARY}, pluck="role")
+		self.assertIn("TPO", roles)
 
 
 def run():

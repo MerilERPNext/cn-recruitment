@@ -46,6 +46,7 @@ def after_migrate():
     ensure_offer_compensation()
     ensure_alumni_employee_field()
     ensure_alumni_employee_employee_field()
+    ensure_alumni_user_link_field()
     backfill_alumni_flag()
     backfill_employee_alumni_mirror()
     ensure_alumni_employee_request_workflow()
@@ -53,6 +54,7 @@ def after_migrate():
     ensure_notice_portal_fields()
     ensure_education_presentation()
     ensure_tpo_email_templates()
+    ensure_hired_status()
 
 
 def ensure_tpo_email_templates():
@@ -168,6 +170,41 @@ def ensure_alumni_hd_category_field():
         frappe.clear_cache(doctype="HD Category")
     except Exception:
         frappe.logger("recruitment").warning("ensure_alumni_hd_category_field: skipped")
+
+
+def ensure_alumni_user_link_field():
+    """Add the read-only `Employee.custom_alumni_user` Link field.
+
+    Stores the personal-email User provisioned when the Employee leaves, so the
+    Alumni Portal can resolve Employee <-> alumni User without guessing from
+    `personal_email` (which may change, or be shared between records).
+    Maintained by recruitment.recruitment.alumni_user_switch. Idempotent.
+    """
+    if frappe.get_meta("Employee").get_field("custom_alumni_user"):
+        return
+    try:
+        from frappe.custom.doctype.custom_field.custom_field import create_custom_field
+
+        create_custom_field(
+            "Employee",
+            {
+                "fieldname": "custom_alumni_user",
+                "label": "Alumni User",
+                "fieldtype": "Link",
+                "options": "User",
+                "read_only": 1,
+                "insert_after": "custom_is_alumni_employee",
+                "description": (
+                    "Personal-email User account used for the Alumni Portal. "
+                    "Created automatically when the employee leaves."
+                ),
+                "module": "Recruitment",
+            },
+            ignore_validate=True,
+        )
+        frappe.clear_cache(doctype="Employee")
+    except Exception:
+        frappe.logger("recruitment").warning("ensure_alumni_user_link_field: skipped")
 
 
 def ensure_alumni_employee_field():
@@ -560,3 +597,49 @@ def repair_broken_fetch_from():
                 len(cleared), "; ".join(cleared)
             )
         )
+
+
+# The offer stage on a candidate: an offer exists but they have not replied yet.
+# Sits between "Approvals" (waiting for the offer to be raised) and "Accepted"
+# (the candidate said yes), and is what recruitment.api.bulk_job_offer writes.
+HIRED_STATUS = "Hired"
+HIRED_AFTER = "Approvals"
+HIRED_SUB_STATUSES = ("Offer To Be Sent", "Offer Sent")
+
+
+def ensure_hired_status():
+    """Add "Hired" to Job Applicant.status, and its sub-statuses to the master.
+
+    Applied from after_migrate rather than a patch: the status options live in a
+    Property Setter that ships as a fixture, and a fixture sync re-applies its own
+    value over anything a patch wrote. Idempotent — it only writes when "Hired" is
+    genuinely missing, and it never reorders what is already there.
+    """
+    try:
+        meta = frappe.get_meta("Job Applicant")
+        field = meta.get_field("status")
+        if not field:
+            return
+        options = [o for o in (field.options or "").split("\n")]
+        if HIRED_STATUS in options:
+            _ensure_hired_sub_statuses()
+            return
+
+        at = options.index(HIRED_AFTER) + 1 if HIRED_AFTER in options else len(options)
+        options.insert(at, HIRED_STATUS)
+        frappe.make_property_setter({
+            "doctype": "Job Applicant", "fieldname": "status", "property": "options",
+            "value": "\n".join(options), "property_type": "Text",
+        }, is_system_generated=False)
+        frappe.clear_cache(doctype="Job Applicant")
+        _ensure_hired_sub_statuses()
+    except Exception:
+        frappe.log_error(frappe.get_traceback(), "Hired status: setup failed")
+
+
+def _ensure_hired_sub_statuses():
+    """The two the offer flow writes, so the dropdown offers them from day one."""
+    from recruitment.api.hiring_stage import _ensure_sub_status_option
+
+    for sub_status in HIRED_SUB_STATUSES:
+        _ensure_sub_status_option(HIRED_STATUS, sub_status)

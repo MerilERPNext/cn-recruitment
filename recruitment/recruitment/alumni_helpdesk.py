@@ -17,6 +17,8 @@ from __future__ import annotations
 
 import html as html_mod
 
+from contextlib import contextmanager
+
 import frappe
 from frappe import _
 
@@ -26,6 +28,7 @@ from recruitment.recruitment.alumni_portal import (
     _alumni_email,
     _require_alumni_session,
 )
+from recruitment.recruitment.utils import as_administrator
 
 
 # ── HD Categories & Subcategories ────────────────────────────────────────────
@@ -385,6 +388,22 @@ def download_alumni_ticket_attachment(file_url: str):
 
 # ── Ticket Actions ───────────────────────────────────────────────────────────
 
+@contextmanager
+def _as_system_user():
+    """Run a read elevated, then always restore the caller's session.
+
+    Only for helpdesk calls whose own permission check assumes an HD role. The
+    caller MUST have already authorised the request (e.g. via
+    `_validate_ticket_ownership`); this never widens *which* ticket is returned.
+
+    Delegates to `as_administrator`, which restores the whole session rather
+    than just the user — see there for why a bare `set_user` pair logs the
+    caller out.
+    """
+    with as_administrator():
+        yield
+
+
 def _validate_ticket_ownership(ticket_id: str):
     user = _require_alumni_session()
     email = _alumni_email(user)
@@ -399,12 +418,20 @@ def get_alumni_hd_ticket_detail(ticket_id: str) -> dict:
     _validate_ticket_ownership(ticket_id)
     # The normal helpdesk get_one returns the full ticket detail.
     # We use frappe.call to execute it as if we hit the endpoint.
+    #
+    # helpdesk's get_one opens with check_permissions("HD Ticket"), which needs a
+    # role the alumni account deliberately does not have — an alumnus is a bare
+    # Website User with no roles (see alumni_user_switch). Access for THIS ticket
+    # is already established by _validate_ticket_ownership above (raised_by ==
+    # the alumnus' own email), so the delegated read runs elevated. The elevation
+    # is limited to this read and always restored.
     try:
-        result = frappe.call(
-            "helpdesk.helpdesk.doctype.hd_ticket.api.get_one",
-            name=ticket_id,
-            is_customer_portal=False,
-        )
+        with _as_system_user():
+            result = frappe.call(
+                "helpdesk.helpdesk.doctype.hd_ticket.api.get_one",
+                name=ticket_id,
+                is_customer_portal=False,
+            )
         return result
     except Exception:
         frappe.log_error(frappe.get_traceback(), "alumni get_alumni_hd_ticket_detail failed")

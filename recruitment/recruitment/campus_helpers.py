@@ -130,3 +130,111 @@ def sync_drive_applicant_links(drive_name, invites):
 			                    update_modified=False)
 
 	return {"linked": len(linked), "released": len(released)}
+
+
+# ---------------------------------------------------------------------------
+# Institute lock: a drive going live closes that college's registrations
+#
+# An invite carries several institutes, and HR schedules them into drives sized by
+# candidate count (one big college on its own, two small ones merged). So
+# "registration is closed" is never a fact about the invite as a whole — it is a
+# fact about one college on it. The moment a college's drive leaves Draft its list
+# is frozen; the colleges still waiting for a drive carry on registering.
+#
+# The invite's Registration Expiry Date remains the deadline for the colleges that
+# have NOT been scheduled yet, which is why HR can keep extending it after submit.
+# ---------------------------------------------------------------------------
+
+# Statuses a Campus Drive has once it has been scheduled and gone live. A Draft
+# drive is still being planned — HR may still add colleges to it or drop them, so
+# it must not freeze anyone.
+DRIVE_LIVE_STATUSES = ("Live", "In Progress", "Completed", "Closed")
+
+
+def drives_on_invites(campus_invites, exclude_drive=None):
+	"""Names of the Campus Drives that selected any of `campus_invites`."""
+	campus_invites = [i for i in dict.fromkeys(campus_invites or []) if i]
+	if not campus_invites:
+		return []
+	names = frappe.get_all(
+		"Campus Drive Invite",
+		filters={"parenttype": "Campus Drive", "campus_invite": ["in", campus_invites]},
+		pluck="parent",
+	)
+	return [n for n in dict.fromkeys(names) if n and n != exclude_drive]
+
+
+def drive_institutes_by_status(campus_invites, statuses, exclude_drive=None):
+	"""``{institute: campus_drive}`` for the institutes carried by drives on any of
+	`campus_invites` whose `drive_status` is one of `statuses`.
+
+	`exclude_drive` leaves a drive out of the reckoning so it never sees itself.
+
+	Read with `frappe.get_all` (permissions off) on purpose: a TPO has no access to
+	Campus Drive at all, yet the answer has to be the same for them as for HR.
+	"""
+	drives = drives_on_invites(campus_invites, exclude_drive=exclude_drive)
+	if not drives:
+		return {}
+
+	matching = frappe.get_all(
+		"Campus Drive",
+		filters={"name": ["in", drives], "drive_status": ["in", list(statuses)]},
+		pluck="name",
+	)
+	if not matching:
+		return {}
+
+	found = {}
+	for row in frappe.get_all(
+		"Campus Drive Institute",
+		filters={"parenttype": "Campus Drive", "parentfield": "participating_institutes",
+		         "parent": ["in", matching]},
+		fields=["parent", "institute"],
+		order_by="parent asc, idx asc",
+	):
+		# First drive wins the attribution — the message only needs to name one.
+		if row.institute and row.institute not in found:
+			found[row.institute] = row.parent
+	return found
+
+
+def live_drive_institutes(campus_invites, exclude_drive=None):
+	"""``{institute: campus_drive}`` for the institutes already claimed by a live drive.
+
+	These are the colleges whose registration window has closed, and the ones HR may
+	no longer put on a new drive.
+	"""
+	return drive_institutes_by_status(campus_invites, DRIVE_LIVE_STATUSES,
+	                                 exclude_drive=exclude_drive)
+
+
+def draft_drive_institutes(campus_invites, exclude_drive=None):
+	"""``{institute: campus_drive}`` for the institutes sitting on a DRAFT drive.
+
+	Not a lock — HR moves colleges between draft drives while sizing the batches, and
+	must be free to. It is only worth saying out loud, because both drafts go live by
+	the calendar (see `update_drive_statuses`) rather than by a save, and nothing
+	validates them at that moment: two drafts holding the same college would both turn
+	live and each claim it.
+	"""
+	return drive_institutes_by_status(campus_invites, ("Draft",),
+	                                 exclude_drive=exclude_drive)
+
+
+def locked_institutes_for_invite(campus_invite):
+	"""``{institute: campus_drive}`` for one invite. See `live_drive_institutes`."""
+	return live_drive_institutes([campus_invite])
+
+
+def open_institutes_for_invite(campus_invite, institutes=None):
+	"""The invited institutes on `campus_invite` that may still register candidates.
+
+	`institutes` narrows the answer to a subset (a TPO's own colleges); omit it to
+	ask about every college on the invite.
+	"""
+	from recruitment.recruitment.doctype.campus_invite.campus_invite import get_invite_institutes
+
+	invited = institutes if institutes is not None else get_invite_institutes(campus_invite)
+	locked = locked_institutes_for_invite(campus_invite)
+	return [i for i in invited if i not in locked]

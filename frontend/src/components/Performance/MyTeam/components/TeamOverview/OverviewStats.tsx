@@ -15,7 +15,7 @@ interface OverviewStatsProps {
 
 const OverviewStats: React.FC<OverviewStatsProps> = ({ isCompact, stats }) => {
   return (
-    <section className={`grid ${isCompact ? "grid-cols-2" : "grid-cols-5"} gap-3 sm:gap-4`}>
+    <section className={`grid ${isCompact ? "grid-cols-2 sm:grid-cols-3" : "grid-cols-2 sm:grid-cols-3 lg:grid-cols-6"} gap-3 sm:gap-4`}>
       {stats.map((stat, idx) => (
         <div
           key={idx}
@@ -30,7 +30,7 @@ const OverviewStats: React.FC<OverviewStatsProps> = ({ isCompact, stats }) => {
           <div>
             <Typography
               variant="h2"
-              className={`${stat.valueColor} mb-1 text-2xl font-bold leading-none`}
+              className={`text-blue-600 mb-1 text-2xl font-bold leading-none`}
             >
               {stat.value}
             </Typography>
@@ -44,4 +44,4 @@ const OverviewStats: React.FC<OverviewStatsProps> = ({ isCompact, stats }) => {
   );
 };
 
-export default OverviewStats;
+export default React.memo(OverviewStats);

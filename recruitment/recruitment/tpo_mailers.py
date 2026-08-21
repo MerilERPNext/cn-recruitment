@@ -1,11 +1,14 @@
 """The two emails a TPO gets, both driven entirely by configuration.
 
   Welcome       — when an institute's Primary TPO is recorded (on creation, and on
-                  any later edit that adds one). Once per contact, ever.
+                  any later edit that adds one). Once per contact, ever. This is
+                  the TPO's ONLY account mail: it provisions their Desk user and
+                  carries the set-password link in its own body. It used to be one
+                  of two — a welcome here and a separate "set your password" mail
+                  at Campus Invite — which meant the same person was written to
+                  twice about the same account.
   Campus invite — when a Campus Invite is submitted, to every TPO contact of the
-                  invited institutes. The Primary TPO also gets their existing
-                  "set your password" mail (recruitment.recruitment.tpo_access);
-                  the two say different things and are sent independently.
+                  invited institutes. About the drive, not about their login.
 
 Nothing about either is hardcoded: whether they go out at all, and every word in
 them, comes from Campus Settings —
@@ -42,9 +45,13 @@ CONTACT_DT = "Institute TPO Contact"
 
 def _settings(enabled_field, template_field, fallback):
 	"""``(enabled, template)`` for one mailer, read off Campus Settings."""
-	enabled = frappe.db.get_single_value("Campus Settings", enabled_field)
-	# A site that predates the field (None) keeps the shipped default: on.
-	enabled = True if enabled is None else bool(enabled)
+	# single_value_or_default, not get_single_value: a site that has not saved
+	# Campus Settings since these fields appeared has no row for them, and
+	# get_single_value casts that to 0 — which reads as "switched off" and would
+	# silence the mail on a fresh site. See recruitment.recruitment.settings_helpers.
+	from recruitment.recruitment.settings_helpers import single_value_or_default
+
+	enabled = bool(single_value_or_default("Campus Settings", enabled_field, True))
 	template = frappe.db.get_single_value("Campus Settings", template_field) or fallback
 	return enabled, template
 
@@ -104,7 +111,8 @@ def send_tpo_welcome(doc, method=None):
 
 		sent = 0
 		for row in pending:
-			rendered = _render(template, _welcome_context(doc, row),
+			link = _provision_and_link(row)
+			rendered = _render(template, _welcome_context(doc, row, link),
 			                   _("Welcome — {0}").format(doc.get("institute_name") or doc.name))
 			if not rendered:
 				return sent  # template gone: say so once, don't mark anyone as done
@@ -121,10 +129,42 @@ def send_tpo_welcome(doc, method=None):
 		return 0
 
 
-def _welcome_context(institute, contact):
+def _provision_and_link(contact):
+	"""Create the TPO's Desk user and return a set-password link for the welcome mail.
+
+	The welcome email is the only account mail a TPO gets, so the account has to
+	exist by the time it is written. Provisioning used to happen at Campus Invite
+	submit, which is what made the second mail necessary.
+
+	Best effort, and deliberately so: a provisioning or link-generation failure
+	costs the TPO their password link, not their welcome — the template falls back
+	to Forgot Password, and the error is in the log for someone to fix.
+	"""
+	from recruitment.recruitment.tpo_access import (
+		generate_set_password_link,
+		provision_tpo_user,
+	)
+
+	try:
+		name = provision_tpo_user(
+			email=contact.get("email"),
+			full_name=contact.get("contact_name"),
+			enabled=True,
+			send_email=False,
+		)
+		if not name:
+			return None
+		return generate_set_password_link(frappe.get_doc("User", name))
+	except Exception:
+		frappe.log_error(frappe.get_traceback(), "TPO welcome: user provisioning failed")
+		return None
+
+
+def _welcome_context(institute, contact, set_password_link=None):
 	from frappe.utils import get_url
 
 	return {
+		"set_password_link": set_password_link,
 		"tpo_name": contact.get("contact_name") or contact.get("email"),
 		"email": contact.get("email"),
 		"role": contact.get("role"),
@@ -154,18 +194,32 @@ def send_campus_invite(invite):
 		if not enabled:
 			return 0
 
-		recipients = list(dict.fromkeys(
-			row.email for row in (invite.get("tpo_contacts") or []) if row.get("email")
-		))
-		if not recipients:
+		# One mail per contact rather than one mail addressed to all of them: the
+		# template greets the TPO by name, and a single render shared across
+		# recipients could only ever say "Dear TPO". Deduped by email, first name
+		# wins — the same person can sit on two invited institutes.
+		contacts = {}
+		for row in (invite.get("tpo_contacts") or []):
+			email = (row.get("email") or "").strip().lower()
+			if email and email not in contacts:
+				contacts[email] = row.get("contact_name") or email
+		if not contacts:
 			return 0
 
-		rendered = _render(template, _invite_context(invite),
-		                   _("Campus drive — {0}").format(invite.get("campus_invite_name") or invite.name))
-		if not rendered:
-			return 0
-		_send(recipients, rendered, "Campus Invite", invite.name)
-		return len(recipients)
+		# Built once: it runs a query for the opening titles, and none of it varies
+		# by recipient.
+		base = _invite_context(invite)
+		fallback = _("Campus drive — {0}").format(
+			invite.get("campus_invite_name") or invite.name)
+
+		sent = 0
+		for email, name in contacts.items():
+			rendered = _render(template, dict(base, tpo_name=name, email=email), fallback)
+			if not rendered:
+				return sent  # template gone: logged once, don't retry per contact
+			_send([email], rendered, "Campus Invite", invite.name)
+			sent += 1
+		return sent
 	except Exception:
 		frappe.log_error(frappe.get_traceback(), "Campus invite email failed")
 		return 0
@@ -184,6 +238,13 @@ def _invite_context(invite):
 	openings = [{"job_opening": n, "job_title": titles.get(n) or n} for n in names]
 	institutes = [row.institute for row in (invite.get("institutes") or []) if row.get("institute")]
 	return {
+		# The Desk workspace a TPO lands on — the only one their user can see
+		# (recruitment.recruitment.tpo_access._restrict_user_modules).
+		"tpo_portal_url": get_url("/app/tpo-space"),
+		"deadline": (
+			frappe.utils.formatdate(invite.get("registration_expiry_date"))
+			if invite.get("registration_expiry_date") else None
+		),
 		"invite": invite.get("campus_invite_name") or invite.name,
 		"invite_id": invite.name,
 		"region": invite.get("region"),
@@ -202,39 +263,80 @@ def _invite_context(invite):
 
 DEFAULT_TEMPLATES = {
 	WELCOME_TEMPLATE: {
-		"subject": "Welcome to our campus hiring programme — {{ institute }}",
+		"subject": "Welcome to the HomeFirst ATS Portal - NOVA Recruitment",
+		# `set_password_link` is a one-time reset URL minted per send. The {% if %}
+		# is not decoration: provisioning is best-effort, and an email that shows a
+		# blank "Set Your Password:" is worse than one that points at Forgot Password.
 		"response": """<p>Dear {{ tpo_name }},</p>
 
-<p>Thank you for partnering with us on campus hiring. <b>{{ institute }}</b> is now
-registered with our recruitment team{% if city %}, {{ city }}{% endif %}.</p>
+<p>Greetings from HomeFirst Finance Company India Limited.</p>
 
-<p>You are recorded as the {{ role }} for your institute. When we run a drive at
-your campus you will receive an invite by email, along with access to the TPO Desk
-where you can track candidates, share the registration link with students and
-follow the drive as it progresses.</p>
+<p>Thank you for partnering with us for campus hiring. Your institute,
+<b>{{ institute }}</b>{% if city %}, {{ city }}{% endif %}, is now registered with our
+recruitment team, and you have been added as the {{ role }}.</p>
 
-<p>Nothing is needed from you right now — we will be in touch with drive dates.</p>
+<p>Your TPO account has been created on the Campus Recruitment Portal, where you can
+view campus drives, share student registration links, track candidates, and monitor
+recruitment progress.</p>
 
-<p>Warm regards,<br>Campus Recruitment Team</p>""",
+{% if set_password_link %}
+<p><b>Set Your Password:</b> <a href="{{ set_password_link }}">{{ set_password_link }}</a></p>
+{% else %}
+<p><b>Set Your Password:</b> open <a href="{{ login_url }}">{{ login_url }}</a> and use
+<b>Forgot Password</b>.</p>
+{% endif %}
+<p><b>Login Email:</b> {{ email }}<br>
+<b>Portal:</b> <a href="{{ login_url }}">Campus Recruitment Portal</a></p>
+
+<p>The password setup link is unique to you and will expire after use or after a short
+period.</p>
+
+<p>You will receive an email when the Campus Recruitment Team sends a campus invitation
+for student registrations.</p>
+
+<p>Warm regards,<br>
+Talent Team<br>
+HomeFirst Finance Company India Limited</p>""",
 	},
 	INVITE_TEMPLATE: {
-		"subject": "Campus drive invitation — {{ invite }}",
-		"response": """<p>Dear TPO,</p>
+		"subject": "Invitation to Participate in the HomeFirst Campus Recruitment Drive",
+		# `deadline` is the invite's Registration Expiry Date, which is optional —
+		# hence the {% else %}. "by None" in a mail to a college is not recoverable.
+		"response": """<p>Dear {{ tpo_name }},</p>
 
-<p>We would like to invite <b>{{ institute_list }}</b> to participate in our campus
-drive: <b>{{ invite }}</b>.</p>
+<p>Greetings from HomeFirst Finance Company India Limited.</p>
+
+<p>We are delighted to welcome your students to participate in our Campus Recruitment
+Drive.</p>
+
+<p>To initiate the registration process, kindly upload the list of eligible students by
+logging in to the TPO portal using the link mentioned below:</p>
+
+<p><b>TPO Portal Link:</b> <a href="{{ tpo_portal_url }}">{{ tpo_portal_url }}</a></p>
 
 {% if opening_list %}<p><b>Roles we are hiring for:</b> {{ opening_list }}</p>{% endif %}
-{% if region %}<p><b>Region:</b> {{ region }}</p>{% endif %}
 
-<p>Please share this with your eligible students. Your TPO Desk login gives you the
-student registration link and lets you follow the drive — candidates registered,
-shortlists and results — as it runs. If this is your first drive with us, you will
-receive a separate email to set your password.</p>
+<p>Once the student details are uploaded by your institute, an automated notification
+will be sent to the respective students with a link to complete their application and
+register for the campus drive. Students will be required to fill in the application form
+and submit their details to confirm their participation.</p>
 
-<p>Do let us know your preferred dates and any support you need from our side.</p>
+{% if deadline %}
+<p>We request you to upload the candidate details by <b>{{ deadline }}</b> to ensure
+timely completion of the registration process.</p>
+{% else %}
+<p>We request you to upload the candidate details at the earliest to ensure timely
+completion of the registration process.</p>
+{% endif %}
 
-<p>Warm regards,<br>Campus Recruitment Team</p>""",
+<p>Please feel free to reach out in case of any queries or assistance.</p>
+
+<p>We look forward to partnering with your institute and welcoming your students to
+HomeFirst.</p>
+
+<p>Warm regards,<br>
+Talent Team<br>
+HomeFirst Finance Company India Limited</p>""",
 	},
 }
 

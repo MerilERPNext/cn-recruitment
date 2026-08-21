@@ -16,9 +16,9 @@ export interface LeaveRequest {
   custom_rejection_reason?: string;
   half_day: boolean;
   custom_attachment?:
-    | string
-    | string[]
-    | { url?: string; file_url?: string; name?: string }[];
+  | string
+  | string[]
+  | { url?: string; file_url?: string; name?: string }[];
   half_day_date?: string;
   custom_second_half_day_date?: string;
   total_leave_days: number;
@@ -236,9 +236,9 @@ export interface FormSubmissionData {
   half_day_date?: string;
   custom_second_half_day_date?: string;
   attachment?:
-    | string
-    | string[]
-    | { url?: string; file_url?: string; name?: string }[];
+  | string
+  | string[]
+  | { url?: string; file_url?: string; name?: string }[];
   custom_reason?: string;
   custom_attachment?: unknown[];
 }
@@ -260,9 +260,9 @@ export interface RequestLeaveDefaults {
   description?: string;
   custom_reason?: string;
   custom_attachment?:
-    | string
-    | string[]
-    | { url?: string; file_url?: string; name?: string }[];
+  | string
+  | string[]
+  | { url?: string; file_url?: string; name?: string }[];
   source?: "holiday" | "balances" | "other";
   hideHalfDayToggle?: boolean;
   isEdit?: boolean;
@@ -531,3 +531,8 @@ export interface LeaveDateRangeResponse {
   max_date: string;
   can_apply: boolean;
 }
+
+export interface LeaveSettings {
+  enable_modal_collaps?: number | boolean;
+}
+

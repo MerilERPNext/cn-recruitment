@@ -1,7 +1,8 @@
 import DOMPurify from "dompurify";
 import { X } from "lucide-react";
-import { useCallback, useState, type ReactNode } from "react";
+import { useCallback, useMemo, useState, type ReactNode } from "react";
 import toast from "react-hot-toast";
+import { useLoadingOverlay } from "../../context/OverlayContext";
 import { useGetToDoWithReferenceDoc } from "../../hooks/useAttendance";
 import { useCreateApprovalComment } from "../../hooks/useCreateApprovalComment";
 import useCurrentUser from "../../hooks/useCurrentUser";
@@ -102,6 +103,7 @@ export function LeaveDetailView({
   /** Show the applicant's leave balance — for approvers acting on a request. */
   showLeaveBalance?: boolean;
 }) {
+  const loading = useLoadingOverlay();
   const mutation = useApprovalListActions();
   const approvalCommentMutation = useCreateApprovalComment();
   const { data: user } = useCurrentUser();
@@ -115,8 +117,17 @@ export function LeaveDetailView({
   } = useGetToDoWithReferenceDoc(documentName, referenceName);
 
   const data = documentName || referenceName ? fetchedData : propsData;
-  console.log(data);
   const { isDesktop } = useScreenSize();
+
+  const todoId = useMemo(() => {
+    return (
+      data?.todo_id ||
+      (data?.doctype === "ToDo" ? data?.name : null) ||
+      data?.name ||
+      documentName ||
+      ""
+    );
+  }, [data, documentName]);
 
   const cleanDescription = DOMPurify.sanitize(
     data?.reference_document?.description || "",
@@ -151,8 +162,83 @@ export function LeaveDetailView({
   const [showCommentModal, setShowCommentModal] = useState(false);
   const [pendingAction, setPendingAction] = useState<string | null>(null);
 
-  const handleAction = useCallback(
+  const performAction = useCallback(
     async (action: string) => {
+      const actionLoadingShow = ["approve", "reject"].includes(
+        action.toLowerCase(),
+      )
+        ? action
+        : `Performing Action: ${action}`;
+
+      await loading?.wrap(async () => {
+        setCurrentAction(action);
+
+        try {
+          if (mutation?.isPending) return;
+          const response = await mutation?.mutateAsync({
+            action,
+            name: todoId,
+          });
+          const actionMap: Record<string, string> = {
+            Approve: "Approved",
+            Reject: "Rejected",
+            "Send Back": "Sent Back",
+          };
+
+          const finalAction = actionMap[action] ?? `${action}ed`;
+
+          toast.success(`Request ${finalAction} Successfully!`);
+          const responseWithSession = response as unknown as {
+            session?: string;
+          };
+
+          if (
+            (data?.custom_approval_type === "Approval Matrix" &&
+              responseWithSession?.session) ||
+            (data?.custom_approval_type === "Multi Actions" &&
+              data?.custom_open_chatnext_assistant_on_action)
+          ) {
+            if (window.trigger_chatnext_assistant) {
+              window.trigger_chatnext_assistant(
+                true,
+                responseWithSession?.session,
+              );
+            }
+          } else {
+            setTimeout(() => {
+              setRefetchAttendance(true);
+            }, 2000);
+          }
+          setIsActed(true);
+          document.dispatchEvent(
+            new CustomEvent("approval:acted", {
+              detail: { id: todoId },
+            }),
+          );
+          if (onAction) {
+            onAction();
+          }
+          setCurrentAction(null);
+        } catch (error) {
+          setCurrentAction(null);
+          toast.error(errorResponseFormater(error));
+          console.error("Action failed", error);
+        }
+      }, actionLoadingShow);
+    },
+    [
+      data?.custom_approval_type,
+      data?.custom_open_chatnext_assistant_on_action,
+      loading,
+      mutation,
+      onAction,
+      setRefetchAttendance,
+      todoId,
+    ],
+  );
+
+  const handleAction = useCallback(
+    (action: string) => {
       if (["approve", "reject"].includes(action.toLowerCase())) {
         const isMandatory = rejectionMandatoryData ?? true;
         if (action.toLowerCase() === "approve" || isMandatory) {
@@ -161,67 +247,9 @@ export function LeaveDetailView({
           return;
         }
       }
-      setCurrentAction(action);
-
-      try {
-        if (mutation?.isPending) return;
-        const response = await mutation?.mutateAsync({
-          action,
-          name: data?.todo_id || "",
-        });
-        const actionMap: Record<string, string> = {
-          Approve: "Approved",
-          Reject: "Rejected",
-        };
-
-        const finalAction = actionMap[action] ?? `${action}ed`;
-
-        toast.success(`Request ${finalAction} Successfully!`);
-        const responseWithSession = response as unknown as {
-          session?: string;
-        };
-
-        if (
-          (data?.custom_approval_type === "Approval Matrix" &&
-            responseWithSession?.session) ||
-          (data?.custom_approval_type === "Multi Actions" &&
-            data?.custom_open_chatnext_assistant_on_action)
-        ) {
-          if (window.trigger_chatnext_assistant) {
-            window.trigger_chatnext_assistant(
-              true,
-              responseWithSession?.session,
-            );
-          }
-        } else {
-          setTimeout(() => {
-            setRefetchAttendance(true);
-          }, 2000);
-        }
-        setIsActed(true);
-        document.dispatchEvent(
-          new CustomEvent("approval:acted", {
-            detail: { id: data?.todo_id },
-          }),
-        );
-        if (onAction) {
-          onAction();
-        }
-        setCurrentAction(null);
-      } catch (error) {
-        setCurrentAction(null);
-        toast.error(errorResponseFormater(error));
-        console.error("Action failed", error);
-      }
+      performAction(action);
     },
-
-    [
-      data,
-      mutation,
-      onAction,
-      setRefetchAttendance,
-      rejectionMandatoryData,
-    ],
+    [performAction, rejectionMandatoryData],
   );
 
   const handleSaveComment = async (reason: string | null) => {
@@ -235,17 +263,21 @@ export function LeaveDetailView({
                 : "Cancelled",
             reference_doctype: "Leave Application",
             reference_name:
-              data?.reference_document?.name || data?.reference_name || "",
+              data?.reference_document?.name || data?.reference_name || referenceName || "",
             comment_email: user?.name || "",
             comment_by: user?.name || "",
             content: reason,
-            subject: pendingAction.toLowerCase() === "approve" ? "Request Approved" : "Request Rejected",
+            subject:
+              pendingAction.toLowerCase() === "approve"
+                ? "Request Approved"
+                : "Request Rejected",
           });
         }
 
+        const actionToExecute = pendingAction;
         setShowCommentModal(false);
-        handleAction(pendingAction);
         setPendingAction(null);
+        await performAction(actionToExecute);
       }
     } catch (error) {
       console.error("Failed to save comment", error);
@@ -256,9 +288,23 @@ export function LeaveDetailView({
     setShowCommentModal(false);
     setPendingAction(null);
   };
-  const actions = data?.custom_doctype_actions
-    ? JSON.parse(data?.custom_doctype_actions)
-    : [];
+  const actions = useMemo(() => {
+    if (!data?.custom_doctype_actions) return [];
+    if (Array.isArray(data.custom_doctype_actions)) return data.custom_doctype_actions;
+    try {
+      return JSON.parse(data.custom_doctype_actions);
+    } catch {
+      return [];
+    }
+  }, [data?.custom_doctype_actions]);
+
+  const currentStatus = data?.todo_status || data?.status || "Open";
+  const isActionable =
+    (currentStatus === "Open" ||
+      currentStatus === "Pending" ||
+      currentStatus === "Draft" ||
+      currentStatus === "On Hold") &&
+    !isActed;
 
   if (isLoading && (documentName || referenceName)) {
     return <LoadingView onClose={onClose} label={label} />;
@@ -456,18 +502,17 @@ export function LeaveDetailView({
           </div>
         ) : actionsEnabled &&
           actions?.length > 0 &&
-          data?.status === "Open" &&
-          !isActed ? (
+          isActionable ? (
           <div className="w-full bg-white border-t shadow-md p-4 z-20">
             <TeamApprovalActionPill
               actionsEnabled={actionsEnabled}
               variant={isDesktop ? "modal" : "buttons"}
               actions={actions}
-              status={data?.status}
-              recordId={data?.todo_id}
+              status={currentStatus}
+              recordId={todoId}
               loadingAction={
                 currentAction
-                  ? { id: data?.todo_id, action: currentAction }
+                  ? { id: todoId, action: currentAction }
                   : null
               }
               onAction={(action) => handleAction(action)}
@@ -491,7 +536,7 @@ export function LeaveDetailView({
         description={`Please add a comment before ${pendingAction?.toLowerCase() === "approve" ? "approving" : "rejecting"} this leave request.`}
         label={`${pendingAction?.toLowerCase() === "approve" ? "APPROVAL" : "REJECTION"} COMMENT *`}
         placeholder={`Enter your ${pendingAction?.toLowerCase() === "approve" ? "approval" : "rejection"} comment...`}
-        todo_id={data?.todo_id}
+        todo_id={todoId}
         onCancel={handleCancelComment}
         onSave={handleSaveComment}
       />

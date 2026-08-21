@@ -74,26 +74,6 @@ frappe.ui.form.on("Job Offer", {
 });
 
 frappe.ui.form.on("Job Offer", {
-    // refresh: function(frm){
-	// 	if(frm.doc.status=="Awaiting Response"){
-	// 		  frm.add_custom_button(__('Send Job Offer'), function(){
-	// 			frappe.call({
-	// 				method: "recruitment.job_offer_utils.send_job_offer",
-	// 				args:{
-	// 					"job_offer_url": window.location.origin+"/job_offer?appl="+frm.doc.job_applicant,
-	// 					"candidate":frm.doc.applicant_name,
-	// 					"mail_id":frm.doc.job_applicant,
-	// 					"company":frm.doc.company,
-	// 					"designation":frm.doc.designation
-	// 				},
-	// 				callback: function(r) {
-	// 					// code snippet
-	// 				}
-	// 			});
-
-	// 		});
-	// 	}
-    // },
     offer_date: function(frm) {
         frm.trigger("filter_jo_expiry_date");
     },
@@ -544,6 +524,22 @@ function recruitment_offer_letter_styles() {
 		.ol-tab.active { color:var(--blue-600,#1479d6); font-weight:600; border-bottom-color:var(--blue-600,#1479d6); }
 		.ol-body { min-height:340px; }
 		.ol-empty { padding:48px; text-align:center; color:var(--text-muted,#8d99a6); }
+
+		/* An Employment Type mapped to several letters is previewed as one pane per
+		   letter, never merged — see get_offer_letter_preview_html. Each pane keeps
+		   its own PDF, so the viewer's own save button hands back that letter alone. */
+		.ol-letters-note { font-size:12px; color:var(--text-muted,#8d99a6); margin-bottom:10px; }
+		.ol-letter + .ol-letter { margin-top:22px; }
+		.ol-letter-head {
+			display:flex; align-items:center; gap:10px;
+			padding:9px 14px; border:1px solid #e0e0e0; border-bottom:none;
+			border-radius:6px 6px 0 0; background:var(--fg-color,#f7f8f9);
+		}
+		.ol-letter-no {
+			font-size:11px; font-weight:600; color:var(--text-muted,#8d99a6);
+			border:1px solid var(--border-color,#e2e6e9); border-radius:10px; padding:1px 8px;
+		}
+		.ol-letter-name { font-size:13px; font-weight:600; color:var(--text-color,#1f272e); }
 	`;
 	document.head.appendChild(style);
 }
@@ -772,6 +768,41 @@ function choose_offer_position(frm, opts) {
         },
     });
 }
+
+// ---------------------------------------------------------------------------
+// Retrigger Welcome Email — manually re-send the configured welcome / offer email
+// (Recruitment Settings -> job_offer_template) to the candidate. Direct top-level
+// button; only for a saved offer that has a linked Job Applicant.
+// ---------------------------------------------------------------------------
+frappe.ui.form.on("Job Offer", {
+    refresh(frm) {
+        if (frm.is_new() || !frm.doc.job_applicant) return;
+
+        frm.add_custom_button(__("Retrigger Welcome Email"), () => {
+            frappe.confirm(
+                __("Re-send the welcome email to {0}?", [
+                    frappe.utils.escape_html(frm.doc.applicant_name || frm.doc.job_applicant),
+                ]),
+                () => {
+                    frappe.call({
+                        method: "recruitment.api.bulk_job_offer.resend_welcome_email",
+                        args: { job_offer: frm.doc.name },
+                        freeze: true,
+                        freeze_message: __("Sending welcome email…"),
+                        callback: (r) => {
+                            if (!r.exc && r.message) {
+                                frappe.show_alert({
+                                    message: __("Welcome email sent to {0}", [r.message.email]),
+                                    indicator: "green",
+                                });
+                            }
+                        },
+                    });
+                }
+            );
+        });
+    },
+});
 
 // ---------------------------------------------------------------------------
 // Withdraw — pulls the offer back and releases its position to Open, which is

@@ -47,7 +47,10 @@ frappe.ui.form.on("Campus Drive Invite", {
 
 		frappe.call({
 			method: "recruitment.recruitment.doctype.campus_drive.campus_drive.get_campus_invite_details",
-			args: { campus_invite: row.campus_invite },
+			args: {
+				campus_invite: row.campus_invite,
+				campus_drive: frm.is_new() ? null : frm.doc.name,
+			},
 			callback: function (r) {
 				if (!r.message) {
 					return;
@@ -55,17 +58,11 @@ frappe.ui.form.on("Campus Drive Invite", {
 				const data = r.message;
 				let added = 0;
 
-				// Institutes -> Participating Institutes
-				(data.institutes || []).forEach((institute) => {
-					const exists = (frm.doc.participating_institutes || []).some(
-						(d) => d.institute === institute
-					);
-					if (!exists) {
-						const child = frm.add_child("participating_institutes");
-						child.institute = institute;
-						added += 1;
-					}
-				});
+				// Institutes are NOT copied in. An invite carries several colleges and HR
+				// splits them into drives by candidate count — one big college on its own,
+				// two small ones merged — so the choice is theirs. Report what is left to
+				// pick and what another live drive has already taken.
+				report_institutes(row.campus_invite, data);
 
 				// Job Openings -> Linked Job Openings
 				(data.job_openings || []).forEach((jo) => {
@@ -82,15 +79,12 @@ frappe.ui.form.on("Campus Drive Invite", {
 					}
 				});
 
-				frm.refresh_field("participating_institutes");
 				frm.refresh_field("linked_job_openings");
 
 				if (added) {
 					frappe.show_alert(
 						{
-							message: __("Institute & Job Openings fetched from {0}", [
-								row.campus_invite,
-							]),
+							message: __("Job Openings fetched from {0}", [row.campus_invite]),
 							indicator: "green",
 						},
 						5
@@ -98,6 +92,68 @@ frappe.ui.form.on("Campus Drive Invite", {
 				}
 			},
 		});
+	},
+});
+
+// Tell HR which colleges on a freshly added invite are still theirs to schedule.
+// The Participating Institutes picker is filtered to exactly this set (see
+// drive_institute_query in public/js/campus_drive.js) — this message is so they know
+// why a college is missing from it rather than wondering.
+function report_institutes(campus_invite, data) {
+	const available = data.available_institutes || [];
+	const taken = data.taken_institutes || [];
+
+	if (!available.length && taken.length) {
+		frappe.msgprint({
+			title: __("All colleges already scheduled"),
+			message: __(
+				"Every institute on {0} is already running on a live drive: {1}. Nothing left to schedule from this invite.",
+				[campus_invite, taken.map((t) => `${t.institute} → ${t.campus_drive}`).join(", ")]
+			),
+			indicator: "orange",
+		});
+		return;
+	}
+
+	if (!available.length) {
+		return;
+	}
+
+	let message = __("Pick the colleges for this drive from: {0}", [available.join(", ")]);
+	if (taken.length) {
+		message +=
+			"<br><br>" +
+			__("Already on a live drive (not available): {0}", [
+				taken.map((t) => `${t.institute} → ${t.campus_drive}`).join(", "),
+			]);
+	}
+	frappe.msgprint({
+		title: __("Select Participating Institutes"),
+		message: message,
+		indicator: "blue",
+	});
+}
+
+frappe.ui.form.on("Campus Drive Institute", {
+	institute: function (frm, cdt, cdn) {
+		// Each college runs once on a drive. Mirrors the server-side check in
+		// _validate_participating_institutes; caught here for instant feedback.
+		const row = locals[cdt][cdn];
+		if (!row.institute) {
+			return;
+		}
+		const dupe = (frm.doc.participating_institutes || []).find(
+			(d) => d.name !== row.name && d.institute === row.institute
+		);
+		if (dupe) {
+			const value = row.institute;
+			frappe.model.set_value(cdt, cdn, "institute", null);
+			frappe.msgprint({
+				title: __("Duplicate Institute"),
+				message: __("Institute {0} is already on this drive.", [value]),
+				indicator: "orange",
+			});
+		}
 	},
 });
 

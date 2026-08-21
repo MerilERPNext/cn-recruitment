@@ -1,11 +1,14 @@
 import frappe
 import json
+
+from frappe import _
 from  hrms.payroll.doctype.salary_slip import salary_slip
 from frappe.model.mapper import get_mapped_doc
 from frappe.utils import cint
-from frappe.utils import formatdate, now_datetime, time_diff_in_hours, flt, fmt_money
+from frappe.utils import escape_html, formatdate, now_datetime, time_diff_in_hours, flt, fmt_money
 
 from recruitment.recruitment.link_token import OFFER_SCOPE, offer_token, require_token
+from recruitment.recruitment.utils import as_administrator
 
 
 def is_dpdp_consent_enabled():
@@ -32,15 +35,49 @@ def _authorize_offer(appl, token, ptype="read"):
     require_token(OFFER_SCOPE, appl, token)
 
 
+def _candidate_owns_applicant(appl):
+    """True when the current Candidate Portal session owns Job Applicant ``appl``.
+
+    Resolves the candidate straight from their portal session cookie (endpoints that
+    are not wrapped by ``@candidate_required`` don't have ``frappe.local.candidate``
+    populated) and checks ownership the same way ``enforce_candidate_identity`` does:
+    the session email equals ``appl`` or the Job Applicant's ``email_id``.
+
+    Non-throwing — returns False for guests / non-candidate sessions, so callers can
+    safely fall back to the existing token / permission gate.
+    """
+    try:
+        from recruitment.api.candidate_auth import _get_session_cookie, _get_active_session
+
+        cookie = _get_session_cookie()
+        if not cookie:
+            return False
+        session = _get_active_session(cookie)
+        email = ((session.candidate if session else "") or "").strip().lower()
+        if not email:
+            return False
+        if (appl or "").strip().lower() == email:
+            return True
+        applicant_email = frappe.db.get_value("Job Applicant", appl, "email_id")
+        return bool(applicant_email and applicant_email.strip().lower() == email)
+    except Exception:
+        return False
+
+
 def _resolve_offer_employment_type(job_offer):
     """Employment Type (Link id) driving the offer print-format / document-template
     / compensation logic.
 
-    Prefers the value stored on the Job Offer itself, falling back to the linked
-    Job Applicant. This makes the mapping work even when the Employment Type was
-    set directly on the Job Offer (or is missing on the Job Applicant).
+    Read from the Job Offer, then the linked Job Applicant, then the Job Opening
+    the candidate applied to — the same order
+    `recruitment.customizations.job_offer.set_employment_type` writes it in at
+    submit. The opening matters most for a DRAFT: the offer's own value is
+    fetched from the applicant and `set_employment_type` only runs at submit, so
+    an offer being previewed has nothing on it yet and the letters would resolve
+    to none — leaving the preview to fall back to the doctype's default format
+    and show the candidate's offer as an unrelated letter.
 
-    Accepts a Job Offer name (str), a dict, or a doc. Returns None when neither
+    Accepts a Job Offer name (str), a dict, or a doc. Returns None when nothing
     carries a value. Never raises — callers degrade to their safe default.
     """
     try:
@@ -57,26 +94,38 @@ def _resolve_offer_employment_type(job_offer):
 
         if jo_et:
             return jo_et
-        if job_applicant:
-            return frappe.db.get_value(
-                "Job Applicant", job_applicant, "custom_employment_type"
-            )
+        if not job_applicant:
+            return None
+
+        applicant_et, opening = frappe.db.get_value(
+            "Job Applicant", job_applicant, ["custom_employment_type", "job_title"]
+        ) or (None, None)
+        if applicant_et:
+            return applicant_et
+        if opening:
+            return frappe.db.get_value("Job Opening", opening, "employment_type")
     except Exception:
         pass
     return None
 
 
-def get_job_offer_print_format(job_offer=None):
-    """Resolve which Job Offer Print Format to use.
+def get_job_offer_print_formats(job_offer=None):
+    """Resolve every Job Offer Print Format an offer should be sent with, in order.
 
-    Picks the print format mapped to the offer's Employment Type in
-    Recruitment Settings (`job_offer_print_format_mapping`) — read from the Job
-    Offer, falling back to the linked Job Applicant. Falls back to the single
-    `job_offer_print_format` default when there is no matching row.
+    Recruitment Settings' `job_offer_print_format_mapping` may carry more than
+    one row for the same Employment Type, and all of them apply: a Management
+    Trainee, for instance, is sent both the trainee letter and the permanent
+    offer letter. Rows are returned in table order, so the row order in the
+    settings decides the order of the attachments.
 
-    Backward compatible by design: an empty mapping table resolves to the exact
-    same value as before. Never raises — on any error it degrades to the default
-    (or None / Frappe default) so existing render / download paths keep working.
+    The Employment Type is read from the Job Offer, falling back to the linked
+    Job Applicant. Falls back to the single `job_offer_print_format` default
+    when no row matches.
+
+    Backward compatible by design: a mapping table with at most one row per
+    Employment Type resolves to exactly what it did before. Never raises — on
+    any error it degrades to the default so render / download paths keep
+    working.
 
     `job_offer` may be a Job Offer name (str) or a Job Offer doc; if omitted,
     only the default is returned.
@@ -87,23 +136,39 @@ def get_job_offer_print_format(job_offer=None):
         settings = None
 
     default_pf = (getattr(settings, "job_offer_print_format", None) or None) if settings else None
+    fallback = [default_pf] if default_pf else []
 
     if not job_offer or not settings:
-        return default_pf
+        return fallback
 
     try:
         employment_type = _resolve_offer_employment_type(job_offer)
         if not employment_type:
-            return default_pf
+            return fallback
 
+        formats = []
         for row in (settings.get("job_offer_print_format_mapping") or []):
             if row.employment_type == employment_type and row.print_format:
-                return row.print_format
+                if row.print_format not in formats:
+                    formats.append(row.print_format)
+        if formats:
+            return formats
     except Exception:
         # Any unexpected issue -> safe default, never break rendering.
         pass
 
-    return default_pf
+    return fallback
+
+
+def get_job_offer_print_format(job_offer=None):
+    """The offer's primary Job Offer Print Format, or None.
+
+    The single-format view of ``get_job_offer_print_formats`` — the first
+    mapped row. Used where only one document can be shown, such as the
+    print-view URL behind the desk 'Preview Offer Letter' button.
+    """
+    formats = get_job_offer_print_formats(job_offer)
+    return formats[0] if formats else None
 
 
 def get_job_offer_document_template(job_offer=None):
@@ -235,12 +300,21 @@ def render_job_offer_via_document_template(job_offer, template_name):
         return None, None
 
 
-def get_job_offer_pdf(job_offer):
-    """Return ``(pdf_bytes, filename)`` for a Job Offer using the configured
-    source: a Document Template when the toggle is on and one resolves,
-    otherwise the Print Format (existing behaviour).
+# How long a rendered offer PDF is reused for. Short, because it only exists to
+# stop repeat views re-spawning wkhtmltopdf; correctness comes from the key.
+OFFER_PDF_CACHE_TTL = 5 * 60
 
-    Central helper so the email / download / bulk flows share one decision.
+
+def get_job_offer_pdfs(job_offer):
+    """Return ``[(pdf_bytes, filename), ...]`` — every letter this offer is sent with.
+
+    The source is the configured one: a Document Template when the toggle is on
+    and one resolves (always a single document, since a template is an explicit
+    override of the print-format path), otherwise the Print Formats mapped to
+    the offer's Employment Type. That mapping is what makes a Management Trainee
+    receive two letters — the trainee letter and the permanent offer letter.
+
+    Central helper so the email / download / preview flows share one decision.
     ``job_offer`` may be a Job Offer name (str) or doc.
     """
     jo_name = job_offer if isinstance(job_offer, str) else job_offer.get("name")
@@ -250,14 +324,129 @@ def get_job_offer_pdf(job_offer):
     if template_name:
         pdf_bytes, filename = render_job_offer_via_document_template(job_offer, template_name)
         if pdf_bytes:
-            return pdf_bytes, filename
+            return [(pdf_bytes, filename)]
         # Render failed — fall through to the Print Format path (already logged).
 
-    pf = get_job_offer_print_format(job_offer)
-    pdf_bytes = frappe.get_print(
-        "Job Offer", jo_name, doc=jo_doc, print_format=pf, as_pdf=True
-    )
-    return pdf_bytes, f"{jo_name}.pdf"
+    formats = get_job_offer_print_formats(job_offer) or [None]
+    single = len(formats) == 1
+
+    documents = []
+    for pf in formats:
+        pdf_bytes = frappe.get_print(
+            "Job Offer", jo_name, doc=jo_doc, print_format=pf, as_pdf=True
+        )
+        # One letter keeps the plain filename it has always had; several are
+        # named after their format so the candidate can tell them apart.
+        filename = f"{jo_name}.pdf" if single or not pf else f"{jo_name} - {pf}.pdf"
+        documents.append((pdf_bytes, filename))
+
+    return documents
+
+
+def get_job_offer_pdf(job_offer):
+    """Return ``(pdf_bytes, filename)`` for a Job Offer as a single document.
+
+    Every configured letter, merged into one PDF when there is more than one, so
+    callers that can only hand over a single file (the candidate's download, the
+    preview panes) still give the candidate everything that was sent.
+
+    Rendering costs one wkhtmltopdf subprocess per letter, and the preview and
+    portal paths that call this are repeatable — ``preview_job_offer_html`` is a
+    guest endpoint — so the result is cached briefly. The cache key carries the
+    Job Offer's and every print format's ``modified`` stamp, so editing either
+    the offer or a letter invalidates it instead of serving a stale document.
+    Only a saved name is cached; passing a doc renders fresh, which is what the
+    send path does.
+    """
+    cache_key = _offer_pdf_cache_key(job_offer) if isinstance(job_offer, str) else None
+    if cache_key:
+        cached = frappe.cache.get_value(cache_key)
+        if cached:
+            return cached["pdf"], cached["filename"]
+
+    documents = get_job_offer_pdfs(job_offer)
+    if not documents:
+        return None, None
+
+    jo_name = job_offer if isinstance(job_offer, str) else job_offer.get("name")
+    if len(documents) == 1:
+        pdf_bytes, filename = documents[0]
+    else:
+        pdf_bytes, filename = merge_pdfs(documents), f"{jo_name}.pdf"
+
+    if cache_key and pdf_bytes:
+        frappe.cache.set_value(
+            cache_key,
+            {"pdf": pdf_bytes, "filename": filename},
+            expires_in_sec=OFFER_PDF_CACHE_TTL,
+        )
+
+    return pdf_bytes, filename
+
+
+def _offer_pdf_cache_key(jo_name):
+    """Cache key for a Job Offer's merged PDF, versioned on everything that can
+    change what the PDF looks like. Returns None if the version cannot be read,
+    which simply disables caching for that call."""
+    import hashlib
+
+    try:
+        stamps = [str(frappe.db.get_value("Job Offer", jo_name, "modified"))]
+        for pf in get_job_offer_print_formats(jo_name):
+            stamps.append(str(frappe.get_cached_value("Print Format", pf, "modified")))
+    except Exception:
+        return None
+
+    digest = hashlib.sha1("|".join([jo_name] + stamps).encode()).hexdigest()
+    return f"job_offer_pdf::{digest}"
+
+
+def render_job_offer_html(job_offer, print_format=None):
+    """Render an offer letter as HTML for a browser rather than for a PDF.
+
+    ``frappe.get_print`` stamps ``form_dict.pdf_generator`` whether or not a PDF
+    is actually being produced, and a print format cannot tell the difference at
+    render time. Formats that compensate for a PDF engine's quirks — the
+    HomeFirst letters scale themselves up for an unpatched-Qt wkhtmltopdf — would
+    therefore apply that compensation to on-screen HTML too. Pre-setting the
+    marker to something that is not a PDF generator tells them this render is
+    screen-bound.
+    """
+    previous = frappe.local.form_dict.get("pdf_generator")
+    frappe.local.form_dict.pdf_generator = "screen"
+    try:
+        return frappe.get_print("Job Offer", job_offer, print_format=print_format)
+    finally:
+        if previous is None:
+            frappe.local.form_dict.pop("pdf_generator", None)
+        else:
+            frappe.local.form_dict.pdf_generator = previous
+
+
+def merge_pdfs(documents):
+    """Concatenate ``[(pdf_bytes, filename), ...]`` into one PDF's bytes.
+
+    Falls back to the first document if merging fails, so a download can never
+    break on a malformed page tree.
+    """
+    import io
+
+    try:
+        from pypdf import PdfReader, PdfWriter
+
+        writer = PdfWriter()
+        for pdf_bytes, _filename in documents:
+            for page in PdfReader(io.BytesIO(pdf_bytes)).pages:
+                writer.add_page(page)
+        merged = io.BytesIO()
+        writer.write(merged)
+        return merged.getvalue()
+    except Exception:
+        frappe.log_error(
+            title="Job Offer PDF merge failed",
+            message=frappe.get_traceback(),
+        )
+        return documents[0][0]
 
 
 @frappe.whitelist()
@@ -287,15 +476,37 @@ def get_job_offer_print_preview_url(job_offer):
 
 
 @frappe.whitelist(allow_guest=True)
-def download_job_offer_pdf(appl, token=None):
-    """Download Job Offer PDF for a given applicant — guest, token-gated."""
+def download_job_offer_pdf(appl, token=None, separate=None):
+    """Download Job Offer PDF for a given applicant — guest, token-gated.
+
+    Default (``separate`` omitted / falsy): unchanged — streams ONE PDF file (all
+    configured letters merged into a single document when there is more than one),
+    exactly as before. Existing callers are unaffected.
+
+    Opt-in (``separate`` truthy, e.g. ``&separate=1``): returns JSON instead, with
+    each letter as its own base64 PDF, so the portal can show / download the letters
+    individually (e.g. a trainee letter AND a permanent offer letter mapped to the
+    same Employment Type)::
+
+        {"jo_id": "...", "count": 2, "letters": [
+            {"index": 0, "print_format": "Intern Offer Letter",
+             "filename": "HR-OFF-... - Intern Offer Letter.pdf", "pdf_base64": "..."},
+            ...
+        ]}
+    """
     if not appl:
         frappe.throw("Missing applicant parameter")
-    _authorize_offer(appl, token, "read")
+    # Desk/HR and the token-gated offer accept/reject page keep working exactly as
+    # before. Additionally, a logged-in candidate downloading THEIR OWN offer is
+    # allowed WITHOUT a link token — the candidate dashboard fetches this PDF after
+    # login and has no offer token to pass. Any other caller still needs the token
+    # (or Job Offer permission), so this does not open the endpoint up.
+    if not _candidate_owns_applicant(appl):
+        _authorize_offer(appl, token, "read")
 
-    original_user = frappe.session.user
-    frappe.set_user("Administrator")
-    try:
+    want_separate = cint(separate) if separate is not None else 0
+
+    with as_administrator():
         jo_id = frappe.db.get_value("Job Offer", {
             "job_applicant": appl,
             "docstatus": ["!=", 2],
@@ -306,14 +517,37 @@ def download_job_offer_pdf(appl, token=None):
 
         jo_doc = frappe.get_doc("Job Offer", jo_id)
 
-        # Document Template (when enabled) or Print Format (default).
+        # Opt-in: return every letter separately as base64 JSON.
+        if want_separate:
+            import base64
+
+            # Same source of truth as the merged/email paths, so the letters here are
+            # exactly the ones the candidate is sent — just kept separate.
+            documents = get_job_offer_pdfs(jo_doc) or []
+            # Print-format names in the same order, to label each letter (best-effort;
+            # a Document-Template render collapses to a single doc with no format name).
+            formats = get_job_offer_print_formats(jo_doc)
+
+            letters = []
+            for idx, (pdf_bytes, filename) in enumerate(documents):
+                if not pdf_bytes:
+                    continue
+                letters.append({
+                    "index": idx,
+                    "print_format": formats[idx] if idx < len(formats) else None,
+                    "filename": filename,
+                    "pdf_base64": base64.b64encode(pdf_bytes).decode(),
+                })
+
+            return {"jo_id": jo_id, "count": len(letters), "letters": letters}
+
+        # Default (unchanged): single merged PDF streamed as a file.
         pdf_content, filename = get_job_offer_pdf(jo_doc)
 
         frappe.local.response.filename = filename
         frappe.local.response.filecontent = pdf_content
         frappe.local.response.type = "pdf"
-    finally:
-        frappe.set_user(original_user)
+
 
 @frappe.whitelist(allow_guest=True)
 def preview_job_offer_html(appl, token=None):
@@ -322,9 +556,7 @@ def preview_job_offer_html(appl, token=None):
         frappe.throw("Missing applicant parameter")
     _authorize_offer(appl, token, "read")
 
-    original_user = frappe.session.user
-    frappe.set_user("Administrator")
-    try:
+    with as_administrator():
         jo_id = frappe.db.get_value("Job Offer", {
             "job_applicant": appl,
             "docstatus": ["!=", 2],
@@ -347,13 +579,23 @@ def preview_job_offer_html(appl, token=None):
                 )
                 return {"html": html, "jo_id": jo_id}
 
-        pf = get_job_offer_print_format(jo_id)
+        formats = get_job_offer_print_formats(jo_id)
 
-        # Exact same call your Jinja route makes on line 37 — just no as_pdf.
-        html = frappe.get_print("Job Offer", jo_id, print_format=pf)
+        # More than one letter cannot be shown as raw HTML without their
+        # stylesheets colliding, so the candidate is shown the same merged PDF
+        # the download gives them.
+        if len(formats) > 1:
+            import base64
+            pdf_bytes, _fname = get_job_offer_pdf(jo_id)
+            data_uri = "data:application/pdf;base64," + base64.b64encode(pdf_bytes).decode()
+            html = (
+                f'<iframe src="{data_uri}" style="width:100%; height:85vh; '
+                f'border:1px solid #ddd;" title="Offer Letter"></iframe>'
+            )
+            return {"html": html, "jo_id": jo_id}
+
+        html = render_job_offer_html(jo_id, formats[0] if formats else None)
         return {"html": html, "jo_id": jo_id}
-    finally:
-        frappe.set_user(original_user)
 
 @frappe.whitelist(allow_guest=True)
 def get_job_offer_status(appl, token=None):
@@ -397,6 +639,29 @@ def job_offer_update(status, appl, token=None, reason=None, message=None):
                 candidate_id=appl,
                 commit=True,
             )
+
+        # Guarantee the Employee Onboarding is materialized on acceptance,
+        # independently of the Job Offer's docstatus. sync_job_offer_action_item
+        # (which normally creates the EO) is wired only to after_insert / on_submit /
+        # on_update_after_submit, so an offer still in draft (docstatus 0) when the
+        # candidate accepts never triggers it — the raw docstatus flip above fires no
+        # hooks either. Calling the same routine here mirrors exactly what the hook
+        # does; it is idempotent (re-uses an existing EO) and DPDP-aware (defers when
+        # consent is enforced), so it is safe even when the hook also runs. When DPDP
+        # consent is enabled the dedicated consent-submission flow creates the EO, so
+        # we skip here to avoid the pre-consent side effects.
+        if status == "Accepted" and not is_dpdp_consent_enabled():
+            try:
+                from recruitment.api.action_center import _sync_onboarding_action_for_applicant
+                candidate_email = frappe.db.get_value("Job Applicant", appl, "email_id")
+                if candidate_email:
+                    _sync_onboarding_action_for_applicant(appl, candidate_email)
+                    frappe.db.commit()
+            except Exception:
+                frappe.log_error(
+                    frappe.get_traceback(),
+                    "job_offer_update: ensure onboarding on accept failed",
+                )
 
         webform = frappe.db.get_single_value("Recruitment Settings", "employee_onboarding_webform") or ""
 
@@ -454,11 +719,11 @@ def get_job_offer_summary(appl, token=None):
 
         # --- Compensation: dynamic by Employment Type -----------------------
         # Employment Type (custom_employment_type -> Employment Type Link) is read
-        # from the Job Offer, falling back to the linked Job Applicant. Resolve it
-        # to its title ("Intern", "Employee", ...). Only Intern carries a single
-        # Stipend; every
-        # other type carries Fixed (Base) + Variable (Variable Incentive) + Total.
-        # Raw numeric amounts are returned as-is — formatting is done on the UI.
+        # from the Job Offer, then the Job Applicant, then the Job Opening (see
+        # _resolve_offer_employment_type). Resolve it to its title ("Intern",
+        # "Employee", ...). Only Intern carries a single Stipend; every other type
+        # carries Fixed (Base) + Variable (Variable Incentive) + Total. Raw numeric
+        # amounts are returned as-is — formatting is done on the UI.
         employment_type = None
         et_id = _resolve_offer_employment_type(jo)
         if et_id:
@@ -480,8 +745,21 @@ def get_job_offer_summary(appl, token=None):
             precision = 0 if v == int(v) else 2
             return fmt_money(v, precision=precision)
 
+        # --- Compensation: driven by what's actually on the offer ---------------
+        # Populate the stipend and/or the fixed/variable/total fields based on which
+        # amounts are present, independent of role. Normally only one set is filled
+        # (a stipend for a trainee, or fixed pay for an employee); a Trainee sent BOTH
+        # a stipend letter and a fixed-pay letter simply has both filled, so the UI
+        # shows whichever section(s) are non-null. When nothing is filled the role
+        # default keeps the original shape (stipend for Intern, else fixed).
+        stipend_val = flt(stipend)
+        fixed_val = flt(jo.get("custom_total_fixed_pay") or jo.get("custom_base_salary"))
+        variable_val = flt(jo.get("custom_variable_incentive"))
+        has_stipend = stipend_val > 0
+        has_fixed = fixed_val > 0 or variable_val > 0
+
         compensation = {
-            "compensation_type": "stipend" if is_intern else "fixed_variable",
+            "compensation_type": None,
             "stipend": None,
             "fixed": None,
             "variable": None,
@@ -493,23 +771,50 @@ def get_job_offer_summary(appl, token=None):
             "total_formatted": None,
         }
 
-        if is_intern:
-            compensation["stipend"] = num(stipend)
-            compensation["stipend_formatted"] = fmt(stipend)
+        if has_stipend:
+            compensation["stipend"] = num(stipend_val)
+            compensation["stipend_formatted"] = fmt(stipend_val)
+        if has_fixed:
+            compensation["fixed"] = num(fixed_val)
+            compensation["variable"] = num(variable_val)
+            compensation["total"] = num(fixed_val + variable_val)
+            compensation["fixed_formatted"] = fmt(fixed_val)
+            compensation["variable_formatted"] = fmt(variable_val)
+            compensation["total_formatted"] = fmt(fixed_val + variable_val)
+
+        # Nothing filled -> fall back to the original role-based default so the
+        # response shape and values are unchanged for those offers.
+        if not has_stipend and not has_fixed:
+            if is_intern:
+                compensation["stipend"] = num(stipend_val)
+                compensation["stipend_formatted"] = fmt(stipend_val)
+            else:
+                compensation["fixed"] = num(fixed_val)
+                compensation["variable"] = num(variable_val)
+                compensation["total"] = num(fixed_val + variable_val)
+                compensation["fixed_formatted"] = fmt(fixed_val)
+                compensation["variable_formatted"] = fmt(variable_val)
+                compensation["total_formatted"] = fmt(fixed_val + variable_val)
+
+        # Hint for the UI: "both" when a stipend AND fixed pay are present (the
+        # trainee dual-letter case), else the single kind as before.
+        if has_stipend and has_fixed:
+            compensation["compensation_type"] = "both"
+        elif has_stipend:
+            compensation["compensation_type"] = "stipend"
+        elif has_fixed:
+            compensation["compensation_type"] = "fixed_variable"
         else:
-            fixed = flt(jo.get("custom_base_salary"))
-            variable = flt(jo.get("custom_variable_incentive"))
-            compensation["fixed"] = num(fixed)
-            compensation["variable"] = num(variable)
-            compensation["total"] = num(fixed + variable)
-            compensation["fixed_formatted"] = fmt(fixed)
-            compensation["variable_formatted"] = fmt(variable)
-            compensation["total_formatted"] = fmt(fixed + variable)
+            compensation["compensation_type"] = "stipend" if is_intern else "fixed_variable"
+
+        duration_display = (
+            f"{duration} Month{'s' if int(duration) != 1 else ''}" if duration else None
+        )
 
         return {
             "applicant_name": f"{jo.get('applicant_name') or ''} {jo.get('applicant_last_name') or ''}".strip(),
             "designation": designation_name or "Intern",
-            "duration_display": f"{duration} Month{'s' if int(duration) != 1 else ''}" if duration else None,
+            "duration_display": duration_display,
             "expected_doj_display": formatdate(expected_doj) if expected_doj else None,
             "expiry_display": expiry_display,
             "employment_type": employment_type,
@@ -601,10 +906,48 @@ def get_offer_letter_preview_html(job_offer):
                 "html": f'<iframe src="{data_uri}" style="width:100%;height:78vh;border:1px solid #e0e0e0;border-radius:6px;" title="Offer Letter Preview"></iframe>',
                 "source": "template",
             }
-    # Fall back to the Print Format preview.
+    # Fall back to the Print Format preview.  An Employment Type mapped to several
+    # letters gets one pane per letter rather than a single merged document: a
+    # Management Trainee is sent the trainee letter AND the permanent offer letter
+    # as two separate attachments, and a preview that glues them into one PDF
+    # misrepresents that — you cannot see where one ends, and saving from the
+    # viewer hands you both stapled together under one name.  One PDF per pane
+    # keeps the preview honest and lets each be read, printed and saved alone.
+    formats = get_job_offer_print_formats(job_offer)
+    if len(formats) > 1:
+        import base64
+
+        panes = []
+        for idx, (pdf_bytes, filename) in enumerate(get_job_offer_pdfs(job_offer) or []):
+            if not pdf_bytes:
+                continue
+            label = formats[idx] if idx < len(formats) else filename
+            data_uri = "data:application/pdf;base64," + base64.b64encode(pdf_bytes).decode()
+            panes.append(
+                f'<div class="ol-letter">'
+                f'<div class="ol-letter-head">'
+                f'<span class="ol-letter-no">{idx + 1} / {len(formats)}</span>'
+                f'<span class="ol-letter-name">{escape_html(label)}</span>'
+                f'</div>'
+                f'<iframe src="{data_uri}" style="width:100%;height:78vh;border:1px solid #e0e0e0;'
+                f'border-top:none;border-radius:0 0 6px 6px;" title="{escape_html(label)}"></iframe>'
+                f'</div>'
+            )
+
+        if panes:
+            return {
+                "html": (
+                    '<div class="ol-letters">'
+                    f'<div class="ol-letters-note">{_("This offer is sent as {0} separate letters.").format(len(panes))}</div>'
+                    + "".join(panes)
+                    + "</div>"
+                ),
+                "source": "print_format",
+            }
+
     from urllib.parse import urlencode
     params = {"doctype": "Job Offer", "name": job_offer, "trigger_print": 0, "no_letterhead": 0}
-    pf = get_job_offer_print_format(job_offer)
+    pf = formats[0] if formats else None
     if pf:
         params["format"] = pf
     url = "/printview?" + urlencode(params)
@@ -633,15 +976,19 @@ def send_job_offer(job_offer_url, candidate, mail_id,company,designation):
     settings = frappe.get_doc("Recruitment Settings")
     job_offer_temp = settings.job_offer_template
 
-    # Document Template (when enabled) or Print Format (default).
-    output_pdf, filename = get_job_offer_pdf(jo_doc)
-    pdf_attachment = {
-        "fname": filename,  # Name of the file
-        "fcontent": output_pdf,  # Byte content of the file
-        "content_type": "application/pdf",  # Content type of the file
-    }
+    # Document Template (when enabled) or Print Format(s). An Employment Type
+    # mapped to more than one print format is sent one attachment per letter —
+    # Management Trainees get the trainee letter and the permanent offer letter.
+    pdf_attachments = [
+        {
+            "fname": filename,  # Name of the file
+            "fcontent": output_pdf,  # Byte content of the file
+            "content_type": "application/pdf",  # Content type of the file
+        }
+        for output_pdf, filename in get_job_offer_pdfs(jo_doc)
+    ]
     frappe.sendmail(
-        attachments=[pdf_attachment],
+        attachments=pdf_attachments,
         recipients=[mail_id],
         subject=frappe.render_template(
             frappe.db.get_value("Email Template", job_offer_temp, "subject"),
@@ -729,7 +1076,6 @@ def make_salary_slip(
         target_doc,
         postprocess,
         ignore_child_tables=True,
-        #ignore_permissions=ignore_permissions,
         cached=True,
     )
     total_amount = 0
@@ -741,7 +1087,5 @@ def make_salary_slip(
         for j in doc.deductions:
             self.append("custom_deduction",{'component':j.salary_component,'amount':j.amount})
             total+=j.amount
-        # self.custom_total_earnings=total_amount
-        # self.custom_total_deductions=total
         return doc
         
