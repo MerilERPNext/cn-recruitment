@@ -1,36 +1,17 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useScreenSize } from "../../../hooks/useScreenSize";
-import useDebounce from "../../../hooks/useDebounce";
 import { APPROVAL_GOALS, GOAL_DETAIL } from "./mockData";
 import { GoalDetailData } from "./types";
 import { GoalHeader } from "./components/TeamGoals/GoalHeader";
 import { ApprovalQueueSection } from "./components/TeamGoals/ApprovalQueueSection";
 import { AllTeamGoalsSection } from "./components/TeamGoals/AllTeamGoalsSection";
 import { GoalDetailModal } from "./components/TeamGoals/GoalDetailModal";
-import { useGetTeamGoals } from "../../../hooks/usePerformance";
-
 
 const TeamGoals: React.FC = () => {
   const navigate = useNavigate();
   const { isMobile } = useScreenSize();
-  const [searchQuery, setSearchQuery] = useState<string>("");
-  const [page, setPage] = useState<number>(1);
-  const limit = 10;
-  const start = (page - 1) * limit;
 
-  const debouncedSearch = useDebounce(searchQuery, 300);
-
-  useEffect(() => {
-    setPage(1);
-  }, [debouncedSearch]);
-
-  const { data: teamGoals, isLoading, error } = useGetTeamGoals({
-    start,
-    limit,
-    search: debouncedSearch || undefined,
-  });
-  const card = teamGoals?.data?.cards;
   const [checkedGoals, setCheckedGoals] = useState<Set<string>>(
     new Set(APPROVAL_GOALS.filter((g) => g.checked).map((g) => g.id))
   );
@@ -76,21 +57,7 @@ const TeamGoals: React.FC = () => {
           onGoalClick={handleGoalClick}
         />
 
-        <AllTeamGoalsSection
-          isLoading={isLoading}
-          error={error}
-          totalGoals={card?.goals}
-          groups={teamGoals?.data?.groups}
-          health={teamGoals?.data?.health}
-          count={teamGoals?.data?.count}
-          matched={teamGoals?.data?.matched}
-          start={teamGoals?.data?.start}
-          limit={teamGoals?.data?.limit}
-          hasMore={teamGoals?.data?.has_more}
-          searchValue={searchQuery}
-          onSearchChange={setSearchQuery}
-          onPageChange={(newPage) => setPage(newPage)}
-        />
+        <AllTeamGoalsSection />
       </div>
 
       {selectedGoal && (

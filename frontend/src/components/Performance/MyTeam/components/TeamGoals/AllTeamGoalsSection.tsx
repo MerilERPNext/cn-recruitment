@@ -7,6 +7,8 @@ import { useScreenSize } from "../../../../../hooks/useScreenSize";
 import { getInitials } from "../../../../../utils/helperUtils";
 import Button from "../../../../shared/atoms/Button";
 import type { TeamGoalGroup, TeamGoalsHealth } from "../../../../../types/goal";
+import useDebounce from "../../../../../hooks/useDebounce";
+import { useGetTeamGoals } from "../../../../../hooks/usePerformance";
 import TeamGoalDetailModal, { type SelectedGoalDetail } from "./TeamGoalDetailModal";
 import TeamGoalRow from "./TeamGoalRow";
 import { TeamGoalsListSkeleton } from "./TeamGoalsSkeleton";
@@ -30,27 +32,36 @@ interface AllTeamGoalsSectionProps {
   onPageChange?: (page: number) => void;
 }
 
-export const AllTeamGoalsSection: React.FC<AllTeamGoalsSectionProps> = ({
-  totalGoals = 0,
-  groups = [],
-  health,
-  count,
-  matched,
-  start = 0,
-  limit = 10,
-  hasMore = false,
-  searchValue = "",
-  isLoading = false,
-  error,
-  onSearchChange,
-  onPageChange,
-}) => {
+export const AllTeamGoalsSection: React.FC<AllTeamGoalsSectionProps> = () => {
   const { isMobile, isTablet } = useScreenSize();
   const isCompact = isMobile || isTablet;
 
+  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [page, setPage] = useState<number>(1);
+  const limit = 10;
+  const start = (page - 1) * limit;
+
+  const debouncedSearch = useDebounce(searchQuery, 300);
+
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch]);
+
+  const { data: teamGoalsData, isLoading, error } = useGetTeamGoals({
+    start,
+    limit,
+    search: debouncedSearch || undefined,
+  });
+
+  const groups = teamGoalsData?.data?.groups || [];
+  const health = teamGoalsData?.data?.health;
+  const count = teamGoalsData?.data?.count;
+  const matched = teamGoalsData?.data?.matched;
+  const hasMore = teamGoalsData?.data?.has_more ?? false;
+  const totalGoals = teamGoalsData?.data?.cards?.goals ?? matched ?? groups.length;
+
   const [expandedMembers, setExpandedMembers] = useState<Set<string>>(new Set());
   const [selectedGoalDetail, setSelectedGoalDetail] = useState<SelectedGoalDetail | null>(null);
-  const [page, setPage] = useState<number>(1);
 
   useEffect(() => {
     if (groups && groups.length > 0) {
@@ -74,31 +85,18 @@ export const AllTeamGoalsSection: React.FC<AllTeamGoalsSectionProps> = ({
   }, []);
 
   const totalReporteesCount = matched ?? count ?? groups.length;
-  const pageSize = limit > 0 ? limit : 10;
-  const totalPages = Math.max(1, Math.ceil(totalReporteesCount / pageSize));
+  const totalPages = Math.max(1, Math.ceil(totalReporteesCount / limit));
 
-  const displayedGroups = useMemo(() => {
-    if (groups.length > pageSize) {
-      const startIndex = (page - 1) * pageSize;
-      return groups.slice(startIndex, startIndex + pageSize);
-    }
-    return groups;
-  }, [groups, page, pageSize]);
-
-  const startItem = totalReporteesCount === 0 ? 0 : start + (page - 1) * pageSize + 1;
-  const endItem = Math.min(start + page * pageSize, totalReporteesCount);
+  const startItem = totalReporteesCount === 0 ? 0 : start + 1;
+  const endItem = Math.min(start + limit, totalReporteesCount);
 
   const handlePrevPage = () => {
-    const newPage = Math.max(page - 1, 1);
-    setPage(newPage);
-    onPageChange?.(newPage);
+    setPage((prev) => Math.max(prev - 1, 1));
   };
 
   const handleNextPage = () => {
     if (page < totalPages || hasMore) {
-      const newPage = page + 1;
-      setPage(newPage);
-      onPageChange?.(newPage);
+      setPage((prev) => prev + 1);
     }
   };
 
@@ -117,7 +115,6 @@ export const AllTeamGoalsSection: React.FC<AllTeamGoalsSectionProps> = ({
         ],
     [health]
   );
-
 
   return (
     <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
@@ -144,15 +141,15 @@ export const AllTeamGoalsSection: React.FC<AllTeamGoalsSectionProps> = ({
             <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-400" />
             <input
               type="text"
-              value={searchValue}
-              onChange={(e) => onSearchChange?.(e.target.value)}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search employee..."
               className="h-9 w-full rounded-lg border border-gray-200 bg-white pl-8 pr-8 text-xs text-gray-800 placeholder-gray-400 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
             />
-            {searchValue && (
+            {searchQuery && (
               <button
                 type="button"
-                onClick={() => onSearchChange?.("")}
+                onClick={() => setSearchQuery("")}
                 className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
               >
                 <X className="h-3.5 w-3.5" />
@@ -173,14 +170,14 @@ export const AllTeamGoalsSection: React.FC<AllTeamGoalsSectionProps> = ({
       </header>
 
       <div className="space-y-3">
-        {!isLoading ? (
+        {isLoading ? (
           <TeamGoalsListSkeleton />
         ) : error ? (
           <TeamGoalsError
             message={getPerformanceErrorMessage(error, "Failed to load team goals")}
           />
-        ) : displayedGroups.length > 0 ? (
-          displayedGroups.map((group) => {
+        ) : groups.length > 0 ? (
+          groups.map((group: TeamGoalGroup) => {
             const isExpanded = expandedMembers.has(group.employee);
             return (
               <article
