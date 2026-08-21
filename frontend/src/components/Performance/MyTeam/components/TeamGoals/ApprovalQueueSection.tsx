@@ -196,7 +196,7 @@ export const ApprovalQueueSection: React.FC<ApprovalQueueSectionProps> = ({
           <Typography variant="bodySmall">No goals pending approval.</Typography>
         </div>
       ) : isPlanAction && byEmployeeList.length > 0 ? (
-        <div className="p-3 sm:p-4 space-y-3 bg-slate-50/60">
+        <div className="p-3 sm:p-4 space-y-3 bg-slate-50/60 max-h-[500px] overflow-y-auto">
           {byEmployeeList.map((empGroup: ApprovalQueueByEmployee) => (
             <EmployeeApprovalItem
               key={empGroup.employee}
@@ -212,7 +212,7 @@ export const ApprovalQueueSection: React.FC<ApprovalQueueSectionProps> = ({
           ))}
         </div>
       ) : isCompact ? (
-        <div className="space-y-3 border-t border-slate-100 bg-slate-50/60 p-3 sm:p-4">
+        <div className="space-y-3 border-t border-slate-100 bg-slate-50/60 p-3 sm:p-4 max-h-[500px] overflow-y-auto">
           {queueItems.map((item: ApprovalQueueItem) => {
             const itemId = item.goal || item.goal_key || item.employee;
             return (
@@ -232,7 +232,7 @@ export const ApprovalQueueSection: React.FC<ApprovalQueueSectionProps> = ({
           titles={APPROVAL_TABLE_TITLES}
           columnWidths={APPROVAL_TABLE_COLUMN_WIDTHS}
         >
-          <div className="w-full">
+          <div className="w-full max-h-[500px] overflow-y-auto">
             {queueItems.map((item: ApprovalQueueItem) => {
               const itemId = item.goal || item.goal_key || item.employee;
               return (
