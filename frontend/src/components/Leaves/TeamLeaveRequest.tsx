@@ -325,6 +325,7 @@ const TeamLeaveRequest = () => {
       {(requestId || referenceName) && (
         <LeaveDetailView
           actionsEnabled={actionsEnabled}
+          showLeaveBalance
           documentName={requestId || undefined}
           referenceName={referenceName || undefined}
           label="Leave Application"

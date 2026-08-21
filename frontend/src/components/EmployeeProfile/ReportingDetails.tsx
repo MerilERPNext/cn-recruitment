@@ -168,6 +168,7 @@ const ReportingDetails = ({ onActionSuccess }: ReportingDetailsProps) => {
     itemName: string;
     canDelete?: boolean;
     canEdit?: boolean;
+    isUnassigned?: boolean;
   }
 
   const HierarchyCard: React.FC<HierarchyCardProps> = ({
@@ -181,6 +182,7 @@ const ReportingDetails = ({ onActionSuccess }: ReportingDetailsProps) => {
     onDelete,
     canDelete,
     canEdit,
+    isUnassigned,
   }) => {
     const isCurrent = !endDate;
 
@@ -192,11 +194,19 @@ const ReportingDetails = ({ onActionSuccess }: ReportingDetailsProps) => {
           </div>
           <div className="flex flex-col gap-1 flex-1">
             <div className="flex justify-between items-center">
-              <Link to={`/webapp/employee-profile?target_user=${id}`} target="_blank">
-                <Typography variant="bodyMedium" className="font-bold text-gray-900 truncate flex gap-1 items-center hover:text-primary">
-                  <span>{name}</span><ExternalLink className="h-4 w-4" />
+              {/* A period the field held no value: there is no employee to link
+                  to, so the tile just states the gap. */}
+              {isUnassigned ? (
+                <Typography variant="bodyMedium" className="font-bold text-gray-400 italic truncate">
+                  Unassigned
                 </Typography>
-              </Link>
+              ) : (
+                <Link to={`/webapp/employee-profile?target_user=${id}`} target="_blank">
+                  <Typography variant="bodyMedium" className="font-bold text-gray-900 truncate flex gap-1 items-center hover:text-primary">
+                    <span>{name}</span><ExternalLink className="h-4 w-4" />
+                  </Typography>
+                </Link>
+              )}
 
               <div className="flex gap-1">
                 {id && canEditReportingDetails && canEdit !== false && (
@@ -329,7 +339,9 @@ const ReportingDetails = ({ onActionSuccess }: ReportingDetailsProps) => {
                 <div className="flex gap-2 overflow-auto items-stretch">
                   {sortedItems.map((item: any) => (
                     <div
-                      key={item.records}
+                      // Keyed on the history row, not its value -- "Unassigned"
+                      // rows carry no value and would collide on a blank key.
+                      key={item.name}
                       className={`min-h-[100%] ${sortedItems.length === 1 ? "max-w-md w-full" : ""}`}
                     >
                       <HierarchyCard
@@ -340,6 +352,7 @@ const ReportingDetails = ({ onActionSuccess }: ReportingDetailsProps) => {
                         id={item.records}
                         location={item.branch_name}
                         itemName={item?.name}
+                        isUnassigned={!!item.is_unassigned}
                         canDelete={!!item.can_delete}
                         canEdit={item.can_edit !== false}
                         onEdit={() => openEditModal(category, item)}
