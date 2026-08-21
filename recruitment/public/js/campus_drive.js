@@ -323,6 +323,14 @@ function cdScheduleDialog(frm, roundCode, poolData, done) {
 					"Campus interviews are walk-in: candidates are seen in any order, so only the date is needed."
 				),
 			},
+			{
+				fieldname: "mode", label: __("Mode of Interview"), fieldtype: "Select",
+				options: ["On-Site", "Online"], reqd: 1,
+				default: frm.doc.drive_type || "On-Site",
+				description: __(
+					"Defaults to this drive's Drive Type. Change it to run this batch the other way — each interview keeps its own mode, so a single one can still be switched later."
+				),
+			},
 			{ fieldname: "sec", fieldtype: "Section Break", label: __("Optional day window") },
 			{ fieldname: "from_time", label: __("From"), fieldtype: "Time", default: "09:00:00" },
 			{ fieldname: "col", fieldtype: "Column Break" },
@@ -359,6 +367,7 @@ function cdScheduleDialog(frm, roundCode, poolData, done) {
 				args: {
 					campus_drive: frm.doc.name, round_code: roundCode,
 					scheduled_on: v.scheduled_on, from_time: v.from_time, to_time: v.to_time,
+					mode: v.mode,
 					applicants: JSON.stringify(picked),
 				},
 				callback: (r) => {
@@ -1023,6 +1032,15 @@ function cdManualDialog(frm, roundCode, opts, done) {
 				reqd: 1,
 				default: frappe.datetime.get_today(),
 			},
+			{
+				fieldname: "mode",
+				label: __("Mode of Interview"),
+				fieldtype: "Select",
+				options: opts.modes || ["On-Site", "Online"],
+				reqd: 1,
+				default: opts.drive_mode || frm.doc.drive_type || "On-Site",
+				description: __("Defaults to this drive's Drive Type."),
+			},
 			{ fieldname: "body", fieldtype: "HTML" },
 		],
 		primary_action_label: __("Create Interviews"),
@@ -1053,6 +1071,7 @@ function cdManualDialog(frm, roundCode, opts, done) {
 						interviewer: user,
 						applicants: byUser[user],
 						scheduled_on: v.scheduled_on,
+						mode: v.mode,
 					},
 				})
 			);
@@ -1178,8 +1197,16 @@ function cdTakeCandidates(frm, roundCode, done) {
 	});
 }
 
-// Read-only panel view: each panel, its interviewers, and its candidates with their
-// live INTERVIEW status. No Pass/Fail here — that comes from Interview Feedback.
+// Panel view: each panel, its interviewers, and its candidates with their live
+// INTERVIEW status. No Pass/Fail here — that comes from Interview Feedback.
+//
+// Panels are dealt evenly but never FINISH evenly: one panelist gets three quick
+// candidates and is free while another is still on their first. So each row carries
+// a Reassign action that moves that candidate to whoever is free (and can switch the
+// interview's mode at the same time). The picker shows each interviewer's live load
+// — done vs still pending — which is the whole point: it is how HR spots the panel
+// that has run dry. Rows whose feedback is already in are not offered: that feedback
+// belongs to the person who gave it.
 function cdOpenPanelsDialog(frm, roundCode) {
 	const esc = (s) => frappe.utils.escape_html(String(s == null ? "" : s));
 	const d = new frappe.ui.Dialog({
@@ -1193,12 +1220,19 @@ function cdOpenPanelsDialog(frm, roundCode) {
 		({ Cleared: "#10B981", Rejected: "#EF4444", "Under Review": "#F59E0B", Pending: "#6B7280" }[st] ||
 			"#6B7280");
 
+	// The last payload, so the Reassign dialog can read the roster and the row it is
+	// acting on without a second round trip.
+	let last = { panels: [] };
+
 	function load() {
 		$body().html('<div class="cd-loading text-muted">' + __("Loading…") + "</div>");
 		frappe.call({
 			method: "recruitment.recruitment.doctype.campus_drive.campus_drive.get_round_interviews",
 			args: { campus_drive: frm.doc.name, round_code: roundCode },
-			callback: (r) => render(r.message || { panels: [] }),
+			callback: (r) => {
+				last = r.message || { panels: [] };
+				render(last);
+			},
 		});
 	}
 
@@ -1222,16 +1256,26 @@ function cdOpenPanelsDialog(frm, roundCode) {
 					const fb = c.feedback_expected
 						? `${c.feedback_got}/${c.feedback_expected}`
 						: "—";
+					const action = c.can_reassign
+						? `<button class="btn btn-xs btn-default cd-pv-move" data-pv-move="${esc(
+								c.interview
+						  )}">${__("Reassign")}</button>`
+						: `<span class="text-muted" title="${__(
+								"Feedback is in — reassigning would orphan it. Use an Additional Round instead."
+						  )}">${__("done")}</span>`;
 					return `<tr>
 						<td class="cd-gd-cand">${cdAvatar(c.applicant_name || c.job_applicant, cdColorFor(c.job_applicant))}
 							<span class="cd-link" data-pv-applicant="${esc(c.job_applicant)}">${esc(
 						c.applicant_name || c.job_applicant
 					)}</span></td>
+						<td class="text-muted">${esc(c.interviewer_name || c.interviewer || "—")}</td>
 						<td><span class="cd-badge" style="background:${cdTint(col, 0.15)};color:${col}">${esc(
 						c.status
 					)}</span></td>
+						<td class="text-muted">${esc(c.mode || "—")}</td>
 						<td class="text-muted">${__("feedback")}: ${fb}</td>
 						<td><span class="cd-link" data-pv-interview="${esc(c.interview)}">${esc(c.interview)}</span></td>
+						<td>${action}</td>
 					</tr>`;
 				})
 				.join("");
@@ -1242,16 +1286,18 @@ function cdOpenPanelsDialog(frm, roundCode) {
 					<span class="cd-rd-who">${who}</span>
 				</div>
 				${p.candidates.length ? `<div class="cd-table-wrap"><table class="cd-table cd-gd-table">
-					<thead><tr><th class="cd-inst-col">${__("Candidate")}</th><th>${__("Interview Status")}</th>
-					<th>${__("Feedback")}</th><th>${__("Interview")}</th></tr></thead>
+					<thead><tr><th class="cd-inst-col">${__("Candidate")}</th><th>${__("Interviewer")}</th>
+					<th>${__("Interview Status")}</th><th>${__("Mode")}</th>
+					<th>${__("Feedback")}</th><th>${__("Interview")}</th><th></th></tr></thead>
 					<tbody>${rows}</tbody></table></div>`
 					: `<div class="cd-empty text-muted">${__("No candidates dealt to this panel yet.")}</div>`}
 			</div>`;
 		};
 		$body().html(
 			`<div class="cd-hint text-muted" style="margin-bottom:10px">${__(
-				"Interviewers submit feedback on the Interview record; the result and stage move update automatically. This view is read-only."
+				"Interviewers submit feedback on the Interview record; the result and stage move update automatically. Use Reassign to hand a waiting candidate to a panelist who has finished early."
 			)}</div>` +
+			cdRosterBar(data.roster || []) +
 			`<div class="campus-dash">${panels.map(panelCard).join("")}</div>`
 		);
 	}
@@ -1262,10 +1308,126 @@ function cdOpenPanelsDialog(frm, roundCode) {
 	$body().on("click", "[data-pv-interview]", function () {
 		frappe.set_route("Form", "Interview", $(this).attr("data-pv-interview"));
 	});
+	$body().on("click", "[data-pv-move]", function () {
+		const interview = $(this).attr("data-pv-move");
+		const row = (last.panels || [])
+			.flatMap((p) => p.candidates || [])
+			.find((c) => c.interview === interview);
+		cdReassignDialog(frm, roundCode, row || { interview: interview }, last, load);
+	});
 
 	cdInjectStyles();
 	d.show();
 	load();
+}
+
+/**
+ * A strip of every rostered interviewer with their live load, above the panels.
+ *
+ * "Who is free right now" is the question the panel view exists to answer during a
+ * drive, and counting rows across four panel cards to work it out is exactly the
+ * delay this is meant to remove. Sorted by what is still pending, so whoever has
+ * run dry is first.
+ */
+function cdRosterBar(roster) {
+	if (!roster.length) return "";
+	const esc = (s) => frappe.utils.escape_html(String(s == null ? "" : s));
+	const sorted = roster.slice().sort((a, b) => a.pending - b.pending || b.done - a.done);
+	const pills = sorted
+		.map((r) => {
+			const free = r.pending === 0;
+			return `<span class="cd-pill ${free ? "cd-pill-free" : ""}" title="${esc(r.user)} · ${esc(
+				r.panel
+			)}">${esc(r.name)} — ${__("{0} pending", [r.pending])} · ${__("{0} done", [r.done])}</span>`;
+		})
+		.join("");
+	return `<div class="cd-roster-bar">
+		<span class="cd-meta-label">${__("Interviewer load")}</span>${pills}</div>`;
+}
+
+/**
+ * Move one candidate's interview to a different interviewer, and/or switch its mode.
+ *
+ * Deliberately one interview at a time: this is the "panelist just freed up, give
+ * them the next one" move, not a bulk re-deal. Bulk re-dealing is what "Assign to
+ * Panels" already does for candidates who have no interview yet.
+ */
+function cdReassignDialog(frm, roundCode, row, data, done) {
+	const roster = data.roster || [];
+	if (!roster.length) {
+		frappe.msgprint({
+			title: __("No interviewers on this round"),
+			indicator: "orange",
+			message: __("Add rows to Round Panelists with Round Code {0}, then try again.", [
+				`<b>${frappe.utils.escape_html(roundCode)}</b>`,
+			]),
+		});
+		return;
+	}
+
+	// Whoever is free is listed first and their load is in the label, so the choice is
+	// made from the dropdown itself rather than by cross-checking the board.
+	const sorted = roster.slice().sort((a, b) => a.pending - b.pending || b.done - a.done);
+	const options = sorted.map((r) => ({
+		value: r.user,
+		label: `${r.name} · ${r.panel} — ${__("{0} pending", [r.pending])} · ${__("{0} done", [
+			r.done,
+		])}`,
+	}));
+
+	const d = new frappe.ui.Dialog({
+		title: __("Reassign — {0}", [row.applicant_name || row.job_applicant || row.interview]),
+		fields: [
+			{
+				fieldname: "interviewer",
+				label: __("Interviewer"),
+				fieldtype: "Select",
+				options: options,
+				reqd: 1,
+				default: row.interviewer || options[0].value,
+				description: __(
+					"Currently with {0}. Panelists with nothing pending have finished their queue.",
+					[row.interviewer_name || row.interviewer || __("nobody")]
+				),
+			},
+			{
+				fieldname: "mode",
+				label: __("Mode of Interview"),
+				fieldtype: "Select",
+				options: data.modes || ["On-Site", "Online"],
+				reqd: 1,
+				default: row.mode || data.drive_mode || "On-Site",
+				description: __("Switch a single interview without changing the drive."),
+			},
+		],
+		primary_action_label: __("Reassign"),
+		primary_action(v) {
+			d.hide();
+			frappe.call({
+				method:
+					"recruitment.recruitment.doctype.campus_drive.campus_drive.reassign_round_interview",
+				args: {
+					campus_drive: frm.doc.name,
+					interview: row.interview,
+					interviewer: v.interviewer,
+					mode: v.mode,
+				},
+				freeze: true,
+				freeze_message: __("Reassigning…"),
+				callback: (r) => {
+					const m = r.message || {};
+					frappe.show_alert({
+						message: m.changed
+							? __("{0}: {1}", [m.interview, m.detail])
+							: __("Nothing changed — already assigned that way."),
+						indicator: m.changed ? "green" : "blue",
+					});
+					if (done) done();
+				},
+			});
+		},
+	});
+	d.show();
 }
 
 // ---------------------------------------------------------------------------
@@ -2275,6 +2437,11 @@ function cdInjectStyles() {
 .cd-pill-amber{background:rgba(245,158,11,.16);color:#D97706}
 .cd-pill-pass{background:rgba(16,185,129,.16);color:#059669}
 .cd-pill-fail{background:rgba(239,68,68,.14);color:#DC2626}
+/* An interviewer with nothing pending — the one HR is looking for. */
+.cd-pill-free{background:rgba(16,185,129,.16);color:#059669}
+.cd-roster-bar{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-bottom:10px;padding:8px 10px;border:1px solid var(--border-color);border-radius:8px;background:var(--control-bg,rgba(0,0,0,.03))}
+.cd-meta-label{font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--text-muted);margin-right:4px}
+.cd-pv-move{margin-left:4px}
 .cd-card{background:var(--card-bg,var(--fg-color));border:1px solid var(--border-color);border-radius:14px;padding:16px 18px;margin-bottom:14px}
 .cd-drive-strip{border-style:dashed}
 .cd-card-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:12px}

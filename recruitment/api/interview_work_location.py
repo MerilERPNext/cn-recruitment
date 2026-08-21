@@ -195,25 +195,45 @@ def get_work_location_context(job_applicant=None, recommended_region=None):
 	``restricted`` is False when the region has no locations mapped to it yet. The
 	form then offers every branch rather than an empty dropdown the panel cannot get
 	past — an unmaintained location master should not block interview feedback.
+
+	``reason`` says WHY when ``is_campus`` is False, so the form can tell a panel
+	"this is not a campus candidate" apart from "this candidate's record is missing".
 	"""
-	blank = {"is_campus": False, "region": None, "region_label": None, "branches": [],
-	         "restricted": False, "current_location": None, "locked_to": None,
-	         "locked_by": None}
-	if not job_applicant or not frappe.db.exists("Job Applicant", job_applicant):
-		return blank
+	def blank(reason):
+		# `reason` is what stops the form hiding both sections without a word. The
+		# three ways this comes back empty need different things from the reader:
+		# a lateral candidate SHOULD see nothing, a candidate whose record has been
+		# deleted is broken data someone has to fix, and an empty link is just a form
+		# that is not filled in yet. Telling them apart on the client needs the
+		# server to say which one it is.
+		return {"is_campus": False, "reason": reason, "region": None, "region_label": None,
+		        "branches": [], "restricted": False, "current_location": None,
+		        "locked_to": None, "locked_by": None}
+
+	if not job_applicant:
+		return blank("no_applicant")
+	if not frappe.db.exists("Job Applicant", job_applicant):
+		# A dangling link — the interview outlived the candidate record it points at.
+		# Not the same as "not a campus candidate": nothing about this interview can
+		# be answered, and the feedback is being written against a candidate who is
+		# no longer there.
+		return blank("applicant_missing")
 
 	if not _may_see(job_applicant):
 		frappe.throw(_("Not permitted."), frappe.PermissionError)
 
 	applicant = _applicant(job_applicant)
-	if not applicant or not _is_campus(applicant):
-		return blank
+	if not applicant:
+		return blank("applicant_missing")
+	if not _is_campus(applicant):
+		return blank("not_campus")
 
 	region = resolve_region(applicant, recommended_region)
 	branches = get_region_branches(region)
 	locked = locked_location(job_applicant)
 	return {
 		"is_campus": True,
+		"reason": None,
 		"region": region,
 		"region_label": _region_label(region),
 		"branches": branches,

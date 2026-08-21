@@ -118,6 +118,11 @@ doctype_js = {
         "public/js/interview.js",
         # Trims the form down to what a panel member needs (panel-only users).
         "public/js/interview_panel_view.js",
+        # "Submit Feedback" opens the Interview Feedback FORM instead of HRMS's
+        # dialog — the dialog skips the Region Recommendation / Work Location
+        # sections, which only exist on the form. Must load AFTER hrms's own
+        # interview.js (it is, being a hooks entry) so the override sticks.
+        "public/js/interview_feedback_route.js",
     ],
     "Interview Feedback": ["public/js/interview_feedback.js"],
     "User": ["public/js/user.js"],
