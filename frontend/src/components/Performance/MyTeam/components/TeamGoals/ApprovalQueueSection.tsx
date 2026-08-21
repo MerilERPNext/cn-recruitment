@@ -141,8 +141,7 @@ export const ApprovalQueueSection: React.FC<ApprovalQueueSectionProps> = ({
           <Typography variant="bodySmall">No goals pending approval.</Typography>
         </div>
       ) : isPlanAction && byEmployeeList.length > 0 ? (
-        /* plan_action === true: Smooth Collapsible Employee Dropdowns (All Closed Initially) */
-        <div className="divide-y divide-slate-200">
+        <div className="p-3 sm:p-4 space-y-3 bg-slate-50/60">
           {byEmployeeList.map((empGroup: ApprovalQueueByEmployee) => (
             <EmployeeApprovalItem
               key={empGroup.employee}
@@ -158,7 +157,6 @@ export const ApprovalQueueSection: React.FC<ApprovalQueueSectionProps> = ({
           ))}
         </div>
       ) : isCompact ? (
-        /* plan_action === false: Flat Queue List (Compact View) */
         <div className="space-y-3 border-t border-slate-100 bg-slate-50/60 p-3 sm:p-4">
           {queueItems.map((item: ApprovalQueueItem) => {
             const itemId = item.goal || item.goal_key || item.employee;

@@ -41,11 +41,11 @@ export const EmployeeApprovalItem: React.FC<EmployeeApprovalItemProps> = memo(({
   const canSendBackPlan = empActions.includes("send_back_plan");
 
   return (
-    <div className="bg-white">
+    <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm hover:border-slate-300 transition-all">
       {/* Employee Header (Click to Toggle Smoothly) */}
       <div
         onClick={() => onToggleExpand(empGroup.employee)}
-        className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 bg-slate-50 hover:bg-slate-100/80 transition-colors cursor-pointer"
+        className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 bg-white hover:bg-slate-50/80 transition-colors cursor-pointer"
       >
         <div className="flex flex-wrap items-center gap-3">
           <button
