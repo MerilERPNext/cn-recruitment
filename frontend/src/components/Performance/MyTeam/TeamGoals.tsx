@@ -55,7 +55,7 @@ const TeamGoals: React.FC = () => {
           checkedGoals={checkedGoals}
           onToggleCheck={toggleCheck}
           onGoalClick={handleGoalClick}
-        />
+        /> 
 
         <AllTeamGoalsSection />
       </div>
