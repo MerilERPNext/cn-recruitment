@@ -184,14 +184,15 @@ export const ApprovalQueueSection: React.FC<ApprovalQueueSectionProps> = ({
         </div>
       ) : isCompact ? (
         <div className="space-y-3 border-t border-slate-100 bg-slate-50/60 p-3 sm:p-4 max-h-[500px] overflow-y-auto">
-          {queueItems.map((item: ApprovalQueueItem , index:number) => {
-            const itemId = item.goal || item.goal_key || `${item.employee}-${index}`;            return (
+          {queueItems.map((item: ApprovalQueueItem, index: number) => {
+            const itemId = item.goal || item.goal_key || `${item.employee}-${index}`;
+            return (
               <GoalApprovalItem
                 key={itemId}
                 goal={item}
                 checked={checkedGoals.has(itemId)}
-                onToggleCheck={() => onToggleCheck(itemId)}
-                onClick={() => onGoalClick(item)}
+                onToggleCheck={onToggleCheck}
+                onClick={onGoalClick}
               />
             );
           })}
@@ -202,15 +203,15 @@ export const ApprovalQueueSection: React.FC<ApprovalQueueSectionProps> = ({
           columnWidths={APPROVAL_TABLE_COLUMN_WIDTHS}
         >
           <div className="w-full max-h-[500px] overflow-y-auto">
-            {queueItems.map((item: ApprovalQueueItem) => {
-              const itemId = item.goal || item.goal_key || item.employee;
+            {queueItems.map((item: ApprovalQueueItem, index: number) => {
+              const itemId = item.goal || item.goal_key || `${item.employee}-${index}`;
               return (
                 <GoalApprovalItem
                   key={itemId}
                   goal={item}
                   checked={checkedGoals.has(itemId)}
-                  onToggleCheck={() => onToggleCheck(itemId)}
-                  onClick={() => onGoalClick(item)}
+                  onToggleCheck={onToggleCheck}
+                  onClick={onGoalClick}
                 />
               );
             })}

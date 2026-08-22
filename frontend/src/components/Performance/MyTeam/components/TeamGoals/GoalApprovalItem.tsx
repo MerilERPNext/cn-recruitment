@@ -1,4 +1,4 @@
-import React, { memo } from "react";
+import React, { memo, useCallback } from "react";
 import { AlertCircle, Check, Eye, Undo2, X } from "lucide-react";
 import { useScreenSize } from "../../../../../hooks/useScreenSize";
 import { Typography } from "../../../../shared/atoms/Typography";
@@ -27,8 +27,8 @@ export const APPROVAL_TABLE_COLUMN_WIDTHS = [
 interface GoalApprovalItemProps {
   goal: ApprovalQueueItem;
   checked: boolean;
-  onToggleCheck: () => void;
-  onClick: () => void;
+  onToggleCheck: (id: string) => void;
+  onClick: (goal: ApprovalQueueItem) => void;
 }
 
 const getFlagStyles = (tone?: string) => {
@@ -117,6 +117,16 @@ export const GoalApprovalItem: React.FC<GoalApprovalItemProps> = memo(({
 }) => {
   const { isDesktop } = useScreenSize();
 
+  const itemId = goal.goal || goal.goal_key || goal.employee;
+
+  const handleCheckChange = useCallback(() => {
+    onToggleCheck(itemId);
+  }, [onToggleCheck, itemId]);
+
+  const handleCardClick = useCallback(() => {
+    onClick(goal);
+  }, [onClick, goal]);
+
   const empName = goal.employee_name || goal.employee || "Employee";
   const initials = goal.initials;
   const methodology = goal.methodology || "OKR";
@@ -136,7 +146,7 @@ export const GoalApprovalItem: React.FC<GoalApprovalItemProps> = memo(({
   if (isDesktop) {
     return (
       <div
-        onClick={onClick}
+        onClick={handleCardClick}
         className="grid gap-4 px-6 py-4 border-b border-gray-100 hover:bg-slate-50 transition-colors cursor-pointer items-center bg-white"
         style={{ gridTemplateColumns: APPROVAL_TABLE_COLUMN_WIDTHS.join(" ") }}
       >
@@ -145,7 +155,7 @@ export const GoalApprovalItem: React.FC<GoalApprovalItemProps> = memo(({
             aria-label={`Select ${goal.title}`}
             type="checkbox"
             checked={checked}
-            onChange={onToggleCheck}
+            onChange={handleCheckChange}
             className="h-4 w-4 rounded border-gray-300 text-blue-500 accent-blue-500 focus:ring-blue-500 cursor-pointer"
           />
         </div>
@@ -220,7 +230,7 @@ export const GoalApprovalItem: React.FC<GoalApprovalItemProps> = memo(({
 
         <div className="whitespace-nowrap text-center">
           <div className="flex justify-center">
-            <ApprovalActionButton goal={goal} onClick={onClick} />
+            <ApprovalActionButton goal={goal} onClick={handleCardClick} />
           </div>
         </div>
       </div>
@@ -229,7 +239,7 @@ export const GoalApprovalItem: React.FC<GoalApprovalItemProps> = memo(({
 
   return (
     <article
-      onClick={onClick}
+      onClick={handleCardClick}
       className="border border-slate-200 bg-white rounded-xl p-4 shadow-sm space-y-3 cursor-pointer hover:border-slate-300 transition-colors mb-3"
     >
       <div className="flex items-center justify-between gap-2">
@@ -238,7 +248,7 @@ export const GoalApprovalItem: React.FC<GoalApprovalItemProps> = memo(({
             aria-label={`Select ${goal.title}`}
             type="checkbox"
             checked={checked}
-            onChange={onToggleCheck}
+            onChange={handleCheckChange}
             className="h-4 w-4 rounded border-gray-300 text-blue-500 accent-blue-500 focus:ring-blue-500 cursor-pointer"
           />
           <Avatar
@@ -304,7 +314,7 @@ export const GoalApprovalItem: React.FC<GoalApprovalItemProps> = memo(({
       </div>
 
       <div className="flex items-center justify-end gap-3 pt-2 border-t border-slate-100" onClick={(e) => e.stopPropagation()}>
-        <ApprovalActionButton goal={goal} onClick={onClick} />
+        <ApprovalActionButton goal={goal} onClick={handleCardClick} />
       </div>
     </article>
   );
