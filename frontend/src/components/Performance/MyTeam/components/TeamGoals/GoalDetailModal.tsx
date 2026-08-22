@@ -65,7 +65,6 @@ export const GoalDetailModal: React.FC<GoalDetailModalProps> = ({
   return (
     <Modal isOpen onClose={onClose} size="md">
       <div className="flex flex-col max-h-[90vh]">
-        {/* Header */}
         <div className="flex items-start justify-between p-6 pb-4 border-b border-gray-100">
           <div className="flex flex-wrap gap-2 items-center mt-1">
             <Badge
@@ -101,9 +100,8 @@ export const GoalDetailModal: React.FC<GoalDetailModalProps> = ({
           </button>
         </div>
 
-        {/* Scrollable Body */}
         <div className="overflow-y-auto flex-1 p-6 space-y-6">
-          {!isLoading ? (
+          {isLoading ? (
             <GoalDetailSkeleton />
           ) : error || !apiData ? (
             <div className="py-12 text-center text-slate-500 font-medium space-y-1">
@@ -118,7 +116,6 @@ export const GoalDetailModal: React.FC<GoalDetailModalProps> = ({
             </div>
           ) : (
             <>
-              {/* Title + Employee */}
               <div>
                 <Typography variant="h3" className="text-gray-900 mb-2 font-bold">
                   {apiData?.title || "-"}
@@ -138,7 +135,6 @@ export const GoalDetailModal: React.FC<GoalDetailModalProps> = ({
                 </div>
               </div>
 
-              {/* Meta Grid */}
               <div className={`grid ${isMobile ? "grid-cols-2" : "grid-cols-4"} gap-6`}>
                 {metaItems.map((item) => (
                   <div key={item.label}>
@@ -155,7 +151,6 @@ export const GoalDetailModal: React.FC<GoalDetailModalProps> = ({
                 ))}
               </div>
 
-              {/* Description */}
               <div>
                 <Typography variant="bodySmall" className="font-medium text-gray-900 mb-2 block">
                   Description
@@ -167,7 +162,6 @@ export const GoalDetailModal: React.FC<GoalDetailModalProps> = ({
                 </div>
               </div>
 
-              {/* Key Results */}
               <div>
                 <Typography variant="bodySmall" className="font-medium text-gray-900 mb-3 block">
                   Key Results ({keyResults.length})
@@ -196,7 +190,6 @@ export const GoalDetailModal: React.FC<GoalDetailModalProps> = ({
                 )}
               </div>
 
-              {/* Add Comment */}
               <div>
                 <Typography variant="bodySmall" className="font-medium text-gray-900 mb-2 block">
                   Add comment{" "}
@@ -214,7 +207,6 @@ export const GoalDetailModal: React.FC<GoalDetailModalProps> = ({
                 />
               </div>
 
-              {/* Audit */}
               <div className="bg-slate-50 rounded-xl p-4 mb-2">
                 <Typography
                   variant="caption"
@@ -243,7 +235,6 @@ export const GoalDetailModal: React.FC<GoalDetailModalProps> = ({
           )}
         </div>
 
-        {/* Footer */}
         <div className="sticky bottom-0 z-10 flex flex-wrap items-center justify-between gap-4 border-t border-gray-200 bg-white px-6 py-4 shadow-[0_-1px_2px_rgba(15,23,42,0.04)]">
           <Typography variant="caption" className="text-gray-500">
             {apiData?.auto_approve_on ? `Auto-approves on ${apiData.auto_approve_on}` : "-"}
