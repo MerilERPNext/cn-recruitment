@@ -8,6 +8,7 @@ import Modal from "../../../../shared/Modal";
 import Avatar from "../../../../shared/Avatar";
 import { GoalDetailData } from "../../types";
 import { useGetGoalApprovalDetail } from "../../../../../hooks/usePerformance";
+import { getPerformanceErrorMessage } from "../../../../../services/performanceService";
 
 interface GoalDetailModalProps {
   goal?: GoalDetailData;
@@ -21,41 +22,43 @@ export const GoalDetailModal: React.FC<GoalDetailModalProps> = ({
   onClose,
   onApprove,
   employee,
-  goalKey
+  goalKey,
 }) => {
-  const [comment, setComment] = useState(
-    "Looks good. Make sure KR3 has weekly check-ins — this is the riskiest one."
-  );
+  const [comment, setComment] = useState("");
   const { isMobile } = useScreenSize();
-  const {data:goalApprovalData , isLoading , error } = useGetGoalApprovalDetail({employee:employee,goal_key:goalKey})
-  console.log(goalApprovalData,'ppppppppppppppp')
-  const keyResults = [
-    {
-      id: "KR 1",
-      title: "Design system v2 components shipped (24 of 32)",
-      target: "32",
-    },
-    {
-      id: "KR 2",
-      title: "Dashboard usability score ≥ 4.4 / 5",
-      target: "4.4",
-    },
-    {
-      id: "KR 3",
-      title: "WAU adoption ≥ 80% by Q3",
-      target: "80",
-    },
-  ];
+  const { data: goalApprovalData, isLoading, error } = useGetGoalApprovalDetail({
+    employee,
+    goal_key: goalKey,
+  });
+
+  const apiData = goalApprovalData?.data;
+
+  const keyResults = apiData?.key_results || [];
+  const auditLogs = apiData?.audit || [];
+  const flags = apiData?.flags || [];
+  const isActionDisabled = isLoading || Boolean(error) || !apiData;
 
   const metaItems = [
-    { label: "WEIGHTAGE", value: "20%" },
-    { label: "START", value: "1 Apr 2026" },
-    { label: "END", value: "31 Mar 2027" },
-    { label: "METRIC", value: "% rollout - target 100" },
-    { label: "ALIGNED TO", value: "Alakh Pandey · Org OKR" },
-    { label: "CONTRIBUTION", value: "12% of parent" },
-    { label: "VISIBILITY", value: "Team" },
-    { label: "AUTO-PULL", value: "Jira · OXY-2.0" },
+    {
+      label: "WEIGHTAGE",
+      value:
+        apiData?.weightage !== undefined && apiData?.weightage !== null
+          ? `${apiData.weightage}%`
+          : "-",
+    },
+    { label: "START", value: apiData?.start_date || "-" },
+    { label: "END", value: apiData?.end_date || "-" },
+    { label: "METRIC", value: apiData?.metric || "-" },
+    { label: "ALIGNED TO", value: apiData?.department ? `${apiData.department}` : "-" },
+    {
+      label: "CONTRIBUTION",
+      value:
+        apiData?.plan_total_weightage !== undefined && apiData?.plan_total_weightage !== null
+          ? `${apiData.plan_total_weightage}% of plan`
+          : "-",
+    },
+    { label: "VISIBILITY", value: apiData?.approval_mode || "-" },
+    { label: "AUTO-PULL", value: apiData?.goal_plan || "-" },
   ];
 
   return (
@@ -65,20 +68,28 @@ export const GoalDetailModal: React.FC<GoalDetailModalProps> = ({
         <div className="flex items-start justify-between p-6 pb-4 border-b border-gray-100">
           <div className="flex flex-wrap gap-2 items-center mt-1">
             <Badge
-              label="OKR · Individual"
+              label={`${apiData?.methodology || "OKR"} · Individual`}
               backgroundColor="bg-purple-50 text-purple-700"
               size="sm"
             />
             <Badge
-              label="Submitted"
+              label={apiData?.status_label || apiData?.goal_status || "-"}
               backgroundColor="bg-yellow-50 text-yellow-700"
               size="sm"
             />
             <Badge
-              label="Pending Approval"
+              label={apiData?.plan_status ? `Plan: ${apiData.plan_status}` : "-"}
               backgroundColor="bg-orange-50 text-orange-600"
               size="sm"
             />
+            {flags.map((flag) => (
+              <Badge
+                key={flag.key || flag.label}
+                label={flag.label}
+                backgroundColor="bg-red-50 text-red-700"
+                size="sm"
+              />
+            ))}
           </div>
           <button
             onClick={onClose}
@@ -91,145 +102,161 @@ export const GoalDetailModal: React.FC<GoalDetailModalProps> = ({
 
         {/* Scrollable Body */}
         <div className="overflow-y-auto flex-1 p-6 space-y-6">
-          {/* Title + Employee */}
-          <div>
-            <Typography variant="h3" className="text-gray-900 mb-2 font-bold">
-              dd
-            </Typography>
-            <div className="flex items-center gap-2">
-              <Avatar
-                name="SHARON"
-                fontSize="text-xs"
-                size="h-8 w-8"
-                avatarBgColor="bg-blue-50"
-                avatarTextColor="text-blue-600"
-              />
-              <Typography variant="bodySmall" className="text-gray-500">
-                SHARON · Sr. Product Designer · submitted 2 days ago
-              </Typography>
+          {isLoading ? (
+            <div className="py-12 text-center text-slate-500 font-medium animate-pulse">
+              Loading goal details...
             </div>
-          </div>
-
-          {/* Meta Grid */}
-          <div
-            className={`grid ${isMobile ? "grid-cols-2" : "grid-cols-4"} gap-6`}
-          >
-            {metaItems.map((item) => (
-              <div key={item.label}>
-                <Typography
-                  variant="caption"
-                  className="text-gray-400 uppercase tracking-wider block mb-1 font-semibold"
-                >
-                  {item.label}
-                </Typography>
-                <Typography
-                  variant="bodySmall"
-                  className="font-semibold text-gray-800"
-                >
-                  {item.value}
-                </Typography>
+          ) : error || !apiData ? (
+            <div className="py-12 text-center text-slate-500 font-medium space-y-1">
+              <div className="text-sm font-semibold text-slate-700">
+                {error
+                  ? getPerformanceErrorMessage(error, "Goal detail not found.")
+                  : "No goal details found."}
               </div>
-            ))}
-          </div>
-
-          {/* Description */}
-          <div>
-            <Typography
-              variant="bodySmall"
-              className="font-medium text-gray-900 mb-2 block"
-            >
-              Description
-            </Typography>
-            <div className="bg-[#f8fafc] border border-gray-100 rounded-xl p-4">
-              <Typography variant="bodySmall" className="text-gray-600">
-                Lead the design + research for the redesigned dashboard. Drive
-                adoption past 80% WAU. Coordinate with PMM and CS for rollout
-                comms. Quarterly progress reviews with Aditi.
+              <Typography variant="caption" className="text-slate-400 block">
+                The requested goal data is not available in the plan.
               </Typography>
             </div>
-          </div>
-
-          {/* Key Results */}
-          <div>
-            <Typography
-              variant="bodySmall"
-              className="font-medium text-gray-900 mb-3 block"
-            >
-              Key Results ({keyResults.length})
-            </Typography>
-            <div className="space-y-2">
-              {keyResults.map((kr) => (
-                <div
-                  key={kr.id}
-                  className="flex items-center justify-between gap-3 py-3 px-4 border border-gray-100 rounded-xl bg-white hover:bg-gray-50 transition-colors"
-                >
-                  <div className="flex items-center gap-3">
-                    <Badge label={kr.id} variant="purple-outline" size="sm" />
-                    <Typography
-                      variant="bodySmall"
-                      className="text-gray-800 font-medium"
-                    >
-                      {kr.title}
-                    </Typography>
-                  </div>
-                  <Typography
-                    variant="caption"
-                    className="text-gray-500 shrink-0"
-                  >
-                    Target {kr.target}
+          ) : (
+            <>
+              {/* Title + Employee */}
+              <div>
+                <Typography variant="h3" className="text-gray-900 mb-2 font-bold">
+                  {apiData?.title || "-"}
+                </Typography>
+                <div className="flex items-center gap-2">
+                  <Avatar
+                    name={apiData?.employee_name || employee || "Employee"}
+                    fontSize="text-xs"
+                    size="h-8 w-8"
+                    avatarBgColor="bg-blue-50"
+                    avatarTextColor="text-blue-600"
+                  />
+                  <Typography variant="bodySmall" className="text-gray-500">
+                    {apiData?.employee_name || "-"} · {apiData?.designation || "-"} · submitted{" "}
+                    {apiData?.submitted_ago || "-"}
                   </Typography>
                 </div>
-              ))}
-            </div>
-          </div>
+              </div>
 
-          {/* Add Comment */}
-          <div>
-            <Typography
-              variant="bodySmall"
-              className="font-medium text-gray-900 mb-2 block"
-            >
-              Add comment{" "}
-              <span className="text-gray-400 font-normal">
-                (visible to SHARON)
-              </span>
-            </Typography>
-            <textarea
-              aria-label="Add comment for SHARON"
-              value={comment}
-              onChange={(e) => setComment(e.target.value)}
-              rows={3}
-              className="w-full border border-gray-200 rounded-xl p-3 text-sm text-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 resize-none shadow-sm"
-            />
-          </div>
+              {/* Meta Grid */}
+              <div className={`grid ${isMobile ? "grid-cols-2" : "grid-cols-4"} gap-6`}>
+                {metaItems.map((item) => (
+                  <div key={item.label}>
+                    <Typography
+                      variant="caption"
+                      className="text-gray-400 uppercase tracking-wider block mb-1 font-semibold"
+                    >
+                      {item.label}
+                    </Typography>
+                    <Typography variant="bodySmall" className="font-semibold text-gray-800">
+                      {item.value}
+                    </Typography>
+                  </div>
+                ))}
+              </div>
 
-          {/* Audit */}
-          <div className="bg-slate-50 rounded-xl p-4 mb-2">
-            <Typography
-              variant="caption"
-              className="uppercase tracking-wider text-gray-500 font-bold block mb-1.5"
-            >
-              AUDIT
-            </Typography>
-            <Typography variant="bodySmall" className="text-gray-500">
-              Drafted 28 Apr · Submitted 30 Apr 09:14 · Edited 30 Apr 11:22
-              (added KR3) · Re-approval triggered
-            </Typography>
-          </div>
+              {/* Description */}
+              <div>
+                <Typography variant="bodySmall" className="font-medium text-gray-900 mb-2 block">
+                  Description
+                </Typography>
+                <div className="bg-[#f8fafc] border border-gray-100 rounded-xl p-4">
+                  <Typography variant="bodySmall" className="text-gray-600">
+                    {apiData?.description || "-"}
+                  </Typography>
+                </div>
+              </div>
+
+              {/* Key Results */}
+              <div>
+                <Typography variant="bodySmall" className="font-medium text-gray-900 mb-3 block">
+                  Key Results ({keyResults.length})
+                </Typography>
+                {keyResults.length > 0 ? (
+                  <div className="space-y-2">
+                    {keyResults.map((kr, idx) => (
+                      <div
+                        key={kr.goal_key || idx}
+                        className="flex items-center justify-between gap-3 py-3 px-4 border border-gray-100 rounded-xl bg-white hover:bg-gray-50 transition-colors"
+                      >
+                        <div className="flex items-center gap-3">
+                          <Badge label={`KR ${idx + 1}`} variant="purple-outline" size="sm" />
+                          <Typography variant="bodySmall" className="text-gray-800 font-medium">
+                            {kr.title || "-"}
+                          </Typography>
+                        </div>
+                        <Typography variant="caption" className="text-gray-500 shrink-0">
+                          Target {kr.target ?? "-"}
+                        </Typography>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-xs text-gray-400 italic py-2">No key results available.</div>
+                )}
+              </div>
+
+              {/* Add Comment */}
+              <div>
+                <Typography variant="bodySmall" className="font-medium text-gray-900 mb-2 block">
+                  Add comment{" "}
+                  <span className="text-gray-400 font-normal">
+                    (visible to {(apiData?.employee_name || employee || "").split(" ")[0] || "-"})
+                  </span>
+                </Typography>
+                <textarea
+                  aria-label={`Add comment for ${apiData?.employee_name || employee || "-"}`}
+                  value={comment}
+                  onChange={(e) => setComment(e.target.value)}
+                  placeholder="Type your comment here..."
+                  rows={3}
+                  className="w-full border border-gray-200 rounded-xl p-3 text-sm text-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 resize-none shadow-sm"
+                />
+              </div>
+
+              {/* Audit */}
+              <div className="bg-slate-50 rounded-xl p-4 mb-2">
+                <Typography
+                  variant="caption"
+                  className="uppercase tracking-wider text-gray-500 font-bold block mb-1.5"
+                >
+                  AUDIT
+                </Typography>
+                {auditLogs.length > 0 ? (
+                  <div className="space-y-1.5">
+                    {auditLogs.map((log, index) => (
+                      <Typography key={index} variant="bodySmall" className="text-gray-600 block">
+                        <span className="font-semibold text-gray-800">{log.action || "-"}</span> by{" "}
+                        <span className="font-medium text-gray-700">{log.by_name || log.actioned_by || "-"}</span>
+                        {log.actioned_on ? ` (${log.actioned_on})` : ""}
+                        {log.note ? ` — ${log.note}` : ""}
+                      </Typography>
+                    ))}
+                  </div>
+                ) : (
+                  <Typography variant="bodySmall" className="text-gray-500">
+                    -
+                  </Typography>
+                )}
+              </div>
+            </>
+          )}
         </div>
 
         {/* Footer */}
         <div className="sticky bottom-0 z-10 flex flex-wrap items-center justify-between gap-4 border-t border-gray-200 bg-white px-6 py-4 shadow-[0_-1px_2px_rgba(15,23,42,0.04)]">
           <Typography variant="caption" className="text-gray-500">
-            Auto-approves in 2 days
+            {apiData?.auto_approve_on ? `Auto-approves on ${apiData.auto_approve_on}` : "-"}
           </Typography>
           <div className="flex flex-wrap items-center gap-3">
             <Button
               variant="outline"
               bgColor="text"
               size="sm"
+              disabled={isActionDisabled}
               onClick={onClose}
-              className="h-9 w-[92px] bg-white px-0 text-xs font-semibold"
+              className="h-9 w-[92px] bg-white px-0 text-xs font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Send back
             </Button>
@@ -237,7 +264,8 @@ export const GoalDetailModal: React.FC<GoalDetailModalProps> = ({
               variant="outline"
               bgColor="error"
               size="sm"
-              className="h-9 w-[70px] bg-white px-0 text-xs font-semibold"
+              disabled={isActionDisabled}
+              className="h-9 w-[70px] bg-white px-0 text-xs font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Reject
             </Button>
@@ -245,8 +273,9 @@ export const GoalDetailModal: React.FC<GoalDetailModalProps> = ({
               variant="contain"
               bgColor="success"
               size="sm"
+              disabled={isActionDisabled}
               onClick={onApprove}
-              className="h-9 w-[110px] px-0 text-xs font-semibold"
+              className="h-9 w-[110px] px-0 text-xs font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Approve goal
             </Button>
