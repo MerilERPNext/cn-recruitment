@@ -24,6 +24,7 @@ export const EmployeeApprovalItem: React.FC<EmployeeApprovalItemProps> = memo(({
   const canApprovePlan = empActions.includes("approve_plan");
   const canRejectPlan = empActions.includes("reject_plan");
   const canSendBackPlan = empActions.includes("send_back_plan");
+  const hasAnyPlanAction = canApprovePlan || canRejectPlan || canSendBackPlan;
 
   return (
     <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm hover:border-slate-300 transition-all">
@@ -96,6 +97,11 @@ export const EmployeeApprovalItem: React.FC<EmployeeApprovalItemProps> = memo(({
               <Check className="h-3.5 w-3.5 mr-1 shrink-0 text-white" />
               <span>Approve<span className="hidden sm:inline"> Plan</span></span>
             </Button>
+          )}
+          {!hasAnyPlanAction && (
+            <span className="text-xs font-medium text-slate-400 bg-slate-100/80 border border-slate-200/60 px-2.5 py-1 rounded-md">
+              No action
+            </span>
           )}
         </div>
       </div>
