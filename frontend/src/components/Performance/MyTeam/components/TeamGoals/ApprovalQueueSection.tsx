@@ -184,9 +184,8 @@ export const ApprovalQueueSection: React.FC<ApprovalQueueSectionProps> = ({
         </div>
       ) : isCompact ? (
         <div className="space-y-3 border-t border-slate-100 bg-slate-50/60 p-3 sm:p-4 max-h-[500px] overflow-y-auto">
-          {queueItems.map((item: ApprovalQueueItem) => {
-            const itemId = item.goal || item.goal_key || item.employee;
-            return (
+          {queueItems.map((item: ApprovalQueueItem , index:number) => {
+            const itemId = item.goal || item.goal_key || `${item.employee}-${index}`;            return (
               <GoalApprovalItem
                 key={itemId}
                 goal={item}
