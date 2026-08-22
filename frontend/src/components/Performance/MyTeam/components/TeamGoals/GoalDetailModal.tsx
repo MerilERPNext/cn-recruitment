@@ -8,21 +8,51 @@ import Modal from "../../../../shared/Modal";
 import Avatar from "../../../../shared/Avatar";
 import { GoalDetailData } from "../../types";
 
-import { getInitials } from "../../../../../utils/helperUtils";
-
 interface GoalDetailModalProps {
-  goal: GoalDetailData;
+  goal?: GoalDetailData;
+  employee?: string;
+  goalKey?: string;
   onClose: () => void;
   onApprove: () => void;
 }
 
 export const GoalDetailModal: React.FC<GoalDetailModalProps> = ({
-  goal,
   onClose,
   onApprove,
 }) => {
-  const [comment, setComment] = useState(goal.managerComment);
+  const [comment, setComment] = useState(
+    "Looks good. Make sure KR3 has weekly check-ins — this is the riskiest one."
+  );
   const { isMobile } = useScreenSize();
+
+  const keyResults = [
+    {
+      id: "KR 1",
+      title: "Design system v2 components shipped (24 of 32)",
+      target: "32",
+    },
+    {
+      id: "KR 2",
+      title: "Dashboard usability score ≥ 4.4 / 5",
+      target: "4.4",
+    },
+    {
+      id: "KR 3",
+      title: "WAU adoption ≥ 80% by Q3",
+      target: "80",
+    },
+  ];
+
+  const metaItems = [
+    { label: "WEIGHTAGE", value: "20%" },
+    { label: "START", value: "1 Apr 2026" },
+    { label: "END", value: "31 Mar 2027" },
+    { label: "METRIC", value: "% rollout - target 100" },
+    { label: "ALIGNED TO", value: "Alakh Pandey · Org OKR" },
+    { label: "CONTRIBUTION", value: "12% of parent" },
+    { label: "VISIBILITY", value: "Team" },
+    { label: "AUTO-PULL", value: "Jira · OXY-2.0" },
+  ];
 
   return (
     <Modal isOpen onClose={onClose} size="md">
@@ -31,17 +61,17 @@ export const GoalDetailModal: React.FC<GoalDetailModalProps> = ({
         <div className="flex items-start justify-between p-6 pb-4 border-b border-gray-100">
           <div className="flex flex-wrap gap-2 items-center mt-1">
             <Badge
-              label={`${goal.type} · ${goal.label}`}
+              label="OKR · Individual"
               backgroundColor="bg-purple-50 text-purple-700"
               size="sm"
             />
             <Badge
-              label={goal.status}
+              label="Submitted"
               backgroundColor="bg-yellow-50 text-yellow-700"
               size="sm"
             />
             <Badge
-              label={goal.approvalStatus}
+              label="Pending Approval"
               backgroundColor="bg-orange-50 text-orange-600"
               size="sm"
             />
@@ -59,20 +89,19 @@ export const GoalDetailModal: React.FC<GoalDetailModalProps> = ({
         <div className="overflow-y-auto flex-1 p-6 space-y-6">
           {/* Title + Employee */}
           <div>
-            <Typography variant="h3" className="text-gray-900 mb-2">
-              {goal.title}
+            <Typography variant="h3" className="text-gray-900 mb-2 font-bold">
+              dd
             </Typography>
             <div className="flex items-center gap-2">
               <Avatar
-                name={goal.employeeName || getInitials(goal.employeeName)}
+                name="SHARON"
                 fontSize="text-xs"
                 size="h-8 w-8"
                 avatarBgColor="bg-blue-50"
                 avatarTextColor="text-blue-600"
               />
               <Typography variant="bodySmall" className="text-gray-500">
-                {goal.employeeName} · {goal.designation} · submitted{" "}
-                {goal.submittedAgo}
+                SHARON · Sr. Product Designer · submitted 2 days ago
               </Typography>
             </div>
           </div>
@@ -81,16 +110,7 @@ export const GoalDetailModal: React.FC<GoalDetailModalProps> = ({
           <div
             className={`grid ${isMobile ? "grid-cols-2" : "grid-cols-4"} gap-6`}
           >
-            {[
-              { label: "WEIGHTAGE", value: `${goal.weightage}%` },
-              { label: "START", value: goal.start },
-              { label: "END", value: goal.end },
-              { label: "METRIC", value: goal.metric },
-              { label: "ALIGNED TO", value: goal.alignedTo },
-              { label: "CONTRIBUTION", value: goal.contribution },
-              { label: "VISIBILITY", value: goal.visibility },
-              { label: "AUTO-PULL", value: goal.autoPull },
-            ].map((item) => (
+            {metaItems.map((item) => (
               <div key={item.label}>
                 <Typography
                   variant="caption"
@@ -118,7 +138,9 @@ export const GoalDetailModal: React.FC<GoalDetailModalProps> = ({
             </Typography>
             <div className="bg-[#f8fafc] border border-gray-100 rounded-xl p-4">
               <Typography variant="bodySmall" className="text-gray-600">
-                {goal.description}
+                Lead the design + research for the redesigned dashboard. Drive
+                adoption past 80% WAU. Coordinate with PMM and CS for rollout
+                comms. Quarterly progress reviews with Aditi.
               </Typography>
             </div>
           </div>
@@ -129,10 +151,10 @@ export const GoalDetailModal: React.FC<GoalDetailModalProps> = ({
               variant="bodySmall"
               className="font-medium text-gray-900 mb-3 block"
             >
-              Key Results ({goal.keyResults.length})
+              Key Results ({keyResults.length})
             </Typography>
             <div className="space-y-2">
-              {goal.keyResults.map((kr) => (
+              {keyResults.map((kr) => (
                 <div
                   key={kr.id}
                   className="flex items-center justify-between gap-3 py-3 px-4 border border-gray-100 rounded-xl bg-white hover:bg-gray-50 transition-colors"
@@ -165,11 +187,11 @@ export const GoalDetailModal: React.FC<GoalDetailModalProps> = ({
             >
               Add comment{" "}
               <span className="text-gray-400 font-normal">
-                (visible to {goal.employeeName.split(" ")[0]})
+                (visible to SHARON)
               </span>
             </Typography>
             <textarea
-              aria-label={`Add comment for ${goal.employeeName}`}
+              aria-label="Add comment for SHARON"
               value={comment}
               onChange={(e) => setComment(e.target.value)}
               rows={3}
@@ -186,7 +208,8 @@ export const GoalDetailModal: React.FC<GoalDetailModalProps> = ({
               AUDIT
             </Typography>
             <Typography variant="bodySmall" className="text-gray-500">
-              {goal.auditLog}
+              Drafted 28 Apr · Submitted 30 Apr 09:14 · Edited 30 Apr 11:22
+              (added KR3) · Re-approval triggered
             </Typography>
           </div>
         </div>
@@ -194,7 +217,7 @@ export const GoalDetailModal: React.FC<GoalDetailModalProps> = ({
         {/* Footer */}
         <div className="sticky bottom-0 z-10 flex flex-wrap items-center justify-between gap-4 border-t border-gray-200 bg-white px-6 py-4 shadow-[0_-1px_2px_rgba(15,23,42,0.04)]">
           <Typography variant="caption" className="text-gray-500">
-            Auto-approves in {goal.autoApprovesInDays} days
+            Auto-approves in 2 days
           </Typography>
           <div className="flex flex-wrap items-center gap-3">
             <Button

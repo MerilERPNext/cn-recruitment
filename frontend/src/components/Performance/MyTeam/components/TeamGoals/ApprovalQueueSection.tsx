@@ -19,7 +19,7 @@ import EmployeeApprovalItem from "./EmployeeApprovalItem";
 interface ApprovalQueueSectionProps {
   checkedGoals: Set<string>;
   onToggleCheck: (id: string) => void;
-  onGoalClick: (goal: any) => void;
+  onGoalClick: (employee: string, goalKey: string) => void;
 }
 
 export const ApprovalQueueSection: React.FC<ApprovalQueueSectionProps> = ({

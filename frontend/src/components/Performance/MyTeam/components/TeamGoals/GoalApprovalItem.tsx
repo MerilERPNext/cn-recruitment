@@ -28,7 +28,7 @@ interface GoalApprovalItemProps {
   goal: ApprovalQueueItem;
   checked: boolean;
   onToggleCheck: (id: string) => void;
-  onClick: (goal: ApprovalQueueItem) => void;
+  onClick: (employee: string, goalKey: string) => void;
 }
 
 const getFlagStyles = (tone?: string) => {
@@ -124,7 +124,9 @@ export const GoalApprovalItem: React.FC<GoalApprovalItemProps> = memo(({
   }, [onToggleCheck, itemId]);
 
   const handleCardClick = useCallback(() => {
-    onClick(goal);
+    const emp = goal.employee || "";
+    const key = goal.goal || goal.goal_key || "";
+    onClick(emp, key);
   }, [onClick, goal]);
 
   const empName = goal.employee_name || goal.employee || "Employee";

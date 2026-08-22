@@ -1,8 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useScreenSize } from "../../../hooks/useScreenSize";
-import { GOAL_DETAIL } from "./mockData";
-import { GoalDetailData } from "./types";
 import { GoalHeader } from "./components/TeamGoals/GoalHeader";
 import { ApprovalQueueSection } from "./components/TeamGoals/ApprovalQueueSection";
 import { AllTeamGoalsSection } from "./components/TeamGoals/AllTeamGoalsSection";
@@ -13,18 +11,10 @@ const TeamGoals: React.FC = () => {
   const { isMobile } = useScreenSize();
 
   const [checkedGoals, setCheckedGoals] = useState<Set<string>>(new Set());
-  const [selectedGoal, setSelectedGoal] = useState<GoalDetailData | null>(null);
+  const [selectedGoal, setSelectedGoal] = useState<{ employee: string; goalKey: string } | null>(null);
 
-  const handleGoalClick = (baseGoal: any) => {
-    setSelectedGoal({
-      ...GOAL_DETAIL,
-      id: baseGoal.goal || baseGoal.goal_key || baseGoal.id || "",
-      title: baseGoal.title,
-      status: baseGoal.status_label || baseGoal.status || "Submitted",
-      employeeName: baseGoal.employee_name || baseGoal.employeeName,
-      employeeInitials: baseGoal.initials || baseGoal.employeeInitials,
-      weightage: baseGoal.weightage || GOAL_DETAIL.weightage,
-    });
+  const handleGoalClick = (employee: string, goalKey: string) => {
+    setSelectedGoal({ employee, goalKey });
   };
 
   const handleApproveGoal = () => {
@@ -59,7 +49,8 @@ const TeamGoals: React.FC = () => {
 
       {selectedGoal && (
         <GoalDetailModal
-          goal={selectedGoal}
+          employee={selectedGoal.employee}
+          goalKey={selectedGoal.goalKey}
           onClose={() => setSelectedGoal(null)}
           onApprove={handleApproveGoal}
         />
