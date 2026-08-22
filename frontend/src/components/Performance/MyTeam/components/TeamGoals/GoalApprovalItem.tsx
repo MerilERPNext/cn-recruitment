@@ -124,7 +124,6 @@ export const GoalApprovalItem: React.FC<GoalApprovalItemProps> = memo(({
   }, [onToggleCheck, itemId]);
 
   const handleCardClick = useCallback(() => {
-    onClick(goal);
   }, [onClick, goal]);
 
   const empName = goal.employee_name || goal.employee || "Employee";

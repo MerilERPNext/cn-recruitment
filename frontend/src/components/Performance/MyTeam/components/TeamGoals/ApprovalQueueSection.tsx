@@ -145,61 +145,43 @@ export const ApprovalQueueSection: React.FC<ApprovalQueueSectionProps> = ({
         </div>
       </div>
 
-      {queueLoading ? (
-        <div className="p-4">
-          <CardSkeleton rows={2} />
-        </div>
-      ) : error ? (
-        <div className="m-4 rounded-lg border border-red-200 bg-red-50 p-4 text-red-700 flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3 min-w-0">
-            <AlertCircle className="w-5 h-5 shrink-0 text-red-600" />
-            <Typography variant="bodySmall" className="truncate">
-              Failed to load approval queue. {getPerformanceErrorMessage(error, "An unexpected error occurred.")}
-            </Typography>
+      {isCompact ? (
+        queueLoading ? (
+          <div className="p-4">
+            <CardSkeleton rows={2} />
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => refetch()}
-            className="shrink-0 border-red-200 text-red-700 hover:bg-red-100"
-          >
-            Retry
-          </Button>
-        </div>
-      ) : queueItems.length === 0 && byEmployeeList.length === 0 ? (
-        <div className="py-12 text-center text-slate-400">
-          <Typography variant="bodySmall">No goals pending approval.</Typography>
-        </div>
-      ) : isPlanAction && byEmployeeList.length > 0 ? (
-        <div className="p-3 sm:p-4 pr-2 sm:pr-3 space-y-3 bg-slate-50/60 max-h-[500px] overflow-y-auto">
-          {byEmployeeList.map((empGroup: ApprovalQueueByEmployee) => (
-            <EmployeeApprovalItem
-              key={empGroup.employee}
-              empGroup={empGroup}
-            />
-          ))}
-        </div>
-      ) : isCompact ? (
-        <div className="space-y-3 border-t border-slate-100 bg-slate-50/60 p-3 sm:p-4 max-h-[500px] overflow-y-auto">
-          {queueItems.map((item: ApprovalQueueItem, index: number) => {
-            const itemId = item.goal || item.goal_key || `${item.employee}-${index}`;
-            return (
-              <GoalApprovalItem
-                key={itemId}
-                goal={item}
-                checked={checkedGoals.has(itemId)}
-                onToggleCheck={onToggleCheck}
-                onClick={onGoalClick}
+        ) : error ? (
+          <div className="m-4 rounded-lg border border-red-200 bg-red-50 p-4 text-red-700 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3 min-w-0">
+              <AlertCircle className="w-5 h-5 shrink-0 text-red-600" />
+              <Typography variant="bodySmall" className="truncate">
+                Failed to load approval queue. {getPerformanceErrorMessage(error, "An unexpected error occurred.")}
+              </Typography>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => refetch()}
+              className="shrink-0 border-red-200 text-red-700 hover:bg-red-100"
+            >
+              Retry
+            </Button>
+          </div>
+        ) : queueItems.length === 0 && byEmployeeList.length === 0 ? (
+          <div className="py-12 text-center text-slate-400">
+            <Typography variant="bodySmall">No goals pending approval.</Typography>
+          </div>
+        ) : isPlanAction && byEmployeeList.length > 0 ? (
+          <div className="p-3 sm:p-4 pr-2 sm:pr-3 space-y-3 bg-slate-50/60 max-h-[500px] overflow-y-auto">
+            {byEmployeeList.map((empGroup: ApprovalQueueByEmployee) => (
+              <EmployeeApprovalItem
+                key={empGroup.employee}
+                empGroup={empGroup}
               />
-            );
-          })}
-        </div>
-      ) : (
-        <CardTable
-          titles={APPROVAL_TABLE_TITLES}
-          columnWidths={APPROVAL_TABLE_COLUMN_WIDTHS}
-        >
-          <div className="w-full max-h-[500px] overflow-y-auto">
+            ))}
+          </div>
+        ) : (
+          <div className="space-y-3 border-t border-slate-100 bg-slate-50/60 p-3 sm:p-4 max-h-[500px] overflow-y-auto">
             {queueItems.map((item: ApprovalQueueItem, index: number) => {
               const itemId = item.goal || item.goal_key || `${item.employee}-${index}`;
               return (
@@ -213,6 +195,62 @@ export const ApprovalQueueSection: React.FC<ApprovalQueueSectionProps> = ({
               );
             })}
           </div>
+        )
+      ) : (
+        <CardTable
+          titles={APPROVAL_TABLE_TITLES}
+          columnWidths={APPROVAL_TABLE_COLUMN_WIDTHS}
+        >
+          {queueLoading ? (
+            <div className="p-4">
+              <CardSkeleton rows={2} />
+            </div>
+          ) : error ? (
+            <div className="m-4 rounded-lg border border-red-200 bg-red-50 p-4 text-red-700 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3 min-w-0">
+                <AlertCircle className="w-5 h-5 shrink-0 text-red-600" />
+                <Typography variant="bodySmall" className="truncate">
+                  Failed to load approval queue. {getPerformanceErrorMessage(error, "An unexpected error occurred.")}
+                </Typography>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => refetch()}
+                className="shrink-0 border-red-200 text-red-700 hover:bg-red-100"
+              >
+                Retry
+              </Button>
+            </div>
+          ) : queueItems.length === 0 && byEmployeeList.length === 0 ? (
+            <div className="py-12 text-center text-slate-400">
+              <Typography variant="bodySmall">No goals pending approval.</Typography>
+            </div>
+          ) : isPlanAction && byEmployeeList.length > 0 ? (
+            <div className="p-3 sm:p-4 pr-2 sm:pr-3 space-y-3 bg-slate-50/60 max-h-[500px] overflow-y-auto">
+              {byEmployeeList.map((empGroup: ApprovalQueueByEmployee) => (
+                <EmployeeApprovalItem
+                  key={empGroup.employee}
+                  empGroup={empGroup}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="w-full max-h-[500px] overflow-y-auto">
+              {queueItems.map((item: ApprovalQueueItem, index: number) => {
+                const itemId = item.goal || item.goal_key || `${item.employee}-${index}`;
+                return (
+                  <GoalApprovalItem
+                    key={itemId}
+                    goal={item}
+                    checked={checkedGoals.has(itemId)}
+                    onToggleCheck={onToggleCheck}
+                    onClick={onGoalClick}
+                  />
+                );
+              })}
+            </div>
+          )}
         </CardTable>
       )}
 
