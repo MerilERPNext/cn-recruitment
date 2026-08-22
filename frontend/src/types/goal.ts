@@ -1065,4 +1065,83 @@ export interface ApprovalQueueResponse {
   data: ApprovalQueueData;
 }
 
+export interface GoalApprovalFlag {
+  key: string;
+  tone: string;
+  label: string;
+}
+
+export interface GoalApprovalKeyResult {
+  goal_key: string;
+  goal?: string | null;
+  title: string;
+  weightage: number;
+  metric?: string | null;
+  target?: number | null;
+  target_type?: string;
+  achievement?: number | null;
+  goal_status?: string;
+}
+
+export interface GoalApprovalAuditItem {
+  action: string;
+  actioned_by: string;
+  actioned_on: string;
+  note?: string | null;
+  approval_mode?: string;
+  by_name?: string;
+}
+
+export interface GoalApprovalDetailData {
+  approval_mode: string;
+  approval_engine: string;
+  approval_matrix?: string | null;
+  decide_via: string;
+  approval_todo?: unknown;
+  employee: string;
+  employee_name: string;
+  designation?: string | null;
+  goal_plan: string;
+  plan_status: string;
+  goal_key: string;
+  goal?: string | null;
+  title: string;
+  description?: string | null;
+  weightage: number;
+  methodology: string;
+  start_date: string;
+  end_date: string;
+  metric?: string | null;
+  target?: number;
+  target_type?: string;
+  department?: string | null;
+  designation_target?: string | null;
+  goal_status: string;
+  status_label: string;
+  status_tone: string;
+  is_mandatory: boolean;
+  is_locked: boolean;
+  submitted_on?: string | null;
+  submitted_ago?: string | null;
+  auto_approve_on?: string | null;
+  action_reason?: string | null;
+  edited_after_approval: boolean;
+  plan_total_weightage: number;
+  flags: GoalApprovalFlag[];
+  actions: string[];
+  key_results: GoalApprovalKeyResult[];
+  audit: GoalApprovalAuditItem[];
+}
+
+export interface GoalApprovalDetailParams {
+  employee: string;
+  goal_key: string;
+}
+
+export interface GoalApprovalDetailResponse {
+  success: boolean;
+  message: string;
+  data: GoalApprovalDetailData;
+}
+
 
