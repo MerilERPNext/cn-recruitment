@@ -32,13 +32,10 @@ export const ApprovalQueueSection: React.FC<ApprovalQueueSectionProps> = ({
 
   const [status, setStatus] = useState<string>("pending");
   const [start, setStart] = useState<number>(0);
-  const [customLimit] = useState<number | undefined>(undefined);
 
   const { data: approvalQueueResponse, isLoading: queueLoading, error, refetch } = useGetApprovelQueue({
     status,
-    start,
-    limit: customLimit,
-  });
+    start  });
 
   const queueData = approvalQueueResponse?.data;
   const queueItems: ApprovalQueueItem[] = queueData?.queue || [];
