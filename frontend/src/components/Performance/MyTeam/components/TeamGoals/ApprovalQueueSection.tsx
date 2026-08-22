@@ -171,7 +171,7 @@ export const ApprovalQueueSection: React.FC<ApprovalQueueSectionProps> = ({
           <div className="py-12 text-center text-slate-400">
             <Typography variant="bodySmall">No goals pending approval.</Typography>
           </div>
-        ) : isPlanAction && byEmployeeList.length > 0 ? (
+        ) : !isPlanAction && byEmployeeList.length > 0 ? (
           <div className="p-3 sm:p-4 pr-2 sm:pr-3 space-y-3 bg-slate-50/60 max-h-[500px] overflow-y-auto">
             {byEmployeeList.map((empGroup: ApprovalQueueByEmployee) => (
               <EmployeeApprovalItem
@@ -221,7 +221,7 @@ export const ApprovalQueueSection: React.FC<ApprovalQueueSectionProps> = ({
         <div className="py-12 text-center text-slate-400">
           <Typography variant="bodySmall">No goals pending approval.</Typography>
         </div>
-      ) : isPlanAction && byEmployeeList.length > 0 ? (
+      ) : !isPlanAction && byEmployeeList.length > 0 ? (
         <div className="p-3 sm:p-4 pr-2 sm:pr-3 space-y-3 bg-slate-50/60 max-h-[500px] overflow-y-auto border-t border-slate-100">
           {byEmployeeList.map((empGroup: ApprovalQueueByEmployee) => (
             <EmployeeApprovalItem
