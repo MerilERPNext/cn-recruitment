@@ -1,4 +1,4 @@
-import React from "react";
+import React, { memo } from "react";
 import { AlertCircle, Check, Eye, Undo2, X } from "lucide-react";
 import { useScreenSize } from "../../../../../hooks/useScreenSize";
 import { Typography } from "../../../../shared/atoms/Typography";
@@ -109,7 +109,7 @@ const ApprovalActionButton = ({ goal, onClick }: { goal: ApprovalQueueItem; onCl
   );
 };
 
-export const GoalApprovalItem: React.FC<GoalApprovalItemProps> = ({
+export const GoalApprovalItem: React.FC<GoalApprovalItemProps> = memo(({
   goal,
   checked,
   onToggleCheck,
@@ -308,6 +308,8 @@ export const GoalApprovalItem: React.FC<GoalApprovalItemProps> = ({
       </div>
     </article>
   );
-};
+});
+
+GoalApprovalItem.displayName = "GoalApprovalItem";
 
 export default GoalApprovalItem;
