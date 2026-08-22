@@ -63,16 +63,16 @@ export const EmployeeApprovalItem: React.FC<EmployeeApprovalItemProps> = memo(({
         </div>
 
         {/* Plan Level Action Buttons */}
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 shrink-0">
           {canSendBackPlan && (
             <Button
               type="button"
               variant="outline"
               size="sm"
-              className="border-amber-300 text-amber-800 bg-amber-50/50 hover:bg-amber-100/80 active:bg-amber-200"
+              className="border-amber-300 text-amber-800 bg-amber-50/50 hover:bg-amber-100/80 active:bg-amber-200 text-xs px-2 sm:px-3"
             >
-              <Undo2 className="h-3.5 w-3.5 mr-1 text-amber-600" />
-              Send Back Plan
+              <Undo2 className="h-3.5 w-3.5 mr-1 shrink-0 text-amber-600" />
+              <span>Send Back<span className="hidden sm:inline"> Plan</span></span>
             </Button>
           )}
           {canRejectPlan && (
@@ -80,10 +80,10 @@ export const EmployeeApprovalItem: React.FC<EmployeeApprovalItemProps> = memo(({
               type="button"
               variant="outline"
               size="sm"
-              className="border-red-300 text-red-700 bg-red-50/50 hover:bg-red-100/80 active:bg-red-200"
+              className="border-red-300 text-red-700 bg-red-50/50 hover:bg-red-100/80 active:bg-red-200 text-xs px-2 sm:px-3"
             >
-              <X className="h-3.5 w-3.5 mr-1 text-red-600" />
-              Reject Plan
+              <X className="h-3.5 w-3.5 mr-1 shrink-0 text-red-600" />
+              <span>Reject<span className="hidden sm:inline"> Plan</span></span>
             </Button>
           )}
           {canApprovePlan && (
@@ -91,10 +91,10 @@ export const EmployeeApprovalItem: React.FC<EmployeeApprovalItemProps> = memo(({
               type="button"
               variant="contain"
               size="sm"
-              className="border border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-700 active:bg-emerald-800 shadow-xs"
+              className="border border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-700 active:bg-emerald-800 shadow-xs text-xs px-2 sm:px-3"
             >
-              <Check className="h-3.5 w-3.5 mr-1 text-white" />
-              Approve Plan
+              <Check className="h-3.5 w-3.5 mr-1 shrink-0 text-white" />
+              <span>Approve<span className="hidden sm:inline"> Plan</span></span>
             </Button>
           )}
         </div>
