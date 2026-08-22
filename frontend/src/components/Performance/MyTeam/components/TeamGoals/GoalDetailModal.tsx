@@ -9,6 +9,7 @@ import Avatar from "../../../../shared/Avatar";
 import { GoalDetailData } from "../../types";
 import { useGetGoalApprovalDetail } from "../../../../../hooks/usePerformance";
 import { getPerformanceErrorMessage } from "../../../../../services/performanceService";
+import GoalDetailSkeleton from "./GoalDetailSkeleton";
 
 interface GoalDetailModalProps {
   goal?: GoalDetailData;
@@ -102,10 +103,8 @@ export const GoalDetailModal: React.FC<GoalDetailModalProps> = ({
 
         {/* Scrollable Body */}
         <div className="overflow-y-auto flex-1 p-6 space-y-6">
-          {isLoading ? (
-            <div className="py-12 text-center text-slate-500 font-medium animate-pulse">
-              Loading goal details...
-            </div>
+          {!isLoading ? (
+            <GoalDetailSkeleton />
           ) : error || !apiData ? (
             <div className="py-12 text-center text-slate-500 font-medium space-y-1">
               <div className="text-sm font-semibold text-slate-700">
