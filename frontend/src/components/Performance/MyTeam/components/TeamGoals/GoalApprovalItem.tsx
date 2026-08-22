@@ -125,7 +125,7 @@ export const GoalApprovalItem: React.FC<GoalApprovalItemProps> = memo(({
 
   const handleCardClick = useCallback(() => {
     const emp = goal.employee || "";
-    const key = goal.goal || goal.goal_key || "";
+    const key =goal.goal_key || "";
     onClick(emp, key);
   }, [onClick, goal]);
 

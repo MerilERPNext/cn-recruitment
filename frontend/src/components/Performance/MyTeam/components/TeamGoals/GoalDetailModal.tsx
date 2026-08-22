@@ -7,11 +7,12 @@ import Badge from "../../../../shared/Badge";
 import Modal from "../../../../shared/Modal";
 import Avatar from "../../../../shared/Avatar";
 import { GoalDetailData } from "../../types";
+import { useGetGoalApprovalDetail } from "../../../../../hooks/usePerformance";
 
 interface GoalDetailModalProps {
   goal?: GoalDetailData;
-  employee?: string;
-  goalKey?: string;
+  employee: string;
+  goalKey: string;
   onClose: () => void;
   onApprove: () => void;
 }
@@ -19,12 +20,15 @@ interface GoalDetailModalProps {
 export const GoalDetailModal: React.FC<GoalDetailModalProps> = ({
   onClose,
   onApprove,
+  employee,
+  goalKey
 }) => {
   const [comment, setComment] = useState(
     "Looks good. Make sure KR3 has weekly check-ins — this is the riskiest one."
   );
   const { isMobile } = useScreenSize();
-
+  const {data:goalApprovalData , isLoading , error } = useGetGoalApprovalDetail({employee:employee,goal_key:goalKey})
+  console.log(goalApprovalData,'ppppppppppppppp')
   const keyResults = [
     {
       id: "KR 1",
