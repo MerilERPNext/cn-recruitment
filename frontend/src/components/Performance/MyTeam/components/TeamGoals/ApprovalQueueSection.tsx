@@ -34,20 +34,6 @@ export const ApprovalQueueSection: React.FC<ApprovalQueueSectionProps> = ({
   const [start, setStart] = useState<number>(0);
   const [customLimit] = useState<number | undefined>(undefined);
 
-  const [expandedEmployees, setExpandedEmployees] = useState<Set<string>>(new Set());
-
-  const toggleExpand = (empId: string) => {
-    setExpandedEmployees((prev) => {
-      const next = new Set(prev);
-      if (next.has(empId)) {
-        next.delete(empId);
-      } else {
-        next.add(empId);
-      }
-      return next;
-    });
-  };
-
   const { data: approvalQueueResponse, isLoading: queueLoading, error, refetch } = useGetApprovelQueue({
     status,
     start,
@@ -193,13 +179,6 @@ export const ApprovalQueueSection: React.FC<ApprovalQueueSectionProps> = ({
             <EmployeeApprovalItem
               key={empGroup.employee}
               empGroup={empGroup}
-              queueItems={queueItems}
-              isExpanded={expandedEmployees.has(empGroup.employee)}
-              onToggleExpand={toggleExpand}
-              checkedGoals={checkedGoals}
-              onToggleCheck={onToggleCheck}
-              onGoalClick={onGoalClick}
-              isCompact={isCompact}
             />
           ))}
         </div>
