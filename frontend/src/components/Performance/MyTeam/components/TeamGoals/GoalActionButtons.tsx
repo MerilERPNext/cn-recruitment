@@ -7,7 +7,7 @@ export interface GoalActionItem {
 }
 
 export interface GoalActionButtonsProps {
-  items?: GoalActionItem[] | GoalActionItem;
+  items?: GoalActionItem;
   employees?: string[] | string;
   actions?: string[];
   note?: string;

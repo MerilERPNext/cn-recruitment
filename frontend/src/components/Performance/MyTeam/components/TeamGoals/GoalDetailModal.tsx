@@ -16,12 +16,10 @@ interface GoalDetailModalProps {
   employee: string;
   goalKey: string;
   onClose: () => void;
-  onApprove: () => void;
 }
 
 export const GoalDetailModal: React.FC<GoalDetailModalProps> = ({
   onClose,
-  onApprove,
   employee,
   goalKey,
 }) => {
@@ -244,8 +242,6 @@ export const GoalDetailModal: React.FC<GoalDetailModalProps> = ({
             actions={apiData?.actions}
             note={comment}
             disabled={isActionDisabled}
-            onSendBack={onClose}
-            onApprove={onApprove}
           />
         </div>
       </div>
