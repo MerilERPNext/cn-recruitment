@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { X } from "lucide-react";
 import { useScreenSize } from "../../../../../hooks/useScreenSize";
-import Button from "../../../../shared/atoms/Button";
 import { Typography } from "../../../../shared/atoms/Typography";
 import Badge from "../../../../shared/Badge";
 import Modal from "../../../../shared/Modal";
@@ -10,6 +9,7 @@ import { GoalDetailData } from "../../types";
 import { useGetGoalApprovalDetail } from "../../../../../hooks/usePerformance";
 import { getPerformanceErrorMessage } from "../../../../../services/performanceService";
 import GoalDetailSkeleton from "./GoalDetailSkeleton";
+import GoalActionButtons from "./GoalActionButtons";
 
 interface GoalDetailModalProps {
   goal?: GoalDetailData;
@@ -227,7 +227,7 @@ export const GoalDetailModal: React.FC<GoalDetailModalProps> = ({
                   </div>
                 ) : (
                   <Typography variant="bodySmall" className="text-gray-500">
-                    -
+                    No audit found!
                   </Typography>
                 )}
               </div>
@@ -239,37 +239,14 @@ export const GoalDetailModal: React.FC<GoalDetailModalProps> = ({
           <Typography variant="caption" className="text-gray-500">
             {apiData?.auto_approve_on ? `Auto-approves on ${apiData.auto_approve_on}` : "-"}
           </Typography>
-          <div className="flex flex-wrap items-center gap-3">
-            <Button
-              variant="outline"
-              bgColor="text"
-              size="sm"
-              disabled={isActionDisabled}
-              onClick={onClose}
-              className="h-9 w-[92px] bg-white px-0 text-xs font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Send back
-            </Button>
-            <Button
-              variant="outline"
-              bgColor="error"
-              size="sm"
-              disabled={isActionDisabled}
-              className="h-9 w-[70px] bg-white px-0 text-xs font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Reject
-            </Button>
-            <Button
-              variant="contain"
-              bgColor="success"
-              size="sm"
-              disabled={isActionDisabled}
-              onClick={onApprove}
-              className="h-9 w-[110px] px-0 text-xs font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Approve goal
-            </Button>
-          </div>
+          <GoalActionButtons
+            items={{ employee, goal_key: goalKey }}
+            actions={apiData?.actions}
+            note={comment}
+            disabled={isActionDisabled}
+            onSendBack={onClose}
+            onApprove={onApprove}
+          />
         </div>
       </div>
     </Modal>
