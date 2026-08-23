@@ -18,6 +18,10 @@
 // The fields the panel is meant to see, plus the structure holding them and the
 // Feedback tab — which is not information about the interview, it is how the panel
 // does their job, so dropping it would leave them a read-only page.
+//
+// The meeting fields are here because they are conditional on the mode: Frappe still
+// honours each one's depends_on, so an On-Site interview shows the location and an
+// Online one shows the link — the panel only ever sees the half that applies.
 const PANEL_VISIBLE_FIELDS = [
 	"interview_details_section",
 	// Both names on purpose: HRMS v15 carries the round in `interview_round`, v16 in
@@ -25,12 +29,26 @@ const PANEL_VISIBLE_FIELDS = [
 	// panel keeps seeing its round on either.
 	"interview_type",
 	"interview_round",
+	// How the interview is held (labelled "Mode of Interview" — the Select, not the
+	// Link above). A panel member has to know whether to walk to a room or open a
+	// meeting link, so it belongs here with the meeting fields it drives.
+	"custom_interview_type",
+	"custom_zoom_link",
+	"custom_zoom_password",
+	"custom_interview_location",
+	"custom_address",
+	"custom_google_map_link",
 	"job_applicant",
 	"designation",
 	"custom_resume_attachment",
+	"custom_extra_interview_reason",
 	"column_break_4",
 	"status",
 	"scheduled_on",
+	// The slot itself. Without these the panel gets a date and no time, which is the
+	// one thing they need in order to turn up.
+	"from_time",
+	"to_time",
 	"feedback_tab",
 	"feedback_html",
 ];

@@ -14,6 +14,14 @@ from recruitment.recruitment.tpo_access import PRIMARY_TPO_ROLE
 # to the institute mapped to their login.
 INSTITUTE_CHOOSER_ROLES = {"System Manager", "HR Manager"}
 
+# The email every registered candidate gets is configured in Campus Settings ->
+# Candidate Registration Email Template. Its wording is HomeFirst's and lives in
+# ``homefirst_customs.email_templates``.
+#
+# Jinja vars passed to it: full_name, first_name, registration_link, deadline,
+# institute, campus_invite, email_id, doc. `registration_link` already carries the
+# invite id, so the candidate never has to choose a drive.
+
 # Mobile numbers are Indian campus numbers — exactly ten digits once the usual
 # formatting (spaces, hyphens, brackets, a +91 / 0 prefix) is taken off.
 MOBILE_DIGITS = 10
@@ -364,10 +372,22 @@ class CandidateRegistration(Document):
 		if not recipients:
 			frappe.throw(_("Add at least one candidate with an Email ID."))
 
+		# One lookup for the whole batch: the date is the drive's, not each
+		# candidate's, and a college submits a hundred rows at a time.
+		deadline = self._registration_deadline()
 		for candidate in recipients:
-			self._send_to_candidate(template_name, candidate)
+			self._send_to_candidate(template_name, candidate, deadline)
 
-	def _send_to_candidate(self, template_name, candidate):
+	def _registration_deadline(self):
+		"""The drive's Registration Expiry Date, formatted, or None when it has none."""
+		if not self.campus_invite:
+			return None
+		expiry = frappe.db.get_value(
+			"Campus Invite", self.campus_invite, "registration_expiry_date"
+		)
+		return frappe.utils.formatdate(expiry) if expiry else None
+
+	def _send_to_candidate(self, template_name, candidate, deadline=None):
 		"""Best effort: a bad address / SMTP issue for one candidate is logged and
 		must not block the rest or roll back the submit."""
 		from frappe.email.doctype.email_template.email_template import get_email_template
@@ -396,6 +416,8 @@ class CandidateRegistration(Document):
 			# use {{ registration_link }}. The invite is carried in the link — the
 			# candidate never chooses it.
 			"registration_link": campus_registration_link(candidate.email_id, self.campus_invite),
+			# The date the student is being asked to work to, off the Campus Invite.
+			"deadline": deadline,
 		}
 		try:
 			rendered = get_email_template(template_name, context)

@@ -10,6 +10,8 @@ Run:  bench --site <site> run-tests --app recruitment \
 
 from __future__ import annotations
 
+from unittest.mock import patch
+
 import frappe
 from frappe.tests.utils import FrappeTestCase
 from frappe.utils import add_days, nowdate
@@ -323,22 +325,71 @@ class TestInterviewWorkLocation(FrappeTestCase):
 		self.assertFalse(iwl.get_work_location_context("nobody@test.local")["is_campus"])
 		self.assertFalse(iwl.get_work_location_context(None)["is_campus"])
 
+	# ── why it came back empty ──
+	#
+	# Both sections vanishing with no explanation is indistinguishable from the feature
+	# being missing, which is exactly how it was read on a drive. `reason` is what lets
+	# the form say which of the three it is.
+
+	def test_a_campus_candidate_has_no_reason_to_report(self):
+		self.assertIsNone(iwl.get_work_location_context(self.campus_applicant)["reason"])
+
+	def test_a_lateral_candidate_is_reported_as_not_campus(self):
+		"""Hidden is CORRECT here — there is no region routing behind them."""
+		ctx = iwl.get_work_location_context(self.lateral_applicant)
+		self.assertEqual(ctx["reason"], "not_campus")
+
+	def test_a_deleted_candidate_is_reported_as_missing(self):
+		"""A dangling link, not a lateral hire: the panel is writing feedback against a
+		candidate who is no longer there, and the form has to say so rather than just
+		dropping the sections."""
+		ctx = iwl.get_work_location_context("nobody@test.local")
+		self.assertEqual(ctx["reason"], "applicant_missing")
+
+	def test_an_empty_link_is_reported_as_such(self):
+		self.assertEqual(iwl.get_work_location_context(None)["reason"], "no_applicant")
+
+	def test_a_panel_member_gets_the_sections_for_a_campus_candidate(self):
+		"""The report was that interviewers never see Region Recommendation / Work
+		Location. They do — this is the call the form gates both sections on."""
+		frappe.set_user(PANELIST)
+		ctx = iwl.get_work_location_context(self.campus_applicant)
+		self.assertTrue(ctx["is_campus"])
+		self.assertIsNone(ctx["reason"])
+		self.assertTrue(ctx["branches"])
+
 	# ── who may ask ──
+	#
+	# `_may_see` grants access two ways: sitting on the candidate's panel, OR holding
+	# read permission on the Job Applicant. These tests pin the PANEL half, so they
+	# stub the permission half out rather than reading whatever Job Applicant
+	# permissions this site happens to grant the Interviewer role. Asserting on the
+	# ambient config made the suite pass or fail on a setting neither test is about.
 
 	def test_panel_member_may_ask_without_job_applicant_permission(self):
-		"""The Interviewer role carries no Job Applicant permission, yet the panel is
-		exactly who fills this field in."""
+		"""Sitting on the panel is enough on its own — the panel is exactly who fills
+		this field in, and they are not guaranteed any Job Applicant permission."""
 		frappe.set_user(PANELIST)
-		self.assertFalse(frappe.has_permission("Job Applicant", "read",
-		                                       doc=self.campus_applicant))
-		ctx = iwl.get_work_location_context(self.campus_applicant)
+		with patch.object(frappe, "has_permission", return_value=False):
+			ctx = iwl.get_work_location_context(self.campus_applicant)
 		self.assertTrue(ctx["is_campus"])
 		self.assertEqual(ctx["region"], self.region_a)
 
 	def test_someone_off_the_panel_is_refused(self):
+		"""An interviewer who is not on THIS candidate's panel has no business asking
+		where they can be posted."""
 		frappe.set_user(OUTSIDER)
-		with self.assertRaises(frappe.PermissionError):
-			iwl.get_work_location_context(self.campus_applicant)
+		with patch.object(frappe, "has_permission", return_value=False):
+			with self.assertRaises(frappe.PermissionError):
+				iwl.get_work_location_context(self.campus_applicant)
+
+	def test_job_applicant_read_permission_is_the_other_way_in(self):
+		"""The second half of the gate: HR holds no panel seat and still gets an
+		answer, because they can read the candidate."""
+		frappe.set_user(OUTSIDER)
+		with patch.object(frappe, "has_permission", return_value=True):
+			ctx = iwl.get_work_location_context(self.campus_applicant)
+		self.assertTrue(ctx["is_campus"])
 
 	# ── validation on the feedback ──
 

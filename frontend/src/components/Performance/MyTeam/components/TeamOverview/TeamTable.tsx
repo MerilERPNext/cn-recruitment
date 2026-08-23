@@ -1,11 +1,13 @@
-import React from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { AlertCircle, Search, X } from "lucide-react";
 import Button from "../../../../shared/atoms/Button";
 import CardTable from "../../../../shared/CardTable";
 import CustomDropdown from "../../../../shared/CustomDropdown";
-import DataListView from "../../../../DataListView";
 import { Typography } from "../../../../shared/atoms/Typography";
-import { OverviewTeamMember } from "../../types";
-import type { FrappePageResponse } from "../../../../../types/frappe";
+import { CardSkeleton } from "../../../../shared/molecules/Skeletons/TableSkeleton";
+import useDebounce from "../../../../../hooks/useDebounce";
+import { useGetTeamMembers } from "../../../../../hooks/usePerformance";
+import type { TeamMembersSortOption, TeamMembersStatusFilter } from "../../../../../types/goal";
 import { TeamMemberItem, TEAM_TABLE_COLUMN_WIDTHS } from "./TeamMemberItem";
 
 const TEAM_TABLE_TITLES = [
@@ -18,35 +20,87 @@ const TEAM_TABLE_TITLES = [
   "Action",
 ];
 
-const STATUS_OPTIONS = [
-  { label: "All status", value: "all" },
-  { label: "Done", value: "done" },
-  { label: "Pending", value: "pending" },
-  { label: "Overdue", value: "overdue" },
+const FILTER_LABEL_MAP: Record<string, string> = {
+  all: "All status",
+  no_plan: "No plan",
+  pending_approval: "Pending approval",
+  off_track: "Off track",
+  checkin_due: "Check-in due",
+  on_track: "On track",
+};
+
+const DEFAULT_FILTERS = [
+  "all",
+  "no_plan",
+  "pending_approval",
+  "off_track",
+  "checkin_due",
+  "on_track",
 ];
 
 const SORT_OPTIONS = [
   { label: "Sort: progress", value: "progress" },
+  { label: "Sort: progress desc", value: "progress_desc" },
   { label: "Sort: name", value: "name" },
-  { label: "Sort: rating", value: "rating" },
+  { label: "Sort: check-in", value: "checkin" },
+  { label: "Sort: off-track", value: "off_track" },
 ];
 
 interface TeamTableProps {
   isCompact: boolean;
-  members: OverviewTeamMember[];
 }
 
-const TeamTable: React.FC<TeamTableProps> = ({ isCompact, members }) => {
-  const [selectedStatus, setSelectedStatus] = React.useState("all");
-  const [selectedSort, setSelectedSort] = React.useState("progress");
-  const fetchMembers = React.useCallback(async (): Promise<FrappePageResponse> => {
-    return {
-      data: members as unknown as FrappePageResponse["data"],
-      totalCount: members.length,
-      hasNextPage: false,
-      pages: [],
-    };
-  }, [members]);
+const TeamTable: React.FC<TeamTableProps> = ({ isCompact }) => {
+  const [selectedStatus, setSelectedStatus] = useState<string>("all");
+  const [selectedSort, setSelectedSort] = useState<string>("progress");
+  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [page, setPage] = useState<number>(1);
+  const limit = 20;
+
+  const debouncedSearch = useDebounce(searchQuery, 300);
+  const start = (page - 1) * limit;
+
+  useEffect(() => {
+    setPage(1);
+  }, [selectedStatus, selectedSort, debouncedSearch]);
+
+  const { data: teamMembersData, isLoading, isFetching, error, refetch } = useGetTeamMembers({
+    status: selectedStatus as TeamMembersStatusFilter,
+    sort: selectedSort as TeamMembersSortOption,
+    search: debouncedSearch,
+    start,
+    limit,
+  });
+
+  const members = teamMembersData?.data?.members || [];
+  const totalCount = teamMembersData?.data?.total ?? members.length;
+  const overdueCount = teamMembersData?.data?.summary?.checkin_due ?? 0;
+  const totalPages = Math.ceil(totalCount / limit) || 1;
+  const hasMore = teamMembersData?.data?.has_more ?? false;
+
+  const handleStatusChange = useCallback((event: React.ChangeEvent<HTMLSelectElement>) => {
+    setSelectedStatus(event.target.value);
+  }, []);
+
+  const handleSortChange = useCallback((event: React.ChangeEvent<HTMLSelectElement>) => {
+    setSelectedSort(event.target.value);
+  }, []);
+
+  const handleSearchChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(event.target.value);
+  }, []);
+
+  const handleClearSearch = useCallback(() => {
+    setSearchQuery("");
+  }, []);
+
+  const statusOptions = useMemo(() => {
+    const filterList = teamMembersData?.data?.filters || DEFAULT_FILTERS;
+    return filterList.map((f) => ({
+      label: FILTER_LABEL_MAP[f] || f.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
+      value: f,
+    }));
+  }, [teamMembersData?.data?.filters]);
 
   return (
     <section className="overflow-hidden rounded-xl border border-slate-200 bg-white pt-4 shadow-sm">
@@ -58,7 +112,7 @@ const TeamTable: React.FC<TeamTableProps> = ({ isCompact, members }) => {
             variant="label"
             className="flex h-7 w-7 items-center justify-center rounded-full bg-blue-50 font-bold text-blue-600"
           >
-            8
+            {totalCount}
           </Typography>
           <div className="min-w-0">
             <Typography variant="bodySmall" className="font-semibold text-slate-950">
@@ -69,46 +123,83 @@ const TeamTable: React.FC<TeamTableProps> = ({ isCompact, members }) => {
             </Typography>
           </div>
         </div>
-        <div className={`flex items-center gap-3 ${isCompact ? "flex-wrap w-full" : ""}`}>
+        <div className={`flex items-center gap-2.5 ${isCompact ? "flex-wrap w-full" : ""}`}>
+          <div className={`relative ${isCompact ? "w-full" : "w-48 sm:w-56"}`}>
+            <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-400" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={handleSearchChange}
+              placeholder="Search employee..."
+              className="h-9 w-full rounded-lg border border-gray-200 bg-white pl-8 pr-8 text-xs text-gray-800 placeholder-gray-400 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={handleClearSearch}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
           <CustomDropdown
             value={selectedStatus}
-            onChange={(event) => setSelectedStatus(event.target.value)}
-            options={STATUS_OPTIONS}
-            position="bottom-right"
-            className={isCompact ? "flex-1" : ""}
+            onChange={handleStatusChange}
+            options={statusOptions}
+            position="bottom-left"
+            className={isCompact ? "flex-1" : "w-auto"}
+            menuClassName="min-w-[160px] w-auto max-w-[200px]"
           />
           <CustomDropdown
             value={selectedSort}
-            onChange={(event) => setSelectedSort(event.target.value)}
+            onChange={handleSortChange}
             options={SORT_OPTIONS}
-            position="bottom-right"
-            className={isCompact ? "flex-1" : ""}
+            position="bottom-left"
+            className={isCompact ? "flex-1" : "w-auto"}
+            menuClassName="min-w-[170px] w-auto max-w-[220px]"
           />
           <Button
             variant="contain"
             bgColor="primary"
-            className={`${isCompact ? "w-full" : "px-4 py-2"} justify-center rounded-lg bg-[#1a73e8] text-xs font-semibold hover:bg-blue-600`}
+            disabled={overdueCount === 0}
+            className={`${isCompact ? "w-full" : "px-3.5 py-2"} justify-center rounded-lg bg-[#1a73e8] text-xs font-semibold hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed`}
           >
-            Nudge 2 overdue
+            Nudge {overdueCount} overdue
           </Button>
         </div>
       </div>
 
-      {isCompact ? (
+      {error ? (
+        <div className="m-4 rounded-lg border border-red-200 bg-red-50 p-4 text-red-700 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <AlertCircle className="w-5 h-5 shrink-0 text-red-600" />
+            <Typography variant="bodySmall" className="truncate">
+              Failed to load team members. {error?.message}
+            </Typography>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => refetch()}
+            className="shrink-0 border-red-200 text-red-700 hover:bg-red-100"
+          >
+            Retry
+          </Button>
+        </div>
+      ) : isCompact ? (
         <div className="space-y-3 border-t border-slate-100 bg-slate-50/60 p-3 sm:p-4">
-          <DataListView<OverviewTeamMember>
-            queryKey="team-overview-members-mobile"
-            fetchFunction={fetchMembers}
-            isSearch={false}
-            showPagination={false}
-            showRefreshButton={false}
-            pageSize={members.length}
-            infiniteScroll={false}
-            loadMorePagination={false}
-            enableUrlParams={false}
-            getItemKey={(item) => item.id}
-            ItemComponent={({ item }) => <TeamMemberItem item={item} />}
-          />
+          {isLoading ? (
+            <CardSkeleton rows={4} />
+          ) : members.length === 0 ? (
+            <div className="py-12 text-center text-slate-400">
+              <Typography variant="bodySmall">No team members found matching your search/filters.</Typography>
+            </div>
+          ) : (
+            members.map((member) => (
+              <TeamMemberItem key={member.employee} item={member} />
+            ))
+          )}
         </div>
       ) : (
         <CardTable
@@ -116,24 +207,57 @@ const TeamTable: React.FC<TeamTableProps> = ({ isCompact, members }) => {
           columnWidths={TEAM_TABLE_COLUMN_WIDTHS}
         >
           <div className="w-full min-w-[1080px]">
-            <DataListView<OverviewTeamMember>
-              queryKey="team-overview-members"
-              fetchFunction={fetchMembers}
-              isSearch={false}
-              showPagination={false}
-              showRefreshButton={false}
-              pageSize={members.length}
-              infiniteScroll={false}
-              loadMorePagination={false}
-              enableUrlParams={false}
-              getItemKey={(item) => item.id}
-              ItemComponent={({ item }) => <TeamMemberItem item={item} />}
-            />
+            {isLoading ? (
+              <div className="p-4">
+                <CardSkeleton rows={4} />
+              </div>
+            ) : members.length === 0 ? (
+              <div className="py-12 text-center text-slate-400">
+                <Typography variant="bodySmall">No team members found matching your search/filters.</Typography>
+              </div>
+            ) : (
+              members.map((member) => (
+                <TeamMemberItem key={member.employee} item={member} />
+              ))
+            )}
           </div>
         </CardTable>
+      )}
+
+      {totalCount > 0 && (
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-slate-100 px-4 py-3 sm:px-6 bg-white">
+          <Typography variant="caption" className="text-slate-500">
+            Showing <span className="font-semibold text-slate-700">{start + 1}</span> to{" "}
+            <span className="font-semibold text-slate-700">{Math.min(start + limit, totalCount)}</span> of{" "}
+            <span className="font-semibold text-slate-700">{totalCount}</span> reportees
+          </Typography>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={page === 1 || isFetching}
+              onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
+              className="border-slate-200 text-slate-700 hover:bg-slate-50 disabled:opacity-40"
+            >
+              Previous
+            </Button>
+            <Typography variant="caption" className="font-semibold text-slate-700 px-2">
+              Page {page} of {totalPages}
+            </Typography>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={(!hasMore && page >= totalPages) || isFetching}
+              onClick={() => setPage((prev) => prev + 1)}
+              className="border-slate-200 text-slate-700 hover:bg-slate-50 disabled:opacity-40"
+            >
+              Next
+            </Button>
+          </div>
+        </div>
       )}
     </section>
   );
 };
 
-export default TeamTable;
+export default React.memo(TeamTable);

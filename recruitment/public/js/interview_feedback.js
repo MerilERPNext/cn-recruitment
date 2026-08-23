@@ -10,6 +10,96 @@
 // The Work Location the panel picks becomes the candidate's final location on
 // submit, so the options are restricted to locations of the region that owns the
 // candidate — or of the region recommended above, when the panel ticked one.
+// The panel now arrives here straight from the Interview's "Submit Feedback" (see
+// public/js/interview_feedback_route.js), so this form is the first thing they see —
+// and on its own it shows an interview ID and nothing about the interview. The
+// context strip below carries what they need in front of them while they write:
+// which round and mode, who the candidate is, the resume, and the slot.
+const CONTEXT_FIELDS = [
+    "interview_type",
+    "interview_round",
+    "custom_interview_type",
+    "job_applicant",
+    "designation",
+    "custom_resume_attachment",
+    "scheduled_on",
+    "from_time",
+    "to_time",
+    "custom_interview_panel",
+];
+
+function renderInterviewContext(frm) {
+    if (!frm.doc.interview) return;
+    // Cached against the interview: refresh() fires on load, every save and every tab
+    // switch, and none of this changes in between.
+    if (frm.__context_for === frm.doc.interview) return;
+    frm.__context_for = frm.doc.interview;
+
+    frappe.call({
+        method: "frappe.client.get_value",
+        args: {
+            doctype: "Interview",
+            filters: { name: frm.doc.interview },
+            // Asked for as a list so a field this HRMS version lacks (v15 has
+            // interview_round, v16 interview_type) comes back missing rather than
+            // erroring the whole read.
+            fieldname: CONTEXT_FIELDS,
+        },
+        callback: (r) => {
+            const iv = (r && r.message) || {};
+            if (!Object.keys(iv).length) return;
+            drawContext(frm, iv);
+        },
+    });
+}
+
+function drawContext(frm, iv) {
+    const esc = (v) => frappe.utils.escape_html(String(v == null ? "" : v));
+    const time = (t) => (t ? String(t).slice(0, 5) : null);
+    const slot =
+        [time(iv.from_time), time(iv.to_time)].filter(Boolean).join(" – ") || null;
+
+    const items = [
+        [__("Candidate"), iv.job_applicant],
+        [__("Designation"), iv.designation],
+        [__("Interview Type"), iv.interview_type || iv.interview_round],
+        [__("Mode of Interview"), iv.custom_interview_type],
+        [__("Panel"), iv.custom_interview_panel],
+        [__("Scheduled On"), iv.scheduled_on ? frappe.datetime.str_to_user(iv.scheduled_on) : null],
+        [__("Time"), slot],
+    ].filter(([, value]) => value);
+
+    const cells = items
+        .map(
+            ([label, value]) =>
+                `<div class="ifb-ctx-item"><div class="ifb-ctx-label">${esc(
+                    label
+                )}</div><div class="ifb-ctx-value">${esc(value)}</div></div>`
+        )
+        .join("");
+
+    const resume = iv.custom_resume_attachment
+        ? `<a class="btn btn-xs btn-default" href="${esc(
+              iv.custom_resume_attachment
+          )}" target="_blank" rel="noopener">${__("Open Resume")}</a>`
+        : "";
+
+    const html = `<div class="ifb-ctx">
+        <div class="ifb-ctx-grid">${cells}</div>
+        ${resume ? `<div class="ifb-ctx-actions">${resume}</div>` : ""}
+    </div>
+    <style>
+        .ifb-ctx-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px 16px}
+        .ifb-ctx-label{font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--text-muted)}
+        .ifb-ctx-value{font-weight:600}
+        .ifb-ctx-actions{margin-top:10px}
+    </style>`;
+
+    // add_section rather than a custom field: this is context to read, not data to
+    // store, and the dashboard already sits above the form where they start reading.
+    frm.dashboard.add_section(html, __("Interview"));
+}
+
 frappe.ui.form.on("Interview Feedback", {
     setup(frm) {
         // Registered once. The allowed list is read from the form at query time, so
@@ -20,7 +110,11 @@ frappe.ui.form.on("Interview Feedback", {
         });
     },
     refresh(frm) {
+        renderInterviewContext(frm);
         applyCampusSections(frm);
+    },
+    interview(frm) {
+        renderInterviewContext(frm);
     },
     job_applicant(frm) {
         applyCampusSections(frm);
@@ -79,12 +173,64 @@ function applyCampusSections(frm) {
             frm.__work_location_ctx = ctx;
             frm.__work_location_key = key;
             render(frm, ctx);
+        })
+        .catch(() => {
+            // Without this the sections keep whatever state they were last left in,
+            // which reads as "this form does not have them" — the one outcome that
+            // must never happen silently, because they are the panel's whole job.
+            frm.__work_location_key = null;
+            toggle(frm, false);
+            explain(
+                frm,
+                __(
+                    "Could not load the Region Recommendation and Work Location options for this candidate. Refresh the page, and tell HR if it keeps happening."
+                )
+            );
         });
 }
 
 function render(frm, ctx) {
-    toggle(frm, Boolean(ctx.is_campus));
-    if (ctx.is_campus) applyWorkLocation(frm, ctx);
+    const campus = Boolean(ctx.is_campus);
+    toggle(frm, campus);
+
+    if (campus) {
+        explain(frm, null);
+        applyWorkLocation(frm, ctx);
+        return;
+    }
+
+    // Hidden is correct for a lateral / referral / IJP candidate — there is no region
+    // routing behind them, so there is nothing to recommend or post. It is NOT correct
+    // when the candidate record has gone: the panel is then writing feedback against a
+    // candidate who no longer exists, and two sections quietly missing looks exactly
+    // like the feature being broken for them. Say which it is.
+    explain(
+        frm,
+        ctx.reason === "applicant_missing"
+            ? __(
+                  "This interview's Job Applicant record no longer exists, so the Region Recommendation and Work Location sections cannot be shown. Please tell HR — the feedback is being written against a deleted candidate."
+              )
+            : null
+    );
+}
+
+// One reusable notice above the form. Cleared by passing null, so a form that
+// recovers (the candidate is filled in, the retry succeeds) does not keep a stale
+// warning on screen.
+//
+// Re-set on every call rather than memoised: the layout message is wiped whenever the
+// form re-renders, and this runs from refresh(), so skipping a repeat set would make
+// the notice disappear on the next tab switch — the exact silence it exists to fix.
+function explain(frm, message) {
+    if (!message) {
+        if (frm.__campus_notice) {
+            frm.dashboard.clear_headline();
+            frm.__campus_notice = null;
+        }
+        return;
+    }
+    frm.__campus_notice = message;
+    frm.dashboard.set_headline(message, "orange");
 }
 
 function toggle(frm, on) {

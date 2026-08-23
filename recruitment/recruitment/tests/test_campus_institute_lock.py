@@ -353,7 +353,10 @@ class TestCampusInstituteLock(FrappeTestCase):
 		doc.registration_expiry_date = add_days(nowdate(), 45)
 		with self.assertRaises(frappe.ValidationError) as caught:
 			doc.save(ignore_permissions=True)
-		self.assertIn("live campus drive", str(caught.exception).lower())
+		message = frappe.utils.strip_html(str(caught.exception)).lower()
+		self.assertIn("already started its campus drive", message)
+		# It names the colleges holding it up, so HR knows where to look.
+		self.assertIn(self.institute_a.lower(), message)
 
 
 def run():

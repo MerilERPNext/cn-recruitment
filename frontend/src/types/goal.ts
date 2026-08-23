@@ -752,5 +752,149 @@ export interface AddGoalCommentResponse {
   data?: AddGoalCommentData;
 }
 
+export interface TeamOverviewStage {
+  sequence: number;
+  stage_name: string;
+  stage_type: string;
+  start_date: string;
+  end_date: string;
+  lock_date?: string | null;
+  enabled: number;
+}
 
+export interface TeamOverviewCards {
+  goals_pending_approval: number;
+  employees_pending_approval: number;
+  team_avg_progress: number;
+  expected_progress: number;
+  off_track_goals: number;
+  off_track_employees: number;
+  checkins_due: number;
+  checkins_overdue: number;
+  no_plan_yet: number;
+  on_track_employees: number;
+}
 
+export interface TeamOverviewRules {
+  off_track_tolerance: number;
+  stale_checkin_days: number;
+  include_indirect: number;
+}
+
+export interface TeamOverviewData {
+  framework: string;
+  cycle_name: string;
+  status: string;
+  start_date: string;
+  end_date: string;
+  methodology: string;
+  description: string | null;
+  company: string;
+  stages: TeamOverviewStage[];
+  current_stage: string | null;
+  locks_on: string | null;
+  days_remaining: number;
+  manager: string;
+  manager_name: string;
+  team_size: number;
+  cards: TeamOverviewCards;
+  rules: TeamOverviewRules;
+}
+
+export interface TeamOverviewParams {
+  manager?: string;
+}
+
+export interface TeamOverviewResponse {
+  success: boolean;
+  message: string;
+  data: TeamOverviewData;
+}
+
+export interface TeamMemberItem {
+  employee: string;
+  employee_name: string;
+  initials: string;
+  image: string | null;
+  designation: string;
+  department: string;
+  tenure_years: number;
+  goal_plan: string | null;
+  plan_status: string;
+  goal_count: number;
+  goals_pending_approval: number;
+  progress: number;
+  score: number;
+  expected_progress: number;
+  off_track_count: number;
+  behind_schedule_count: number;
+  stale_checkin_count: number;
+  checkin_requested: boolean;
+  checkin_requested_count: number;
+  checkin_overdue: boolean;
+  last_checkin_date: string | null;
+  days_since_checkin: number | null;
+  status: string;
+  status_label: string;
+  status_tone: string;
+  actions: string[];
+}
+
+export interface TeamMembersSummary {
+  total: number;
+  no_plan: number;
+  pending_approval: number;
+  off_track: number;
+  checkin_due: number;
+  on_track: number;
+}
+
+export interface TeamMembersRules {
+  off_track_tolerance: number;
+  stale_checkin_days: number;
+  include_indirect: number;
+}
+
+export interface TeamMembersData {
+  manager: string;
+  members: TeamMemberItem[];
+  count: number;
+  matched: number;
+  total: number;
+  start: number;
+  limit: number;
+  has_more: boolean;
+  summary: TeamMembersSummary;
+  filters: string[];
+  rules: TeamMembersRules;
+}
+
+export type TeamMembersStatusFilter =
+  | "all"
+  | "no_plan"
+  | "pending_approval"
+  | "off_track"
+  | "checkin_due"
+  | "on_track";
+
+export type TeamMembersSortOption =
+  | "progress"
+  | "progress_desc"
+  | "name"
+  | "checkin"
+  | "off_track";
+
+export interface TeamMembersParams {
+  manager?: string;
+  status?: TeamMembersStatusFilter;
+  sort?: TeamMembersSortOption;
+  search?: string;
+  limit?: number;
+  start?: number;
+}
+
+export interface TeamMembersResponse {
+  success: boolean;
+  message: string;
+  data: TeamMembersData;
+}

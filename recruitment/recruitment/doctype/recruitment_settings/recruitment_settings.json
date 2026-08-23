@@ -47,6 +47,8 @@
   "allow_future_dated_positions",
   "allow_hiring_manager_override",
   "job_posting_settings_section",
+  "send_external_recruiter_assignment_email",
+  "external_recruiter_assignment_email_template",
   "make_job_description_mandatory",
   "restrict_job_posting_without_open_positions",
   "job_posting_columns_section",
@@ -531,6 +533,21 @@
    "fieldname": "enable_sla_tat",
    "fieldtype": "Check",
    "label": "Enable SLA & TAT Tracking"
+  },
+  {
+   "fieldname": "send_external_recruiter_assignment_email",
+   "fieldtype": "Check",
+   "label": "Send External Recruiter Assignment Email",
+   "default": "1",
+   "description": "Email an external recruiter when a job opening is assigned to them."
+  },
+  {
+   "fieldname": "external_recruiter_assignment_email_template",
+   "fieldtype": "Link",
+   "label": "External Recruiter Assignment Email Template",
+   "options": "Email Template",
+   "depends_on": "send_external_recruiter_assignment_email",
+   "description": "Defaults to \"External Recruiter Job Opening Assigned\" when blank."
   }
  ],
  "index_web_pages_for_search": 1,

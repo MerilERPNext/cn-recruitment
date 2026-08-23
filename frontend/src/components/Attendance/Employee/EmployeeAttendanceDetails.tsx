@@ -454,7 +454,13 @@ const EmployeeAttendanceDetails = ({
   const renderCompoffLateDetails = () => {
     const combined = [data, ...(events ?? [])];
     const earnedRec = combined.find((r) => r?.comp_off === "earned");
-    const appliedRec = combined.find((r) => r?.comp_off === "applied");
+    // Co- only for live requests: docstatus 0 (draft) or 1 (submitted), not Rejected
+    const appliedRec = combined.find(
+      (r) =>
+        r?.comp_off === "applied" &&
+        [0, 1].includes(Number(r?.docstatus ?? 0)) &&
+        r?.status !== "Rejected"
+    );
     const compEarned = !!earnedRec;
     const compApplied = !!appliedRec;
     const lateEntry = !!data?.late_entry;

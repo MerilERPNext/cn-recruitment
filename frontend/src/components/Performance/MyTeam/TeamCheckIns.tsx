@@ -49,25 +49,24 @@ const TeamCheckIns: React.FC = () => {
 
   return (
     <main
-      className={`min-h-full overflow-y-auto overflow-x-hidden bg-[#f8fafc] font-sans ${isMobile ? "p-4" : "p-1"}`}
+      className={`min-h-full overflow-y-auto overflow-x-hidden bg-[#f8fafc] font-sans ${isMobile ? "p-3 sm:p-4" : "p-1"}`}
     >
       <div className="mx-auto w-full max-w-screen space-y-5">
         <div
-          className={`flex ${isCompact ? "flex-col gap-4" : "items-end justify-between"} mb-6`}
+          className={`flex ${isCompact ? "flex-col gap-3" : "items-end justify-between"} mb-6`}
         >
-          <div className="space-y-1">
+          <div className="space-y-1 min-w-0">
             <h1 className="text-xl font-bold text-gray-900 tracking-tight">
               Weekly Check-ins
             </h1>
             <Typography
               variant="bodySmall"
-              className="text-gray-500 font-medium"
+              className="text-gray-500 font-medium text-xs sm:text-sm leading-snug break-words"
             >
-              Week of 11 May 2026 · 15-minute employee · 5-minute manager
-              cadence
+              Week of 11 May 2026 · 15-minute employee · 5-minute manager cadence
             </Typography>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 shrink-0">
             <button className="flex items-center gap-1.5 px-3 py-1.5 border border-gray-200 rounded-md text-[11px] font-semibold text-gray-700 hover:bg-gray-50 bg-white transition-colors" aria-label="Previous week">
               <ChevronLeft className="w-3.5 h-3.5" /> Prev week
             </button>
@@ -79,29 +78,29 @@ const TeamCheckIns: React.FC = () => {
 
         {/* ── Stats Cards ─────────────────────────────────────────────── */}
         <div
-          className={`grid ${isCompact ? "grid-cols-2" : "grid-cols-4"} max-w-4xl mx-auto gap-4 mb-4`}
+          className={`grid ${isCompact ? "grid-cols-2" : "grid-cols-4"} max-w-4xl mx-auto gap-2.5 sm:gap-4 mb-4`}
         >
           {STATS.map((stat, idx) => (
             <div
               key={idx}
-              className="bg-white rounded-xl border border-gray-200 p-4 shadow-[0_1px_3px_rgba(0,0,0,0.02)] flex items-start gap-3"
+              className="bg-white rounded-xl border border-gray-200 p-3 sm:p-4 shadow-[0_1px_3px_rgba(0,0,0,0.02)] flex items-start gap-2.5 sm:gap-3 min-w-0"
             >
               <div
-                className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${stat.iconBg}`}
+                className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center shrink-0 ${stat.iconBg}`}
               >
                 {stat.icon}
               </div>
               <div className="min-w-0 flex-1">
-                <span className="text-gray-400 uppercase tracking-widest font-bold text-[9px] block mb-0.5">
+                <span className="text-gray-400 uppercase tracking-wider font-bold text-[9px] block mb-0.5 leading-tight break-words">
                   {stat.label}
                 </span>
                 <div className="flex items-baseline gap-2">
-                  <span className="text-gray-900 font-bold text-lg leading-tight">
+                  <span className="text-gray-900 font-bold text-base sm:text-lg leading-tight">
                     {stat.value}
                   </span>
                 </div>
                 {stat.sub && (
-                  <div className="text-[10px] mt-0.5">{stat.sub}</div>
+                  <div className="text-[10px] sm:text-[11px] mt-0.5 leading-tight text-gray-500">{stat.sub}</div>
                 )}
               </div>
             </div>
