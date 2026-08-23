@@ -378,14 +378,14 @@ export const performanceService = {
     );
     return throwIfUnsuccessful(response as GoalActionResultResponse);
   },
-  rejectTeamGoals: async (payload: GoalActionPayload): Promise<GoalActionResultResponse> => {
+  rejectTeamGoals: async (payload: GoalActionPayload | EmployeesGoalActionPayload): Promise<GoalActionResultResponse> => {
     const response = await FrappeAPI.callMethod(
       "cn_pms.cn_performance_management.api.team_goal_api.reject_goals",
       payload as unknown as Record<string, unknown>,
     );
     return throwIfUnsuccessful(response as GoalActionResultResponse);
   },
-  sendBackTeamGoals: async (payload: GoalActionPayload): Promise<GoalActionResultResponse> => {
+  sendBackTeamGoals: async (payload: GoalActionPayload | EmployeesGoalActionPayload): Promise<GoalActionResultResponse> => {
     const response = await FrappeAPI.callMethod(
       "cn_pms.cn_performance_management.api.team_goal_api.send_back_goals",
       payload as unknown as Record<string, unknown>,

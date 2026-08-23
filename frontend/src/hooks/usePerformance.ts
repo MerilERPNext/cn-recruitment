@@ -327,7 +327,7 @@ export const useApproveTeamGoals = () => {
   })
 }
 export const useRejectTeamGoals = () => {
-  return useMutation<GoalActionResultResponse, Error, GoalActionPayload>({
+  return useMutation<GoalActionResultResponse, Error, GoalActionPayload | EmployeesGoalActionPayload>({
     mutationFn: (payload) => performanceService.rejectTeamGoals(payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["performance", "approval-queue"] });
@@ -336,7 +336,7 @@ export const useRejectTeamGoals = () => {
   })
 }
 export const useSendBackTeamGoals = () => {
-  return useMutation<GoalActionResultResponse, Error, GoalActionPayload>({
+  return useMutation<GoalActionResultResponse, Error, GoalActionPayload | EmployeesGoalActionPayload>({
     mutationFn: (payload) => performanceService.sendBackTeamGoals(payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["performance", "approval-queue"] });
