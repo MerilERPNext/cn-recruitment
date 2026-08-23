@@ -1159,10 +1159,14 @@ export interface EntirePlanGoalActionPayload {
   note?: string;
 }
 
-export type GoalActionPayloadData = IndividualGoalActionPayload | EntirePlanGoalActionPayload;
+export interface EmployeesGoalActionPayload {
+  employees: string[];
+  note?: string;
+}
+
 
 export interface GoalActionPayload {
-  payload: GoalActionPayloadData;
+  payload: IndividualGoalActionPayload;
 }
 
 export interface GoalActionedItem {

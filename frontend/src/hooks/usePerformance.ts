@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient, type UseQueryResult } from "@tanstack/react-query";
-import type { DeleteGoalsPayload, GoalActionResponse, GoalFormConfig, GoalPlanId, GoalPlanResponse, GoalsRequest, GoalSubmitResponse, Message, MyGoalsResponse, ReferenceGoalsParams, ReferenceGoalsResponse, GoalRepositoryResponse, SaveGoalsPayload, SubmitSelectedGoalsPayload, CascadeGoalsParams, CascadeGoalsResponse, GoalDetailResponse, GoalCheckInsResponse, SubmitGoalCheckInPayload, SubmitGoalCheckInResponse, PerformanceOverviewResponse, RequestCheckInPayload, RequestCheckInResponse, MyPeerReviewsResponse, FeedbackFormResponse, SaveFeedbackResponse, SaveFeedbackPayload, SubmitFeedbackPayload, SubmitFeedbackResponse, AddGoalCommentPayload, AddGoalCommentResponse, TeamOverviewResponse, TeamMembersResponse, TeamMembersParams, TeamGoalsParams, TeamGoalsResponse, ApprovalQueueParams, ApprovalQueueResponse, GoalApprovalDetailParams, GoalApprovalDetailResponse, GoalActionPayload, GoalActionResultResponse } from "../types/goal";
+import type { DeleteGoalsPayload, GoalActionResponse, GoalFormConfig, GoalPlanId, GoalPlanResponse, GoalsRequest, GoalSubmitResponse, Message, MyGoalsResponse, ReferenceGoalsParams, ReferenceGoalsResponse, GoalRepositoryResponse, SaveGoalsPayload, SubmitSelectedGoalsPayload, CascadeGoalsParams, CascadeGoalsResponse, GoalDetailResponse, GoalCheckInsResponse, SubmitGoalCheckInPayload, SubmitGoalCheckInResponse, PerformanceOverviewResponse, RequestCheckInPayload, RequestCheckInResponse, MyPeerReviewsResponse, FeedbackFormResponse, SaveFeedbackResponse, SaveFeedbackPayload, SubmitFeedbackPayload, SubmitFeedbackResponse, AddGoalCommentPayload, AddGoalCommentResponse, TeamOverviewResponse, TeamMembersResponse, TeamMembersParams, TeamGoalsParams, TeamGoalsResponse, ApprovalQueueParams, ApprovalQueueResponse, GoalApprovalDetailParams, GoalApprovalDetailResponse, GoalActionPayload, GoalActionResultResponse, EmployeesGoalActionPayload } from "../types/goal";
 import { performanceService } from "../services/performanceService";
 import { queryClient } from "../providers/QueryProvider";
 interface PerformanceQueryKey {
@@ -318,8 +318,26 @@ export const useGetGoalApprovalDetail = (
   });
 
 export const useApproveTeamGoals = () => {
-  return useMutation<GoalActionResultResponse, Error, GoalActionPayload>({
+  return useMutation<GoalActionResultResponse, Error, GoalActionPayload | EmployeesGoalActionPayload>({
     mutationFn: (payload) => performanceService.approveTeamGoals(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["performance", "approval-queue"] });
+      queryClient.invalidateQueries({ queryKey: ["performance", "goal-approval-detail"] });
+    },
+  })
+}
+export const useRejectTeamGoals = () => {
+  return useMutation<GoalActionResultResponse, Error, GoalActionPayload>({
+    mutationFn: (payload) => performanceService.rejectTeamGoals(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["performance", "approval-queue"] });
+      queryClient.invalidateQueries({ queryKey: ["performance", "goal-approval-detail"] });
+    },
+  })
+}
+export const useSendBackTeamGoals = () => {
+  return useMutation<GoalActionResultResponse, Error, GoalActionPayload>({
+    mutationFn: (payload) => performanceService.sendBackTeamGoals(payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["performance", "approval-queue"] });
       queryClient.invalidateQueries({ queryKey: ["performance", "goal-approval-detail"] });
