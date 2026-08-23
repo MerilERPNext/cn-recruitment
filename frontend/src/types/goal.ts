@@ -1144,4 +1144,55 @@ export interface GoalApprovalDetailResponse {
   data: GoalApprovalDetailData;
 }
 
+export interface GoalActionItem {
+  employee: string;
+  goal_key: string;
+}
+
+export interface IndividualGoalActionPayload {
+  items: GoalActionItem[];
+  note?: string;
+}
+
+export interface EntirePlanGoalActionPayload {
+  employees: string[];
+  note?: string;
+}
+
+export type GoalActionPayloadData = IndividualGoalActionPayload | EntirePlanGoalActionPayload;
+
+export interface GoalActionPayload {
+  payload: GoalActionPayloadData;
+}
+
+export interface GoalActionedItem {
+  goal_key: string;
+  title: string;
+  goal: string;
+  goal_status: string;
+  employee: string;
+}
+
+export interface GoalSkippedItem {
+  goal_key: string;
+  reason?: string;
+  [key: string]: unknown;
+}
+
+export interface GoalActionResultData {
+  approval_mode?: string;
+  actioned: GoalActionedItem[];
+  skipped: GoalSkippedItem[];
+  count: number;
+}
+
+export interface GoalActionResultResponse {
+  success: boolean;
+  message: string;
+  data: GoalActionResultData;
+}
+
+
+
+
 
