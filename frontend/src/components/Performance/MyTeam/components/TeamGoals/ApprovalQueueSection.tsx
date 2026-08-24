@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { AlertCircle } from "lucide-react";
 import toast from "react-hot-toast";
 import Button from "../../../../shared/atoms/Button";
@@ -55,9 +55,20 @@ export const ApprovalQueueSection: React.FC<ApprovalQueueSectionProps> = ({
 
   const onToggleCheck = toggleCheck;
 
-  const selectedEmployees = useMemo(() => Array.from(checkedGoals), [checkedGoals])
+  const selectedEmployees = useMemo(() => Array.from(checkedGoals), [checkedGoals]);
   const [status, setStatus] = useState<string>("pending");
   const [start, setStart] = useState<number>(0);
+
+  const clearSelection = useCallback(() => {
+    setLocalCheckedGoals(new Set());
+    if (externalOnToggleCheck && externalCheckedGoals && externalCheckedGoals.size > 0) {
+      externalCheckedGoals.forEach((id) => externalOnToggleCheck(id));
+    }
+  }, [externalOnToggleCheck, externalCheckedGoals]);
+
+  useEffect(() => {
+    clearSelection();
+  }, [status, start]);
 
   const { data: approvalQueueResponse, isLoading: queueLoading, error, refetch } = useGetApprovelQueue({
     status,
@@ -73,14 +84,14 @@ export const ApprovalQueueSection: React.FC<ApprovalQueueSectionProps> = ({
       {
         onSuccess: (res) => {
           toast.success(res?.message || "Goal(s) approved successfully.");
-          setLocalCheckedGoals(new Set());
+          clearSelection();
         },
         onError: (err) => {
           toast.error(getPerformanceErrorMessage(err, "Failed to approve goals."));
         },
       }
     );
-  }, [selectedEmployees, approveTeamGoals]);
+  }, [selectedEmployees, approveTeamGoals, clearSelection]);
 
   const rejectAllSelectedGoals = useCallback(
     (noteText: string) => {
@@ -90,7 +101,7 @@ export const ApprovalQueueSection: React.FC<ApprovalQueueSectionProps> = ({
           onSuccess: (res) => {
             toast.success(res?.message || "Goal(s) rejected successfully.");
             setIsRejectModalOpen(false);
-            setLocalCheckedGoals(new Set());
+            clearSelection();
           },
           onError: (err) => {
             toast.error(getPerformanceErrorMessage(err, "Failed to reject goals."));
@@ -98,7 +109,7 @@ export const ApprovalQueueSection: React.FC<ApprovalQueueSectionProps> = ({
         }
       );
     },
-    [selectedEmployees, rejectGoal]
+    [selectedEmployees, rejectGoal, clearSelection]
   );
   const queueData = approvalQueueResponse?.data;
   const queueItems: ApprovalQueueItem[] = queueData?.queue || [];
