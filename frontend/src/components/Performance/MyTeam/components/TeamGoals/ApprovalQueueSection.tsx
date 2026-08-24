@@ -19,14 +19,10 @@ import EmployeeApprovalItem from "./EmployeeApprovalItem";
 import { GoalReasonModal } from "./GoalReasonModal";
 
 interface ApprovalQueueSectionProps {
-  checkedGoals?: Set<string>;
-  onToggleCheck?: (id: string) => void;
   onGoalClick: (employee: string, goalKey: string) => void;
 }
 
 export const ApprovalQueueSection: React.FC<ApprovalQueueSectionProps> = ({
-  checkedGoals: externalCheckedGoals,
-  onToggleCheck: externalOnToggleCheck,
   onGoalClick,
 }) => {
   const { isMobile, isTablet } = useScreenSize();
@@ -34,37 +30,23 @@ export const ApprovalQueueSection: React.FC<ApprovalQueueSectionProps> = ({
   const { mutate: approveTeamGoals, isPending } = useApproveTeamGoals();
   const { mutate: rejectGoal, isPending: rejectGoalLoading } = useRejectTeamGoals();
 
-  const [localCheckedGoals, setLocalCheckedGoals] = useState<Set<string>>(new Set());
+  const [checkedGoals, setCheckedGoals] = useState<Set<string>>(new Set());
   const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
-  const checkedGoals = externalCheckedGoals || localCheckedGoals;
 
-  const toggleCheck = useCallback(
-    (id: string) => {
-      if (externalOnToggleCheck) {
-        externalOnToggleCheck(id);
-      } else {
-        setLocalCheckedGoals((prev) => {
-          const next = new Set(prev);
-          next.has(id) ? next.delete(id) : next.add(id);
-          return next;
-        });
-      }
-    },
-    [externalOnToggleCheck]
-  );
+  const onToggleCheck = useCallback((id: string) => {
+    setCheckedGoals((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  }, []);
 
-  const onToggleCheck = toggleCheck;
-
-  const selectedEmployees = useMemo(() => Array.from(checkedGoals), [checkedGoals]);
   const [status, setStatus] = useState<string>("pending");
   const [start, setStart] = useState<number>(0);
 
   const clearSelection = useCallback(() => {
-    setLocalCheckedGoals(new Set());
-    if (externalOnToggleCheck && externalCheckedGoals && externalCheckedGoals.size > 0) {
-      externalCheckedGoals.forEach((id) => externalOnToggleCheck(id));
-    }
-  }, [externalOnToggleCheck, externalCheckedGoals]);
+    setCheckedGoals(new Set());
+  }, []);
 
   useEffect(() => {
     clearSelection();
@@ -73,6 +55,17 @@ export const ApprovalQueueSection: React.FC<ApprovalQueueSectionProps> = ({
   const { data: approvalQueueResponse, isLoading: queueLoading, error, refetch } = useGetApprovelQueue({
     status,
     start  });
+
+  const queueData = approvalQueueResponse?.data;
+  const queueItems: ApprovalQueueItem[] = queueData?.queue || [];
+  const byEmployeeList: ApprovalQueueByEmployee[] = queueData?.by_employee || [];
+
+  const selectedEmployees = useMemo(() => {
+    const validIds = new Set<string>();
+    queueItems.forEach((item) => item.employee && validIds.add(item.employee));
+    byEmployeeList.forEach((item) => item.employee && validIds.add(item.employee));
+    return Array.from(checkedGoals).filter((id) => validIds.has(id));
+  }, [checkedGoals, queueItems, byEmployeeList]);
 
   const approveAllSelectedGoals = useCallback(() => {
     if (selectedEmployees.length === 0) {
@@ -111,9 +104,6 @@ export const ApprovalQueueSection: React.FC<ApprovalQueueSectionProps> = ({
     },
     [selectedEmployees, rejectGoal, clearSelection]
   );
-  const queueData = approvalQueueResponse?.data;
-  const queueItems: ApprovalQueueItem[] = queueData?.queue || [];
-  const byEmployeeList: ApprovalQueueByEmployee[] = queueData?.by_employee || [];
   const isPlanAction = Boolean(queueData?.plan_action);
   const filters: string[] = queueData?.filters || ["pending", "all", "approved", "rejected", "sent_back"];
   const hasMore = Boolean(queueData?.has_more);
