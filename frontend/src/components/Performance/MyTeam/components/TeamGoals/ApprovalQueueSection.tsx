@@ -1,11 +1,12 @@
 import React, { useMemo, useState } from "react";
 import { AlertCircle } from "lucide-react";
+import toast from "react-hot-toast";
 import Button from "../../../../shared/atoms/Button";
 import CardTable from "../../../../shared/CardTable";
 import { Typography } from "../../../../shared/atoms/Typography";
 import { Select } from "../../../../shared/atoms/Select";
 import { useScreenSize } from "../../../../../hooks/useScreenSize";
-import { useGetApprovelQueue } from "../../../../../hooks/usePerformance";
+import { useApproveTeamGoals, useGetApprovelQueue } from "../../../../../hooks/usePerformance";
 import { CardSkeleton } from "../../../../shared/molecules/Skeletons/TableSkeleton";
 import { getPerformanceErrorMessage } from "../../../../../services/performanceService";
 import type { ApprovalQueueByEmployee, ApprovalQueueItem } from "../../../../../types/goal";
@@ -29,6 +30,7 @@ export const ApprovalQueueSection: React.FC<ApprovalQueueSectionProps> = ({
 }) => {
   const { isMobile, isTablet } = useScreenSize();
   const isCompact = isMobile || isTablet;
+  const { mutate: approveTeamGoals, isPending } = useApproveTeamGoals();
 
   const [localCheckedGoals, setLocalCheckedGoals] = useState<Set<string>>(new Set());
   const checkedGoals = externalCheckedGoals || localCheckedGoals;
@@ -56,7 +58,28 @@ export const ApprovalQueueSection: React.FC<ApprovalQueueSectionProps> = ({
   const { data: approvalQueueResponse, isLoading: queueLoading, error, refetch } = useGetApprovelQueue({
     status,
     start  });
-
+const approveAllSelectedGoals = () => {
+  if (selectedEmployees.length === 0) {
+    toast.error("Please select at least one employee.");
+    return;
+  }
+  approveTeamGoals(
+    {
+      payload: {
+        employees: selectedEmployees,
+      },
+    },
+    {
+      onSuccess: (res) => {
+        toast.success(res?.message || "Goal(s) approved successfully.");
+        setLocalCheckedGoals(new Set());
+      },
+      onError: (err) => {
+        toast.error(getPerformanceErrorMessage(err, "Failed to approve goals."));
+      },
+    }
+  );
+};
   const queueData = approvalQueueResponse?.data;
   const queueItems: ApprovalQueueItem[] = queueData?.queue || [];
   const byEmployeeList: ApprovalQueueByEmployee[] = queueData?.by_employee || [];
@@ -152,9 +175,11 @@ export const ApprovalQueueSection: React.FC<ApprovalQueueSectionProps> = ({
               variant="contain"
               bgColor="success"
               size="sm"
+              disabled={isPending}
+              onClick={approveAllSelectedGoals}
               className={isCompact ? "w-full sm:w-fit" : ""}
             >
-              Approve all
+              {isPending ? "Approving..." : "Approve all"}
             </Button>
           )}
           {!hasBulkAction && (

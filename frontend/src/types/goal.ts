@@ -1150,23 +1150,28 @@ export interface GoalActionItem {
 }
 
 export interface IndividualGoalActionPayload {
-  items: GoalActionItem[];
+  items?: GoalActionItem[];
+  employees?: string[];
   note?: string;
 }
 
 export interface EntirePlanGoalActionPayload {
-  employees: string[];
+  employees?: string[];
+  items?: GoalActionItem[];
   note?: string;
 }
 
 export interface EmployeesGoalActionPayload {
-  employees: string[];
+  employees?: string[];
+  items?: GoalActionItem[];
   note?: string;
 }
 
-
 export interface GoalActionPayload {
-  payload: IndividualGoalActionPayload;
+  payload?: IndividualGoalActionPayload;
+  employees?: string[];
+  items?: GoalActionItem[];
+  note?: string;
 }
 
 export interface GoalActionedItem {
