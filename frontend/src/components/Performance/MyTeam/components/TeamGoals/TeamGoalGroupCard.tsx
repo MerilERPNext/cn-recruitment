@@ -10,6 +10,7 @@ import TeamGoalRow from "./TeamGoalRow";
 interface TeamGoalGroupCardProps {
   group: TeamGoalGroup;
   isExpanded: boolean;
+  employee:string;
   isCompact: boolean;
   onToggle: (employeeId: string) => void;
   onSelectGoal: (selected: SelectedGoalDetail) => void;
@@ -17,6 +18,7 @@ interface TeamGoalGroupCardProps {
 
 export const TeamGoalGroupCard: React.FC<TeamGoalGroupCardProps> = React.memo(({
   group,
+  employee,
   isExpanded,
   isCompact,
   onToggle,
@@ -98,6 +100,7 @@ export const TeamGoalGroupCard: React.FC<TeamGoalGroupCardProps> = React.memo(({
                 <TeamGoalRow
                   key={goal.goal_key || goal.goal}
                   goal={goal}
+                  employee={employee || group?.employee}
                   employeeName={group?.employee_name ?? "-"}
                   employeeInitials={group?.initials ?? ""}
                   designation={group?.designation}

@@ -1,11 +1,12 @@
-import React, { useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { AlertCircle } from "lucide-react";
+import toast from "react-hot-toast";
 import Button from "../../../../shared/atoms/Button";
 import CardTable from "../../../../shared/CardTable";
 import { Typography } from "../../../../shared/atoms/Typography";
 import { Select } from "../../../../shared/atoms/Select";
 import { useScreenSize } from "../../../../../hooks/useScreenSize";
-import { useGetApprovelQueue } from "../../../../../hooks/usePerformance";
+import { useApproveTeamGoals, useGetApprovelQueue, useRejectTeamGoals } from "../../../../../hooks/usePerformance";
 import { CardSkeleton } from "../../../../shared/molecules/Skeletons/TableSkeleton";
 import { getPerformanceErrorMessage } from "../../../../../services/performanceService";
 import type { ApprovalQueueByEmployee, ApprovalQueueItem } from "../../../../../types/goal";
@@ -15,23 +16,41 @@ import {
   APPROVAL_TABLE_COLUMN_WIDTHS,
 } from "./GoalApprovalItem";
 import EmployeeApprovalItem from "./EmployeeApprovalItem";
+import { GoalReasonModal } from "./GoalReasonModal";
 
 interface ApprovalQueueSectionProps {
-  checkedGoals: Set<string>;
-  onToggleCheck: (id: string) => void;
-  onGoalClick: (goal: any) => void;
+  onGoalClick: (employee: string, goalKey: string) => void;
 }
 
 export const ApprovalQueueSection: React.FC<ApprovalQueueSectionProps> = ({
-  checkedGoals,
-  onToggleCheck,
   onGoalClick,
 }) => {
   const { isMobile, isTablet } = useScreenSize();
   const isCompact = isMobile || isTablet;
+  const { mutate: approveTeamGoals, isPending } = useApproveTeamGoals();
+  const { mutate: rejectGoal, isPending: rejectGoalLoading } = useRejectTeamGoals();
+
+  const [checkedGoals, setCheckedGoals] = useState<Set<string>>(new Set());
+  const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
+
+  const onToggleCheck = useCallback((id: string) => {
+    setCheckedGoals((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  }, []);
 
   const [status, setStatus] = useState<string>("pending");
   const [start, setStart] = useState<number>(0);
+
+  const clearSelection = useCallback(() => {
+    setCheckedGoals(new Set());
+  }, []);
+
+  useEffect(() => {
+    clearSelection();
+  }, [status, start]);
 
   const { data: approvalQueueResponse, isLoading: queueLoading, error, refetch } = useGetApprovelQueue({
     status,
@@ -40,6 +59,51 @@ export const ApprovalQueueSection: React.FC<ApprovalQueueSectionProps> = ({
   const queueData = approvalQueueResponse?.data;
   const queueItems: ApprovalQueueItem[] = queueData?.queue || [];
   const byEmployeeList: ApprovalQueueByEmployee[] = queueData?.by_employee || [];
+
+  const selectedEmployees = useMemo(() => {
+    const validIds = new Set<string>();
+    queueItems.forEach((item) => item.employee && validIds.add(item.employee));
+    byEmployeeList.forEach((item) => item.employee && validIds.add(item.employee));
+    return Array.from(checkedGoals).filter((id) => validIds.has(id));
+  }, [checkedGoals, queueItems, byEmployeeList]);
+
+  const approveAllSelectedGoals = useCallback(() => {
+    if (selectedEmployees.length === 0) {
+      toast.error("Please select at least one employee.");
+      return;
+    }
+    approveTeamGoals(
+      { payload: { employees: selectedEmployees } },
+      {
+        onSuccess: (res) => {
+          toast.success(res?.message || "Goal(s) approved successfully.");
+          clearSelection();
+        },
+        onError: (err) => {
+          toast.error(getPerformanceErrorMessage(err, "Failed to approve goals."));
+        },
+      }
+    );
+  }, [selectedEmployees, approveTeamGoals, clearSelection]);
+
+  const rejectAllSelectedGoals = useCallback(
+    (noteText: string) => {
+      rejectGoal(
+        { payload: { employees: selectedEmployees, note: noteText } },
+        {
+          onSuccess: (res) => {
+            toast.success(res?.message || "Goal(s) rejected successfully.");
+            setIsRejectModalOpen(false);
+            clearSelection();
+          },
+          onError: (err) => {
+            toast.error(getPerformanceErrorMessage(err, "Failed to reject goals."));
+          },
+        }
+      );
+    },
+    [selectedEmployees, rejectGoal, clearSelection]
+  );
   const isPlanAction = Boolean(queueData?.plan_action);
   const filters: string[] = queueData?.filters || ["pending", "all", "approved", "rejected", "sent_back"];
   const hasMore = Boolean(queueData?.has_more);
@@ -117,14 +181,32 @@ export const ApprovalQueueSection: React.FC<ApprovalQueueSectionProps> = ({
             />
           )}
 
+          {selectedEmployees.length > 0 && (
+            <span className="inline-flex items-center rounded-md bg-amber-200/80 px-2.5 py-1 text-xs font-semibold text-amber-900 shrink-0">
+              {selectedEmployees.length} Selected
+            </span>
+          )}
+
           {showRejectAll && (
             <Button
               variant="outline"
               bgColor="error"
               size="sm"
+              disabled={rejectGoalLoading}
+              onClick={() => {
+                if (selectedEmployees.length === 0) {
+                  toast.error("Please select at least one employee.");
+                  return;
+                }
+                setIsRejectModalOpen(true);
+              }}
               className={isCompact ? "w-full sm:w-fit" : ""}
             >
-              Reject all
+              {rejectGoalLoading
+                ? "Rejecting selected..."
+                : selectedEmployees.length > 0
+                ? `Reject all selected (${selectedEmployees.length})`
+                : "Reject all selected"}
             </Button>
           )}
           {showApproveAll && (
@@ -132,9 +214,15 @@ export const ApprovalQueueSection: React.FC<ApprovalQueueSectionProps> = ({
               variant="contain"
               bgColor="success"
               size="sm"
+              disabled={isPending}
+              onClick={approveAllSelectedGoals}
               className={isCompact ? "w-full sm:w-fit" : ""}
             >
-              Approve all
+              {isPending
+                ? "Approving selected..."
+                : selectedEmployees.length > 0
+                ? `Approve all selected (${selectedEmployees.length})`
+                : "Approve all selected"}
             </Button>
           )}
           {!hasBulkAction && (
@@ -177,13 +265,15 @@ export const ApprovalQueueSection: React.FC<ApprovalQueueSectionProps> = ({
               <EmployeeApprovalItem
                 key={empGroup.employee}
                 empGroup={empGroup}
+                checked={checkedGoals.has(empGroup.employee)}
+                onToggleCheck={onToggleCheck}
               />
             ))}
           </div>
         ) : (
           <div className="space-y-3 border-t border-slate-100 bg-slate-50/60 p-3 sm:p-4 max-h-[500px] overflow-y-auto">
-            {queueItems.map((item: ApprovalQueueItem, index: number) => {
-              const itemId = item.goal || item.goal_key || `${item.employee}-${index}`;
+            {queueItems.map((item: ApprovalQueueItem) => {
+              const itemId = item.employee || "";
               return (
                 <GoalApprovalItem
                   key={itemId}
@@ -227,6 +317,8 @@ export const ApprovalQueueSection: React.FC<ApprovalQueueSectionProps> = ({
             <EmployeeApprovalItem
               key={empGroup.employee}
               empGroup={empGroup}
+              checked={checkedGoals.has(empGroup.employee)}
+              onToggleCheck={onToggleCheck}
             />
           ))}
         </div>
@@ -236,8 +328,8 @@ export const ApprovalQueueSection: React.FC<ApprovalQueueSectionProps> = ({
           columnWidths={APPROVAL_TABLE_COLUMN_WIDTHS}
         >
           <div className="w-full max-h-[500px] overflow-y-auto">
-            {queueItems.map((item: ApprovalQueueItem, index: number) => {
-              const itemId = item.goal || item.goal_key || `${item.employee}-${index}`;
+            {queueItems.map((item: ApprovalQueueItem) => {
+              const itemId = item.employee || "";
               return (
                 <GoalApprovalItem
                   key={itemId}
@@ -287,6 +379,19 @@ export const ApprovalQueueSection: React.FC<ApprovalQueueSectionProps> = ({
           </div>
         </div>
       )}
+
+      <GoalReasonModal
+        isOpen={isRejectModalOpen}
+        onClose={() => setIsRejectModalOpen(false)}
+        onConfirm={rejectAllSelectedGoals}
+        title="Reject Selected Goals"
+        description="Please enter a reason/note to reject goals for selected employee(s)."
+        placeholder="Enter reason for rejection..."
+        confirmText="Reject"
+        loadingText="Rejecting..."
+        confirmBgColor="error"
+        isLoading={rejectGoalLoading}
+      />
     </section>
   );
 };

@@ -42,6 +42,11 @@ import type {
   TeamGoalsResponse,
   ApprovalQueueParams,
   ApprovalQueueResponse,
+  GoalApprovalDetailParams,
+  GoalApprovalDetailResponse,
+  GoalActionPayload,
+  GoalActionResultResponse,
+  EmployeesGoalActionPayload,
 } from "../types/goal";
 import FrappeAPI from "../utils/frappeAPI";
 
@@ -358,6 +363,34 @@ export const performanceService = {
       params as Record<string, unknown> | undefined,
     );
     return throwIfUnsuccessful(response as ApprovalQueueResponse);
+  },
+  getGoalApprovalDetail: async (params: GoalApprovalDetailParams): Promise<GoalApprovalDetailResponse> => {
+    const response = await FrappeAPI.getMethod(
+      "cn_pms.cn_performance_management.api.team_goal_api.get_goal_approval_detail",
+      { employee: params.employee, goal_key: params.goal_key },
+    );
+    return throwIfUnsuccessful(response as GoalApprovalDetailResponse);
+  },
+  approveTeamGoals: async (payload: GoalActionPayload | EmployeesGoalActionPayload): Promise<GoalActionResultResponse> => {
+    const response = await FrappeAPI.callMethod(
+      "cn_pms.cn_performance_management.api.team_goal_api.approve_goals",
+      payload as unknown as Record<string, unknown>,
+    );
+    return throwIfUnsuccessful(response as GoalActionResultResponse);
+  },
+  rejectTeamGoals: async (payload: GoalActionPayload | EmployeesGoalActionPayload): Promise<GoalActionResultResponse> => {
+    const response = await FrappeAPI.callMethod(
+      "cn_pms.cn_performance_management.api.team_goal_api.reject_goals",
+      payload as unknown as Record<string, unknown>,
+    );
+    return throwIfUnsuccessful(response as GoalActionResultResponse);
+  },
+  sendBackTeamGoals: async (payload: GoalActionPayload | EmployeesGoalActionPayload): Promise<GoalActionResultResponse> => {
+    const response = await FrappeAPI.callMethod(
+      "cn_pms.cn_performance_management.api.team_goal_api.send_back_goals",
+      payload as unknown as Record<string, unknown>,
+    );
+    return throwIfUnsuccessful(response as GoalActionResultResponse);
   },
 
 };

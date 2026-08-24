@@ -20,6 +20,7 @@ const getHealthBarColor = (tone?: string, health?: string): string => {
 
 interface TeamGoalRowProps {
   goal: TeamGoalItem;
+  employee?: string;
   employeeName: string;
   employeeInitials: string;
   designation?: string;
@@ -29,6 +30,7 @@ interface TeamGoalRowProps {
 
 export const TeamGoalRow: React.FC<TeamGoalRowProps> = React.memo(({
   goal,
+  employee,
   employeeName,
   employeeInitials,
   designation,
@@ -38,6 +40,7 @@ export const TeamGoalRow: React.FC<TeamGoalRowProps> = React.memo(({
   const handleClick = () => {
     onSelect({
       ...goal,
+      employee: employee ||"",
       employeeName,
       employeeInitials,
       designation,

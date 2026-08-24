@@ -1,8 +1,6 @@
-import React, { useState } from "react";
+import React, { useCallback, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useScreenSize } from "../../../hooks/useScreenSize";
-import { GOAL_DETAIL } from "./mockData";
-import { GoalDetailData } from "./types";
 import { GoalHeader } from "./components/TeamGoals/GoalHeader";
 import { ApprovalQueueSection } from "./components/TeamGoals/ApprovalQueueSection";
 import { AllTeamGoalsSection } from "./components/TeamGoals/AllTeamGoalsSection";
@@ -12,34 +10,17 @@ const TeamGoals: React.FC = () => {
   const navigate = useNavigate();
   const { isMobile } = useScreenSize();
 
-  const [checkedGoals, setCheckedGoals] = useState<Set<string>>(new Set());
-  const [selectedGoal, setSelectedGoal] = useState<GoalDetailData | null>(null);
+  const [selectedGoal, setSelectedGoal] = useState<{ employee: string; goalKey: string } | null>(null);
 
-  const handleGoalClick = (baseGoal: any) => {
-    setSelectedGoal({
-      ...GOAL_DETAIL,
-      id: baseGoal.goal || baseGoal.goal_key || baseGoal.id || "",
-      title: baseGoal.title,
-      status: baseGoal.status_label || baseGoal.status || "Submitted",
-      employeeName: baseGoal.employee_name || baseGoal.employeeName,
-      employeeInitials: baseGoal.initials || baseGoal.employeeInitials,
-      weightage: baseGoal.weightage || GOAL_DETAIL.weightage,
-    });
-  };
+  const handleGoalClick = useCallback((employee: string, goalKey: string) => {
+    setSelectedGoal({ employee, goalKey });
+  }, []);
 
-  const handleApproveGoal = () => {
+
+  const handleApproveGoal = useCallback(() => {
     setSelectedGoal(null);
     navigate("/webapp/performance-app/team-goals/assign-goal");
-  };
-
-  const toggleCheck = (id: string) => {
-    setCheckedGoals((prev) => {
-      const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
-      return next;
-    });
-  };
-
+  }, [navigate]);
   return (
     <main
       className={`min-h-full overflow-y-auto overflow-x-hidden bg-[#f6f8fb] font-sans ${isMobile ? "px-3 py-4" : "p-1"
@@ -49,8 +30,6 @@ const TeamGoals: React.FC = () => {
         <GoalHeader />
 
         <ApprovalQueueSection
-          checkedGoals={checkedGoals}
-          onToggleCheck={toggleCheck}
           onGoalClick={handleGoalClick}
         />
 
@@ -59,7 +38,8 @@ const TeamGoals: React.FC = () => {
 
       {selectedGoal && (
         <GoalDetailModal
-          goal={selectedGoal}
+          employee={selectedGoal.employee}
+          goalKey={selectedGoal.goalKey}
           onClose={() => setSelectedGoal(null)}
           onApprove={handleApproveGoal}
         />
