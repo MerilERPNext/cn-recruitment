@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useCallback, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import { GoalHeader } from "./components/TeamGoals/GoalHeader";
@@ -12,15 +12,15 @@ const TeamGoals: React.FC = () => {
 
   const [selectedGoal, setSelectedGoal] = useState<{ employee: string; goalKey: string } | null>(null);
 
-  const handleGoalClick = (employee: string, goalKey: string) => {
+  const handleGoalClick = useCallback((employee: string, goalKey: string) => {
     setSelectedGoal({ employee, goalKey });
-  };
+  }, []);
 
-  const handleApproveGoal = () => {
+
+  const handleApproveGoal = useCallback(() => {
     setSelectedGoal(null);
     navigate("/webapp/performance-app/team-goals/assign-goal");
-  };
-
+  }, [navigate]);
   return (
     <main
       className={`min-h-full overflow-y-auto overflow-x-hidden bg-[#f6f8fb] font-sans ${isMobile ? "px-3 py-4" : "p-1"

@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import { AlertCircle } from "lucide-react";
 import toast from "react-hot-toast";
 import Button from "../../../../shared/atoms/Button";
@@ -38,22 +38,24 @@ export const ApprovalQueueSection: React.FC<ApprovalQueueSectionProps> = ({
   const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
   const checkedGoals = externalCheckedGoals || localCheckedGoals;
 
-  const toggleCheck = (id: string) => {
-    if (externalOnToggleCheck) {
-      externalOnToggleCheck(id);
-    } else {
-      setLocalCheckedGoals((prev) => {
-        const next = new Set(prev);
-        next.has(id) ? next.delete(id) : next.add(id);
-        return next;
-      });
-    }
-  };
+  const toggleCheck = useCallback(
+    (id: string) => {
+      if (externalOnToggleCheck) {
+        externalOnToggleCheck(id);
+      } else {
+        setLocalCheckedGoals((prev) => {
+          const next = new Set(prev);
+          next.has(id) ? next.delete(id) : next.add(id);
+          return next;
+        });
+      }
+    },
+    [externalOnToggleCheck]
+  );
 
   const onToggleCheck = toggleCheck;
 
-  const selectedEmployees = Array.from(checkedGoals);
-
+  const selectedEmployees = useMemo(() => Array.from(checkedGoals), [checkedGoals])
   const [status, setStatus] = useState<string>("pending");
   const [start, setStart] = useState<number>(0);
 
@@ -61,17 +63,13 @@ export const ApprovalQueueSection: React.FC<ApprovalQueueSectionProps> = ({
     status,
     start  });
 
-  const approveAllSelectedGoals = () => {
+  const approveAllSelectedGoals = useCallback(() => {
     if (selectedEmployees.length === 0) {
       toast.error("Please select at least one employee.");
       return;
     }
     approveTeamGoals(
-      {
-        payload: {
-          employees: selectedEmployees,
-        },
-      },
+      { payload: { employees: selectedEmployees } },
       {
         onSuccess: (res) => {
           toast.success(res?.message || "Goal(s) approved successfully.");
@@ -82,28 +80,26 @@ export const ApprovalQueueSection: React.FC<ApprovalQueueSectionProps> = ({
         },
       }
     );
-  };
+  }, [selectedEmployees, approveTeamGoals]);
 
-  const rejectAllSelectedGoals = (noteText: string) => {
-    rejectGoal(
-      {
-        payload: {
-          employees: selectedEmployees,
-          note: noteText,
-        },
-      },
-      {
-        onSuccess: (res) => {
-          toast.success(res?.message || "Goal(s) rejected successfully.");
-          setIsRejectModalOpen(false);
-          setLocalCheckedGoals(new Set());
-        },
-        onError: (err) => {
-          toast.error(getPerformanceErrorMessage(err, "Failed to reject goals."));
-        },
-      }
-    );
-  };
+  const rejectAllSelectedGoals = useCallback(
+    (noteText: string) => {
+      rejectGoal(
+        { payload: { employees: selectedEmployees, note: noteText } },
+        {
+          onSuccess: (res) => {
+            toast.success(res?.message || "Goal(s) rejected successfully.");
+            setIsRejectModalOpen(false);
+            setLocalCheckedGoals(new Set());
+          },
+          onError: (err) => {
+            toast.error(getPerformanceErrorMessage(err, "Failed to reject goals."));
+          },
+        }
+      );
+    },
+    [selectedEmployees, rejectGoal]
+  );
   const queueData = approvalQueueResponse?.data;
   const queueItems: ApprovalQueueItem[] = queueData?.queue || [];
   const byEmployeeList: ApprovalQueueByEmployee[] = queueData?.by_employee || [];
