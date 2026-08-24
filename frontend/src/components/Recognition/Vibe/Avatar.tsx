@@ -17,16 +17,12 @@ const GRADIENTS = [
   "from-rose-400 to-red-500",
 ];
 
-/** Deterministic placeholder photo so each person keeps the same face. */
-const photoFor = (name: string) =>
-  `https://i.pravatar.cc/150?u=${encodeURIComponent(name)}`;
-
 /**
  * Profile avatar used across the Vibe screens. Renders a profile photo and
  * gracefully falls back to a gradient initials badge if the image fails to load.
  */
 const Avatar: React.FC<AvatarProps> = ({ name, initials, photo, size = 40, className = "" }) => {
-  const [failed, setFailed] = useState(false);
+  const [imageError, setImageError] = useState(false);
 
   const label =
     initials ||
@@ -38,14 +34,13 @@ const Avatar: React.FC<AvatarProps> = ({ name, initials, photo, size = 40, class
       .toUpperCase();
 
   const gradient = GRADIENTS[name.length % GRADIENTS.length];
-  const src = photo || photoFor(name);
 
-  if (!failed) {
+  if (photo && !imageError) {
     return (
       <img
-        src={src}
+        src={photo}
         alt={name}
-        onError={() => setFailed(true)}
+        onError={() => setImageError(true)}
         className={`rounded-full object-cover shrink-0 bg-gray-100 ${className}`}
         style={{ width: size, height: size }}
       />
