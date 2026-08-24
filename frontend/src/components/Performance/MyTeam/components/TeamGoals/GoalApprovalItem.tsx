@@ -102,7 +102,6 @@ export const GoalApprovalItem: React.FC<GoalApprovalItemProps> = memo(({
   if (isDesktop) {
     return (
       <div
-        onClick={handleCardClick}
         className="grid gap-4 px-6 py-4 border-b border-gray-100 hover:bg-slate-50 transition-colors cursor-pointer items-center bg-white"
         style={{ gridTemplateColumns: APPROVAL_TABLE_COLUMN_WIDTHS.join(" ") }}
       >
