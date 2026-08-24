@@ -38,7 +38,6 @@ export const GoalActionButtons: React.FC<GoalActionButtonsProps> = ({
   className,
 }) => {
   const [actionModalType, setActionModalType] = useState<"send_back" | "reject" | null>(null);
-
   const hasActions = Boolean(actions && actions.length > 0);
   const { mutate: approveTeamGoals, isPending } = useApproveTeamGoals();
   const { mutate: rejectGoal, isPending: rejectGoalLoading } = useRejectTeamGoals();
@@ -57,19 +56,6 @@ export const GoalActionButtons: React.FC<GoalActionButtonsProps> = ({
     !hasActions ||
     actions!.some((a) => ["approve", "approve_goals", "approve_plan"].includes(a));
 
-  const processSkippedToast = (res: any, defaultSuccess: string) => {
-    const skipped = res?.data?.skipped || res?.skipped || [];
-    if (skipped.length > 0) {
-      skipped.forEach((item: any) => {
-        toast.error(`Skipped: ${item.reason || item.goal_key || "Action skipped"}`);
-      });
-    }
-    const actioned = res?.data?.actioned || [];
-    if (actioned.length > 0 || skipped.length === 0) {
-      toast.success(res?.message || defaultSuccess);
-    }
-  };
-
   const approveGoal = () => {
     const payload = isEntirePlan && items.employee
       ? { employees: [items.employee] }
@@ -79,7 +65,7 @@ export const GoalActionButtons: React.FC<GoalActionButtonsProps> = ({
       { payload },
       {
         onSuccess: (res) => {
-          processSkippedToast(res, "Goal approved successfully.");
+          toast.success(res?.message || "Goal approved successfully.");
           if (onApprove) {
             onApprove();
           } else {
@@ -102,7 +88,7 @@ export const GoalActionButtons: React.FC<GoalActionButtonsProps> = ({
       { payload },
       {
         onSuccess: (res) => {
-          processSkippedToast(res, "Goal sent back successfully.");
+          toast.success(res?.message || "Goal sent back successfully.");
           setActionModalType(null);
           onClose?.();
         },
@@ -122,7 +108,7 @@ export const GoalActionButtons: React.FC<GoalActionButtonsProps> = ({
       { payload },
       {
         onSuccess: (res) => {
-          processSkippedToast(res, "Goal rejected successfully.");
+          toast.success(res?.message || "Goal rejected successfully.");
           setActionModalType(null);
           onClose?.();
         },
