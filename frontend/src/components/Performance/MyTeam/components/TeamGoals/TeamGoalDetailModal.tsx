@@ -1,15 +1,16 @@
 import React from "react";
 import { X } from "lucide-react";
 import { useScreenSize } from "../../../../../hooks/useScreenSize";
-import Button from "../../../../shared/atoms/Button";
 import { Typography } from "../../../../shared/atoms/Typography";
 import Badge, { type BadgeVariant } from "../../../../shared/Badge";
 import Modal from "../../../../shared/Modal";
 import Avatar from "../../../../shared/Avatar";
 import { getInitials } from "../../../../../utils/helperUtils";
 import type { TeamGoalItem, TeamGoalKeyResult } from "../../../../../types/goal";
+import { GoalActionButtons } from "./GoalActionButtons";
 
 export interface SelectedGoalDetail extends TeamGoalItem {
+  employee?: string;
   employeeName: string;
   employeeInitials: string;
   designation?: string;
@@ -19,8 +20,6 @@ interface TeamGoalDetailModalProps {
   goal: SelectedGoalDetail;
   onClose: () => void;
   onApprove?: () => void;
-  onSendBack?: () => void;
-  onReject?: () => void;
 }
 
 const getHealthBadgeVariant = (tone?: string, health?: string): BadgeVariant => {
@@ -34,8 +33,6 @@ export const TeamGoalDetailModal: React.FC<TeamGoalDetailModalProps> = ({
   goal,
   onClose,
   onApprove,
-  onSendBack,
-  onReject,
 }) => {
   const { isMobile } = useScreenSize();
 
@@ -200,32 +197,14 @@ export const TeamGoalDetailModal: React.FC<TeamGoalDetailModalProps> = ({
           <Typography variant="caption" className="text-slate-500 font-medium">
             {goal.goal ? `Goal ID: ${goal.goal}` : "Team Goal Details"}
           </Typography>
-          <div className="flex flex-wrap items-center gap-3">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onSendBack || onClose}
-              className="border-slate-200 text-slate-700 hover:bg-slate-50"
-            >
-              Send back
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onReject || onClose}
-              className="border-red-200 text-red-600 hover:bg-red-50"
-            >
-              Reject
-            </Button>
-            <Button
-              variant="contain"
-              size="sm"
-              onClick={onApprove || onClose}
-              className="bg-emerald-100 text-emerald-700 hover:bg-emerald-200 border-none font-semibold shadow-none"
-            >
-              Approve goal
-            </Button>
-          </div>
+          <GoalActionButtons
+            items={{
+              employee: goal.employee || "",
+              goal_key: goal.goal_key || "",
+            }}
+            onApprove={onApprove}
+            onClose={onClose}
+          />
         </div>
       </div>
     </Modal>

@@ -178,6 +178,7 @@ export const AllTeamGoalsSection: React.FC<AllTeamGoalsSectionProps> = () => {
           groups.map((group: TeamGoalGroup) => (
             <TeamGoalGroupCard
               key={group.employee}
+              employee={group.employee}
               group={group}
               isExpanded={expandedMembers.has(group.employee)}
               isCompact={isCompact}
@@ -226,7 +227,7 @@ export const AllTeamGoalsSection: React.FC<AllTeamGoalsSectionProps> = () => {
       )}
 
       {selectedGoalDetail && (
-        <TeamGoalDetailModal
+        <TeamGoalDetailModal 
           goal={selectedGoalDetail}
           onClose={handleCloseModal}
         />
