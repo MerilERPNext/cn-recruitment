@@ -53,7 +53,6 @@ export const ApprovalQueueSection: React.FC<ApprovalQueueSectionProps> = ({
   const onToggleCheck = toggleCheck;
 
   const selectedEmployees = Array.from(checkedGoals);
-  console.log(selectedEmployees, '=======================checked goals employees array');
 
   const [status, setStatus] = useState<string>("pending");
   const [start, setStart] = useState<number>(0);
@@ -185,6 +184,12 @@ export const ApprovalQueueSection: React.FC<ApprovalQueueSectionProps> = ({
             />
           )}
 
+          {selectedEmployees.length > 0 && (
+            <span className="inline-flex items-center rounded-md bg-amber-200/80 px-2.5 py-1 text-xs font-semibold text-amber-900 shrink-0">
+              {selectedEmployees.length} Selected
+            </span>
+          )}
+
           {showRejectAll && (
             <Button
               variant="outline"
@@ -200,7 +205,11 @@ export const ApprovalQueueSection: React.FC<ApprovalQueueSectionProps> = ({
               }}
               className={isCompact ? "w-full sm:w-fit" : ""}
             >
-              {rejectGoalLoading ? "Rejecting selected..." : "Reject all selected"}
+              {rejectGoalLoading
+                ? "Rejecting selected..."
+                : selectedEmployees.length > 0
+                ? `Reject all selected (${selectedEmployees.length})`
+                : "Reject all selected"}
             </Button>
           )}
           {showApproveAll && (
@@ -212,7 +221,11 @@ export const ApprovalQueueSection: React.FC<ApprovalQueueSectionProps> = ({
               onClick={approveAllSelectedGoals}
               className={isCompact ? "w-full sm:w-fit" : ""}
             >
-              {isPending ? "Approving selected..." : "Approve all selected"}
+              {isPending
+                ? "Approving selected..."
+                : selectedEmployees.length > 0
+                ? `Approve all selected (${selectedEmployees.length})`
+                : "Approve all selected"}
             </Button>
           )}
           {!hasBulkAction && (
