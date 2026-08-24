@@ -322,6 +322,7 @@ export const useApproveTeamGoals = () => {
     mutationFn: (payload) => performanceService.approveTeamGoals(payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["performance", "approval-queue"] });
+      queryClient.invalidateQueries({ queryKey: ["performance", "team-goals"] });
       queryClient.invalidateQueries({ queryKey: ["performance", "goal-approval-detail"] });
     },
   })
@@ -331,6 +332,7 @@ export const useRejectTeamGoals = () => {
     mutationFn: (payload) => performanceService.rejectTeamGoals(payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["performance", "approval-queue"] });
+      queryClient.invalidateQueries({ queryKey: ["performance", "team-goals"] });
       queryClient.invalidateQueries({ queryKey: ["performance", "goal-approval-detail"] });
     },
   })
@@ -340,6 +342,7 @@ export const useSendBackTeamGoals = () => {
     mutationFn: (payload) => performanceService.sendBackTeamGoals(payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["performance", "approval-queue"] });
+      queryClient.invalidateQueries({ queryKey: ["performance", "team-goals"] });
       queryClient.invalidateQueries({ queryKey: ["performance", "goal-approval-detail"] });
     },
   })
