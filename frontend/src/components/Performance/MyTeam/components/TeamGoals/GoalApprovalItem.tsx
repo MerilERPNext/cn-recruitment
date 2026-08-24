@@ -1,10 +1,11 @@
 import React, { memo, useCallback } from "react";
-import { AlertCircle, Check, Eye, Undo2, X } from "lucide-react";
+import { AlertCircle } from "lucide-react";
 import { useScreenSize } from "../../../../../hooks/useScreenSize";
 import { Typography } from "../../../../shared/atoms/Typography";
 import Badge from "../../../../shared/Badge";
 import Avatar from "../../../../shared/Avatar";
 import type { ApprovalQueueItem } from "../../../../../types/goal";
+import { GoalActionButtons } from "./GoalActionButtons";
 
 export const APPROVAL_TABLE_TITLES = [
   "",
@@ -52,63 +53,6 @@ const getWeightageColor = (weightage: number) => {
   return "bg-indigo-500";
 };
 
-/** Reusable icon-button action bar for approval queue items (View, Approve, Reject, Send Back based on goal.actions) */
-const ApprovalActionButton = ({ goal, onClick }: { goal: ApprovalQueueItem; onClick: () => void }) => {
-  const actions: string[] = goal.actions || [];
-  const canView = actions.length === 0 || actions.includes("view");
-  const canApprove = actions.includes("approve");
-  const canReject = actions.includes("reject");
-  const canSendBack = actions.includes("send_back");
-
-  return (
-    <div className="flex items-center justify-center gap-1.5">
-      {canView && (
-        <button
-          type="button"
-          title="View Goal"
-          onClick={(e) => {
-            e.stopPropagation();
-            onClick();
-          }}
-          className="inline-flex items-center justify-center h-8 w-8 rounded-lg border border-slate-200 bg-white text-slate-600 shadow-sm transition-all hover:border-slate-300 hover:bg-slate-100 hover:text-slate-900 active:scale-95"
-        >
-          <Eye className="h-4 w-4" />
-        </button>
-      )}
-      {canApprove && (
-        <button
-          type="button"
-          title="Approve Goal"
-          onClick={(e) => e.stopPropagation()}
-          className="inline-flex items-center justify-center h-8 w-8 rounded-lg bg-emerald-600 text-white shadow-sm transition-all hover:bg-emerald-700 active:scale-95"
-        >
-          <Check className="h-4 w-4" />
-        </button>
-      )}
-      {canReject && (
-        <button
-          type="button"
-          title="Reject Goal"
-          onClick={(e) => e.stopPropagation()}
-          className="inline-flex items-center justify-center h-8 w-8 rounded-lg bg-red-500 text-white shadow-sm transition-all hover:bg-red-600 active:scale-95"
-        >
-          <X className="h-4 w-4" />
-        </button>
-      )}
-      {canSendBack && (
-        <button
-          type="button"
-          title="Send Back"
-          onClick={(e) => e.stopPropagation()}
-          className="inline-flex items-center justify-center h-8 w-8 rounded-lg border border-slate-200 bg-white text-slate-600 shadow-sm transition-all hover:border-amber-300 hover:bg-amber-50 hover:text-amber-700 active:scale-95"
-        >
-          <Undo2 className="h-4 w-4" />
-        </button>
-      )}
-    </div>
-  );
-};
-
 export const GoalApprovalItem: React.FC<GoalApprovalItemProps> = memo(({
   goal,
   checked,
@@ -125,7 +69,7 @@ export const GoalApprovalItem: React.FC<GoalApprovalItemProps> = memo(({
 
   const handleCardClick = useCallback(() => {
     const emp = goal.employee || "";
-    const key =goal.goal_key || "";
+    const key = goal.goal_key || "";
     onClick(emp, key);
   }, [onClick, goal]);
 
@@ -143,6 +87,16 @@ export const GoalApprovalItem: React.FC<GoalApprovalItemProps> = memo(({
     if (statusTone === "warning" || statusLabel.toLowerCase() === "draft") return "warning";
     if (statusTone === "danger") return "danger";
     return "success";
+  };
+
+  const actionButtonsProps = {
+    items: {
+      employee: goal.employee,
+      goal_key: goal.goal_key || "",
+    },
+    actions: goal.actions,
+    isModel: false,
+    onViewGoal: handleCardClick,
   };
 
   if (isDesktop) {
@@ -173,7 +127,7 @@ export const GoalApprovalItem: React.FC<GoalApprovalItemProps> = memo(({
               avatarTextColor="text-blue-600"
             />
             <Typography variant="caption" className="text-gray-600 font-medium">
-              {empName} 
+              {empName}
             </Typography>
             {flags.map((flag) => (
               <span
@@ -231,8 +185,8 @@ export const GoalApprovalItem: React.FC<GoalApprovalItemProps> = memo(({
         </div>
 
         <div className="whitespace-nowrap text-center">
-          <div className="flex justify-center">
-            <ApprovalActionButton goal={goal} onClick={handleCardClick} />
+          <div className="flex justify-center" onClick={(e) => e.stopPropagation()}>
+            <GoalActionButtons {...actionButtonsProps} />
           </div>
         </div>
       </div>
@@ -316,7 +270,7 @@ export const GoalApprovalItem: React.FC<GoalApprovalItemProps> = memo(({
       </div>
 
       <div className="flex items-center justify-end gap-3 pt-2 border-t border-slate-100" onClick={(e) => e.stopPropagation()}>
-        <ApprovalActionButton goal={goal} onClick={handleCardClick} />
+        <GoalActionButtons {...actionButtonsProps} />
       </div>
     </article>
   );
