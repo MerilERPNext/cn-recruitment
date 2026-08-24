@@ -1,56 +1,118 @@
-import React, { useState } from "react";
-import { ChevronRight, CornerDownRight } from "lucide-react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
+import { Search, X } from "lucide-react";
 import { Typography } from "../../../../shared/atoms/Typography";
 import Badge, { type BadgeVariant } from "../../../../shared/Badge";
-import Avatar from "../../../../shared/Avatar";
 import { useScreenSize } from "../../../../../hooks/useScreenSize";
-import { GoalStatus } from "../../types";
-
-import { getInitials } from "../../../../../utils/helperUtils";
-
-const statusVariant: Record<GoalStatus, BadgeVariant> = {
-  "On-track": "success",
-  "At-risk": "warning",
-  "Off-track": "danger",
-};
-
-const statusBarColor: Record<GoalStatus, string> = {
-  "On-track": "bg-blue-500",
-  "At-risk": "bg-blue-500",
-  "Off-track": "bg-red-500",
-};
-
-const statusSummary = [
-  { label: "18 On-track", variant: "success" as BadgeVariant },
-  { label: "10 At-risk", variant: "warning" as BadgeVariant },
-  { label: "4 Off-track", variant: "danger" as BadgeVariant },
-];
+import Button from "../../../../shared/atoms/Button";
+import type { TeamGoalGroup, TeamGoalsHealth } from "../../../../../types/goal";
+import useDebounce from "../../../../../hooks/useDebounce";
+import { useGetTeamGoals } from "../../../../../hooks/usePerformance";
+import TeamGoalDetailModal, { type SelectedGoalDetail } from "./TeamGoalDetailModal";
+import TeamGoalGroupCard from "./TeamGoalGroupCard";
+import { TeamGoalsListSkeleton } from "./TeamGoalsSkeleton";
+import { TeamGoalsError } from "./TeamGoalsError";
+import { getPerformanceErrorMessage } from "../../../../../services/performanceService";
 
 interface AllTeamGoalsSectionProps {
-  totalGoals: number;
-  members: any[];
-  onGoalClick: (goal: any) => void;
+  totalGoals?: number;
+  groups?: TeamGoalGroup[];
+  health?: TeamGoalsHealth;
+  count?: number;
+  matched?: number;
+  start?: number;
+  limit?: number;
+  hasMore?: boolean;
+  searchValue?: string;
+  isLoading?: boolean;
+  error?: unknown;
+  onSearchChange?: (val: string) => void;
+  onGoalClick?: (goal: any) => void;
+  onPageChange?: (page: number) => void;
 }
 
-export const AllTeamGoalsSection: React.FC<AllTeamGoalsSectionProps> = ({
-  totalGoals,
-  members,
-  onGoalClick,
-}) => {
+export const AllTeamGoalsSection: React.FC<AllTeamGoalsSectionProps> = () => {
   const { isMobile, isTablet } = useScreenSize();
   const isCompact = isMobile || isTablet;
 
-  const [expandedMembers, setExpandedMembers] = useState<Set<string>>(
-    new Set(["m1"])
-  );
+  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [page, setPage] = useState<number>(1);
+  const limit = 10;
+  const start = (page - 1) * limit;
 
-  const toggleMember = (id: string) => {
+  const debouncedSearch = useDebounce(searchQuery, 300);
+
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch]);
+
+  const { data: teamGoalsData, isLoading, error } = useGetTeamGoals({
+    start,
+    limit,
+    search: debouncedSearch || undefined,
+  });
+
+  const groups = teamGoalsData?.data?.groups || [];
+  const health = teamGoalsData?.data?.health;
+  const count = teamGoalsData?.data?.count;
+  const matched = teamGoalsData?.data?.matched;
+  const hasMore = teamGoalsData?.data?.has_more ?? false;
+  const totalGoals = teamGoalsData?.data?.cards?.goals ?? matched ?? groups.length;
+
+  const [expandedMembers, setExpandedMembers] = useState<Set<string>>(new Set());
+  const [selectedGoalDetail, setSelectedGoalDetail] = useState<SelectedGoalDetail | null>(null);
+
+  useEffect(() => {
+    if (groups && groups.length > 0) {
+      const firstWithGoals = groups.find((g) => g.goal_count > 0) || groups[0];
+      if (firstWithGoals) {
+        setExpandedMembers(new Set([firstWithGoals.employee]));
+      }
+    }
+  }, [groups]);
+
+  const toggleMember = useCallback((id: string) => {
     setExpandedMembers((prev) => {
       const next = new Set(prev);
       next.has(id) ? next.delete(id) : next.add(id);
       return next;
     });
+  }, []);
+
+  const handleCloseModal = useCallback(() => {
+    setSelectedGoalDetail(null);
+  }, []);
+
+  const totalReporteesCount = matched ?? count ?? groups.length;
+  const totalPages = Math.max(1, Math.ceil(totalReporteesCount / limit));
+
+  const startItem = totalReporteesCount === 0 ? 0 : start + 1;
+  const endItem = Math.min(start + limit, totalReporteesCount);
+
+  const handlePrevPage = () => {
+    setPage((prev) => Math.max(prev - 1, 1));
   };
+
+  const handleNextPage = () => {
+    if (hasMore) {
+      setPage((prev) => prev + 1);
+    }
+  };
+
+  const statusSummary = useMemo(
+    () =>
+      health
+        ? [
+          { label: `${health.on_track} On-track`, variant: "success" as BadgeVariant },
+          { label: `${health.at_risk} At-risk`, variant: "warning" as BadgeVariant },
+          { label: `${health.off_track} Off-track`, variant: "danger" as BadgeVariant },
+        ]
+        : [
+          { label: "0 On-track", variant: "success" as BadgeVariant },
+          { label: "0 At-risk", variant: "warning" as BadgeVariant },
+          { label: "0 Off-track", variant: "danger" as BadgeVariant },
+        ],
+    [health]
+  );
 
   return (
     <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
@@ -72,145 +134,103 @@ export const AllTeamGoalsSection: React.FC<AllTeamGoalsSectionProps> = ({
             Approved & in progress · grouped by reportee
           </Typography>
         </div>
-        <div
-          className={`flex flex-wrap gap-2 ${
-            isCompact ? "w-full" : "shrink-0 justify-end"
-          }`}
-        >
-          {statusSummary.map((item) => (
-            <Badge
-              key={item.label}
-              label={item.label}
-              variant={item.variant}
-              size="sm"
+        <div className={`flex flex-wrap items-center gap-3 ${isCompact ? "w-full flex-col sm:flex-row" : "shrink-0 justify-end"}`}>
+          <div className={`relative ${isCompact ? "w-full" : "w-48 sm:w-56"}`}>
+            <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-400" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search employee..."
+              className="h-9 w-full rounded-lg border border-gray-200 bg-white pl-8 pr-8 text-xs text-gray-800 placeholder-gray-400 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
             />
-          ))}
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery("")}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {statusSummary.map((item) => (
+              <Badge
+                key={item.label}
+                label={item.label}
+                variant={item.variant}
+                size="sm"
+              />
+            ))}
+          </div>
         </div>
       </header>
 
       <div className="space-y-3">
-        {members.map((member) => {
-          const isExpanded = expandedMembers.has(member.id);
-          return (
-            <article
-              key={member.id}
-              className="overflow-hidden rounded-xl border border-slate-200"
-            >
-              <button
-                type="button"
-                aria-label={`${isExpanded ? "Collapse" : "Expand"} ${member.name} goals`}
-                onClick={() => toggleMember(member.id)}
-                className="flex w-full items-start justify-between gap-3 bg-blue-50/70 px-4 py-3 text-left transition-colors hover:bg-blue-50 sm:items-center"
-              >
-                <div className="flex min-w-0 flex-1 items-start gap-3 sm:items-center">
-                  <Avatar
-                    name={member.name || getInitials(member.name)}
-                    size="h-8 w-8"
-                    fontSize="text-xs"
-                    avatarBgColor="bg-blue-50"
-                    avatarTextColor="text-blue-600"
-                  />
-                  <div className="min-w-0">
-                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                      <Typography
-                        variant="bodySmall"
-                        className="font-semibold text-slate-950"
-                      >
-                        {member.name}
-                      </Typography>
-                      <Typography
-                        variant="caption"
-                        className="text-slate-500"
-                      >
-                        {member.designation} · {member.goalCount} goals ·{" "}
-                        {member.avgProgress}% avg
-                      </Typography>
-                    </div>
-                    {isCompact && (
-                      <div className="mt-2 flex items-center gap-2">
-                        <div className="h-1.5 w-28 overflow-hidden rounded-md bg-blue-100">
-                          <div
-                            className="h-full rounded-md bg-blue-500"
-                            style={{ width: `${member.avgProgress}%` }}
-                          />
-                        </div>
-                        <span className="text-xs font-semibold text-blue-700">
-                          {member.avgProgress}%
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-                <ChevronRight
-                  className={`mt-2 h-4 w-4 shrink-0 text-slate-500 transition-transform sm:mt-0 ${
-                    isExpanded ? "rotate-90" : ""
-                  }`}
-                />
-              </button>
-
-              {isExpanded && (
-                <div
-                  className={
-                    isCompact
-                      ? "space-y-2 bg-slate-50/60 p-3"
-                      : "divide-y divide-gray-50 px-4 py-2"
-                  }
-                >
-                  {member.goals.map((goal: any) => (
-                    <div
-                      key={goal.id}
-                      onClick={() =>
-                        onGoalClick({
-                          ...goal,
-                          employeeName: member.name,
-                          employeeInitials: member.initials,
-                        })
-                      }
-                      className={`grid cursor-pointer gap-3 transition-colors hover:bg-slate-50 ${
-                        isCompact
-                          ? "grid-cols-1 rounded-lg border border-slate-100 bg-white p-3 shadow-sm"
-                          : "grid-cols-[minmax(0,1fr)_220px] items-center py-3"
-                      }`}
-                    >
-                      <div className="flex min-w-0 items-center gap-3">
-                        <CornerDownRight className="h-4 w-4 shrink-0 text-slate-300" />
-                        <Badge
-                          label={goal.type}
-                          variant="purple"
-                          size="sm"
-                        />
-                        <Typography
-                          variant="bodySmall"
-                          className={`min-w-0 text-slate-700 ${
-                            isCompact ? "break-words" : "truncate"
-                          }`}
-                        >
-                          {goal.title}
-                        </Typography>
-                      </div>
-                      <div className="flex min-w-0 items-center gap-4">
-                        <div className="h-2 flex-1 overflow-hidden rounded-md bg-slate-200">
-                          <div
-                            className={`h-full rounded-md ${
-                              statusBarColor[goal.status as GoalStatus]
-                            }`}
-                            style={{ width: `${goal.progress}%` }}
-                          />
-                        </div>
-                        <Badge
-                          label={goal.status}
-                          variant={statusVariant[goal.status as GoalStatus]}
-                          size="sm"
-                        />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </article>
-          );
-        })}
+        {isLoading ? (
+          <TeamGoalsListSkeleton />
+        ) : error ? (
+          <TeamGoalsError
+            message={getPerformanceErrorMessage(error, "Failed to load team goals")}
+          />
+        ) : groups.length > 0 ? (
+          groups.map((group: TeamGoalGroup) => (
+            <TeamGoalGroupCard
+              key={group.employee}
+              group={group}
+              isExpanded={expandedMembers.has(group.employee)}
+              isCompact={isCompact}
+              onToggle={toggleMember}
+              onSelectGoal={setSelectedGoalDetail}
+            />
+          ))
+        ) : (
+          <div className="py-6 text-center text-xs italic text-slate-400">
+            No reportees or team goals found.
+          </div>
+        )}
       </div>
+
+      {totalReporteesCount > 0 && (
+        <div className="mt-4 flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-slate-100 pt-4 px-2 bg-white">
+          <Typography variant="caption" className="text-slate-500">
+            Showing <span className="font-semibold text-slate-700">{startItem}</span> to{" "}
+            <span className="font-semibold text-slate-700">{endItem}</span> of{" "}
+            <span className="font-semibold text-slate-700">{totalReporteesCount}</span> reportees
+          </Typography>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={page === 1}
+              onClick={handlePrevPage}
+              className="border-slate-200 text-slate-700 hover:bg-slate-50 disabled:opacity-40"
+            >
+              Previous
+            </Button>
+            <Typography variant="caption" className="font-semibold text-slate-700 px-2">
+              Page {page} of {totalPages}
+            </Typography>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={!hasMore}
+              onClick={handleNextPage}
+              className="border-slate-200 text-slate-700 hover:bg-slate-50 disabled:opacity-40"
+            >
+              Next
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {selectedGoalDetail && (
+        <TeamGoalDetailModal
+          goal={selectedGoalDetail}
+          onClose={handleCloseModal}
+        />
+      )}
     </section>
   );
 };

@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useScreenSize } from "../../../hooks/useScreenSize";
-import { APPROVAL_GOALS, GOAL_DETAIL, TEAM_MEMBERS } from "./mockData";
+import { GOAL_DETAIL } from "./mockData";
 import { GoalDetailData } from "./types";
 import { GoalHeader } from "./components/TeamGoals/GoalHeader";
 import { ApprovalQueueSection } from "./components/TeamGoals/ApprovalQueueSection";
@@ -12,19 +12,17 @@ const TeamGoals: React.FC = () => {
   const navigate = useNavigate();
   const { isMobile } = useScreenSize();
 
-  const [checkedGoals, setCheckedGoals] = useState<Set<string>>(
-    new Set(APPROVAL_GOALS.filter((g) => g.checked).map((g) => g.id))
-  );
+  const [checkedGoals, setCheckedGoals] = useState<Set<string>>(new Set());
   const [selectedGoal, setSelectedGoal] = useState<GoalDetailData | null>(null);
 
   const handleGoalClick = (baseGoal: any) => {
     setSelectedGoal({
       ...GOAL_DETAIL,
-      id: baseGoal.id,
+      id: baseGoal.goal || baseGoal.goal_key || baseGoal.id || "",
       title: baseGoal.title,
-      status: baseGoal.status || "Submitted",
-      employeeName: baseGoal.employeeName,
-      employeeInitials: baseGoal.employeeInitials,
+      status: baseGoal.status_label || baseGoal.status || "Submitted",
+      employeeName: baseGoal.employee_name || baseGoal.employeeName,
+      employeeInitials: baseGoal.initials || baseGoal.employeeInitials,
       weightage: baseGoal.weightage || GOAL_DETAIL.weightage,
     });
   };
@@ -33,10 +31,6 @@ const TeamGoals: React.FC = () => {
     setSelectedGoal(null);
     navigate("/webapp/performance-app/team-goals/assign-goal");
   };
-
-  const totalGoals = 32;
-  const totalReportees = 8;
-  const pendingApproval = APPROVAL_GOALS.length;
 
   const toggleCheck = (id: string) => {
     setCheckedGoals((prev) => {
@@ -48,29 +42,19 @@ const TeamGoals: React.FC = () => {
 
   return (
     <main
-      className={`min-h-full overflow-y-auto overflow-x-hidden bg-[#f6f8fb] font-sans ${
-        isMobile ? "px-3 py-4" : "p-1"
-      }`}
+      className={`min-h-full overflow-y-auto overflow-x-hidden bg-[#f6f8fb] font-sans ${isMobile ? "px-3 py-4" : "p-1"
+        }`}
     >
       <div className="mx-auto w-full space-y-4 sm:space-y-5">
-        <GoalHeader
-          totalGoals={totalGoals}
-          totalReportees={totalReportees}
-          pendingApproval={pendingApproval}
-        />
+        <GoalHeader />
 
         <ApprovalQueueSection
-          goals={APPROVAL_GOALS}
           checkedGoals={checkedGoals}
           onToggleCheck={toggleCheck}
           onGoalClick={handleGoalClick}
         />
 
-        <AllTeamGoalsSection
-          totalGoals={totalGoals}
-          members={TEAM_MEMBERS}
-          onGoalClick={handleGoalClick}
-        />
+        <AllTeamGoalsSection />
       </div>
 
       {selectedGoal && (
