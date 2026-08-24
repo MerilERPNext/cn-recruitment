@@ -28,7 +28,6 @@ export const EmployeeApprovalItem: React.FC<EmployeeApprovalItemProps> = memo(({
 
   return (
     <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm hover:border-slate-300 transition-all">
-      {/* Employee Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 bg-white transition-colors">
         <div className="flex flex-wrap items-center gap-3">
           <Avatar
@@ -63,7 +62,6 @@ export const EmployeeApprovalItem: React.FC<EmployeeApprovalItemProps> = memo(({
           </div>
         </div>
 
-        {/* Plan Level Action Buttons */}
         <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 shrink-0">
           {canSendBackPlan && (
             <Button
