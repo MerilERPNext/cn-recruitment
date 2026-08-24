@@ -1,5 +1,8 @@
 import React from "react";
+import toast from "react-hot-toast";
 import Button from "../../../../shared/atoms/Button";
+import { useApproveTeamGoals } from "../../../../../hooks/usePerformance";
+import { getPerformanceErrorMessage } from "../../../../../services/performanceService";
 
 export interface GoalActionItem {
   employee: string;
@@ -7,7 +10,7 @@ export interface GoalActionItem {
 }
 
 export interface GoalActionButtonsProps {
-  items?: GoalActionItem;
+  items: GoalActionItem;
   employees?: string[] | string;
   actions?: string[];
   note?: string;
@@ -19,7 +22,9 @@ export interface GoalActionButtonsProps {
 }
 
 export const GoalActionButtons: React.FC<GoalActionButtonsProps> = ({
+  items,
   actions,
+  note,
   disabled = false,
   onSendBack,
   onReject,
@@ -27,6 +32,8 @@ export const GoalActionButtons: React.FC<GoalActionButtonsProps> = ({
   className = "flex flex-wrap items-center gap-3",
 }) => {
   const hasActions = Boolean(actions && actions.length > 0);
+  console.log(items,'ppppppppppppppppppppbbbbbbbbbbbboooooooooooosssssssssssssss')
+  const {mutate:approveTeamGoals , isPending , isError} = useApproveTeamGoals()
 
   const canSendBack =
     !hasActions ||
@@ -37,7 +44,25 @@ export const GoalActionButtons: React.FC<GoalActionButtonsProps> = ({
   const canApprove =
     !hasActions ||
     actions!.some((a) => ["approve", "approve_goals", "approve_plan"].includes(a));
-
+const approveGoal = ()=>{
+  approveTeamGoals(
+    {
+      payload: {
+        items: [items],
+        note: note || "",
+      },
+    },
+    {
+      onSuccess: (res) => {
+        toast.success(res?.message || "Goal approved successfully.");
+        onApprove?.();
+      },
+      onError: (err) => {
+        toast.error(getPerformanceErrorMessage(err, "Failed to approve goal."));
+      },
+    }
+  );
+}
   return (
     <div className={className}>
       {canSendBack && (
@@ -70,7 +95,7 @@ export const GoalActionButtons: React.FC<GoalActionButtonsProps> = ({
           bgColor="success"
           size="sm"
           disabled={disabled}
-          onClick={onApprove}
+          onClick={approveGoal}
           className="h-9 w-[110px] px-0 text-xs font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Approve goal

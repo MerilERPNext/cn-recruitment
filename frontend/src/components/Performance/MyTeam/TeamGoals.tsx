@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-// import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import { GoalHeader } from "./components/TeamGoals/GoalHeader";
 import { ApprovalQueueSection } from "./components/TeamGoals/ApprovalQueueSection";
@@ -7,7 +7,7 @@ import { AllTeamGoalsSection } from "./components/TeamGoals/AllTeamGoalsSection"
 import { GoalDetailModal } from "./components/TeamGoals/GoalDetailModal";
 
 const TeamGoals: React.FC = () => {
-  // const navigate = useNavigate();
+  const navigate = useNavigate();
   const { isMobile } = useScreenSize();
 
   const [checkedGoals, setCheckedGoals] = useState<Set<string>>(new Set());
@@ -17,10 +17,10 @@ const TeamGoals: React.FC = () => {
     setSelectedGoal({ employee, goalKey });
   };
 
-  // const handleApproveGoal = () => {
-  //   setSelectedGoal(null);
-  //   navigate("/webapp/performance-app/team-goals/assign-goal");
-  // };
+  const handleApproveGoal = () => {
+    setSelectedGoal(null);
+    navigate("/webapp/performance-app/team-goals/assign-goal");
+  };
 
   const toggleCheck = (id: string) => {
     setCheckedGoals((prev) => {
@@ -52,6 +52,7 @@ const TeamGoals: React.FC = () => {
           employee={selectedGoal.employee}
           goalKey={selectedGoal.goalKey}
           onClose={() => setSelectedGoal(null)}
+          onApprove={handleApproveGoal}
         />
       )}
     </main>

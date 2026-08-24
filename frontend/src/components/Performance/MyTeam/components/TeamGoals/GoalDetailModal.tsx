@@ -16,12 +16,14 @@ interface GoalDetailModalProps {
   employee: string;
   goalKey: string;
   onClose: () => void;
+  onApprove?: () => void;
 }
 
 export const GoalDetailModal: React.FC<GoalDetailModalProps> = ({
   onClose,
   employee,
   goalKey,
+  onApprove,
 }) => {
   const [comment, setComment] = useState("");
   const { isMobile } = useScreenSize();
@@ -115,7 +117,7 @@ export const GoalDetailModal: React.FC<GoalDetailModalProps> = ({
           ) : (
             <>
               <div>
-                <Typography variant="h3" className="text-gray-900 mb-2 font-bold">
+                <Typography variant="h3" className="text-gray-900 mb-2 font-bold break-words">
                   {apiData?.title || "-"}
                 </Typography>
                 <div className="flex items-center gap-2">
@@ -126,7 +128,7 @@ export const GoalDetailModal: React.FC<GoalDetailModalProps> = ({
                     avatarBgColor="bg-blue-50"
                     avatarTextColor="text-blue-600"
                   />
-                  <Typography variant="bodySmall" className="text-gray-500">
+                  <Typography variant="bodySmall" className="text-gray-500 break-words">
                     {apiData?.employee_name || "-"} · {apiData?.designation || "-"} · submitted{" "}
                     {apiData?.submitted_ago || "-"}
                   </Typography>
@@ -142,7 +144,7 @@ export const GoalDetailModal: React.FC<GoalDetailModalProps> = ({
                     >
                       {item.label}
                     </Typography>
-                    <Typography variant="bodySmall" className="font-semibold text-gray-800">
+                    <Typography variant="bodySmall" className="font-semibold text-gray-800 break-words">
                       {item.value}
                     </Typography>
                   </div>
@@ -153,8 +155,8 @@ export const GoalDetailModal: React.FC<GoalDetailModalProps> = ({
                 <Typography variant="bodySmall" className="font-medium text-gray-900 mb-2 block">
                   Description
                 </Typography>
-                <div className="bg-[#f8fafc] border border-gray-100 rounded-xl p-4">
-                  <Typography variant="bodySmall" className="text-gray-600">
+                <div className="bg-[#f8fafc] border border-gray-100 rounded-xl p-4 break-words overflow-hidden">
+                  <Typography variant="bodySmall" className="text-gray-600 whitespace-pre-wrap break-words [word-break:break-word]">
                     {apiData?.description || "-"}
                   </Typography>
                 </div>
@@ -242,6 +244,7 @@ export const GoalDetailModal: React.FC<GoalDetailModalProps> = ({
             actions={apiData?.actions}
             note={comment}
             disabled={isActionDisabled}
+            onApprove={onApprove}
           />
         </div>
       </div>
