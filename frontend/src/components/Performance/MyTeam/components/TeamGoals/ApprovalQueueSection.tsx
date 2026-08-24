@@ -275,6 +275,8 @@ export const ApprovalQueueSection: React.FC<ApprovalQueueSectionProps> = ({
               <EmployeeApprovalItem
                 key={empGroup.employee}
                 empGroup={empGroup}
+                checked={checkedGoals.has(empGroup.employee)}
+                onToggleCheck={onToggleCheck}
               />
             ))}
           </div>
@@ -325,6 +327,8 @@ export const ApprovalQueueSection: React.FC<ApprovalQueueSectionProps> = ({
             <EmployeeApprovalItem
               key={empGroup.employee}
               empGroup={empGroup}
+              checked={checkedGoals.has(empGroup.employee)}
+              onToggleCheck={onToggleCheck}
             />
           ))}
         </div>

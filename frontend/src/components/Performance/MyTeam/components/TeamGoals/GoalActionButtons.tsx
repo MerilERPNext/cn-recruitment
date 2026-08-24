@@ -22,6 +22,7 @@ export interface GoalActionButtonsProps {
   onViewGoal?: () => void;
   className?: string;
   isModel?: boolean;
+  isEntirePlan?: boolean;
 }
 
 export const GoalActionButtons: React.FC<GoalActionButtonsProps> = ({
@@ -33,6 +34,7 @@ export const GoalActionButtons: React.FC<GoalActionButtonsProps> = ({
   onClose,
   onViewGoal,
   isModel = true,
+  isEntirePlan = false,
   className,
 }) => {
   const [actionModalType, setActionModalType] = useState<"send_back" | "reject" | null>(null);
@@ -55,17 +57,29 @@ export const GoalActionButtons: React.FC<GoalActionButtonsProps> = ({
     !hasActions ||
     actions!.some((a) => ["approve", "approve_goals", "approve_plan"].includes(a));
 
+  const processSkippedToast = (res: any, defaultSuccess: string) => {
+    const skipped = res?.data?.skipped || res?.skipped || [];
+    if (skipped.length > 0) {
+      skipped.forEach((item: any) => {
+        toast.error(`Skipped: ${item.reason || item.goal_key || "Action skipped"}`);
+      });
+    }
+    const actioned = res?.data?.actioned || [];
+    if (actioned.length > 0 || skipped.length === 0) {
+      toast.success(res?.message || defaultSuccess);
+    }
+  };
+
   const approveGoal = () => {
+    const payload = isEntirePlan && items.employee
+      ? { employees: [items.employee] }
+      : { items: [items], note: note || "" };
+
     approveTeamGoals(
-      {
-        payload: {
-          items: [items],
-          note: note || "",
-        },
-      },
+      { payload },
       {
         onSuccess: (res) => {
-          toast.success(res?.message || "Goal approved successfully.");
+          processSkippedToast(res, "Goal approved successfully.");
           if (onApprove) {
             onApprove();
           } else {
@@ -80,16 +94,15 @@ export const GoalActionButtons: React.FC<GoalActionButtonsProps> = ({
   };
 
   const submitSendBack = (noteText: string) => {
+    const payload = isEntirePlan && items.employee
+      ? { employees: [items.employee], note: noteText }
+      : { items: [items], note: noteText };
+
     sendBackTeamGoal(
-      {
-        payload: {
-          items: [items],
-          note: noteText,
-        },
-      },
+      { payload },
       {
         onSuccess: (res) => {
-          toast.success(res?.message || "Goal sent back successfully.");
+          processSkippedToast(res, "Goal sent back successfully.");
           setActionModalType(null);
           onClose?.();
         },
@@ -101,16 +114,15 @@ export const GoalActionButtons: React.FC<GoalActionButtonsProps> = ({
   };
 
   const submitReject = (noteText: string) => {
+    const payload = isEntirePlan && items.employee
+      ? { employees: [items.employee], note: noteText }
+      : { items: [items], note: noteText };
+
     rejectGoal(
-      {
-        payload: {
-          items: [items],
-          note: noteText,
-        },
-      },
+      { payload },
       {
         onSuccess: (res) => {
-          toast.success(res?.message || "Goal rejected successfully.");
+          processSkippedToast(res, "Goal rejected successfully.");
           setActionModalType(null);
           onClose?.();
         },
@@ -124,7 +136,58 @@ export const GoalActionButtons: React.FC<GoalActionButtonsProps> = ({
   return (
     <>
       <div className={className || (isModel ? "flex flex-wrap items-center gap-3" : "flex items-center justify-center gap-1.5")}>
-        {!isModel ? (
+        {isEntirePlan ? (
+          <>
+            {canSendBack && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={disabled || isAnyLoading}
+                onClick={(e) => {
+                  e?.stopPropagation?.();
+                  setActionModalType("send_back");
+                }}
+                className="border-amber-300 text-amber-800 bg-amber-50/50 hover:bg-amber-100/80 active:bg-amber-200 text-xs px-2 sm:px-3 font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <Undo2 className="h-3.5 w-3.5 mr-1 shrink-0 text-amber-600" />
+                <span>{sendBackTeamGoalLoading ? "Sending..." : "Send Back"}</span>
+              </Button>
+            )}
+            {canReject && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={disabled || isAnyLoading}
+                onClick={(e) => {
+                  e?.stopPropagation?.();
+                  setActionModalType("reject");
+                }}
+                className="border-red-300 text-red-700 bg-red-50/50 hover:bg-red-100/80 active:bg-red-200 text-xs px-2 sm:px-3 font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <X className="h-3.5 w-3.5 mr-1 shrink-0 text-red-600" />
+                <span>{rejectGoalLoading ? "Rejecting..." : "Reject"}</span>
+              </Button>
+            )}
+            {canApprove && (
+              <Button
+                type="button"
+                variant="contain"
+                size="sm"
+                disabled={disabled || isAnyLoading}
+                onClick={(e) => {
+                  e?.stopPropagation?.();
+                  approveGoal();
+                }}
+                className="border border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-700 active:bg-emerald-800 shadow-xs text-xs px-2 sm:px-3 font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <Check className="h-3.5 w-3.5 mr-1 shrink-0 text-white" />
+                <span>{isPending ? "Approving..." : "Approve"}</span>
+              </Button>
+            )}
+          </>
+        ) : !isModel ? (
           <>
             {onViewGoal && canView && (
               <button

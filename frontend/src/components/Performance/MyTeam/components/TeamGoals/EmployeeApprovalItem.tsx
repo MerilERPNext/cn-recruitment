@@ -1,16 +1,16 @@
 import React, { memo } from "react";
-import { Check, Undo2, X } from "lucide-react";
-import Button from "../../../../shared/atoms/Button";
 import { Typography } from "../../../../shared/atoms/Typography";
 import Avatar from "../../../../shared/Avatar";
 import Badge from "../../../../shared/Badge";
 import type { ApprovalQueueByEmployee, ApprovalQueueItem } from "../../../../../types/goal";
+import { GoalActionButtons } from "./GoalActionButtons";
 
 interface EmployeeApprovalItemProps {
   empGroup: ApprovalQueueByEmployee;
   queueItems?: ApprovalQueueItem[];
   isExpanded?: boolean;
   onToggleExpand?: (empId: string) => void;
+  checked?: boolean;
   checkedGoals?: Set<string>;
   onToggleCheck?: (id: string) => void;
   onGoalClick?: (goal: ApprovalQueueItem) => void;
@@ -19,17 +19,39 @@ interface EmployeeApprovalItemProps {
 
 export const EmployeeApprovalItem: React.FC<EmployeeApprovalItemProps> = memo(({
   empGroup,
+  checked,
+  checkedGoals,
+  onToggleCheck,
 }) => {
-  const empActions = empGroup.actions || [];
-  const canApprovePlan = empActions.includes("approve_plan");
-  const canRejectPlan = empActions.includes("reject_plan");
-  const canSendBackPlan = empActions.includes("send_back_plan");
-  const hasAnyPlanAction = canApprovePlan || canRejectPlan || canSendBackPlan;
+  const isChecked = checked || Boolean(checkedGoals?.has(empGroup.employee));
+
+  const handleToggle = () => {
+    if (onToggleCheck) {
+      onToggleCheck(empGroup.employee);
+    }
+  };
 
   return (
-    <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm hover:border-slate-300 transition-all">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 bg-white transition-colors">
+    <div
+      onClick={handleToggle}
+      className={`overflow-hidden rounded-xl border ${
+        isChecked ? "border-blue-400 bg-blue-50/20" : "border-slate-200 bg-white"
+      } shadow-sm hover:border-slate-300 transition-all ${onToggleCheck ? "cursor-pointer" : ""}`}
+    >
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 transition-colors">
         <div className="flex flex-wrap items-center gap-3">
+          {onToggleCheck && (
+            <div onClick={(e) => e.stopPropagation()} className="flex items-center justify-center">
+              <input
+                aria-label={`Select ${empGroup.employee_name}`}
+                type="checkbox"
+                checked={isChecked}
+                onChange={handleToggle}
+                className="h-4 w-4 rounded border-gray-300 text-blue-500 accent-blue-500 focus:ring-blue-500 cursor-pointer"
+              />
+            </div>
+          )}
+
           <Avatar
             name={empGroup.employee_name}
             fontSize="text-xs"
@@ -62,45 +84,12 @@ export const EmployeeApprovalItem: React.FC<EmployeeApprovalItemProps> = memo(({
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 shrink-0">
-          {canSendBackPlan && (
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="border-amber-300 text-amber-800 bg-amber-50/50 hover:bg-amber-100/80 active:bg-amber-200 text-xs px-2 sm:px-3"
-            >
-              <Undo2 className="h-3.5 w-3.5 mr-1 shrink-0 text-amber-600" />
-              <span>Send Back<span className="hidden sm:inline"> Plan</span></span>
-            </Button>
-          )}
-          {canRejectPlan && (
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="border-red-300 text-red-700 bg-red-50/50 hover:bg-red-100/80 active:bg-red-200 text-xs px-2 sm:px-3"
-            >
-              <X className="h-3.5 w-3.5 mr-1 shrink-0 text-red-600" />
-              <span>Reject<span className="hidden sm:inline"> Plan</span></span>
-            </Button>
-          )}
-          {canApprovePlan && (
-            <Button
-              type="button"
-              variant="contain"
-              size="sm"
-              className="border border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-700 active:bg-emerald-800 shadow-xs text-xs px-2 sm:px-3"
-            >
-              <Check className="h-3.5 w-3.5 mr-1 shrink-0 text-white" />
-              <span>Approve<span className="hidden sm:inline"> Plan</span></span>
-            </Button>
-          )}
-          {!hasAnyPlanAction && (
-            <span className="text-xs font-medium text-slate-400 bg-slate-100/80 border border-slate-200/60 px-2.5 py-1 rounded-md">
-              No action
-            </span>
-          )}
+        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 shrink-0" onClick={(e) => e.stopPropagation()}>
+          <GoalActionButtons
+            items={{ employee: empGroup.employee, goal_key: "" }}
+            actions={empGroup.actions}
+            isEntirePlan={true}
+          />
         </div>
       </div>
     </div>
