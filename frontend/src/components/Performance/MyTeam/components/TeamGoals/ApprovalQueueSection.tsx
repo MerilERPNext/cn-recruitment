@@ -6,7 +6,7 @@ import CardTable from "../../../../shared/CardTable";
 import { Typography } from "../../../../shared/atoms/Typography";
 import { Select } from "../../../../shared/atoms/Select";
 import { useScreenSize } from "../../../../../hooks/useScreenSize";
-import { useApproveTeamGoals, useGetApprovelQueue } from "../../../../../hooks/usePerformance";
+import { useApproveTeamGoals, useGetApprovelQueue, useRejectTeamGoals } from "../../../../../hooks/usePerformance";
 import { CardSkeleton } from "../../../../shared/molecules/Skeletons/TableSkeleton";
 import { getPerformanceErrorMessage } from "../../../../../services/performanceService";
 import type { ApprovalQueueByEmployee, ApprovalQueueItem } from "../../../../../types/goal";
@@ -16,6 +16,7 @@ import {
   APPROVAL_TABLE_COLUMN_WIDTHS,
 } from "./GoalApprovalItem";
 import EmployeeApprovalItem from "./EmployeeApprovalItem";
+import { GoalReasonModal } from "./GoalReasonModal";
 
 interface ApprovalQueueSectionProps {
   checkedGoals?: Set<string>;
@@ -31,8 +32,10 @@ export const ApprovalQueueSection: React.FC<ApprovalQueueSectionProps> = ({
   const { isMobile, isTablet } = useScreenSize();
   const isCompact = isMobile || isTablet;
   const { mutate: approveTeamGoals, isPending } = useApproveTeamGoals();
+  const { mutate: rejectGoal, isPending: rejectGoalLoading } = useRejectTeamGoals();
 
   const [localCheckedGoals, setLocalCheckedGoals] = useState<Set<string>>(new Set());
+  const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
   const checkedGoals = externalCheckedGoals || localCheckedGoals;
 
   const toggleCheck = (id: string) => {
@@ -58,28 +61,50 @@ export const ApprovalQueueSection: React.FC<ApprovalQueueSectionProps> = ({
   const { data: approvalQueueResponse, isLoading: queueLoading, error, refetch } = useGetApprovelQueue({
     status,
     start  });
-const approveAllSelectedGoals = () => {
-  if (selectedEmployees.length === 0) {
-    toast.error("Please select at least one employee.");
-    return;
-  }
-  approveTeamGoals(
-    {
-      payload: {
-        employees: selectedEmployees,
-      },
-    },
-    {
-      onSuccess: (res) => {
-        toast.success(res?.message || "Goal(s) approved successfully.");
-        setLocalCheckedGoals(new Set());
-      },
-      onError: (err) => {
-        toast.error(getPerformanceErrorMessage(err, "Failed to approve goals."));
-      },
+
+  const approveAllSelectedGoals = () => {
+    if (selectedEmployees.length === 0) {
+      toast.error("Please select at least one employee.");
+      return;
     }
-  );
-};
+    approveTeamGoals(
+      {
+        payload: {
+          employees: selectedEmployees,
+        },
+      },
+      {
+        onSuccess: (res) => {
+          toast.success(res?.message || "Goal(s) approved successfully.");
+          setLocalCheckedGoals(new Set());
+        },
+        onError: (err) => {
+          toast.error(getPerformanceErrorMessage(err, "Failed to approve goals."));
+        },
+      }
+    );
+  };
+
+  const rejectAllSelectedGoals = (noteText: string) => {
+    rejectGoal(
+      {
+        payload: {
+          employees: selectedEmployees,
+          note: noteText,
+        },
+      },
+      {
+        onSuccess: (res) => {
+          toast.success(res?.message || "Goal(s) rejected successfully.");
+          setIsRejectModalOpen(false);
+          setLocalCheckedGoals(new Set());
+        },
+        onError: (err) => {
+          toast.error(getPerformanceErrorMessage(err, "Failed to reject goals."));
+        },
+      }
+    );
+  };
   const queueData = approvalQueueResponse?.data;
   const queueItems: ApprovalQueueItem[] = queueData?.queue || [];
   const byEmployeeList: ApprovalQueueByEmployee[] = queueData?.by_employee || [];
@@ -165,9 +190,17 @@ const approveAllSelectedGoals = () => {
               variant="outline"
               bgColor="error"
               size="sm"
+              disabled={rejectGoalLoading}
+              onClick={() => {
+                if (selectedEmployees.length === 0) {
+                  toast.error("Please select at least one employee.");
+                  return;
+                }
+                setIsRejectModalOpen(true);
+              }}
               className={isCompact ? "w-full sm:w-fit" : ""}
             >
-              Reject all selected
+              {rejectGoalLoading ? "Rejecting selected..." : "Reject all selected"}
             </Button>
           )}
           {showApproveAll && (
@@ -332,6 +365,19 @@ const approveAllSelectedGoals = () => {
           </div>
         </div>
       )}
+
+      <GoalReasonModal
+        isOpen={isRejectModalOpen}
+        onClose={() => setIsRejectModalOpen(false)}
+        onConfirm={rejectAllSelectedGoals}
+        title="Reject Selected Goals"
+        description="Please enter a reason/note to reject goals for selected employee(s)."
+        placeholder="Enter reason for rejection..."
+        confirmText="Reject"
+        loadingText="Rejecting..."
+        confirmBgColor="error"
+        isLoading={rejectGoalLoading}
+      />
     </section>
   );
 };
