@@ -167,7 +167,7 @@ const approveAllSelectedGoals = () => {
               size="sm"
               className={isCompact ? "w-full sm:w-fit" : ""}
             >
-              Reject all
+              Reject all selected
             </Button>
           )}
           {showApproveAll && (
@@ -179,7 +179,7 @@ const approveAllSelectedGoals = () => {
               onClick={approveAllSelectedGoals}
               className={isCompact ? "w-full sm:w-fit" : ""}
             >
-              {isPending ? "Approving..." : "Approve all"}
+              {isPending ? "Approving selected..." : "Approve all selected"}
             </Button>
           )}
           {!hasBulkAction && (
