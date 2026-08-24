@@ -118,6 +118,11 @@ doctype_js = {
         "public/js/interview.js",
         # Trims the form down to what a panel member needs (panel-only users).
         "public/js/interview_panel_view.js",
+        # "Submit Feedback" opens the Interview Feedback FORM instead of HRMS's
+        # dialog — the dialog skips the Region Recommendation / Work Location
+        # sections, which only exist on the form. Must load AFTER hrms's own
+        # interview.js (it is, being a hooks entry) so the override sticks.
+        "public/js/interview_feedback_route.js",
     ],
     "Interview Feedback": ["public/js/interview_feedback.js"],
     "User": ["public/js/user.js"],
@@ -427,6 +432,12 @@ doc_events = {
             # eligibility conditions from Campus Eligibility Settings onto it.
             "recruitment.recruitment.eligibility_engine.apply_default_eligibility_rules",
         ],
+        # Tell an external recruiter the opening is theirs to work on. Both events
+        # so a recruiter added to an existing opening is mailed too; sent once per
+        # recruiter per posting row (Job Opening Posting Channel.notified_recruiters),
+        # and only while Recruitment Settings says so.
+        "after_insert": "recruitment.recruitment.external_recruiter_mailers.notify_assigned_recruiters",
+        "on_update": "recruitment.recruitment.external_recruiter_mailers.notify_assigned_recruiters",
     },
     "Employee": {
         "before_insert": "recruitment.customizations.job_applicant.validate_blacklist_employee",

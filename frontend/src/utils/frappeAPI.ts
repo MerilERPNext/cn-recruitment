@@ -15,6 +15,9 @@ if (!API_BASE) {
 }
 interface CustomAxiosRequestConfig extends AxiosRequestConfig {
   _retry?: boolean;
+  // Opt out of the sticky X-Target-Employee-Id header for calls that already
+  // name the employee they want (backends prefer the header over the payload).
+  skipTargetEmployee?: boolean;
 }
 declare global {
   interface Window {
@@ -62,7 +65,10 @@ apiClient.interceptors.request.use(
     }
 
     // Inject target employee ID header if set
-    if (currentTargetEmployeeId) {
+    if (
+      currentTargetEmployeeId &&
+      !(config as CustomAxiosRequestConfig).skipTargetEmployee
+    ) {
       config.headers["X-Target-Employee-Id"] = currentTargetEmployeeId;
     }
 
@@ -188,10 +194,13 @@ export const FrappeAPI = {
 
   callMethod: async (
     method: string,
-    args: Record<string, unknown> = {}
+    args: Record<string, unknown> = {},
+    options: { skipTargetEmployee?: boolean } = {}
   ): Promise<unknown> => {
     try {
-      const response = await apiClient.post(`/api/method/${method}`, args);
+      const response = await apiClient.post(`/api/method/${method}`, args, {
+        skipTargetEmployee: options.skipTargetEmployee,
+      } as CustomAxiosRequestConfig);
       return response.data.message;
     } catch (error) {
       // Log detailed error information for debugging

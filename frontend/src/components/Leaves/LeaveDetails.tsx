@@ -26,6 +26,7 @@ import { AttachmentCard } from "../shared/molecules/AttachmentCard";
 import ActionReasonModal from "../shared/ActionReasonModal";
 import MobileAllocatedTo from "../shared/MobileAllocatedTo";
 import AllocatedToTooltip from "../shared/AllocatedToTooltip";
+import LeaveBalanceField from "./LeaveBalanceField";
 import type { MyLeaveRequestType } from "../../types/leaves";
 import type { allocatedToType } from "../../types/allocatedToTooltip";
 
@@ -87,6 +88,7 @@ export function LeaveDetailView({
   reasonName,
   sendBackComment,
   customActions,
+  showLeaveBalance = false,
 }: {
   actionsEnabled?: boolean;
   documentName?: string;
@@ -98,6 +100,8 @@ export function LeaveDetailView({
   reasonName?: string;
   sendBackComment?: string;
   customActions?: ReactNode;
+  /** Show the applicant's leave balance — for approvers acting on a request. */
+  showLeaveBalance?: boolean;
 }) {
   const loading = useLoadingOverlay();
   const mutation = useApprovalListActions();
@@ -378,6 +382,15 @@ export function LeaveDetailView({
                 </Typography>
               </div>}
             </div>
+            {showLeaveBalance && data?.reference_document?.employee && (
+              <div className="flex justify-between w-full">
+                <LeaveBalanceField
+                  employee={data?.reference_document?.employee}
+                  leaveTypeId={data?.reference_document?.leave_type}
+                  asOfDate={data?.reference_document?.from_date}
+                />
+              </div>
+            )}
             <div className="flex justify-between w-full">
               {hasAssignedTo && <MobileAllocatedTo
                 users={assignedUsers}

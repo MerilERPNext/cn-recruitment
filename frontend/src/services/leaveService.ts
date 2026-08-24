@@ -71,6 +71,7 @@ export const leaveService = {
     employeeId: string,
     date: string,
     leaveType?: string,
+    options?: { skipTargetEmployee?: boolean },
   ): Promise<LeaveBalanceResponse> => {
     const response = await FrappeAPI.callMethod(
       "cn_leave_shift_managment.api.custom_get_leave_details",
@@ -79,6 +80,7 @@ export const leaveService = {
         date: date,
         ...(leaveType ? { leave_type: leaveType } : {}),
       },
+      { skipTargetEmployee: options?.skipTargetEmployee },
     );
 
     return response as LeaveBalanceResponse;

@@ -10,6 +10,7 @@
   "overview_section",
   "drive_name",
   "drive_status",
+  "drive_type",
   "drive_owner",
   "column_break_overview",
   "drive_id",
@@ -73,6 +74,17 @@
    "in_standard_filter": 1,
    "label": "Status",
    "options": "Draft\nLive\nIn Progress\nCompleted\nClosed",
+   "reqd": 1
+  },
+  {
+   "default": "On-Site",
+   "description": "How this drive is run. Every interview created for it opens in this mode; HR can still switch an individual interview when assigning or reassigning it.",
+   "fieldname": "drive_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Drive Type",
+   "options": "On-Site\nOnline",
    "reqd": 1
   },
   {

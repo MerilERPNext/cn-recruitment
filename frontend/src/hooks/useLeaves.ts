@@ -64,6 +64,27 @@ export const useGetLeaveBalance = (
   });
 };
 
+/**
+ * Leave balance of an arbitrary employee — e.g. the applicant an approver is
+ * acting on. Unlike `useGetLeaveBalance` it drops the X-Target-Employee-Id
+ * header, which the backend prefers over the employee argument: a sticky
+ * "viewing as" session would otherwise return someone else's balance.
+ */
+export const useGetEmployeeLeaveBalance = (
+  employeeId: string | undefined,
+  date: string | undefined,
+) => {
+  return useQuery<LeaveBalanceResponse>({
+    queryKey: ["leave-balance-employee", employeeId, date],
+    queryFn: () =>
+      leaveService.getLeaveBalance(employeeId!, date!, undefined, {
+        skipTargetEmployee: true,
+      }),
+    enabled: !!employeeId && !!date,
+    staleTime: 5 * 60 * 1000,
+  });
+};
+
 export function useRequestCompOff() {
   const queryClient = useQueryClient();
 

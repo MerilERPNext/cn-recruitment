@@ -99,7 +99,15 @@ const getExtraMarkers = (attendance: AttendanceStatusInfo): ExtraMarker[] => {
     const markers: ExtraMarker[] = [];
     if (all.some((r) => r?.comp_off === "earned"))
         markers.push({ text: "Co+", className: "bg-green-600 text-white", title: "Compensatory Off Earned" });
-    if (all.some((r) => r?.comp_off === "applied"))
+    // Co- only for live requests: docstatus 0 (draft) or 1 (submitted), not Rejected
+    if (
+        all.some(
+            (r) =>
+                r?.comp_off === "applied" &&
+                [0, 1].includes(Number(r?.docstatus ?? 0)) &&
+                r?.status !== "Rejected"
+        )
+    )
         markers.push({ text: "Co-", className: "bg-red-600 text-white", title: "Compensatory Off Applied" });
     if (attendance?.record?.late_entry)
         markers.push({ text: "LE", className: "bg-amber-500 text-white", title: "Late Entry" });

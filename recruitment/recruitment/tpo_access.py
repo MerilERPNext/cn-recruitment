@@ -144,18 +144,32 @@ def _restrict_user_modules(user):
 			user.append("block_modules", {"module": module})
 
 
+def generate_set_password_link(user):
+	"""A one-time set-password URL for ``user``, generated but not emailed.
+
+	Split out so the Institute welcome mail can carry the link in its own body
+	(recruitment.recruitment.tpo_mailers) instead of the TPO receiving a second,
+	separate "set your password" mail.
+
+	Method name differs by Frappe version (v16: reset_password, v15:
+	_reset_password), so pick whichever this build exposes.
+	"""
+	reset_password = getattr(user, "reset_password", None) or getattr(user, "_reset_password", None)
+	return reset_password(send_email=False)
+
+
 def _send_set_password_email(user, display_name=None, override_template=None):
 	"""Email the TPO a 'set your password' link. Best effort: SMTP problems are
 	logged and never roll back the invite. The link is always inside an <a href>
-	(both button and copy-paste), so mail clients never truncate the reset key."""
+	(both button and copy-paste), so mail clients never truncate the reset key.
+
+	Only reached for a TPO who has no account yet at Campus Invite time — normally
+	the Institute welcome mail already provisioned them and carried the link.
+	"""
 	try:
 		from frappe.utils import get_url
 
-		# Generates a one-time reset key and returns the fully-qualified set-password
-		# URL. Method name differs by Frappe version (v16: reset_password,
-		# v15: _reset_password), so pick whichever this build exposes.
-		reset_password = getattr(user, "reset_password", None) or getattr(user, "_reset_password", None)
-		link = reset_password(send_email=False)
+		link = generate_set_password_link(user)
 		context = {
 			"tpo_name": display_name or user.first_name or user.email,
 			"link": link,
