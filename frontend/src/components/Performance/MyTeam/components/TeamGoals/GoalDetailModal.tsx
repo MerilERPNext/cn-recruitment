@@ -245,6 +245,7 @@ export const GoalDetailModal: React.FC<GoalDetailModalProps> = ({
             note={comment}
             disabled={isActionDisabled}
             onApprove={onApprove}
+            onClose={onClose}
           />
         </div>
       </div>
