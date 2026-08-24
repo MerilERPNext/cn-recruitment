@@ -10,7 +10,6 @@ const TeamGoals: React.FC = () => {
   const navigate = useNavigate();
   const { isMobile } = useScreenSize();
 
-  const [checkedGoals, setCheckedGoals] = useState<Set<string>>(new Set());
   const [selectedGoal, setSelectedGoal] = useState<{ employee: string; goalKey: string } | null>(null);
 
   const handleGoalClick = (employee: string, goalKey: string) => {
@@ -22,14 +21,6 @@ const TeamGoals: React.FC = () => {
     navigate("/webapp/performance-app/team-goals/assign-goal");
   };
 
-  const toggleCheck = (id: string) => {
-    setCheckedGoals((prev) => {
-      const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
-      return next;
-    });
-  };
-
   return (
     <main
       className={`min-h-full overflow-y-auto overflow-x-hidden bg-[#f6f8fb] font-sans ${isMobile ? "px-3 py-4" : "p-1"
@@ -39,8 +30,6 @@ const TeamGoals: React.FC = () => {
         <GoalHeader />
 
         <ApprovalQueueSection
-          checkedGoals={checkedGoals}
-          onToggleCheck={toggleCheck}
           onGoalClick={handleGoalClick}
         />
 

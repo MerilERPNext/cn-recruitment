@@ -61,7 +61,7 @@ export const GoalApprovalItem: React.FC<GoalApprovalItemProps> = memo(({
 }) => {
   const { isDesktop } = useScreenSize();
 
-  const itemId = goal.goal || goal.goal_key || goal.employee;
+  const itemId = goal.employee || "";
 
   const handleCheckChange = useCallback(() => {
     onToggleCheck(itemId);
@@ -102,6 +102,7 @@ export const GoalApprovalItem: React.FC<GoalApprovalItemProps> = memo(({
   if (isDesktop) {
     return (
       <div
+        onClick={handleCheckChange}
         className="grid gap-4 px-6 py-4 border-b border-gray-100 hover:bg-slate-50 transition-colors cursor-pointer items-center bg-white"
         style={{ gridTemplateColumns: APPROVAL_TABLE_COLUMN_WIDTHS.join(" ") }}
       >
@@ -194,7 +195,7 @@ export const GoalApprovalItem: React.FC<GoalApprovalItemProps> = memo(({
 
   return (
     <article
-      onClick={handleCardClick}
+      onClick={handleCheckChange}
       className="border border-slate-200 bg-white rounded-xl p-4 shadow-sm space-y-3 cursor-pointer hover:border-slate-300 transition-colors mb-3"
     >
       <div className="flex items-center justify-between gap-2">

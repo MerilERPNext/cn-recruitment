@@ -17,18 +17,38 @@ import {
 import EmployeeApprovalItem from "./EmployeeApprovalItem";
 
 interface ApprovalQueueSectionProps {
-  checkedGoals: Set<string>;
-  onToggleCheck: (id: string) => void;
+  checkedGoals?: Set<string>;
+  onToggleCheck?: (id: string) => void;
   onGoalClick: (employee: string, goalKey: string) => void;
 }
 
 export const ApprovalQueueSection: React.FC<ApprovalQueueSectionProps> = ({
-  checkedGoals,
-  onToggleCheck,
+  checkedGoals: externalCheckedGoals,
+  onToggleCheck: externalOnToggleCheck,
   onGoalClick,
 }) => {
   const { isMobile, isTablet } = useScreenSize();
   const isCompact = isMobile || isTablet;
+
+  const [localCheckedGoals, setLocalCheckedGoals] = useState<Set<string>>(new Set());
+  const checkedGoals = externalCheckedGoals || localCheckedGoals;
+
+  const toggleCheck = (id: string) => {
+    if (externalOnToggleCheck) {
+      externalOnToggleCheck(id);
+    } else {
+      setLocalCheckedGoals((prev) => {
+        const next = new Set(prev);
+        next.has(id) ? next.delete(id) : next.add(id);
+        return next;
+      });
+    }
+  };
+
+  const onToggleCheck = toggleCheck;
+
+  const selectedEmployees = Array.from(checkedGoals);
+  console.log(selectedEmployees, '=======================checked goals employees array');
 
   const [status, setStatus] = useState<string>("pending");
   const [start, setStart] = useState<number>(0);
@@ -182,8 +202,8 @@ export const ApprovalQueueSection: React.FC<ApprovalQueueSectionProps> = ({
           </div>
         ) : (
           <div className="space-y-3 border-t border-slate-100 bg-slate-50/60 p-3 sm:p-4 max-h-[500px] overflow-y-auto">
-            {queueItems.map((item: ApprovalQueueItem, index: number) => {
-              const itemId = item.goal || item.goal_key || `${item.employee}-${index}`;
+            {queueItems.map((item: ApprovalQueueItem) => {
+              const itemId = item.employee || "";
               return (
                 <GoalApprovalItem
                   key={itemId}
@@ -236,8 +256,8 @@ export const ApprovalQueueSection: React.FC<ApprovalQueueSectionProps> = ({
           columnWidths={APPROVAL_TABLE_COLUMN_WIDTHS}
         >
           <div className="w-full max-h-[500px] overflow-y-auto">
-            {queueItems.map((item: ApprovalQueueItem, index: number) => {
-              const itemId = item.goal || item.goal_key || `${item.employee}-${index}`;
+            {queueItems.map((item: ApprovalQueueItem) => {
+              const itemId = item.employee || "";
               return (
                 <GoalApprovalItem
                   key={itemId}
