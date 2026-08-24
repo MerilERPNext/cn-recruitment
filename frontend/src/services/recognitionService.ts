@@ -498,7 +498,7 @@ export const useProgramValues = (programName?: string) => {
         ["values"],
       )) as { values?: string | null };
       return (p?.values || "")
-        .split(",")
+        .split("|")
         .map((v) => v.trim())
         .filter(Boolean);
     },
