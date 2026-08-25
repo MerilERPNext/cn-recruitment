@@ -1195,11 +1195,26 @@ export interface GoalActionResultData {
   count: number;
 }
 
-export interface GoalActionResultResponse {
+export interface AddTeamGoalCommentContent {
+  employee: string;
+  goal_key: string;
+  note: string;
+}
+
+export interface AddTeamGoalCommentPayload {
+  payload: AddTeamGoalCommentContent;
+}
+
+export interface AddTeamGoalCommentData {
+  goal_key: string;
+}
+
+export interface AddTeamGoalCommentResponse {
   success: boolean;
   message: string;
-  data: GoalActionResultData;
+  data: AddTeamGoalCommentData;
 }
+
 
 
 
