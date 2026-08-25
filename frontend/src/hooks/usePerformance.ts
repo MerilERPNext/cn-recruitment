@@ -266,9 +266,14 @@ export const useAddGoalComment = ()  => {
   return useMutation<AddGoalCommentResponse, Error, AddGoalCommentPayload>({
     mutationFn:(payload)=>performanceService.addGoalComment(payload),
     onSuccess:()=>{
-      queryClient.invalidateQueries({queryKey:PERFORMANCE_QUERY_KEYS.myGoals})
-      queryClient.invalidateQueries({ queryKey: ["performance", "goal-check-ins"]})
-      queryClient.invalidateQueries({ queryKey: ["performance", "goal-detail"] })
+      queryClient.invalidateQueries({ queryKey: ["performance", "approval-queue"] });
+      queryClient.invalidateQueries({ queryKey: ["performance", "team-goals"] });
+      queryClient.invalidateQueries({ queryKey: ["performance", "goal-approval-detail"] });
+      queryClient.invalidateQueries({ queryKey: PERFORMANCE_QUERY_KEYS.myGoals });
+      queryClient.invalidateQueries({ queryKey: PERFORMANCE_QUERY_KEYS.mandatoryGoals });
+      queryClient.invalidateQueries({ queryKey: ["performance", "goal-check-ins"] });
+      queryClient.invalidateQueries({ queryKey: ["performance", "goal-detail"] });
+      queryClient.invalidateQueries({ queryKey: PERFORMANCE_QUERY_KEYS.myPeerReviews });
     }
   })
 }
@@ -325,6 +330,10 @@ export const useApproveTeamGoals = () => {
       queryClient.invalidateQueries({ queryKey: ["performance", "team-goals"] });
       queryClient.invalidateQueries({ queryKey: ["performance", "goal-approval-detail"] });
       queryClient.invalidateQueries({ queryKey: PERFORMANCE_QUERY_KEYS.myGoals });
+      queryClient.invalidateQueries({ queryKey: PERFORMANCE_QUERY_KEYS.mandatoryGoals });
+      queryClient.invalidateQueries({ queryKey: ["performance", "goal-check-ins"] });
+      queryClient.invalidateQueries({ queryKey: ["performance", "goal-detail"] });
+      queryClient.invalidateQueries({ queryKey: PERFORMANCE_QUERY_KEYS.myPeerReviews });
     },
   })
 }
@@ -336,6 +345,10 @@ export const useRejectTeamGoals = () => {
       queryClient.invalidateQueries({ queryKey: ["performance", "team-goals"] });
       queryClient.invalidateQueries({ queryKey: ["performance", "goal-approval-detail"] });
       queryClient.invalidateQueries({ queryKey: PERFORMANCE_QUERY_KEYS.myGoals });
+      queryClient.invalidateQueries({ queryKey: PERFORMANCE_QUERY_KEYS.mandatoryGoals });
+      queryClient.invalidateQueries({ queryKey: ["performance", "goal-check-ins"] });
+      queryClient.invalidateQueries({ queryKey: ["performance", "goal-detail"] });
+      queryClient.invalidateQueries({ queryKey: PERFORMANCE_QUERY_KEYS.myPeerReviews });
     },
   })
 }
@@ -347,6 +360,10 @@ export const useSendBackTeamGoals = () => {
       queryClient.invalidateQueries({ queryKey: ["performance", "team-goals"] });
       queryClient.invalidateQueries({ queryKey: ["performance", "goal-approval-detail"] });
       queryClient.invalidateQueries({ queryKey: PERFORMANCE_QUERY_KEYS.myGoals });
+      queryClient.invalidateQueries({ queryKey: PERFORMANCE_QUERY_KEYS.mandatoryGoals });
+      queryClient.invalidateQueries({ queryKey: ["performance", "goal-check-ins"] });
+      queryClient.invalidateQueries({ queryKey: ["performance", "goal-detail"] });
+      queryClient.invalidateQueries({ queryKey: PERFORMANCE_QUERY_KEYS.myPeerReviews });
     },
   })
 }
@@ -358,6 +375,10 @@ export const useAddTeamGoalComment = () => {
       queryClient.invalidateQueries({ queryKey: ["performance", "team-goals"] });
       queryClient.invalidateQueries({ queryKey: ["performance", "goal-approval-detail"] });
       queryClient.invalidateQueries({ queryKey: PERFORMANCE_QUERY_KEYS.myGoals });
+      queryClient.invalidateQueries({ queryKey: PERFORMANCE_QUERY_KEYS.mandatoryGoals });
+      queryClient.invalidateQueries({ queryKey: ["performance", "goal-check-ins"] });
+      queryClient.invalidateQueries({ queryKey: ["performance", "goal-detail"] });
+      queryClient.invalidateQueries({ queryKey: PERFORMANCE_QUERY_KEYS.myPeerReviews });
     },
   })
 }
