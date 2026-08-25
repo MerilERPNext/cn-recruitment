@@ -14,6 +14,7 @@ import {
     ShieldCheck,
     LogOut,
     RotateCcwKey,
+    Loader2,
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import useLogout from "../../hooks/useLogout";
@@ -71,7 +72,10 @@ const quickActions: QuickAction[] = [
 
     const user = empData?.employee;
     const { mutateAsync: logout } = useLogout();
+    const [isLoggingOut, setIsLoggingOut] = useState(false);
     const logoutHandler = async () => {
+        if (isLoggingOut) return;
+        setIsLoggingOut(true);
         try {
             if (window?.isApp && window?.nativeInterface?.execute) {
                 await window.nativeInterface.execute("logout");
@@ -80,9 +84,9 @@ const quickActions: QuickAction[] = [
                 await logout();
             }
             sessionStorage.removeItem("viewed_employee_id");
-
         } catch (error) {
             console.error("Logout failed:", error);
+            setIsLoggingOut(false);
         }
     };
     return (
@@ -171,19 +175,25 @@ const quickActions: QuickAction[] = [
             </div>
             <div
                 onClick={logoutHandler}
-                className="w-full mt-0 px-2 cursor-pointer"
+                className={`w-full mt-0 px-2 cursor-pointer ${isLoggingOut ? "pointer-events-none opacity-50" : ""}`}
             >
-                <div className="flex items-center justify-between rounded-lg px-3 py-3 hover:bg-gray-50 active:bg-gray-100">
+                <div className={`flex items-center justify-between rounded-lg px-3 py-3 transition-colors ${
+                    isLoggingOut ? "bg-error text-white" : "hover:bg-gray-50 active:bg-gray-100"
+                }`}>
                     <div className="flex items-center gap-3">
-                        <span className="text-gray-700">
-                            <LogOut className="w-5 h-5 text-error" />
+                        <span className={isLoggingOut ? "text-white" : "text-gray-700"}>
+                            {isLoggingOut ? (
+                                <Loader2 className="w-5 h-5 animate-spin text-white" />
+                            ) : (
+                                <LogOut className="w-5 h-5 text-error" />
+                            )}
                         </span>
-                        <Typography variant="bodyMedium" color="error">
-                            Logout
+                        <Typography variant="bodyMedium" color={isLoggingOut ? "white" : "error"}>
+                            {isLoggingOut ? "Logging out..." : "Logout"}
                         </Typography>
                     </div>
 
-                    <ChevronRight className="w-4 h-4 text-gray-400" />
+                    <ChevronRight className={`w-4 h-4 ${isLoggingOut ? "text-white" : "text-gray-400"}`} />
                 </div>
             </div>
             <ChangePassword

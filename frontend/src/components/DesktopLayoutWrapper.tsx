@@ -33,6 +33,7 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
   const location = useLocation();
   const navigate = useNavigate();
   const { mutateAsync: logout } = useLogout();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   // Force static badge count for UI demo
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   const [isSidebarExpanded, setIsSidebarExpanded] = useState(false);
@@ -59,10 +60,12 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
   );
   // logout logic
   const logoutHandler = async () => {
+    setIsLoggingOut(true);
     try {
       await logout();
     } catch (error) {
       console.error("Logout failed:", error);
+      setIsLoggingOut(false);
     }
   };
   // Change password — self-service modal (current / new / confirm) that calls
@@ -351,19 +354,20 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
 
                     <hr className="my-2 border-gray-100" />
                     <Button
-                      variant="subtle"
+                      variant={isLoggingOut ? "contain" : "subtle"}
                       size="md"
                       fullWidth
                       contentAlign="start"
+                      bgColor="error"
+                      loading={isLoggingOut}
+                      icon={isLoggingOut ? undefined : <LogOut className="w-4 h-4" />}
                       onClick={async () => {
                         await logoutHandler();
                         sessionStorage.removeItem("viewed_employee_id");
                         setShowProfileDropdown(false);
                       }}
-                      bgColor="error"
                     >
-                      <LogOut className="w-4 h-4" />
-                      Logout
+                      {isLoggingOut ? "Logging out..." : "Logout"}
                     </Button>
                   </div>
                 </div>
