@@ -43,6 +43,7 @@ const getSubmissionVariant = (state?: string): BadgeVariant => {
   if (s === "pending") return "warning";
   if (s === "submitted") return "info";
   if (s === "rejected") return "danger";
+  if (s === "sent back" || s === "needs rework") return "warning";
   if (s === "draft") return "info";
   return "info";
 };
@@ -69,7 +70,8 @@ const getGoalSubmissionStatus = (goal: MyGoalsGoal): string =>
   goal.goal_status || goal.submission_status || "";
 
 const isSelectableGoal = (goal: MyGoalsGoal): boolean =>
-  ["draft", "pending"].includes(getGoalSubmissionStatus(goal).toLowerCase());
+  Boolean(goal.needs_rework) ||
+  ["draft", "pending", "rejected", "sent back"].includes(getGoalSubmissionStatus(goal).toLowerCase());
 
 interface MyGoalsProps {
   onCreateGoal?: () => void;
@@ -90,7 +92,7 @@ const MyGoals: React.FC<MyGoalsProps> = ({ onCreateGoal, onSelectGoal }) => {
   const { data: myGoalsResponse, isLoading, isError, error } = useMyGoals();
   const { mutateAsync: submitSelectedGoals, isPending: isSubmitting } = useSubmitSelectedGoals();
   const { mutateAsync: deleteGoals, isPending: isDeleting } = useDeleteGoals();
-
+  console.log(myGoalsResponse, '============my goaaaaaaaaaaaaaalllllllls')
   const goalsData = myGoalsResponse?.data;
   const allGoals: MyGoalsGoal[] = goalsData?.goals ?? [];
   const totalGoals = goalsData?.total ?? 0;
@@ -102,7 +104,7 @@ const MyGoals: React.FC<MyGoalsProps> = ({ onCreateGoal, onSelectGoal }) => {
   }, 0);
 
   const goals = useMemo(() => {
-    return allGoals.filter(g=>{
+    return allGoals.filter(g => {
       const goalStatus = (getGoalSubmissionStatus(g) || "").toLocaleLowerCase()
       const matchStatus = statusFilter === "all" || goalStatus === statusFilter.toLocaleLowerCase()
       const q = searchQuery.trim().toLocaleLowerCase()
@@ -111,8 +113,8 @@ const MyGoals: React.FC<MyGoalsProps> = ({ onCreateGoal, onSelectGoal }) => {
         (g.department_title || "").toLowerCase().includes(q) ||
         (g.goal_type || "").toLowerCase().includes(q)
 
-        return matchStatus && matchSearch
-      }).reverse()
+      return matchStatus && matchSearch
+    }).reverse()
   }, [allGoals, searchQuery, statusFilter]);
 
   const handleDeleteDraftGoal = (e: React.MouseEvent, goal: MyGoalsGoal) => {
@@ -137,33 +139,15 @@ const MyGoals: React.FC<MyGoalsProps> = ({ onCreateGoal, onSelectGoal }) => {
     return sum + (Number(w) || 0);
   }, 0);
   const isTotalWeightageValid = Math.abs(selectedWeightageSum - 100) < 0.0001;
-  const hasPositiveWeightageForEachGoal = selectedGoalsData.every((goal) => {
-    const weightage =
-      editedWeightages[getGoalId(goal)] !== undefined
-        ? editedWeightages[getGoalId(goal)]
-        : goal.weightage;
-    return Number(weightage) > 0;
-  });
-  const canSubmitSelectedGoals =
-    selectedGoalsData.length > 0 &&
-    isTotalWeightageValid &&
-    hasPositiveWeightageForEachGoal;
-
+  const canSubmitSelectedGoals = selectedGoalsData.length > 0;
   const weightageColor = isTotalWeightageValid
-      ? 'text-green-600 font-bold' 
-      : selectedWeightageSum > 100
-          ? 'text-red-600 font-bold' 
-          : 'text-slate-700 font-medium';
+    ? 'text-green-600 font-bold'
+    : selectedWeightageSum > 100
+      ? 'text-red-600 font-bold'
+      : 'text-slate-700 font-medium';
 
   const handleSubmitSelectedGoals = async () => {
-    if (!canSubmitSelectedGoals) {
-      toast.error(
-        hasPositiveWeightageForEachGoal
-          ? "Total weightage must be exactly 100% before submitting."
-          : "Each selected goal must have a weightage greater than 0%.",
-      );
-      return;
-    }
+    if (!canSubmitSelectedGoals) return;
 
     try {
       const response = await submitSelectedGoals({
@@ -177,7 +161,12 @@ const MyGoals: React.FC<MyGoalsProps> = ({ onCreateGoal, onSelectGoal }) => {
       });
 
       if (!response.success) {
-        throw new Error(response.message || "Failed to submit selected goals.");
+        const responseData = response.data as { errors?: string[] } | undefined;
+        const detailErrs = Array.isArray(responseData?.errors)
+          ? responseData.errors.join(", ")
+          : "";
+        const errText = detailErrs ? `${response.message} ${detailErrs}` : response.message;
+        throw new Error(errText || "Failed to submit selected goals.");
       }
 
       toast.success(response.message || "Selected goals submitted successfully.");
@@ -215,7 +204,7 @@ const MyGoals: React.FC<MyGoalsProps> = ({ onCreateGoal, onSelectGoal }) => {
     }
   };
 
- 
+
 
   if (isError) {
     return (
@@ -232,9 +221,8 @@ const MyGoals: React.FC<MyGoalsProps> = ({ onCreateGoal, onSelectGoal }) => {
 
   return (
     <div
-      className={`min-h-full overflow-y-auto overflow-x-hidden bg-[#f6f8fb] px-3 py-4 font-sans sm:px-4 sm:py-5 lg:px-1 lg:pt-1 ${
-        selectedGoals.length > 0 ? "pb-52 sm:pb-44 lg:pb-48" : "pb-16 sm:pb-20 lg:pb-24"
-      }`}
+      className={`min-h-full overflow-y-auto overflow-x-hidden bg-[#f6f8fb] px-3 py-4 font-sans sm:px-4 sm:py-5 lg:px-1 lg:pt-1 ${selectedGoals.length > 0 ? "pb-52 sm:pb-44 lg:pb-48" : "pb-16 sm:pb-20 lg:pb-24"
+        }`}
     >
       <MandatoryGoalsBanner />
 
@@ -374,235 +362,241 @@ const MyGoals: React.FC<MyGoalsProps> = ({ onCreateGoal, onSelectGoal }) => {
                   </div>
                 ) : (
                   goals.map((goal: MyGoalsGoal, index: number) => (
-                <div
-                  key={getGoalId(goal)}
-                  onClick={() => {
-                    if (onSelectGoal) {
-                      onSelectGoal(index);
-                    } else {
-                      navigate(`/webapp/performance-app/my-goals/${getGoalId(goal)}`);
-                    }
-                  }}
-                  className="relative z-5 min-w-0 cursor-pointer overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition-all hover:border-blue-300 hover:shadow-md"
-                >
-                  {!isCompact && (
-                    <div className="absolute left-[-28px] top-12 h-px w-[28px] bg-slate-200" />
-                  )}
-
-                  <div className="relative z-10 flex min-w-0 flex-col gap-4 p-4 lg:flex-row lg:items-center lg:justify-between lg:p-5">
-                    {/* Left: Checkbox + goal_type badge + department + title */}
-                    <div className="flex min-w-0 flex-1 flex-col gap-3 sm:flex-row sm:items-start">
-                      {isSelectableGoal(goal) && (
-                        <div
-                          className="flex shrink-0 items-center mt-1 mr-2"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <input
-                            type="checkbox"
-                            checked={selectedGoals.includes(getGoalId(goal))}
-                            onChange={() => handleToggleSelection(getGoalId(goal))}
-                            className="h-4 w-4 cursor-pointer rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-                            aria-label={`Select ${goal.title}`}
-                          />
-                        </div>
+                    <div
+                      key={getGoalId(goal)}
+                      onClick={() => {
+                        if (onSelectGoal) {
+                          onSelectGoal(index);
+                        } else {
+                          navigate(`/webapp/performance-app/my-goals/${getGoalId(goal)}`);
+                        }
+                      }}
+                      className="relative z-5 min-w-0 cursor-pointer overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition-all hover:border-blue-300 hover:shadow-md"
+                    >
+                      {!isCompact && (
+                        <div className="absolute left-[-28px] top-12 h-px w-[28px] bg-slate-200" />
                       )}
-                      <div className="flex shrink-0 flex-wrap items-center gap-2 sm:w-[104px] sm:flex-col sm:items-start sm:gap-1">
-                        <Badge label={goal.goal_type} variant="purple" size="sm" />
-                        <Typography
-                          variant="caption"
-                          className="text-slate-500 sm:ml-1"
-                        >
-                          {goal.department_title}
-                        </Typography>
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <Typography
-                          variant="bodyMedium"
-                          className="mb-1 block break-words font-semibold leading-snug text-slate-950"
-                        >
-                          {goal.title}
-                        </Typography>
-                        <Typography
-                          variant="caption"
-                          className="block break-words leading-relaxed text-slate-500"
-                        >
-                          {goal.description}
-                        </Typography>
-                      </div>
-                    </div>
 
-                    {/* Right: weightage bar + status + approval + chevron */}
-                    <div className="flex w-full min-w-0 shrink-0 flex-col gap-3 rounded-lg bg-slate-50 p-3 md:flex-row md:items-center md:justify-between lg:max-w-[400px] lg:bg-transparent lg:p-0">
-                      <div className="grid min-w-0 flex-1 grid-cols-[auto_minmax(0,1fr)] items-center gap-3 lg:border-r lg:border-slate-100 lg:pr-5">
-                        <div className="min-w-0">
-                          {selectedGoals.includes(getGoalId(goal)) ? (
-                            <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                      <div className="relative z-10 flex min-w-0 flex-col gap-4 p-4 lg:flex-row lg:items-center lg:justify-between lg:p-5">
+                        {/* Left: Checkbox + goal_type badge + department + title */}
+                        <div className="flex min-w-0 flex-1 flex-col gap-3 sm:flex-row sm:items-start">
+                          {isSelectableGoal(goal) && (
+                            <div
+                              className="flex shrink-0 items-center mt-1 mr-2"
+                              onClick={(e) => e.stopPropagation()}
+                            >
                               <input
-                                type="text"
-                                className="w-14 rounded border border-gray-300 px-2 py-1 text-sm font-semibold outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                                value={editedWeightages[getGoalId(goal)] !== undefined ? editedWeightages[getGoalId(goal)] : goal.weightage}
-                                onChange={(e) => {
-                                  const rawVal = e.target.value;
-                                  if (rawVal === "") {
-                                    setEditedWeightages((prev) => ({ ...prev, [getGoalId(goal)]: 0 }));
-                                    return;
-                                  }
-                                  if (/^\d*\.?\d*$/.test(rawVal)) {
-                                    const num = parseFloat(rawVal);
-                                    if (!isNaN(num)) {
-                                      setEditedWeightages((prev) => ({
-                                        ...prev,
-                                        [getGoalId(goal)]: Math.min(num, 100)
-                                      }));
-                                    }
-                                  }
-                                }}
+                                type="checkbox"
+                                checked={selectedGoals.includes(getGoalId(goal))}
+                                onChange={() => handleToggleSelection(getGoalId(goal))}
+                                className="h-4 w-4 cursor-pointer rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                                aria-label={`Select ${goal.title}`}
                               />
-                              <span className="text-sm font-bold text-slate-950">%</span>
                             </div>
-                          ) : (
+                          )}
+                          <div className="flex shrink-0 flex-wrap items-center gap-2 sm:w-[104px] sm:flex-col sm:items-start sm:gap-1">
+                            <Badge label={goal.goal_type} variant="purple" size="sm" />
+                            <Typography
+                              variant="caption"
+                              className="text-slate-500 sm:ml-1"
+                            >
+                              {goal.department_title}
+                            </Typography>
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex flex-wrap items-center gap-2 mb-1.5">
+                              <Badge
+                                label={goal.status}
+                                variant={getStatusVariant(goal.status)}
+                                size="sm"
+                                pulse={{ show: true }}
+                              />
+                              <Badge
+                                label={getGoalSubmissionStatus(goal)}
+                                variant={getSubmissionVariant(getGoalSubmissionStatus(goal))}
+                                size="sm"
+                              />
+                            </div>
                             <Typography
                               variant="bodyMedium"
-                              className="block whitespace-nowrap font-bold text-slate-950"
+                              className="mb-1 block break-words font-semibold leading-snug text-slate-950"
                             >
-                              {editedWeightages[getGoalId(goal)] !== undefined ? editedWeightages[getGoalId(goal)] : goal.weightage}%
+                              {goal.title}
                             </Typography>
-                          )}
-                          <Typography
-                            variant="caption"
-                            className="mt-0.5 block break-words text-slate-500"
-                          >
-                            Weightage
-                          </Typography>
+                            <Typography
+                              variant="caption"
+                              className="block break-words leading-relaxed text-slate-500"
+                            >
+                              {goal.description}
+                            </Typography>
+                            {goal.approver_note && (
+                              <div className="mt-2 inline-flex max-w-full items-start gap-1.5 text-xs text-amber-800 bg-amber-50 border border-amber-200/80 rounded-lg px-2.5 py-1.5 shadow-xs">
+                                <span className="font-semibold shrink-0">Manager Note:</span>
+                                <span className="break-words whitespace-normal">{goal.approver_note}</span>
+                              </div>
+                            )}
+                          </div>
                         </div>
-                        <div className="flex min-w-0 flex-col gap-1.5">
-                          <Typography
-                            variant="caption"
-                            className="text-right text-slate-500"
-                          >
-                            {editedWeightages[getGoalId(goal)] !== undefined ? editedWeightages[getGoalId(goal)] : goal.weightage}%
-                          </Typography>
-                          <div className="h-2 w-full overflow-hidden rounded-md bg-slate-200">
-                            <div
-                              className={`h-2 rounded-md ${getBarColor(goal.status)} transition-all duration-300`}
-                              style={{ width: `${editedWeightages[getGoalId(goal)] !== undefined ? editedWeightages[getGoalId(goal)] : goal.weightage}%` }}
+
+                        {/* Right: weightage bar + chevron */}
+                        <div className="flex w-full min-w-0 shrink-0 flex-col gap-3 rounded-lg bg-slate-50 p-3 md:flex-row md:items-center md:justify-between lg:max-w-[400px] lg:bg-transparent lg:p-0">
+                          <div className="grid min-w-0 flex-1 grid-cols-[auto_minmax(0,1fr)] items-center gap-3 lg:border-r lg:border-slate-100 lg:pr-5">
+                            <div className="min-w-0">
+                              {selectedGoals.includes(getGoalId(goal)) ? (
+                                <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                                  <input
+                                    type="text"
+                                    className="w-14 rounded border border-gray-300 px-2 py-1 text-sm font-semibold outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                                    value={editedWeightages[getGoalId(goal)] !== undefined ? editedWeightages[getGoalId(goal)] : goal.weightage}
+                                    onChange={(e) => {
+                                      const rawVal = e.target.value;
+                                      if (rawVal === "") {
+                                        setEditedWeightages((prev) => ({ ...prev, [getGoalId(goal)]: 0 }));
+                                        return;
+                                      }
+                                      if (/^\d*\.?\d*$/.test(rawVal)) {
+                                        const num = parseFloat(rawVal);
+                                        if (!isNaN(num)) {
+                                          setEditedWeightages((prev) => ({
+                                            ...prev,
+                                            [getGoalId(goal)]: Math.min(num, 100)
+                                          }));
+                                        }
+                                      }
+                                    }}
+                                  />
+                                  <span className="text-sm font-bold text-slate-950">%</span>
+                                </div>
+                              ) : (
+                                <Typography
+                                  variant="bodyMedium"
+                                  className="block whitespace-nowrap font-bold text-slate-950"
+                                >
+                                  {editedWeightages[getGoalId(goal)] !== undefined ? editedWeightages[getGoalId(goal)] : goal.weightage}%
+                                </Typography>
+                              )}
+                              <Typography
+                                variant="caption"
+                                className="mt-0.5 block break-words text-slate-500"
+                              >
+                                Weightage
+                              </Typography>
+                            </div>
+                            <div className="flex min-w-0 flex-col gap-1.5">
+                              <Typography
+                                variant="caption"
+                                className="text-right text-slate-500"
+                              >
+                                {editedWeightages[getGoalId(goal)] !== undefined ? editedWeightages[getGoalId(goal)] : goal.weightage}%
+                              </Typography>
+                              <div className="h-2 w-full overflow-hidden rounded-md bg-slate-200">
+                                <div
+                                  className={`h-2 rounded-md ${getBarColor(goal.status)} transition-all duration-300`}
+                                  style={{ width: `${editedWeightages[getGoalId(goal)] !== undefined ? editedWeightages[getGoalId(goal)] : goal.weightage}%` }}
+                                />
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex shrink-0 justify-between items-center gap-2">
+                            {isSelectableGoal(goal) && (
+                              <button
+                                onClick={(e) => handleDeleteDraftGoal(e, goal)}
+                                className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 transition-all hover:border-red-300 hover:bg-red-50 hover:text-red-600"
+                                title="Delete draft goal"
+                                aria-label="Delete draft goal"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </button>
+                            )}
+                            <ChevronRight
+                              className={`h-5 w-5 border-gray-500 border rounded-full transition-transform duration-200 cursor-pointer ${openGoalIndex === index ? "rotate-90" : ""}`}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setOpenGoalIndex(
+                                  openGoalIndex === index ? null : index,
+                                );
+                              }}
                             />
                           </div>
                         </div>
                       </div>
-                      <div className="flex shrink-0 flex-wrap items-center gap-2 md:flex-col md:items-end">
-                        <Badge
-                          label={goal.status}
-                          variant={getStatusVariant(goal.status)}
-                          size="sm"
-                          pulse={{ show: true }}
-                        />
-                        <Badge
-                          label={getGoalSubmissionStatus(goal)}
-                          variant={getSubmissionVariant(getGoalSubmissionStatus(goal))}
-                          size="sm"
-                        />
-                      </div>
-                      <div className="flex shrink-0 justify-between items-center gap-2">
-                        {isSelectableGoal(goal) && (
-                          <button
-                            onClick={(e) => handleDeleteDraftGoal(e, goal)}
-                            className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 transition-all hover:border-red-300 hover:bg-red-50 hover:text-red-600"
-                            title="Delete draft goal"
-                            aria-label="Delete draft goal"
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </button>
-                        )}
-                        <ChevronRight
-                          className={`h-5 w-5 border-gray-500 border rounded-full transition-transform duration-200 cursor-pointer ${openGoalIndex === index ? "rotate-90" : ""}`}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setOpenGoalIndex(
-                              openGoalIndex === index ? null : index,
-                            );
-                          }}
-                        />
-                      </div>
-                    </div>
-                  </div>
 
-                  {/* Expanded Key Results */}
-                  <div
-                    className={`grid transition-[grid-template-rows] duration-300 ease-in-out ${openGoalIndex === index ? "grid-rows-[1fr]" : "grid-rows-[0fr]"}`}
-                  >
-                    <div className="overflow-hidden">
-                      <div className="relative z-10 border-t border-slate-100 bg-slate-50/70 p-3 sm:p-4">
-                        {goal.key_results && goal.key_results.length > 0 ? (
-                          <div className="relative min-w-0 space-y-3 md:pl-8">
-                            {!isCompact && (
-                              <div className="absolute bottom-4 left-[16px] top-[-16px] w-px bg-slate-200" />
-                            )}
-                            {goal.key_results.map((kr: MyGoalsKeyResult, kIdx: number) => (
-                              <div
-                                key={kr.goal_key || kr.name}
-                                className="relative flex min-w-0 flex-col gap-2 rounded-lg border border-slate-100 bg-white p-3 lg:flex-row lg:items-center"
-                              >
+                      {/* Expanded Key Results */}
+                      <div
+                        className={`grid transition-[grid-template-rows] duration-300 ease-in-out ${openGoalIndex === index ? "grid-rows-[1fr]" : "grid-rows-[0fr]"}`}
+                      >
+                        <div className="overflow-hidden">
+                          <div className="relative z-10 border-t border-slate-100 bg-slate-50/70 p-3 sm:p-4">
+                            {goal.key_results && goal.key_results.length > 0 ? (
+                              <div className="relative min-w-0 space-y-3 md:pl-8">
                                 {!isCompact && (
-                                  <div className="absolute left-[-16px] top-[18px] h-px w-[16px] bg-slate-200" />
+                                  <div className="absolute bottom-4 left-[16px] top-[-16px] w-px bg-slate-200" />
                                 )}
-
-                                <div className="flex min-w-0 flex-1 items-start gap-3 lg:items-center">
-                                  <div className="mt-0.5 flex-shrink-0">
-                                    <Badge
-                                      label={`KR ${kIdx + 1}`}
-                                      variant="purple-outline"
-                                      size="sm"
-                                    />
-                                  </div>
-                                  <Typography
-                                    variant="caption"
-                                    className="min-w-0 break-words leading-relaxed text-slate-600"
+                                {goal.key_results.map((kr: MyGoalsKeyResult, kIdx: number) => (
+                                  <div
+                                    key={kr.goal_key || kr.name}
+                                    className="relative flex min-w-0 flex-col gap-2 rounded-lg border border-slate-100 bg-white p-3 lg:flex-row lg:items-center"
                                   >
-                                    {kr.title}
-                                  </Typography>
-                                </div>
+                                    {!isCompact && (
+                                      <div className="absolute left-[-16px] top-[18px] h-px w-[16px] bg-slate-200" />
+                                    )}
 
-                                <div className="flex w-full min-w-0 shrink-0 items-center justify-start lg:w-[240px] xl:w-[320px]">
-                                  <div className="flex w-full min-w-0 flex-col gap-1">
-                                    <Typography
-                                      variant="caption"
-                                      className="text-right text-slate-500"
-                                    >
-                                      {kr.weightage}%
-                                    </Typography>
-                                    <div className="h-1.5 w-full overflow-hidden rounded-md bg-slate-200">
-                                      <div
-                                        className="h-1.5 rounded-md bg-blue-500"
-                                        style={{ width: `${kr.weightage}%` }}
-                                      />
+                                    <div className="flex min-w-0 flex-1 items-start gap-3 lg:items-center">
+                                      <div className="mt-0.5 flex-shrink-0">
+                                        <Badge
+                                          label={`KR ${kIdx + 1}`}
+                                          variant="purple-outline"
+                                          size="sm"
+                                        />
+                                      </div>
+                                      <Typography
+                                        variant="caption"
+                                        className="min-w-0 break-words leading-relaxed text-slate-600"
+                                      >
+                                        {kr.title}
+                                      </Typography>
+                                    </div>
+
+                                    <div className="flex w-full min-w-0 shrink-0 items-center justify-start lg:w-[240px] xl:w-[320px]">
+                                      <div className="flex w-full min-w-0 flex-col gap-1">
+                                        <Typography
+                                          variant="caption"
+                                          className="text-right text-slate-500"
+                                        >
+                                          {kr.weightage}%
+                                        </Typography>
+                                        <div className="h-1.5 w-full overflow-hidden rounded-md bg-slate-200">
+                                          <div
+                                            className="h-1.5 rounded-md bg-blue-500"
+                                            style={{ width: `${kr.weightage}%` }}
+                                          />
+                                        </div>
+                                      </div>
                                     </div>
                                   </div>
-                                </div>
+                                ))}
                               </div>
-                            ))}
+                            ) : (
+                              <div className="flex items-center gap-2 justify-center py-4 px-4 text-center rounded-lg border border-dashed border-slate-200 bg-white shadow-sm">
+                                <Info className="h-4 w-4 text-blue-500 shrink-0" />
+                                <Typography
+                                  variant="caption"
+                                  className="text-slate-500 font-medium"
+                                >
+                                  No Key Results (KRs) linked to this goal.
+                                </Typography>
+                              </div>
+                            )}
                           </div>
-                        ) : (
-                          <div className="flex items-center gap-2 justify-center py-4 px-4 text-center rounded-lg border border-dashed border-slate-200 bg-white shadow-sm">
-                            <Info className="h-4 w-4 text-blue-500 shrink-0" />
-                            <Typography
-                              variant="caption"
-                              className="text-slate-500 font-medium"
-                            >
-                              No Key Results (KRs) linked to this goal.
-                            </Typography>
-                          </div>
-                        )}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </>
-      )}
-    </div>
+                  ))
+                )}
+              </div>
+            </>
+          )}
+        </div>
 
         {/* Floating Bottom Bar for Selected Goals */}
         {selectedGoals.length > 0 && (
