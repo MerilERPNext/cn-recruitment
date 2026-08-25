@@ -92,7 +92,6 @@ const MyGoals: React.FC<MyGoalsProps> = ({ onCreateGoal, onSelectGoal }) => {
   const { data: myGoalsResponse, isLoading, isError, error } = useMyGoals();
   const { mutateAsync: submitSelectedGoals, isPending: isSubmitting } = useSubmitSelectedGoals();
   const { mutateAsync: deleteGoals, isPending: isDeleting } = useDeleteGoals();
-  console.log(myGoalsResponse, '============my goaaaaaaaaaaaaaalllllllls')
   const goalsData = myGoalsResponse?.data;
   const allGoals: MyGoalsGoal[] = goalsData?.goals ?? [];
   const totalGoals = goalsData?.total ?? 0;
