@@ -534,5 +534,6 @@ export interface LeaveDateRangeResponse {
 
 export interface LeaveSettings {
   enable_modal_collaps?: number | boolean;
+  select_all_status_as_default?: number | boolean;
 }
 
