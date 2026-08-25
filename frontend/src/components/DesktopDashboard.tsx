@@ -361,9 +361,11 @@ export default function DesktopDashboard() {
 
   const contentMarginLeft = isSidebarExpanded ? "ml-64" : "ml-20";
 
-  const canRedirectToDesk = currentUser?.roles?.some((role) =>
-    ["System User", "Payroll Manager", "System Manager"].includes(role.role),
-  );
+  const { data: layoutPermission } = useGetUiPermission("Layout");
+  const canRedirectToDesk =
+    currentUser?.roles?.some((role) =>
+      ["System User", "Payroll Manager", "System Manager"].includes(role.role),
+    ) || isActionEnabled(layoutPermission, "switch_to_admin", "Header");
 
   const currentUserIsAdmin = currentUser?.roles?.some(
     (role) => "Administrator" === role.role,
