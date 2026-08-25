@@ -156,12 +156,24 @@ class TestInterviewWorkLocation(FrappeTestCase):
 
 	@classmethod
 	def _invite(cls, region):
+		"""An invite for this suite's institute.
+
+		Job Openings are mandatory on a Campus Invite — an invite with no role on it is
+		a dead end for the college — so one is attached even though nothing here reads
+		it: this suite is about region and work location, not about the roles.
+		"""
+		opening = frappe.get_all("Job Opening", pluck="name", limit=1)
 		doc = frappe.get_doc({
 			"doctype": "Campus Invite",
 			"campus_invite_name": f"{PREFIX} Invite",
 			"region": region,
 			"institutes": [{"institute": cls.institute}],
-		}).insert(ignore_permissions=True)
+			"job_openings": [{"job_opening": opening[0]}] if opening else [],
+		})
+		# Only so a site with no Job Opening at all can still run the suite; the rows
+		# above are the real path.
+		doc.flags.ignore_mandatory = True
+		doc.insert(ignore_permissions=True)
 		return doc.name
 
 	@classmethod

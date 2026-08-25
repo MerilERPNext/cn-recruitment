@@ -692,6 +692,12 @@ def get_job_offer_summary(appl, token=None):
 
         duration = jo.get("custom_duration")
         expected_doj = jo.get("custom_expected_doj")
+        # A Trainee is sent two letters that start on different days: the traineeship
+        # begins on this date, the permanent role on Expected DOJ. Only Trainee offers
+        # carry it, so it stays None everywhere else rather than repeating the other
+        # date and implying the two are the same
+        # (recruitment.patches.add_trainee_joining_date).
+        trainee_doj = jo.get("custom_trainee_doj")
         stipend = jo.get("custom_stipend")
         expiry_date = jo.get("custom_jo_expiry_date")
 
@@ -715,7 +721,7 @@ def get_job_offer_summary(appl, token=None):
         # Resolve the Designation link to its title (falls back to the id).
         designation_name = None
         if jo.designation:
-            designation_name = frappe.db.get_value("Designation", jo.designation, "custom_designation_title") or jo.designation
+            designation_name = frappe.get_cached_value("Designation", jo.designation, "custom_designation_title") or jo.designation
 
         # --- Compensation: dynamic by Employment Type -----------------------
         # Employment Type (custom_employment_type -> Employment Type Link) is read
@@ -727,7 +733,7 @@ def get_job_offer_summary(appl, token=None):
         employment_type = None
         et_id = _resolve_offer_employment_type(jo)
         if et_id:
-            employment_type = frappe.db.get_value("Employment Type", et_id, "employee_type_name") or et_id
+            employment_type = frappe.get_cached_value("Employment Type", et_id, "employee_type_name") or et_id
 
         is_intern = (employment_type or "").strip().lower() == "intern"
 
@@ -816,6 +822,9 @@ def get_job_offer_summary(appl, token=None):
             "designation": designation_name or "Intern",
             "duration_display": duration_display,
             "expected_doj_display": formatdate(expected_doj) if expected_doj else None,
+            # Always present, null when the offer has no traineeship date, so the
+            # response shape does not change between offers.
+            "trainee_doj_display": formatdate(trainee_doj) if trainee_doj else None,
             "expiry_display": expiry_display,
             "employment_type": employment_type,
             **compensation,

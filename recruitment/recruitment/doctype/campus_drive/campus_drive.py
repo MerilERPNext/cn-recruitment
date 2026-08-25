@@ -5,7 +5,16 @@ import frappe
 from frappe import _
 from frappe.model.document import Document
 
+from recruitment.api.applicant_name import (
+	FIRST_FIELD,
+	FULL_FIELD,
+	LAST_FIELD,
+	MIDDLE_FIELD,
+	full_name as build_full_name,
+)
 from recruitment.recruitment.campus_helpers import (
+	APPLICANT_DRIVE_FIELD,
+	APPLICANT_INVITE_FIELD,
 	draft_drive_institutes,
 	live_drive_institutes,
 	sync_drive_applicant_links,
@@ -249,12 +258,18 @@ class CampusDrive(Document):
 		# rather than in validate because it saves other documents.
 		apply_workflow_to_openings(self)
 
-		# Auto-generate the QR the first time the form is enabled. Refreshing is
-		# manual (the "Generate QR Code" button) so the image isn't rebuilt on
-		# every save. Best-effort: a QR failure must never block the save.
-		if self.registration_form_enabled and not self.registration_form_qr_code:
+		# Generate the QR the first time the form is enabled, and rebuild it whenever
+		# the URL it encodes has moved (a changed site address, a renamed drive). Built
+		# from `registration_form_link` itself, so the image and the field a candidate
+		# is sent are always the same string. Unchanged URL -> no rebuild, so an
+		# ordinary save does not churn the file. Best-effort: a QR failure must never
+		# block the save.
+		if self.registration_form_enabled and (
+			not self.registration_form_qr_code
+			or self.has_value_changed("registration_form_link")
+		):
 			try:
-				self._write_registration_qr(self._registration_url())
+				self._write_registration_qr(self.registration_form_link)
 			except Exception:
 				frappe.log_error(frappe.get_traceback(), "Campus Drive: QR auto-generate failed")
 
@@ -299,7 +314,11 @@ class CampusDrive(Document):
 			self.registration_form_title = self.drive_name
 		# The QR code and the Registration Link both point candidates at the public
 		# email-verification page. Keep the link field in sync with the current site
-		# URL so it always reflects a working address.
+		# URL so it always reflects a working address — and `on_update` rebuilds the QR
+		# whenever this changes, because the two must never disagree: the link is what
+		# HR copies and the QR is what the candidate scans, and a QR still encoding a
+		# previous site URL sends everyone who scans it nowhere, with nothing on the
+		# drive to say so.
 		self.registration_form_link = self._registration_url()
 
 	def _set_round_codes(self):
@@ -476,6 +495,35 @@ def _ja_status_options():
 	return [s.strip() for s in (df.options or "").split("\n") if s and s.strip()]
 
 
+# ---------------------------------------------------------------------------
+# Who counts as "on" a drive
+#
+# Two routes lead to the same drive:
+#   * a Campus Invite the drive selected — the candidate carries custom_campus_invite
+#   * the drive's own registration QR    — a walk-in, who never had an invite to carry
+#
+# Every pool below used to match on the invite alone, so a spot registration was
+# created correctly and then appeared nowhere: not in the candidates tab, not in a
+# round's waiting list, not in a GD group. The DRIVE link is the one thing both
+# routes carry — campus_helpers stamps it on invite candidates from both directions —
+# so it leads here, and the invite match rides along as an OR for any applicant
+# whose drive field predates that stamping and was never backfilled.
+# ---------------------------------------------------------------------------
+
+
+def _on_drive_or_filters(campus_drive, invites=None):
+	"""``or_filters`` matching every Job Applicant on this drive — invited or walk-in.
+
+	Frappe ANDs this group with the caller's own `filters`, giving
+	``<their filters> AND (drive = X OR invite IN (...))``.
+	"""
+	or_filters = [[APPLICANT_DRIVE_FIELD, "=", campus_drive]]
+	invites = [i for i in dict.fromkeys(invites or []) if i]
+	if invites:
+		or_filters.append([APPLICANT_INVITE_FIELD, "in", invites])
+	return or_filters
+
+
 @frappe.whitelist()
 def get_drive_breakdown(campus_drive):
 	"""Candidate counts for a Campus Drive, MERGED across the invites it selected.
@@ -488,7 +536,10 @@ def get_drive_breakdown(campus_drive):
 
 	Counts are reported for EVERY status on the Job Applicant status field (Draft,
 	Open, Shortlisted, Interview, Hold, Approvals, Accepted, Rejected, ...), not just
-	a fixed pair. Applicants carry custom_campus_invite + custom_institute + job_title.
+	a fixed pair. Applicants carry custom_institute + job_title, and reach the drive
+	either through a Campus Invite it selected or straight from its registration QR —
+	both are counted (see `_on_drive_or_filters`), so a drive that runs only spot
+	registrations reports its candidates like any other.
 	"""
 	statuses = _ja_status_options()
 	zero = lambda: {s: 0 for s in statuses}  # noqa: E731
@@ -500,7 +551,29 @@ def get_drive_breakdown(campus_drive):
 		order_by="idx asc",
 	)
 	invite_names = [i for i in dict.fromkeys(invite_names) if i]
-	if not invite_names:
+
+	# The drive's OWN openings and institutes — the ones a walk-in picks from on the
+	# registration form. On a drive that runs purely on spot registrations these are
+	# the only ones there are, which is why this page came back empty for it; on a
+	# mixed drive they union with what the invites carry.
+	drive_openings = [
+		o for o in dict.fromkeys(frappe.get_all(
+			"Campus Drive Job Opening",
+			filters={"parenttype": "Campus Drive", "parentfield": "linked_job_openings",
+			         "parent": campus_drive},
+			pluck="job_opening", order_by="idx asc",
+		)) if o
+	]
+	drive_institutes = [
+		i for i in dict.fromkeys(frappe.get_all(
+			"Campus Drive Institute",
+			filters={"parenttype": "Campus Drive", "parentfield": "participating_institutes",
+			         "parent": campus_drive},
+			pluck="institute", order_by="idx asc",
+		)) if i
+	]
+
+	if not invite_names and not drive_openings:
 		return {
 			"statuses": statuses, "invites": [], "openings": [],
 			"summary": {"invites": 0, "institutes": 0, "openings": 0,
@@ -509,22 +582,23 @@ def get_drive_breakdown(campus_drive):
 
 	# invite -> institutes / openings
 	inst_map, op_map = {}, {}
-	for row in frappe.get_all(
-		"Campus Invite Institute",
-		filters={"parenttype": "Campus Invite", "parent": ["in", invite_names]},
-		fields=["parent", "institute"], order_by="idx asc",
-	):
-		b = inst_map.setdefault(row.parent, [])
-		if row.institute and row.institute not in b:
-			b.append(row.institute)
-	for row in frappe.get_all(
-		"Campus Invite Job Opening",
-		filters={"parenttype": "Campus Invite", "parent": ["in", invite_names]},
-		fields=["parent", "job_opening"], order_by="idx asc",
-	):
-		b = op_map.setdefault(row.parent, [])
-		if row.job_opening and row.job_opening not in b:
-			b.append(row.job_opening)
+	if invite_names:
+		for row in frappe.get_all(
+			"Campus Invite Institute",
+			filters={"parenttype": "Campus Invite", "parent": ["in", invite_names]},
+			fields=["parent", "institute"], order_by="idx asc",
+		):
+			b = inst_map.setdefault(row.parent, [])
+			if row.institute and row.institute not in b:
+				b.append(row.institute)
+		for row in frappe.get_all(
+			"Campus Invite Job Opening",
+			filters={"parenttype": "Campus Invite", "parent": ["in", invite_names]},
+			fields=["parent", "job_opening"], order_by="idx asc",
+		):
+			b = op_map.setdefault(row.parent, [])
+			if row.job_opening and row.job_opening not in b:
+				b.append(row.job_opening)
 
 	# opening -> institutes (union across every invite carrying that opening)
 	opening_order, opening_institutes = [], {}
@@ -537,7 +611,18 @@ def get_drive_breakdown(campus_drive):
 				if inst not in opening_institutes[op]:
 					opening_institutes[op].append(inst)
 
-	all_insts = list({i for lst in inst_map.values() for i in lst})
+	# The drive's own openings, carrying the drive's own institutes: a walk-in may pair
+	# any participating institute with any linked opening, so that is the pairing the
+	# breakdown has to be able to show them under.
+	for op in drive_openings:
+		if op not in opening_institutes:
+			opening_institutes[op] = []
+			opening_order.append(op)
+		for inst in drive_institutes:
+			if inst not in opening_institutes[op]:
+				opening_institutes[op].append(inst)
+
+	all_insts = list({i for lst in inst_map.values() for i in lst} | set(drive_institutes))
 	inst_name = {
 		r.name: r.institute_name
 		for r in frappe.get_all("Institute", filters={"name": ["in", all_insts]},
@@ -556,7 +641,7 @@ def get_drive_breakdown(campus_drive):
 	agg = {}
 	for c in frappe.get_all(
 		"Job Applicant",
-		filters={"custom_campus_invite": ["in", invite_names]},
+		or_filters=_on_drive_or_filters(campus_drive, invite_names),
 		fields=["job_title as opening", "custom_institute as institute", "status"],
 		limit_page_length=0,
 	):
@@ -834,11 +919,12 @@ def generate_gd_groups(campus_drive, round_code=None, group_size=None, split_by=
 	# the last generation instead of drifting back to the old stored value.
 	row.gd_group_size = size
 
-	# --- candidate pool: Shortlisted applicants on this drive's invites ---
+	# --- candidate pool: Shortlisted applicants on this drive ---
+	# Both routes onto the drive, not just the invited ones: a drive can run entirely
+	# on spot registrations, and demanding an invite up front refused to group a hall
+	# full of walk-ins.
 	invite_names = [r.campus_invite for r in (doc.campus_invites or []) if r.campus_invite]
 	invite_names = list(dict.fromkeys(invite_names))
-	if not invite_names:
-		frappe.throw(_("Add at least one Campus Invite to the drive first."))
 
 	# Groups already on this round, split by whether they are frozen. A Completed group
 	# is one whose results have been pushed: it is history, and neither it nor its
@@ -858,8 +944,9 @@ def generate_gd_groups(campus_drive, round_code=None, group_size=None, split_by=
 
 	applicants = frappe.get_all(
 		"Job Applicant",
-		filters={"custom_campus_invite": ["in", invite_names], "status": GD_POOL_STATUS},
-		fields=["name", "applicant_name", "custom_applicant_last_name",
+		filters={"status": GD_POOL_STATUS},
+		or_filters=_on_drive_or_filters(campus_drive, invite_names),
+		fields=["name", *_NAME_FIELDS,
 		        "custom_institute as institute", "job_title as job_opening"],
 		order_by="name asc",
 	)
@@ -878,10 +965,10 @@ def generate_gd_groups(campus_drive, round_code=None, group_size=None, split_by=
 				title=_("Nothing new to group"),
 			)
 		frappe.throw(
-			_("No {0} candidates found on this drive's campus invites.").format(frappe.bold(GD_POOL_STATUS))
+			_("No {0} candidates found on this drive.").format(frappe.bold(GD_POOL_STATUS))
 		)
 	for a in applicants:  # store the full name on the group member snapshot
-		a.applicant_name = _full_name(a.applicant_name, a.get("custom_applicant_last_name"))
+		a.applicant_name = _display_name(a)
 
 	by_role = {}
 	for a in applicants:
@@ -1228,15 +1315,26 @@ def _round_by_code(doc, round_code):
 	return row
 
 
-def _full_name(first, last):
-	"""Full candidate name for display: campus applications store the first name in
-	`applicant_name` and the surname in `custom_applicant_last_name`, so combine them
-	(guarding against a surname already present in the first field)."""
-	full = (first or "").strip()
-	last = (last or "").strip()
-	if last and last.lower() not in full.lower():
-		full = (full + " " + last).strip()
-	return full or last
+# Name columns every candidate list selects, so `_display_name` can answer without a
+# second query: the derived full name, plus the parts it is rebuilt from.
+_NAME_FIELDS = ("applicant_name", "custom_applicant_middle_name",
+                "custom_applicant_last_name", "custom_full_name")
+
+
+def _display_name(row):
+	"""The candidate's whole name, for a row selected with `_NAME_FIELDS`.
+
+	The parts are kept clean on the Job Applicant — `applicant_name` is the first name
+	and nothing else — and `custom_full_name` is derived from them on every save (see
+	recruitment.api.applicant_name), which is also the doctype's title. So the drive
+	board reads that one field rather than re-joining first + surname here, which is
+	what used to render "Neha Iyer Iyer" wherever a surname had leaked into the
+	first-name box. The join survives only as the fallback for rows last saved before
+	the derived field shipped.
+	"""
+	return (row.get(FULL_FIELD)
+	        or build_full_name(row.get(FIRST_FIELD), row.get(MIDDLE_FIELD), row.get(LAST_FIELD))
+	        or "")
 
 
 def _applicant_full_names(ja_names):
@@ -1245,10 +1343,10 @@ def _applicant_full_names(ja_names):
 	if not ja_names:
 		return {}
 	return {
-		r.name: _full_name(r.applicant_name, r.get("custom_applicant_last_name"))
+		r.name: _display_name(r)
 		for r in frappe.get_all(
 			"Job Applicant", filters={"name": ["in", ja_names]},
-			fields=["name", "applicant_name", "custom_applicant_last_name"],
+			fields=["name", *_NAME_FIELDS],
 		)
 	}
 
@@ -1585,15 +1683,11 @@ def _terminal_round_pool(campus_drive, round_code):
 	if not stage:
 		frappe.throw(_("Set the Hiring Stage on round {0} first.").format(round_code))
 
-	invites = _drive_invites(doc)
-	if not invites:
-		return stage, []
-
 	return stage, frappe.get_all(
 		"Job Applicant",
-		filters={"custom_campus_invite": ["in", invites], "custom_current_stage": stage,
-		         "status": ["not in", PARKED_STATUSES]},
-		fields=["name", "applicant_name", "custom_applicant_last_name",
+		filters={"custom_current_stage": stage, "status": ["not in", PARKED_STATUSES]},
+		or_filters=_on_drive_or_filters(campus_drive, _drive_invites(doc)),
+		fields=["name", *_NAME_FIELDS,
 		        "custom_institute as institute", "job_title as job_opening",
 		        "designation", "status"],
 		order_by="job_title asc, name asc",
@@ -1603,7 +1697,7 @@ def _terminal_round_pool(campus_drive, round_code):
 def _candidate_card(r, **extra):
 	card = {
 		"name": r.name,
-		"applicant_name": _full_name(r.applicant_name, r.get("custom_applicant_last_name")),
+		"applicant_name": _display_name(r),
 		"institute": r.institute,
 		"job_opening": r.job_opening,
 		"designation": r.designation,
@@ -1767,21 +1861,18 @@ def get_round_pool(campus_drive, round_code):
 		frappe.throw(_("Set the <b>Hiring Stage</b> on round {0} first.").format(round_code))
 
 	invites = _drive_invites(doc)
-	if not invites:
-		return {"stage": stage, "pool": [], "scheduled": 0}
-
 	pool = frappe.get_all(
 		"Job Applicant",
-		filters={"custom_campus_invite": ["in", invites], "custom_current_stage": stage,
-		         "status": ["not in", PARKED_STATUSES]},
-		fields=["name", "applicant_name", "custom_applicant_last_name",
+		filters={"custom_current_stage": stage, "status": ["not in", PARKED_STATUSES]},
+		or_filters=_on_drive_or_filters(campus_drive, invites),
+		fields=["name", *_NAME_FIELDS,
 		        "custom_institute as institute", "job_title as job_opening", "designation",
 		        *_REGION_FIELDS],
 		order_by="job_title asc, name asc",
 	)
 	invite_regions = _invite_region_map({c.get("custom_campus_invite") for c in pool})
 	for c in pool:  # show full name in the schedule picker
-		c["applicant_name"] = _full_name(c.applicant_name, c.get("custom_applicant_last_name"))
+		c["applicant_name"] = _display_name(c)
 		# Surfaced so the schedule picker can show who is being interviewed by a
 		# region other than their own before anyone clicks Schedule.
 		c["region"] = _effective_region(c, invite_regions)
@@ -2528,23 +2619,22 @@ def get_rounds_overview(campus_drive):
 	# say up front when a round has nobody to take them — read off the same rows.
 	stage_regions = {}
 	invite_regions = _invite_region_map(invites)
-	if invites:
-		for r in frappe.get_all(
-			"Job Applicant",
-			filters={"custom_campus_invite": ["in", invites]},
-			fields=["name", "custom_current_stage as stage", "status", *_REGION_FIELDS],
-			limit_page_length=0,
-		):
-			s = r.stage or ""
-			if r.status in PARKED_STATUSES:
-				# Knocked out on eligibility, rejected or already accepted: parked on
-				# purpose. Not waiting for this round, not stuck at its stage, and not
-				# somebody a panel has to be found for.
-				continue
-			stage_applicants.setdefault(s, set()).add(r.name)
-			stage_regions.setdefault(s, {}).setdefault(
-				_effective_region(r, invite_regions), []).append(r.name)
-			stage_active[s] = stage_active.get(s, 0) + 1
+	for r in frappe.get_all(
+		"Job Applicant",
+		or_filters=_on_drive_or_filters(campus_drive, invites),
+		fields=["name", "custom_current_stage as stage", "status", *_REGION_FIELDS],
+		limit_page_length=0,
+	):
+		s = r.stage or ""
+		if r.status in PARKED_STATUSES:
+			# Knocked out on eligibility, rejected or already accepted: parked on
+			# purpose. Not waiting for this round, not stuck at its stage, and not
+			# somebody a panel has to be found for.
+			continue
+		stage_applicants.setdefault(s, set()).add(r.name)
+		stage_regions.setdefault(s, {}).setdefault(
+			_effective_region(r, invite_regions), []).append(r.name)
+		stage_active[s] = stage_active.get(s, 0) + 1
 
 	# Interviews this drive created, with their feedback progress. The extra-round
 	# columns ride along on the same rows — the additional rounds are drawn from these,
@@ -2950,7 +3040,7 @@ def get_extra_round_options(campus_drive, round_code):
 	detail = {
 		r.name: r
 		for r in frappe.get_all("Job Applicant", filters={"name": ["in", names]},
-		                        fields=["name", "applicant_name", "custom_applicant_last_name",
+		                        fields=["name", *_NAME_FIELDS,
 		                                "custom_institute as institute", "job_title as job_opening"])
 	} if names else {}
 	role_titles = {r.job_opening: r.job_title for r in (doc.linked_job_openings or [])}
@@ -2983,8 +3073,7 @@ def get_extra_round_options(campus_drive, round_code):
 		                    if r.round_code == round_code), None) or round_code,
 		"candidates": [
 			{"name": n,
-			 "applicant_name": _full_name(detail[n].applicant_name,
-			                              detail[n].get("custom_applicant_last_name")),
+			 "applicant_name": _display_name(detail[n]),
 			 "institute": detail[n].institute,
 			 "job_title": role_titles.get(detail[n].job_opening) or detail[n].job_opening}
 			for n in names if n in detail

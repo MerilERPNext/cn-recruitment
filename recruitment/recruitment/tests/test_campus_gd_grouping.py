@@ -17,15 +17,23 @@ Run:  bench --site <site> execute \
 
 from __future__ import annotations
 
+import re
+
 import frappe
 from frappe.tests.utils import FrappeTestCase
 from frappe.utils import add_days, nowdate
 
 from recruitment.recruitment.doctype.campus_drive import campus_drive as cd
+from recruitment.recruitment.doctype.campus_drive.campus_drive import GD_GROUP_DT, GD_MEMBER_DT
 
 PREFIX = "_Test GD"
 EMAIL_LIKE = "gd.cand%@test.local"
 PER_BUCKET = 6  # candidates per (institute, role) — 2 x 2 x 6 = 24 in the pool
+
+
+def _slug(value):
+	"""Anything that is not an address character becomes a dot."""
+	return re.sub(r"[^a-z0-9._-]+", ".", (value or "").lower()).strip(".")
 
 
 class TestCampusGdGrouping(FrappeTestCase):
@@ -135,7 +143,9 @@ class TestCampusGdGrouping(FrappeTestCase):
 		doc = frappe.get_doc({
 			"doctype": "Job Applicant",
 			"applicant_name": f"{PREFIX} Cand {institute[-2:]}{role[-2:]}{i}",
-			"email_id": f"gd.cand.{institute}.{role}.{i}@test.local".lower(),
+			# The institute and role ids are Frappe names ("_Test GD College A"), so
+			# their spaces have to come out before they can sit in an address.
+			"email_id": _slug(f"gd.cand.{institute}.{role}.{i}") + "@test.local",
 			"status": cd.GD_POOL_STATUS,
 			"source": "Campus Hiring",
 			"job_title": role,
@@ -147,8 +157,12 @@ class TestCampusGdGrouping(FrappeTestCase):
 
 	def setUp(self):
 		frappe.set_user("Administrator")
-		# Pushing GD results commits (and advances / rejects candidates), so it outlives
-		# the per-test rollback — put the pool back to a pre-GD start before each test.
+		# Generating groups commits, and so does pushing their results (which advances
+		# or rejects the candidates) — both outlive the per-test rollback. So each test
+		# starts from a drive with no groups on it and a pool that has not sat a GD:
+		# otherwise the first test to run leaves everyone grouped and every test after
+		# it is told there is nothing new to group.
+		self._reset_groups()
 		for name in self.candidates:
 			frappe.db.set_value("Job Applicant", name,
 			                    {"status": cd.GD_POOL_STATUS, "custom_current_stage": None},
@@ -160,6 +174,13 @@ class TestCampusGdGrouping(FrappeTestCase):
 		frappe.db.rollback()
 
 	# ── helpers ──
+
+	def _reset_groups(self):
+		"""Take every group off the drive. Generating them commits, so this is what
+		gives each test (and each mode inside a test) an ungrouped hall to start from."""
+		for doctype in (GD_GROUP_DT, GD_MEMBER_DT):
+			frappe.db.delete(doctype, {"parenttype": "Campus Drive", "parent": self.drive})
+		frappe.db.commit()
 
 	def _panelists(self, rows):
 		"""Replace the drive's panelist roster with `rows` — (panel, role) tuples."""
@@ -247,6 +268,9 @@ class TestCampusGdGrouping(FrappeTestCase):
 		pool = set(self.candidates)
 		for mode in cd.GD_SPLIT_MODES:
 			with self.subTest(split_by=mode):
+				# Each mode regroups the same hall from scratch — without this the
+				# second mode is told everyone is already in a group.
+				self._reset_groups()
 				res = self._generate(mode)
 				members = self._members()
 				self.assertEqual(len(members), len(pool), "pool size changed")

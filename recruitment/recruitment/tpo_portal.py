@@ -6,6 +6,11 @@ drive's Campus Invite pre-selected — so registering is the standard form (whos
 Candidates grid already offers Download / Upload for bulk entry), and this module
 only has to answer "which drives are mine, and how are they doing?".
 
+Its "View Candidates" button asks ``get_drive_candidates`` the follow-up question:
+not how many were registered, but where each of them has actually got to — still a
+draft, registered and yet to apply, or applied and sitting somewhere in the hiring
+pipeline.
+
 Scoping is done by the permission system, not by hand: Campus Invite and
 Candidate Registration are read with ``frappe.get_list``, so ``campus_invite_query``
 narrows a TPO to the invites carrying their email and ``candidate_registration_query``
@@ -105,6 +110,7 @@ def get_my_campus_drives():
 				"candidate_count": stats.get("candidates", 0),
 				"registration_count": stats.get("registrations", 0),
 				"draft_count": stats.get("drafts", 0),
+				"applied_count": stats.get("applied", 0),
 			}
 		)
 	return drives
@@ -163,6 +169,87 @@ def _openings_by_invite(invites):
 	return grouped
 
 
+# ---------------------------------------------------------------------------
+# "Where has each of my candidates got to?"
+#
+# A TPO submits a Candidate Registration; the candidates on it are then emailed and
+# apply themselves, which is what creates the Job Applicant. So a candidate sits in
+# one of three places, and the card only ever showed the first:
+#
+#   Draft       the registration has not been submitted — nobody has been emailed
+#   Registered  submitted, but this candidate has not applied yet
+#   Applied     a Job Applicant exists, and carries its own status and stage
+#
+# Everything below is scoped to what the caller may already see: the registrations
+# come through frappe.get_list (candidate_registration_query narrows a TPO to their
+# own), and the Job Applicants are looked up BY THOSE candidates' email addresses.
+# ---------------------------------------------------------------------------
+
+# What a candidate's row says when there is no Job Applicant for them yet.
+STATE_DRAFT = "Draft"
+STATE_REGISTERED = "Registered"
+STATE_APPLIED = "Applied"
+
+
+def _full_name(row):
+	return " ".join(
+		part for part in (row.get("first_name"), row.get("middle_name"), row.get("last_name"))
+		if part and part.strip()
+	).strip()
+
+
+def _opening_titles(openings):
+	"""``{Job Opening: job_title}`` — a TPO has no read access to Job Opening, and a
+	raw HR-OPN id on their screen means nothing to them."""
+	openings = [o for o in dict.fromkeys(openings) if o]
+	if not openings:
+		return {}
+	return {
+		r.name: r.job_title or r.name
+		for r in frappe.get_all(
+			"Job Opening", filters={"name": ["in", openings]}, fields=["name", "job_title"],
+			ignore_permissions=True,
+		)
+	}
+
+
+def _applications_by_candidate(invites, emails):
+	"""``{(invite, email): [application, ...]}`` for the given candidates.
+
+	ignore_permissions on purpose, and safe because of what is passed in: the emails
+	are the caller's OWN registered candidates (resolved through a permission-checked
+	read), and the invites are the ones they can already see. A TPO has no access to
+	Job Applicant itself — without this their candidates would all read "Registered"
+	forever, which is precisely the thing they are asking about.
+	"""
+	emails = [e for e in dict.fromkeys(emails) if e]
+	if not (invites and emails):
+		return {}
+	rows = frappe.get_all(
+		"Job Applicant",
+		filters={"custom_campus_invite": ["in", list(invites)], "email_id": ["in", emails]},
+		fields=["name", "email_id", "custom_campus_invite", "status", "custom_current_stage",
+		        "custom_spot_registered", "job_title", "creation"],
+		order_by="creation asc",
+		limit_page_length=0,
+		ignore_permissions=True,
+	)
+	titles = _opening_titles([r.job_title for r in rows])
+	out = {}
+	for r in rows:
+		key = (r.custom_campus_invite, (r.email_id or "").strip().lower())
+		# One candidate may apply to more than one opening on the same invite, so this
+		# is a list — collapsing it would silently hide an application.
+		out.setdefault(key, []).append({
+			"job_applicant": r.name,
+			"job_title": titles.get(r.job_title) or r.job_title,
+			"status": r.status,
+			"stage": r.custom_current_stage,
+			"spot_registered": bool(r.custom_spot_registered),
+		})
+	return out
+
+
 def _registration_stats(invites):
 	"""Per-invite counts of the caller's own registrations and candidates.
 
@@ -180,28 +267,37 @@ def _registration_stats(invites):
 	if not registrations:
 		return {}
 
-	# Child table, already fenced to the parents resolved above.
+	# Child table, already fenced to the parents resolved above. The email comes along
+	# so the same rows can say who has since applied, without a second read.
 	#
 	# Counting in Python rather than with a SQL COUNT/GROUP BY on purpose: v16
 	# rejects SQL functions written as field strings ("SQL functions are not
 	# allowed as strings in SELECT"), and its dict form ({"COUNT": "*"}) does not
 	# exist on v15. Plucking one column and tallying works identically on both,
 	# and the payload is a single short column.
-	parents = frappe.get_all(
+	rows = frappe.get_all(
 		"Candidate Registration Detail",
 		filters={
 			"parenttype": "Candidate Registration",
 			"parentfield": "candidates",
 			"parent": ["in", [r.name for r in registrations]],
 		},
-		pluck="parent",
+		fields=["parent", "email_id"],
 		limit_page_length=0,
 	)
-	rows_by_parent = Counter(parents)
+	rows_by_parent = Counter(r.parent for r in rows)
+
+	invite_of = {r.name: r.campus_invite for r in registrations}
+	submitted = {r.name for r in registrations if r.docstatus != 0}
+	# Only submitted registrations can have applied — a draft has not been emailed.
+	applications = _applications_by_candidate(
+		invites, [r.email_id for r in rows if r.parent in submitted]
+	)
 
 	stats = {}
 	for reg in registrations:
-		bucket = stats.setdefault(reg.campus_invite, {"registrations": 0, "candidates": 0, "drafts": 0})
+		bucket = stats.setdefault(reg.campus_invite,
+		                          {"registrations": 0, "candidates": 0, "drafts": 0, "applied": 0})
 		bucket["registrations"] += 1
 		if reg.docstatus == 0:
 			bucket["drafts"] += 1
@@ -209,4 +305,163 @@ def _registration_stats(invites):
 			# Only submitted rows count as registered — a draft has not been
 			# emailed and cannot be applied against yet.
 			bucket["candidates"] += rows_by_parent.get(reg.name, 0)
+
+	# How many of those registered candidates have actually applied. Counted per
+	# candidate, not per application: someone who applied to two openings on the same
+	# invite is still one candidate who has applied.
+	for row in rows:
+		if row.parent not in submitted:
+			continue
+		invite = invite_of.get(row.parent)
+		key = (invite, (row.email_id or "").strip().lower())
+		if applications.get(key):
+			stats[invite]["applied"] += 1
 	return stats
+
+
+@frappe.whitelist()
+def get_drive_candidates(campus_invite):
+	"""Every candidate the caller has on `campus_invite`, and where each has got to.
+
+	The drive card could only ever say how many candidates were registered, which is
+	the least interesting half of the question: a TPO wants to know who has actually
+	applied and what has happened to them since. Each row therefore carries its own
+	state — Draft / Registered / Applied — and, once applied, the Job Applicant's
+	status and current hiring stage.
+
+	Candidates who registered at the venue on the day (the drive's QR code) have no
+	Candidate Registration behind them at all. They are listed too, marked
+	``spot_registered``, so the list is every candidate of this college on the drive
+	rather than only the ones the TPO typed in.
+	"""
+	invite = (campus_invite or "").strip()
+	if not invite:
+		frappe.throw(frappe._("campus_invite is required."))
+	# Permission-checked read: campus_invite_query narrows a TPO to their own invites,
+	# so an id they were not invited to simply is not found.
+	invite_row = frappe.get_list(
+		"Campus Invite",
+		filters={"name": invite},
+		fields=["name", "campus_invite_name", "registration_expiry_date"],
+		limit_page_length=1,
+	)
+	if not invite_row:
+		frappe.throw(frappe._("You do not have access to this campus drive."),
+		             frappe.PermissionError)
+	invite_row = invite_row[0]
+
+	registrations = frappe.get_list(
+		"Candidate Registration",
+		filters={"campus_invite": invite, "docstatus": ["<", 2]},
+		fields=["name", "docstatus", "institute", "institute_name"],
+		order_by="creation asc",
+		limit_page_length=0,
+	)
+	detail = []
+	if registrations:
+		detail = frappe.get_all(
+			"Candidate Registration Detail",
+			filters={
+				"parenttype": "Candidate Registration",
+				"parentfield": "candidates",
+				"parent": ["in", [r.name for r in registrations]],
+			},
+			fields=["parent", "idx", "first_name", "middle_name", "last_name",
+			        "email_id", "mobile_number"],
+			order_by="parent asc, idx asc",
+			limit_page_length=0,
+		)
+
+	by_name = {r.name: r for r in registrations}
+	applications = _applications_by_candidate([invite], [r.email_id for r in detail])
+
+	candidates = []
+	seen_emails = set()
+	for row in detail:
+		registration = by_name[row.parent]
+		email = (row.email_id or "").strip().lower()
+		seen_emails.add(email)
+		# A draft registration has not been emailed, so its candidates cannot have
+		# applied — they are not waiting on the candidate, they are waiting on the TPO.
+		apps = applications.get((invite, email)) or [] if registration.docstatus != 0 else []
+		candidates.append({
+			"full_name": _full_name(row) or row.email_id,
+			"email_id": row.email_id,
+			"mobile_number": row.mobile_number,
+			"institute": registration.institute_name or registration.institute,
+			"registration": registration.name,
+			"submitted": registration.docstatus != 0,
+			"spot_registered": False,
+			"state": (STATE_APPLIED if apps
+			          else STATE_REGISTERED if registration.docstatus != 0
+			          else STATE_DRAFT),
+			"applications": apps,
+		})
+
+	# Walk-ins: on this invite, with no registration behind them. Scoped to the
+	# caller's own colleges so a TPO never sees another college's candidates.
+	for extra in _spot_candidates(invite, seen_emails):
+		candidates.append(extra)
+
+	summary = Counter(c["state"] for c in candidates)
+	return {
+		"campus_invite": invite_row.name,
+		"campus_invite_name": invite_row.campus_invite_name or invite_row.name,
+		"candidates": candidates,
+		"summary": {
+			"total": len(candidates),
+			"draft": summary.get(STATE_DRAFT, 0),
+			"registered": summary.get(STATE_REGISTERED, 0),
+			"applied": summary.get(STATE_APPLIED, 0),
+		},
+	}
+
+
+def _spot_candidates(invite, exclude_emails):
+	"""Candidates who registered at the venue on this invite, with no Candidate
+	Registration behind them.
+
+	Scoped to the caller's own colleges when they are a TPO: the walk-in carries the
+	institute they picked at the desk, and a TPO must only ever see their own.
+	"""
+	filters = {"custom_campus_invite": invite, "custom_spot_registered": 1}
+	if is_tpo_only():
+		mine = _primary_institutes(frappe.session.user)
+		if not mine:
+			return []
+		filters["custom_institute"] = ["in", mine]
+
+	rows = frappe.get_all(
+		"Job Applicant",
+		filters=filters,
+		fields=["name", "custom_full_name", "applicant_name", "email_id", "phone_number",
+		        "custom_institute", "status", "custom_current_stage", "job_title"],
+		order_by="creation asc",
+		limit_page_length=0,
+		# Same reasoning as _applications_by_candidate: a TPO has no access to Job
+		# Applicant, and the filter above is what fences this to their own college.
+		ignore_permissions=True,
+	)
+	titles = _opening_titles([r.job_title for r in rows])
+	out = []
+	for r in rows:
+		if (r.email_id or "").strip().lower() in exclude_emails:
+			continue
+		out.append({
+			"full_name": r.custom_full_name or r.applicant_name or r.email_id,
+			"email_id": r.email_id,
+			"mobile_number": r.phone_number,
+			"institute": r.custom_institute,
+			"registration": None,
+			"submitted": True,
+			"spot_registered": True,
+			"state": STATE_APPLIED,
+			"applications": [{
+				"job_applicant": r.name,
+				"job_title": titles.get(r.job_title) or r.job_title,
+				"status": r.status,
+				"stage": r.custom_current_stage,
+				"spot_registered": True,
+			}],
+		})
+	return out

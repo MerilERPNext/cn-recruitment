@@ -378,7 +378,7 @@ def _is_trainee_offer(doc):
 	if not employment_type:
 		return False
 
-	name = frappe.db.get_value("Employment Type", employment_type, "employee_type_name")
+	name = frappe.get_cached_value("Employment Type", employment_type, "employee_type_name")
 	return (name or "").strip().casefold() == TRAINEE_EMPLOYMENT_TYPE.casefold()
 
 

@@ -236,8 +236,10 @@ def ensure_fields_in_section(fieldnames, section):
 	section, that choice is honoured directly here — assigning the row's section
 	rather than recomputing it from meta (which may not even contain that label).
 
-	Fields are also recorded in ``synced_field_refs`` so ``_auto_sync`` treats
-	them as already handled and never adds a second, meta-grouped row.
+	Only fields actually placed are recorded in ``synced_field_refs``, which is
+	what tells ``_auto_sync`` to leave them alone. Recording one this ran past
+	would bury it for good: it never reaches the table, and every later load then
+	skips it as "already seen".
 	"""
 	section = (section or "").strip() or "General"
 	fieldnames = [fn for fn in fieldnames if fn]
@@ -246,12 +248,31 @@ def ensure_fields_in_section(fieldnames, section):
 
 	settings = frappe.get_single("Job Applicant Profile Settings")
 	meta = frappe.get_meta("Job Applicant")
+
+	# Fields created moments ago in this same request are not on the cached meta
+	# yet, and that stale read is what used to drop them. Fetch just those from the
+	# Custom Field table — one query, against the eight a full meta rebuild costs,
+	# and none at all once the cache has caught up.
+	unseen = [fn for fn in fieldnames if not meta.get_field(fn)]
+	fresh = {}
+	if unseen:
+		fresh = {
+			r.fieldname: r
+			for r in frappe.get_all(
+				"Custom Field",
+				filters={"dt": "Job Applicant", "fieldname": ["in", unseen]},
+				fields=["fieldname", "label", "fieldtype", "options"],
+			)
+		}
+
 	by_ref = {r.reference_name: r for r in settings.default_application_fields if r.reference_name}
 
+	placed = []
 	for fn in fieldnames:
-		df = meta.get_field(fn)
+		df = meta.get_field(fn) or fresh.get(fn)
 		if not df:
 			continue
+		placed.append(fn)
 		child_cfg = _init_child_field_config(df.options) if df.fieldtype in TABLE_FIELDTYPES else ""
 		row = by_ref.get(fn)
 		if row:
@@ -268,8 +289,20 @@ def ensure_fields_in_section(fieldnames, section):
 				build_default_row(fn, df.label or fn, df.fieldtype, section, child_cfg),
 			)
 
+	missing = set(fieldnames) - set(placed)
+	if missing:
+		# Left unrecorded on purpose, so the next _auto_sync still surfaces them.
+		frappe.log_error(
+			"Not on Job Applicant: " + ", ".join(sorted(missing)),
+			"Job Applicant Profile Settings: field placement skipped",
+		)
+	if not placed:
+		# Saving here would only bump `modified` under an open form and cost the
+		# admin a version conflict on their next save.
+		return
+
 	synced = {r.strip() for r in (settings.synced_field_refs or "").split("\n") if r.strip()}
-	synced |= set(fieldnames)
+	synced |= set(placed)
 	settings.synced_field_refs = "\n".join(sorted(synced))
 	settings.save(ignore_permissions=True)
 

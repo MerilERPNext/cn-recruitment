@@ -170,6 +170,18 @@
 	font-size: var(--text-sm);
 }
 
+/* How many of the registered candidates have actually applied. Coloured, unlike
+   the draft note, because it is the number a TPO is looking for — "I added 40,
+   how many turned up in the pipeline?" */
+.tpo-applied-note {
+	margin-left: 8px;
+	padding: 1px 8px;
+	border-radius: 999px;
+	background: var(--green-100, #e3f5e9);
+	color: var(--green-700, #1a7f43);
+	font-size: var(--text-sm);
+}
+
 /* --- registration closed -------------------------------------------------
 
    Shown on the card in place of a save-time error: registration closes per
