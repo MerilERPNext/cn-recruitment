@@ -221,6 +221,15 @@ const EmployeeSidebarForm = ({
                             cleansed[key] = value.map(v => ({ [comp.linkFieldName]: v }));
                         } else if (comp?.type === 'datagrid' && Array.isArray(value)) {
                             cleansed[key] = value.map(row => sanitizeData(row, comp.components));
+                        } else if (
+                            comp?.type === 'datetime' &&
+                            comp?.enableTime === false &&
+                            typeof value === 'string' &&
+                            value.trim() !== ''
+                        ) {
+                            // Date-only field: strip time from ISO string → send "YYYY-MM-DD" to Frappe
+                            const dateOnly = value.split('T')[0];
+                            cleansed[key] = dateOnly || value;
                         } else {
                             cleansed[key] = sanitizeData(value, components);
                         }
