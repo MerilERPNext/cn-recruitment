@@ -17,6 +17,8 @@ import { useTargetUser } from "../context/ViewedUserContext";
 import SearchMembers from "./shared/SearchMembers";
 import Button from "./shared/atoms/Button";
 import { Typography } from "./shared/atoms/Typography";
+import { useGetUiPermission } from "../hooks/userUiPermission";
+import { isActionEnabled } from "../utils/uiPermission";
 
 interface DesktopLayoutWrapperProps {
   children: React.ReactNode;
@@ -54,9 +56,11 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
   const profileImageSrc = imageLoadError
     ? defaultProfile
     : currentEmployee?.image || defaultProfile;
-  const canRedirectToDesk = currentUser?.roles?.some((role) =>
-    ["System User", "Payroll Manager", "System Manager"].includes(role.role),
-  );
+  const { data: layoutPermission } = useGetUiPermission("Layout");
+  const canRedirectToDesk =
+    currentUser?.roles?.some((role) =>
+      ["System User", "Payroll Manager", "System Manager"].includes(role.role),
+    ) || isActionEnabled(layoutPermission, "switch_to_admin", "Header");
   // logout logic
   const logoutHandler = async () => {
     try {
