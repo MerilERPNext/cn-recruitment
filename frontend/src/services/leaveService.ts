@@ -528,7 +528,7 @@ export const leaveService = {
     const response = await FrappeAPI.getDocument(
       "Leave Settings",
       "Leave Settings",
-      ["enable_modal_collaps"],
+      ["enable_modal_collaps", "select_all_status_as_default"],
     );
     return response as LeaveSettings;
   },
