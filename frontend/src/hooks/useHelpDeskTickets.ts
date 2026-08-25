@@ -22,7 +22,7 @@ export interface HDTicket {
   custom_closure_requested?: boolean;
   custom_closure_requested_by?: string;
   resolution_details?: string;
-  custom_second_level_escalation_delay_hours: number;
+  custom_second_level_escalation_delay_hours?: number;
   owner: string;
   resolution_by: string;
   agreement_status: "First Response Due" | "Resolution Due" | "Failed" | "Fulfilled" | "Paused";
