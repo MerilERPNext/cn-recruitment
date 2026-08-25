@@ -418,7 +418,7 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
           const minD = parseDateLocal(attendanceRequestAttachmentsMandatory.allowed_from_date);
           const maxD = parseDateLocal(attendanceRequestAttachmentsMandatory.allowed_to_date);
 
-          (["from_date", "to_date"] as const).forEach((key) => {
+          (["from_date", "to_date", "date"] as const).forEach((key) => {
             const comp = panel?.components?.find((c: SchemaComponent) => c.key === key);
             if (!comp) return;
             if (!comp.datePicker) comp.datePicker = {};
@@ -541,6 +541,11 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
           defaultAttendanceData?.reference_document?.from_date || selectedDate,
         to_date:
           defaultAttendanceData?.reference_document?.to_date || selectedDate,
+        // Single-date mode (Attendance Adjustment with show_only_single_date_field)
+        // renders the "date" field instead of from_date/to_date, so it needs the
+        // same calendar-selected default those two already get.
+        date:
+          defaultAttendanceData?.reference_document?.from_date || selectedDate,
         request_type:
           defaultAttendanceData?.reference_document?.custom_request_type,
         employee: defaultAttendanceData?.reference_document?.employee,
@@ -654,7 +659,7 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
       const panel = updated.components?.[0];
       if (!panel?.components) return prev;
 
-      (["from_date", "to_date"] as const).forEach((key) => {
+      (["from_date", "to_date", "date"] as const).forEach((key) => {
         const comp = panel?.components?.find((c: SchemaComponent) => c.key === key);
         if (!comp) return;
         if (!comp.datePicker) comp.datePicker = {};
@@ -872,8 +877,10 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
     };
 
     const fromDateComp = instance.getComponent("from_date") as any;
+    const dateComp = instance.getComponent("date") as any;
     patchRuntimeSchema(fromDateComp);
     patchRuntimeSchema(toDateComp);
+    patchRuntimeSchema(dateComp);
 
     // Best-effort: directly update already-initialised flatpickr instances so
     // constraints are visible without waiting for the next rebuild.
@@ -892,6 +899,7 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
 
     applyFP(fromDateComp);
     applyFP(toDateComp);
+    applyFP(dateComp);
 
     // Re-evaluate all customConditionals (e.g. time_type_selection visibility)
     // after hidden config fields are synced with noUpdateEvent:true.

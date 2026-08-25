@@ -898,3 +898,310 @@ export interface TeamMembersResponse {
   message: string;
   data: TeamMembersData;
 }
+
+export interface TeamGoalKeyResult {
+  goal_key: string | null;
+  goal: string | null;
+  title: string;
+  weightage: number;
+  metric: string | null;
+  target: number | string | null;
+  target_type: string;
+  achievement: number;
+  goal_status?: string;
+}
+
+export interface TeamGoalItem {
+  goal_key: string | null;
+  goal: string;
+  title: string;
+  description: string;
+  weightage: number;
+  methodology: string;
+  achievement: number;
+  expected_progress: number;
+  health: string;
+  health_label: string;
+  health_tone: string;
+  is_mandatory: boolean;
+  is_locked: boolean;
+  edited_after_approval: boolean;
+  key_results: TeamGoalKeyResult[];
+}
+
+export interface TeamGoalGroup {
+  employee: string;
+  employee_name: string;
+  initials: string;
+  designation: string;
+  image: string | null;
+  goal_plan: string | null;
+  plan_status: string;
+  goal_count: number;
+  pending_count: number;
+  avg_progress: number;
+  goals: TeamGoalItem[];
+}
+
+export interface TeamGoalsCards {
+  goals: number;
+  reportees: number;
+  pending_approval: number;
+}
+
+export interface TeamGoalsHealth {
+  on_track: number;
+  at_risk: number;
+  off_track: number;
+}
+
+export interface TeamGoalsData {
+  approval_mode: string;
+  cards: TeamGoalsCards;
+  health: TeamGoalsHealth;
+  headline: string;
+  groups: TeamGoalGroup[];
+  count: number;
+  matched: number;
+  start: number;
+  limit: number;
+  has_more: boolean;
+}
+
+export interface TeamGoalsParams {
+  manager?: string;
+  employee?: string;
+  search?: string;
+  limit?: number;
+  start?: number;
+}
+
+export interface TeamGoalsResponse {
+  success: boolean;
+  message: string;
+  data: TeamGoalsData;
+}
+
+export interface ApprovalQueueFlag {
+  key: string;
+  tone: "warning" | "danger" | string;
+  label: string;
+}
+
+export interface ApprovalTodo {
+  todo: string;
+  tracker: string;
+  stage_index: number;
+}
+
+export interface ApprovalQueueItem {
+  employee: string;
+  employee_name: string;
+  initials: string;
+  designation: string;
+  goal_plan: string;
+  plan_status: string;
+  goal_key: string | null;
+  goal: string;
+  title: string;
+  description: string | null;
+  methodology: string | null;
+  weightage: number;
+  goal_status: string;
+  status_label: string;
+  status_tone: string;
+  is_mandatory: boolean;
+  is_locked: boolean;
+  submitted_on: string | null;
+  submitted_ago: string | null;
+  auto_approve_on: string | null;
+  action_reason: string | null;
+  kr_count: number;
+  flags: ApprovalQueueFlag[];
+  actions: string[];
+  approval_todo: ApprovalTodo | null;
+}
+
+export interface ApprovalQueueByEmployee {
+  employee: string;
+  employee_name: string;
+  goal_plan: string;
+  plan_status: string;
+  submitted_total: number;
+  goals: number;
+  actions: string[];
+}
+
+export interface ApprovalQueueData {
+  approval_mode: string;
+  approval_engine: string;
+  approval_matrix: any | null;
+  decide_via: string;
+  plan_action: boolean;
+  auto_approve_after_days: number;
+  auto_approve_note: string | null;
+  bulk_actions: string[];
+  queue: ApprovalQueueItem[];
+  by_employee: ApprovalQueueByEmployee[];
+  count: number;
+  matched: number;
+  start: number;
+  limit: number;
+  has_more: boolean;
+  filters: string[];
+}
+
+export interface ApprovalQueueParams {
+  manager?: string;
+  employee?: string;
+  status?: "pending" | "all" | "approved" | "rejected" | "sent_back" | string;
+  limit?: number;
+  start?: number;
+}
+
+export interface ApprovalQueueResponse {
+  success: boolean;
+  message: string;
+  data: ApprovalQueueData;
+}
+
+export interface GoalApprovalFlag {
+  key: string;
+  tone: string;
+  label: string;
+}
+
+export interface GoalApprovalKeyResult {
+  goal_key: string;
+  goal?: string | null;
+  title: string;
+  weightage: number;
+  metric?: string | null;
+  target?: number | null;
+  target_type?: string;
+  achievement?: number | null;
+  goal_status?: string;
+}
+
+export interface GoalApprovalAuditItem {
+  action: string;
+  actioned_by: string;
+  actioned_on: string;
+  note?: string | null;
+  approval_mode?: string;
+  by_name?: string;
+}
+
+export interface GoalApprovalDetailData {
+  approval_mode: string;
+  approval_engine: string;
+  approval_matrix?: string | null;
+  decide_via: string;
+  approval_todo?: unknown;
+  employee: string;
+  employee_name: string;
+  designation?: string | null;
+  goal_plan: string;
+  plan_status: string;
+  goal_key: string;
+  goal?: string | null;
+  title: string;
+  description?: string | null;
+  weightage: number;
+  methodology: string;
+  start_date: string;
+  end_date: string;
+  metric?: string | null;
+  target?: number;
+  target_type?: string;
+  department?: string | null;
+  designation_target?: string | null;
+  goal_status: string;
+  status_label: string;
+  status_tone: string;
+  is_mandatory: boolean;
+  is_locked: boolean;
+  submitted_on?: string | null;
+  submitted_ago?: string | null;
+  auto_approve_on?: string | null;
+  action_reason?: string | null;
+  edited_after_approval: boolean;
+  plan_total_weightage: number;
+  flags: GoalApprovalFlag[];
+  actions: string[];
+  key_results: GoalApprovalKeyResult[];
+  audit: GoalApprovalAuditItem[];
+}
+
+export interface GoalApprovalDetailParams {
+  employee: string;
+  goal_key: string;
+}
+
+export interface GoalApprovalDetailResponse {
+  success: boolean;
+  message: string;
+  data: GoalApprovalDetailData;
+}
+
+export interface GoalActionItem {
+  employee: string;
+  goal_key: string;
+}
+
+export interface IndividualGoalActionPayload {
+  items?: GoalActionItem[];
+  employees?: string[];
+  note?: string;
+}
+
+export interface EntirePlanGoalActionPayload {
+  employees?: string[];
+  items?: GoalActionItem[];
+  note?: string;
+}
+
+export interface EmployeesGoalActionPayload {
+  employees?: string[];
+  items?: GoalActionItem[];
+  note?: string;
+}
+
+export interface GoalActionPayload {
+  payload?: IndividualGoalActionPayload;
+  employees?: string[];
+  items?: GoalActionItem[];
+  note?: string;
+}
+
+export interface GoalActionedItem {
+  goal_key: string;
+  title: string;
+  goal: string;
+  goal_status: string;
+  employee: string;
+}
+
+export interface GoalSkippedItem {
+  goal_key: string;
+  reason?: string;
+  [key: string]: unknown;
+}
+
+export interface GoalActionResultData {
+  approval_mode?: string;
+  actioned: GoalActionedItem[];
+  skipped: GoalSkippedItem[];
+  count: number;
+}
+
+export interface GoalActionResultResponse {
+  success: boolean;
+  message: string;
+  data: GoalActionResultData;
+}
+
+
+
+
+

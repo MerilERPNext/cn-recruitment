@@ -90,6 +90,7 @@ export default function DesktopDashboard() {
   const [isSidebarExpanded, setIsSidebarExpanded] = useState(false);
   const navigate = useNavigate();
   const { mutateAsync: logout } = useLogout();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const employeeState = useEmployeeWithFallback();
   const profileDropdownRef = useRef<HTMLDivElement>(null);
   const [showAttendanceRequest, setShowAttendanceRequest] = useState(false);
@@ -181,16 +182,17 @@ export default function DesktopDashboard() {
   const { data: currentUser } = useCurrentUser();
 
   const logoutHandler = async () => {
+    setIsLoggingOut(true);
     try {
       if (window.isApp) {
-        window.nativeInterface.execute("logout").then(() => {
-          alert("Logged out");
-        });
+        await window.nativeInterface.execute("logout");
+        alert("Logged out");
       } else {
         await logout();
       }
     } catch (error) {
       console.error("Logout failed:", error);
+      setIsLoggingOut(false);
     }
   };
 
@@ -361,9 +363,11 @@ export default function DesktopDashboard() {
 
   const contentMarginLeft = isSidebarExpanded ? "ml-64" : "ml-20";
 
-  const canRedirectToDesk = currentUser?.roles?.some((role) =>
-    ["System User", "Payroll Manager", "System Manager"].includes(role.role),
-  );
+  const { data: layoutPermission } = useGetUiPermission("Layout");
+  const canRedirectToDesk =
+    currentUser?.roles?.some((role) =>
+      ["System User", "Payroll Manager", "System Manager"].includes(role.role),
+    ) || isActionEnabled(layoutPermission, "switch_to_admin", "Header");
 
   const currentUserIsAdmin = currentUser?.roles?.some(
     (role) => "Administrator" === role.role,
@@ -829,19 +833,20 @@ export default function DesktopDashboard() {
                     </Button>
                     <hr className="my-2 border-gray-100" />
                     <Button
-                      variant="subtle"
+                      variant={isLoggingOut ? "contain" : "subtle"}
                       size="md"
                       fullWidth
                       contentAlign="start"
                       bgColor="error"
+                      loading={isLoggingOut}
+                      icon={isLoggingOut ? undefined : <LogOut className="w-4 h-4" />}
                       onClick={async () => {
                         await logoutHandler();
                         sessionStorage.removeItem("viewed_employee_id");
                         setShowProfileDropdown(false);
                       }}
                     >
-                      <LogOut className="w-4 h-4" />
-                      Logout
+                      {isLoggingOut ? "Logging out..." : "Logout"}
                     </Button>
                   </div>
                 </div>

@@ -334,6 +334,8 @@ function mapFieldToFormio(field: any, fieldValue: any): any {
       break;
 
     case "Date":
+      schema.enableTime = false;
+      schema.datePicker = { disableWeekends: false, disableWeekdays: false };
       schema.widget = {
         type: "calendar",
         displayInTimezone: "viewer",
@@ -343,6 +345,7 @@ function mapFieldToFormio(field: any, fieldValue: any): any {
         allowInput: true,
         clickOpens: true,
         enableTime: false,
+        noCalendar: false,
         mode: "single",
       };
       schema.format = "dd-MM-yyyy";

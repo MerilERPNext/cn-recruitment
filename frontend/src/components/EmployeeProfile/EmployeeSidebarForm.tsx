@@ -162,8 +162,33 @@ const EmployeeSidebarForm = ({
             const getSubmissionData = async (instanceKey: string) => {
                 const instance = formInstances.current[instanceKey];
                 if (instance) {
-                    const submission = await instance.submit();
-                    return submission?.data || {};
+                    try {
+                        const submission = await instance.submit();
+                        return submission?.data || {};
+                    } catch (err: any) {
+                        // Formio throws a ValidationError (or array of errors) when validation fails.
+                        // This is a local JS error — no API call is made.
+                        const isFormioValidationError =
+                            err?.name === "ValidationError" ||
+                            (Array.isArray(err) && err.length > 0 && err[0]?.message) ||
+                            (err?.errors && Array.isArray(err.errors));
+
+                        if (isFormioValidationError) {
+                            const errors: any[] = Array.isArray(err)
+                                ? err
+                                : err?.errors || [];
+                            const messages = errors
+                                .map((e: any) => e?.message || e?.toString())
+                                .filter(Boolean);
+                            toast.error(
+                                messages.length > 0
+                                    ? `Please fix the following: ${messages.join(", ")}`
+                                    : "Please fill in all required fields correctly."
+                            );
+                            return null; // Signal to abort submission
+                        }
+                        throw err; // Re-throw unexpected errors
+                    }
                 }
                 return {};
             };
@@ -172,6 +197,7 @@ const EmployeeSidebarForm = ({
                 // Granular Edit Case
                 const storageKey = `${edit.key}-${edit.fieldname}${edit.rowIndex !== undefined ? `-${edit.rowIndex}` : ""}`;
                 const submittedFieldData = await getSubmissionData(storageKey);
+                if (submittedFieldData === null) return; // Validation failed — abort
 
                 if (edit.rowIndex !== undefined) {
                     const existingTableData = (employee as any)?.[edit.fieldname] || [];
@@ -193,6 +219,7 @@ const EmployeeSidebarForm = ({
                 // Section Edit Case (Original)
                 for (const tab of formioTabs) {
                     const data = await getSubmissionData(tab.key);
+                    if (data === null) return; // Validation failed — abort
                     Object.assign(allData, data);
                 }
             }
@@ -221,6 +248,15 @@ const EmployeeSidebarForm = ({
                             cleansed[key] = value.map(v => ({ [comp.linkFieldName]: v }));
                         } else if (comp?.type === 'datagrid' && Array.isArray(value)) {
                             cleansed[key] = value.map(row => sanitizeData(row, comp.components));
+                        } else if (
+                            comp?.type === 'datetime' &&
+                            comp?.enableTime === false &&
+                            typeof value === 'string' &&
+                            value.trim() !== ''
+                        ) {
+                            // Date-only field: strip time from ISO string → send "YYYY-MM-DD" to Frappe
+                            const dateOnly = value.split('T')[0];
+                            cleansed[key] = dateOnly || value;
                         } else {
                             cleansed[key] = sanitizeData(value, components);
                         }

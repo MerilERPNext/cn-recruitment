@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useLocation } from "react-router-dom";
 
 import { Search } from "lucide-react";
 
@@ -125,6 +126,12 @@ const SearchMembers = () => {
   };
 
   const [isFocused, setIsFocused] = useState(false);
+  const location = useLocation();
+
+  // Close the search dropdown whenever the route changes
+  useEffect(() => {
+    setIsFocused(false);
+  }, [location]);
 
   const containerRef = useRef<HTMLDivElement>(null);
 
