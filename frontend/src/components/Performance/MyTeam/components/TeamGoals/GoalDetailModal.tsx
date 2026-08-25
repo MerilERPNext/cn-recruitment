@@ -1,17 +1,16 @@
 import React, { useState } from "react";
-import { X, MessageSquare, Send } from "lucide-react";
-import toast from "react-hot-toast";
+import { X } from "lucide-react";
 import { useScreenSize } from "../../../../../hooks/useScreenSize";
 import { Typography } from "../../../../shared/atoms/Typography";
 import Badge from "../../../../shared/Badge";
 import Modal from "../../../../shared/Modal";
 import Avatar from "../../../../shared/Avatar";
-import Button from "../../../../shared/atoms/Button";
 import { GoalDetailData } from "../../types";
-import { useAddTeamGoalComment, useGetGoalApprovalDetail } from "../../../../../hooks/usePerformance";
+import { useGetGoalApprovalDetail } from "../../../../../hooks/usePerformance";
 import { getPerformanceErrorMessage } from "../../../../../services/performanceService";
 import GoalDetailSkeleton from "./GoalDetailSkeleton";
 import GoalActionButtons from "./GoalActionButtons";
+import GoalCommentBox from "./GoalCommentBox";
 
 interface GoalDetailModalProps {
   goal?: GoalDetailData;
@@ -33,24 +32,7 @@ export const GoalDetailModal: React.FC<GoalDetailModalProps> = ({
     employee,
     goal_key: goalKey,
   });
-  const { mutate: addGoalComment, isPending } = useAddTeamGoalComment();
   const apiData = goalApprovalData?.data;
-
-  const handlePostComment = () => {
-    if (!comment.trim()) return;
-    addGoalComment(
-      { payload: { employee, goal_key: goalKey, note: comment.trim() } },
-      {
-        onSuccess: (res) => {
-          toast.success(res?.message || "Comment added successfully.");
-          setComment("");
-        },
-        onError: (err) => {
-          toast.error(getPerformanceErrorMessage(err, "Failed to add comment."));
-        },
-      }
-    );
-  };
 
   const keyResults = apiData?.key_results || [];
   const auditLogs = apiData?.audit || [];
@@ -208,44 +190,13 @@ export const GoalDetailModal: React.FC<GoalDetailModalProps> = ({
                 )}
               </div>
 
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <Typography variant="bodySmall" className="font-medium text-gray-900 block">
-                    Add comment{" "}
-                    <span className="text-gray-400 font-normal">
-                      (visible to {(apiData?.employee_name || employee || "").split(" ")[0] || "-"})
-                    </span>
-                  </Typography>
-                  <Typography variant="caption" className="text-slate-400 italic">
-                    Submit comment without deciding
-                  </Typography>
-                </div>
-                <textarea
-                  aria-label={`Add comment for ${apiData?.employee_name || employee || "-"}`}
-                  value={comment}
-                  onChange={(e) => setComment(e.target.value)}
-                  placeholder="Type your comment/note for the employee here..."
-                  rows={3}
-                  className="w-full border border-gray-200 rounded-xl p-3 text-sm text-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 resize-none shadow-sm"
-                />
-                <div className="mt-2.5 flex flex-wrap items-center justify-between gap-3">
-                  <p className="text-xs text-slate-500 flex items-center gap-1.5">
-                    <MessageSquare className="h-3.5 w-3.5 text-blue-500 shrink-0" />
-                    <span>Post feedback or note for employee without changing goal status.</span>
-                  </p>
-                  <Button
-                    type="button"
-                    variant="contain"
-                    size="sm"
-                    disabled={!comment.trim() || isPending}
-                    onClick={handlePostComment}
-                    className="border border-blue-600 bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800 shadow-xs text-xs px-3 py-1.5 font-semibold shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <Send className="h-3.5 w-3.5 mr-1 shrink-0 text-white" />
-                    <span>{isPending ? "Posting..." : "Post Comment"}</span>
-                  </Button>
-                </div>
-              </div>
+              <GoalCommentBox
+                employee={employee}
+                goalKey={goalKey}
+                employeeName={apiData?.employee_name}
+                comment={comment}
+                onCommentChange={setComment}
+              />
 
               <div className="bg-slate-50 rounded-xl p-4 mb-2">
                 <Typography
