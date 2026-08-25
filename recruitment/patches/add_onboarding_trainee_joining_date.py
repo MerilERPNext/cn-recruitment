@@ -81,12 +81,32 @@ def execute():
 	frappe.clear_cache(doctype="Employee Onboarding")
 
 
+def _has_columns(doctype, *columns):
+	"""Whether every one of `columns` exists on `doctype`'s table.
+
+	These backfills are raw SQL over Custom Field columns, and custom fields
+	shipped in an app's `custom/*.json` are created by `sync_customizations()` —
+	which runs AFTER patches in a migrate (see frappe/migrate.py). On a site that
+	has not had those fields created yet the column is simply absent and the
+	UPDATE dies with "Unknown column".
+
+	Skipping loses nothing: a column that does not exist holds no data to carry
+	across, and `fetch_from` fills the field from the next save onward.
+	"""
+	return all(frappe.db.has_column(doctype, column) for column in columns)
+
+
 def _backfill_type_name():
 	"""Fill the mirror on onboardings that already exist.
 
 	`fetch_from` only runs on save, and a submitted onboarding will not be saved
 	again — without this its Trainee joining date would stay hidden on the form.
 	"""
+	if not _has_columns("Employee Onboarding", "custom_employment_type_name") or not _has_columns(
+		"Job Offer", "custom_employment_type_name"
+	):
+		return
+
 	frappe.db.sql(
 		"""
 		update `tabEmployee Onboarding` eo
@@ -104,6 +124,11 @@ def _backfill_trainee_doj():
 	Drafts only. A submitted onboarding is a record of what was agreed at the
 	time, and writing a date into it after the fact would rewrite that.
 	"""
+	if not _has_columns("Employee Onboarding", "custom_trainee_doj") or not _has_columns(
+		"Job Offer", "custom_trainee_doj"
+	):
+		return
+
 	frappe.db.sql(
 		"""
 		update `tabEmployee Onboarding` eo
