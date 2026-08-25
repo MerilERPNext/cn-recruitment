@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { AlertCircle } from "lucide-react";
 import toast from "react-hot-toast";
 import Button from "../../../../shared/atoms/Button";
@@ -22,7 +22,7 @@ interface ApprovalQueueSectionProps {
   onGoalClick: (employee: string, goalKey: string) => void;
 }
 
-export const ApprovalQueueSection: React.FC<ApprovalQueueSectionProps> = ({
+export const ApprovalQueueSection: React.FC<ApprovalQueueSectionProps> = memo(({
   onGoalClick,
 }) => {
   const { isMobile, isTablet } = useScreenSize();
@@ -394,6 +394,6 @@ export const ApprovalQueueSection: React.FC<ApprovalQueueSectionProps> = ({
       />
     </section>
   );
-};
+});
 
 export default ApprovalQueueSection;
