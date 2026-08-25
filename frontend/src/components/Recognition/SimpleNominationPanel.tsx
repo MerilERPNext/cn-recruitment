@@ -52,11 +52,17 @@ const stripSubmitButtons = (schema: FormioSchema): FormioSchema =>
 interface SimpleNominationPanelProps {
   awardName: string;
   onSuccess: () => void;
+  /**
+   * Read-only mode for programs that are no longer active — every field and
+   * the Submit button are disabled.
+   */
+  disabled?: boolean;
 }
 
 export const SimpleNominationPanel: React.FC<SimpleNominationPanelProps> = ({
   awardName,
   onSuccess,
+  disabled = false,
 }) => {
   const [selectedEmployee, setSelectedEmployee] = useState("");
   const [selectedName, setSelectedName] = useState("");
@@ -170,6 +176,8 @@ export const SimpleNominationPanel: React.FC<SimpleNominationPanelProps> = ({
   );
 
   const handleSubmit = async () => {
+    // Inactive program — nothing is submittable.
+    if (disabled) return;
     if (!selectedEmployee) {
       toast.error("Please select an employee to appreciate.");
       return;
@@ -279,13 +287,15 @@ export const SimpleNominationPanel: React.FC<SimpleNominationPanelProps> = ({
               setSelectedName(match?.employee_name || id);
             }}
             placeholder={
-              receiversLoading
-                ? "Loading eligible employees..."
-                : receiverOptions.length === 0
-                  ? "No eligible employees for this program"
-                  : "Search by name or ID..."
+              disabled
+                ? "Program is inactive"
+                : receiversLoading
+                  ? "Loading eligible employees..."
+                  : receiverOptions.length === 0
+                    ? "No eligible employees for this program"
+                    : "Search by name or ID..."
             }
-            disabled={receiversLoading || receiverOptions.length === 0}
+            disabled={disabled || receiversLoading || receiverOptions.length === 0}
           />
         </div>
 
@@ -299,7 +309,8 @@ export const SimpleNominationPanel: React.FC<SimpleNominationPanelProps> = ({
             value={reason}
             onChange={(e) => setReason(e.target.value)}
             placeholder="Why are you appreciating this employee?"
-            className="w-full rounded-lg border border-gray-200 p-2.5 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+            disabled={disabled}
+            className="w-full rounded-lg border border-gray-200 p-2.5 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400"
             rows={3}
           />
           {minimumNominationCharacters > 0 && (
@@ -322,7 +333,8 @@ export const SimpleNominationPanel: React.FC<SimpleNominationPanelProps> = ({
             <button
               type="button"
               onClick={() => setValuesOpen((v) => !v)}
-              className="flex w-full items-center bg-white justify-between rounded-lg border border-gray-200 px-3 py-2.5 text-sm text-left hover:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/20"
+              disabled={disabled}
+              className="flex w-full items-center bg-white justify-between rounded-lg border border-gray-200 px-3 py-2.5 text-sm text-left hover:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:hover:border-gray-200"
             >
               <span className={selectedValues.length ? "text-gray-800" : "text-gray-400"}>
                 {selectedValues.length
@@ -346,14 +358,16 @@ export const SimpleNominationPanel: React.FC<SimpleNominationPanelProps> = ({
                     className="inline-flex items-center gap-1 rounded-lg bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-600"
                   >
                     {v}
-                    <button
-                      type="button"
-                      onClick={() => toggleValue(v)}
-                      className="text-blue-400 hover:text-blue-700"
-                      aria-label={`Remove ${v}`}
-                    >
-                      ×
-                    </button>
+                    {!disabled && (
+                      <button
+                        type="button"
+                        onClick={() => toggleValue(v)}
+                        className="text-blue-400 hover:text-blue-700"
+                        aria-label={`Remove ${v}`}
+                      >
+                        ×
+                      </button>
+                    )}
                   </span>
                 ))}
               </div>
@@ -364,13 +378,16 @@ export const SimpleNominationPanel: React.FC<SimpleNominationPanelProps> = ({
                 {programValues.map((v) => (
                   <label
                     key={v}
-                    className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-gray-50"
+                    className={`flex items-center gap-2 rounded-md px-2 py-1.5 text-sm ${
+                      disabled ? "cursor-not-allowed opacity-60" : "cursor-pointer hover:bg-gray-50"
+                    }`}
                   >
                     <input
                       type="checkbox"
                       className="accent-primary"
                       checked={selectedValues.includes(v)}
                       onChange={() => toggleValue(v)}
+                      disabled={disabled}
                     />
                     <span className="text-gray-700">{v}</span>
                   </label>
@@ -388,6 +405,7 @@ export const SimpleNominationPanel: React.FC<SimpleNominationPanelProps> = ({
           onChangeEmployees={setCcEmployees}
           ccEmails={ccEmails}
           onChangeEmails={setCcEmails}
+          disabled={disabled}
         />
 
         {/* The program's attached Microapp Form Widget. Revealed on click; its
@@ -412,6 +430,7 @@ export const SimpleNominationPanel: React.FC<SimpleNominationPanelProps> = ({
                 <Form
                  
                   form={panelFormSchema as any}
+                  options={{ readOnly: disabled } as any}
                   submission={{ data: panelFormData }}
                   onChange={(change: any) => {
                     if (change?.data) setPanelFormData(change.data);
@@ -431,7 +450,7 @@ export const SimpleNominationPanel: React.FC<SimpleNominationPanelProps> = ({
               onClick={handleSubmit}
               size="md"
               loading={submitting}
-              disabled={submitting || !selectedEmployee}
+              disabled={disabled || submitting || !selectedEmployee}
             >
               Submit
             </Button>

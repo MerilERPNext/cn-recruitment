@@ -7,20 +7,23 @@ import { useGetAllEmployees } from "../../hooks/useEmployee";
 // Basic email-format check (mirrors the backend validation intent).
 const isValidEmail = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
 
-const Chip: React.FC<{ label: string; onRemove: () => void }> = ({
+const Chip: React.FC<{ label: string; onRemove: () => void; disabled?: boolean }> = ({
   label,
   onRemove,
+  disabled = false,
 }) => (
   <span className="inline-flex items-center gap-1 rounded-lg bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-600">
     {label}
-    <button
-      type="button"
-      onClick={onRemove}
-      className="text-blue-400 hover:text-blue-700"
-      aria-label={`Remove ${label}`}
-    >
-      <X className="size-3" />
-    </button>
+    {!disabled && (
+      <button
+        type="button"
+        onClick={onRemove}
+        className="text-blue-400 hover:text-blue-700"
+        aria-label={`Remove ${label}`}
+      >
+        <X className="size-3" />
+      </button>
+    )}
   </span>
 );
 
@@ -33,6 +36,8 @@ export interface RecognitionCcFieldsProps {
   onChangeEmployees: (next: string[]) => void;
   ccEmails: string[];
   onChangeEmails: (next: string[]) => void;
+  /** Read-only mode — every input is disabled and chips lose their remove button. */
+  disabled?: boolean;
 }
 
 /**
@@ -48,6 +53,7 @@ const RecognitionCcFields: React.FC<RecognitionCcFieldsProps> = ({
   onChangeEmployees,
   ccEmails,
   onChangeEmails,
+  disabled = false,
 }) => {
   const [emailInput, setEmailInput] = useState("");
   const [emailError, setEmailError] = useState("");
@@ -119,6 +125,7 @@ const RecognitionCcFields: React.FC<RecognitionCcFieldsProps> = ({
             value=""
             onChange={addEmployee}
             placeholder="Search employees to CC..."
+            disabled={disabled}
           />
           {ccEmployees.length > 0 && (
             <div className="mt-2 flex flex-wrap gap-2">
@@ -127,6 +134,7 @@ const RecognitionCcFields: React.FC<RecognitionCcFieldsProps> = ({
                   key={id}
                   label={nameById[id] || id}
                   onRemove={() => removeEmployee(id)}
+                  disabled={disabled}
                 />
               ))}
             </div>
@@ -152,12 +160,14 @@ const RecognitionCcFields: React.FC<RecognitionCcFieldsProps> = ({
                 }
               }}
               placeholder="name@example.com"
-              className="flex-1 rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+              disabled={disabled}
+              className="flex-1 rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400"
             />
             <button
               type="button"
               onClick={addEmail}
-              className="rounded-lg border border-primary-200 bg-primary-50 px-3 py-2 text-sm font-medium text-primary-700 hover:bg-primary-100"
+              disabled={disabled}
+              className="rounded-lg border border-primary-200 bg-primary-50 px-3 py-2 text-sm font-medium text-primary-700 hover:bg-primary-100 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-primary-50"
             >
               Add
             </button>
@@ -166,7 +176,12 @@ const RecognitionCcFields: React.FC<RecognitionCcFieldsProps> = ({
           {ccEmails.length > 0 && (
             <div className="mt-2 flex flex-wrap gap-2">
               {ccEmails.map((email) => (
-                <Chip key={email} label={email} onRemove={() => removeEmail(email)} />
+                <Chip
+                  key={email}
+                  label={email}
+                  onRemove={() => removeEmail(email)}
+                  disabled={disabled}
+                />
               ))}
             </div>
           )}

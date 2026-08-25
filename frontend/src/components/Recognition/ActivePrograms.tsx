@@ -196,6 +196,7 @@ export const ActivePrograms: React.FC = () => {
                   <ProgramExpansionPanel
                     awardName={program.id}
                     onCollapse={() => setExpandedProgramId(null)}
+                    isActive={active}
                   />
                 )}
               </div>
