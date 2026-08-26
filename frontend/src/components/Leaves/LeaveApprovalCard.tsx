@@ -123,18 +123,20 @@ const LeaveApprovalCard = ({
         >
           {isBulkSelectEnabled && (
             <div className="flex items-center justify-center">
-              <input
-                type="checkbox"
-                className="accent-primary"
-                checked={isSelected}
-                onClick={(e) => e.stopPropagation()}
-                onChange={() => onToggleSelect?.(data?.todo_id)}
-                disabled={
-                  isDisabled ||
-                  actionsWithForm?.includes("Approve") ||
-                  actionsWithForm?.includes("Reject")
-                }
-              />
+              {data?.todo_status === "Open" && (
+                <input
+                  type="checkbox"
+                  className="accent-primary"
+                  checked={isSelected}
+                  onClick={(e) => e.stopPropagation()}
+                  onChange={() => onToggleSelect?.(data?.todo_id)}
+                  disabled={
+                    isDisabled ||
+                    actionsWithForm?.includes("Approve") ||
+                    actionsWithForm?.includes("Reject")
+                  }
+                />
+              )}
             </div>
           )}
 
@@ -267,7 +269,7 @@ const LeaveApprovalCard = ({
           }}
         >
           <div className="p-4 flex items-start gap-3 w-full">
-            {isBulkSelectEnabled && (
+            {isBulkSelectEnabled && data?.todo_status === "Open" && (
               <input
                 type="checkbox"
                 className="mt-1 accent-blue-500"
