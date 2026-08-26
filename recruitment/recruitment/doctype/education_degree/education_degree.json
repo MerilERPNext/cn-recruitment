@@ -19,7 +19,6 @@
    "unique": 1
   },
   {
-   "description": "The stage this degree belongs to, so a form showing degrees for a chosen stage can list only these. Left blank, the degree is simply not offered under any stage.",
    "fieldname": "education_stage",
    "fieldtype": "Link",
    "in_list_view": 1,
