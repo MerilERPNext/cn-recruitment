@@ -54,3 +54,4 @@ recruitment.patches.restore_orphaned_applicant_profile_fields
 recruitment.patches.add_onboarding_trainee_joining_date
 recruitment.patches.backfill_requisition_region
 recruitment.patches.add_job_offer_region
+recruitment.patches.backfill_requisition_position_location

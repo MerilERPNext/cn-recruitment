@@ -400,6 +400,9 @@ doc_events = {
             # `custom_region` so it is filterable/reportable from the
             # requisition itself — same mirror as on the Job Opening.
             "recruitment.customizations.job_requisition_region.set_region_from_regions_table",
+            # The Lateral counterpart: the Position Details table's location on
+            # `custom_position_location`, and onto the empty `custom_location`.
+            "recruitment.customizations.job_requisition_region.set_location_from_position_details",
         ],
         "on_update": [
             # Once a requisition is approved its positions "start appearing in the
