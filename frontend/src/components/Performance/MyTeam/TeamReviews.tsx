@@ -424,17 +424,7 @@ const TeamReviews: React.FC = () => {
             </p>
           </section>
 
-          <section className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-            <div className="mb-3 flex items-center gap-2">
-              <Sparkles className="h-4 w-4 text-purple-600" />
-              <Typography variant="bodySmall" className="font-bold text-gray-900">
-                AI bias check
-              </Typography>
-            </div>
-            <Typography variant="caption" className="block leading-relaxed text-gray-600">
-              No flagged language detected. Self + peer + your ratings are tightly aligned (var = 0.4 on 5-pt).
-            </Typography>
-          </section>
+       
         </aside>
       </div>
     </main>
