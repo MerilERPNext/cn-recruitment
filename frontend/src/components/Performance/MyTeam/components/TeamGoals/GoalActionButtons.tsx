@@ -286,38 +286,41 @@ export const GoalActionButtons: React.FC<GoalActionButtonsProps> = ({
           <>
             {canSendBack && (
               <Button
+                type="button"
                 variant="outline"
-                bgColor="text"
                 size="sm"
                 disabled={disabled || isAnyLoading}
                 onClick={() => setActionModalType("send_back")}
-                className="h-9 min-w-[92px] px-3 bg-white text-xs font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                className="border-amber-300 text-amber-800 bg-amber-50/50 hover:bg-amber-100/80 active:bg-amber-200 text-xs h-9 px-3.5 font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {sendBackTeamGoalLoading ? "Sending..." : "Send back"}
+                <SendToBack className="h-3.5 w-3.5 mr-1.5 shrink-0 text-amber-600" />
+                <span>{sendBackTeamGoalLoading ? "Sending..." : "Send back"}</span>
               </Button>
             )}
             {canReject && (
               <Button
+                type="button"
                 variant="outline"
-                bgColor="error"
                 size="sm"
                 disabled={disabled || isAnyLoading}
                 onClick={() => setActionModalType("reject")}
-                className="h-9 min-w-[70px] px-3 bg-white text-xs font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                className="border-red-300 text-red-700 bg-red-50/50 hover:bg-red-100/80 active:bg-red-200 text-xs h-9 px-3.5 font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {rejectGoalLoading ? "Rejecting..." : "Reject"}
+                <X className="h-3.5 w-3.5 mr-1.5 shrink-0 text-red-600" />
+                <span>{rejectGoalLoading ? "Rejecting..." : "Reject"}</span>
               </Button>
             )}
             {canApprove && (
               <Button
+                type="button"
                 variant="contain"
-                bgColor="success"
                 size="sm"
                 disabled={disabled || isAnyLoading}
                 onClick={approveGoal}
-                className="h-9 min-w-[110px] px-3 text-xs font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                className="border border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-700 active:bg-emerald-800 shadow-xs text-xs h-9 px-3.5 font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isPending ? "Approving..." : "Approve goal"}
+                <Check className="h-3.5 w-3.5 mr-1.5 shrink-0 text-white" />
+                <span>{isPending ? "Approving..." : "Approve goal"}</span>
               </Button>
             )}
           </>
