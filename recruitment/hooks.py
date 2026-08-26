@@ -396,6 +396,10 @@ doc_events = {
             # Enforce Recruitment Settings -> Job Requisition Settings
             # (max positions, replacement-employee restriction & uniqueness).
             "recruitment.api.job_requisition.validate_requisition_settings",
+            # Capture the Regions child table's region on the parent
+            # `custom_region` so it is filterable/reportable from the
+            # requisition itself — same mirror as on the Job Opening.
+            "recruitment.customizations.job_requisition_region.set_region_from_regions_table",
         ],
         "on_update": [
             # Once a requisition is approved its positions "start appearing in the
