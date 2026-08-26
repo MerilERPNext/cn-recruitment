@@ -57,10 +57,10 @@ type Reportee = {
 };
 
 const sections: ReviewSection[] = [
-  { id: "self-review", label: "Self-Review", done: true, number: 1 },
-  { id: "peer-aggregate", label: "Peer Aggregate", done: true, number: 2 },
-  { id: "goals", label: "Goals & KRs", done: true, number: 3 },
-  { id: "competencies", label: "Competencies", done: true, number: 4 },
+  { id: "self-review", label: "Self-Review", number: 1 },
+  { id: "peer-aggregate", label: "Peer Aggregate", number: 2 },
+  { id: "goals", label: "Goals & KRs", number: 3 },
+  { id: "competencies", label: "Competencies", number: 4 },
   { id: "achievements", label: "Achievements Review", number: 5 },
   { id: "manager-comments", label: "Manager Comments", number: 6 },
   { id: "recommendation", label: "Recommendation", number: 7 },
@@ -380,9 +380,26 @@ const TeamReviews: React.FC = () => {
   const [sendBackModalOpen, setSendBackModalOpen] = useState(false);
   const [sendBackReason, setSendBackReason] = useState("");
 
+  const [maxVisitedByReportee, setMaxVisitedByReportee] = useState<Record<string, number>>({
+    pm: 3,
+    ki: 0,
+    ms: 0,
+    rb: 0,
+    ab: 0,
+  });
+
   const currentReportee = reporteesData.find((r) => r.id === selectedReporteeId) || reporteesData[0];
   const activeSectionIndex = sections.findIndex((s) => s.id === activeSectionId);
   const currentSection = sections[activeSectionIndex] || sections[3];
+
+  const handleSectionChange = (sectionId: string) => {
+    setActiveSectionId(sectionId);
+    const targetIdx = sections.findIndex((s) => s.id === sectionId);
+    setMaxVisitedByReportee((prev) => ({
+      ...prev,
+      [selectedReporteeId]: Math.max(prev[selectedReporteeId] ?? 0, targetIdx),
+    }));
+  };
 
   const handleRatingChange = (compKey: string, rating: Rating) => {
     setRatingsState((prev) => ({
@@ -420,7 +437,7 @@ const TeamReviews: React.FC = () => {
 
   const handleNextSection = () => {
     if (activeSectionIndex < sections.length - 1) {
-      setActiveSectionId(sections[activeSectionIndex + 1].id);
+      handleSectionChange(sections[activeSectionIndex + 1].id);
     } else {
       toast.success("Review finalized! Proceeding to preview & sign-off.");
       navigate("/webapp/performance-app/team-reviews/team-pre-release-preview");
@@ -429,7 +446,7 @@ const TeamReviews: React.FC = () => {
 
   const handlePrevSection = () => {
     if (activeSectionIndex > 0) {
-      setActiveSectionId(sections[activeSectionIndex - 1].id);
+      handleSectionChange(sections[activeSectionIndex - 1].id);
     } else {
       navigate("/webapp/performance-app/team-overview");
     }
@@ -469,14 +486,16 @@ const TeamReviews: React.FC = () => {
               Sections
             </Typography>
             <nav className="mt-2 grid gap-1 sm:grid-cols-2 xl:grid-cols-1" aria-label="Review sections">
-              {sections.map((section) => {
+              {sections.map((section, idx) => {
                 const isActive = section.id === activeSectionId;
+                const maxVisited = maxVisitedByReportee[selectedReporteeId] ?? 0;
+                const isDone = !isActive && idx < maxVisited;
 
                 return (
                   <button
                     key={section.id}
                     type="button"
-                    onClick={() => setActiveSectionId(section.id)}
+                    onClick={() => handleSectionChange(section.id)}
                     className={`flex min-h-9 w-full items-center gap-2 rounded-md px-2.5 text-left text-[13px] font-semibold transition cursor-pointer ${
                       isActive
                         ? "bg-blue-600 text-white shadow-xs"
@@ -487,15 +506,15 @@ const TeamReviews: React.FC = () => {
                       className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold ${
                         isActive
                           ? "bg-white text-blue-600"
-                          : section.done
+                          : isDone
                           ? "bg-emerald-500 text-white"
                           : "bg-gray-200 text-gray-600"
                       }`}
                     >
-                      {section.done && !isActive ? <Check className="h-3 w-3" /> : section.number}
+                      {isDone ? <Check className="h-3 w-3" /> : section.number}
                     </span>
                     <span className="min-w-0 flex-1 truncate">{section.label}</span>
-                    {section.done && !isActive ? (
+                    {isDone ? (
                       <FileText className="h-3.5 w-3.5 text-gray-400" />
                     ) : null}
                   </button>
@@ -517,7 +536,12 @@ const TeamReviews: React.FC = () => {
                   <button
                     key={member.id}
                     type="button"
-                    onClick={() => setSelectedReporteeId(member.id)}
+                    onClick={() => {
+                      setSelectedReporteeId(member.id);
+                      const memberMaxVisited = maxVisitedByReportee[member.id] ?? 0;
+                      const targetSec = sections[Math.min(memberMaxVisited, sections.length - 1)];
+                      setActiveSectionId(targetSec.id);
+                    }}
                     className={`flex min-w-0 items-center gap-2 rounded-lg px-2 py-1.5 text-left transition cursor-pointer ${
                       isSelected
                         ? "bg-blue-50 border border-blue-200"
