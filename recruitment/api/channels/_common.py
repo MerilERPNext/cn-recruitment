@@ -528,6 +528,7 @@ def get_application_fields_for_channel(opening_name, channel, job_applicant=None
 				},
 				fields=["field", "options"],
 			)
+			if row.get("field")
 		}
 
 	# Load the applicant once so each field can surface its current value.
