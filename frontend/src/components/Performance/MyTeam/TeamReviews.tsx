@@ -256,15 +256,7 @@ const TeamReviews: React.FC = () => {
                   Competencies
                 </Typography>
               </div>
-              <Button
-                type="button"
-                variant="soft"
-                bgColor="primary"
-                className="min-h-9 w-full justify-center rounded-md bg-purple-50 px-3 text-[12px] font-bold text-purple-700 hover:bg-purple-100 sm:w-auto"
-              >
-                <Sparkles className="h-4 w-4" />
-                AI summary of self+peers
-              </Button>
+              
             </div>
           </header>
 
