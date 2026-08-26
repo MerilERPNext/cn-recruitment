@@ -1,4 +1,5 @@
-"""Tests for: a Campus Invite needs at least one Job Opening.
+"""Tests for the Campus Invite's Job Openings table: it is mandatory, and it is
+filtered by the invite's Region.
 
 The invite is what a TPO's candidates are registered against and what they later
 apply through, so an invite with no opening on it is a dead end in three places at
@@ -14,6 +15,14 @@ The Institutes table has always been mandatory. This puts Job Openings on the sa
 footing — an invite is a set of colleges AND a set of roles, and neither half is
 optional.
 
+The Region filter is the second half. An invite is run for one region, so offering
+HR every campus opening on the site invites a college for roles that region is not
+hiring. Openings with NO region are offered whatever the region — a blank Region
+means "not tied to one", the same reading the campus panels already use for a
+Round Panelist with no Region — and without that rule the picker would come back
+empty for a region that has no opening of its own, which, with the table mandatory,
+would leave HR unable to create the invite at all.
+
 Run:  bench --site <site> execute \
         recruitment.recruitment.tests.test_campus_invite_requires_openings.run
 """
@@ -22,6 +31,8 @@ from __future__ import annotations
 
 import frappe
 from frappe.tests.utils import FrappeTestCase
+
+from recruitment.api import campus_openings as co
 
 PREFIX = "_Test Reqd Openings"
 
@@ -34,6 +45,21 @@ class TestCampusInviteRequiresOpenings(FrappeTestCase):
 		cls._purge()
 		cls.institute = cls._institute()
 		cls.opening = frappe.get_all("Job Opening", pluck="name", limit=1)
+
+		# Read the site's real campus openings rather than making new ones: an opening
+		# only counts as "campus" through its Posting Options window, which is a lot of
+		# fixture for a filter that is pure set arithmetic.
+		cls.campus_openings = co.campus_openings_for_region(None)
+		rows = frappe.get_all("Job Opening",
+		                      filters={"name": ["in", cls.campus_openings or [""]]},
+		                      fields=["name", "custom_region"])
+		cls.regionless = [r.name for r in rows if not r.custom_region]
+		cls.by_region = {}
+		for r in rows:
+			if r.custom_region:
+				cls.by_region.setdefault(r.custom_region, []).append(r.name)
+		first = sorted(cls.by_region)[0] if cls.by_region else None
+		cls.regional = (first, cls.by_region[first][0]) if first else None
 		frappe.db.commit()
 
 	@classmethod
@@ -90,6 +116,18 @@ class TestCampusInviteRequiresOpenings(FrappeTestCase):
 		doc.insert(ignore_permissions=True)
 		return doc
 
+	def _opening_of_another_region(self):
+		"""``(region, an opening belonging to a DIFFERENT region)`` or None."""
+		regions = sorted(self.by_region)
+		if len(regions) < 2:
+			return None
+		return regions[0], self.by_region[regions[1]][0]
+
+	def _region_without_openings(self):
+		"""A Region that has no campus opening of its own, or None."""
+		everything = frappe.get_all("Region", pluck="name")
+		return next((r for r in everything if r not in self.by_region), None)
+
 	# ── the rule ──
 
 	def test_the_job_openings_table_is_mandatory(self):
@@ -140,6 +178,79 @@ class TestCampusInviteRequiresOpenings(FrappeTestCase):
 			self.skipTest("no submitted invite on this site")
 		doc = frappe.get_doc("Campus Invite", existing[0])
 		self.assertEqual(doc.docstatus, 1)
+
+
+	# ── the Region filter ──
+
+	def test_no_region_offers_every_campus_opening(self):
+		"""An invite with no Region set is not narrowed — that is the Campus Drive
+		picker's case too, which passes no region at all."""
+		self.assertEqual(co.campus_openings_for_region(None), self.campus_openings)
+
+	def test_a_region_offers_its_own_openings(self):
+		if not self.regional:
+			self.skipTest("no campus opening carries a region on this site")
+		region, opening = self.regional
+		self.assertIn(opening, co.campus_openings_for_region(region))
+
+	def test_a_region_does_not_offer_another_regions_openings(self):
+		other = self._opening_of_another_region()
+		if not other:
+			self.skipTest("need two regions with campus openings")
+		region, foreign = other
+		self.assertNotIn(foreign, co.campus_openings_for_region(region))
+
+	def test_openings_with_no_region_are_offered_everywhere(self):
+		"""They are not tied to a region, and dropping them would empty the picker for
+		a region with no opening of its own."""
+		if not (self.regionless and self.regional):
+			self.skipTest("need a region-less opening and a region")
+		for opening in self.regionless:
+			self.assertIn(opening, co.campus_openings_for_region(self.regional[0]))
+
+	def test_a_region_with_no_openings_still_offers_the_regionless_ones(self):
+		"""The trap this rule exists to avoid: Job Openings is mandatory, so an empty
+		picker would block the invite outright."""
+		if not self.regionless:
+			self.skipTest("no region-less campus opening on this site")
+		empty_region = self._region_without_openings()
+		if not empty_region:
+			self.skipTest("every region has an opening of its own")
+		offered = co.campus_openings_for_region(empty_region)
+		self.assertTrue(offered, "a region with no openings must still get the region-less ones")
+		self.assertEqual(set(offered), set(self.regionless))
+
+	# ── changing the Region cleans up what was already picked ──
+
+	def test_changing_region_drops_the_other_regions_openings(self):
+		other = self._opening_of_another_region()
+		if not other:
+			self.skipTest("need two regions with campus openings")
+		region, foreign = other
+		self.assertEqual(co.openings_outside_region([foreign], region), [foreign])
+
+	def test_changing_region_keeps_the_regionless_ones(self):
+		if not (self.regionless and self.regional):
+			self.skipTest("need a region-less opening and a region")
+		self.assertEqual(co.openings_outside_region(self.regionless, self.regional[0]), [])
+
+	def test_nothing_is_dropped_when_no_region_is_set(self):
+		"""Clearing the Region must not empty the table — there is nothing to filter
+		against."""
+		if not self.campus_openings:
+			self.skipTest("no campus openings on this site")
+		self.assertEqual(co.openings_outside_region(self.campus_openings, None), [])
+
+	def test_the_json_list_form_is_accepted(self):
+		"""The client hands the picked rows over as a JSON string."""
+		import json as _json
+
+		other = self._opening_of_another_region()
+		if not other:
+			self.skipTest("need two regions with campus openings")
+		region, foreign = other
+		self.assertEqual(
+			co.openings_outside_region(_json.dumps([foreign]), region), [foreign])
 
 
 def run():

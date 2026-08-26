@@ -341,6 +341,11 @@ doc_events = {
             # Record the requisition this offer draws on and pull its agreed
             # Fixed / Variable Pay across. Only fills empty fields.
             "recruitment.customizations.job_offer.set_requisition_and_pay",
+            # Region: the field's own fetch_from covers the candidate's interview
+            # region; this reaches the region applied under and the opening's.
+            # On save, not at submit — HR is meant to see and change it while
+            # drafting. Only fills when empty.
+            "recruitment.customizations.job_offer.set_offer_region",
             # The position this offer consumes must belong to the offer's
             # requisition and still be free. Runs before save so a stale pick is
             # rejected rather than silently claiming the wrong row.

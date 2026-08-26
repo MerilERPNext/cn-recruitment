@@ -52,3 +52,4 @@ recruitment.patches.job_offer_applicant_full_name
 recruitment.patches.tpo_space_registration_above_drives
 recruitment.patches.restore_orphaned_applicant_profile_fields
 recruitment.patches.add_onboarding_trainee_joining_date
+recruitment.patches.add_job_offer_region
