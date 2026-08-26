@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import toast from "react-hot-toast";
-import { Check, Eye, Undo2, X } from "lucide-react";
+import { Check, Eye, SendToBack, X } from "lucide-react";
 import Button from "../../../../shared/atoms/Button";
+import Tooltip from "../../../../shared/Tooltip";
 import { GoalReasonModal } from "./GoalReasonModal";
 import { useApproveTeamGoals, useRejectTeamGoals, useSendBackTeamGoals } from "../../../../../hooks/usePerformance";
 import { getPerformanceErrorMessage } from "../../../../../services/performanceService";
@@ -119,6 +120,103 @@ export const GoalActionButtons: React.FC<GoalActionButtonsProps> = ({
     );
   };
 
+  const actionItems: { key: string; element: React.ReactNode }[] = [];
+
+  if (onViewGoal && canView) {
+    actionItems.push({
+      key: "view",
+      element: (
+        <Tooltip key="view" content="View Goal" position="top">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onViewGoal();
+            }}
+            className="flex items-center justify-center cursor-pointer hover:opacity-80 transition-opacity"
+          >
+            <Eye className="w-4 h-4 text-gray-600" strokeWidth={2} />
+          </button>
+        </Tooltip>
+      ),
+    });
+  }
+
+  if (canApprove) {
+    actionItems.push({
+      key: "approve",
+      element: (
+        <Tooltip key="approve" content="Approve Goal" position="top">
+          <button
+            type="button"
+            disabled={disabled || isAnyLoading}
+            onClick={(e) => {
+              e.stopPropagation();
+              approveGoal();
+            }}
+            className="flex items-center justify-center cursor-pointer hover:opacity-80 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isPending ? (
+              <span className="w-4 h-4 border border-gray-400 border-t-transparent rounded-3xl animate-spin" />
+            ) : (
+              <Check className="w-4 h-4 text-green-600" strokeWidth={2} />
+            )}
+          </button>
+        </Tooltip>
+      ),
+    });
+  }
+
+  if (canReject) {
+    actionItems.push({
+      key: "reject",
+      element: (
+        <Tooltip key="reject" content="Reject Goal" position="top">
+          <button
+            type="button"
+            disabled={disabled || isAnyLoading}
+            onClick={(e) => {
+              e.stopPropagation();
+              setActionModalType("reject");
+            }}
+            className="flex items-center justify-center cursor-pointer hover:opacity-80 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {rejectGoalLoading ? (
+              <span className="w-4 h-4 border border-gray-400 border-t-transparent rounded-3xl animate-spin" />
+            ) : (
+              <X className="w-4 h-4 text-red-500" strokeWidth={2} />
+            )}
+          </button>
+        </Tooltip>
+      ),
+    });
+  }
+
+  if (canSendBack) {
+    actionItems.push({
+      key: "send_back",
+      element: (
+        <Tooltip key="send_back" content="Send Back" position="top">
+          <button
+            type="button"
+            disabled={disabled || isAnyLoading}
+            onClick={(e) => {
+              e.stopPropagation();
+              setActionModalType("send_back");
+            }}
+            className="flex items-center justify-center cursor-pointer hover:opacity-80 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {sendBackTeamGoalLoading ? (
+              <span className="w-4 h-4 border border-gray-400 border-t-transparent rounded-3xl animate-spin" />
+            ) : (
+              <SendToBack className="w-4 h-4 text-amber-600" strokeWidth={2} />
+            )}
+          </button>
+        </Tooltip>
+      ),
+    });
+  }
+
   return (
     <>
       <div className={className || (isModel ? "flex flex-wrap items-center gap-3" : "flex items-center justify-center gap-1.5")}>
@@ -136,7 +234,7 @@ export const GoalActionButtons: React.FC<GoalActionButtonsProps> = ({
                 }}
                 className="border-amber-300 text-amber-800 bg-amber-50/50 hover:bg-amber-100/80 active:bg-amber-200 text-xs px-2 sm:px-3 font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <Undo2 className="h-3.5 w-3.5 mr-1 shrink-0 text-amber-600" />
+                <SendToBack className="h-3.5 w-3.5 mr-1 shrink-0 text-amber-600" />
                 <span>{sendBackTeamGoalLoading ? "Sending..." : "Send Back"}</span>
               </Button>
             )}
@@ -174,99 +272,55 @@ export const GoalActionButtons: React.FC<GoalActionButtonsProps> = ({
             )}
           </>
         ) : !isModel ? (
-          <>
-            {onViewGoal && canView && (
-              <button
-                type="button"
-                title="View Goal"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onViewGoal();
-                }}
-                className="inline-flex items-center justify-center h-8 w-8 rounded-lg border border-slate-200 bg-white text-slate-600 shadow-sm transition-all hover:border-slate-300 hover:bg-slate-100 hover:text-slate-900 active:scale-95"
-              >
-                <Eye className="h-4 w-4" />
-              </button>
-            )}
-            {canApprove && (
-              <button
-                type="button"
-                title="Approve Goal"
-                disabled={disabled || isAnyLoading}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  approveGoal();
-                }}
-                className="inline-flex items-center justify-center h-8 w-8 rounded-lg bg-emerald-600 text-white shadow-sm transition-all hover:bg-emerald-700 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <Check className="h-4 w-4" />
-              </button>
-            )}
-            {canReject && (
-              <button
-                type="button"
-                title="Reject Goal"
-                disabled={disabled || isAnyLoading}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setActionModalType("reject");
-                }}
-                className="inline-flex items-center justify-center h-8 w-8 rounded-lg bg-red-500 text-white shadow-sm transition-all hover:bg-red-600 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            )}
-            {canSendBack && (
-              <button
-                type="button"
-                title="Send Back"
-                disabled={disabled || isAnyLoading}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setActionModalType("send_back");
-                }}
-                className="inline-flex items-center justify-center h-8 w-8 rounded-lg border border-slate-200 bg-white text-slate-600 shadow-sm transition-all hover:border-amber-300 hover:bg-amber-50 hover:text-amber-700 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <Undo2 className="h-4 w-4" />
-              </button>
-            )}
-          </>
+          <div className="h-8 flex items-center gap-1 px-3 py-1 rounded-3xl bg-gray-10 w-fit">
+            {actionItems.map(({ key, element }, index) => (
+              <div key={key} className="flex items-center gap-2">
+                {element}
+                {index < actionItems.length - 1 && (
+                  <span className="w-px h-4 bg-gray-300" />
+                )}
+              </div>
+            ))}
+          </div>
         ) : (
           <>
             {canSendBack && (
               <Button
+                type="button"
                 variant="outline"
-                bgColor="text"
                 size="sm"
                 disabled={disabled || isAnyLoading}
                 onClick={() => setActionModalType("send_back")}
-                className="h-9 min-w-[92px] px-3 bg-white text-xs font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                className="border-amber-300 text-amber-800 bg-amber-50/50 hover:bg-amber-100/80 active:bg-amber-200 text-xs h-9 px-3.5 font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {sendBackTeamGoalLoading ? "Sending..." : "Send back"}
+                <SendToBack className="h-3.5 w-3.5 mr-1.5 shrink-0 text-amber-600" />
+                <span>{sendBackTeamGoalLoading ? "Sending..." : "Send back"}</span>
               </Button>
             )}
             {canReject && (
               <Button
+                type="button"
                 variant="outline"
-                bgColor="error"
                 size="sm"
                 disabled={disabled || isAnyLoading}
                 onClick={() => setActionModalType("reject")}
-                className="h-9 min-w-[70px] px-3 bg-white text-xs font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                className="border-red-300 text-red-700 bg-red-50/50 hover:bg-red-100/80 active:bg-red-200 text-xs h-9 px-3.5 font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {rejectGoalLoading ? "Rejecting..." : "Reject"}
+                <X className="h-3.5 w-3.5 mr-1.5 shrink-0 text-red-600" />
+                <span>{rejectGoalLoading ? "Rejecting..." : "Reject"}</span>
               </Button>
             )}
             {canApprove && (
               <Button
+                type="button"
                 variant="contain"
-                bgColor="success"
                 size="sm"
                 disabled={disabled || isAnyLoading}
                 onClick={approveGoal}
-                className="h-9 min-w-[110px] px-3 text-xs font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                className="border border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-700 active:bg-emerald-800 shadow-xs text-xs h-9 px-3.5 font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isPending ? "Approving..." : "Approve goal"}
+                <Check className="h-3.5 w-3.5 mr-1.5 shrink-0 text-white" />
+                <span>{isPending ? "Approving..." : "Approve goal"}</span>
               </Button>
             )}
           </>
