@@ -502,6 +502,34 @@ def get_application_fields_for_channel(opening_name, channel, job_applicant=None
 	meta = frappe.get_meta("Job Applicant")
 	meta_lookup = {df.fieldname: df for df in meta.fields if df.fieldname}
 
+	# A managed (virtual) field keeps its choice list on Custom Doctype Field Item,
+	# never on the docfield: `options` on a virtual field is the slot Frappe
+	# evaluates as Python during serialisation, so storing a Select's choices
+	# there raises SyntaxError on every read of the doctype. Without this the
+	# candidate sees a Select with nothing in it.
+	#
+	# One query, and only when a field this form actually renders needs it — a
+	# form with no managed Select pays nothing.
+	managed_options = {}
+	if any(
+		(meta_lookup.get(r.get("reference_name")) or frappe._dict()).get("is_virtual")
+		and not (meta_lookup.get(r.get("reference_name")) or frappe._dict()).get("options")
+		for r in rows
+		if cint(r.get(view_col))
+	):
+		managed_options = {
+			row.field: (row.options or "")
+			for row in frappe.get_all(
+				"Custom Doctype Field Item",
+				filters={
+					"parent": "Job Applicant",
+					"parenttype": "Custom Doctype Fields",
+					"child_table": ["is", "not set"],
+				},
+				fields=["field", "options"],
+			)
+		}
+
 	# Load the applicant once so each field can surface its current value.
 	applicant_doc = None
 	if job_applicant and frappe.db.exists("Job Applicant", job_applicant):
@@ -522,7 +550,7 @@ def get_application_fields_for_channel(opening_name, channel, job_applicant=None
 			"reference_name": ref,
 			"display_name": r.get("display_name") or df.label or ref,
 			"fieldtype": df.fieldtype,
-			"options": df.options or "",
+			"options": df.options or managed_options.get(ref) or "",
 			"reqd": cint(r.get(mandatory_col)),
 			"ctq": cint(r.get("ctq_flag")),
 			"visibility": r.get("visibility") or "All",
