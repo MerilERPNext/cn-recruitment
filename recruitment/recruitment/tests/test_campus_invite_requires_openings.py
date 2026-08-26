@@ -15,7 +15,11 @@ The Institutes table has always been mandatory. This puts Job Openings on the sa
 footing — an invite is a set of colleges AND a set of roles, and neither half is
 optional.
 
-The Region filter is the second half. An invite is run for one region, so offering
+Two filters sit on that table's picker. Campus hiring IS fresher hiring — a college
+drive cannot fill a lateral role, and `custom_hiring_type` defaults to Lateral, so
+without that rule the picker offers roles no campus candidate is eligible for.
+
+The Region filter is the other. An invite is run for one region, so offering
 HR every campus opening on the site invites a college for roles that region is not
 hiring. Openings with NO region are offered whatever the region — a blank Region
 means "not tied to one", the same reading the campus panels already use for a
@@ -49,10 +53,10 @@ class TestCampusInviteRequiresOpenings(FrappeTestCase):
 		# Read the site's real campus openings rather than making new ones: an opening
 		# only counts as "campus" through its Posting Options window, which is a lot of
 		# fixture for a filter that is pure set arithmetic.
-		cls.campus_openings = co.campus_openings_for_region(None)
+		cls.campus_openings = co.campus_openings(None)
 		rows = frappe.get_all("Job Opening",
 		                      filters={"name": ["in", cls.campus_openings or [""]]},
-		                      fields=["name", "custom_region"])
+		                      fields=["name", "custom_region", "custom_hiring_type"])
 		cls.regionless = [r.name for r in rows if not r.custom_region]
 		cls.by_region = {}
 		for r in rows:
@@ -123,6 +127,18 @@ class TestCampusInviteRequiresOpenings(FrappeTestCase):
 			return None
 		return regions[0], self.by_region[regions[1]][0]
 
+	def _campus_active_lateral(self):
+		"""A Lateral opening that IS posted to the Campus channel, or None."""
+		from recruitment.api.channels._common import get_openings_active_on_channel
+
+		active = get_openings_active_on_channel("campus")
+		if not active:
+			return None
+		rows = frappe.get_all("Job Opening", filters={"name": ["in", active]},
+		                      fields=["name", "custom_hiring_type"])
+		return next((r.name for r in rows if r.custom_hiring_type != co.CAMPUS_HIRING_TYPE),
+		            None)
+
 	def _region_without_openings(self):
 		"""A Region that has no campus opening of its own, or None."""
 		everything = frappe.get_all("Region", pluck="name")
@@ -180,25 +196,74 @@ class TestCampusInviteRequiresOpenings(FrappeTestCase):
 		self.assertEqual(doc.docstatus, 1)
 
 
+	# ── the Fresher filter ──
+	#
+	# Campus hiring IS fresher hiring: a college drive cannot fill a lateral role, and
+	# `custom_hiring_type` DEFAULTS to Lateral — so without this rule the picker offers
+	# roles no campus candidate is eligible for.
+
+	def test_every_offered_opening_is_a_fresher_role(self):
+		offered = frappe.get_all(
+			"Job Opening", filters={"name": ["in", self.campus_openings or [""]]},
+			fields=["name", "job_title", "custom_hiring_type"])
+		wrong = [f"{o.job_title} ({o.custom_hiring_type})" for o in offered
+		         if o.custom_hiring_type != co.CAMPUS_HIRING_TYPE]
+		self.assertFalse(wrong, f"non-Fresher openings offered: {wrong}")
+
+	def test_a_lateral_opening_is_never_offered(self):
+		lateral = self._campus_active_lateral()
+		if not lateral:
+			self.skipTest("no Lateral opening is posted to the Campus channel")
+		self.assertNotIn(lateral, self.campus_openings)
+
+	def test_the_lateral_opening_is_otherwise_a_valid_campus_opening(self):
+		"""Proves the previous test is the hiring type doing the work, not the opening
+		being off the Campus channel or out of its display window."""
+		lateral = self._campus_active_lateral()
+		if not lateral:
+			self.skipTest("no Lateral opening is posted to the Campus channel")
+		from recruitment.api.channels._common import get_openings_active_on_channel
+
+		self.assertIn(lateral, get_openings_active_on_channel("campus"))
+
+	def test_the_fresher_filter_survives_the_region_filter(self):
+		"""Both narrowings apply together, not one or the other."""
+		if not self.regional:
+			self.skipTest("no campus opening carries a region on this site")
+		offered = co.campus_openings(self.regional[0])
+		types = frappe.get_all("Job Opening", filters={"name": ["in", offered or [""]]},
+		                       pluck="custom_hiring_type")
+		self.assertTrue(offered)
+		self.assertEqual(set(types), {co.CAMPUS_HIRING_TYPE})
+
+	def test_the_link_query_offers_only_fresher_roles(self):
+		"""End to end, through the query the picker actually calls."""
+		rows = co.campus_job_opening_query("Job Opening", "", "name", 0, 50, {})
+		names = [r[0] for r in rows]
+		types = frappe.get_all("Job Opening", filters={"name": ["in", names or [""]]},
+		                       pluck="custom_hiring_type")
+		self.assertTrue(names)
+		self.assertEqual(set(types), {co.CAMPUS_HIRING_TYPE})
+
 	# ── the Region filter ──
 
 	def test_no_region_offers_every_campus_opening(self):
 		"""An invite with no Region set is not narrowed — that is the Campus Drive
 		picker's case too, which passes no region at all."""
-		self.assertEqual(co.campus_openings_for_region(None), self.campus_openings)
+		self.assertEqual(co.campus_openings(None), self.campus_openings)
 
 	def test_a_region_offers_its_own_openings(self):
 		if not self.regional:
 			self.skipTest("no campus opening carries a region on this site")
 		region, opening = self.regional
-		self.assertIn(opening, co.campus_openings_for_region(region))
+		self.assertIn(opening, co.campus_openings(region))
 
 	def test_a_region_does_not_offer_another_regions_openings(self):
 		other = self._opening_of_another_region()
 		if not other:
 			self.skipTest("need two regions with campus openings")
 		region, foreign = other
-		self.assertNotIn(foreign, co.campus_openings_for_region(region))
+		self.assertNotIn(foreign, co.campus_openings(region))
 
 	def test_openings_with_no_region_are_offered_everywhere(self):
 		"""They are not tied to a region, and dropping them would empty the picker for
@@ -206,7 +271,7 @@ class TestCampusInviteRequiresOpenings(FrappeTestCase):
 		if not (self.regionless and self.regional):
 			self.skipTest("need a region-less opening and a region")
 		for opening in self.regionless:
-			self.assertIn(opening, co.campus_openings_for_region(self.regional[0]))
+			self.assertIn(opening, co.campus_openings(self.regional[0]))
 
 	def test_a_region_with_no_openings_still_offers_the_regionless_ones(self):
 		"""The trap this rule exists to avoid: Job Openings is mandatory, so an empty
@@ -216,7 +281,7 @@ class TestCampusInviteRequiresOpenings(FrappeTestCase):
 		empty_region = self._region_without_openings()
 		if not empty_region:
 			self.skipTest("every region has an opening of its own")
-		offered = co.campus_openings_for_region(empty_region)
+		offered = co.campus_openings(empty_region)
 		self.assertTrue(offered, "a region with no openings must still get the region-less ones")
 		self.assertEqual(set(offered), set(self.regionless))
 
