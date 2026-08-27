@@ -143,7 +143,8 @@ const AttendanceAssignments = ({
                   </div>`,
                 value: item?.[0],
               }))
-            }
+            },
+            customConditional: "show = !data.use_shift_blocks ;",
           },
           {
             label: "Shift Block",
@@ -218,16 +219,34 @@ const AttendanceAssignments = ({
     try {
       const submission = await formInstance.current?.submit();
       const submissionData = submission?.data || {};
-      console.log(submission)
-      const mappedData = {
+      const useShiftBlocks = !!submissionData.use_shift_blocks;
+      const mappedData: Record<string, unknown> = {
         enable_web_clockin: submissionData.enable_web_clockin ? 1 : 0,
         enable_check_in: submissionData.enable_check_in ? 1 : 0,
-        use_shift_blocks: submissionData.use_shift_blocks ? 1 : 0,
-        shift: submissionData.shift || "none",
-        weekly_off: submissionData.weekly_off || "none",
+        use_shift_blocks: useShiftBlocks ? 1 : 0,
         policy_name: submissionData.policy_name || "none",
         effective_from: submissionData.effective_from?.split("T")[0] || "none",
+        // When use_shift_blocks is OFF → send shift + weekly_off
+        // When use_shift_blocks is ON  → send shift_block only
+        ...(useShiftBlocks
+          ? { shift_block: submissionData.shift_block || "none" }
+          : {
+              shift: submissionData.shift || "none",
+              weekly_off: submissionData.weekly_off || "none",
+            }),
       };
+      // Include geofencing_restriction when enable_check_in is active
+      if (submissionData.enable_check_in && Array.isArray(submissionData.geofencing_restriction) && submissionData.geofencing_restriction.length > 0) {
+        mappedData.geofencing_restriction = submissionData.geofencing_restriction.map(
+          (geo: string) => ({ geo_fencing: geo })
+        );
+      }
+      // Include ip_restriction when enable_web_clockin is active
+      if (submissionData.enable_web_clockin && Array.isArray(submissionData.ip_restriction) && submissionData.ip_restriction.length > 0) {
+        mappedData.ip_restriction = submissionData.ip_restriction.map(
+          (ip: string) => ({ ip_restriction: ip })
+        );
+      }
       if (targetEmployees.length > 0) {
         const promises = targetEmployees.map((emp) =>
           mutation.mutateAsync({
