@@ -175,6 +175,7 @@ function applyPositionCounts(data: Record<string, any>, changedKey: PositionCoun
 // ---------------------------------------------------------------------------
 const SINGLE_SELECT_TITLE_KEYS: [string, string][] = [
   ["hiring_manager", "hiring_manager_title"],
+  ["hiring_lead", "hiring_lead_title"],
   ["company", "company_title"],
   ["department", "department_title"],
   ["designation", "designation_title"],
