@@ -2788,3 +2788,74 @@ def create_alumni_todo(
         "success": True,
         "todo": frappe.db.get_value("ToDo", doc.name, _existing_todo_fields(), as_dict=True),
     }
+
+
+# ── Alumni Workplace Feed ────────────────────────────────────────────────────
+# Work Connect's `post.get_feed` returns no per-viewer state: neither `is_saved`
+# nor `user_reaction` (its `get_post` returns `user_reaction`, but not
+# `is_saved` either). The portal therefore painted every bookmark empty and
+# every like un-liked until the user interacted, and a Save on an
+# already-saved post came back as "Post already saved" — an error for something
+# the user had already achieved.
+#
+# Fixed here rather than in `post.get_feed`, which ESS shares: this wrapper
+# delegates to it unchanged and enriches the rows on the way out. Two batched
+# queries, not one per post.
+
+_FEED_ENRICH_BATCH = 200
+
+
+def _feed_viewer_state(user: str, post_ids: list[str]) -> tuple[set, dict]:
+    """(saved post ids, {post id: reaction type}) for one viewer."""
+    if not post_ids:
+        return set(), {}
+
+    saved = set(
+        frappe.get_all(
+            "Saved Post",
+            filters={"user": user, "post": ["in", post_ids]},
+            pluck="post",
+        )
+        or []
+    )
+    reactions = {
+        r["post"]: r["reaction_type"]
+        for r in frappe.get_all(
+            "Post Reaction",
+            filters={"user": user, "post": ["in", post_ids]},
+            fields=["post", "reaction_type"],
+        )
+        or []
+    }
+    return saved, reactions
+
+
+@frappe.whitelist(methods=["POST"])
+def get_alumni_feed(**kwargs) -> dict:
+    """The workplace feed, with this viewer's saved/reaction state attached.
+
+    Same arguments and same envelope as
+    `chatnext_work_connect…post.get_feed` — only `is_saved` and
+    `user_reaction` are added to each post, so the portal can paint bookmarks
+    and like icons correctly on first render.
+    """
+    user = _require_alumni_session()
+
+    from chatnext_work_connect.chatnext_work_connect.api import post as post_api
+
+    params = {k: v for k, v in kwargs.items() if k not in ("cmd", "sid")}
+    result = post_api.get_feed(**params) or {}
+
+    data = result.get("data") or {}
+    posts = data.get("posts") or []
+
+    ids = [p.get("id") or p.get("name") for p in posts]
+    ids = [i for i in ids if i][:_FEED_ENRICH_BATCH]
+    saved, reactions = _feed_viewer_state(user, ids)
+
+    for p in posts:
+        pid = p.get("id") or p.get("name")
+        p["is_saved"] = pid in saved
+        p["user_reaction"] = reactions.get(pid)
+
+    return result
