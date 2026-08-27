@@ -25,6 +25,8 @@ type MapperContext = {
   isCostCenterReadonly?: boolean;
   autoCostCenterId?: string;
   autoCostCenterName?: string;
+  filterProjectsByCostCenter?: boolean;
+  selectedCostCenter?: string;
 };
 
 const buildLabel = (label?: string) => {
@@ -167,6 +169,12 @@ const mapFieldToFormio = (field: FieldConfig, ctx: MapperContext) => {
         const doctype = field.options || (field.fieldname === "project" ? "Project" : "Cost Center");
         const nameField = field.fieldname === "project" ? "project_name" : "cost_center_name";
         const isAutopopulated = field.fieldname === "cost_center" && ctx.isCostCenterReadonly && ctx.autoCostCenterId;
+        const shouldFilterProjectByCostCenter =
+          field.fieldname === "project" && !!ctx.filterProjectsByCostCenter;
+        const isProjectWaitingForCostCenter =
+          shouldFilterProjectByCostCenter && !ctx.selectedCostCenter;
+        const baseResourceUrl = `/api/resource/${doctype}?fields=%5B%22name%22,%22${nameField}%22%5D&limit_page_length=100&limit=100&skip=0`;
+        const projectCostCenterFilter = `&filters=%5B%5B%22cost_center%22,%22=%22,%22{{ data.cost_center }}%22%5D%5D`;
 
         return {
           type: "select",
@@ -182,9 +190,9 @@ const mapFieldToFormio = (field: FieldConfig, ctx: MapperContext) => {
                     cost_center_name: ctx.autoCostCenterName || ctx.autoCostCenterId,
                   },
                 ],
-              }
+            }
             : {
-                url: `/api/resource/${doctype}?fields=["name","${nameField}"]&limit_page_length=100`,
+                url: `${baseResourceUrl}${shouldFilterProjectByCostCenter ? projectCostCenterFilter : ""}`,
               },
           template: `<span>{{ item.${nameField} || item.name || item }}</span>`,
           valueProperty: "name",
@@ -197,6 +205,17 @@ const mapFieldToFormio = (field: FieldConfig, ctx: MapperContext) => {
             : {}),
           ...(field.fieldname === "cost_center" && ctx.autoCostCenterId
             ? { defaultValue: ctx.autoCostCenterId }
+            : {}),
+          ...(isProjectWaitingForCostCenter
+            ? { disabled: true }
+            : {}),
+          ...(shouldFilterProjectByCostCenter
+            ? {
+                refreshOn: "cost_center",
+                redrawOn: "cost_center",
+                clearOnRefresh: true,
+                customRefresh: "return !!data.cost_center;",
+              }
             : {}),
         };
       }
