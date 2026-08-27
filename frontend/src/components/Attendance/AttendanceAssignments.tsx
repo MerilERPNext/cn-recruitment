@@ -219,7 +219,7 @@ const AttendanceAssignments = ({
       const submission = await formInstance.current?.submit();
       const submissionData = submission?.data || {};
       console.log(submission)
-      const mappedData = {
+      const mappedData: Record<string, unknown> = {
         enable_web_clockin: submissionData.enable_web_clockin ? 1 : 0,
         enable_check_in: submissionData.enable_check_in ? 1 : 0,
         use_shift_blocks: submissionData.use_shift_blocks ? 1 : 0,
@@ -228,6 +228,12 @@ const AttendanceAssignments = ({
         policy_name: submissionData.policy_name || "none",
         effective_from: submissionData.effective_from?.split("T")[0] || "none",
       };
+      // Include geofencing_restriction when enable_check_in is active
+      if (submissionData.enable_check_in && Array.isArray(submissionData.geofencing_restriction) && submissionData.geofencing_restriction.length > 0) {
+        mappedData.geofencing_restriction = submissionData.geofencing_restriction.map(
+          (geo: string) => ({ geo_fencing: geo })
+        );
+      }
       if (targetEmployees.length > 0) {
         const promises = targetEmployees.map((emp) =>
           mutation.mutateAsync({
