@@ -306,6 +306,16 @@ const AddExpenseFormV2: React.FC<AddExpenseFormV2Props> = ({
     return expenseTypePayload?.is_amount_readonly ?? false;
   }, [expenseTypePayload]);
 
+  const filterProjectsByCostCenter = Boolean(
+    expenseTypePayload?.filter_projects_by_cost_center ||
+    (expenseTypePayload as any)?.message?.filter_projects_by_cost_center,
+  );
+
+  const selectedCostCenter =
+    typeof dynamicFormData?.cost_center === "string"
+      ? dynamicFormData.cost_center
+      : dynamicFormData?.cost_center?.name || "";
+
   const isAttachmentMandatory = useMemo(() => {
     const fields = expenseTypePayload?.fields;
     if (!Array.isArray(fields)) return false;
@@ -342,6 +352,8 @@ const AddExpenseFormV2: React.FC<AddExpenseFormV2Props> = ({
         isCostCenterReadonly: autoCostCenter?.auto_populate_cost_center || false,
         autoCostCenterId: autoCostCenter?.cost_center_id || undefined,
         autoCostCenterName: autoCostCenter?.cost_center_name || undefined,
+        filterProjectsByCostCenter,
+        selectedCostCenter,
       }),
     [
       expenseTypePayload,
@@ -351,6 +363,8 @@ const AddExpenseFormV2: React.FC<AddExpenseFormV2Props> = ({
       unitFieldLabel,
       isUnitsFromOdometer,
       autoCostCenter,
+      filterProjectsByCostCenter,
+      selectedCostCenter,
     ],
   );
 
@@ -558,7 +572,7 @@ const AddExpenseFormV2: React.FC<AddExpenseFormV2Props> = ({
                   </div>
                 )}
                 <Form
-                  key={`${selectedExpenseType || "no-expense-type"}-${dynamicFormRevision}`}
+                  key={`${selectedExpenseType || "no-expense-type"}-${dynamicFormRevision}-${filterProjectsByCostCenter ? selectedCostCenter || "no-cost-center" : "all-projects"}`}
                   form={dynamicSchema}
                   submission={dynamicSubmission}
                   className="show-req-astrik"
@@ -589,6 +603,12 @@ const AddExpenseFormV2: React.FC<AddExpenseFormV2Props> = ({
                       if (computed !== null) {
                         setDataVersion((v) => v + 1);
                       }
+                      return;
+                    }
+
+                    if (changedKey === "cost_center" && filterProjectsByCostCenter) {
+                      setDynamicFormData((prev) => ({ ...prev, ...nextData, project: "" }));
+                      setDataVersion((v) => v + 1);
                       return;
                     }
 
