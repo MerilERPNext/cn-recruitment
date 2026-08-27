@@ -52,9 +52,15 @@ def get_context(context):
                     render_job_offer_via_document_template,
                 )
 
+                from recruitment.recruitment.offer_document_template import (
+                    is_document_template_offer_enabled,
+                    template_unavailable_html,
+                )
+
                 context.use_document_template = 0
                 context.offer_pdf_data_uri = ''
                 context.print = ''
+                context.offer_letter_unavailable = 0
 
                 template_name = get_job_offer_document_template(context.doc)
                 if template_name:
@@ -67,10 +73,17 @@ def get_context(context):
                             'data:application/pdf;base64,'
                             + base64.b64encode(pdf_bytes).decode()
                         )
+                elif is_document_template_offer_enabled():
+                    # The letter is configured to come from a Document Template and
+                    # none admits this offer. Showing the candidate a Print Format
+                    # instead would hand them a letter nobody chose for them, so the
+                    # page says what is missing and who to ask.
+                    context.offer_letter_unavailable = 1
+                    context.print = template_unavailable_html()
 
                 # Fall back to the Print Format HTML if the template is off or the
                 # render failed (already logged inside the helper).
-                if not context.use_document_template:
+                if not context.use_document_template and not context.offer_letter_unavailable:
                     formats = get_job_offer_print_formats(context.doc)
                     if len(formats) > 1:
                         # An Employment Type mapped to several letters (a Management
@@ -86,7 +99,7 @@ def get_context(context):
                                 + base64.b64encode(pdf_bytes).decode()
                             )
 
-                if not context.use_document_template:
+                if not context.use_document_template and not context.offer_letter_unavailable:
                     context.print = render_job_offer_html(
                         context.doc, formats[0] if formats else None
                     )

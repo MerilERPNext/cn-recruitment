@@ -31,7 +31,16 @@ def _backfill_type():
 	create_tpo_campus_drives_block's, which is how the drives block gets placed on a
 	site that does not have it yet. Filling it in is what makes the workspace saveable
 	again; "Workspace" is the field's own default and what this row has always been.
+
+	The field itself only arrived in Frappe v16. On v15 there is no `type` column, so
+	asking for its value is a hard SQL error (1054) that takes the whole migrate down
+	— and there is nothing to backfill, because nothing is mandatory yet. Asked of the
+	schema rather than assumed from a version number: db, not meta, because the two
+	calls it guards are direct SQL that bypasses meta.
 	"""
+	if not frappe.db.has_column("Workspace", "type"):
+		return
+
 	if not frappe.db.get_value("Workspace", WORKSPACE, "type"):
 		frappe.db.set_value("Workspace", WORKSPACE, "type", "Workspace",
 		                    update_modified=False)

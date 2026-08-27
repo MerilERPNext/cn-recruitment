@@ -435,7 +435,8 @@
 
 		const sectionRows = rows.filter((r) => (r.section || "General") === active);
 		const bodyHtml = sectionRows.length
-			? sectionRows.map((r, i) => AFU.renderRow(r, i)).join("")
+			// `lockable` — this is the one page that may set or lift a lock.
+			? sectionRows.map((r, i) => AFU.renderRow(r, i, { lockable: true })).join("")
 			: `<tr><td colspan="${AFU.TOTAL_COLS}">${AFU.emptyState(__("No fields in this section."))}</td></tr>`;
 
 		host.innerHTML = `

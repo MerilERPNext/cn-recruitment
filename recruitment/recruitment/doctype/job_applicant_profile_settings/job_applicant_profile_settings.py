@@ -213,6 +213,7 @@ def build_default_row(reference_name, display_name, fieldtype, section, child_fi
 		"display_name": display_name or reference_name,
 		"fieldtype": fieldtype or "",
 		"child_field_config": child_field_config or "",
+		"locked": 0,
 		"view_careers": 0, "mandatory_careers": 0,
 		"view_ijp": 0, "mandatory_ijp": 0,
 		"view_refer": 0, "mandatory_refer": 0,
@@ -458,6 +459,64 @@ class JobApplicantProfileSettings(Document):
 			self.save(ignore_permissions=True)
 
 
+def locked_field_refs():
+	"""``{reference_name}`` frozen in Job Applicant Profile Settings.
+
+	A locked field is configured once, centrally: every Job Opening shows it
+	read-only and cannot override, reposition or remove it. The point is the
+	mistake it prevents — a field that must be collected on every opening
+	(Applicant Name, say) being switched off on one of them by accident.
+
+	Read straight off the child table rather than through the Single: this runs on
+	every Job Opening save and ``get_single`` would pull the whole settings
+	document, including the education-stages table nothing here looks at.
+	"""
+	return set(frappe.get_all(
+		"Job Opening Application Field",
+		filters={
+			"parenttype": "Job Applicant Profile Settings",
+			"parentfield": "default_application_fields",
+			"locked": 1,
+		},
+		pluck="reference_name",
+		limit_page_length=0,
+	))
+
+
+def enforce_locked_fields(doc, method=None):
+	"""Drop a Job Opening's overrides for locked fields (Job Opening ``validate``).
+
+	The UI already renders those rows disabled, but a disabled control is not a
+	rule: the override table is ordinary child data that the API, a Data Import or
+	a stale form can all write. Locking has to hold at save time or it does not
+	hold at all.
+
+	The whole override row goes, not just the toggles — a locked field is frozen
+	as a unit, placement and label included, so what every opening shows is
+	exactly the settings row. An opening that had configured the field before it
+	was locked therefore reverts to the central definition, which is what locking
+	is for.
+	"""
+	rows = doc.get("custom_application_fields") or []
+	if not rows:
+		return
+
+	locked = locked_field_refs()
+	if not locked:
+		return
+
+	keep = [r for r in rows if r.reference_name not in locked]
+	if len(keep) == len(rows):
+		return
+
+	dropped = sorted({r.reference_name for r in rows if r.reference_name in locked})
+	doc.set("custom_application_fields", keep)
+	frappe.logger("recruitment").info(
+		f"Job Opening {doc.name or '(new)'}: discarded overrides for locked application "
+		f"field(s) {', '.join(dropped)}."
+	)
+
+
 @frappe.whitelist()
 def get_job_applicant_profile_template(opening=None):
 	"""Return the merged template the Job Opening form UI renders.
@@ -541,6 +600,9 @@ def get_job_applicant_profile_template(opening=None):
 				or def_row.get("child_field_config")
 				or "",
 			),
+			# Deliberately `def_row`, not `pick`: locking is a settings decision and
+			# an opening must not be able to unlock itself by carrying its own row.
+			"locked": 1 if def_row.get("locked") else 0,
 			"view_careers": pick(ref, "view_careers"),
 			"mandatory_careers": pick(ref, "mandatory_careers"),
 			"view_ijp": pick(ref, "view_ijp"),

@@ -103,6 +103,20 @@ frappe.provide("recruitment.applicant_fields_ui");
 	// offering in the bulk bar. GENERAL / PRE-OFFER RULES hold selects, not switches.
 	AFU.TOGGLE_GROUPS = AFU.COLUMN_GROUPS.filter((g) => g.cols.every((c) => c.type === "toggle"));
 
+	// Lock affordances. Kept next to the other shared styles so both pages get
+	// them from the one stylesheet injectStyles() writes.
+	AFU.LOCK_CSS = `
+		.apf-lock{display:inline-flex;align-items:center;gap:4px;margin-left:8px;font-size:10px;
+			font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--text-muted);cursor:pointer;}
+		.apf-lock input{margin:0;cursor:pointer;}
+		.apf-lock-badge{display:inline-flex;align-items:center;gap:3px;margin-left:8px;padding:1px 6px;
+			border-radius:9px;font-size:10px;font-weight:600;letter-spacing:.03em;
+			background:var(--gray-200,#e6e9ec);color:var(--gray-700,#4a5157);white-space:nowrap;}
+		tr.apf-frozen{background:var(--subtle-fg,rgba(0,0,0,.02));}
+		tr.apf-frozen input:disabled,tr.apf-frozen select:disabled{opacity:.55;cursor:not-allowed;}
+		.apf-grip-off{opacity:.3;cursor:not-allowed;}
+	`;
+
 	AFU.escapeHtml = function (s) {
 		if (s === null || s === undefined) return "";
 		return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
@@ -579,7 +593,7 @@ frappe.provide("recruitment.applicant_fields_ui");
 				padding: 8px 10px 2px; border-top: 1px solid var(--apf-border);
 				margin-top: 8px;
 			}
-		`;
+		` + AFU.LOCK_CSS;
 		document.head.appendChild(style);
 	};
 
@@ -765,7 +779,7 @@ frappe.provide("recruitment.applicant_fields_ui");
 		});
 	};
 
-	AFU.renderChildConfigRow = function (row) {
+	AFU.renderChildConfigRow = function (row, frozen) {
 		const ref = row.reference_name || "";
 		let config = {};
 		try { config = JSON.parse(row.child_field_config || "{}"); } catch (e) { /* ignore */ }
@@ -778,9 +792,10 @@ frappe.provide("recruitment.applicant_fields_ui");
 						<div class="apf-child-field-label">${esc(cfc.label || cfn)}</div>
 						<div class="apf-child-field-ref">${esc(cfn)}</div>
 					</td>
-					${AFU.CHILD_CHANNEL_GROUPS.map((g) => g.cols.map((c) =>
-						`<td>${AFU.renderChildToggle(ref, cfn, c.col, cfc[c.col], g.cls)}</td>`
-					).join("")).join("")}
+					${AFU.CHILD_CHANNEL_GROUPS.map((g) => g.cols.map((c) => {
+						const t = AFU.renderChildToggle(ref, cfn, c.col, cfc[c.col], g.cls);
+						return `<td>${frozen ? t.replace("<input ", "<input disabled ") : t}</td>`;
+					}).join("")).join("")}
 				</tr>`
 			).join("")
 			: `<tr><td colspan="${AFU.CHILD_TOTAL_COLS}" class="apf-child-empty">No configurable child fields.</td></tr>`;
@@ -818,9 +833,25 @@ frappe.provide("recruitment.applicant_fields_ui");
 	};
 
 	// ----------------------------------------------------------------- rows --
-	AFU.renderRow = function (row, idx) {
+	/**
+	 * One field's row.
+	 *
+	 * `opts.lockable` — whether this page may CHANGE the lock. Only Job Applicant
+	 * Profile Settings may; the Job Opening shows the padlock as a static badge.
+	 *
+	 * A locked row renders every control disabled, so the change handlers both
+	 * pages bind simply never fire on it. That is presentation only: the rule
+	 * itself is `enforce_locked_fields` on Job Opening.validate, because a
+	 * disabled input stops a mistake, not an API call.
+	 */
+	AFU.renderRow = function (row, idx, opts) {
+		opts = opts || {};
 		const ref = row.reference_name || "";
 		const isTable = row.fieldtype === "Table" || row.fieldtype === "Table MultiSelect";
+		// Frozen only where the lock cannot be lifted — on the settings page the
+		// admin has to be able to untick it, so the row stays live there.
+		const frozen = !!row.locked && !opts.lockable;
+		const dis = frozen ? " disabled" : "";
 		const groupCells = AFU.COLUMN_GROUPS.map((g) => g.cols.map((c, ci) => {
 			const cls = [
 				c.type === "toggle" ? "apf-col-toggle" : "apf-col-select",
@@ -831,28 +862,42 @@ frappe.provide("recruitment.applicant_fields_ui");
 				// A MANDATORY switch is only meaningful while its channel's VIEW is on.
 				const viewCol = g.cols[0].col;
 				const conflict = c.col !== viewCol && row[c.col] && !row[viewCol];
-				const toggle = AFU.renderToggle(ref, c.col, row[c.col], g.cls);
-				return `<td class="${cls}">${
-					conflict ? toggle.replace("apf-toggle ", "apf-toggle apf-conflict ") : toggle
-				}</td>`;
+				let toggle = AFU.renderToggle(ref, c.col, row[c.col], g.cls);
+				if (conflict) toggle = toggle.replace("apf-toggle ", "apf-toggle apf-conflict ");
+				if (frozen) toggle = toggle.replace("<input ", "<input disabled ");
+				return `<td class="${cls}">${toggle}</td>`;
 			}
-			return `<td class="${cls}">${AFU.renderSelect(ref, c.col, row[c.col] || c.options[0], c.options)}</td>`;
+			const select = AFU.renderSelect(ref, c.col, row[c.col] || c.options[0], c.options);
+			return `<td class="${cls}">${frozen ? select.replace("<select ", "<select disabled ") : select}</td>`;
 		}).join("")).join("");
 
 		const tableBadge = isTable ? `<span class="apf-table-badge">TABLE</span>` : "";
+
+		// The lock itself: a live checkbox on the settings page, a padlock badge on
+		// the Job Opening. Same `data-col` either way, so the settings page needs no
+		// handler of its own — the existing [data-ref][data-col] binding picks it up.
+		const lockCell = opts.lockable
+			? `<label class="apf-lock" title="${__("Lock this field — every Job Opening shows it read-only")}">
+					<input type="checkbox" data-ref="${esc(ref)}" data-col="locked"${row.locked ? " checked" : ""}/>
+					<span>${__("Lock")}</span>
+				</label>`
+			: (row.locked
+				? `<span class="apf-lock-badge" title="${__("Locked in Job Applicant Profile Settings — configure it there")}">🔒 ${__("Locked")}</span>`
+				: "");
 		const expandBtn = isTable
 			? `<button class="apf-expand" data-ref="${esc(ref)}" title="Configure child table fields">▶ Child Fields</button>`
 			: "";
 
 		const mainRow = `
-			<tr data-ref="${esc(ref)}" data-search="${esc(
+			<tr data-ref="${esc(ref)}" class="${frozen ? "apf-frozen" : ""}" data-search="${esc(
 				`${row.display_name || ""} ${ref}`.toLowerCase()
 			)}">
-				<td class="apf-col-check"><input type="checkbox" class="apf-row-check" data-ref="${esc(ref)}"/></td>
+				<td class="apf-col-check"><input type="checkbox" class="apf-row-check" data-ref="${esc(ref)}"${dis}/></td>
 				<td class="apf-col-no apf-no">
 					<div class="apf-no-cell">
-						<span class="apf-grip" draggable="true" data-ref="${esc(ref)}"
-							title="${__("Drag to reposition · click to move to another section")}">⠿</span>
+						${frozen ? `<span class="apf-grip apf-grip-off" title="${__("Locked — placement is set in Job Applicant Profile Settings")}">⠿</span>`
+							: `<span class="apf-grip" draggable="true" data-ref="${esc(ref)}"
+							title="${__("Drag to reposition · click to move to another section")}">⠿</span>`}
 						<span class="apf-no-num">${idx + 1}</span>
 					</div>
 				</td>
@@ -861,17 +906,19 @@ frappe.provide("recruitment.applicant_fields_ui");
 						<input class="apf-label-input" type="text"
 							data-ref="${esc(ref)}"
 							value="${esc(row.display_name || ref)}"
-							title="Click to edit label"/>
+							title="Click to edit label"${dis}/>
 						${tableBadge}
+						${lockCell}
 					</div>
 					<div class="apf-ref">${esc(ref)}</div>
 					${expandBtn}
 				</td>
 				${groupCells}
-				<td class="apf-col-actions"><button class="apf-delete" data-ref="${esc(ref)}" title="Remove">×</button></td>
+				<td class="apf-col-actions">${frozen ? ""
+					: `<button class="apf-delete" data-ref="${esc(ref)}" title="Remove">×</button>`}</td>
 			</tr>`;
 
-		return mainRow + (isTable ? AFU.renderChildConfigRow(row) : "");
+		return mainRow + (isTable ? AFU.renderChildConfigRow(row, frozen) : "");
 	};
 
 	// --------------------------------------------------------------- header --

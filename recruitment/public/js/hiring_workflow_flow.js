@@ -157,6 +157,9 @@
         .hwf-btn:hover{background:var(--control-bg-on-gray,var(--bg-color));}
         .hwf-btn.primary{background:var(--blue-500,#2490ef);border-color:var(--blue-500,#2490ef);color:#fff;}
         .hwf-btn.primary:hover{background:var(--blue-600,#1479d6);}
+        .hwf-btn[disabled]{opacity:.5;cursor:not-allowed;}
+        .hwf-req{font-size:.66rem;font-weight:600;letter-spacing:.03em;text-transform:uppercase;
+            padding:1px 6px;border-radius:9px;background:var(--orange-100,#fdebd0);color:var(--orange-700,#9c5700);}
         .hwf-btn.danger{color:var(--red-600,#c0392b);border-color:var(--red-200,#f0b4b4);}
         .hwf-btn.danger:hover{background:var(--red-50,#fdeaea);}
         .hwf-more-wrap{position:relative;display:inline-block;}
@@ -278,16 +281,20 @@
                 frappe.model.with_doctype("Interview", () => {
                     const d = frappe.model.get_new_doc("Interview");
                     d.job_applicant = m.job_applicant;
-                    // prepare_interview always returns the round under the key
-                    // `interview_round`, but the field it belongs in was renamed in
-                    // HRMS v16 to `interview_type`. Writing the old name there put the
-                    // value on a field that does not exist, so the new Interview opened
-                    // with its round blank. Meta is loaded by with_doctype above.
-                    d[frappe.meta.has_field("Interview", "interview_type")
-                        ? "interview_type"
-                        : "interview_round"] = m.interview_round;
+                    // v15 links the round through `interview_round`, v16 through
+                    // `interview_type`; the server says which this site has.
+                    d[m.interview_round_field || "interview_round"] = m.interview_round;
                     if (m.designation) d.designation = m.designation;
                     if (m.job_opening) d.job_opening = m.job_opening;
+                    // The stage's configured panel. Plain assignment, not
+                    // frm.set_value: HRMS's own `interview_round` handler CLEARS
+                    // interview_details and refills it from the round, so these
+                    // rows only survive because nothing triggers that handler
+                    // here. A recruiter who re-picks the round on the form is
+                    // choosing HRMS's list, and that is the right outcome.
+                    (m.interviewers || []).forEach((interviewer) => {
+                        frappe.model.add_child(d, "Interview Detail", "interview_details").interviewer = interviewer;
+                    });
                     frappe.set_route("Form", "Interview", d.name);
                 });
             },
@@ -519,6 +526,26 @@
         return `<div class="hwf-panel"><div class="hwf-empty" style="padding-bottom:4px;">${__("Candidate is not on any stage yet.")}</div>${startBtn}</div>`;
     }
 
+    // "Mark as Not Required" is offered only where skipping is actually allowed:
+    // a stage the workflow marks Mandatory can be cleared or rejected, never
+    // stepped around. Returns null so moreMenu() drops the entry (and the whole
+    // ⋮ button, when nothing else is left in it).
+    function notRequiredItem(stage) {
+        if (stage && stage.is_mandatory) return null;
+        return { key: "notreq", label: __("Mark as Not Required"), cls: "danger" };
+    }
+
+    function moreMenu(items) {
+        const live = (items || []).filter(Boolean);
+        if (!live.length) return "";
+        const links = live.map((i) =>
+            `<a data-menu="${esc(i.key)}"${i.cls ? ` class="${esc(i.cls)}"` : ""}>${esc(i.label)}</a>`).join("");
+        return `<span class="hwf-more-wrap">
+                <button class="hwf-btn" data-act="more" title="${__("More")}">⋮</button>
+                <div class="hwf-menu" style="display:none;">${links}</div>
+            </span>`;
+    }
+
     // Actions + context for the stage the candidate is standing on. Rendered inside
     // that stage's card in the vertical flow, so it carries no frame of its own.
     function renderStageActions(frm, view, cur) {
@@ -530,27 +557,25 @@
         } else if (type === "Shortlist") {
             actions += `<button class="hwf-btn primary" data-act="review" data-mode="Shortlist">${__("Shortlist")}</button>`;
         } else if (type === "Interview") {
+            // Feedback is filed against the interview that was actually held, so
+            // the stage can't be completed before one exists — the server refuses
+            // it too (complete_interview), this just says so before the click.
+            const hasInterview = (cur.interviews || []).length > 0;
             actions += `<button class="hwf-btn" data-act="interview">+ ${__("Schedule Interview")}</button>`;
-            actions += `<button class="hwf-btn primary" data-act="markdone">${__("Mark as Completed")}</button>`;
-            actions += `<span class="hwf-more-wrap">
-                <button class="hwf-btn" data-act="more" title="${__("More")}">⋮</button>
-                <div class="hwf-menu" style="display:none;">
-                    <a data-menu="feedbackform">${__("Send Feedback Form")}</a>
-                    <a data-menu="notreq" class="danger">${__("Mark as Not Required")}</a>
-                </div>
-            </span>`;
+            actions += hasInterview
+                ? `<button class="hwf-btn primary" data-act="markdone">${__("Mark as Completed")}</button>`
+                : `<button class="hwf-btn primary" disabled title="${__("Schedule an interview for this stage first.")}">${__("Mark as Completed")}</button>`;
+            actions += moreMenu([
+                { key: "feedbackform", label: __("Send Feedback Form") },
+                notRequiredItem(cur),
+            ]);
         } else if (type === "Pre Offer") {
             const po = view.pre_offer || {};
             const poLabel = po.sent ? __("Resend Pre Offer Form") : __("Send Pre Offer Form");
             actions += `<button class="hwf-btn primary" data-act="preoffer">+ ${poLabel}</button>`;
             actions += `<button class="hwf-btn" data-act="viewpreoffer">${__("View Pre Offer Form")}</button>`;
             if (!view.is_last) actions += `<button class="hwf-btn" data-act="complete">✓ ${__("Complete stage")}</button>`;
-            actions += `<span class="hwf-more-wrap">
-                <button class="hwf-btn" data-act="more" title="${__("More")}">⋮</button>
-                <div class="hwf-menu" style="display:none;">
-                    <a data-menu="notreq" class="danger">${__("Mark as Not Required")}</a>
-                </div>
-            </span>`;
+            actions += moreMenu([notRequiredItem(cur)]);
         } else if (type === "Offer") {
             actions += view.job_offer
                 ? `<button class="hwf-btn" data-act="openoffer">${__("Open Job Offer")}</button>`
@@ -587,7 +612,7 @@
 
     // What a stage shows when expanded: live actions for the current stage, the
     // recorded outcome for anything already passed, a "move here" for what's ahead.
-    function stageBody(frm, view, s) {
+    function stageBody(frm, view, s, i) {
         if (s.state === "current" && !view.is_closed) return renderStageActions(frm, view, s);
 
         const bits = [];
@@ -599,7 +624,16 @@
         // Forward-only: a completed or current stage can't be revisited, so the jump
         // is offered on upcoming stages only.
         if (s.state === "upcoming" && !view.is_closed) {
-            html += `<div class="hwf-actions" style="margin-top:10px;">
+            // Jumping here would leave every stage in between with no outcome —
+            // which a mandatory stage does not allow. set_stage refuses it
+            // server-side; this names the blocker instead of offering the click.
+            const blockers = (view.stages || [])
+                .slice(view.current_stage_index + 1, i)
+                .filter((b) => b.is_mandatory)
+                .map((b) => b.stage_name);
+            html += blockers.length
+                ? `<div class="hwf-sub" style="margin-top:10px;">${__("Can't move here — the mandatory stage(s) {0} must be completed first.", [esc(blockers.join(", "))])}</div>`
+                : `<div class="hwf-actions" style="margin-top:10px;">
                 <button class="hwf-btn" data-jump="${esc(s.stage_name)}">${__("Move candidate to this stage")}</button>
             </div>`;
         }
@@ -643,9 +677,10 @@
                         <span class="hwf-name">${esc(s.stage_name || "")}</span>
                         <span class="hwf-sbadge ${stageStatusCls(s)}">${esc(stageStatusLabel(s))}</span>
                         <span class="hwf-type">${esc(s.stage_type || "")}</span>
+                        ${s.is_mandatory ? `<span class="hwf-req" title="${__("This stage can't be skipped.")}">${__("Mandatory")}</span>` : ""}
                         <span class="hwf-chevron">⌄</span>
                     </div>
-                    <div class="hwf-card-body">${stageBody(frm, view, s)}</div>
+                    <div class="hwf-card-body">${stageBody(frm, view, s, i)}</div>
                 </div>
             </div>`;
         }).join("");

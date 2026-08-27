@@ -94,6 +94,10 @@ doctype_js = {
         "public/js/hiring_workflow_flow.js",
         "public/js/pre_offer_field_approval.js",
         "public/js/job_applicant_banner.js",
+        # "Previous Applications" tab — has this candidate applied to us before?
+        "public/js/job_applicant_other_applications.js",
+        # "Employee Record" tab — is this candidate already/formerly an employee?
+        "public/js/job_applicant_employee_record.js",
         "public/js/job_applicant_section_nav.js",
     ],
     "Job Opening": [
@@ -329,6 +333,11 @@ doc_events = {
         "before_submit": [
             "recruitment.customizations.job_offer.set_employment_type",
             "recruitment.customizations.job_offer.validate_offer_is_complete",
+            # Last of the three: it matches the offer against the Document
+            # Template assignments, and Employee Type is one of the attributes
+            # templates are commonly scoped by — so it has to run after the stamp
+            # above, never before it.
+            "recruitment.recruitment.offer_document_template.validate_offer_document_template",
         ],
         "validate": [
             "recruitment.customizations.job_applicant.validation_blacklist_on_doctypes",
@@ -350,6 +359,10 @@ doc_events = {
             # requisition and still be free. Runs before save so a stale pick is
             # rejected rather than silently claiming the wrong row.
             "recruitment.api.offer_position.validate_position_choice",
+            # Offer-time duplicity rules from TA Duplicity Check Settings: an
+            # active offer held by the same person under another application, and
+            # the employee-pool outcomes (block / exceptional approval / allow).
+            "recruitment.customizations.ta_duplicity_job_offer.check_job_offer_duplicity",
         ],
         "before_save": "recruitment.customizations.job_offer.calculate_salary_structure",
         "after_insert": [
@@ -443,13 +456,25 @@ doc_events = {
             # First save on which the opening is posted to Campus: copy the default
             # eligibility conditions from Campus Eligibility Settings onto it.
             "recruitment.recruitment.eligibility_engine.apply_default_eligibility_rules",
+            # A field locked in Job Applicant Profile Settings is frozen for every
+            # opening: discard any per-opening override for it. The tab renders
+            # those rows disabled, but a disabled control is not a rule — the
+            # override table is ordinary child data the API can write.
+            "recruitment.recruitment.doctype.job_applicant_profile_settings.job_applicant_profile_settings.enforce_locked_fields",
         ],
         # Tell an external recruiter the opening is theirs to work on. Both events
         # so a recruiter added to an existing opening is mailed too; sent once per
         # recruiter per posting row (Job Opening Posting Channel.notified_recruiters),
         # and only while Recruitment Settings says so.
         "after_insert": "recruitment.recruitment.external_recruiter_mailers.notify_assigned_recruiters",
-        "on_update": "recruitment.recruitment.external_recruiter_mailers.notify_assigned_recruiters",
+        "on_update": [
+            "recruitment.recruitment.external_recruiter_mailers.notify_assigned_recruiters",
+            # Saving an opening against an Approved Draft requisition is what
+            # activates it: the requisition becomes Approved Active and its
+            # positions open, so an offer can be raised against them. Same step
+            # the "Activate" action performs, applied to the create path too.
+            "recruitment.api.requisition_status.activate_requisition_on_opening",
+        ],
     },
     "Employee": {
         "before_insert": "recruitment.customizations.job_applicant.validate_blacklist_employee",
@@ -470,7 +495,14 @@ doc_events = {
         ],
     },
     "Job Applicant": {
-        "before_insert": "recruitment.customizations.ta_duplicity_check.check_duplicity",
+        "before_insert": [
+            # Duplicity check: match keys mandatory, rejection cooldown, and the
+            # multi-position rules — for candidates and for IJP. The employee-pool
+            # rules from the same settings record are decided at the Job Offer
+            # instead (see ta_duplicity_job_offer); ta_rehire_check now only
+            # DETECTS, feeding the Job Applicant's Employee Record tab.
+            "recruitment.customizations.ta_duplicity_check.check_duplicity",
+        ],
         "before_save": [
             "recruitment.customizations.job_applicant.validate_blacklist",
             # Campus candidates arrive carrying their Campus Invite; resolve the
@@ -490,6 +522,9 @@ doc_events = {
             # branch on them belongs to the region they are leaving, so it is
             # cleared and the next panel picks one in the new region.
             "recruitment.api.interview_work_location.clear_location_on_region_change",
+            # Uppercase / de-space the PAN and check its shape. PAN is a match key
+            # for the rehire check, and a mistyped one silently matches nothing.
+            "recruitment.api.applicant_pan.normalize_pan",
         ],
         # Place a new applicant on the linked opening's first hiring stage
         # (no-op unless the Hiring Workflow feature is enabled).

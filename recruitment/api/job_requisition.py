@@ -3719,7 +3719,11 @@ def activate_job_requisition(job_requisition, job_opening):
     # call are held to the requisition/position status matrix too. Imported here
     # rather than at module scope: requisition_status is a sibling API module and
     # a top-level import would couple the two files' load order.
-    from recruitment.api.requisition_status import ACTIVATE, _require_action
+    from recruitment.api.requisition_status import (
+        ACTIVATE,
+        _require_action,
+        mark_requisition_active,
+    )
 
     _require_action(job_requisition, ACTIVATE)
 
@@ -3751,14 +3755,9 @@ def activate_job_requisition(job_requisition, job_opening):
 
     # Activating a requisition opens it up: the requisition becomes Approved
     # Active and every position that was still Draft becomes Open. Positions
-    # already Filled / On Hold / Archived are left as they are.
-    if doc.status != "Approved Active":
-        frappe.db.set_value("Job Requisition", job_requisition, "status", "Approved Active")
-    for row in doc.get("custom_position_summary") or []:
-        if (row.status or "Draft") == "Draft":
-            frappe.db.set_value(
-                "Job Requisition Position", row.name, "status", "Open", update_modified=False
-            )
+    # already Filled / On Hold / Archived are left as they are. Shared with the
+    # Job Opening hook so this action and "Create Job Opening" cannot diverge.
+    mark_requisition_active(job_requisition)
 
     return {
         "job_requisition": job_requisition,

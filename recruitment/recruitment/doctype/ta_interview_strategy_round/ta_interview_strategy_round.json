@@ -10,6 +10,8 @@
   "round_name",
   "is_mandatory",
   "evaluation_form",
+  "interviewer_pool",
+  "interviewer_role",
   "auto_rejection_of_candidates",
   "skip_stage_for_sources",
   "interviewer_scheduling_template",
@@ -41,7 +43,8 @@
    "fieldname": "is_mandatory",
    "fieldtype": "Check",
    "in_list_view": 1,
-   "label": "Mandatory"
+   "label": "Mandatory",
+   "description": "A mandatory round can't be marked Not Required on a Job Applicant, and the candidate can't be moved past it. Setting <b>Allow skipping</b> to No does the same thing."
   },
   {
    "depends_on": "eval:doc.step_type == 'Interview'",
@@ -49,6 +52,22 @@
    "fieldtype": "Link",
    "label": "Select scales/Evaluation forms",
    "options": "Microapp Form Widget"
+  },
+  {
+   "description": "Users this Dynamic User Assignment resolves to become the interviewers on this round's interviews. Its own conditions decide who that is.",
+   "fieldname": "interviewer_pool",
+   "fieldtype": "Link",
+   "label": "Interviewer User Assignment",
+   "options": "Dynamic User Assignment",
+   "depends_on": "eval:doc.step_type == 'Interview'"
+  },
+  {
+   "description": "Everybody holding this role is added as an interviewer too. Leave both this and the assignment empty to pick interviewers by hand on each Interview.",
+   "fieldname": "interviewer_role",
+   "fieldtype": "Link",
+   "label": "Interviewer Role",
+   "options": "Role",
+   "depends_on": "eval:doc.step_type == 'Interview'"
   },
   {
    "default": "0",
@@ -86,7 +105,8 @@
    "fieldname": "allow_skipping",
    "fieldtype": "Select",
    "label": "Allow skipping",
-   "options": "Yes\nNo"
+   "options": "Yes\nNo",
+   "description": "No is equivalent to ticking <b>Mandatory</b>."
   },
   {
    "default": "No",
@@ -100,7 +120,7 @@
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2026-05-19 14:20:00.000000",
+ "modified": "2026-08-24 15:00:00.000000",
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "TA Interview Strategy Round",

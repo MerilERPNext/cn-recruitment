@@ -212,8 +212,27 @@ def _doj_joined(doc):
     # permission gate: this runs as whoever saved the Onboarding, and the insert
     # below is already ignore_permissions.
     from recruitment.auto_fetch_fields import build_employee
+    from recruitment.customizations.employee_onboarding.overide_class import (
+        IncompleteTaskError,
+    )
 
-    emp = build_employee(doc.name)
+    # build_employee enforces the onboarding-complete gate (required tasks closed,
+    # every portal field approved). Recording that someone joined and creating
+    # their Employee record are two different things, and only the second one is
+    # gated — so an unfinished onboarding must not stop HR saving the outcome. Say
+    # why no Employee was created and leave it to the Create Employee button.
+    try:
+        emp = build_employee(doc.name)
+    except IncompleteTaskError as exc:
+        frappe.msgprint(
+            _("Marked as Joined, but the Employee record was not created — {0}").format(
+                str(exc)
+            ),
+            title=_("Employee not created yet"),
+            indicator="orange",
+        )
+        return
+
     if not emp:
         return
 
