@@ -3,11 +3,11 @@
  * Job Opening — auto-prefill the Hiring workflow tab (custom_hiring_stages)
  * from the matching "Hiring Workflow" master (TA Interview Strategy Template).
  *
- * The master's "Applicable To" lists Dynamic User Assignments. A template
- * applies when one of those assignments' conditions (department, designation,
- * location, company, etc.) is satisfied by this Job Opening's own field
- * values; on multiple matches the most recently created template wins. The
- * whole live form doc is sent so conditions can reference any field.
+ * The master's "Applicable To" lists Dynamic User Assignments of purpose
+ * Attributes. A template applies when one of those assignments' attributes
+ * (department, designation, location, company, etc.) is satisfied by this Job
+ * Opening's own field values; on multiple matches the most specific template
+ * wins. The whole live form doc is sent so attributes can name any field.
  *
  * Server: recruitment.recruitment.doctype.ta_interview_strategy_template
  *         .ta_interview_strategy_template.get_hiring_stages_for_job_opening
@@ -51,8 +51,13 @@
 				const stages = msg.stages || [];
 				if (!stages.length) {
 					if (force) {
+						// A deferred match is not "no match": a template's
+						// attributes name a field this opening hasn't filled in
+						// yet, so prefilling anything now would be a guess.
 						frappe.show_alert({
-							message: __("No matching hiring workflow template found."),
+							message: msg.deferred
+								? __("Fill in the opening's details — a hiring workflow template is waiting on them.")
+								: __("No matching hiring workflow template found."),
 							indicator: "orange",
 						});
 					}
@@ -71,6 +76,15 @@
 	}
 
 	frappe.ui.form.on("Job Opening", {
+		setup(frm) {
+			// Panels are made of people, so only People assignments are offered —
+			// the Attributes ones scope which openings a template covers instead.
+			// Three-arg form: the field lives in a child grid.
+			frm.set_query("interviewer_pool", "custom_hiring_stages", () => ({
+				query: "recruitment.recruitment.doctype.ta_interview_strategy_template.ta_interview_strategy_template.get_interviewer_user_assignments",
+			}));
+		},
+
 		refresh(frm) {
 			// Stage Name is a round picker on Interview rows, free text elsewhere.
 			recruitment.interview_round_link.sync(frm, STAGE_LINK);
@@ -116,8 +130,8 @@
 	});
 
 	// Re-prefill (only while the tab is empty) when a field commonly used in
-	// assignment conditions changes. The "Fetch Hiring Workflow" button covers
-	// any other field a condition might reference.
+	// assignment attributes changes. The "Fetch Hiring Workflow" button covers
+	// any other field an attribute might name.
 	["department", "designation", "company", "location"].forEach((field) => {
 		frappe.ui.form.on("Job Opening", {
 			[field](frm) {

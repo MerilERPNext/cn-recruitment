@@ -5,6 +5,7 @@ import { useGlobalStore } from "../../hooks/useGlobalStore";
 import {
   useGetButtonsStatus,
   useGetLeaveBalance,
+  useLeaveSettings,
   useReplaceLeave,
   useRevokeApprovedLeave,
 } from "../../hooks/useLeaves";
@@ -30,11 +31,21 @@ const MyLeaveRequests = ({
 }) => {
   const replaceLeave = useReplaceLeave();
   const { isDesktop } = useScreenSize();
-  const [activeStatus, setActiveStatus] = useState("Open");
 
   const { refetchAttendance, setRefetchAttendance } = useGlobalStore();
   const { data: currentEmployee, isLoading: isEmployeeLoading } =
     useCurrentEmployeeDetails({ logged_in_employee_details: true });
+
+  const { data: leaveSettings } = useLeaveSettings();
+  const selectAllStatusAsDefault = !!leaveSettings?.select_all_status_as_default;
+
+  // When select_all_status_as_default is enabled show all statuses (no filter),
+  // otherwise default to Pending (Open).
+  const defaultStatusFilter = selectAllStatusAsDefault
+    ? {}
+    : { status: "Open" };
+
+  const [activeStatus, setActiveStatus] = useState("Open");
 
   const today = new Date().toISOString().split("T")[0];
   const { data: leaveBalanceData } = useGetLeaveBalance(
@@ -314,7 +325,7 @@ const MyLeaveRequests = ({
                 }}
                 isSearch={true}
                 isFilter={true}
-                defaultFilters={{ status: "Open" }}
+                defaultFilters={defaultStatusFilter}
                 filterFields={dynamicFilterFields}
                 SkeletonComponent={CardSkeleton}
                 onRefetchComplete={() => setRefetchAttendance(false)}

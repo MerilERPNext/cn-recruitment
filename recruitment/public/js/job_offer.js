@@ -88,15 +88,20 @@ frappe.ui.form.on("Job Offer", {
 		// (clause_type / salary_component pickers are set up in the handler below,
 		// which owns the Salary Component custom-field filters.)
 
-		// Offer Letter Template picker: only Document Templates whose reference
-		// doctype is Job Offer.
+		// Offer Letter Template picker: only the templates whose assignment admits
+		// THIS offer — its Company, or the attributes on its User Assignments. A
+		// server-side link query, not a filters dict, because the match depends on
+		// attribute configuration only the server can evaluate; the form's current
+		// (possibly unsaved) values go along so the list narrows as HR types.
 		frm.set_query("custom_offer_letter_template", () => ({
-			filters: { doctype_name: "Job Offer" },
+			query: "recruitment.recruitment.offer_document_template.offer_document_template_query",
+			filters: recruitment_offer_template_context(frm),
 		}));
 
 		// Offer Letter tab (Template / Preview), rendered inline on the form.
 		recruitment_offer_letter_styles();
 		recruitment_render_offer_letter_tab(frm);
+		recruitment_check_offer_template_availability(frm);
 
 		// Offer-letter buttons — each gated by a Recruitment Settings toggle
 		// (both default ON). Only for a saved Job Offer.
@@ -431,13 +436,75 @@ frappe.ui.form.on("Extra Payment Child Doc", {
     }
 });
 
+// Re-check availability when a field a template can be scoped by changes, and
+// drop the rendered-letter cache when the template itself does — otherwise the
+// Offer Letter tab keeps showing the letter that was resolved before the change.
+frappe.ui.form.on("Job Offer", {
+	company: recruitment_offer_template_changed,
+	designation: recruitment_offer_template_changed,
+	custom_employment_type: recruitment_offer_template_changed,
+	job_applicant: recruitment_offer_template_changed,
+	custom_offer_letter_template: recruitment_offer_template_changed,
+});
+
+function recruitment_offer_template_changed(frm) {
+	frm._ol_cache = {};
+	recruitment_check_offer_template_availability(frm);
+	recruitment_render_offer_letter_tab(frm);
+}
+
+// The form values the template picker and the availability check are matched
+// against. Sent live rather than read from the database so an offer being filled
+// in filters correctly before its first save; the server falls back to what is
+// stored for anything not listed here.
+function recruitment_offer_template_context(frm) {
+	const ctx = { job_offer: frm.doc.name && !frm.is_new() ? frm.doc.name : "" };
+	["company", "designation", "custom_employment_type", "job_applicant", "custom_location"].forEach((f) => {
+		if (frm.doc[f]) ctx[f] = frm.doc[f];
+	});
+	return ctx;
+}
+
+// Banner above the Offer Letter Template field: when the Document Template path
+// is on and nothing admits this offer, say so where HR is looking — the submit
+// would otherwise be the first time they hear about it.
+function recruitment_check_offer_template_availability(frm) {
+	const field = frm.fields_dict && frm.fields_dict.custom_offer_letter_template;
+	if (!field || !field.$wrapper) return;
+
+	const clear = () => field.$wrapper.find(".ol-unavailable").remove();
+
+	// A hand-picked template is HR overriding the rules on purpose — nothing to warn about.
+	if (frm.doc.custom_offer_letter_template) {
+		clear();
+		return;
+	}
+
+	frappe.call({
+		method: "recruitment.recruitment.offer_document_template.get_offer_template_availability",
+		args: {
+			job_offer: frm.doc.name && !frm.is_new() ? frm.doc.name : null,
+			overlay: JSON.stringify(recruitment_offer_template_context(frm)),
+		},
+	}).then((r) => {
+		const res = (r && r.message) || {};
+		clear();
+		if (!res.enabled || res.available) return;
+		field.$wrapper.prepend(
+			`<div class="ol-unavailable">${frappe.utils.escape_html(res.message || "")}</div>`
+		);
+	}).catch(() => clear());
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Offer Letter tab — Template (raw placeholders) + Preview (rendered).
 //
 // Same two endpoints the dialog uses, rendered inline on the form's "Offer
 // Letter" tab so the letter sits beside the fields instead of behind a button.
-// `get_offer_letter_preview_html` resolves the Document Template first and falls
-// back to the Job Offer print format, so Preview always shows something.
+// `get_offer_letter_preview_html` resolves the Document Template first; with the
+// Document Template path on and nothing admitting this offer it returns the
+// "contact HR" notice rather than falling back to a Print Format, so Preview
+// never shows a letter the candidate will not be sent.
 // ─────────────────────────────────────────────────────────────────────────────
 function recruitment_render_offer_letter_tab(frm) {
 	const field = frm.fields_dict && frm.fields_dict.custom_offer_letter_html;
@@ -524,6 +591,11 @@ function recruitment_offer_letter_styles() {
 		.ol-tab.active { color:var(--blue-600,#1479d6); font-weight:600; border-bottom-color:var(--blue-600,#1479d6); }
 		.ol-body { min-height:340px; }
 		.ol-empty { padding:48px; text-align:center; color:var(--text-muted,#8d99a6); }
+		.ol-unavailable {
+			margin-bottom:8px; padding:9px 12px; border-radius:6px;
+			background:var(--bg-orange,#fff8e6); color:var(--text-color,#7a5c00);
+			border:1px solid var(--yellow-300,#ffe8a3); font-size:12px; line-height:1.5;
+		}
 
 		/* An Employment Type mapped to several letters is previewed as one pane per
 		   letter, never merged — see get_offer_letter_preview_html. Each pane keeps
@@ -846,4 +918,47 @@ frappe.ui.form.on("Job Offer", {
             );
         });
     },
+});
+
+/*
+ * Work Location follows Region.
+ *
+ * Branch — the Work Location master — carries `custom_region`, so once a Region is
+ * chosen only the branches inside it can be offered. Two halves:
+ *
+ *   1. The picker is filtered to that region.
+ *   2. Changing the Region drops a Work Location that no longer belongs to it.
+ *
+ * Filtered here rather than with a `link_filters` on the custom field because an
+ * offer with no Region yet would then query `custom_region = null` and show an
+ * empty branch list, which reads as a broken field. With no Region set, every
+ * branch stays offerable exactly as before.
+ *
+ * The clear is conditional — only when the branch actually disagrees with the new
+ * region. `custom_region` fetches from the Job Applicant, so an unconditional
+ * clear would wipe the Work Location that was seeded from the same applicant the
+ * moment the offer is created.
+ */
+frappe.ui.form.on("Job Offer", {
+	refresh(frm) {
+		frm.set_query("custom_work_location", () => {
+			const region = frm.doc.custom_region;
+			return region ? { filters: { custom_region: region } } : {};
+		});
+	},
+
+	custom_region(frm) {
+		const region = frm.doc.custom_region;
+		const branch = frm.doc.custom_work_location;
+		if (!branch) return;
+		if (!region) {
+			frm.set_value("custom_work_location", null);
+			return;
+		}
+		frappe.db.get_value("Branch", branch, "custom_region").then((r) => {
+			if ((r.message || {}).custom_region !== region) {
+				frm.set_value("custom_work_location", null);
+			}
+		});
+	},
 });

@@ -15,6 +15,10 @@
 // and on its own it shows an interview ID and nothing about the interview. The
 // context strip below carries what they need in front of them while they write:
 // which round and mode, who the candidate is, the resume, and the slot.
+// Both round fieldnames are listed on purpose — HRMS v15 calls it
+// `interview_round`, v16 renamed it to `interview_type` — but see
+// interviewFieldsOnThisSite(): the list is filtered to what this version really
+// has before it is sent, because the server rejects the read outright otherwise.
 const CONTEXT_FIELDS = [
     "interview_type",
     "interview_round",
@@ -35,21 +39,39 @@ function renderInterviewContext(frm) {
     if (frm.__context_for === frm.doc.interview) return;
     frm.__context_for = frm.doc.interview;
 
-    frappe.call({
-        method: "frappe.client.get_value",
-        args: {
-            doctype: "Interview",
-            filters: { name: frm.doc.interview },
-            // Asked for as a list so a field this HRMS version lacks (v15 has
-            // interview_round, v16 interview_type) comes back missing rather than
-            // erroring the whole read.
-            fieldname: CONTEXT_FIELDS,
-        },
-        callback: (r) => {
-            const iv = (r && r.message) || {};
-            if (!Object.keys(iv).length) return;
-            drawContext(frm, iv);
-        },
+    interviewFieldsOnThisSite(CONTEXT_FIELDS, (fieldname) => {
+        frappe.call({
+            method: "frappe.client.get_value",
+            args: {
+                doctype: "Interview",
+                filters: { name: frm.doc.interview },
+                fieldname: fieldname,
+            },
+            callback: (r) => {
+                const iv = (r && r.message) || {};
+                if (!Object.keys(iv).length) return;
+                drawContext(frm, iv);
+            },
+        });
+    });
+}
+
+/**
+ * Narrow `fields` to the ones the Interview doctype actually has here.
+ *
+ * `frappe.client.get_value` does NOT ignore a field the doctype lacks — it
+ * throws `DataError: Field not permitted in query` and the whole read fails
+ * (frappe/desk/reportview.py, `raise_invalid_field`). Listing both the v15
+ * (`interview_round`) and v16 (`interview_type`) round fieldnames to "let the
+ * missing one come back empty" therefore breaks the request on EVERY site
+ * instead of on none, which is why this strip errored on open.
+ *
+ * `with_doctype` caches, so this costs one meta load per page at most — and the
+ * panel usually arrives from the Interview form, where it is already loaded.
+ */
+function interviewFieldsOnThisSite(fields, done) {
+    frappe.model.with_doctype("Interview", () => {
+        done(fields.filter((f) => frappe.meta.has_field("Interview", f)));
     });
 }
 

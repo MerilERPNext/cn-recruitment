@@ -215,51 +215,76 @@ def _requisition_for_applicant(job_applicant):
 	return frappe.db.get_value("Job Opening", opening, "job_requisition") or None
 
 
-def _requisition_pay(requisition):
-	"""``{target_field: value}`` for whichever pay fields this site actually has.
+def _pay_from(doctype, name):
+	"""``{target_field: value}`` read off any doctype carrying the pay field names.
+
+	Job Opening, Campus Drive and Job Requisition all name them `fixed_pay` /
+	`variable_pay`, so one map serves all three.
 
 	Guarded by ``has_column``, not ``meta.get_field``: a field can be present in the
 	meta and still have no database column — which is exactly how `fixed_pay` and
 	`variable_pay` shipped originally, as virtual fields. Reading one of those
-	raises "Unknown column", so the meta alone is not a safe check.
+	raises "Unknown column", so the meta alone is not a safe check. The same guard
+	is what lets a source disappear entirely without this code changing.
 	"""
-	if not requisition:
+	if not name:
 		return {}
-	available = [src for src in REQUISITION_PAY_MAP
-	             if frappe.db.has_column("Job Requisition", src)]
+	available = [src for src in REQUISITION_PAY_MAP if frappe.db.has_column(doctype, src)]
 	if not available:
 		return {}
-	values = frappe.db.get_value("Job Requisition", requisition, available, as_dict=True) or {}
+	values = frappe.db.get_value(doctype, name, available, as_dict=True) or {}
 	return {REQUISITION_PAY_MAP[src]: values.get(src) for src in available if values.get(src)}
+
+
+def _requisition_pay(requisition):
+	"""The requisition's agreed band — the fallback when no opening states one."""
+	return _pay_from("Job Requisition", requisition)
+
+
+def _job_opening_pay(job_applicant):
+	"""The package named on the opening the candidate applied to.
+
+	The opening is where the agreed Fixed / Variable Pay is now kept: it is the one
+	thing every offer has behind it, campus or not, and a campus drive spanning
+	several openings can pay differently for each. It is asked first for that reason.
+	"""
+	opening = frappe.db.get_value("Job Applicant", job_applicant,
+	                              "job_title") if job_applicant else None
+	return _pay_from("Job Opening", opening)
 
 
 def _campus_drive_pay(job_applicant):
 	"""The package agreed on the candidate's Campus Drive, in offer fields.
 
-	Campus hiring negotiates one package per drive rather than per requisition, so a
-	drive that names its own Fixed / Variable Pay speaks for its candidates. The drive
-	carries the same field names as the requisition, so one map serves both — and the
-	same has_column guard applies, for a site that hasn't migrated the fields in yet.
+	Superseded by the opening's own pay (above), and kept only so a drive that still
+	carries the older per-drive package keeps prefilling its offers. ``_pay_from``'s
+	has_column guard turns this into a no-op once those columns are dropped, which is
+	what `recruitment.patches.move_campus_drive_pay_to_job_opening` does after
+	carrying the values across.
 	"""
 	drive = frappe.db.get_value("Job Applicant", job_applicant,
 	                            "custom_campus_drive") if job_applicant else None
-	if not drive:
-		return {}
-	available = [src for src in REQUISITION_PAY_MAP
-	             if frappe.db.has_column("Campus Drive", src)]
-	if not available:
-		return {}
-	values = frappe.db.get_value("Campus Drive", drive, available, as_dict=True) or {}
-	return {REQUISITION_PAY_MAP[src]: values.get(src) for src in available if values.get(src)}
+	return _pay_from("Campus Drive", drive)
+
+
+def _agreed_pay_for(job_applicant, requisition):
+	"""What an offer should start from, best source first.
+
+	The opening the candidate applied to, then the candidate's Campus Drive (the
+	older per-drive package), then the requisition's band for anything neither
+	covers. One function so the form's prefill (`get_requisition_defaults`) and the
+	save-time seeding (`set_requisition_and_pay`) can never disagree about which
+	source wins — they did before, and an offer's pay changed on first save.
+	"""
+	pay = _job_opening_pay(job_applicant)
+	for source in (_campus_drive_pay(job_applicant), _requisition_pay(requisition)):
+		for target, value in source.items():
+			pay.setdefault(target, value)
+	return pay
 
 
 def _agreed_pay(doc):
-	"""What this offer should start from: the candidate's Campus Drive package where
-	there is one, the requisition's band for anything it doesn't cover."""
-	pay = _campus_drive_pay(doc.get("job_applicant"))
-	for target, value in _requisition_pay(doc.get("custom_job_requisition")).items():
-		pay.setdefault(target, value)
-	return pay
+	return _agreed_pay_for(doc.get("job_applicant"), doc.get("custom_job_requisition"))
 
 
 def set_requisition_and_pay(doc, method=None):
@@ -337,6 +362,43 @@ def set_employment_type(doc, method=None):
 			return
 
 
+# Where the offer's Region can be found, best source first. `fetch_from` on the
+# field itself covers the candidate's interview region; the rest needs a hop the
+# form cannot make, so it is resolved here.
+_REGION_SOURCES = (
+	("Job Applicant", "job_applicant", "custom_interview_region"),
+	("Job Applicant", "job_applicant", "custom_region"),
+	("Job Opening", "job_title", "custom_region"),
+)
+
+
+def set_offer_region(doc, method=None):
+	"""``validate``: fill the offer's Region from the candidate, then the opening.
+
+	Only fills when empty, so a region HR set by hand — or cleared and re-picked —
+	is never overwritten. Runs on save rather than at submit because the point of
+	the field is that HR can see it and change it while drafting the offer; a value
+	that only appeared at SEND would be a value nobody got to check.
+	"""
+	field = "custom_region"
+	if not doc.meta.get_field(field) or doc.get(field):
+		return
+
+	applicant = doc.get("job_applicant")
+	if not applicant:
+		return
+	opening = frappe.db.get_value("Job Applicant", applicant, "job_title")
+
+	for doctype, source, column in _REGION_SOURCES:
+		key = applicant if doctype == "Job Applicant" else opening
+		if not key or not frappe.get_meta(doctype).has_field(column):
+			continue
+		value = frappe.db.get_value(doctype, key, column)
+		if value:
+			doc.set(field, value)
+			return
+
+
 def validate_offer_is_complete(doc, method=None):
 	"""``before_submit``: refuse an offer that is missing what onboarding needs.
 
@@ -378,7 +440,7 @@ def _is_trainee_offer(doc):
 	if not employment_type:
 		return False
 
-	name = frappe.db.get_value("Employment Type", employment_type, "employee_type_name")
+	name = frappe.get_cached_value("Employment Type", employment_type, "employee_type_name")
 	return (name or "").strip().casefold() == TRAINEE_EMPLOYMENT_TYPE.casefold()
 
 
@@ -391,9 +453,8 @@ def get_requisition_defaults(job_applicant):
 	"""
 	frappe.has_permission("Job Offer", "create", throw=True)
 	requisition = _requisition_for_applicant(job_applicant)
-	pay = _requisition_pay(requisition)
-	pay.update(_campus_drive_pay(job_applicant))  # the drive's package wins
-	return {"job_requisition": requisition, "pay": pay}
+	return {"job_requisition": requisition,
+	        "pay": _agreed_pay_for(job_applicant, requisition)}
 
 
 def _requisition_scope(job_applicant=None, company=None, designation=None):

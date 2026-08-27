@@ -5,6 +5,7 @@ from frappe import _
 
 APPLICANT_DRIVE_FIELD = "custom_campus_drive"
 APPLICANT_INVITE_FIELD = "custom_campus_invite"
+APPLICANT_SPOT_FIELD = "custom_spot_registered"
 
 
 def validate_unique_job_openings(doc, table_fieldname="job_openings", link_fieldname="job_opening"):
@@ -63,6 +64,71 @@ def drive_for_invite(campus_invite):
 	return rows[0].parent if rows else None
 
 
+def invite_for_drive_institute(campus_drive, institute, job_opening=None):
+	"""The Campus Invite on `campus_drive` that covers `institute`, or None.
+
+	A walk-in registers straight from the drive's QR, so there is no invite in the
+	URL to carry the way the portal flow does — yet the invite is what the rest of
+	campus reads a candidate's provenance from (`custom_region` is fetched off it,
+	and the drive board's pools were built from it). It therefore has to be resolved
+	backwards from what the candidate DID pick: their institute, and the opening they
+	applied to when that narrows the choice further.
+
+	Drive order decides ties — the invites are read in the order HR put them on the
+	drive, so the answer is stable rather than dependent on insertion timestamps. A
+	drive running no invites at all (a pure spot-registration drive) simply has no
+	invite to give, and the candidate stays linked by `custom_campus_drive` alone.
+	"""
+	if not (campus_drive and institute):
+		return None
+
+	# ignore_permissions throughout: a walk-in submitting the registration form is a
+	# Guest, and their provenance must still resolve.
+	invites = frappe.get_all(
+		"Campus Drive Invite",
+		filters={"parenttype": "Campus Drive", "parentfield": "campus_invites",
+		         "parent": campus_drive},
+		pluck="campus_invite",
+		order_by="idx asc",
+		ignore_permissions=True,
+	)
+	invites = [i for i in dict.fromkeys(invites) if i]
+	if not invites:
+		return None
+
+	covering = {
+		r.parent for r in frappe.get_all(
+			"Campus Invite Institute",
+			filters={"parenttype": "Campus Invite", "parent": ["in", invites],
+			         "institute": institute},
+			fields=["parent"],
+			ignore_permissions=True,
+		)
+	}
+	# Filtered through `invites` rather than used as-is, so drive order is kept.
+	candidates = [i for i in invites if i in covering]
+	if not candidates:
+		return None
+
+	if job_opening and len(candidates) > 1:
+		with_opening = {
+			r.parent for r in frappe.get_all(
+				"Campus Invite Job Opening",
+				filters={"parenttype": "Campus Invite", "parent": ["in", candidates],
+				         "job_opening": job_opening},
+				fields=["parent"],
+				ignore_permissions=True,
+			)
+		}
+		narrowed = [i for i in candidates if i in with_opening]
+		# Only narrow when something survives: an opening added to the drive but not
+		# to any invite must not lose the institute match we already have.
+		if narrowed:
+			candidates = narrowed
+
+	return candidates[0]
+
+
 def set_applicant_drive_from_invite(doc, method=None):
 	"""Job Applicant hook: fill `custom_campus_drive` from the applicant's Campus
 	Invite whenever it is still empty.
@@ -104,6 +170,12 @@ def sync_drive_applicant_links(drive_name, invites):
 	]
 	if invites:
 		release_filters.append([APPLICANT_INVITE_FIELD, "not in", invites])
+	# A walk-in now carries an invite too (resolved from the institute they picked at
+	# the venue — see `invite_for_drive_institute`), so dropping that invite from the
+	# drive would otherwise release someone who physically registered AT this drive.
+	# Their tie is the drive itself; the invite is only provenance.
+	if frappe.get_meta("Job Applicant").has_field(APPLICANT_SPOT_FIELD):
+		release_filters.append([APPLICANT_SPOT_FIELD, "!=", 1])
 	# ignore_permissions on both scans: the link must cover the drive's whole cohort,
 	# not just the applicants the user saving the drive happens to be able to read.
 	released = frappe.get_all("Job Applicant", filters=release_filters, pluck="name",

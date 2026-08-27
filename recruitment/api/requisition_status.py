@@ -350,6 +350,57 @@ def _set_position_statuses(name, new_status, only_from=None):
 
 
 # ---------------------------------------------------------------------------
+# Activation — Approved Draft -> Approved Active
+# ---------------------------------------------------------------------------
+
+def mark_requisition_active(job_requisition):
+    """Approved Draft -> Approved Active, opening every position still at Draft.
+
+    Activation is what makes the positions available to link to a candidate when
+    raising an offer. Idempotent and non-throwing: any other status is left alone
+    and False returned; Filled / On Hold / Archived positions keep their status.
+    """
+    if frappe.db.get_value(JOB_REQUISITION, job_requisition, "status") != APPROVED_DRAFT_STATUS:
+        return False
+
+    # A requisition approved before the materialisation hook existed can be
+    # approved with no position rows at all — seed them rather than open nothing.
+    ensure_position_rows(job_requisition)
+
+    frappe.db.set_value(JOB_REQUISITION, job_requisition, "status", APPROVED_ACTIVE_STATUS)
+    _set_position_statuses(job_requisition, POSITION_OPEN, only_from=(POSITION_DRAFT,))
+    return True
+
+
+def activate_requisition_on_opening(doc, method=None):
+    """Job Opening `on_update`: an opening going live activates its requisition.
+
+    "Create Job Opening" hands back an *unsaved* opening, so nothing moved the
+    requisition on — it stayed Approved Draft with its positions in Draft and an
+    offer found nothing to draw on. Saving the opening is the moment the
+    requisition is really live, so the step sits here rather than in the mapper:
+    the Desk button, the web app's Resource API POST and an import all reach it.
+
+    Best-effort — a failure here must never block saving the opening.
+    """
+    requisition = doc.get("job_requisition")
+    if not requisition:
+        return
+
+    try:
+        if not mark_requisition_active(requisition):
+            return
+        frappe.get_doc(JOB_REQUISITION, requisition).add_comment(
+            "Comment",
+            _("Activated by {0}: Job Opening {1} was created against this requisition.").format(
+                _actor_name(), doc.name
+            ),
+        )
+    except Exception:
+        frappe.log_error(frappe.get_traceback(), "Job Opening: requisition activation failed")
+
+
+# ---------------------------------------------------------------------------
 # Actions
 # ---------------------------------------------------------------------------
 

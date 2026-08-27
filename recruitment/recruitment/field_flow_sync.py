@@ -268,7 +268,9 @@ def _place_fields_in_section(fieldnames, section_label):
         if moved:
             frappe.clear_cache(doctype=SOURCE_DOCTYPE)
 
-    # Authoritative: the settings/candidate grouping.
+    # Authoritative: the settings/candidate grouping. It reads any field the cached
+    # meta is missing straight from the Custom Field table, so the anchor lookup
+    # above caching a copy that predates these fields no longer drops them.
     ensure_fields_in_section(fieldnames, section_label)
 
 

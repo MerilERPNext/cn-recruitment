@@ -169,6 +169,14 @@ def build_employee(source_name, target_doc=None):
     as whoever saved the Onboarding, who need not hold Employee create rights;
     it inserts with ``ignore_permissions`` of its own.
     """
+    # Onboarding must actually be finished — required tasks closed AND every
+    # portal field approved. Checked here rather than in make_employee because
+    # every path that creates an Employee funnels through this function: the
+    # button, HRMS's redirected mapper, and the DOJ-outcome automation. HRMS
+    # called this gate from its own make_employee; ours replaced that function
+    # and dropped the call, so nothing enforced it.
+    frappe.get_doc("Employee Onboarding", source_name).validate_employee_creation()
+
     field_map = get_field_map("Employee Onboarding", "Employee") or _legacy_onboarding_field_map()
 
     def set_missing_values(source, target):

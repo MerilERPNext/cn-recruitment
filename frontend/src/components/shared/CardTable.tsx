@@ -132,7 +132,13 @@ const CardTable = ({
                     const { state, callbacksRef } = bulkSelect;
                     const allSelected =
                       state.allRequests.length > 0 &&
-                      state.selectedIds.length === state.allRequests.length;
+                      state.selectedIds.filter(Boolean).length ===
+                        state.allRequests.filter(
+                          (req: any) => req?.todo_status === "Open",
+                        ).length &&
+                      state.allRequests.some(
+                        (req: any) => req?.todo_status === "Open",
+                      );
                     return (
                       <div key={index} className="flex items-center justify-center">
                         <input

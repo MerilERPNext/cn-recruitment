@@ -39,8 +39,24 @@
 		preoffer_edit_approve: "Editable",
 	};
 
-	/** The opening's own row for `ref`, created from the merged template if absent. */
+	/** Whether `ref` is locked in Job Applicant Profile Settings. */
+	function isLocked(state, ref) {
+		const tpl = (state.rows || []).find((r) => r.reference_name === ref);
+		return !!(tpl && tpl.locked);
+	}
+
+	/**
+	 * The opening's own row for `ref`, created from the merged template if absent.
+	 *
+	 * Returns a throwaway object for a locked field so every caller can go on
+	 * assigning to it without a guard of its own, while nothing reaches the
+	 * document. The controls for such a row are rendered disabled, so this is the
+	 * belt to that braces — and `enforce_locked_fields` on the server is the rule
+	 * neither of them can be.
+	 */
 	function upsertOpeningRow(frm, ref, state) {
+		if (isLocked(state, ref)) return {};
+
 		let docRow = (frm.doc.custom_application_fields || []).find((r) => r.reference_name === ref);
 		if (docRow) return docRow;
 
@@ -112,6 +128,7 @@
 	 * the merged template reads back in preference to the settings placement.
 	 */
 	function moveRows(host, state, frm, refs, dest) {
+		if (!refs.length) return;   // every selected row was locked
 		const result = AFU.applyMove(
 			state.rows || [], refs, dest,
 			(r) => r.section || "General",
@@ -173,7 +190,9 @@
 
 		const sectionRows = rows.filter((r) => (r.section || "General") === active);
 		const bodyHtml = sectionRows.length
-			? sectionRows.map((r, i) => AFU.renderRow(r, i)).join("")
+			// No `lockable`: a lock is a Job Applicant Profile Settings decision, so
+			// a locked field renders here as a frozen row with a padlock badge.
+			? sectionRows.map((r, i) => AFU.renderRow(r, i, { lockable: false })).join("")
 			: `<tr><td colspan="${AFU.TOTAL_COLS}">${AFU.emptyState(__("No fields in this section."))}</td></tr>`;
 
 		host.innerHTML = `
@@ -299,6 +318,7 @@
 		host.querySelectorAll(".apf-delete").forEach((btn) => {
 			btn.addEventListener("click", () => {
 				const ref = btn.getAttribute("data-ref");
+				if (isLocked(state, ref)) return;
 				frappe.confirm(`Remove ${ref}?`, () => {
 					state.rows = state.rows.filter((r) => r.reference_name !== ref);
 					const idx = (frm.doc.custom_application_fields || []).findIndex((r) => r.reference_name === ref);
@@ -316,9 +336,11 @@
 		// and `moveRows` are the only per-page parts: they upsert each change as a
 		// per-opening override.
 		AFU.bindToolbar(host, {
-			moveRows(refs, dest) { moveRows(host, state, frm, refs, dest); },
+			moveRows(refs, dest) {
+				moveRows(host, state, frm, refs.filter((ref) => !isLocked(state, ref)), dest);
+			},
 			applyBulk(col, value, refs) {
-				refs.forEach((ref) => {
+				refs.filter((ref) => !isLocked(state, ref)).forEach((ref) => {
 					const stateRow = state.rows.find((r) => r.reference_name === ref);
 					if (stateRow) stateRow[col] = value;
 					upsertOpeningRow(frm, ref, state)[col] = value;

@@ -47,6 +47,8 @@ import type {
   GoalActionPayload,
   GoalActionResultResponse,
   EmployeesGoalActionPayload,
+  AddTeamGoalCommentPayload,
+  AddTeamGoalCommentResponse,
 } from "../types/goal";
 import FrappeAPI from "../utils/frappeAPI";
 
@@ -391,6 +393,13 @@ export const performanceService = {
       payload as unknown as Record<string, unknown>,
     );
     return throwIfUnsuccessful(response as GoalActionResultResponse);
+  },
+  addTeamGoalComment: async (payload: AddTeamGoalCommentPayload): Promise<AddTeamGoalCommentResponse> => {
+    const response = await FrappeAPI.callMethod(
+      "cn_pms.cn_performance_management.api.team_goal_api.add_goal_comment",
+      payload as unknown as Record<string, unknown>,
+    );
+    return throwIfUnsuccessful(response as AddTeamGoalCommentResponse);
   },
 
 };

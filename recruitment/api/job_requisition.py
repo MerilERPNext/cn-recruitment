@@ -926,6 +926,10 @@ _LAYOUT_TYPES = frozenset({
 _SKIP_FIELDNAMES = frozenset({
     "naming_series", "amended_from", "amendment_date",
     "status", "workflow_state",
+    # Derived mirrors of the Regions / Position Details tables — filled on save,
+    # never entered, so they would only render as empty read-only boxes on the
+    # requisition form.
+    "custom_region", "custom_position_location",
 })
 
 # `applies_to` value (config) → parent Table fieldname on Job Requisition.
@@ -3475,6 +3479,13 @@ _EDIT_AFTER_APPROVAL_IGNORE = {
     # from the stored value without anyone having edited the requisition.
     "custom_active_employees", "custom_active_requisitions", "custom_active_openings",
     "custom_headcount_last_updated",
+    # Parent mirrors of where the requisition hires — the Regions table's region
+    # and the Position Details table's location (see
+    # recruitment.customizations.job_requisition_region). Derived, never typed —
+    # and both tables they are copied from are themselves guarded, so ignoring
+    # them here gives nothing away while letting a pre-existing requisition pick
+    # the values up on its next save.
+    "custom_region", "custom_position_location",
 }
 _LAYOUT_FIELDTYPES = {
     "Section Break", "Column Break", "Tab Break", "HTML", "Button", "Heading", "Fold",
@@ -3708,7 +3719,11 @@ def activate_job_requisition(job_requisition, job_opening):
     # call are held to the requisition/position status matrix too. Imported here
     # rather than at module scope: requisition_status is a sibling API module and
     # a top-level import would couple the two files' load order.
-    from recruitment.api.requisition_status import ACTIVATE, _require_action
+    from recruitment.api.requisition_status import (
+        ACTIVATE,
+        _require_action,
+        mark_requisition_active,
+    )
 
     _require_action(job_requisition, ACTIVATE)
 
@@ -3740,14 +3755,9 @@ def activate_job_requisition(job_requisition, job_opening):
 
     # Activating a requisition opens it up: the requisition becomes Approved
     # Active and every position that was still Draft becomes Open. Positions
-    # already Filled / On Hold / Archived are left as they are.
-    if doc.status != "Approved Active":
-        frappe.db.set_value("Job Requisition", job_requisition, "status", "Approved Active")
-    for row in doc.get("custom_position_summary") or []:
-        if (row.status or "Draft") == "Draft":
-            frappe.db.set_value(
-                "Job Requisition Position", row.name, "status", "Open", update_modified=False
-            )
+    # already Filled / On Hold / Archived are left as they are. Shared with the
+    # Job Opening hook so this action and "Create Job Opening" cannot diverge.
+    mark_requisition_active(job_requisition)
 
     return {
         "job_requisition": job_requisition,

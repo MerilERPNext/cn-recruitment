@@ -16,10 +16,6 @@
   "drive_id",
   "drive_start_date",
   "drive_end_date",
-  "offer_package_section",
-  "fixed_pay",
-  "column_break_offer_package",
-  "variable_pay",
   "campus_invites_section",
   "campus_invites",
   "participating_institutes_section",
@@ -150,34 +146,6 @@
    "fieldtype": "Table",
    "label": "Linked Job Openings",
    "options": "Campus Drive Job Opening"
-  },
-  {
-   "description": "The package agreed for this drive. It prefills every Job Offer raised for its candidates; a negotiated amount already on an offer is never overwritten.",
-   "fieldname": "offer_package_section",
-   "fieldtype": "Section Break",
-   "label": "Offer Package",
-   "permlevel": 1
-  },
-  {
-   "fieldname": "fixed_pay",
-   "fieldtype": "Currency",
-   "label": "Fixed Pay",
-   "non_negative": 1,
-   "permlevel": 1,
-   "reqd": 1
-  },
-  {
-   "fieldname": "column_break_offer_package",
-   "fieldtype": "Column Break",
-   "permlevel": 1
-  },
-  {
-   "fieldname": "variable_pay",
-   "fieldtype": "Currency",
-   "label": "Variable Pay",
-   "non_negative": 1,
-   "permlevel": 1,
-   "reqd": 1
   },
   {
    "fieldname": "candidates_tab",

@@ -930,6 +930,28 @@ def _get_joining_info(eo_doc, applicant_doc):
         doj = applicant_doc.get("custom_date_of_joining")
     days = date_diff(getdate(doj), getdate(nowdate())) if doj else None
 
+    # A Trainee starts twice: the traineeship on this date, the permanent role on
+    # date_of_joining. Read from the onboarding, falling back to the accepted offer
+    # so the date is there before onboarding is materialized (Scenario B, where
+    # eo_doc is None). Stays null for everyone else — a non-null value is the
+    # signal to show it, and it is never filled in from date_of_joining, which
+    # would tell the candidate the two are the same day.
+    if eo_doc is not None:
+        # The onboarding is the authority once it exists: the auto-map fills this at
+        # creation and `fetch_from` keeps it current, so asking the offer as well
+        # would be a query per portal load that can only ever confirm what is here.
+        trainee_doj = eo_doc.get("custom_trainee_doj")
+    elif applicant_doc is not None:
+        trainee_doj = frappe.db.get_value(
+            "Job Offer",
+            {"job_applicant": applicant_doc.name, "status": "Accepted", "docstatus": ("<", 2)},
+            "custom_trainee_doj",
+            order_by="creation desc",
+        )
+    else:
+        trainee_doj = None
+    trainee_days = date_diff(getdate(trainee_doj), getdate(nowdate())) if trainee_doj else None
+
     # Role (Designation) and Department — Employee Onboarding wins, falling back
     # to the Job Applicant (designation / custom_department) when EO is empty.
     role = eo_doc.get("designation") if eo_doc is not None else None
@@ -944,6 +966,10 @@ def _get_joining_info(eo_doc, applicant_doc):
         "boarding_begins_on": bbo,
         "days_to_joining": days,
         "is_set": bool(doj),
+        # Additive: date_of_joining and days_to_joining keep meaning exactly what
+        # they did, so the existing header is unaffected.
+        "trainee_doj": trainee_doj,
+        "days_to_trainee_joining": trainee_days,
         "role": role,
         "role_name": _link_title("Designation", role),
         "department": department,

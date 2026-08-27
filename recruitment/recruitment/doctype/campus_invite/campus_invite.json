@@ -83,10 +83,12 @@
    "label": "Job Openings"
   },
   {
+   "description": "The roles this invite is hiring for. At least one is required \u2014 the invite is what a TPO's candidates apply against, and with no opening on it they have nothing to apply to and the Campus Drive built from it inherits no roles.",
    "fieldname": "job_openings",
    "fieldtype": "Table",
    "label": "Job Openings",
-   "options": "Campus Invite Job Opening"
+   "options": "Campus Invite Job Opening",
+   "reqd": 1
   },
   {
    "description": "Auto-populated (read-only) from the selected Institutes' TPO Contacts. On submit, only the Primary TPO of each institute is given portal access and emailed a login link — the rest are listed for reference.",

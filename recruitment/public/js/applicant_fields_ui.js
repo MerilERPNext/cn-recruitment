@@ -103,6 +103,20 @@ frappe.provide("recruitment.applicant_fields_ui");
 	// offering in the bulk bar. GENERAL / PRE-OFFER RULES hold selects, not switches.
 	AFU.TOGGLE_GROUPS = AFU.COLUMN_GROUPS.filter((g) => g.cols.every((c) => c.type === "toggle"));
 
+	// Lock affordances. Kept next to the other shared styles so both pages get
+	// them from the one stylesheet injectStyles() writes.
+	AFU.LOCK_CSS = `
+		.apf-lock{display:inline-flex;align-items:center;gap:4px;margin-left:8px;font-size:10px;
+			font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--text-muted);cursor:pointer;}
+		.apf-lock input{margin:0;cursor:pointer;}
+		.apf-lock-badge{display:inline-flex;align-items:center;gap:3px;margin-left:8px;padding:1px 6px;
+			border-radius:9px;font-size:10px;font-weight:600;letter-spacing:.03em;
+			background:var(--gray-200,#e6e9ec);color:var(--gray-700,#4a5157);white-space:nowrap;}
+		tr.apf-frozen{background:var(--subtle-fg,rgba(0,0,0,.02));}
+		tr.apf-frozen input:disabled,tr.apf-frozen select:disabled{opacity:.55;cursor:not-allowed;}
+		.apf-grip-off{opacity:.3;cursor:not-allowed;}
+	`;
+
 	AFU.escapeHtml = function (s) {
 		if (s === null || s === undefined) return "";
 		return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
@@ -300,16 +314,22 @@ frappe.provide("recruitment.applicant_fields_ui");
 				width: 100%; border-collapse: separate; border-spacing: 0;
 				font-size: 12px; min-width: 1940px; table-layout: fixed;
 			}
+			/* Both header rows freeze against the top of .apf-scroll: a toggle a
+			   hundred rows down is unreadable once the channel band above it has
+			   scrolled away. The second row parks directly beneath the first —
+			   --apf-group-h is measured by AFU.freezeHeader, the band's height
+			   being font-dependent. The fallback holds until that first measure. */
 			.apf-table thead .apf-group-row th {
 				padding: 9px 4px 6px; text-align: center; font-weight: 700;
 				font-size: 10px; letter-spacing: .07em; color: var(--apf-text-dim);
 				background: var(--apf-bg); border-bottom: 1px solid var(--apf-border-soft);
+				position: sticky; top: 0; z-index: 3;
 			}
 			.apf-table thead .apf-col-row th {
 				padding: 7px 4px; text-align: center; font-weight: 600;
 				font-size: 9.5px; letter-spacing: .05em; color: var(--apf-text-dim);
 				background: var(--apf-bg-head); border-bottom: 1px solid var(--apf-border);
-				white-space: nowrap; position: sticky; top: 0;
+				white-space: nowrap; position: sticky; top: var(--apf-group-h, 46px);
 			}
 			/* The group's accent, carried by its header chip, its column band and
 			   its ON switches — this is what makes a column readable at a glance. */
@@ -442,8 +462,14 @@ frappe.provide("recruitment.applicant_fields_ui");
 			}
 			.apf-child-container[hidden] { display: none; }
 			/* The child's own scroller: its columns scroll here, independently of the
-			   parent, and it is the ancestor the frozen FIELD column sticks to. */
-			.apf-child-scroll { overflow-x: auto; overflow-y: hidden; }
+			   parent, and it is the ancestor BOTH frozen edges stick to — the FIELD
+			   column to its left, the header row to its top.
+			   It has to scroll vertically as well as horizontally: with overflow-y
+			   hidden the panel simply grew as tall as its rows, so a child table with
+			   twenty stages pushed the page itself into scrolling and took its own
+			   header off-screen with it. Capped so the parent grid stays in view
+			   above it. */
+			.apf-child-scroll { overflow: auto; max-height: 320px; }
 			.apf-child-header {
 				background: color-mix(in srgb, var(--apf-g-campus) 12%, transparent); color: var(--apf-g-campus);
 				font-size: 10.5px; font-weight: 700; padding: 7px 12px; letter-spacing: .06em; text-transform: uppercase;
@@ -458,9 +484,14 @@ frappe.provide("recruitment.applicant_fields_ui");
 				border-collapse: separate; border-spacing: 0;
 				font-size: 11.5px; background: var(--apf-bg);
 			}
+			/* Frozen header — the same reasoning as the parent grid's: a toggle far
+			   down a child table is unreadable once its channel column heading has
+			   scrolled away. Sticks to the top of .apf-child-scroll, which is the
+			   panel's own scrollport, so it never travels with the page. */
 			.apf-child-table thead th {
 				padding: 6px 8px; background: var(--apf-bg-head); color: var(--apf-text-dim); font-size: 9.5px;
 				font-weight: 700; text-align: center; border-bottom: 1px solid var(--apf-border); letter-spacing: .05em;
+				position: sticky; top: 0; z-index: 2;
 			}
 			.apf-child-table thead th.apf-child-col-field { text-align: left; }
 			.apf-child-group-header { color: var(--g); letter-spacing: .06em; }
@@ -482,7 +513,12 @@ frappe.provide("recruitment.applicant_fields_ui");
 				position: sticky; left: 0; width: 298px; min-width: 298px;
 				box-shadow: 1px 0 0 var(--apf-border);
 			}
-			.apf-child-table tbody td.apf-child-col-field { background: var(--apf-bg); z-index: 2; }
+			/* Three layers, and the order matters now that the header is sticky too:
+			   scrolling cells (auto) < frozen FIELD cells (1) < header row (2) <
+			   the corner cell where both freezes meet (3). Left at the old 2, the
+			   body's FIELD cells tied with the header row and — coming later in the
+			   DOM — painted straight over it on the first vertical scroll. */
+			.apf-child-table tbody td.apf-child-col-field { background: var(--apf-bg); z-index: 1; }
 			.apf-child-table thead th.apf-child-col-field { background: var(--apf-bg-head); z-index: 3; }
 			.apf-child-table tbody tr:hover td.apf-child-col-field { background: var(--apf-hover); }
 			.apf-child-field-label { color: var(--apf-text); font-weight: 500; font-size: 11.5px; }
@@ -557,7 +593,7 @@ frappe.provide("recruitment.applicant_fields_ui");
 				padding: 8px 10px 2px; border-top: 1px solid var(--apf-border);
 				margin-top: 8px;
 			}
-		`;
+		` + AFU.LOCK_CSS;
 		document.head.appendChild(style);
 	};
 
@@ -584,6 +620,38 @@ frappe.provide("recruitment.applicant_fields_ui");
 				data-col="${col}" ${checked ? "checked" : ""}/>
 			<span class="apf-toggle-slider"></span>
 		</label>`;
+	};
+
+	/**
+	 * Park the VIEW / MANDATORY header row directly under the channel band.
+	 *
+	 * Both rows are `position: sticky`, but the second needs to know how tall the
+	 * first is to stop in the right place, and CSS has no way to ask. The band
+	 * carries a pill label plus (for toggle groups) a count line, so its height
+	 * moves with the font — a hardcoded offset shows up either as a seam of
+	 * scrolling rows between the two, or as the second row covering the first.
+	 */
+	AFU.freezeHeader = function (host) {
+		const table = host && host.querySelector(".apf-table");
+		const band = table && table.querySelector("thead .apf-group-row");
+		if (!band) return;
+
+		// Re-rendered on every section switch: without this each render leaves
+		// another live observer measuring a table no longer on the page.
+		if (host._apfHeaderRO) host._apfHeaderRO.disconnect();
+
+		const apply = () => {
+			const h = Math.round(band.getBoundingClientRect().height);
+			// 0 while the tab is hidden (Job Opening mounts this behind one) — keep
+			// the CSS fallback; the observer re-measures on reveal.
+			if (h) table.style.setProperty("--apf-group-h", h + "px");
+		};
+
+		apply();
+		if (window.ResizeObserver) {
+			host._apfHeaderRO = new ResizeObserver(apply);
+			host._apfHeaderRO.observe(band);
+		}
 	};
 
 	/**
@@ -621,6 +689,66 @@ frappe.provide("recruitment.applicant_fields_ui");
 			panel.hidden = true;
 			dock.appendChild(panel);
 		});
+
+		// Every panel is closed on a fresh render, so the grid gets its full height
+		// back — otherwise a section switched away from while a panel was open would
+		// hand its shortened pane to the next section.
+		AFU.anchorDock(host);
+	};
+
+	/* The grid never collapses below this while a panel is anchored to a row near
+	   the top — a 100px sliver of table reads as broken, and the two frozen header
+	   rows would take most of it. */
+	AFU.DOCK_MIN_H = 200;
+
+	/**
+	 * End the grid just below the row whose panel is open.
+	 *
+	 * The panel is docked beneath the whole scroller (see dockChildPanels), which is
+	 * what keeps its FIELD column frozen — but it also meant a table field sitting
+	 * eighth in a section of twenty opened its config below all twenty, with no
+	 * visible connection to the row that owns it.
+	 *
+	 * Rather than move the panel back inside the horizontal scrollport, the grid is
+	 * ended where the panel should start: the pane is capped so the owning row is its
+	 * last visible row, and scrolled so that row sits against the bottom edge. The
+	 * panel then reads as belonging to the row directly above it, wherever in the
+	 * section that row happens to be, and the rows below stay reachable by scrolling
+	 * the (now shorter) pane.
+	 *
+	 * Reads its state from the DOM rather than taking arguments, so every caller —
+	 * the expand toggle, a re-render, the search filter — can just call it and get
+	 * the right answer, including "nothing is open, put the grid back".
+	 */
+	AFU.anchorDock = function (host) {
+		const pane = host && host.querySelector(".apf-scroll");
+		if (!pane) return;
+
+		const panel = host.querySelector(".apf-child-dock > .apf-child-container:not([hidden])");
+		const ref = panel && panel.getAttribute("data-parent-ref");
+		const childRow = ref && host.querySelector(`.apf-child-row[data-parent-ref="${ref}"]`);
+		// The marker row is display:none, so it has no box to measure — the field row
+		// that owns it is the one immediately before it (see renderRow).
+		const fieldRow = childRow && childRow.previousElementSibling;
+
+		// Nothing open, or nothing measurable: the grid goes back to its full height.
+		if (!fieldRow) {
+			pane.style.maxHeight = "";
+			return;
+		}
+
+		pane.style.maxHeight = "";                       // measure at natural height
+		const full = pane.clientHeight;
+		const rowBottom = Math.round(
+			fieldRow.getBoundingClientRect().bottom
+			- pane.getBoundingClientRect().top
+			+ pane.scrollTop
+		);
+		if (!full || rowBottom <= 0) return;             // hidden tab: leave it alone
+
+		const height = Math.max(AFU.DOCK_MIN_H, Math.min(full, rowBottom));
+		pane.style.maxHeight = height + "px";
+		pane.scrollTop = Math.max(0, rowBottom - height);
 	};
 
 	/**
@@ -646,10 +774,12 @@ frappe.provide("recruitment.applicant_fields_ui");
 			host.querySelectorAll(".apf-child-dock > .apf-child-container").forEach((p) => {
 				p.hidden = p !== panel || !open;
 			});
+			// ...and end the grid just above whichever one is now showing.
+			AFU.anchorDock(host);
 		});
 	};
 
-	AFU.renderChildConfigRow = function (row) {
+	AFU.renderChildConfigRow = function (row, frozen) {
 		const ref = row.reference_name || "";
 		let config = {};
 		try { config = JSON.parse(row.child_field_config || "{}"); } catch (e) { /* ignore */ }
@@ -662,9 +792,10 @@ frappe.provide("recruitment.applicant_fields_ui");
 						<div class="apf-child-field-label">${esc(cfc.label || cfn)}</div>
 						<div class="apf-child-field-ref">${esc(cfn)}</div>
 					</td>
-					${AFU.CHILD_CHANNEL_GROUPS.map((g) => g.cols.map((c) =>
-						`<td>${AFU.renderChildToggle(ref, cfn, c.col, cfc[c.col], g.cls)}</td>`
-					).join("")).join("")}
+					${AFU.CHILD_CHANNEL_GROUPS.map((g) => g.cols.map((c) => {
+						const t = AFU.renderChildToggle(ref, cfn, c.col, cfc[c.col], g.cls);
+						return `<td>${frozen ? t.replace("<input ", "<input disabled ") : t}</td>`;
+					}).join("")).join("")}
 				</tr>`
 			).join("")
 			: `<tr><td colspan="${AFU.CHILD_TOTAL_COLS}" class="apf-child-empty">No configurable child fields.</td></tr>`;
@@ -702,9 +833,25 @@ frappe.provide("recruitment.applicant_fields_ui");
 	};
 
 	// ----------------------------------------------------------------- rows --
-	AFU.renderRow = function (row, idx) {
+	/**
+	 * One field's row.
+	 *
+	 * `opts.lockable` — whether this page may CHANGE the lock. Only Job Applicant
+	 * Profile Settings may; the Job Opening shows the padlock as a static badge.
+	 *
+	 * A locked row renders every control disabled, so the change handlers both
+	 * pages bind simply never fire on it. That is presentation only: the rule
+	 * itself is `enforce_locked_fields` on Job Opening.validate, because a
+	 * disabled input stops a mistake, not an API call.
+	 */
+	AFU.renderRow = function (row, idx, opts) {
+		opts = opts || {};
 		const ref = row.reference_name || "";
 		const isTable = row.fieldtype === "Table" || row.fieldtype === "Table MultiSelect";
+		// Frozen only where the lock cannot be lifted — on the settings page the
+		// admin has to be able to untick it, so the row stays live there.
+		const frozen = !!row.locked && !opts.lockable;
+		const dis = frozen ? " disabled" : "";
 		const groupCells = AFU.COLUMN_GROUPS.map((g) => g.cols.map((c, ci) => {
 			const cls = [
 				c.type === "toggle" ? "apf-col-toggle" : "apf-col-select",
@@ -715,28 +862,42 @@ frappe.provide("recruitment.applicant_fields_ui");
 				// A MANDATORY switch is only meaningful while its channel's VIEW is on.
 				const viewCol = g.cols[0].col;
 				const conflict = c.col !== viewCol && row[c.col] && !row[viewCol];
-				const toggle = AFU.renderToggle(ref, c.col, row[c.col], g.cls);
-				return `<td class="${cls}">${
-					conflict ? toggle.replace("apf-toggle ", "apf-toggle apf-conflict ") : toggle
-				}</td>`;
+				let toggle = AFU.renderToggle(ref, c.col, row[c.col], g.cls);
+				if (conflict) toggle = toggle.replace("apf-toggle ", "apf-toggle apf-conflict ");
+				if (frozen) toggle = toggle.replace("<input ", "<input disabled ");
+				return `<td class="${cls}">${toggle}</td>`;
 			}
-			return `<td class="${cls}">${AFU.renderSelect(ref, c.col, row[c.col] || c.options[0], c.options)}</td>`;
+			const select = AFU.renderSelect(ref, c.col, row[c.col] || c.options[0], c.options);
+			return `<td class="${cls}">${frozen ? select.replace("<select ", "<select disabled ") : select}</td>`;
 		}).join("")).join("");
 
 		const tableBadge = isTable ? `<span class="apf-table-badge">TABLE</span>` : "";
+
+		// The lock itself: a live checkbox on the settings page, a padlock badge on
+		// the Job Opening. Same `data-col` either way, so the settings page needs no
+		// handler of its own — the existing [data-ref][data-col] binding picks it up.
+		const lockCell = opts.lockable
+			? `<label class="apf-lock" title="${__("Lock this field — every Job Opening shows it read-only")}">
+					<input type="checkbox" data-ref="${esc(ref)}" data-col="locked"${row.locked ? " checked" : ""}/>
+					<span>${__("Lock")}</span>
+				</label>`
+			: (row.locked
+				? `<span class="apf-lock-badge" title="${__("Locked in Job Applicant Profile Settings — configure it there")}">🔒 ${__("Locked")}</span>`
+				: "");
 		const expandBtn = isTable
 			? `<button class="apf-expand" data-ref="${esc(ref)}" title="Configure child table fields">▶ Child Fields</button>`
 			: "";
 
 		const mainRow = `
-			<tr data-ref="${esc(ref)}" data-search="${esc(
+			<tr data-ref="${esc(ref)}" class="${frozen ? "apf-frozen" : ""}" data-search="${esc(
 				`${row.display_name || ""} ${ref}`.toLowerCase()
 			)}">
-				<td class="apf-col-check"><input type="checkbox" class="apf-row-check" data-ref="${esc(ref)}"/></td>
+				<td class="apf-col-check"><input type="checkbox" class="apf-row-check" data-ref="${esc(ref)}"${dis}/></td>
 				<td class="apf-col-no apf-no">
 					<div class="apf-no-cell">
-						<span class="apf-grip" draggable="true" data-ref="${esc(ref)}"
-							title="${__("Drag to reposition · click to move to another section")}">⠿</span>
+						${frozen ? `<span class="apf-grip apf-grip-off" title="${__("Locked — placement is set in Job Applicant Profile Settings")}">⠿</span>`
+							: `<span class="apf-grip" draggable="true" data-ref="${esc(ref)}"
+							title="${__("Drag to reposition · click to move to another section")}">⠿</span>`}
 						<span class="apf-no-num">${idx + 1}</span>
 					</div>
 				</td>
@@ -745,17 +906,19 @@ frappe.provide("recruitment.applicant_fields_ui");
 						<input class="apf-label-input" type="text"
 							data-ref="${esc(ref)}"
 							value="${esc(row.display_name || ref)}"
-							title="Click to edit label"/>
+							title="Click to edit label"${dis}/>
 						${tableBadge}
+						${lockCell}
 					</div>
 					<div class="apf-ref">${esc(ref)}</div>
 					${expandBtn}
 				</td>
 				${groupCells}
-				<td class="apf-col-actions"><button class="apf-delete" data-ref="${esc(ref)}" title="Remove">×</button></td>
+				<td class="apf-col-actions">${frozen ? ""
+					: `<button class="apf-delete" data-ref="${esc(ref)}" title="Remove">×</button>`}</td>
 			</tr>`;
 
-		return mainRow + (isTable ? AFU.renderChildConfigRow(row) : "");
+		return mainRow + (isTable ? AFU.renderChildConfigRow(row, frozen) : "");
 	};
 
 	// --------------------------------------------------------------- header --
@@ -1057,6 +1220,9 @@ frappe.provide("recruitment.applicant_fields_ui");
 	AFU.bindToolbar = function (host, opts) {
 		AFU.dockChildPanels(host);
 		AFU.bindChildDock(host);
+		// After the docking moves, so the band is measured once against a settled
+		// DOM rather than being read and then invalidated.
+		AFU.freezeHeader(host);
 
 		const search = host.querySelector(".apf-search");
 		const bulk = host.querySelector(".apf-bulk");
@@ -1095,6 +1261,9 @@ frappe.provide("recruitment.applicant_fields_ui");
 				if (panel && !hit) panel.hidden = true;
 				if (hit) shown += 1;
 			});
+			// A filter that hid the open panel's own row leaves the grid capped just
+			// below a row that is no longer there — re-anchor against what's left.
+			AFU.anchorDock(host);
 			const showing = host.querySelector(".apf-showing");
 			if (showing) {
 				const total = mainRows().length;

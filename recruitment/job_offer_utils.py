@@ -8,6 +8,11 @@ from frappe.utils import cint
 from frappe.utils import escape_html, formatdate, now_datetime, time_diff_in_hours, flt, fmt_money
 
 from recruitment.recruitment.link_token import OFFER_SCOPE, offer_token, require_token
+from recruitment.recruitment.offer_document_template import (
+    get_offer_document_template,
+    is_document_template_offer_enabled,
+    template_unavailable_html,
+)
 from recruitment.recruitment.utils import as_administrator
 
 
@@ -176,18 +181,37 @@ def get_job_offer_document_template(job_offer=None):
 
     Returns a Document Template name ONLY when the master toggle
     ``send_offer_via_document_template`` is ON in Recruitment Settings and a
-    template is configured. Selection mirrors ``get_job_offer_print_format``:
-    the template mapped to the applicant's Employment Type
-    (``job_offer_document_template_mapping``) wins, otherwise the single
-    ``job_offer_document_template`` default is used.
+    template admits this offer.
 
-    Returns None whenever the toggle is off or nothing is configured, so every
-    caller cleanly falls back to the existing Print Format path. Never raises —
-    any unexpected error degrades to None (Print Format path).
+    Selection is *attribute-driven* and lives on the Document Template itself —
+    its Company, or the attributes on the Dynamic User Assignments in its User
+    Assignment table. See :mod:`recruitment.recruitment.offer_document_template`
+    for the full contract. The old Recruitment Settings pair (a single default
+    plus a per-Employment-Type mapping table) is gone: an Employment Type is now
+    just one attribute among the many a template can be scoped by.
+
+    Returns None when the toggle is off, or when nothing admits this offer. The
+    second case is deliberate and is **not** a fallback to the Print Format path
+    for the offer letter — the callers that show or send a letter surface
+    ``no_template_message()`` instead, and ``validate_offer_document_template``
+    blocks the send at submit. Never raises.
 
     ``job_offer`` may be a Job Offer name (str) or a Job Offer doc.
     """
-    # A template explicitly picked on the Job Offer form wins over everything.
+    # The toggle is checked FIRST, before anything else, and it is the only gate
+    # that matters: off means this whole path does not exist and every caller
+    # renders from a Print Format exactly as it did before the feature shipped.
+    #
+    # It used to be checked *after* the hand-picked template below, which let a
+    # value on one Job Offer form switch that offer onto the Document Template
+    # path while the site-wide toggle said Print Format. That is not what the
+    # toggle reads as, so the order is now the other way round.
+    if not is_document_template_offer_enabled():
+        return None
+
+    # With the path on, a template picked by hand on the form wins over the
+    # attribute match: the picker already offered only templates that admit this
+    # offer, so a value there is HR choosing between them on purpose.
     try:
         if job_offer:
             picked = (
@@ -201,30 +225,12 @@ def get_job_offer_document_template(job_offer=None):
         pass
 
     try:
-        settings = frappe.get_cached_doc("Recruitment Settings")
+        return get_offer_document_template(job_offer)
     except Exception:
+        frappe.log_error(
+            frappe.get_traceback(), "Job Offer Document Template: resolution failed"
+        )
         return None
-
-    if not settings or not settings.get("send_offer_via_document_template"):
-        return None
-
-    default_tmpl = settings.get("job_offer_document_template") or None
-
-    if not job_offer:
-        return default_tmpl
-
-    try:
-        employment_type = _resolve_offer_employment_type(job_offer)
-        if not employment_type:
-            return default_tmpl
-
-        for row in (settings.get("job_offer_document_template_mapping") or []):
-            if row.employment_type == employment_type and row.document_template:
-                return row.document_template
-    except Exception:
-        pass
-
-    return default_tmpl
 
 
 def render_job_offer_via_document_template(job_offer, template_name):
@@ -578,6 +584,10 @@ def preview_job_offer_html(appl, token=None):
                     f'border:1px solid #ddd;" title="Offer Letter"></iframe>'
                 )
                 return {"html": html, "jo_id": jo_id}
+        elif is_document_template_offer_enabled():
+            # Same call as the desk preview: no template admits this offer, so
+            # there is no letter to show the candidate either.
+            return {"html": template_unavailable_html(), "jo_id": jo_id, "available": False}
 
         formats = get_job_offer_print_formats(jo_id)
 
@@ -692,6 +702,12 @@ def get_job_offer_summary(appl, token=None):
 
         duration = jo.get("custom_duration")
         expected_doj = jo.get("custom_expected_doj")
+        # A Trainee is sent two letters that start on different days: the traineeship
+        # begins on this date, the permanent role on Expected DOJ. Only Trainee offers
+        # carry it, so it stays None everywhere else rather than repeating the other
+        # date and implying the two are the same
+        # (recruitment.patches.add_trainee_joining_date).
+        trainee_doj = jo.get("custom_trainee_doj")
         stipend = jo.get("custom_stipend")
         expiry_date = jo.get("custom_jo_expiry_date")
 
@@ -715,7 +731,7 @@ def get_job_offer_summary(appl, token=None):
         # Resolve the Designation link to its title (falls back to the id).
         designation_name = None
         if jo.designation:
-            designation_name = frappe.db.get_value("Designation", jo.designation, "custom_designation_title") or jo.designation
+            designation_name = frappe.get_cached_value("Designation", jo.designation, "custom_designation_title") or jo.designation
 
         # --- Compensation: dynamic by Employment Type -----------------------
         # Employment Type (custom_employment_type -> Employment Type Link) is read
@@ -727,7 +743,7 @@ def get_job_offer_summary(appl, token=None):
         employment_type = None
         et_id = _resolve_offer_employment_type(jo)
         if et_id:
-            employment_type = frappe.db.get_value("Employment Type", et_id, "employee_type_name") or et_id
+            employment_type = frappe.get_cached_value("Employment Type", et_id, "employee_type_name") or et_id
 
         is_intern = (employment_type or "").strip().lower() == "intern"
 
@@ -816,6 +832,9 @@ def get_job_offer_summary(appl, token=None):
             "designation": designation_name or "Intern",
             "duration_display": duration_display,
             "expected_doj_display": formatdate(expected_doj) if expected_doj else None,
+            # Always present, null when the offer has no traineeship date, so the
+            # response shape does not change between offers.
+            "trainee_doj_display": formatdate(trainee_doj) if trainee_doj else None,
             "expiry_display": expiry_display,
             "employment_type": employment_type,
             **compensation,
@@ -866,7 +885,33 @@ def get_offer_template_raw_html(template=None, job_offer=None):
     if not template and job_offer:
         template = get_job_offer_document_template(job_offer)
     if not template:
-        return {"html": "<div style='padding:32px;text-align:center;color:#888;'>No offer letter template selected. Pick one in <b>Offer Letter Template</b>, or configure a default in Recruitment Settings.</div>"}
+        # With the Document Template path switched on, "nothing resolved" means no
+        # template's assignment admits this offer — a configuration gap HR has to
+        # close, not something the recruiter can fix on the form. Say so in the
+        # same words every other surface uses. Off, the old hint still applies:
+        # the letter comes from a Print Format and the picker is optional.
+        if is_document_template_offer_enabled():
+            return {"html": template_unavailable_html(), "available": False}
+        # The path is switched off site-wide, so this tab has nothing to show and
+        # the Offer Letter Template field is inert — the letter comes from a Print
+        # Format, which the Preview tab beside this one renders. Say which of the
+        # two is in force rather than implying a template is missing.
+        return {
+            "html": (
+                "<div style='padding:40px 32px;text-align:center;color:#8d99a6;"
+                "font-size:13px;line-height:1.7;'>"
+                + frappe.utils.escape_html(
+                    _("Job Offers are rendered from a Print Format on this site.")
+                )
+                + "<br>"
+                + frappe.utils.escape_html(
+                    _("Turn on 'Send Job Offer via Document Template' in Recruitment "
+                      "Settings to use offer letter templates.")
+                )
+                + "</div>"
+            ),
+            "enabled": False,
+        }
     try:
         tdoc = frappe.get_doc("Document Template", template)
         if not tdoc.template_file:
@@ -893,9 +938,13 @@ def get_offer_template_raw_html(template=None, job_offer=None):
 @frappe.whitelist()
 def get_offer_letter_preview_html(job_offer):
     """Offer letter rendered with THIS Job Offer's data — for the 'Preview' tab.
-    Uses the resolved Document Template (embedded PDF) or the Print Format.
+
+    Uses the resolved Document Template (embedded PDF), or the Print Format when
+    the Document Template path is switched off. With it ON and no template
+    admitting this offer there is no preview at all — see the branch below.
     """
     frappe.has_permission("Job Offer", "read", doc=job_offer, throw=True)
+
     template_name = get_job_offer_document_template(job_offer)
     if template_name:
         pdf_bytes, _fn = render_job_offer_via_document_template(job_offer, template_name)
@@ -906,6 +955,13 @@ def get_offer_letter_preview_html(job_offer):
                 "html": f'<iframe src="{data_uri}" style="width:100%;height:78vh;border:1px solid #e0e0e0;border-radius:6px;" title="Offer Letter Preview"></iframe>',
                 "source": "template",
             }
+    elif is_document_template_offer_enabled():
+        # The letter is meant to come from a Document Template and none admits
+        # this offer. Falling through to a Print Format here would show a letter
+        # the candidate will never be sent, which is worse than showing nothing —
+        # so the preview is withheld and the gap is named instead. The send is
+        # blocked at submit by validate_offer_document_template.
+        return {"html": template_unavailable_html(), "source": "unavailable", "available": False}
     # Fall back to the Print Format preview.  An Employment Type mapped to several
     # letters gets one pane per letter rather than a single merged document: a
     # Management Trainee is sent the trainee letter AND the permanent offer letter

@@ -74,8 +74,9 @@ def get_opening_stages(job_opening):
 			"parentfield": STAGES_FIELD,
 		},
 		fields=[
-			"stage_name", "stage_type", "sla", "sla_unit",
-			"owner_role", "notify", "auto", "notes", "idx",
+			"stage_name", "stage_type", "is_mandatory",
+			"interviewer_pool", "interviewer_role",
+			"sla", "sla_unit", "owner_role", "notify", "auto", "notes", "idx",
 		],
 		order_by="idx asc",
 	)
@@ -87,6 +88,11 @@ def get_opening_stages(job_opening):
 def _terminal_stage(name, stage_type, idx):
 	return {
 		"stage_name": name, "stage_type": stage_type,
+		# The virtual offer stages are part of every workflow and are never
+		# configured, so nothing marks them mandatory; the key is present so
+		# callers can read it off any stage without a default.
+		"is_mandatory": 0,
+		"interviewer_pool": None, "interviewer_role": None,
 		"sla": 0, "sla_unit": "d", "owner_role": "HR",
 		"notify": 0, "auto": 0, "notes": "", "idx": idx,
 	}
@@ -138,8 +144,9 @@ def get_openings_stages(job_openings):
 			"parentfield": STAGES_FIELD,
 		},
 		fields=[
-			"parent", "stage_name", "stage_type", "sla", "sla_unit",
-			"owner_role", "notify", "auto", "notes", "idx",
+			"parent", "stage_name", "stage_type", "is_mandatory",
+			"interviewer_pool", "interviewer_role",
+			"sla", "sla_unit", "owner_role", "notify", "auto", "notes", "idx",
 		],
 		order_by="parent asc, idx asc",
 	)
@@ -185,6 +192,48 @@ def _find_stage(stages, stage_name):
 		if (s.get("stage_name") or "") == (stage_name or ""):
 			return i
 	return -1
+
+
+# --------------------------------------------------------------------------- #
+# Mandatory stages
+# --------------------------------------------------------------------------- #
+# A round ticked "Mandatory" on the TA Interview Strategy Template (or one whose
+# "Allow skipping" is No) becomes a stage nobody may step around: it can be
+# cleared or it can be rejected, but it cannot be marked Not Required and the
+# candidate cannot be jumped past it. The rule lives here rather than in the UI
+# because both skip paths are whitelisted endpoints — hiding a button only hides
+# the button.
+def _is_mandatory(stage):
+	return bool((stage or {}).get("is_mandatory"))
+
+
+def _assert_skippable(stage):
+	"""Refuse to skip a stage the workflow marks mandatory."""
+	if not _is_mandatory(stage):
+		return
+	frappe.throw(
+		_("<b>{0}</b> is a mandatory stage — it can't be marked Not Required. "
+		  "Complete it or reject the candidate.").format(stage.get("stage_name") or "")
+	)
+
+
+def _assert_no_mandatory_skipped(stages, from_idx, to_idx):
+	"""Refuse a jump that would step over a mandatory stage.
+
+	``from_idx`` is where the candidate stands (its own stage counts as completed
+	by the move, exactly as ``move_to_next_stage`` treats it); everything strictly
+	between it and ``to_idx`` would be left with no outcome at all.
+	"""
+	skipped = [
+		s.get("stage_name") for s in stages[from_idx + 1:to_idx] if _is_mandatory(s)
+	]
+	if not skipped:
+		return
+	frappe.throw(
+		_("This move would skip the mandatory stage(s) {0}. Complete them in order first.").format(
+			", ".join(frappe.bold(n or "") for n in skipped)
+		)
+	)
 
 
 # --------------------------------------------------------------------------- #
@@ -430,6 +479,8 @@ def set_stage(job_applicant, stage_name):
 	if idx <= cur_idx:
 		frappe.throw(_("The hiring workflow moves forward only — you can't return to a completed or the current stage."))
 
+	_assert_no_mandatory_skipped(stages, cur_idx, idx)
+
 	_enter_stage(doc, stages[idx], result="Set")
 	return {"current_stage": stage_name}
 
@@ -613,9 +664,28 @@ def prepare_interview(job_applicant, stage_name=None):
 	return {
 		"job_applicant": doc.name,
 		"interview_round": interview_round,
+		# Named, not assumed: v15 links the round through `interview_round`, v16
+		# through `interview_type`. The client sets whichever this site has.
+		"interview_round_field": get_interview_round_field() or "interview_round",
 		"designation": doc.get("designation"),
 		"job_opening": doc.get("job_title"),
+		"interviewers": stage_interviewers(stage),
 	}
+
+
+def stage_interviewers(stage):
+	"""The panel a stage's interviews are scheduled with — never raises.
+
+	An unresolvable panel must not stop anybody scheduling an interview; an empty
+	list simply means the recruiter picks, which is the pre-feature behaviour.
+	"""
+	try:
+		from recruitment.recruitment.interview_panel import interviewers_for_stage
+
+		return interviewers_for_stage(stage)
+	except Exception:
+		frappe.log_error(frappe.get_traceback(), "Hiring Workflow: interviewer panel resolution failed")
+		return []
 
 
 # --------------------------------------------------------------------------- #
@@ -867,13 +937,36 @@ def complete_review(job_applicant, action, comment=None, tags=None):
 # --------------------------------------------------------------------------- #
 # Interview completion ("Mark as Completed" → Interview Feedback)
 # --------------------------------------------------------------------------- #
+def _find_stage_interview(job_applicant, round_name):
+	"""The live Interview scheduled for ``round_name``, or None.
+
+	Resolved, not named: v16 dropped ``interview_round`` for ``interview_type``,
+	and the old column survives the upgrade — so filtering on the literal matched
+	nothing there and a fresh interview was created on every click.
+	"""
+	round_field = get_interview_round_field()
+	return frappe.db.get_value(
+		"Interview",
+		{"job_applicant": job_applicant, **({round_field: round_name} if round_field else {}),
+		 "docstatus": ["<", 2]},
+		"name",
+	)
+
+
 @frappe.whitelist()
 def complete_interview(job_applicant, rating, comments=None, assessment=None, stage_name=None):
-	"""Create (and submit) an Interview Feedback for the candidate's current (or
-	given) Interview stage, then let the auto-advance hook move them on.
+	"""Submit an Interview Feedback for the candidate's current (or given)
+	Interview stage, then let the auto-advance hook move them on.
 
 	``assessment`` is "Candidate Selected" (→ Cleared → advance) or
 	"Candidate Rejected" (→ Rejected → reject). ``rating`` is 1–5.
+
+	**An Interview must already exist for the stage.** This used to create one on
+	the spot, which meant "Mark as Completed" quietly manufactured an interview
+	that was never scheduled, never had real interviewers on it and never
+	happened — feedback filed against a record invented one second earlier. The
+	stage is completed against the interview that was actually held, or not at all:
+	schedule it first.
 	"""
 	_require_applicant_write(job_applicant)
 	doc = frappe.get_doc("Job Applicant", job_applicant)
@@ -885,35 +978,14 @@ def complete_interview(job_applicant, rating, comments=None, assessment=None, st
 	stage = stages[idx]
 	round_name = _ensure_interview_round(stage.get("stage_name"), doc.get("designation"))
 
-	# Reuse an interview scheduled for this stage, else create one now.
-	# Resolved, not named: v16 dropped `interview_round` for `interview_type`, and
-	# the old column survives the upgrade — so filtering on the literal matched
-	# nothing there and a fresh interview was created on every click.
-	round_field = get_interview_round_field()
-	interview = frappe.db.get_value(
-		"Interview",
-		{"job_applicant": doc.name, **({round_field: round_name} if round_field else {}),
-		 "docstatus": ["<", 2]},
-		"name",
-	)
+	interview = _find_stage_interview(doc.name, round_name)
 	if not interview:
-		iv = frappe.new_doc("Interview")
-		iv.job_applicant = doc.name
-		if round_field:
-			iv.set(round_field, round_name)
-		iv.job_opening = doc.get("job_title")
-		if doc.get("designation"):
-			iv.designation = doc.get("designation")
-		iv.scheduled_on = today()
-		# At least one interviewer is mandatory (the feedback's on_submit re-saves
-		# the Interview, re-running validation) — use the acting HR user.
-		iv.append("interview_details", {"interviewer": frappe.session.user})
-		iv.flags.ignore_mandatory = True
-		# Rounds are shared by stage name across designations; skip HRMS's
-		# round↔designation validation so completing feedback never gets blocked.
-		iv.flags.ignore_validate = True
-		iv.insert(ignore_permissions=True)
-		interview = iv.name
+		frappe.throw(
+			_("No interview has been scheduled for <b>{0}</b> yet. "
+			  "Schedule the interview before marking this stage as completed.").format(
+				stage.get("stage_name") or ""
+			)
+		)
 
 	cleared = (assessment or "") == "Candidate Selected"
 	result = "Cleared" if cleared else "Rejected"
@@ -956,10 +1028,14 @@ def _stage_or_throw(doc, stage_name):
 @frappe.whitelist()
 def mark_stage_not_required(job_applicant, stage_name=None, comment=None):
 	"""Skip the current (or given) stage — record 'Not Required' (with the HR's
-	comment) and advance to the next stage without any action."""
+	comment) and advance to the next stage without any action.
+
+	Refused for a stage the workflow marks mandatory; see :func:`_assert_skippable`.
+	"""
 	_require_applicant_write(job_applicant)
 	doc = frappe.get_doc("Job Applicant", job_applicant)
 	stages, idx = _stage_or_throw(doc, stage_name)
+	_assert_skippable(stages[idx])
 	_append_history(doc, stages[idx], "Not Required", notes=comment)
 	if comment:
 		try:
@@ -987,16 +1063,8 @@ def send_interview_feedback_form(job_applicant, stage_name=None):
 	stage = stages[idx]
 	round_name = _ensure_interview_round(stage.get("stage_name"), doc.get("designation"))
 
-	# Resolved, not named: v16 dropped `interview_round` for `interview_type`, and
-	# the old column survives the upgrade — so filtering on the literal matched
-	# nothing there and a fresh interview was created on every click.
 	round_field = get_interview_round_field()
-	interview = frappe.db.get_value(
-		"Interview",
-		{"job_applicant": doc.name, **({round_field: round_name} if round_field else {}),
-		 "docstatus": ["<", 2]},
-		"name",
-	)
+	interview = _find_stage_interview(doc.name, round_name)
 	if not interview:
 		iv = frappe.new_doc("Interview")
 		iv.job_applicant = doc.name
@@ -1004,7 +1072,13 @@ def send_interview_feedback_form(job_applicant, stage_name=None):
 			iv.set(round_field, round_name)
 		iv.job_opening = doc.get("job_title")
 		iv.scheduled_on = today()
-		iv.append("interview_details", {"interviewer": frappe.session.user})
+		# The stage's configured panel, falling back to the acting user: at least
+		# one interviewer is mandatory (the feedback's on_submit re-saves the
+		# Interview, re-running validation), and this endpoint exists to mail
+		# them — an interview created here with nobody on it could not be sent.
+		panel = stage_interviewers(stage) or [frappe.session.user]
+		for interviewer in panel:
+			iv.append("interview_details", {"interviewer": interviewer})
 		iv.flags.ignore_mandatory = True
 		iv.flags.ignore_validate = True
 		iv.insert(ignore_permissions=True)
@@ -1080,7 +1154,10 @@ def get_workflow_view(job_applicant):
 	round_field = get_interview_round_field()
 	for iv in frappe.get_all(
 		"Interview",
-		filters={"job_applicant": doc.name},
+		# `docstatus < 2` so a cancelled interview does not make a stage look
+		# completable — complete_interview ignores those, and the flow's
+		# "Mark as Completed" button is enabled off exactly this list.
+		filters={"job_applicant": doc.name, "docstatus": ["<", 2]},
 		fields=["name", "scheduled_on", "status", "average_rating"]
 		       + ([round_field] if round_field else []),
 		order_by="scheduled_on asc, creation asc",
@@ -1100,6 +1177,7 @@ def get_workflow_view(job_applicant):
 		out_stages.append({
 			"stage_name": s.get("stage_name"),
 			"stage_type": s.get("stage_type"),
+			"is_mandatory": 1 if _is_mandatory(s) else 0,
 			"state": state,
 			"entered_on": info.get("entered_on"),
 			"result": info.get("result"),

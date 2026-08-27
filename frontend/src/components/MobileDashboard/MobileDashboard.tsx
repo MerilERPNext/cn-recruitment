@@ -141,7 +141,7 @@ const MobileDashboard: React.FC = () => {
       CompanyLogo.length > 0 &&
       currentEmployeeCompany
       ? CompanyLogo.find(
-        (company) => company.company_name === currentEmployeeCompany,
+        (company) => company.name === currentEmployeeCompany,
       )
       : CompanyLogo?.[0];
 
