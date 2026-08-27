@@ -13,7 +13,7 @@ export const TEAM_TABLE_COLUMN_WIDTHS = [
   "minmax(130px, 1fr)",
   "minmax(140px, 1fr)",
   "minmax(140px, 1fr)",
-  "minmax(130px, 0.9fr)",
+  // "minmax(130px, 0.9fr)",
 ];
 
 const getProgressColor = (progress: number) => {
@@ -182,9 +182,9 @@ export const TeamMemberItem = memo(({ item: m }: { item: TeamMemberItemType }) =
               </Typography>
             )}
           </div>
-          <div className="w-28 shrink-0">
+          {/* <div className="w-28 shrink-0">
             <ActionButton actions={m.actions} />
-          </div>
+          </div> */}
         </div>
       </article>
     );
@@ -255,11 +255,11 @@ export const TeamMemberItem = memo(({ item: m }: { item: TeamMemberItemType }) =
           </Typography>
         )}
       </div>
-      <div className="whitespace-nowrap text-center">
+      {/* <div className="whitespace-nowrap text-center">
         <div className="flex justify-center">
           <ActionButton actions={m.actions} />
         </div>
-      </div>
+      </div> */}
     </div>
   );
 });
