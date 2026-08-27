@@ -6,7 +6,7 @@ import { useEffect, useRef, useState } from "react";
  * Dynamically loads the todo manager bundle before rendering
  *
  * Cache-busting strategy (post-deployment fix):
- *  - The bundle URL lookup carries a timestamp query param so the browser
+ *  - assets.json is fetched with a timestamp query param so the browser
  *    never serves a stale mapping to a deleted bundle hash.
  *  - CSS stylesheets injected into the shadow DOM carry the same version
  *    stamp to avoid mismatched styles after a deploy.
@@ -23,12 +23,12 @@ import { useEffect, useRef, useState } from "react";
  *    the shadow host. While waiting we render a <TodoSkeleton> that matches
  *    the real page layout so the transition looks intentional.
  *  - A module-level `resolvedBundleUrl` survives React unmount / remount so
- *    navigating away and back skips the bundle URL lookup entirely.
+ *    navigating away and back skips the assets.json fetch entirely.
  */
 
 // ─── Module-level state (survives React unmount / remount) ───────────────────
-// Remembers which bundle URL has already been injected so we never re-run the
-// bundle URL lookup or double-inject the script when the user tabs back.
+// Remembers which bundle URL has already been injected so we never fetch
+// assets.json or double-inject the script when the user tabs back.
 let resolvedBundleUrl: string | null = null;
 
 // ─── Skeleton loader ─────────────────────────────────────────────────────────
@@ -194,7 +194,7 @@ const TodoAppShadowWrapper = () => {
 
     // Load (or hot-swap) the todo manager bundle script.
     // If we already know the bundle URL from a previous mount, skip the
-    // lookup and mark the script as loaded immediately.
+    // assets.json fetch and mark the script as loaded immediately.
     useEffect(() => {
         let cancelled = false;
 
@@ -204,33 +204,23 @@ const TodoAppShadowWrapper = () => {
             return;
         }
 
-        // Resolve the bundle through an authenticated, single-bundle endpoint
-        // rather than fetching /assets/assets.json, which handed out the full
-        // bundle map of every installed app to anyone with no session at all
-        // (VAPT finding 16). The endpoint answers for one allow-listed name.
-        //
-        // Still cache-busted per mount: the response must not be reused across a
-        // deployment, otherwise the stale-bundle swap below can never trigger.
+        // A timestamp version stamp used for cache-busting on every mount.
+        // assets.json is tiny (~1 KB) so the extra network hit is negligible.
         const version = Date.now();
-        const BUNDLE_URL_ENDPOINT =
-            "/api/method/cn_hrms_core.cn_hrms_core.apis.asset_manifest.get_bundle_url";
 
-        fetch(
-            `${BUNDLE_URL_ENDPOINT}?bundle=cn_todo_manager.bundle.js&v=${version}`,
-            { credentials: "same-origin" }
-        )
+        fetch(`/assets/assets.json?v=${version}`)
             .then((response) => {
                 if (!response.ok) {
-                    throw new Error(`bundle URL lookup failed: ${response.status}`);
+                    throw new Error(`assets.json fetch failed: ${response.status}`);
                 }
                 return response.json();
             })
             .then((data) => {
                 if (cancelled) return;
 
-                const newBundleUrl: string = data?.message;
+                const newBundleUrl: string = data["cn_todo_manager.bundle.js"];
                 if (!newBundleUrl) {
-                    throw new Error("cn_todo_manager.bundle.js missing from bundle URL lookup");
+                    throw new Error("cn_todo_manager.bundle.js key missing from assets.json");
                 }
 
                 const existingScript = document.querySelector<HTMLScriptElement>(
