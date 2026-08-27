@@ -5,6 +5,7 @@ import toast from "react-hot-toast";
 import { useCurrentEmployeeDetails } from "../../hooks/useEmployee";
 import {
   useEmployeeDocument,
+  useEmployeeDocumentCount,
   useSubmitAcknowledgement,
 } from "../../hooks/useEmployeeDocuments";
 import { useGetUiPermission } from "../../hooks/userUiPermission";
@@ -21,9 +22,19 @@ import CustomDropdown from "../shared/CustomDropdown";
 import { DocumentMobileCard } from "./DocumentMobileCard";
 import { DocumentTableRow } from "./DocumentTableRow";
 import { DocumentItem } from "../../types/employeeDocument";
+import { FilterCondition } from "../../types/frappe";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+
+const PAGE_SIZE = 10;
 
 const EmployeeDocumentsPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState("awaiting");
+  const [pageMap, setPageMap] = useState<Record<string, number>>({
+    awaiting: 1,
+    mydocs: 1,
+    approved: 1,
+  });
+  const currentPage = pageMap[activeTab] ?? 1;
   const [isMobile, setIsMobile] = useState(false);
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
   const [selectedDocId, setSelectedDocId] = useState<string | null>(null);
@@ -43,7 +54,21 @@ const EmployeeDocumentsPage: React.FC = () => {
     return user?.employee || "";
   }, [targetEmployeeId, user?.employee]);
 
-  const { data, isLoading } = useEmployeeDocument(employeeId);
+  const tabFilters = useMemo((): FilterCondition[] => {
+    switch (activeTab) {
+      case "awaiting":
+        return [["type", "=", "Personal"]];
+      case "mydocs":
+        return [["status", "=", "Acknowledgement Required"]];
+      case "approved":
+        return [["type", "!=", "Personal"], ["status", "=", "Approved"]];
+      default:
+        return [];
+    }
+  }, [activeTab]);
+
+  const { data: documents = [], isLoading } = useEmployeeDocument(employeeId, currentPage, PAGE_SIZE, tabFilters);
+  const { data: totalCount = 0 } = useEmployeeDocumentCount(employeeId, tabFilters);
   const { mutate: submitAcknowledgement } = useSubmitAcknowledgement();
 
   const { data: userUiPermission } = useGetUiPermission("Profile");
@@ -89,14 +114,30 @@ const EmployeeDocumentsPage: React.FC = () => {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  const documents = useMemo(() => data || [], [data]);
+  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
+  const hasPrevPage = currentPage > 1;
+  const hasNextPage = currentPage < totalPages;
 
-  const filteredDocuments = documents.filter((doc: DocumentItem) => {
-    if (activeTab === "awaiting") return doc.type === "Personal";
-    if (activeTab === "mydocs") return doc.status === "Acknowledgement Required";
-    if (activeTab === "approved") return doc.type !== "Personal" && doc.status === "Approved";
-    return true;
-  });
+  const handlePageChange = (page: number) => {
+    if (page < 1 || page > totalPages) return;
+    setPageMap((prev) => ({ ...prev, [activeTab]: page }));
+  };
+
+  const startItem = documents.length === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1;
+  const endItem = (currentPage - 1) * PAGE_SIZE + documents.length;
+
+  const getVisiblePages = (): number[] => {
+    const pages: number[] = [];
+    const maxVisible = 5;
+    let start = Math.max(1, currentPage - Math.floor(maxVisible / 2));
+    let end = start + maxVisible - 1;
+    if (end > totalPages) {
+      end = totalPages;
+      start = Math.max(1, end - maxVisible + 1);
+    }
+    for (let i = start; i <= end; i++) pages.push(i);
+    return pages;
+  };
 
   const closeModal = () => setSelectedFile(null);
 
@@ -116,17 +157,14 @@ const EmployeeDocumentsPage: React.FC = () => {
     {
       key: "awaiting",
       label: "My Documents",
-      count: documents.filter((doc: DocumentItem) => doc.type === "Personal").length,
     },
     {
       key: "mydocs",
       label: "Awaiting My Acknowledgment",
-      count: documents.filter((doc: DocumentItem) => doc.status === "Acknowledgement Required").length,
     },
     {
       key: "approved",
       label: "Documents Approved",
-      count: documents.filter((doc: DocumentItem) => doc.type?.trim().toLowerCase() !== "personal" && doc.status === "Approved").length,
     },
   ];
 
@@ -161,7 +199,7 @@ const EmployeeDocumentsPage: React.FC = () => {
               onChange={(e) => setActiveTab(e.target.value)}
               options={tabs.map((tab) => ({
                 value: tab.key,
-                label: `${tab.label} (${tab.count})`,
+                label: tab.label + (activeTab === tab.key ? ` (${totalCount})` : ""),
               }))}
               position="bottom-left"
             />
@@ -180,7 +218,6 @@ const EmployeeDocumentsPage: React.FC = () => {
                   }`}
               >
                 {tab.label}
-                <span className="ml-1">({tab.count})</span>
               </Button>
             ))}
           </div>
@@ -195,7 +232,7 @@ const EmployeeDocumentsPage: React.FC = () => {
             noRound
           >
             <StaticListView
-              data={filteredDocuments}
+              data={documents}
               ItemComponent={(_, doc) => {
                 const canView = doc.type === "Personal" ? canViewPersonalDocument : canViewSystemDocument;
                 const canDownload = doc.type === "Personal" ? canDownloadPersonalDocument : canDownloadSystemDocument;
@@ -221,11 +258,62 @@ const EmployeeDocumentsPage: React.FC = () => {
                 );
               }}
               isLoading={isLoading}
-              pageSize={20}
-              loadMorePagination={true}
+              pageSize={PAGE_SIZE}
+              loadMorePagination={false}
             />
           </CardTable>
         </div>
+
+        {/* Pagination */}
+        {!isLoading && (hasNextPage || hasPrevPage) && (
+          <div className="flex flex-col sm:flex-row gap-3 items-center justify-between px-4 py-3 border border-t-0 rounded-b-xl bg-white mt-1">
+            <p className="text-sm text-gray-500 whitespace-nowrap">
+              {documents.length === 0
+                ? "No results"
+                : `Showing ${startItem} to ${endItem} of ${totalCount} documents`}
+            </p>
+
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={!hasPrevPage}
+                className={`w-8 h-8 flex items-center justify-center rounded border text-sm
+                  ${!hasPrevPage
+                    ? "text-gray-300 border-gray-200 cursor-not-allowed"
+                    : "text-gray-600 border-gray-300 hover:bg-gray-100"
+                  }`}
+              >
+                <ChevronLeft size={16} />
+              </button>
+
+              {getVisiblePages().map((page) => (
+                <button
+                  key={page}
+                  onClick={() => handlePageChange(page)}
+                  className={`w-8 h-8 flex items-center justify-center rounded border text-sm font-medium
+                    ${currentPage === page
+                      ? "bg-primary text-white border-primary"
+                      : "text-gray-600 border-gray-300 hover:bg-gray-100"
+                    }`}
+                >
+                  {page}
+                </button>
+              ))}
+
+              <button
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={!hasNextPage}
+                className={`w-8 h-8 flex items-center justify-center rounded border text-sm
+                  ${!hasNextPage
+                    ? "text-gray-300 border-gray-200 cursor-not-allowed"
+                    : "text-gray-600 border-gray-300 hover:bg-gray-100"
+                  }`}
+              >
+                <ChevronRight size={16} />
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* PDF Modal */}
         {selectedFile && (

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   useEmployeeDocument,
+  useEmployeeDocumentCount,
   useSubmitAcknowledgement,
 } from "../../hooks/useEmployeeDocuments";
 import { useCurrentEmployeeDetails } from "../../hooks/useEmployee";
@@ -17,9 +18,19 @@ import toast from "react-hot-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { getFileNameFromUrl } from "../../utils/urlFormating";
 import formatToIndianDate from "../../utils/formatToIndianDate";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { FilterCondition } from "../../types/frappe";
+
+const PAGE_SIZE = 10;
 
 const DocumentLibrary = () => {
   const [activeTab, setActiveTab] = useState("awaiting");
+  const [pageMap, setPageMap] = useState<Record<string, number>>({
+    awaiting: 1,
+    mydocs: 1,
+    approved: 1,
+  });
+  const currentPage = pageMap[activeTab] ?? 1;
   const [isMobile, setIsMobile] = useState(false);
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
   const [selectedDocId, setSelectedDocId] = useState<string | null>(null);
@@ -33,7 +44,21 @@ const DocumentLibrary = () => {
     return user?.employee || "";
   }, [targetEmployeeId, user?.employee]);
 
-  const { data, isLoading } = useEmployeeDocument(employeeId);
+  const tabFilters = useMemo((): FilterCondition[] => {
+    switch (activeTab) {
+      case "awaiting":
+        return [["type", "=", "Personal"]];
+      case "mydocs":
+        return [["status", "=", "Acknowledgement Required"]];
+      case "approved":
+        return [["type", "!=", "Personal"], ["status", "=", "Approved"]];
+      default:
+        return [];
+    }
+  }, [activeTab]);
+
+  const { data: documents = [], isLoading } = useEmployeeDocument(employeeId, currentPage, PAGE_SIZE, tabFilters);
+  const { data: totalCount = 0 } = useEmployeeDocumentCount(employeeId, tabFilters);
   const [acknowledged, setAcknowledged] = useState(false);
 
   const { mutate: submitAcknowledgement } = useSubmitAcknowledgement();
@@ -80,14 +105,31 @@ const DocumentLibrary = () => {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  const documents = useMemo(() => data || [], [data]);
+  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
+  const hasPrevPage = currentPage > 1;
+  const hasNextPage = currentPage < totalPages;
 
-  const filteredDocuments = documents.filter((doc: any) => {
-    if (activeTab === "awaiting") return doc.type === "Personal";
-    if (activeTab === "mydocs") return doc.status === "Acknowledgement Required";
-    if (activeTab === "approved") return doc.type !== "Personal" && doc.status === "Approved";
-    return true;
-  });
+  const handlePageChange = (page: number) => {
+    if (page < 1 || page > totalPages) return;
+    setPageMap((prev) => ({ ...prev, [activeTab]: page }));
+  };
+
+  const startItem = documents.length === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1;
+  const endItem = (currentPage - 1) * PAGE_SIZE + documents.length;
+
+  const getVisiblePages = (): number[] => {
+    const pages: number[] = [];
+    const maxVisible = 5;
+    let start = Math.max(1, currentPage - Math.floor(maxVisible / 2));
+    let end = start + maxVisible - 1;
+    if (end > totalPages) {
+      end = totalPages;
+      start = Math.max(1, end - maxVisible + 1);
+    }
+    for (let i = start; i <= end; i++) pages.push(i);
+    return pages;
+  };
+
 
   const closeModal = () => setSelectedFile(null);
 
@@ -107,17 +149,14 @@ const DocumentLibrary = () => {
     {
       key: "awaiting",
       label: "My Documents",
-      count: documents.filter((doc: any) => doc.type === "Personal").length,
     },
     {
       key: "mydocs",
       label: "Awaiting My Acknowledgment",
-      count: documents.filter((doc: any) => doc.status === "Acknowledgement Required").length,
     },
     {
       key: "approved",
       label: "Documents Approved",
-      count: documents.filter((doc: any) => doc.type?.trim().toLowerCase() !== "personal" && doc.status === "Approved").length,
     },
   ];
 
@@ -143,7 +182,7 @@ const DocumentLibrary = () => {
           >
             {tabs.map((tab) => (
               <option key={tab.key} value={tab.key}>
-                {tab.label} ({tab.count})
+                {tab.label}{activeTab === tab.key ? ` (${totalCount})` : ""}
               </option>
             ))}
           </select>
@@ -162,7 +201,9 @@ const DocumentLibrary = () => {
                 }`}
             >
               {tab.label}
-              <span className="ml-1">({tab.count})</span>
+              {activeTab === tab.key && (
+                <span className="ml-1">({totalCount})</span>
+              )}
             </Button>
           ))}
         </div>
@@ -184,8 +225,8 @@ const DocumentLibrary = () => {
             <LibraryTableSkeleton />
           ) : (
             <tbody className="text-gray-800">
-              {filteredDocuments.length > 0 ? (
-                filteredDocuments.map((doc: any, i: number) => (
+              {documents.length > 0 ? (
+                documents.map((doc: any, i: number) => (
                   <tr
                     key={i}
                     className="border-t hover:bg-gray-50 transition-colors"
@@ -259,6 +300,57 @@ const DocumentLibrary = () => {
           )}
         </table>
       </div>
+
+      {/* Pagination */}
+      {!isLoading && (hasNextPage || hasPrevPage) && (
+        <div className="flex flex-col sm:flex-row gap-3 items-center justify-between px-4 py-3 border border-t-0 rounded-b-xl bg-white">
+          <p className="text-sm text-gray-500 whitespace-nowrap">
+            {documents.length === 0
+              ? "No results"
+              : `Showing ${startItem} to ${endItem} of ${totalCount} documents`}
+          </p>
+
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={!hasPrevPage}
+              className={`w-8 h-8 flex items-center justify-center rounded border text-sm
+                ${!hasPrevPage
+                  ? "text-gray-300 border-gray-200 cursor-not-allowed"
+                  : "text-gray-600 border-gray-300 hover:bg-gray-100"
+                }`}
+            >
+              <ChevronLeft size={16} />
+            </button>
+
+            {getVisiblePages().map((page) => (
+              <button
+                key={page}
+                onClick={() => handlePageChange(page)}
+                className={`w-8 h-8 flex items-center justify-center rounded border text-sm font-medium
+                  ${currentPage === page
+                    ? "bg-primary text-white border-primary"
+                    : "text-gray-600 border-gray-300 hover:bg-gray-100"
+                  }`}
+              >
+                {page}
+              </button>
+            ))}
+
+            <button
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={!hasNextPage}
+              className={`w-8 h-8 flex items-center justify-center rounded border text-sm
+                ${!hasNextPage
+                  ? "text-gray-300 border-gray-200 cursor-not-allowed"
+                  : "text-gray-600 border-gray-300 hover:bg-gray-100"
+                }`}
+            >
+              <ChevronRight size={16} />
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* PDF Modal */}
       {selectedFile && (
