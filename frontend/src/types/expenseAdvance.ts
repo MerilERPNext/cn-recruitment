@@ -61,6 +61,7 @@ export interface ExpenseTypeFieldsResponse {
   fields?: any[];
   claim_type_based_on?: string;
   is_amount_readonly: boolean;
+  filter_projects_by_cost_center?: boolean;
   [key: string]: any;
 }
 
