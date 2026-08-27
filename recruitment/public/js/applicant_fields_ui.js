@@ -300,16 +300,22 @@ frappe.provide("recruitment.applicant_fields_ui");
 				width: 100%; border-collapse: separate; border-spacing: 0;
 				font-size: 12px; min-width: 1940px; table-layout: fixed;
 			}
+			/* Both header rows freeze against the top of .apf-scroll: a toggle a
+			   hundred rows down is unreadable once the channel band above it has
+			   scrolled away. The second row parks directly beneath the first —
+			   --apf-group-h is measured by AFU.freezeHeader, the band's height
+			   being font-dependent. The fallback holds until that first measure. */
 			.apf-table thead .apf-group-row th {
 				padding: 9px 4px 6px; text-align: center; font-weight: 700;
 				font-size: 10px; letter-spacing: .07em; color: var(--apf-text-dim);
 				background: var(--apf-bg); border-bottom: 1px solid var(--apf-border-soft);
+				position: sticky; top: 0; z-index: 3;
 			}
 			.apf-table thead .apf-col-row th {
 				padding: 7px 4px; text-align: center; font-weight: 600;
 				font-size: 9.5px; letter-spacing: .05em; color: var(--apf-text-dim);
 				background: var(--apf-bg-head); border-bottom: 1px solid var(--apf-border);
-				white-space: nowrap; position: sticky; top: 0;
+				white-space: nowrap; position: sticky; top: var(--apf-group-h, 46px);
 			}
 			/* The group's accent, carried by its header chip, its column band and
 			   its ON switches — this is what makes a column readable at a glance. */
@@ -584,6 +590,38 @@ frappe.provide("recruitment.applicant_fields_ui");
 				data-col="${col}" ${checked ? "checked" : ""}/>
 			<span class="apf-toggle-slider"></span>
 		</label>`;
+	};
+
+	/**
+	 * Park the VIEW / MANDATORY header row directly under the channel band.
+	 *
+	 * Both rows are `position: sticky`, but the second needs to know how tall the
+	 * first is to stop in the right place, and CSS has no way to ask. The band
+	 * carries a pill label plus (for toggle groups) a count line, so its height
+	 * moves with the font — a hardcoded offset shows up either as a seam of
+	 * scrolling rows between the two, or as the second row covering the first.
+	 */
+	AFU.freezeHeader = function (host) {
+		const table = host && host.querySelector(".apf-table");
+		const band = table && table.querySelector("thead .apf-group-row");
+		if (!band) return;
+
+		// Re-rendered on every section switch: without this each render leaves
+		// another live observer measuring a table no longer on the page.
+		if (host._apfHeaderRO) host._apfHeaderRO.disconnect();
+
+		const apply = () => {
+			const h = Math.round(band.getBoundingClientRect().height);
+			// 0 while the tab is hidden (Job Opening mounts this behind one) — keep
+			// the CSS fallback; the observer re-measures on reveal.
+			if (h) table.style.setProperty("--apf-group-h", h + "px");
+		};
+
+		apply();
+		if (window.ResizeObserver) {
+			host._apfHeaderRO = new ResizeObserver(apply);
+			host._apfHeaderRO.observe(band);
+		}
 	};
 
 	/**
@@ -1057,6 +1095,9 @@ frappe.provide("recruitment.applicant_fields_ui");
 	AFU.bindToolbar = function (host, opts) {
 		AFU.dockChildPanels(host);
 		AFU.bindChildDock(host);
+		// After the docking moves, so the band is measured once against a settled
+		// DOM rather than being read and then invalidated.
+		AFU.freezeHeader(host);
 
 		const search = host.querySelector(".apf-search");
 		const bulk = host.querySelector(".apf-bulk");

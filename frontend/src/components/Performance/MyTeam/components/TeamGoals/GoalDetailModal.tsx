@@ -10,6 +10,7 @@ import { useGetGoalApprovalDetail } from "../../../../../hooks/usePerformance";
 import { getPerformanceErrorMessage } from "../../../../../services/performanceService";
 import GoalDetailSkeleton from "./GoalDetailSkeleton";
 import GoalActionButtons from "./GoalActionButtons";
+import GoalCommentBox from "./GoalCommentBox";
 
 interface GoalDetailModalProps {
   goal?: GoalDetailData;
@@ -31,7 +32,6 @@ export const GoalDetailModal: React.FC<GoalDetailModalProps> = ({
     employee,
     goal_key: goalKey,
   });
-
   const apiData = goalApprovalData?.data;
 
   const keyResults = apiData?.key_results || [];
@@ -190,22 +190,13 @@ export const GoalDetailModal: React.FC<GoalDetailModalProps> = ({
                 )}
               </div>
 
-              <div>
-                <Typography variant="bodySmall" className="font-medium text-gray-900 mb-2 block">
-                  Add comment{" "}
-                  <span className="text-gray-400 font-normal">
-                    (visible to {(apiData?.employee_name || employee || "").split(" ")[0] || "-"})
-                  </span>
-                </Typography>
-                <textarea
-                  aria-label={`Add comment for ${apiData?.employee_name || employee || "-"}`}
-                  value={comment}
-                  onChange={(e) => setComment(e.target.value)}
-                  placeholder="Type your comment here..."
-                  rows={3}
-                  className="w-full border border-gray-200 rounded-xl p-3 text-sm text-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 resize-none shadow-sm"
-                />
-              </div>
+              <GoalCommentBox
+                employee={employee}
+                goalKey={goalKey}
+                employeeName={apiData?.employee_name}
+                comment={comment}
+                onCommentChange={setComment}
+              />
 
               <div className="bg-slate-50 rounded-xl p-4 mb-2">
                 <Typography

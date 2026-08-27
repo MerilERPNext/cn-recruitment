@@ -203,6 +203,15 @@ export interface GoalSubmitResponse {
 // My Goals List API Response
 // (from goal_api.get_my_goals)
 // -------------------------
+export interface MyGoalsLastCheckin {
+  date?: string | null;
+  sentiment?: string | null;
+  progress?: number | null;
+  new_value?: number | null;
+  note?: string | null;
+  manager_comment?: string | null;
+}
+
 export interface MyGoalsKeyResult {
   goal_key: string;
   name?: string;
@@ -219,6 +228,13 @@ export interface MyGoalsKeyResult {
   metric?: string | number | null;
   target?: number;
   target_type?: string;
+  needs_rework?: boolean;
+  approver_note?: string | null;
+  submitted_on?: string | null;
+  actioned_on?: string | null;
+  status_label?: string;
+  status_tone?: string;
+  last_checkin?: MyGoalsLastCheckin | null;
 }
 
 export interface MyGoalsGoal {
@@ -228,17 +244,29 @@ export interface MyGoalsGoal {
   title: string;
   description: string;
   goal_type: string;
-  checkin_due:string;
-  department: string;
-  department_title: string;
+  checkin_due?: string | null;
+  department?: string;
+  department_title?: string;
+  designation?: string;
+  designation_title?: string;
   weightage: number;
   status: string;
   achievement: number;
   goal_status?: string;
   submission_status?: string;
   start_date?: string;
-  last_checkin_date?:string;
+  last_checkin_date?: string | null;
   end_date?: string;
+  is_mandatory?: number | boolean;
+  is_locked?: boolean;
+  checkin_requested?: boolean;
+  needs_rework?: boolean;
+  approver_note?: string | null;
+  submitted_on?: string | null;
+  actioned_on?: string | null;
+  status_label?: string;
+  status_tone?: string;
+  last_checkin?: MyGoalsLastCheckin | null;
   key_results: MyGoalsKeyResult[];
 }
 
@@ -248,8 +276,18 @@ export interface MyGoalsData {
   designation: string;
   designation_title: string;
   active_cycle: string;
+  active_cycle_title?: string;
+  goal_plan?: string;
+  plan_status?: string;
+  mandatory_weightage?: number;
+  own_weightage?: number;
+  budget_for_own_goals?: number;
+  total_weightage?: number;
+  overall_score?: number;
+  average_achievement?: number;
+  average_score?: number;
   goals: MyGoalsGoal[];
-  total: number;
+  total?: number;
 }
 
 export interface MyGoalsResponse {
@@ -1200,6 +1238,27 @@ export interface GoalActionResultResponse {
   message: string;
   data: GoalActionResultData;
 }
+
+export interface AddTeamGoalCommentContent {
+  employee: string;
+  goal_key: string;
+  note: string;
+}
+
+export interface AddTeamGoalCommentPayload {
+  payload: AddTeamGoalCommentContent;
+}
+
+export interface AddTeamGoalCommentData {
+  goal_key: string;
+}
+
+export interface AddTeamGoalCommentResponse {
+  success: boolean;
+  message: string;
+  data: AddTeamGoalCommentData;
+}
+
 
 
 

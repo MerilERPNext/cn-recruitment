@@ -341,6 +341,11 @@ doc_events = {
             # Record the requisition this offer draws on and pull its agreed
             # Fixed / Variable Pay across. Only fills empty fields.
             "recruitment.customizations.job_offer.set_requisition_and_pay",
+            # Region: the field's own fetch_from covers the candidate's interview
+            # region; this reaches the region applied under and the opening's.
+            # On save, not at submit — HR is meant to see and change it while
+            # drafting. Only fills when empty.
+            "recruitment.customizations.job_offer.set_offer_region",
             # The position this offer consumes must belong to the offer's
             # requisition and still be free. Runs before save so a stale pick is
             # rejected rather than silently claiming the wrong row.
@@ -391,6 +396,13 @@ doc_events = {
             # Enforce Recruitment Settings -> Job Requisition Settings
             # (max positions, replacement-employee restriction & uniqueness).
             "recruitment.api.job_requisition.validate_requisition_settings",
+            # Capture the Regions child table's region on the parent
+            # `custom_region` so it is filterable/reportable from the
+            # requisition itself — same mirror as on the Job Opening.
+            "recruitment.customizations.job_requisition_region.set_region_from_regions_table",
+            # The Lateral counterpart: the Position Details table's location on
+            # `custom_position_location`, and onto the empty `custom_location`.
+            "recruitment.customizations.job_requisition_region.set_location_from_position_details",
         ],
         "on_update": [
             # Once a requisition is approved its positions "start appearing in the

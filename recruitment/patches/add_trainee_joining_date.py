@@ -70,6 +70,21 @@ def execute():
 	frappe.clear_cache(doctype="Job Offer")
 
 
+def _has_columns(doctype, *columns):
+	"""Whether every one of `columns` exists on `doctype`'s table.
+
+	The backfills below are raw SQL over Custom Field columns, and custom fields
+	shipped in an app's `custom/*.json` are created by `sync_customizations()` —
+	which runs AFTER patches in a migrate (see frappe/migrate.py). On a site that
+	has not had those fields created yet the column simply is not there and the
+	UPDATE dies with "Unknown column".
+
+	Skipping loses nothing: a column that does not exist holds no data to carry
+	across, and `fetch_from` fills the field from the next save onward.
+	"""
+	return all(frappe.db.has_column(doctype, column) for column in columns)
+
+
 def _place_on_form():
 	"""Put the new fields into the saved form layout, next to their anchors.
 
@@ -110,6 +125,9 @@ def _backfill_type_name():
 	going to be saved again — without this their Trainee joining date would stay
 	hidden on the form.
 	"""
+	if not _has_columns("Job Offer", "custom_employment_type", "custom_employment_type_name"):
+		return
+
 	frappe.db.sql(
 		"""
 		update `tabJob Offer` jo
@@ -127,6 +145,11 @@ def _backfill_trainee_doj():
 	across means an offer sent before this patch still reprints exactly as it was
 	issued. New offers get the date typed in on the form.
 	"""
+	if not _has_columns(
+		"Job Offer", "custom_trainee_doj", "custom_expected_doj", "custom_employment_type_name"
+	):
+		return
+
 	frappe.db.sql(
 		"""
 		update `tabJob Offer`

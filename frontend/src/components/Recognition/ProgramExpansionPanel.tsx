@@ -7,6 +7,8 @@ import { useQueryClient } from "@tanstack/react-query";
 interface ProgramExpansionPanelProps {
   awardName: string;
   onCollapse: () => void;
+  /** Inactive programs render the nomination form read-only. */
+  isActive?: boolean;
 }
 
 /**
@@ -17,6 +19,7 @@ interface ProgramExpansionPanelProps {
  */
 export const ProgramExpansionPanel: React.FC<ProgramExpansionPanelProps> = ({
   awardName,
+  isActive = true,
 }) => {
   const queryClient = useQueryClient();
   const { data: currentUser } = useCurrentEmployeeDetails({
@@ -31,9 +34,16 @@ export const ProgramExpansionPanel: React.FC<ProgramExpansionPanelProps> = ({
 
   return (
     <div className="mt-2 p-4 rounded-xl border border-gray-100 bg-gray-50">
+      {!isActive && (
+        <p className="mb-3 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs text-gray-500">
+          This program is inactive. Nominations are closed.
+        </p>
+      )}
+
       <SimpleNominationPanel
         awardName={awardName}
         onSuccess={handleNominationSuccess}
+        disabled={!isActive}
       />
 
       <AssignedEmployeesList

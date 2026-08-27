@@ -150,6 +150,27 @@ const LeaveBalance: React.FC = () => {
     "lb_request_leave",
     "Leave Summary",
   );
+  const showTotalLeavesCard = isActionEnabled(
+    userUiPermission,
+    "show_total_leaves_card",
+    "Leave Summary",
+  );
+  const showAvailedLeavesCard = isActionEnabled(
+    userUiPermission,
+    "show_availed_leaves_card",
+    "Leave Summary",
+  );
+  const showBalanceLeavesCard = isActionEnabled(
+    userUiPermission,
+    "show_balance_leaves_card",
+    "Leave Summary",
+  );
+  const showCardTotalLeavesData = isActionEnabled(
+    userUiPermission,
+    "show_card_total_leaves_data",
+    "Leave Summary",
+  );
+  const showAnySummaryCard = showTotalLeavesCard || showAvailedLeavesCard || showBalanceLeavesCard;
 
   const today = new Date().toISOString().split("T")[0];
 
@@ -263,89 +284,99 @@ const LeaveBalance: React.FC = () => {
         <>
           <div className="md:pt-4 md:p-3">
             <div className="p-4 space-y-4">
-              <div className="flex justify-between items-center">
-                <Typography
-                  variant="subheading"
-                  color="title"
-                  className="font-semibold"
-                >
-                  Leave Summary
-                </Typography>
-              </div>
-
-              <div className="grid grid-cols-3 gap-4">
-                <div
-                  // style={{ backgroundColor: "#EFF6FF" }}
-                  className="rounded-xl flex flex-col items-center p-3 gap-2 bg-primary/10"
-                >
-                  <span className="bg-white rounded-lg w-12 h-12 flex items-center justify-center">
-                    <Calendar size={24} className="text-primary-600" />
-                  </span>
-
+              {showAnySummaryCard && (
+                <div className="flex justify-between items-center">
                   <Typography
-                    variant="bodyMedium"
+                    variant="subheading"
                     color="title"
-                    className="font-semibold leading-none mt-1"
+                    className="font-semibold"
                   >
-                    {leaveBalance.reduce(
-                      (sum, leave) => sum + (leave.entitled || 0),
-                      0,
-                    )}
+                    Leave Summary
                   </Typography>
-
-                  <p className="text-sm text-gray-500 font-medium leading-none">
-                    Total Leaves
-                  </p>
                 </div>
+              )}
 
-                <div
-                  style={{ backgroundColor: "#FFF4ED" }}
-                  className="rounded-xl flex flex-col items-center p-3 gap-2"
-                >
-                  <span className="bg-white rounded-lg w-12 h-12 flex items-center justify-center">
-                    <Plane size={24} className="text-[#E17100]" />
-                  </span>
+              {showAnySummaryCard && (
+                <div className="grid grid-cols-3 gap-4">
+                  {showTotalLeavesCard && (
+                    <div
+                      // style={{ backgroundColor: "#EFF6FF" }}
+                      className="rounded-xl flex flex-col items-center p-3 gap-2 bg-primary/10"
+                    >
+                      <span className="bg-white rounded-lg w-12 h-12 flex items-center justify-center">
+                        <Calendar size={24} className="text-primary-600" />
+                      </span>
 
-                  <Typography
-                    variant="bodyMedium"
-                    color="title"
-                    className="font-semibold leading-none mt-1"
-                  >
-                    {leaveBalance.reduce(
-                      (sum, leave) => sum + (leave.availed || 0),
-                      0,
-                    )}
-                  </Typography>
+                      <Typography
+                        variant="bodyMedium"
+                        color="title"
+                        className="font-semibold leading-none mt-1"
+                      >
+                        {leaveBalance.reduce(
+                          (sum, leave) => sum + (leave.entitled || 0),
+                          0,
+                        )}
+                      </Typography>
 
-                  <p className="text-sm text-gray-500 font-medium leading-none">
-                    Availed Leaves
-                  </p>
+                      <p className="text-sm text-gray-500 font-medium leading-none">
+                        Total Leaves
+                      </p>
+                    </div>
+                  )}
+
+                  {showAvailedLeavesCard && (
+                    <div
+                      style={{ backgroundColor: "#FFF4ED" }}
+                      className="rounded-xl flex flex-col items-center p-3 gap-2"
+                    >
+                      <span className="bg-white rounded-lg w-12 h-12 flex items-center justify-center">
+                        <Plane size={24} className="text-[#E17100]" />
+                      </span>
+
+                      <Typography
+                        variant="bodyMedium"
+                        color="title"
+                        className="font-semibold leading-none mt-1"
+                      >
+                        {leaveBalance.reduce(
+                          (sum, leave) => sum + (leave.availed || 0),
+                          0,
+                        )}
+                      </Typography>
+
+                      <p className="text-sm text-gray-500 font-medium leading-none">
+                        Availed Leaves
+                      </p>
+                    </div>
+                  )}
+
+                  {showBalanceLeavesCard && (
+                    <div
+                      style={{ backgroundColor: "#F0FDF4" }}
+                      className="rounded-xl flex flex-col items-center p-3 gap-2"
+                    >
+                      <span className="bg-white rounded-lg w-12 h-12 flex items-center justify-center">
+                        <Calendar size={24} className="text-[#00A63E]" />
+                      </span>
+
+                      <Typography
+                        variant="bodyMedium"
+                        color="title"
+                        className="font-semibold leading-none mt-1"
+                      >
+                        {leaveBalance.reduce(
+                          (sum, leave) => sum + (leave.balance || 0),
+                          0,
+                        )}
+                      </Typography>
+
+                      <p className="text-sm text-gray-500 font-medium leading-none">
+                        Balance Leaves
+                      </p>
+                    </div>
+                  )}
                 </div>
-
-                <div
-                  style={{ backgroundColor: "#F0FDF4" }}
-                  className="rounded-xl flex flex-col items-center p-3 gap-2"
-                >
-                  <span className="bg-white rounded-lg w-12 h-12 flex items-center justify-center">
-                    <Calendar size={24} className="text-[#00A63E]" />
-                  </span>
-
-                  <Typography
-                    variant="bodyMedium"
-                    color="title"
-                    className="font-semibold leading-none mt-1"
-                  >
-                    {leaveBalance.reduce(
-                      (sum, leave) => sum + (leave.balance || 0),
-                      0,
-                    )}
-                  </Typography>
-
-                  <p className="text-sm text-gray-500 font-medium leading-none">
-                    Balance Leaves
-                  </p>
-                </div>
-              </div>
+              )}
             </div>
 
             <div className="space-y-4 p-4">
@@ -443,14 +474,16 @@ const LeaveBalance: React.FC = () => {
                             </p>
                           </div>
 
-                          <div>
-                            <p className="text-sm font-semibold text-gray-900">
-                              {leave.entitled}
-                            </p>
-                            <p className="text-xs text-gray-600">
-                              Total Leaves
-                            </p>
-                          </div>
+                          {showCardTotalLeavesData && (
+                            <div>
+                              <p className="text-sm font-semibold text-gray-900">
+                                {leave.entitled}
+                              </p>
+                              <p className="text-xs text-gray-600">
+                                Total Leaves
+                              </p>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>

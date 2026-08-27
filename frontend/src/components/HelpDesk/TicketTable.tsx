@@ -236,13 +236,15 @@ const columns = [
   { key: "name", label: "Issue ID", sortable: true, width: "w-28" },
   { key: "subject", label: "Issue Title", sortable: false, width: "w-28" },
   { key: "custom_category", label: "Category", sortable: true, width: "w-32" },
-  { key: "status", label: "Status", sortable: false, width: "w-28" },
+
   {
     key: "custom_sub_category",
     label: "Sub Category",
     sortable: true,
     width: "w-40",
-  }, {
+  },
+  { key: "status", label: "Status", sortable: false, width: "w-28" },
+  {
     key: "no_of_comments",
     label: "Number of Comments",
     sortable: false,
@@ -254,6 +256,13 @@ const columns = [
     sortable: false,
     width: "w-40",
   },
+
+  {
+    key: "response_by",
+    label: "SLA Breached - FRT",
+    sortable: true,
+    width: "w-40",
+  },
   {
     key: "resolution_by",
     label: "SLA Breached - TAT",
@@ -261,11 +270,6 @@ const columns = [
     width: "w-40",
   },
   {
-    key: "response_by",
-    label: "SLA Breached - FRT",
-    sortable: true,
-    width: "w-40",
-  }, {
     key: "raise_by_name",
     label: "Requested By",
     sortable: false,

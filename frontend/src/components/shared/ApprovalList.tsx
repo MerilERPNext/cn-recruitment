@@ -242,11 +242,15 @@ const ApprovalList = ({
 
   // Toggle all
   const handleSelectAll = useCallback(() => {
-    if (selectedIds.length === allRequests.length) {
+    // Only consider Pending (todo_status === "Open") items as selectable
+    const selectableRequests = allRequests.filter(
+      (req) => req?.todo_status === "Open",
+    );
+    if (selectedIds.length === selectableRequests.length) {
       setSelectedIds([]);
     } else {
       setSelectedIds(
-        allRequests.map((req) => {
+        selectableRequests.map((req) => {
           const actionsWithForm = req?.custom_doctype_actions_with_form
             ? JSON.parse(
               req?.custom_doctype_actions_with_form.replace(/'/g, '"'),
@@ -520,8 +524,11 @@ const ApprovalList = ({
 
   const { isDesktop } = useScreenSize();
 
+  const selectablePendingCount = allRequests.filter(
+    (req) => req?.todo_status === "Open",
+  ).length;
   const allSelected =
-    allRequests.length > 0 && selectedIds.length === allRequests.length;
+    selectablePendingCount > 0 && selectedIds.length === selectablePendingCount;
 
   return (
     <>

@@ -337,6 +337,43 @@ def set_employment_type(doc, method=None):
 			return
 
 
+# Where the offer's Region can be found, best source first. `fetch_from` on the
+# field itself covers the candidate's interview region; the rest needs a hop the
+# form cannot make, so it is resolved here.
+_REGION_SOURCES = (
+	("Job Applicant", "job_applicant", "custom_interview_region"),
+	("Job Applicant", "job_applicant", "custom_region"),
+	("Job Opening", "job_title", "custom_region"),
+)
+
+
+def set_offer_region(doc, method=None):
+	"""``validate``: fill the offer's Region from the candidate, then the opening.
+
+	Only fills when empty, so a region HR set by hand — or cleared and re-picked —
+	is never overwritten. Runs on save rather than at submit because the point of
+	the field is that HR can see it and change it while drafting the offer; a value
+	that only appeared at SEND would be a value nobody got to check.
+	"""
+	field = "custom_region"
+	if not doc.meta.get_field(field) or doc.get(field):
+		return
+
+	applicant = doc.get("job_applicant")
+	if not applicant:
+		return
+	opening = frappe.db.get_value("Job Applicant", applicant, "job_title")
+
+	for doctype, source, column in _REGION_SOURCES:
+		key = applicant if doctype == "Job Applicant" else opening
+		if not key or not frappe.get_meta(doctype).has_field(column):
+			continue
+		value = frappe.db.get_value(doctype, key, column)
+		if value:
+			doc.set(field, value)
+			return
+
+
 def validate_offer_is_complete(doc, method=None):
 	"""``before_submit``: refuse an offer that is missing what onboarding needs.
 
@@ -378,7 +415,7 @@ def _is_trainee_offer(doc):
 	if not employment_type:
 		return False
 
-	name = frappe.db.get_value("Employment Type", employment_type, "employee_type_name")
+	name = frappe.get_cached_value("Employment Type", employment_type, "employee_type_name")
 	return (name or "").strip().casefold() == TRAINEE_EMPLOYMENT_TYPE.casefold()
 
 

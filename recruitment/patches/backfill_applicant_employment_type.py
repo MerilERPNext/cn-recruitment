@@ -29,8 +29,26 @@ def execute():
 		frappe.clear_cache(doctype=doctype)
 
 
+def _has_columns(doctype, *columns):
+	"""Whether every one of `columns` exists on `doctype`'s table.
+
+	These backfills are raw SQL over Custom Field columns, and custom fields
+	shipped in an app's `custom/*.json` are created by `sync_customizations()` —
+	which runs AFTER patches in a migrate (see frappe/migrate.py). On a site that
+	has not had those fields created yet the column is simply absent and the
+	UPDATE dies with "Unknown column".
+
+	Skipping loses nothing: a column that does not exist holds no data to carry
+	across, and `fetch_from` fills the field from the next save onward.
+	"""
+	return all(frappe.db.has_column(doctype, column) for column in columns)
+
+
 def _backfill_applicants():
 	"""Job Applicant <- the Job Opening they applied to."""
+	if not _has_columns("Job Applicant", "custom_employment_type"):
+		return
+
 	frappe.db.sql(
 		"""
 		update `tabJob Applicant` ja
@@ -49,6 +67,11 @@ def _backfill_offers():
 	document is submitted, so a direct write is the only way an already-sent
 	offer ever gets the type its letters are chosen by.
 	"""
+	if not _has_columns("Job Offer", "custom_employment_type") or not _has_columns(
+		"Job Applicant", "custom_employment_type"
+	):
+		return
+
 	frappe.db.sql(
 		"""
 		update `tabJob Offer` jo
@@ -67,7 +90,7 @@ def _refresh_type_name_mirror():
 	shown by, so an offer that only now got its type would otherwise keep the
 	field hidden.
 	"""
-	if not frappe.db.has_column("Job Offer", "custom_employment_type_name"):
+	if not _has_columns("Job Offer", "custom_employment_type_name", "custom_employment_type"):
 		return
 
 	frappe.db.sql(

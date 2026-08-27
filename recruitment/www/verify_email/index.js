@@ -215,36 +215,60 @@ frappe.ready(function () {
 		add.addEventListener("click", () => addTableRow(f, rows));
 		wrap.appendChild(add);
 
-		// A required table needs at least one row to fill in; an optional one starts
-		// empty so nobody is nudged into entering data they don't have.
-		if (f.reqd) addTableRow(f, rows);
+		// Education Stages this channel demands (Job Applicant Profile Settings ->
+		// Required Education Stages) get a row each, with the stage already chosen
+		// and locked, so the candidate fills THEIR 10th / 12th / Graduation rather
+		// than guessing which rows to add. Anything beyond them they add themselves.
+		const demanded = requiredStages(f);
+		if (demanded.length) {
+			demanded.forEach((stage) => addTableRow(f, rows, stage));
+		} else if (f.reqd) {
+			// A required table needs at least one row to fill in; an optional one
+			// starts empty so nobody is nudged into entering data they don't have.
+			addTableRow(f, rows);
+		}
 		return wrap;
 	}
 
-	function addTableRow(f, rows) {
+	function requiredStages(f) {
+		return (f.stage_requirement && f.stage_requirement.required_stages) || [];
+	}
+
+	// `lockedStage` seeds a demanded Education Stage: that column is preselected and
+	// cannot be changed or the row removed, so the row the candidate is being asked
+	// for cannot turn into a different one.
+	function addTableRow(f, rows, lockedStage) {
 		const columns = f.table_fields || [];
+		const stageField = f.stage_requirement && f.stage_requirement.fieldname;
 		const row = el("div", "spot-table-row");
 
 		const head = el("div", "spot-table-row-head");
 		head.appendChild(el("span", "spot-table-row-title", ""));
-		const remove = el("button", "spot-row-remove", "×");
-		remove.type = "button";
-		remove.setAttribute("aria-label", __("Remove"));
-		remove.addEventListener("click", () => {
-			row.remove();
-			renumberRows(rows, f);
-		});
-		head.appendChild(remove);
+		if (!lockedStage) {
+			const remove = el("button", "spot-row-remove", "×");
+			remove.type = "button";
+			remove.setAttribute("aria-label", __("Remove"));
+			remove.addEventListener("click", () => {
+				row.remove();
+				renumberRows(rows, f);
+			});
+			head.appendChild(remove);
+		}
 		row.appendChild(head);
 
 		columns.forEach((col) => {
 			if (col.read_only) return;
+			const locked = Boolean(lockedStage) && col.fieldname === stageField;
 			const field = el("div", "verify-field");
-			field.appendChild(buildLabel(col.label, col.reqd_channel));
+			// A demanded stage is mandatory whatever the column config says — it is
+			// the reason this row exists.
+			field.appendChild(buildLabel(col.label, col.reqd_channel || locked));
 			const control = buildControl({
 				fieldtype: col.fieldtype,
 				options: col.options,
 				prefill: col.default || "",
+				preselect: locked ? lockedStage : "",
+				readOnly: locked,
 				link: { fieldname: f.reference_name, child_fieldname: col.fieldname },
 			});
 			control.dataset.childFieldname = col.fieldname;
@@ -257,9 +281,16 @@ frappe.ready(function () {
 	}
 
 	function renumberRows(rows, f) {
+		const demanded = requiredStages(f);
 		Array.from(rows.children).forEach((row, index) => {
 			const title = row.querySelector(".spot-table-row-title");
-			if (title) title.textContent = `${f.display_name} ${index + 1}`;
+			// A seeded row is named for its stage ("Education — 10th"); the rows the
+			// candidate added themselves keep the running number.
+			if (title) {
+				title.textContent = index < demanded.length
+					? `${f.display_name} — ${demanded[index]}`
+					: `${f.display_name} ${index + 1}`;
+			}
 		});
 	}
 
@@ -287,7 +318,7 @@ frappe.ready(function () {
 		} else if (spec.fieldtype === "Link") {
 			input = document.createElement("select");
 			fillSelect(input, __("Loading..."), []);
-			loadLinkOptions(spec.link, input);
+			loadLinkOptions(spec.link, input, spec.preselect);
 		} else if (spec.fieldtype === "Check") {
 			input = document.createElement("input");
 			input.type = "checkbox";
@@ -310,6 +341,11 @@ frappe.ready(function () {
 		if (spec.prefill && input.tagName !== "SELECT" && input.type !== "file") {
 			input.value = spec.prefill;
 		}
+		// A Select's options may not have arrived yet — loadLinkOptions applies the
+		// preselection when they do.
+		if (spec.preselect && input.tagName === "SELECT") input.value = spec.preselect;
+		// Disabled, not readonly: a <select> ignores readonly. `readValue` still reads
+		// a disabled control, so a locked stage is submitted like any other value.
 		if (spec.readOnly) input.disabled = true;
 		return input;
 	}
@@ -323,15 +359,23 @@ frappe.ready(function () {
 		return "text";
 	}
 
-	function loadLinkOptions(link, select) {
+	function loadLinkOptions(link, select, preselect) {
 		callApi("recruitment.api.channels.campus_drive_spot.get_drive_field_options", {
 			drive: driveId,
 			job_opening: spot.opening,
 			fieldname: link.fieldname,
 			child_fieldname: link.child_fieldname || "",
 		})
-			.then((data) => fillSelect(select, __("Select"), data.options || []))
-			.catch(() => fillSelect(select, __("Select"), []));
+			.then((data) => {
+				fillSelect(select, __("Select"), data.options || []);
+				if (preselect) select.value = preselect;
+			})
+			.catch(() => {
+				fillSelect(select, __("Select"), preselect
+					? [{ value: preselect, label: preselect }]
+					: []);
+				if (preselect) select.value = preselect;
+			});
 	}
 
 	// Attach controls upload as soon as a file is picked; the returned file_url is
@@ -375,13 +419,16 @@ frappe.ready(function () {
 
 		const form_data = {};
 		const missing = [];
+		const problems = [];
 
 		// Walk the config rather than the DOM, so a child table's inputs are only
 		// ever read as part of their own row.
 		spot.fields.forEach((config) => {
-			const value = TABLE_FIELDTYPES.includes(config.fieldtype)
+			const isTable = TABLE_FIELDTYPES.includes(config.fieldtype);
+			const value = isTable
 				? readTableValue(config, missing)
 				: readValue(document.getElementById(`spot_f_${config.reference_name}`));
+			if (isTable) problems.push(...stageOrderProblems(config, value));
 
 			const empty = value === "" || value === null ||
 				(Array.isArray(value) && !value.length);
@@ -391,10 +438,12 @@ frappe.ready(function () {
 		});
 
 		if (missing.length) {
-			return showError(
-				applyError,
+			problems.unshift(
 				__("Please fill in: {0}").replace("{0}", missing.join(", "))
 			);
+		}
+		if (problems.length) {
+			return showError(applyError, problems.join(" "));
 		}
 
 		setLoading(applyBtn, true, __("Registering..."), __("Register"));
@@ -443,7 +492,55 @@ frappe.ready(function () {
 			});
 			rows.push(row);
 		});
+
+		// Every Education Stage this channel demands needs a row of its own. Seeded
+		// rows the candidate left entirely blank were dropped above, so this is also
+		// what catches "they never filled in their 12th".
+		if (config.stage_requirement) {
+			const supplied = new Set(
+				rows.map((r) => r[config.stage_requirement.fieldname]).filter(Boolean)
+			);
+			config.stage_requirement.required_stages.forEach((stage) => {
+				if (!supplied.has(stage)) missing.push(`${config.display_name} → ${stage}`);
+			});
+		}
 		return rows;
+	}
+
+	/** Sentences for any demanded stage whose year does not follow the one before it.
+	 *  The stages are configured in the order they are sat (10th, then 12th, then
+	 *  Graduation), so 2015 against the 10th and 2013 against the 12th has them the
+	 *  wrong way round. Only the demanded stages take part — a row the candidate added
+	 *  themselves has no place in that sequence — and blank years are left alone. */
+	function stageOrderProblems(config, rows) {
+		const rule = config.stage_requirement;
+		if (!rule || !rule.year_fieldname) return [];
+		const yearLabel = rule.year_label || rule.year_fieldname;
+
+		const sat = [];
+		rule.required_stages.forEach((stage, position) => {
+			const row = rows.find((r) => r[rule.fieldname] === stage);
+			const year = row && parseInt(row[rule.year_fieldname], 10);
+			if (Number.isFinite(year)) sat.push({ position, stage, year });
+		});
+
+		const problems = [];
+		for (let i = 1; i < sat.length; i++) {
+			const earlier = sat[i - 1];
+			const later = sat[i];
+			if (later.year <= earlier.year) {
+				problems.push(
+					__("{0}: {1} is sat after {2}, so its {3} ({4}) must be later than {2}'s ({5}).")
+						.replace("{0}", config.display_name)
+						.replace(/\{1\}/g, later.stage)
+						.replace(/\{2\}/g, earlier.stage)
+						.replace("{3}", yearLabel)
+						.replace("{4}", later.year)
+						.replace("{5}", earlier.year)
+				);
+			}
+		}
+		return problems;
 	}
 
 	function readValue(input) {

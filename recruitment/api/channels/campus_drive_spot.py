@@ -29,12 +29,18 @@ view_campus = 1 (mandatory_campus = 1 for required), falling back to Job Applica
 Profile Settings. HR configures it on the Job Opening; this module just serves it.
 
 Submitted candidates land as a normal campus Job Applicant, stamped with
-custom_campus_drive / custom_institute / custom_email_verified, and are scored by
-the eligibility engine exactly like invite candidates.
+custom_campus_drive / custom_institute / custom_email_verified / custom_spot_registered,
+and are scored by the eligibility engine exactly like invite candidates. The Campus
+Invite covering the institute they picked is stamped too (campus_helpers.
+invite_for_drive_institute) so the region — and everything read off the invite —
+resolves for a walk-in the same way it does for a pre-registered candidate.
 """
 
 import frappe
-from frappe.utils import getdate, nowdate
+from frappe import _
+from frappe.utils import formatdate, getdate, nowdate
+
+from recruitment.recruitment.campus_helpers import invite_for_drive_institute
 
 from . import _common
 from .campus import DRAFT_STATUS, SUBMIT_STATUS, _apply_form_data, _coerce_form_data
@@ -72,16 +78,30 @@ OPEN_DRIVE_STATUSES = {"Live", "In Progress"}
 OPEN_OPENING_STATUSES = {"Open"}
 
 
-def _get_open_drive(drive):
-    """Return the Campus Drive if it is accepting spot registrations, else None.
+# A drive that has been run and put away. Worth saying out loud rather than lumping in
+# with "not open": a candidate standing at the venue of a finished drive, and one whose
+# link never carried a drive at all, need to do different things about it.
+FINISHED_DRIVE_STATUSES = {"Completed", "Closed"}
 
-    Requires the drive to exist, to have its registration form enabled (the same
-    flag that generates the QR), and to be in a live status. `registration_open_from`
-    gates the start when set; `drive_end_date` gates the end.
+
+def registration_status(drive):
+    """``(drive row or None, message)`` — the drive if it can take a walk-in right
+    now, otherwise why it cannot, in words the candidate can act on.
+
+    Five separate things close this door — no drive on the link, a drive that does not
+    exist, the registration form switched off, a drive still in Draft or already
+    finished, and the registration window not yet open or already past — and they all
+    used to surface as the same "registration is not open for this campus drive",
+    which told neither the candidate at the desk nor the HR person they then asked
+    anything about which one it was. The message is specific; nothing about the drive
+    that a candidate should not see goes into it.
     """
     drive = (drive or "").strip()
     if not drive:
-        return None
+        return None, _(
+            "This link is missing its campus drive. Please scan the QR code shown at "
+            "the registration desk."
+        )
 
     row = frappe.db.get_value(
         "Campus Drive",
@@ -97,17 +117,45 @@ def _get_open_drive(drive):
         ],
         as_dict=True,
     )
-    if not row or not row.registration_form_enabled:
-        return None
+    if not row:
+        return None, _(
+            "This registration link is not valid. Please scan the QR code shown at the "
+            "registration desk."
+        )
+    if not row.registration_form_enabled:
+        return None, _(
+            "On-the-spot registration is switched off for this campus drive. Please "
+            "contact the HR desk."
+        )
+    if row.drive_status in FINISHED_DRIVE_STATUSES:
+        return None, _("This campus drive has finished. Please contact the HR desk.")
     if row.drive_status not in OPEN_DRIVE_STATUSES:
-        return None
+        # Draft: HR is still setting the drive up, so its QR must not create anyone.
+        return None, _(
+            "This campus drive has not started yet. Please contact the HR desk."
+        )
 
     today = getdate(nowdate())
     if row.registration_open_from and getdate(row.registration_open_from) > today:
-        return None
+        return None, _("Registration for this campus drive opens on {0}.").format(
+            formatdate(row.registration_open_from)
+        )
     if row.drive_end_date and getdate(row.drive_end_date) < today:
-        return None
-    return row
+        return None, _("Registration for this campus drive closed on {0}.").format(
+            formatdate(row.drive_end_date)
+        )
+    return row, ""
+
+
+def _get_open_drive(drive):
+    """The Campus Drive if it is accepting spot registrations, else None.
+
+    Requires the drive to exist, to have its registration form enabled (the same
+    flag that generates the QR), and to be in a live status. `registration_open_from`
+    gates the start when set; `drive_end_date` gates the end. Callers that want to
+    tell the candidate WHY should use `registration_status` instead.
+    """
+    return registration_status(drive)[0]
 
 
 def _drive_institutes(drive):
@@ -189,9 +237,9 @@ def get_drive_registration_options(drive):
     "openings": [...]}``. Both lists are drive-scoped: the candidate can only ever
     pick an institute participating in this drive and an opening linked to it.
     """
-    row = _get_open_drive(drive)
+    row, reason = registration_status(drive)
     if not row:
-        return _err("Registration is not open for this campus drive.")
+        return _err(reason)
 
     institutes = _drive_institutes(row.name)
     openings = _drive_openings(row.name)
@@ -222,9 +270,9 @@ def get_drive_application_fields(drive, job_opening):
     linked to `drive` — this is the guest-safe counterpart of the portal-only
     campus.get_application_fields, which requires a candidate session.
     """
-    row = _get_open_drive(drive)
+    row, reason = registration_status(drive)
     if not row:
-        return _err("Registration is not open for this campus drive.")
+        return _err(reason)
 
     opening = (job_opening or "").strip()
     if not opening:
@@ -290,9 +338,9 @@ def get_drive_field_options(drive, job_opening, fieldname, child_fieldname=None,
     `child_fieldname` for a Link column inside a child table (e.g. the education
     grid's Institute / Education Stage pickers).
     """
-    row = _get_open_drive(drive)
+    row, reason = registration_status(drive)
     if not row:
-        return _err("Registration is not open for this campus drive.")
+        return _err(reason)
 
     df = _resolve_form_field(row.name, job_opening, fieldname, child_fieldname)
     if not df or df["fieldtype"] != "Link" or not df["options"]:
@@ -339,9 +387,9 @@ def upload_drive_attachment(drive, job_opening, fieldname, child_fieldname=None)
     """
     import os
 
-    row = _get_open_drive(drive)
+    row, reason = registration_status(drive)
     if not row:
-        return _err("Registration is not open for this campus drive.")
+        return _err(reason)
 
     df = _resolve_form_field(row.name, job_opening, fieldname, child_fieldname)
     if not df or df["fieldtype"] not in ("Attach", "Attach Image"):
@@ -431,9 +479,9 @@ def submit_drive_application(drive, institute, job_opening, email, form_data=Non
     Mandatory campus fields are enforced by assert_field_set_for_channel, which also
     strips anything not configured for the channel.
     """
-    row = _get_open_drive(drive)
+    row, reason = registration_status(drive)
     if not row:
-        return _err("Registration is not open for this campus drive.")
+        return _err(reason)
 
     candidate_email = (email or "").strip().lower()
     if not candidate_email:
@@ -500,12 +548,14 @@ def submit_drive_application(drive, institute, job_opening, email, form_data=Non
         doc.job_title = opening
         doc.status = SUBMIT_STATUS
 
-        # The campus form captures first name in applicant_name and surname in
-        # custom_applicant_last_name — store the FULL name in applicant_name so the
-        # candidate shows with their complete name everywhere (same as the invite flow).
-        last = doc.get("custom_applicant_last_name")
-        if last and last.strip() and last.strip().lower() not in (doc.applicant_name or "").lower():
-            doc.applicant_name = f"{(doc.applicant_name or '').strip()} {last.strip()}".strip()
+        # The name parts are stored EXACTLY as the candidate typed them: applicant_name
+        # is the first name and nothing else. This used to be overwritten with the whole
+        # name so lists would show something complete, which is what put
+        # "Yaswanth Kumar Dasari" in the field labelled "Applicant First Name" while
+        # "Dasari" also sat in the surname box. The display name is the derived
+        # custom_full_name (built on validate by recruitment.api.applicant_name), which
+        # is the doctype's title — so the banner and every list show the full name
+        # without any field holding a merged one.
 
         source = _common.source_value_for(CHANNEL)
         if source and not doc.get("source"):
@@ -515,6 +565,16 @@ def submit_drive_application(drive, institute, job_opening, email, form_data=Non
         doc.custom_campus_drive = row.name
         if doc.meta.has_field("custom_institute"):
             doc.custom_institute = picked_institute
+        # ...and the Campus Invite that covers the institute they picked. A walk-in
+        # has no invite in their URL, but the invite is what carries the region
+        # (custom_region is fetched from it), so a candidate registered at the venue
+        # would otherwise reach the round board with no region and no panel able to
+        # take them. Resolved from the drive + institute + opening; a drive running no
+        # invites at all leaves it empty and the drive link alone stands.
+        if doc.meta.has_field("custom_campus_invite"):
+            invite = invite_for_drive_institute(row.name, picked_institute, opening)
+            if invite:
+                doc.custom_campus_invite = invite
         # Marks them as a walk-in rather than a TPO-registered candidate. The drive
         # link alone can't say that — invite candidates carry it too — so this is what
         # HR filters on to see who registered at the venue.
@@ -549,6 +609,7 @@ def submit_drive_application(drive, institute, job_opening, email, form_data=Non
             "name": doc.name,
             "drive": row.name,
             "institute": picked_institute,
+            "campus_invite": doc.get("custom_campus_invite"),
             "job_opening": opening,
             "job_title": all_openings[opening]["job_title"],
             "status": doc.status,

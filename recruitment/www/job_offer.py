@@ -120,7 +120,8 @@ def get_context(context):
                 # Job Applicant fields (sidebar: duration, stipend, expected_doj, region)
                 ja_id = jo_fields.get('job_applicant') or appl
                 ja_meta = frappe.get_meta('Job Applicant')
-                ja_wanted = ['custom_expected_doj', 'duration', 'stipend', 'region', 'manager_name', 'custom_applicant_last_name']
+                ja_wanted = ['custom_expected_doj', 'duration', 'stipend', 'region', 'manager_name',
+                             'custom_applicant_last_name', 'custom_full_name']
                 ja_existing = [f for f in ja_wanted if ja_meta.has_field(f)]
                 ja_fields = {}
                 if ja_existing:
@@ -140,12 +141,17 @@ def get_context(context):
                 context.region = ja_fields.get('region') or ''
                 context.manager_name = ja_fields.get('manager_name') or ''
 
-                # Build full name with last name from Job Applicant
+                # The candidate's whole name. The Job Applicant keeps the parts separate
+                # (applicant_name is the FIRST name) and derives custom_full_name from
+                # them on every save, so that is the name to print -- joining first +
+                # surname here would drop a middle name, and print the surname twice on
+                # any row where it had leaked into the first-name box.
                 last_name = ja_fields.get('custom_applicant_last_name') or ''
-                if last_name:
-                    context.full_name = (context.applicant_name + ' ' + last_name).strip()
-                else:
-                    context.full_name = context.applicant_name
+                context.full_name = ja_fields.get('custom_full_name') or (
+                    (context.applicant_name + ' ' + last_name).strip()
+                    if last_name and last_name.lower() not in (context.applicant_name or '').lower()
+                    else context.applicant_name
+                )
 
                 # Calculate hours remaining until expiry and is_expired flag
                 context.hours_remaining = 0

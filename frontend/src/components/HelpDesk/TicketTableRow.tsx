@@ -55,12 +55,13 @@ const TicketTableRow = ({
     permReopen = true,
 }: TicketTableRowProps) => {
     const creationTime = new Date(ticket.creation);
-    const delayHours = ticket.custom_second_level_escalation_delay_hours;
+    const delayHours = ticket?.custom_second_level_escalation_delay_hours;
+    const hasDelay = delayHours != null && !isNaN(delayHours);
 
     // target = creation + delay
-    const targetTime = new Date(
-        creationTime.getTime() + delayHours * 60 * 60 * 1000
-    );
+    const targetTime = hasDelay
+        ? new Date(creationTime.getTime() + delayHours * 60 * 60 * 1000)
+        : new Date();
 
     const { hours, minutes, seconds, isExpired } = useCountdown(targetTime);
     return (
@@ -85,6 +86,11 @@ const TicketTableRow = ({
                     {getCategoryName(ticket.custom_category)}
                 </Typography>
             </td>
+            <td className="px-4 py-3">
+                <Typography variant="bodySmall" color="body1">
+                    {getCategoryName(ticket.custom_sub_category_name || ticket.custom_sub_category)}
+                </Typography>
+            </td>
             <td className="px-4 py-3 flex justify-center">
                 {(() => {
                     const badgeConfig = getStatusBadgeConfig(ticket.status);
@@ -100,11 +106,6 @@ const TicketTableRow = ({
             </td>
             <td className="px-4 py-3">
                 <Typography variant="bodySmall" color="body1">
-                    {getCategoryName(ticket.custom_sub_category_name || ticket.custom_sub_category)}
-                </Typography>
-            </td>
-            <td className="px-4 py-3">
-                <Typography variant="bodySmall" color="body1">
                     {ticket.no_of_comments}
                 </Typography>
             </td>
@@ -115,12 +116,12 @@ const TicketTableRow = ({
             </td>
             <td className="px-4 py-3">
                 <Typography variant="bodySmall" color="body1">
-                    {formateDateDiff(ticket.resolution_by, ticket.creation)}
+                    {formateDateDiff(ticket.response_by, ticket.creation)}
                 </Typography>
             </td>
             <td className="px-4 py-3">
                 <Typography variant="bodySmall" color="body1">
-                    {formateDateDiff(ticket.response_by, ticket.creation)}
+                    {formateDateDiff(ticket.resolution_by, ticket.creation)}
                 </Typography>
             </td>
             <td className="px-4 py-3">
@@ -140,7 +141,9 @@ const TicketTableRow = ({
                     color="body1"
                 >
                     {<div>
-                        {isExpired ? (
+                        {!hasDelay ? (
+                            <span>N/A</span>
+                        ) : isExpired ? (
                             <span>Escalated</span>
                         ) : (
                             <span>

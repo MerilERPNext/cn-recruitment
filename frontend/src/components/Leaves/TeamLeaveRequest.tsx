@@ -2,7 +2,7 @@ import { useCallback, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 import useCurrentUser from "../../hooks/useCurrentUser";
 import { useCurrentEmployeeDetails } from "../../hooks/useEmployee";
-import { useGetLeaveBalance } from "../../hooks/useLeaves";
+import { useGetLeaveBalance, useLeaveSettings } from "../../hooks/useLeaves";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import { getCOLUMN_SORT_CONFIG_TEAM_LEAVE_REQUEST } from "../../utils/tableSortConfig";
 import { FilterField } from "../DataListView";
@@ -25,6 +25,16 @@ const TeamLeaveRequest = () => {
   const { data: currentEmployee } = useCurrentEmployeeDetails({
     logged_in_employee_details: true,
   });
+
+  const { data: leaveSettings } = useLeaveSettings();
+  const selectAllStatusAsDefault = !!leaveSettings?.select_all_status_as_default;
+
+  // When select_all_status_as_default is enabled show all statuses (no status filter),
+  // otherwise default to Pending (Open).
+  const defaultStatusFilter = selectAllStatusAsDefault
+    ? { todo_status: ["!=", "Cancelled"] }
+    : { status: "Open", todo_status: ["!=", "Cancelled"] };
+
   const today = new Date().toISOString().split("T")[0];
   const { data: leaveBalanceData } = useGetLeaveBalance(
     currentEmployee?.name,
@@ -69,9 +79,13 @@ const TeamLeaveRequest = () => {
           },
           { label: "Rejected", value: "Rejected" },
         ],
-        emptyValueConfig: {
-          filterValue: ["!=", "Cancelled"],
-        },
+        // When showing all statuses by default, skip the empty-value fallback filter
+        // so no status filter is sent in the payload when nothing is selected.
+        ...(!selectAllStatusAsDefault && {
+          emptyValueConfig: {
+            filterValue: ["!=", "Cancelled"],
+          },
+        }),
       },
       {
         fieldname: "leave_type",
@@ -90,7 +104,7 @@ const TeamLeaveRequest = () => {
         fieldtype: "Date",
       },
     ];
-  }, [leaveBalanceData]);
+  }, [leaveBalanceData, selectAllStatusAsDefault]);
 
   const [refetchApprovalList, setRefetchApprovalList] = useState(false);
   const navigate = useNavigate();
@@ -290,7 +304,7 @@ const TeamLeaveRequest = () => {
                 columnWidths={finalColumnWidths}
                 onBulkSelectVisibilityChange={setIsBulkSelectEnabled}
                 filterFields={dynamicFilterFields}
-                defaultFilters={{ status: "Open", todo_status: ["!=", "Cancelled"] }}
+                defaultFilters={defaultStatusFilter}
                 SkeletonComponent={CardSkeleton}
                 renderCardContent={(item) => {
                   if (

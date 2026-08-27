@@ -2,23 +2,52 @@ import frappe
 from frappe import _
 from frappe.utils import getdate, formatdate, format_time
 
+from recruitment.api.hiring_stage import get_interview_round_field
+
+# The response key stays `interview_round` whatever HRMS calls the field, so the
+# dashboard consuming this API does not have to know which version it is talking to.
+ROUND_KEY = "interview_round"
+MANAGEMENT_ROUND = "Management Round"
+
+
+def _round_field(doctype="Interview"):
+    """The fieldname holding the round on THIS HRMS version, or None.
+
+    v15 calls it `interview_round`, v16 `interview_type`. Hardcoding either is
+    worse than it looks: a site upgraded from v15 keeps the old *column* on
+    `tabInterview` long after the field left the DocType, so a raw query against
+    the old name does not error — it reads a column that is empty for every row
+    and quietly returns nothing. Resolved from the meta instead.
+    """
+    return get_interview_round_field(doctype)
+
 @frappe.whitelist()
 def get_pending_management_interviews():
     if not frappe.has_permission("Interview", "read"):
         frappe.throw(_("Not permitted."), frappe.PermissionError)
     try:
+        round_field = _round_field()
+        if not round_field:
+            # No round field on this version at all — nothing can be a Management
+            # Round, so say so plainly rather than returning an unfiltered list.
+            return {
+                "status": "success",
+                "message": "Fetched pending management interviews",
+                "data": [],
+            }
+
         interviews = frappe.get_all(
             "Interview",
             filters={
                 "status": "Pending",
-                "interview_round": "Management Round",
+                round_field: MANAGEMENT_ROUND,
             },
             fields=[
                 "name",
                 "scheduled_on",
                 "from_time",
                 "to_time",
-                "interview_round",
+                round_field,
                 "custom_resume_attachment",
                 "custom_zoom_link",
                 "job_applicant",
@@ -36,7 +65,7 @@ def get_pending_management_interviews():
             interview_data = {
                 "interview_id": interview.name,
                 "scheduled_on": scheduled_str,
-                "interview_round": interview.interview_round,
+                ROUND_KEY: interview.get(round_field),
                 "resume_link": frappe.utils.get_url(interview.custom_resume_attachment) if interview.custom_resume_attachment else None,
                 "zoom_link": interview.custom_zoom_link,
                 "job_applicant": interview.job_applicant,
@@ -91,13 +120,15 @@ def get_job_applicant_details(applicant_id):
         doc_dict = doc.as_dict()
 
         # Fetch completed Interviews
+        round_field = _round_field()
         completed_interviews = frappe.get_all(
             "Interview",
             filters={
                 "job_applicant": applicant_id,
                 "status": "Cleared"
             },
-            fields=["name", "scheduled_on", "status", "job_opening", "interview_round"]
+            fields=["name", "scheduled_on", "status", "job_opening"]
+            + ([round_field] if round_field else [])
         )
         for interview in completed_interviews:
             interview_name = interview["name"]
@@ -121,6 +152,9 @@ def get_job_applicant_details(applicant_id):
                 fields=["interviewer", "average_rating", "feedback"]
             )
 
+            # Republish the round under the stable key the dashboard expects.
+            if round_field:
+                interview[ROUND_KEY] = interview.get(round_field)
             interview["interviewers"] = interviewers
             interview["feedback"] = feedback
 

@@ -1,12 +1,13 @@
 import { useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { useLocation } from "react-router";
-import { endOfDay, format, startOfDay, isValid } from "date-fns";
+import { endOfDay, format, startOfDay, isValid, isWithinInterval, parseISO } from "date-fns";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   useAllEmployeeCheckIns,
   useAllAttendanceRequests,
   useGetOvertimeJournal,
+  useAttendanceRequestAttachments,
 } from "../../../hooks/useAttendance";
 import {
   AttendanceRecord,
@@ -104,6 +105,30 @@ const EmployeeAttendanceDetails = ({
   ) as { data: LeaveApplication | undefined };
   const effectiveEmployeeId =
     data?.employee || targetEmployeeId || currentEmployee?.employee;
+
+  // Check allowed date range for Attendance Adjustment via check_attachment_mandatory API
+  const attachmentQueryDate = useMemo(
+    () => (validDate ? format(validDate, "yyyy-MM-dd'T'HH:mm:ssXXX") : ""),
+    [validDate]
+  );
+  const { data: attendanceAdjustmentData } = useAttendanceRequestAttachments(
+    effectiveEmployeeId || "",
+    attachmentQueryDate,
+    "Attendance Adjustment",
+  );
+  const isDateInAllowedRange = useMemo(() => {
+    if (!validDate || !attendanceAdjustmentData) return false;
+    const fromStr = attendanceAdjustmentData?.allowed_from_date;
+    const toStr = attendanceAdjustmentData?.allowed_to_date;
+    if (!fromStr || !toStr) return false;
+    try {
+      const from = startOfDay(parseISO(fromStr));
+      const to = endOfDay(parseISO(toStr));
+      return isWithinInterval(validDate, { start: from, end: to });
+    } catch {
+      return false;
+    }
+  }, [validDate, attendanceAdjustmentData]);
 
   const { data: buttonStatus } = useGetButtonsStatus(
     effectiveEmployeeId || "",
@@ -599,7 +624,7 @@ const EmployeeAttendanceDetails = ({
             Leave Request
           </Button>
         )}
-        {(showAttendanceBtn || leaveDetailsFromButtonStatusData?.some(leave => leave.status === 'Open')) && (
+        {isDateInAllowedRange && (showAttendanceBtn || leaveDetailsFromButtonStatusData?.some(leave => leave.status === 'Open')) && (
           <Button
             variant="soft"
             fullWidth

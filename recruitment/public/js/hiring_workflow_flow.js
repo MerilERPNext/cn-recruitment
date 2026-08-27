@@ -278,7 +278,14 @@
                 frappe.model.with_doctype("Interview", () => {
                     const d = frappe.model.get_new_doc("Interview");
                     d.job_applicant = m.job_applicant;
-                    d.interview_round = m.interview_round;
+                    // prepare_interview always returns the round under the key
+                    // `interview_round`, but the field it belongs in was renamed in
+                    // HRMS v16 to `interview_type`. Writing the old name there put the
+                    // value on a field that does not exist, so the new Interview opened
+                    // with its round blank. Meta is loaded by with_doctype above.
+                    d[frappe.meta.has_field("Interview", "interview_type")
+                        ? "interview_type"
+                        : "interview_round"] = m.interview_round;
                     if (m.designation) d.designation = m.designation;
                     if (m.job_opening) d.job_opening = m.job_opening;
                     frappe.set_route("Form", "Interview", d.name);
@@ -416,13 +423,31 @@
         });
     }
 
+    // The Job Applicant keeps the name in parts — `applicant_name` is the FIRST name
+    // — and derives `custom_full_name` from them on save. Anything that shows a
+    // candidate to a person shows that.
+    function candidateName(doc) {
+        if (doc.custom_full_name) return doc.custom_full_name;
+        // Fallback for a row saved before the derived field shipped: skip a part
+        // already sitting in an earlier one, so a surname is never printed twice.
+        let out = "";
+        [doc.applicant_name, doc.custom_applicant_middle_name, doc.custom_applicant_last_name]
+            .map((p) => String(p || "").trim())
+            .filter(Boolean)
+            .forEach((part) => {
+                if (out.toLowerCase().includes(part.toLowerCase())) return;
+                out = out ? `${out} ${part}` : part;
+            });
+        return out || doc.name;
+    }
+
     // Open a prefilled Job Offer form for review (don't create it silently) —
     // HR fills salary/terms and saves it themselves.
     function routeToNewJobOffer(frm, position) {
         frappe.model.with_doctype("Job Offer", () => {
             const d = frappe.model.get_new_doc("Job Offer");
             d.job_applicant = frm.doc.name;
-            d.applicant_name = frm.doc.applicant_name;
+            d.applicant_name = candidateName(frm.doc);
             d.applicant_email = frm.doc.email_id;
             if (frm.doc.designation) d.designation = frm.doc.designation;
             if (frm.doc.custom_expected_doj) d.custom_expected_doj = frm.doc.custom_expected_doj;
@@ -748,7 +773,7 @@
     function openReviewDialog(frm, mode) {
         const actionLabel = mode === "Shortlist" ? __("Shortlist") : __("Screen");
         const d = new frappe.ui.Dialog({
-            title: `${mode} — ${frm.doc.applicant_name || frm.doc.name}`,
+            title: `${mode} — ${candidateName(frm.doc)}`,
             size: "large",
             fields: [
                 { fieldtype: "HTML", fieldname: "summary" },

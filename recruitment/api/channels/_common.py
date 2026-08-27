@@ -502,6 +502,35 @@ def get_application_fields_for_channel(opening_name, channel, job_applicant=None
 	meta = frappe.get_meta("Job Applicant")
 	meta_lookup = {df.fieldname: df for df in meta.fields if df.fieldname}
 
+	# A managed (virtual) field keeps its choice list on Custom Doctype Field Item,
+	# never on the docfield: `options` on a virtual field is the slot Frappe
+	# evaluates as Python during serialisation, so storing a Select's choices
+	# there raises SyntaxError on every read of the doctype. Without this the
+	# candidate sees a Select with nothing in it.
+	#
+	# One query, and only when a field this form actually renders needs it — a
+	# form with no managed Select pays nothing.
+	managed_options = {}
+	if any(
+		(meta_lookup.get(r.get("reference_name")) or frappe._dict()).get("is_virtual")
+		and not (meta_lookup.get(r.get("reference_name")) or frappe._dict()).get("options")
+		for r in rows
+		if cint(r.get(view_col))
+	):
+		managed_options = {
+			row.field: (row.options or "")
+			for row in frappe.get_all(
+				"Custom Doctype Field Item",
+				filters={
+					"parent": "Job Applicant",
+					"parenttype": "Custom Doctype Fields",
+					"child_table": ["is", "not set"],
+				},
+				fields=["field", "options"],
+			)
+			if row.get("field")
+		}
+
 	# Load the applicant once so each field can surface its current value.
 	applicant_doc = None
 	if job_applicant and frappe.db.exists("Job Applicant", job_applicant):
@@ -522,7 +551,7 @@ def get_application_fields_for_channel(opening_name, channel, job_applicant=None
 			"reference_name": ref,
 			"display_name": r.get("display_name") or df.label or ref,
 			"fieldtype": df.fieldtype,
-			"options": df.options or "",
+			"options": df.options or managed_options.get(ref) or "",
 			"reqd": cint(r.get(mandatory_col)),
 			"ctq": cint(r.get("ctq_flag")),
 			"visibility": r.get("visibility") or "All",
@@ -581,8 +610,10 @@ def get_required_education_stages(channel):
 	"""Education Stages a candidate must supply on `channel`, in configured order.
 
 	Configured on Job Applicant Profile Settings → Required Education Stages, one row
-	per stage with a per-channel checkbox. This is advertised to the candidate form,
-	which is what enforces it — nothing here blocks a submit.
+	per stage with a per-channel checkbox. Advertised to the candidate form so it can
+	seed a row per stage and say what is missing inline, and enforced on submit by
+	`assert_child_table_rules` — the form is where the candidate is told, the submit is
+	what makes it true.
 	"""
 	try:
 		rows = frappe.get_all(
@@ -601,9 +632,19 @@ def get_required_education_stages(channel):
 	return [r.education_stage for r in rows if r.education_stage]
 
 
+# The column holding the year a stage was passed. The Required Education Stages are
+# configured in the order they are sat (10th, then 12th, then Graduation), so this is
+# what lets that order be checked against the years the candidate actually typed.
+_STAGE_YEAR_FIELDS = ("year_of_passing", "custom_passing_year")
+
+
 def _stage_requirement_for(table_fields, required_stages):
 	"""Stage rule for a child table, or None when the table has no Education Stage
-	column or this channel requires no particular stage."""
+	column or this channel requires no particular stage.
+
+	`year_fieldname` is the column the stages' years are read from; it is None when
+	the grid does not show one, and the order check is then simply not made.
+	"""
 	if not required_stages:
 		return None
 	stage_field = next(
@@ -611,10 +652,14 @@ def _stage_requirement_for(table_fields, required_stages):
 	)
 	if not stage_field:
 		return None
+	by_name = {f["fieldname"]: f for f in (table_fields or [])}
+	year_field = next((n for n in _STAGE_YEAR_FIELDS if n in by_name), None)
 	return {
 		"fieldname": stage_field["fieldname"],
 		"doctype": _STAGE_DOCTYPE,
 		"required_stages": list(required_stages),
+		"year_fieldname": year_field,
+		"year_label": (by_name[year_field].get("label") or year_field) if year_field else None,
 	}
 
 
@@ -652,6 +697,9 @@ def assert_field_set_for_channel(opening_name, channel, payload, fields=None):
 	channel. Raises frappe.ValidationError on:
 	  - unknown fields not configured for this channel
 	  - missing mandatory fields
+	  - a child-table row missing a column mandatory on this channel, or an
+	    Education Stage the channel demands with no row of its own
+	    (see `assert_child_table_rules`)
 	Returns the cleaned dict (only configured fields, in declared order).
 
 	Pass `fields` when the caller already built the set for this opening/channel —
@@ -678,4 +726,116 @@ def assert_field_set_for_channel(opening_name, channel, payload, fields=None):
 		frappe.throw(frappe._("Missing required fields: {}").format(", ".join(missing)))
 
 	# Keep only configured fields, preserving template order
-	return {k: payload[k] for k in allowed if k in payload}
+	cleaned = {k: payload[k] for k in allowed if k in payload}
+	assert_child_table_rules(fields, cleaned)
+	return cleaned
+
+
+def _table_rows(value):
+	"""The child rows out of a submitted value, as dicts. Anything else is ignored —
+	a malformed row must not silently pass a mandatory check."""
+	if not isinstance(value, (list, tuple)):
+		return []
+	return [r for r in value if isinstance(r, dict)]
+
+
+def _is_blank(value):
+	return value is None or value == "" or value == []
+
+
+def _stage_year_problems(label, rows, rule):
+	"""Sentences for any demanded stage whose year does not follow the one before it.
+
+	The Required Education Stages are configured in the order they are sat — 10th,
+	then 12th, then Graduation — so a candidate who types 2015 against their 10th and
+	2013 against their 12th has them the wrong way round. Only the demanded stages are
+	checked: a row the candidate added themselves has no place in that sequence.
+
+	Blank years are skipped rather than reported (the column is only mandatory if HR
+	made it so, which the check above already covers), and a year that isn't a number
+	is left to the field's own validation.
+	"""
+	year_field = rule.get("year_fieldname")
+	if not year_field:
+		return []
+
+	position = {stage: i for i, stage in enumerate(rule["required_stages"])}
+	sat = []
+	for row in rows:
+		stage = row.get(rule["fieldname"])
+		if stage not in position or _is_blank(row.get(year_field)):
+			continue
+		try:
+			sat.append((position[stage], stage, int(row.get(year_field))))
+		except (TypeError, ValueError):
+			continue
+	sat.sort()
+
+	year_label = rule.get("year_label") or year_field
+	problems = []
+	for (_, earlier, earlier_year), (_, later, later_year) in zip(sat, sat[1:]):
+		if later_year <= earlier_year:
+			problems.append(
+				frappe._(
+					"{0}: {1} is sat after {2}, so its {3} ({4}) must be later than "
+					"{2}'s ({5})."
+				).format(label, later, earlier, year_label, later_year, earlier_year)
+			)
+	return problems
+
+
+def assert_child_table_rules(fields, payload):
+	"""Enforce, per child table on the form:
+
+	  * every column HR marked mandatory for this channel is filled in on every row
+	    the candidate submitted,
+	  * every Education Stage this channel demands has a row of its own, and
+	  * those stages' years run in the order the stages are sat.
+
+	All of this was advertised to the form and enforced NOWHERE. The Required
+	Education Stages grid on Job Applicant Profile Settings therefore had no effect at
+	all: a campus candidate could register having supplied no education history, only
+	their 10th, or a 10th passed three years after their graduation. The client is
+	where the candidate is TOLD (inline, before submitting); this is what makes it
+	true — the spot-registration page, the campus portal and any future caller all
+	come through here.
+
+	Raises frappe.ValidationError naming exactly what is wrong.
+	"""
+	missing = []
+	problems = []
+	for field in fields:
+		if field["fieldtype"] not in ("Table", "Table MultiSelect"):
+			continue
+		label = field.get("display_name") or field["reference_name"]
+		rows = _table_rows(payload.get(field["reference_name"]))
+
+		# Mandatory columns, per row. Row numbers are 1-based to match the form.
+		required_columns = [
+			c for c in (field.get("table_fields") or []) if cint(c.get("reqd_channel"))
+		]
+		for index, row in enumerate(rows, start=1):
+			for column in required_columns:
+				if _is_blank(row.get(column["fieldname"])):
+					missing.append(
+						f"{label} {index} → {column.get('label') or column['fieldname']}"
+					)
+
+		rule = field.get("stage_requirement")
+		if rule:
+			# The stages this channel demands — one row each...
+			supplied = {row.get(rule["fieldname"]) for row in rows}
+			for stage in rule["required_stages"]:
+				if stage not in supplied:
+					missing.append(f"{label} → {stage}")
+			# ...sat in the order they are configured in.
+			problems.extend(_stage_year_problems(label, rows, rule))
+
+	messages = []
+	if missing:
+		messages.append(frappe._("Missing required fields: {}").format(", ".join(missing)))
+	messages.extend(problems)
+	if messages:
+		# Joined as plain sentences: the spot-registration page renders this straight
+		# into a text node, so markup would show up as markup.
+		frappe.throw(" ".join(messages))

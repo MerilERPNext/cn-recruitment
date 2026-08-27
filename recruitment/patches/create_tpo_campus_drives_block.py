@@ -54,9 +54,14 @@ def _add_block_to_workspace():
 			"type": "custom_block",
 			"data": {"custom_block_name": BLOCK_NAME, "col": 12},
 		}
-		# Right after the header block, so the drives are the first thing a TPO
-		# sees rather than sitting below the shortcuts.
-		position = 1 if content and content[0].get("type") == "header" else 0
+		# Below the header and the shortcuts, so the Candidate Registration link — the
+		# thing a TPO comes here to use — stays at the top and the drives board reads
+		# underneath it. See tpo_space_registration_above_drives for existing sites.
+		leading = {"header", "shortcut"}
+		position = next(
+			(i for i, block in enumerate(content) if block.get("type") not in leading),
+			len(content),
+		)
 		content.insert(position, entry)
 		workspace.content = json.dumps(content)
 

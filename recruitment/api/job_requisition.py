@@ -926,6 +926,10 @@ _LAYOUT_TYPES = frozenset({
 _SKIP_FIELDNAMES = frozenset({
     "naming_series", "amended_from", "amendment_date",
     "status", "workflow_state",
+    # Derived mirrors of the Regions / Position Details tables — filled on save,
+    # never entered, so they would only render as empty read-only boxes on the
+    # requisition form.
+    "custom_region", "custom_position_location",
 })
 
 # `applies_to` value (config) → parent Table fieldname on Job Requisition.
@@ -3475,6 +3479,13 @@ _EDIT_AFTER_APPROVAL_IGNORE = {
     # from the stored value without anyone having edited the requisition.
     "custom_active_employees", "custom_active_requisitions", "custom_active_openings",
     "custom_headcount_last_updated",
+    # Parent mirrors of where the requisition hires — the Regions table's region
+    # and the Position Details table's location (see
+    # recruitment.customizations.job_requisition_region). Derived, never typed —
+    # and both tables they are copied from are themselves guarded, so ignoring
+    # them here gives nothing away while letting a pre-existing requisition pick
+    # the values up on its next save.
+    "custom_region", "custom_position_location",
 }
 _LAYOUT_FIELDTYPES = {
     "Section Break", "Column Break", "Tab Break", "HTML", "Button", "Heading", "Fold",

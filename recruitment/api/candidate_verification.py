@@ -33,21 +33,23 @@ def verify_applicant_email(email, first_name=None, last_name=None, phone_number=
 	# registration. That only exists in the context of a drive, so tell the page
 	# whether the scanned drive can actually take a walk-in right now.
 	if not applicant:
-		from recruitment.api.channels.campus_drive_spot import _get_open_drive
+		from recruitment.api.channels.campus_drive_spot import registration_status
 
-		can_register = bool(_get_open_drive(drive))
+		# `reason` says which of the several doors is shut — no drive on the link, a
+		# drive still in Draft, one that has finished, a registration window not yet
+		# open or already past. Collapsing them into one sentence left the candidate at
+		# the desk, and the HR person they then asked, with nothing to go on.
+		open_drive, reason = registration_status(drive)
+		can_register = bool(open_drive)
 		return {
 			"verified": False,
 			"status": "not_found",
 			"can_register": can_register,
-			"drive": (drive or "").strip() if can_register else None,
+			"drive": open_drive.name if can_register else None,
 			"message": (
 				_("We could not find your email in our system yet.")
 				if can_register
-				else _(
-					"We could not find your email in our system, and registration is not "
-					"open for this campus drive. Please contact the HR desk."
-				)
+				else _("We could not find your email in our system. {0}").format(reason)
 			),
 		}
 

@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient, type UseQueryResult } from "@tanstack/react-query";
-import type { DeleteGoalsPayload, GoalActionResponse, GoalFormConfig, GoalPlanId, GoalPlanResponse, GoalsRequest, GoalSubmitResponse, Message, MyGoalsResponse, ReferenceGoalsParams, ReferenceGoalsResponse, GoalRepositoryResponse, SaveGoalsPayload, SubmitSelectedGoalsPayload, CascadeGoalsParams, CascadeGoalsResponse, GoalDetailResponse, GoalCheckInsResponse, SubmitGoalCheckInPayload, SubmitGoalCheckInResponse, PerformanceOverviewResponse, RequestCheckInPayload, RequestCheckInResponse, MyPeerReviewsResponse, FeedbackFormResponse, SaveFeedbackResponse, SaveFeedbackPayload, SubmitFeedbackPayload, SubmitFeedbackResponse, AddGoalCommentPayload, AddGoalCommentResponse, TeamOverviewResponse, TeamMembersResponse, TeamMembersParams, TeamGoalsParams, TeamGoalsResponse, ApprovalQueueParams, ApprovalQueueResponse, GoalApprovalDetailParams, GoalApprovalDetailResponse, GoalActionPayload, GoalActionResultResponse, EmployeesGoalActionPayload } from "../types/goal";
+import type { DeleteGoalsPayload, GoalActionResponse, GoalFormConfig, GoalPlanId, GoalPlanResponse, GoalsRequest, GoalSubmitResponse, Message, MyGoalsResponse, ReferenceGoalsParams, ReferenceGoalsResponse, GoalRepositoryResponse, SaveGoalsPayload, SubmitSelectedGoalsPayload, CascadeGoalsParams, CascadeGoalsResponse, GoalDetailResponse, GoalCheckInsResponse, SubmitGoalCheckInPayload, SubmitGoalCheckInResponse, PerformanceOverviewResponse, RequestCheckInPayload, RequestCheckInResponse, MyPeerReviewsResponse, FeedbackFormResponse, SaveFeedbackResponse, SaveFeedbackPayload, SubmitFeedbackPayload, SubmitFeedbackResponse, AddGoalCommentPayload, AddGoalCommentResponse, TeamOverviewResponse, TeamMembersResponse, TeamMembersParams, TeamGoalsParams, TeamGoalsResponse, ApprovalQueueParams, ApprovalQueueResponse, GoalApprovalDetailParams, GoalApprovalDetailResponse, GoalActionPayload, GoalActionResultResponse, EmployeesGoalActionPayload, AddTeamGoalCommentPayload, AddTeamGoalCommentResponse } from "../types/goal";
 import { performanceService } from "../services/performanceService";
 import { queryClient } from "../providers/QueryProvider";
 interface PerformanceQueryKey {
@@ -266,9 +266,14 @@ export const useAddGoalComment = ()  => {
   return useMutation<AddGoalCommentResponse, Error, AddGoalCommentPayload>({
     mutationFn:(payload)=>performanceService.addGoalComment(payload),
     onSuccess:()=>{
-      queryClient.invalidateQueries({queryKey:PERFORMANCE_QUERY_KEYS.myGoals})
-      queryClient.invalidateQueries({ queryKey: ["performance", "goal-check-ins"]})
-      queryClient.invalidateQueries({ queryKey: ["performance", "goal-detail"] })
+      queryClient.invalidateQueries({ queryKey: ["performance", "approval-queue"] });
+      queryClient.invalidateQueries({ queryKey: ["performance", "team-goals"] });
+      queryClient.invalidateQueries({ queryKey: ["performance", "goal-approval-detail"] });
+      queryClient.invalidateQueries({ queryKey: PERFORMANCE_QUERY_KEYS.myGoals });
+      queryClient.invalidateQueries({ queryKey: PERFORMANCE_QUERY_KEYS.mandatoryGoals });
+      queryClient.invalidateQueries({ queryKey: ["performance", "goal-check-ins"] });
+      queryClient.invalidateQueries({ queryKey: ["performance", "goal-detail"] });
+      queryClient.invalidateQueries({ queryKey: PERFORMANCE_QUERY_KEYS.myPeerReviews });
     }
   })
 }
@@ -324,6 +329,11 @@ export const useApproveTeamGoals = () => {
       queryClient.invalidateQueries({ queryKey: ["performance", "approval-queue"] });
       queryClient.invalidateQueries({ queryKey: ["performance", "team-goals"] });
       queryClient.invalidateQueries({ queryKey: ["performance", "goal-approval-detail"] });
+      queryClient.invalidateQueries({ queryKey: PERFORMANCE_QUERY_KEYS.myGoals });
+      queryClient.invalidateQueries({ queryKey: PERFORMANCE_QUERY_KEYS.mandatoryGoals });
+      queryClient.invalidateQueries({ queryKey: ["performance", "goal-check-ins"] });
+      queryClient.invalidateQueries({ queryKey: ["performance", "goal-detail"] });
+      queryClient.invalidateQueries({ queryKey: PERFORMANCE_QUERY_KEYS.myPeerReviews });
     },
   })
 }
@@ -334,6 +344,11 @@ export const useRejectTeamGoals = () => {
       queryClient.invalidateQueries({ queryKey: ["performance", "approval-queue"] });
       queryClient.invalidateQueries({ queryKey: ["performance", "team-goals"] });
       queryClient.invalidateQueries({ queryKey: ["performance", "goal-approval-detail"] });
+      queryClient.invalidateQueries({ queryKey: PERFORMANCE_QUERY_KEYS.myGoals });
+      queryClient.invalidateQueries({ queryKey: PERFORMANCE_QUERY_KEYS.mandatoryGoals });
+      queryClient.invalidateQueries({ queryKey: ["performance", "goal-check-ins"] });
+      queryClient.invalidateQueries({ queryKey: ["performance", "goal-detail"] });
+      queryClient.invalidateQueries({ queryKey: PERFORMANCE_QUERY_KEYS.myPeerReviews });
     },
   })
 }
@@ -344,6 +359,26 @@ export const useSendBackTeamGoals = () => {
       queryClient.invalidateQueries({ queryKey: ["performance", "approval-queue"] });
       queryClient.invalidateQueries({ queryKey: ["performance", "team-goals"] });
       queryClient.invalidateQueries({ queryKey: ["performance", "goal-approval-detail"] });
+      queryClient.invalidateQueries({ queryKey: PERFORMANCE_QUERY_KEYS.myGoals });
+      queryClient.invalidateQueries({ queryKey: PERFORMANCE_QUERY_KEYS.mandatoryGoals });
+      queryClient.invalidateQueries({ queryKey: ["performance", "goal-check-ins"] });
+      queryClient.invalidateQueries({ queryKey: ["performance", "goal-detail"] });
+      queryClient.invalidateQueries({ queryKey: PERFORMANCE_QUERY_KEYS.myPeerReviews });
+    },
+  })
+}
+export const useAddTeamGoalComment = () => {
+  return useMutation<AddTeamGoalCommentResponse, Error, AddTeamGoalCommentPayload>({
+    mutationFn: (payload) => performanceService.addTeamGoalComment(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["performance", "approval-queue"] });
+      queryClient.invalidateQueries({ queryKey: ["performance", "team-goals"] });
+      queryClient.invalidateQueries({ queryKey: ["performance", "goal-approval-detail"] });
+      queryClient.invalidateQueries({ queryKey: PERFORMANCE_QUERY_KEYS.myGoals });
+      queryClient.invalidateQueries({ queryKey: PERFORMANCE_QUERY_KEYS.mandatoryGoals });
+      queryClient.invalidateQueries({ queryKey: ["performance", "goal-check-ins"] });
+      queryClient.invalidateQueries({ queryKey: ["performance", "goal-detail"] });
+      queryClient.invalidateQueries({ queryKey: PERFORMANCE_QUERY_KEYS.myPeerReviews });
     },
   })
 }

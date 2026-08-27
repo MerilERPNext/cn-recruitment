@@ -30,7 +30,7 @@ frappe.ui.form.on("Job Applicant", {
                         let row = `
                             <tr>
                                 <td class="text-left">${key}</td>
-                                <td class="text-left">${value["interview_round"]}</td>
+                                <td class="text-left">${value["interview_type"] || value["interview_round"] || '-'}</td>
                                 <td class="text-left">${frappe.datetime.str_to_user(value["scheduled_on"])}</td>
                                 <td class="text-left">${value["status"]}</td>
                                 <td class="text-left">
@@ -147,6 +147,26 @@ frappe.ui.form.on("Job Applicant", {
   
 },
 });
+// The name lives on the Job Applicant in parts — applicant_name is the FIRST name
+// and nothing else — and `custom_full_name` is derived from them on every save. The
+// banner shows the whole name, so it reads that field and only falls back to joining
+// the parts for a record saved before the derived field shipped.
+function applicant_full_name(doc) {
+  if (doc.custom_full_name) return doc.custom_full_name;
+  const seen = new Set();
+  const parts = [];
+  [doc.applicant_name, doc.custom_applicant_middle_name, doc.custom_applicant_last_name]
+    .map((p) => String(p || '').trim())
+    .filter(Boolean)
+    .forEach((part) => {
+      const words = part.toLowerCase().split(/\s+/).filter(Boolean);
+      if (words.length && words.every((w) => seen.has(w))) return;   // never twice
+      words.forEach((w) => seen.add(w));
+      parts.push(part);
+    });
+  return parts.join(' ');
+}
+
 function applicant_details(frm) {
   frappe.require('recruitment.recruitment.public.css.job_applicant.css'); 
   let job_applicant_html = `
@@ -154,7 +174,7 @@ function applicant_details(frm) {
 <table class="custom-table">
     <tr>
         <th>Applicant Name</th>
-        <td>${frm.doc.applicant_name || '-'}</td>
+        <td>${applicant_full_name(frm.doc) || '-'}</td>
         <th>Email ID</th>
         <td>${frm.doc.email_id || '-'}</td>
     </tr>
@@ -214,6 +234,11 @@ function applicant_details(frm) {
   `;
 
   // Fetch Interview Details
+  //
+  // `interview_round` is asked for only when this HRMS version has it: v16
+  // renamed it to `interview_type`, and frappe.client.get_list THROWS on a field
+  // the doctype lacks rather than skipping it, which failed this whole panel.
+  // See interview_feedback.js -> interviewFieldsOnThisSite for the detail.
   frappe.call({
       method: 'frappe.client.get_list',
       args: {
@@ -223,7 +248,8 @@ function applicant_details(frm) {
           },
           fields: [
               'custom_interview_type',
-              'interview_round',
+              ...(frappe.meta.has_field('Interview', 'interview_round') ? ['interview_round'] : []),
+              ...(frappe.meta.has_field('Interview', 'interview_type') ? ['interview_type'] : []),
               'job_applicant',
               'status',
               'scheduled_on',
@@ -246,7 +272,7 @@ function applicant_details(frm) {
                           <th class="bold">Interview Type</th>
                           <td>${interview.custom_interview_type || '-'}</td>
                           <th class="bold">Interview Round</th>
-                          <td>${interview.interview_round || '-'}</td>
+                          <td>${interview.interview_type || interview.interview_round || '-'}</td>
                       </tr>
                       <tr>
                           <th class="bold">Job Applicant</th>
@@ -301,7 +327,9 @@ function applicant_details(frm) {
                   },
                   fields: [
                       'interview',
-                      'interview_round',
+                      // Same version split as above — ask only for what exists.
+                      ...(frappe.meta.has_field('Interview Feedback', 'interview_round') ? ['interview_round'] : []),
+                      ...(frappe.meta.has_field('Interview Feedback', 'interview_type') ? ['interview_type'] : []),
                       'job_applicant',
                       'interviewer',
                       'result',
@@ -320,7 +348,7 @@ function applicant_details(frm) {
                                   <th class="bold">Interview</th>
                                   <td>${feedback.interview || '-'}</td>
                                   <th class="bold">Interview Round</th>
-                                  <td>${feedback.interview_round || '-'}</td>
+                                  <td>${feedback.interview_type || feedback.interview_round || '-'}</td>
                               </tr>
                               <tr>
                                   <th class="bold">Job Applicant</th>
