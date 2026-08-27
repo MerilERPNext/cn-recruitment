@@ -234,6 +234,12 @@ const AttendanceAssignments = ({
           (geo: string) => ({ geo_fencing: geo })
         );
       }
+      // Include ip_restriction when enable_web_clockin is active
+      if (submissionData.enable_web_clockin && Array.isArray(submissionData.ip_restriction) && submissionData.ip_restriction.length > 0) {
+        mappedData.ip_restriction = submissionData.ip_restriction.map(
+          (ip: string) => ({ ip_restriction: ip })
+        );
+      }
       if (targetEmployees.length > 0) {
         const promises = targetEmployees.map((emp) =>
           mutation.mutateAsync({
