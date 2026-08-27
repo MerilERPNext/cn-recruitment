@@ -18,6 +18,8 @@
   "total_open_positions",
   "allocated_positions",
   "total_positions",
+  "fixed_pay",
+  "variable_pay",
   "applicant_count"
  ],
  "fields": [
@@ -107,6 +109,20 @@
    "fieldtype": "Int",
    "in_list_view": 1,
    "label": "Total"
+  },
+  {
+   "fetch_from": "job_opening.fixed_pay",
+   "fieldname": "fixed_pay",
+   "fieldtype": "Currency",
+   "label": "Fixed Pay",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "job_opening.variable_pay",
+   "fieldname": "variable_pay",
+   "fieldtype": "Currency",
+   "label": "Variable Pay",
+   "read_only": 1
   },
   {
    "columns": 2,

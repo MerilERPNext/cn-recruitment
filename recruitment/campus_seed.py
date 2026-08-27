@@ -2024,10 +2024,15 @@ def create_gd_test_drive(drive_name="TEST Drive - GD Grouping", colleges=3,
         offer.hiring_stage = next((s for s in ("Pre Job Offer", "Job Offer") if s in stages),
                                   offer.hiring_stage)
 
-    # The campus package, so an offer raised off this drive comes out prefilled.
-    if doc.meta.get_field("fixed_pay"):
-        doc.fixed_pay = fixed_pay
-        doc.variable_pay = variable_pay
+    # The package now lives on the Job Opening, not the drive — an offer reads it
+    # from the opening the candidate applied to (job_offer._job_opening_pay), and the
+    # drive's own rows mirror it. Written here so an offer raised off this seeded
+    # drive still comes out prefilled.
+    if frappe.db.has_column("Job Opening", "fixed_pay"):
+        for op in openings:
+            frappe.db.set_value("Job Opening", op.name,
+                                {"fixed_pay": fixed_pay, "variable_pay": variable_pay},
+                                update_modified=False)
 
     gd = next((r for r in doc.rounds if r.requires_gd_grouping), None)
     emps = frappe.get_all("Employee", filters={"user_id": ["!=", ""], "status": "Active"},
@@ -2161,7 +2166,7 @@ def create_offer_test_drive(drive_name="TEST Drive - Offer Flow", colleges=2,
 
     _log("=" * 72)
     _log(f"OFFER TEST DRIVE: {drive}  ({drive_name})")
-    _log(f"  package: fixed {fixed_pay} · variable {variable_pay}  (Offer Package section)")
+    _log(f"  package: fixed {fixed_pay} · variable {variable_pay}  (on each Job Opening)")
     _log(f"  requisition {requisition} linked to {', '.join(built['openings'])}")
     _log(f"  GD pushed: advanced={pushed['advanced']} rejected={pushed['rejected']}")
     _log(f"  {moved} candidate(s) now waiting at the Offer round stage “{stage}”")

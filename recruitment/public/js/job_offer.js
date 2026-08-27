@@ -847,3 +847,46 @@ frappe.ui.form.on("Job Offer", {
         });
     },
 });
+
+/*
+ * Work Location follows Region.
+ *
+ * Branch — the Work Location master — carries `custom_region`, so once a Region is
+ * chosen only the branches inside it can be offered. Two halves:
+ *
+ *   1. The picker is filtered to that region.
+ *   2. Changing the Region drops a Work Location that no longer belongs to it.
+ *
+ * Filtered here rather than with a `link_filters` on the custom field because an
+ * offer with no Region yet would then query `custom_region = null` and show an
+ * empty branch list, which reads as a broken field. With no Region set, every
+ * branch stays offerable exactly as before.
+ *
+ * The clear is conditional — only when the branch actually disagrees with the new
+ * region. `custom_region` fetches from the Job Applicant, so an unconditional
+ * clear would wipe the Work Location that was seeded from the same applicant the
+ * moment the offer is created.
+ */
+frappe.ui.form.on("Job Offer", {
+	refresh(frm) {
+		frm.set_query("custom_work_location", () => {
+			const region = frm.doc.custom_region;
+			return region ? { filters: { custom_region: region } } : {};
+		});
+	},
+
+	custom_region(frm) {
+		const region = frm.doc.custom_region;
+		const branch = frm.doc.custom_work_location;
+		if (!branch) return;
+		if (!region) {
+			frm.set_value("custom_work_location", null);
+			return;
+		}
+		frappe.db.get_value("Branch", branch, "custom_region").then((r) => {
+			if ((r.message || {}).custom_region !== region) {
+				frm.set_value("custom_work_location", null);
+			}
+		});
+	},
+});

@@ -55,3 +55,5 @@ recruitment.patches.add_onboarding_trainee_joining_date
 recruitment.patches.backfill_requisition_region
 recruitment.patches.add_job_offer_region
 recruitment.patches.backfill_requisition_position_location
+recruitment.patches.job_offer_applicant_first_name
+recruitment.patches.move_campus_drive_pay_to_job_opening

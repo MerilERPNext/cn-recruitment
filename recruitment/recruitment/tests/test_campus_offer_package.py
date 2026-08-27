@@ -1,9 +1,11 @@
-"""Tests for the Campus Drive's Offer Package (Fixed Pay / Variable Pay).
+"""Tests for the offer package (Fixed Pay / Variable Pay) on the Job Opening.
 
-Covers the two things the fields exist for: they prefill the Job Offer raised for a
-candidate who came off that drive (without overwriting a negotiated amount), and they
-are permlevel-1 — visible only to the HR roles granted level-1 access, not to everyone
-who can open a drive.
+The package used to be named once per Campus Drive. It now lives on the Job Opening,
+so a drive running several openings can pay differently for each, and a non-campus
+hire gets the same treatment. This covers what the fields exist for: they prefill the
+Job Offer raised for a candidate who applied to that opening (without overwriting a
+negotiated amount), the same figures reach the form's prefill API, and the drive's
+own opening rows mirror them.
 
 Run:  bench --site <site> execute \
         recruitment.recruitment.tests.test_campus_offer_package.run
@@ -18,17 +20,7 @@ from frappe.utils import add_days, nowdate
 from recruitment.customizations import job_offer as jo
 
 PREFIX = "_Test Pkg"
-PAY_USER = "pkg.hr@test.local"        # holds a role with level-1 access
-PLAIN_USER = "pkg.plain@test.local"   # can open the drive, must not see the package
 FIXED, VARIABLE = 600000.0, 150000.0
-
-
-def _user(email, role):
-	if not frappe.db.exists("User", email):
-		frappe.get_doc({"doctype": "User", "email": email, "first_name": "Pkg",
-		                "enabled": 1, "send_welcome_email": 0,
-		                "roles": [{"role": role}]}).insert(ignore_permissions=True)
-	return email
 
 
 class TestCampusOfferPackage(FrappeTestCase):
@@ -38,11 +30,12 @@ class TestCampusOfferPackage(FrappeTestCase):
 		frappe.set_user("Administrator")
 		cls._purge()
 
-		cls.drive = cls._drive()
-		cls.candidate = cls._applicant("pkg.cand@test.local", drive=cls.drive)
-		cls.walk_in = cls._applicant("pkg.walkin@test.local")
-		cls.pay_user = _user(PAY_USER, "HR User")
-		cls.plain_user = _user(PLAIN_USER, "Recruitment User")
+		cls.opening = cls._opening(FIXED, VARIABLE)
+		cls.unpaid_opening = cls._opening(None, None, suffix=" Unpaid")
+		cls.drive = cls._drive(cls.opening)
+		cls.candidate = cls._applicant("pkg.cand@test.local", opening=cls.opening,
+		                               drive=cls.drive)
+		cls.walk_in = cls._applicant("pkg.walkin@test.local", opening=cls.unpaid_opening)
 		frappe.db.commit()
 
 	@classmethod
@@ -59,24 +52,38 @@ class TestCampusOfferPackage(FrappeTestCase):
 		for name in frappe.get_all("Campus Drive", filters={"drive_name": ("like", f"{PREFIX}%")},
 		                           pluck="name"):
 			frappe.delete_doc("Campus Drive", name, force=True, ignore_permissions=True)
+		for name in frappe.get_all("Job Opening", filters={"job_title": ("like", f"{PREFIX}%")},
+		                           pluck="name"):
+			frappe.delete_doc("Job Opening", name, force=True, ignore_permissions=True)
 		frappe.db.commit()
 
 	@classmethod
-	def _drive(cls):
+	def _opening(cls, fixed, variable, suffix=""):
 		doc = frappe.get_doc({
-			"doctype": "Campus Drive", "drive_name": f"{PREFIX} Drive",
-			"drive_owner": "Administrator", "drive_start_date": nowdate(),
-			"drive_end_date": add_days(nowdate(), 7),
-			"fixed_pay": FIXED, "variable_pay": VARIABLE,
+			"doctype": "Job Opening", "job_title": f"{PREFIX} Opening{suffix}",
+			"company": frappe.get_all("Company", pluck="name")[0],
+			"designation": frappe.get_all("Designation", pluck="name")[0],
+			"status": "Open", "fixed_pay": fixed, "variable_pay": variable,
 		})
 		doc.flags.ignore_mandatory = True
 		return doc.insert(ignore_permissions=True).name
 
 	@classmethod
-	def _applicant(cls, email, drive=None):
+	def _drive(cls, opening):
+		doc = frappe.get_doc({
+			"doctype": "Campus Drive", "drive_name": f"{PREFIX} Drive",
+			"drive_owner": "Administrator", "drive_start_date": nowdate(),
+			"drive_end_date": add_days(nowdate(), 7),
+			"linked_job_openings": [{"job_opening": opening}],
+		})
+		doc.flags.ignore_mandatory = True
+		return doc.insert(ignore_permissions=True).name
+
+	@classmethod
+	def _applicant(cls, email, opening=None, drive=None):
 		doc = frappe.get_doc({
 			"doctype": "Job Applicant", "applicant_name": email.split("@")[0],
-			"email_id": email, "status": "Open",
+			"email_id": email, "status": "Open", "job_title": opening,
 			"source": "Campus Hiring" if drive else "Walk In",
 			"custom_campus_drive": drive,
 		})
@@ -94,24 +101,24 @@ class TestCampusOfferPackage(FrappeTestCase):
 		frappe.set_user("Administrator")
 		frappe.db.rollback()
 
-	# ── the drive's package reaches the offer ──
+	# ── the opening's package reaches the offer ──
 
-	def test_the_drive_package_resolves_for_its_candidate(self):
+	def test_the_opening_package_resolves_for_its_candidate(self):
 		self.assertEqual(
-			jo._campus_drive_pay(self.candidate),
+			jo._job_opening_pay(self.candidate),
 			{"custom_total_fixed_pay": FIXED, "custom_variable_incentive": VARIABLE})
 
-	def test_a_candidate_off_no_drive_gets_nothing(self):
-		self.assertEqual(jo._campus_drive_pay(self.walk_in), {})
-		self.assertEqual(jo._campus_drive_pay(None), {})
+	def test_a_candidate_off_an_unpaid_opening_gets_nothing(self):
+		self.assertEqual(jo._job_opening_pay(self.walk_in), {})
+		self.assertEqual(jo._job_opening_pay(None), {})
 
-	def test_an_empty_field_on_the_drive_is_not_pushed(self):
+	def test_an_empty_field_on_the_opening_is_not_pushed(self):
 		"""Half a package must not zero out the other half of the offer."""
-		frappe.db.set_value("Campus Drive", self.drive, "variable_pay", 0)
-		self.assertEqual(jo._campus_drive_pay(self.candidate),
+		frappe.db.set_value("Job Opening", self.opening, "variable_pay", 0)
+		self.assertEqual(jo._job_opening_pay(self.candidate),
 		                 {"custom_total_fixed_pay": FIXED})
 
-	def test_the_offer_is_prefilled_from_the_drive(self):
+	def test_the_offer_is_prefilled_from_the_opening(self):
 		doc = self._offer(self.candidate)
 		jo.set_requisition_and_pay(doc)
 		self.assertEqual(doc.custom_total_fixed_pay, FIXED)
@@ -119,50 +126,35 @@ class TestCampusOfferPackage(FrappeTestCase):
 
 	def test_a_negotiated_amount_is_never_overwritten(self):
 		"""HR agreeing a different number with one candidate is the whole point of the
-		field being editable — a later save must not put the drive's figure back."""
+		field being editable — a later save must not put the opening's figure back."""
 		doc = self._offer(self.candidate, custom_total_fixed_pay=725000)
 		jo.set_requisition_and_pay(doc)
 		self.assertEqual(doc.custom_total_fixed_pay, 725000)
 		self.assertEqual(doc.custom_variable_incentive, VARIABLE)
 
-	def test_a_non_campus_offer_is_left_to_the_requisition(self):
+	def test_an_offer_off_an_unpaid_opening_is_left_to_the_requisition(self):
 		doc = self._offer(self.walk_in)
 		jo.set_requisition_and_pay(doc)
 		self.assertFalse(doc.get("custom_total_fixed_pay"))
 
-	def test_the_form_prefill_returns_the_drive_package(self):
+	def test_the_form_prefill_returns_the_opening_package(self):
 		pay = jo.get_requisition_defaults(self.candidate)["pay"]
 		self.assertEqual(pay.get("custom_total_fixed_pay"), FIXED)
 		self.assertEqual(pay.get("custom_variable_incentive"), VARIABLE)
 
-	# ── who can see it ──
+	# ── the drive shows what its openings pay ──
 
-	def test_the_pay_fields_sit_behind_permlevel_1(self):
+	def test_the_drive_row_mirrors_the_opening_package(self):
+		"""`Campus Drive Job Opening` fetches the pay from the opening, so a drive
+		reads as the sum of what its openings offer rather than a figure of its own."""
+		row = frappe.get_doc("Campus Drive", self.drive).linked_job_openings[0]
+		self.assertEqual(row.fixed_pay, FIXED)
+		self.assertEqual(row.variable_pay, VARIABLE)
+
+	def test_the_drive_no_longer_carries_a_package_of_its_own(self):
 		meta = frappe.get_meta("Campus Drive")
 		for fieldname in ("fixed_pay", "variable_pay", "offer_package_section"):
-			self.assertEqual(meta.get_field(fieldname).permlevel, 1, fieldname)
-
-	def test_an_hr_role_can_read_the_package(self):
-		frappe.set_user(self.pay_user)
-		drive = frappe.get_doc("Campus Drive", self.drive)
-		self.assertTrue(drive.has_permlevel_access_to("fixed_pay"))
-		self.assertTrue(drive.has_permlevel_access_to("variable_pay"))
-
-	def test_another_role_with_drive_access_cannot(self):
-		"""Recruitment User can open a Campus Drive — the salary on it is not theirs."""
-		frappe.set_user(self.plain_user)
-		drive = frappe.get_doc("Campus Drive", self.drive)
-		self.assertFalse(drive.has_permlevel_access_to("fixed_pay"))
-		self.assertFalse(drive.has_permlevel_access_to("variable_pay"))
-		# ... while the ordinary fields on the same drive stay readable
-		self.assertTrue(drive.has_permlevel_access_to("drive_name"))
-
-	def test_every_named_hr_role_is_granted(self):
-		roles = {p.role for p in frappe.get_meta("Campus Drive").permissions
-		         if p.permlevel == 1 and p.read}
-		for role in ("System Manager", "HR Manager", "HR User", "Hiring Lead"):
-			if frappe.db.exists("Role", role):
-				self.assertIn(role, roles)
+			self.assertIsNone(meta.get_field(fieldname), fieldname)
 
 
 def run():

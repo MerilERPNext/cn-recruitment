@@ -149,7 +149,7 @@ class TestCampusSpotRegistration(FrappeTestCase):
 		doc = frappe.get_doc({
 			"doctype": "Campus Drive", "drive_name": f"{PREFIX} Drive",
 			"drive_owner": "Administrator", "drive_start_date": nowdate(),
-			"drive_end_date": add_days(nowdate(), 7), "fixed_pay": 400000, "variable_pay": 40000,
+			"drive_end_date": add_days(nowdate(), 7),
 			"drive_status": "Live", "registration_form_enabled": 1,
 			"campus_invites": [{"campus_invite": cls.invite}],
 			"participating_institutes": [{"institute": cls.institute}],

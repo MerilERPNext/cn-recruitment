@@ -22,7 +22,7 @@ app_include_js = [
 	# fingerprints *.bundle.js), so browsers hold the old copy indefinitely and a
 	# change here silently doesn't reach anyone. Bump the number whenever this file
 	# changes — the new URL defeats the browser cache and any service worker.
-	"/assets/recruitment/js/applicant_fields_ui.js?v=3",
+	"/assets/recruitment/js/applicant_fields_ui.js?v=4",
 	# Column registry behind the designed Job Applicant / Job Opening / Job
 	# Requisition list views — which columns show, in what order, alignment and
 	# width, plus the "Configure Columns" dialog. Global rather than per-doctype

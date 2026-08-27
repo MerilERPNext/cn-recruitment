@@ -448,8 +448,14 @@ frappe.provide("recruitment.applicant_fields_ui");
 			}
 			.apf-child-container[hidden] { display: none; }
 			/* The child's own scroller: its columns scroll here, independently of the
-			   parent, and it is the ancestor the frozen FIELD column sticks to. */
-			.apf-child-scroll { overflow-x: auto; overflow-y: hidden; }
+			   parent, and it is the ancestor BOTH frozen edges stick to — the FIELD
+			   column to its left, the header row to its top.
+			   It has to scroll vertically as well as horizontally: with overflow-y
+			   hidden the panel simply grew as tall as its rows, so a child table with
+			   twenty stages pushed the page itself into scrolling and took its own
+			   header off-screen with it. Capped so the parent grid stays in view
+			   above it. */
+			.apf-child-scroll { overflow: auto; max-height: 320px; }
 			.apf-child-header {
 				background: color-mix(in srgb, var(--apf-g-campus) 12%, transparent); color: var(--apf-g-campus);
 				font-size: 10.5px; font-weight: 700; padding: 7px 12px; letter-spacing: .06em; text-transform: uppercase;
@@ -464,9 +470,14 @@ frappe.provide("recruitment.applicant_fields_ui");
 				border-collapse: separate; border-spacing: 0;
 				font-size: 11.5px; background: var(--apf-bg);
 			}
+			/* Frozen header — the same reasoning as the parent grid's: a toggle far
+			   down a child table is unreadable once its channel column heading has
+			   scrolled away. Sticks to the top of .apf-child-scroll, which is the
+			   panel's own scrollport, so it never travels with the page. */
 			.apf-child-table thead th {
 				padding: 6px 8px; background: var(--apf-bg-head); color: var(--apf-text-dim); font-size: 9.5px;
 				font-weight: 700; text-align: center; border-bottom: 1px solid var(--apf-border); letter-spacing: .05em;
+				position: sticky; top: 0; z-index: 2;
 			}
 			.apf-child-table thead th.apf-child-col-field { text-align: left; }
 			.apf-child-group-header { color: var(--g); letter-spacing: .06em; }
@@ -488,7 +499,12 @@ frappe.provide("recruitment.applicant_fields_ui");
 				position: sticky; left: 0; width: 298px; min-width: 298px;
 				box-shadow: 1px 0 0 var(--apf-border);
 			}
-			.apf-child-table tbody td.apf-child-col-field { background: var(--apf-bg); z-index: 2; }
+			/* Three layers, and the order matters now that the header is sticky too:
+			   scrolling cells (auto) < frozen FIELD cells (1) < header row (2) <
+			   the corner cell where both freezes meet (3). Left at the old 2, the
+			   body's FIELD cells tied with the header row and — coming later in the
+			   DOM — painted straight over it on the first vertical scroll. */
+			.apf-child-table tbody td.apf-child-col-field { background: var(--apf-bg); z-index: 1; }
 			.apf-child-table thead th.apf-child-col-field { background: var(--apf-bg-head); z-index: 3; }
 			.apf-child-table tbody tr:hover td.apf-child-col-field { background: var(--apf-hover); }
 			.apf-child-field-label { color: var(--apf-text); font-weight: 500; font-size: 11.5px; }
@@ -659,6 +675,66 @@ frappe.provide("recruitment.applicant_fields_ui");
 			panel.hidden = true;
 			dock.appendChild(panel);
 		});
+
+		// Every panel is closed on a fresh render, so the grid gets its full height
+		// back — otherwise a section switched away from while a panel was open would
+		// hand its shortened pane to the next section.
+		AFU.anchorDock(host);
+	};
+
+	/* The grid never collapses below this while a panel is anchored to a row near
+	   the top — a 100px sliver of table reads as broken, and the two frozen header
+	   rows would take most of it. */
+	AFU.DOCK_MIN_H = 200;
+
+	/**
+	 * End the grid just below the row whose panel is open.
+	 *
+	 * The panel is docked beneath the whole scroller (see dockChildPanels), which is
+	 * what keeps its FIELD column frozen — but it also meant a table field sitting
+	 * eighth in a section of twenty opened its config below all twenty, with no
+	 * visible connection to the row that owns it.
+	 *
+	 * Rather than move the panel back inside the horizontal scrollport, the grid is
+	 * ended where the panel should start: the pane is capped so the owning row is its
+	 * last visible row, and scrolled so that row sits against the bottom edge. The
+	 * panel then reads as belonging to the row directly above it, wherever in the
+	 * section that row happens to be, and the rows below stay reachable by scrolling
+	 * the (now shorter) pane.
+	 *
+	 * Reads its state from the DOM rather than taking arguments, so every caller —
+	 * the expand toggle, a re-render, the search filter — can just call it and get
+	 * the right answer, including "nothing is open, put the grid back".
+	 */
+	AFU.anchorDock = function (host) {
+		const pane = host && host.querySelector(".apf-scroll");
+		if (!pane) return;
+
+		const panel = host.querySelector(".apf-child-dock > .apf-child-container:not([hidden])");
+		const ref = panel && panel.getAttribute("data-parent-ref");
+		const childRow = ref && host.querySelector(`.apf-child-row[data-parent-ref="${ref}"]`);
+		// The marker row is display:none, so it has no box to measure — the field row
+		// that owns it is the one immediately before it (see renderRow).
+		const fieldRow = childRow && childRow.previousElementSibling;
+
+		// Nothing open, or nothing measurable: the grid goes back to its full height.
+		if (!fieldRow) {
+			pane.style.maxHeight = "";
+			return;
+		}
+
+		pane.style.maxHeight = "";                       // measure at natural height
+		const full = pane.clientHeight;
+		const rowBottom = Math.round(
+			fieldRow.getBoundingClientRect().bottom
+			- pane.getBoundingClientRect().top
+			+ pane.scrollTop
+		);
+		if (!full || rowBottom <= 0) return;             // hidden tab: leave it alone
+
+		const height = Math.max(AFU.DOCK_MIN_H, Math.min(full, rowBottom));
+		pane.style.maxHeight = height + "px";
+		pane.scrollTop = Math.max(0, rowBottom - height);
 	};
 
 	/**
@@ -684,6 +760,8 @@ frappe.provide("recruitment.applicant_fields_ui");
 			host.querySelectorAll(".apf-child-dock > .apf-child-container").forEach((p) => {
 				p.hidden = p !== panel || !open;
 			});
+			// ...and end the grid just above whichever one is now showing.
+			AFU.anchorDock(host);
 		});
 	};
 
@@ -1136,6 +1214,9 @@ frappe.provide("recruitment.applicant_fields_ui");
 				if (panel && !hit) panel.hidden = true;
 				if (hit) shown += 1;
 			});
+			// A filter that hid the open panel's own row leaves the grid capped just
+			// below a row that is no longer there — re-anchor against what's left.
+			AFU.anchorDock(host);
 			const showing = host.querySelector(".apf-showing");
 			if (showing) {
 				const total = mainRows().length;
