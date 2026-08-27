@@ -32,14 +32,27 @@
       window.frappe.csrf_token = window.csrf_token;
     }
   </script>
-  <script type="module">
-    fetch("/assets/assets.json")
-      .then((response) => response.json())
-      .then((data) => {
-        const script = document.createElement("script");
-        script.src = data["cn-app.bundle.js"];
-        document.body.appendChild(script);
-      });
+  <!--
+    ChatNext assistant bundle. Resolved server-side by Frappe's bundled_asset()
+    Jinja global rather than by fetching /assets/assets.json, which exposed the
+    full bundle map of every installed app to anyone, unauthenticated.
+    See VAPT finding 16.
+  -->
+  <script>
+    window.cnAppBundleUrl = "{{ bundled_asset('cn-app.bundle.js') }}";
+  </script>
+  <script>
+    // Under `vite dev` the tag above is not rendered and arrives literally, so
+    // only inject once it resolved to a real path. Testing the leading slash
+    // rather than looking for Jinja delimiters is deliberate: a literal pair of
+    // braces in this file is parsed as a print statement and breaks rendering.
+    // For the same family of reasons, keep globals here free of a dot followed
+    // by two underscores -- frappe.render_template() rejects such templates.
+    if (window.cnAppBundleUrl && window.cnAppBundleUrl.charAt(0) === "/") {
+      const script = document.createElement("script");
+      script.src = window.cnAppBundleUrl;
+      document.body.appendChild(script);
+    }
   </script>
 </body>
 
