@@ -12,7 +12,7 @@ import { toast } from "react-hot-toast";
 import { useCurrentUser } from "../../../hooks/useCurrentUser";
 import { useCurrentEmployeeDetails } from "../../../hooks/useEmployee";
 import { useGetAllEventsAndAttendance } from "../../../hooks/useAttendance";
-import { useCreateOrUpdateTimesheetEntries, useWeeklyTimesheetData } from "../../../hooks/useTimesheet";
+import { useCreateOrUpdateTimesheetEntries, useWeeklyTimesheetData, useTimesheetSettings } from "../../../hooks/useTimesheet";
 import { getWeeklyTimesheetData } from "../../../services/timesheetService";
 import type { TimesheetApprovalStatus } from "../../../types/timesheet";
 import { useGetUiPermission } from "../../../hooks/userUiPermission";
@@ -39,6 +39,8 @@ export interface TimesheetRow {
   projectName: string;
   task: string;
   taskSubject: string;
+  parentTask?: string;
+  parentTaskSubject?: string;
   activityType: string;
   isBillable: boolean;
   days: Record<string, { hours: number; description: string }>;
@@ -46,7 +48,8 @@ export interface TimesheetRow {
 
 interface RowItemType {
   project: string;
-  task: string;
+  task?: string;
+  custom_parent_task?: string;
   comment: string;
   hrs: number;
 }
@@ -93,7 +96,10 @@ const TimesheetCreate: React.FC = () => {
     week_start_date: startOfWeekStr
   }, !!employeeId);
 
-  const isDetailLoading = isWeeklyLoading || isEmployeeLoading;
+  const { data: timesheetSettingsData, isLoading: isSettingsLoading } = useTimesheetSettings();
+  const showSubtask = timesheetSettingsData ? Number(timesheetSettingsData.show_subtask) === 1 : true;
+
+  const isDetailLoading = isWeeklyLoading || isEmployeeLoading || isSettingsLoading;
 
   // Attendance Working Hours Map from weekly timesheet data
   const attendanceHoursMap = useMemo(() => {
@@ -292,7 +298,7 @@ const TimesheetCreate: React.FC = () => {
 
         (record.time_logs || []).forEach((log, logIndex) => {
           const projectId = log.project_id || "";
-          const taskId = log.task_id || "";
+          const taskId = log.task || log.task_id || "";
           const key = `${projectId}_${taskId}_${logIndex}`;
 
           if (!rowsMap[key]) {
@@ -300,6 +306,8 @@ const TimesheetCreate: React.FC = () => {
               id: key,
               project: projectId,
               projectName: log.project_name || projectId,
+              parentTask: log.custom_parent_task_id || "",
+              parentTaskSubject: log.custom_parent_task_name || log.custom_parent_task_id || "",
               task: taskId,
               taskSubject: log.task_name || taskId,
               activityType: "Service",
@@ -548,7 +556,7 @@ const TimesheetCreate: React.FC = () => {
           (record.time_logs || []).forEach((log, logIndex) => {
             hasLogs = true;
             const projectId = log.project_id || "";
-            const taskId = log.task_id || "";
+            const taskId = log.task || log.task_id || "";
             const key = `${projectId}_${taskId}_${logIndex}`;
 
             if (!rowsMap[key]) {
@@ -556,6 +564,8 @@ const TimesheetCreate: React.FC = () => {
                 id: key,
                 project: projectId,
                 projectName: log.project_name || projectId,
+                parentTask: log.custom_parent_task_id || "",
+                parentTaskSubject: log.custom_parent_task_name || log.custom_parent_task_id || "",
                 task: taskId,
                 taskSubject: log.task_name || taskId,
                 activityType: "Service",
@@ -662,6 +672,8 @@ const TimesheetCreate: React.FC = () => {
       id: tempId,
       project: "",
       projectName: "",
+      parentTask: "",
+      parentTaskSubject: "",
       task: "",
       taskSubject: "",
       activityType: "Service",
@@ -676,6 +688,7 @@ const TimesheetCreate: React.FC = () => {
   const handleConfigureRow = useCallback((rowId: string, submission: any) => {
     const data = submission.data;
     const projectVal = data.project || "";
+    const parentTaskVal = data.custom_parent_task || "";
     const taskVal = data.task || "";
     const isBillable = data.is_billable !== undefined ? !!data.is_billable : true;
 
@@ -686,6 +699,7 @@ const TimesheetCreate: React.FC = () => {
           ...r,
           project: projectVal,
           projectName: projectVal,
+          parentTask: parentTaskVal,
           task: taskVal,
           taskSubject: taskVal,
           isBillable: isBillable
@@ -699,7 +713,37 @@ const TimesheetCreate: React.FC = () => {
       return newErrs;
     });
   }, []);
-  const formSchema = useMemo(() => addTimeEntrySchema, []);
+  const formSchema = useMemo(() => {
+    const schema = JSON.parse(JSON.stringify(addTimeEntrySchema));
+    if (!showSubtask) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const projectComp = schema.components.find((c: any) => c.key === "project");
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const taskColumns = schema.components.find((c: any) => c.key === "taskColumns");
+      if (projectComp && taskColumns && taskColumns.columns) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const parentTaskComp = taskColumns.columns[0].components.find((c: any) => c.key === "custom_parent_task");
+
+        // Put project and parent_task side-by-side in a new columns layout
+        schema.components = [
+          {
+            type: "columns",
+            columns: [
+              {
+                width: 6,
+                components: [projectComp]
+              },
+              {
+                width: 6,
+                components: [parentTaskComp]
+              }
+            ]
+          }
+        ];
+      }
+    }
+    return schema;
+  }, [showSubtask]);
 
 
   // Comments handlers
@@ -769,7 +813,8 @@ const TimesheetCreate: React.FC = () => {
 
     projectsData.forEach((row, index) => {
       const rowIndex = index + 1;
-      if (!row.project || !row.task) {
+      const isTaskMissing = showSubtask ? (!row.task || !row.parentTask) : !row.parentTask;
+      if (!row.project || isTaskMissing) {
         hasValidationError = true;
         newErrors[`${row.id}_project_task`] = `Row ${rowIndex}: Project and Task are required.`;
       }
@@ -821,9 +866,18 @@ const TimesheetCreate: React.FC = () => {
       projectsData.forEach(row => {
         const cell = row.days[dateKey];
         if (cell && cell.hours > 0) {
+          const taskPayload = showSubtask
+            ? {
+                task: row.task || "",
+                custom_parent_task: row.parentTask || "",
+              }
+            : {
+                custom_parent_task: row.parentTask || "",
+              };
+
           rowsForDay.push({
             project: row.project || "",
-            task: row.task || "",
+            ...taskPayload,
             comment: cell.description || "",
             hrs: cell.hours
           });
@@ -1166,6 +1220,8 @@ const TimesheetCreate: React.FC = () => {
                           handleDeleteRow={handleDeleteRow}
                           disabledDays={allDisabledDays}
                           dayStatusMap={dayStatusMap}
+                          showSubtask={showSubtask}
+                          company={company}
                         />
                       );
                     })

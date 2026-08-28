@@ -5,9 +5,10 @@ import { toast } from "react-hot-toast";
 import { errorResponseFormater } from "../../utils/errorResponseFormater";
 import { Form } from "@tsed/react-formio";
 import { timesheetSchema } from "./timesheetSchema";
-import { useCreateTimesheet } from "../../hooks/useTimesheet";
+import { useCreateTimesheet, useTimesheetSettings } from "../../hooks/useTimesheet";
 import Button from "../shared/atoms/Button";
 import { TimesheetFormData, TimesheetDetail } from "../../types/timesheet";
+import { useMemo } from "react";
 
 interface FormioComponentInstance {
   setValue: (val: unknown, flags?: { modified?: boolean; noUpdateEvent?: boolean;[key: string]: unknown }) => void;
@@ -43,6 +44,30 @@ interface TimesheetCreationModalProps {
 
 const TimesheetCreationModal: React.FC<TimesheetCreationModalProps> = ({ onClose, onSuccess }) => {
   const { mutate: createTimesheet, isPending: isSubmitting } = useCreateTimesheet();
+  const { data: timesheetSettingsData, isLoading: isSettingsLoading } = useTimesheetSettings();
+  const showSubtask = timesheetSettingsData ? Number(timesheetSettingsData.show_subtask) === 1 : true;
+
+  const formSchema = useMemo(() => {
+    const schema = JSON.parse(JSON.stringify(timesheetSchema));
+    if (!showSubtask) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const timeLogsComp = schema.components.find((c: any) => c.key === "time_logs");
+      if (timeLogsComp && timeLogsComp.components) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const row3 = timeLogsComp.components.find((c: any) => c.columns && c.columns.some((col: any) => col.components.some((comp: any) => comp.key === "custom_parent_task")));
+        if (row3) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const taskCol = row3.columns.find((col: any) => col.components.some((comp: any) => comp.key === "custom_parent_task"));
+          if (taskCol) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            taskCol.components = taskCol.components.filter((c: any) => c.key !== "task");
+          }
+        }
+      }
+    }
+    return schema;
+  }, [showSubtask]);
+
   const formInstance = useRef<FormioInstance | null>(null);
   const [formReadyInstance, setFormReadyInstance] = useState<FormioInstance | null>(null);
 
@@ -114,18 +139,29 @@ const TimesheetCreationModal: React.FC<TimesheetCreationModalProps> = ({ onClose
       employee: data.employee || window.target_pw_user_id || "",
       project: data.parent_project,
       customer: data.customer,
-      time_logs: data.time_logs.map((log: TimesheetDetail) => ({
-        activity_type: log.activity_type,
-        project: log.project,
-        task: log.task,
-        expected_hours: log.expected_hours,
-        from_time: formatFrappeDatetime(log.from_time),
-        to_time: formatFrappeDatetime(log.to_time),
-        description: log.description,
-        hours: log.hours,
-        completed: log.completed ? 1 : 0,
-        is_billable: log.is_billable ? 1 : 0,
-      }))
+      time_logs: data.time_logs.map((log: TimesheetDetail) => {
+        const taskPayload = showSubtask
+          ? {
+              task: log.task,
+              custom_parent_task: log.custom_parent_task,
+            }
+          : {
+              custom_parent_task: log.custom_parent_task || log.task,
+            };
+
+        return {
+          activity_type: log.activity_type,
+          project: log.project,
+          ...taskPayload,
+          expected_hours: log.expected_hours,
+          from_time: formatFrappeDatetime(log.from_time),
+          to_time: formatFrappeDatetime(log.to_time),
+          description: log.description,
+          hours: log.hours,
+          completed: log.completed ? 1 : 0,
+          is_billable: log.is_billable ? 1 : 0,
+        };
+      })
     };
 
     createTimesheet(formattedData, {
@@ -156,19 +192,25 @@ const TimesheetCreationModal: React.FC<TimesheetCreationModalProps> = ({ onClose
 
         {/* Content */}
         <div className="show-req-astrik p-6 overflow-y-auto flex-1 timesheet-form pb-20">
-          <Form
-            form={timesheetSchema}
-            onSubmit={handleFormSubmit}
-            onFormReady={(instance: FormioInstance) => {
-              formInstance.current = instance;
-              setFormReadyInstance(instance);
-            }}
-            options={{
-              buttonSettings: {
-                showSubmit: false
-              }
-            }}
-          />
+          {isSettingsLoading ? (
+            <div className="flex justify-center items-center h-40">
+              <span className="inline-block w-8 h-8 border-4 border-gray-300 border-t-primary rounded-full animate-spin" />
+            </div>
+          ) : (
+            <Form
+              form={formSchema}
+              onSubmit={handleFormSubmit}
+              onFormReady={(instance: FormioInstance) => {
+                formInstance.current = instance;
+                setFormReadyInstance(instance);
+              }}
+              options={{
+                buttonSettings: {
+                  showSubmit: false
+                }
+              }}
+            />
+          )}
         </div>
 
         {/* Footer */}
