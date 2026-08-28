@@ -1,8 +1,9 @@
 import React, { useMemo, memo } from "react";
-import { Trash2 } from "lucide-react";
+import { Trash2, ChevronRight } from "lucide-react";
 import { format } from "date-fns";
 import { Form } from "@tsed/react-formio";
 import Tooltip from "../../../shared/Tooltip";
+import { Typography } from "../../../shared/atoms/Typography";
 import { useScreenSize } from "../../../../hooks/useScreenSize";
 import { TimesheetRow as TimesheetRowType } from "../TimesheetCreate";
 
@@ -12,19 +13,24 @@ interface InlineFormRowProps {
   handleConfigureRow: (rowId: string, submission: any) => void;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   formSchema: any;
+  showSubtask: boolean;
+  company?: string;
 }
 
-const InlineFormRow = memo(({ row, handleConfigureRow, formSchema }: InlineFormRowProps) => {
+const InlineFormRow = memo(({ row, handleConfigureRow, formSchema, showSubtask, company }: InlineFormRowProps) => {
   const submission = useMemo(
     () => ({
       data: {
-        project: row.project,
-        task: row.task,
-        is_billable: row.isBillable,
+        project: row.project || "",
+        custom_parent_task: row.parentTask || "",
+        ...(showSubtask ? { task: row.task || "" } : {}),
+        company: company || "",
+        is_billable: row.isBillable !== undefined ? row.isBillable : true,
       },
     }),
-    [row.project, row.task, row.isBillable]
+    [row.project, row.parentTask, row.task, row.isBillable, showSubtask, company]
   );
+
   return (
     <Form
       form={formSchema}
@@ -33,11 +39,13 @@ const InlineFormRow = memo(({ row, handleConfigureRow, formSchema }: InlineFormR
       onChange={(sub: any) => {
         const data = sub.data || {};
         const projectVal = data.project || "";
+        const parentTaskVal = data.custom_parent_task || "";
         const taskVal = data.task || "";
         const isBillableVal = data.is_billable !== undefined ? !!data.is_billable : true;
 
         if (
           projectVal === (row.project || "") &&
+          parentTaskVal === (row.parentTask || "") &&
           taskVal === (row.task || "") &&
           isBillableVal === row.isBillable
         ) {
@@ -58,8 +66,11 @@ const InlineFormRow = memo(({ row, handleConfigureRow, formSchema }: InlineFormR
   return (
     prevProps.row.id === nextProps.row.id &&
     prevProps.row.project === nextProps.row.project &&
+    prevProps.row.parentTask === nextProps.row.parentTask &&
     prevProps.row.task === nextProps.row.task &&
-    prevProps.row.isBillable === nextProps.row.isBillable
+    prevProps.row.isBillable === nextProps.row.isBillable &&
+    prevProps.showSubtask === nextProps.showSubtask &&
+    prevProps.company === nextProps.company
   );
 });
 
@@ -82,6 +93,8 @@ export interface TimesheetRowProps {
   handleDeleteRow: (rowId: string) => void;
   disabledDays?: string[];
   dayStatusMap?: Record<string, string>;
+  showSubtask: boolean;
+  company?: string;
 }
 
 export const TimesheetRow: React.FC<TimesheetRowProps> = ({
@@ -100,7 +113,9 @@ export const TimesheetRow: React.FC<TimesheetRowProps> = ({
   getRowTotal,
   handleDeleteRow,
   disabledDays = [],
-  dayStatusMap = {}
+  dayStatusMap = {},
+  showSubtask = true,
+  company = ""
 }) => {
   const { isDesktop } = useScreenSize();
 
@@ -124,6 +139,8 @@ export const TimesheetRow: React.FC<TimesheetRowProps> = ({
                     row={row}
                     handleConfigureRow={handleConfigureRow}
                     formSchema={formSchema}
+                    showSubtask={showSubtask}
+                    company={company}
                   />
                   {validationErrors[`${row.id}_project_task`] && (
                     <div className="text-red-500 text-[10px] mt-1 font-semibold text-center">
@@ -133,13 +150,30 @@ export const TimesheetRow: React.FC<TimesheetRowProps> = ({
                 </div>
               ) : (
                 <div className="flex-1 flex flex-col gap-1">
-                  <span className="font-bold text-gray-900 text-sm">{projName}</span>
+                  <Typography variant="bodyMedium" className="font-bold text-gray-900">{projName}</Typography>
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-gray-500 text-xs font-medium">{taskName}</span>
-                    <span className="text-gray-300 text-xs">|</span>
-                    <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${row.isBillable ? "bg-emerald-50 text-emerald-700" : "bg-gray-100 text-gray-600"}`}>
+                    <div className="flex items-center gap-1 bg-gray-50/80 px-1.5 py-0.5 rounded-md border border-gray-100/80">
+                      {row.parentTaskSubject && (
+                        <>
+                          <Tooltip content={row.parentTaskSubject} position="top">
+                            <Typography variant="caption" className="block font-semibold text-gray-500 truncate max-w-[120px]">
+                              {row.parentTaskSubject}
+                            </Typography>
+                          </Tooltip>
+                          {showSubtask && <ChevronRight className="w-2.5 h-2.5 text-primary/70 shrink-0" strokeWidth={3} />}
+                        </>
+                      )}
+                      {showSubtask && (
+                        <Tooltip content={taskName} position="top">
+                          <Typography variant="caption" className="block font-medium text-gray-700 truncate max-w-[120px]">
+                            {taskName}
+                          </Typography>
+                        </Tooltip>
+                      )}
+                    </div>
+                    <Typography variant="caption" className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${row.isBillable ? "bg-emerald-50 text-emerald-700" : "bg-gray-100 text-gray-600"}`}>
                       {row.isBillable ? "Billable" : "Non-Billable"}
-                    </span>
+                    </Typography>
                   </div>
                 </div>
               )}
@@ -156,8 +190,8 @@ export const TimesheetRow: React.FC<TimesheetRowProps> = ({
                 const status = dayStatusMap[dateKey];
                 return (
                   <div key={dateKey} className="flex flex-col items-center">
-                    <div className="text-[10px] font-bold text-gray-700 leading-tight">{format(day, "d")}</div>
-                    <div className="text-[9px] font-medium text-gray-400 mb-1 leading-tight">{format(day, "EEE")}</div>
+                    <Typography variant="caption" className="text-[10px] font-bold text-gray-700 leading-tight">{format(day, "d")}</Typography>
+                    <Typography variant="caption" className="text-[9px] font-medium text-gray-400 mb-1 leading-tight">{format(day, "EEE")}</Typography>
                     <input
                       key={`mob-input-${dateKey}-${cell.hours}`}
                       type="text"
@@ -217,8 +251,8 @@ export const TimesheetRow: React.FC<TimesheetRowProps> = ({
             </div>
 
             <div className="flex justify-between items-center pt-2 border-t border-gray-50">
-              <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Total Hours</span>
-              <span className="font-bold text-primary">{formatCellOnBlur(getRowTotal(row)) || "0:00"}</span>
+              <Typography variant="label" className="font-bold text-gray-500">Total Hours</Typography>
+              <Typography variant="bodyMedium" className="font-bold text-primary">{formatCellOnBlur(getRowTotal(row)) || "0:00"}</Typography>
             </div>
 
             {isGridEditable && !hasLockedRecord && (
@@ -251,6 +285,8 @@ export const TimesheetRow: React.FC<TimesheetRowProps> = ({
                 row={row}
                 handleConfigureRow={handleConfigureRow}
                 formSchema={formSchema}
+                showSubtask={showSubtask}
+                company={company}
               />
               {validationErrors[`${row.id}_project_task`] && (
                 <div className="text-red-500 text-[10px] mt-1 font-semibold text-center">
@@ -262,17 +298,32 @@ export const TimesheetRow: React.FC<TimesheetRowProps> = ({
         ) : (
           <div className="flex items-center justify-between gap-4">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="font-bold text-gray-900 text-sm">
+              <Typography variant="bodyMedium" className="font-bold text-gray-900">
                 {projName}
-              </span>
-              <span className="text-gray-300 text-xs">|</span>
-              <span className="text-gray-500 text-xs font-medium">
-                {taskName}
-              </span>
-              <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${row.isBillable ? "bg-emerald-50 text-emerald-700" : "bg-gray-100 text-gray-600"
+              </Typography>
+              <div className="flex items-center gap-1.5 bg-gray-50 px-2 py-0.5 rounded-md border border-gray-100">
+                {row.parentTaskSubject && (
+                  <>
+                    <Tooltip content={row.parentTaskSubject} position="top">
+                      <Typography variant="caption" className="block font-semibold text-gray-500 truncate max-w-[150px]">
+                        {row.parentTaskSubject}
+                      </Typography>
+                    </Tooltip>
+                    {showSubtask && <ChevronRight className="w-3 h-3 text-primary/70 shrink-0" strokeWidth={3} />}
+                  </>
+                )}
+                {showSubtask && (
+                  <Tooltip content={taskName} position="top">
+                    <Typography variant="caption" className="block font-medium text-gray-700 truncate max-w-[150px]">
+                      {taskName}
+                    </Typography>
+                  </Tooltip>
+                )}
+              </div>
+              <Typography variant="caption" className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${row.isBillable ? "bg-emerald-50 text-emerald-700" : "bg-gray-100 text-gray-600"
                 }`}>
                 {row.isBillable ? "Billable" : "Non-Billable"}
-              </span>
+              </Typography>
             </div>
           </div>
         )}
@@ -347,8 +398,10 @@ export const TimesheetRow: React.FC<TimesheetRowProps> = ({
       })}
 
       {/* Row Total */}
-      <td className="px-4 py-3 text-center border-l border-gray-50 font-bold text-gray-900 align-middle">
-        {formatCellOnBlur(getRowTotal(row)) || "0:00"}
+      <td className="px-4 py-3 text-center border-l border-gray-50 align-middle">
+        <Typography variant="bodyMedium" className="font-bold text-gray-900">
+          {formatCellOnBlur(getRowTotal(row)) || "0:00"}
+        </Typography>
       </td>
       {/* Delete Action */}
       <td className="px-4 py-3 text-center border-l border-gray-50 align-middle">

@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createTimesheet, updateTimesheet, getWeeklyTimesheetData, createOrUpdateTimesheetEntries } from "../services/timesheetService";
+import { createTimesheet, updateTimesheet, getWeeklyTimesheetData, createOrUpdateTimesheetEntries, getTimesheetSettings } from "../services/timesheetService";
 import { TimesheetPayload, WeeklyTimesheetParams, TimesheetEntryPayload } from "../types/timesheet";
 
 export const useCreateTimesheet = () => {
@@ -49,3 +49,9 @@ export const useCreateOrUpdateTimesheetEntries = () => {
   });
 };
 
+export const useTimesheetSettings = () => {
+  return useQuery({
+    queryKey: ["timesheetSettings"],
+    queryFn: getTimesheetSettings,
+  });
+};

@@ -237,12 +237,12 @@ export const timesheetSchema = {
               components: [
                 {
                   type: "select",
-                  key: "task",
+                  key: "custom_parent_task",
                   label: "Task",
                   input: true,
                   dataSrc: "url",
                   data: {
-                    url: "/api/resource/Task?fields=[\"name\",\"subject\"]&filters=[[\"project\",\"=\",\"{{ row.project }}\"]]",
+                    url: "/api/resource/Task?fields=[\"name\",\"subject\",\"project\"]&filters=[[\"project\",\"=\",\"{{ row.project }}\"],[\"is_group\",\"=\",1]]",
                   },
                   selectValues: "data",
                   valueProperty: "name",
@@ -252,8 +252,24 @@ export const timesheetSchema = {
                   clearOnRefresh: true,
                   lazyLoad: false,
                   ignoreCache: true,
-                  customRefresh: "return !!row.project;",
-                  redrawOn: "data.project",
+                },
+                {
+                  type: "select",
+                  key: "task",
+                  label: "Sub Task",
+                  input: true,
+                  dataSrc: "url",
+                  data: {
+                    url: "/api/resource/Task?fields=[\"name\",\"subject\",\"project\"]&filters=[[\"parent_task\",\"=\",\"{{ row.custom_parent_task }}\"],[\"project\",\"=\",\"{{ row.project }}\"],[\"is_group\",\"=\",0]]",
+                  },
+                  selectValues: "data",
+                  valueProperty: "name",
+                  template: "<span>{{ item.subject || item.name }}</span>",
+                  searchEnabled: true,
+                  refreshOn: "custom_parent_task",
+                  clearOnRefresh: true,
+                  lazyLoad: false,
+                  ignoreCache: true,
                 },
               ]
             },
