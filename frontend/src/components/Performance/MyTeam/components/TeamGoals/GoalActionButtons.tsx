@@ -6,6 +6,7 @@ import Tooltip from "../../../../shared/Tooltip";
 import { GoalReasonModal } from "./GoalReasonModal";
 import { useApproveTeamGoals, useRejectTeamGoals, useSendBackTeamGoals } from "../../../../../hooks/usePerformance";
 import { getPerformanceErrorMessage } from "../../../../../services/performanceService";
+import { useScreenSize } from "../../../../../hooks/useScreenSize";
 
 export interface GoalActionItem {
   employee: string;
@@ -38,6 +39,9 @@ export const GoalActionButtons: React.FC<GoalActionButtonsProps> = ({
   isEntirePlan = false,
   className,
 }) => {
+  const { isMobile, isTablet } = useScreenSize();
+  const isCompact = isMobile || isTablet;
+
   const [actionModalType, setActionModalType] = useState<"send_back" | "reject" | null>(null);
   const hasActions = Boolean(actions && actions.length > 0);
   const { mutate: approveTeamGoals, isPending } = useApproveTeamGoals();
@@ -217,11 +221,28 @@ export const GoalActionButtons: React.FC<GoalActionButtonsProps> = ({
     });
   }
 
+  const showFullButtons = isCompact || isModel || isEntirePlan;
+
   return (
     <>
-      <div className={className || (isModel ? "flex flex-wrap items-center gap-3" : "flex items-center justify-center gap-1.5")}>
-        {isEntirePlan ? (
+      <div className={className || (showFullButtons ? "flex flex-wrap items-center gap-2" : "flex items-center justify-center gap-1.5")}>
+        {showFullButtons ? (
           <>
+            {onViewGoal && canView && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={(e) => {
+                  e?.stopPropagation?.();
+                  onViewGoal();
+                }}
+                className="border-slate-300 text-slate-700 bg-slate-50 hover:bg-slate-100 active:bg-slate-200 text-xs h-8 px-2.5 font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <Eye className="h-3.5 w-3.5 mr-1 shrink-0 text-slate-600" />
+                <span>View</span>
+              </Button>
+            )}
             {canSendBack && (
               <Button
                 type="button"
@@ -232,10 +253,10 @@ export const GoalActionButtons: React.FC<GoalActionButtonsProps> = ({
                   e?.stopPropagation?.();
                   setActionModalType("send_back");
                 }}
-                className="border-amber-300 text-amber-800 bg-amber-50/50 hover:bg-amber-100/80 active:bg-amber-200 text-xs px-2 sm:px-3 font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                className="border-amber-300 text-amber-800 bg-amber-50/50 hover:bg-amber-100/80 active:bg-amber-200 text-xs h-8 px-2.5 font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <SendToBack className="h-3.5 w-3.5 mr-1 shrink-0 text-amber-600" />
-                <span>{sendBackTeamGoalLoading ? "Sending..." : "Send Back"}</span>
+                <span>{sendBackTeamGoalLoading ? "Sending..." : "Send back"}</span>
               </Button>
             )}
             {canReject && (
@@ -248,7 +269,7 @@ export const GoalActionButtons: React.FC<GoalActionButtonsProps> = ({
                   e?.stopPropagation?.();
                   setActionModalType("reject");
                 }}
-                className="border-red-300 text-red-700 bg-red-50/50 hover:bg-red-100/80 active:bg-red-200 text-xs px-2 sm:px-3 font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                className="border-red-300 text-red-700 bg-red-50/50 hover:bg-red-100/80 active:bg-red-200 text-xs h-8 px-2.5 font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <X className="h-3.5 w-3.5 mr-1 shrink-0 text-red-600" />
                 <span>{rejectGoalLoading ? "Rejecting..." : "Reject"}</span>
@@ -264,7 +285,7 @@ export const GoalActionButtons: React.FC<GoalActionButtonsProps> = ({
                   e?.stopPropagation?.();
                   approveGoal();
                 }}
-                className="border border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-700 active:bg-emerald-800 shadow-xs text-xs px-2 sm:px-3 font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                className="border border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-700 active:bg-emerald-800 shadow-xs text-xs h-8 px-2.5 font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Check className="h-3.5 w-3.5 mr-1 shrink-0 text-white" />
                 <span>{isPending ? "Approving..." : "Approve"}</span>
