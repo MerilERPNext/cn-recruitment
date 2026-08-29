@@ -332,6 +332,33 @@ _EMPLOYMENT_TYPE_SOURCES = (
 )
 
 
+OFFER_ACCEPTED_ON = "custom_offer_accepted_on"
+
+
+def stamp_offer_accepted_on(doc, method=None):
+	"""Record the day the offer was accepted, once.
+
+	Nothing else records it. The Employee Onboarding's "Boarding Begins On" is
+	that date, and it cannot be derived after the fact: the onboarding is often
+	created later than the acceptance (deferred behind DPDP consent, or raised by
+	hand from the Action Center), so the day it is created is not the day the
+	candidate said yes. `modified` is no good either — any later edit moves it.
+
+	Written with ``db_set`` and hooked on the two update events rather than
+	``validate``, because `status` is `allow_on_submit`: a submitted offer flipped
+	to Accepted goes through update-after-submit, where validate never runs.
+
+	Stamped only when empty, so re-saving an accepted offer — or one that is
+	rejected and later accepted again — keeps the first acceptance date.
+	"""
+	if not doc.meta.get_field(OFFER_ACCEPTED_ON):
+		return
+	if doc.get("status") != "Accepted" or doc.get(OFFER_ACCEPTED_ON):
+		return
+
+	doc.db_set(OFFER_ACCEPTED_ON, frappe.utils.today(), update_modified=False)
+
+
 def set_employment_type(doc, method=None):
 	"""``before_submit``: fill Employee Type from the candidate, then the opening.
 
