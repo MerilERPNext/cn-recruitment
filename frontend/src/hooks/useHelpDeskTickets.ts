@@ -14,8 +14,9 @@ import { FormIOComponent } from "../types/formio";
  */
 export interface TicketEscalation {
   // "pending" -- next level is coming up, "breached" -- escalation point passed
-  // or every level has fired, "none" -- nothing to escalate
-  status: "pending" | "breached" | "none";
+  // or every level has fired, "paused" -- ticket waiting on the customer,
+  // "none" -- nothing to escalate
+  status: "pending" | "breached" | "paused" | "none";
   enabled: boolean;
   level: number;
   next_level: number | null;
@@ -23,6 +24,8 @@ export interface TicketEscalation {
   due_on: string | null;
   // Working seconds left until `due_on`
   remaining_seconds: number | null;
+  // Ticket is awaiting the customer, so the SLA resolution clock is on hold
+  sla_paused: boolean;
   // False when the desk is shut; the running clock keeps going either way
   is_working_now: boolean;
   // Server clock at read time, so the UI counts against it not the browser's
@@ -53,6 +56,10 @@ export interface HDTicket {
   resolution_details?: string;
   owner: string;
   resolution_by: string;
+  resolution_date?: string | null;
+  first_responded_on?: string | null;
+  // Server clock at read time, so countdowns run against it not the browser's
+  server_now?: string | null;
   agreement_status: "First Response Due" | "Resolution Due" | "Failed" | "Fulfilled" | "Paused";
   escalation?: TicketEscalation | null;
   response_by: string;
@@ -170,6 +177,8 @@ export const useTicketList = (
           "raised_by",
           "resolution_by",
           "response_by",
+          "first_responded_on",
+          "resolution_date",
           "creation",
           "custom_archived",
           "custom_closure_requested",

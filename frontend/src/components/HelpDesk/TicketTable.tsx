@@ -3,6 +3,7 @@ import React, { useRef, useState, useEffect } from "react";
 import { HDTicket, useTicketDetail } from "../../hooks/useHelpDeskTickets";
 import { useCurrentUser } from "../../hooks/useCurrentUser";
 import { useEscalationCountdown } from "../../hooks/Helpdesk/useEscalationCountdown";
+import { useSlaCountdown } from "../../hooks/Helpdesk/useSlaCountdown";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import formatToIndianDate from "../../utils/formatToIndianDate";
 import { Typography } from "../shared/atoms/Typography";
@@ -291,14 +292,6 @@ const columns = [
   { key: "modified", label: "Last Updated", sortable: true, width: "w-32" }
 ];
 
-const formateDateDiff = (date1: string, date2: string) => {
-  if (!date1 || !date2) return "-";
-  const diff = new Date(date1).getTime() - new Date(date2).getTime();
-  const hours = Math.floor(diff / (1000 * 60 * 60));
-  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-  return `${hours}h ${minutes}m`;
-}
-
 interface DetailRowProps {
   label: string;
   value: React.ReactNode;
@@ -362,6 +355,17 @@ const MobileTicketDetailModal: React.FC<MobileTicketDetailModalProps> = ({
   );
 
   const escalation = useEscalationCountdown(ticket?.escalation);
+  const frt = useSlaCountdown({
+    dueOn: ticket?.response_by,
+    metOn: ticket?.first_responded_on,
+    serverNow: ticket?.server_now,
+  });
+  const tat = useSlaCountdown({
+    dueOn: ticket?.resolution_by,
+    metOn: ticket?.resolution_date,
+    serverNow: ticket?.server_now,
+    paused: Boolean(ticket?.escalation?.sla_paused),
+  });
 
   // Reset tab when modal closes
   useEffect(() => {
@@ -412,8 +416,8 @@ const MobileTicketDetailModal: React.FC<MobileTicketDetailModalProps> = ({
           <div className="p-4 grid grid-cols-2 gap-y-5 gap-x-4">
             <DetailRow label="Created on" value={formatToIndianDate(ticket.creation)} />
             <DetailRow label="Last Updated" value={formatToIndianDate(ticket.modified)} />
-            <DetailRow label="SLA Breached TAT" value={formateDateDiff(ticket.resolution_by, ticket.creation)} />
-            <DetailRow label="SLA Breached FRT" value={formateDateDiff(ticket.response_by, ticket.creation)} />
+            <DetailRow label="SLA Breached TAT" value={tat.text} />
+            <DetailRow label="SLA Breached FRT" value={frt.text} />
           </div>
           {/* Highlighted section for Escalation */}
           <div className={`px-4 py-3.5 border-t flex gap-3 justify-between items-center ${escalation.tone === 'breached' ? 'bg-red-50/60 border-red-100' : 'bg-emerald-50/60 border-emerald-100'}`}>
@@ -835,7 +839,6 @@ const TicketTable: React.FC<TicketTableProps> = ({
                 getAssignedEmail={getAssignedEmail}
                 getAssignedName={getAssignedName}
                 getCategoryName={getCategoryName}
-                formateDateDiff={formateDateDiff}
                 onRowClick={onRowClick}
                 permRevoke={permRevoke}
                 permCloseTicket={permCloseTicket}
