@@ -22,7 +22,7 @@ app_include_js = [
 	# fingerprints *.bundle.js), so browsers hold the old copy indefinitely and a
 	# change here silently doesn't reach anyone. Bump the number whenever this file
 	# changes — the new URL defeats the browser cache and any service worker.
-	"/assets/recruitment/js/applicant_fields_ui.js?v=4",
+	"/assets/recruitment/js/applicant_fields_ui.js?v=5",
 	# Column registry behind the designed Job Applicant / Job Opening / Job
 	# Requisition list views — which columns show, in what order, alignment and
 	# width, plus the "Configure Columns" dialog. Global rather than per-doctype
@@ -381,11 +381,16 @@ doc_events = {
         "on_update": [
             "recruitment.api.hiring_stage.advance_on_job_offer_outcome",
             "recruitment.api.offer_position.sync_offer_position",
+            # Stamp the day the candidate accepted. Both update events, because
+            # `status` is allow_on_submit — an offer accepted after submit never
+            # reaches validate. Writes once, then never again.
+            "recruitment.customizations.job_offer.stamp_offer_accepted_on",
         ],
         "on_update_after_submit": [
             "recruitment.api.action_center.sync_job_offer_action_item",
             "recruitment.api.hiring_stage.advance_on_job_offer_outcome",
             "recruitment.api.offer_position.sync_offer_position",
+            "recruitment.customizations.job_offer.stamp_offer_accepted_on",
         ],
         "on_cancel": "recruitment.api.offer_position.sync_offer_position",
     },
