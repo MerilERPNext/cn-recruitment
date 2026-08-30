@@ -1,5 +1,5 @@
 import { HDTicket } from "../../hooks/useHelpDeskTickets";
-import { useCountdown } from "../../hooks/Helpdesk/useCountdown";
+import { useEscalationCountdown } from "../../hooks/Helpdesk/useEscalationCountdown";
 import { Typography } from "../shared/atoms/Typography";
 import WrapperHoverCard from "../shared/WrapperHoverCard";
 import Badge from "../shared/Badge";
@@ -54,16 +54,8 @@ const TicketTableRow = ({
     permReply = true,
     permReopen = true,
 }: TicketTableRowProps) => {
-    const creationTime = new Date(ticket.creation);
-    const delayHours = ticket?.custom_second_level_escalation_delay_hours;
-    const hasDelay = delayHours != null && !isNaN(delayHours);
-
-    // target = creation + delay
-    const targetTime = hasDelay
-        ? new Date(creationTime.getTime() + delayHours * 60 * 60 * 1000)
-        : new Date();
-
-    const { hours, minutes, seconds, isExpired } = useCountdown(targetTime);
+    // Remaining Escalation Business Time -- ticks only during support hours.
+    const escalation = useEscalationCountdown(ticket.escalation);
     return (
         <tr
             key={ticket.name}
@@ -141,15 +133,26 @@ const TicketTableRow = ({
                     color="body1"
                 >
                     {<div>
-                        {!hasDelay ? (
-                            <span>N/A</span>
-                        ) : isExpired ? (
-                            <span>Escalated</span>
-                        ) : (
-                            <span>
-                                {hours}h {minutes}m {seconds}s
-                            </span>
-                        )}
+                        <span
+                            title={
+                                ticket.escalation?.status === "pending" && ticket.escalation?.due_on
+                                    ? `${ticket.escalation.next_level_name} due ${ticket.escalation.due_on}`
+                                        + (escalation.businessText ? ` — ${escalation.businessText} of shift time left` : "")
+                                        + (ticket.escalation.is_working_now ? "" : " (desk currently closed)")
+                                    : undefined
+                            }
+                            className={
+                                escalation.tone === "breached"
+                                    ? "text-red-600 font-semibold"
+                                    : escalation.tone === "paused"
+                                        ? "text-blue-600"
+                                        : escalation.tone === "pending"
+                                            ? "text-amber-600"
+                                            : ""
+                            }
+                        >
+                            {escalation.text}
+                        </span>
                     </div>}
                 </Typography>
             </td>

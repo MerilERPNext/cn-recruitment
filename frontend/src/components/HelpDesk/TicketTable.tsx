@@ -2,7 +2,7 @@ import { ArrowDown, ArrowUp, ArrowUpDown, Ticket as TicketIcon, X, MessageSquare
 import React, { useRef, useState, useEffect } from "react";
 import { HDTicket, useTicketDetail } from "../../hooks/useHelpDeskTickets";
 import { useCurrentUser } from "../../hooks/useCurrentUser";
-import { useCountdown } from "../../hooks/Helpdesk/useCountdown";
+import { useEscalationCountdown } from "../../hooks/Helpdesk/useEscalationCountdown";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import formatToIndianDate from "../../utils/formatToIndianDate";
 import { Typography } from "../shared/atoms/Typography";
@@ -275,9 +275,9 @@ const columns = [
     sortable: false,
     width: "w-40",
   }, {
-    key: "custom_second_level_escalation_delay_hours",
-    label: "Remaining Escalation Business Time ",
-    sortable: true,
+    key: "escalation",
+    label: "Remaining Escalation Business Time",
+    sortable: false,
     width: "w-40",
   },
   {
@@ -361,11 +361,7 @@ const MobileTicketDetailModal: React.FC<MobileTicketDetailModalProps> = ({
     ticket?.name || ""
   );
 
-  const targetTime = ticket
-    ? new Date(new Date(ticket.creation).getTime() + (ticket.custom_second_level_escalation_delay_hours || 0) * 60 * 60 * 1000)
-    : new Date();
-
-  const { hours, minutes, seconds, isExpired } = useCountdown(targetTime);
+  const escalation = useEscalationCountdown(ticket?.escalation);
 
   // Reset tab when modal closes
   useEffect(() => {
@@ -420,10 +416,10 @@ const MobileTicketDetailModal: React.FC<MobileTicketDetailModalProps> = ({
             <DetailRow label="SLA Breached FRT" value={formateDateDiff(ticket.response_by, ticket.creation)} />
           </div>
           {/* Highlighted section for Escalation */}
-          <div className={`px-4 py-3.5 border-t flex gap-3 justify-between items-center ${isExpired ? 'bg-red-50/60 border-red-100' : 'bg-emerald-50/60 border-emerald-100'}`}>
-            <span className={`text-[10px] font-bold uppercase tracking-wider ${isExpired ? 'text-red-700/80' : 'text-emerald-700/80'}`}>Escalation Wait Time</span>
-            <span className={`text-sm font-bold ${isExpired ? 'text-red-600' : 'text-emerald-600'}`}>
-              {isExpired ? "Escalated" : `${hours}h ${minutes}m ${seconds}s`}
+          <div className={`px-4 py-3.5 border-t flex gap-3 justify-between items-center ${escalation.tone === 'breached' ? 'bg-red-50/60 border-red-100' : 'bg-emerald-50/60 border-emerald-100'}`}>
+            <span className={`text-[10px] font-bold uppercase tracking-wider ${escalation.tone === 'breached' ? 'text-red-700/80' : 'text-emerald-700/80'}`}>Remaining Escalation Business Time</span>
+            <span className={`text-sm font-bold ${escalation.tone === 'breached' ? 'text-red-600' : 'text-emerald-600'}`}>
+              {escalation.text}
             </span>
           </div>
         </div>
