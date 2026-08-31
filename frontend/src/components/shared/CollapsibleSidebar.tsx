@@ -49,7 +49,8 @@ import { useSingleCompanyLogo } from "../../hooks/useCompanyLogo";
 import { useCurrentEmployeeDetails } from "../../hooks/useEmployee";
 import { useGetUiPermission } from "../../hooks/userUiPermission";
 import { useRecognitionFlags } from "../../services/recognitionService";
-import { useTodoPendingCount } from "../../hooks/useTodo";
+import { useTodoPendingCount, useTodoSettings } from "../../hooks/useTodo";
+import { useOptionalTargetEmployeeId } from "../../context/ViewedUserContext";
 import Avatar from "./Avatar";
 import { Typography } from "./atoms/Typography";
 import SidebarSkeleton from "./molecules/Skeletons/SidebarSkeleton";
@@ -124,6 +125,14 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
   const companyName = getTruncatedCompanyName(originalCompanyName);
   const { getCount, getSubModuleCount } = useAppNotificationCounts();
   const { data: todoPendingCount = 0 } = useTodoPendingCount();
+  const { data: todoSettings } = useTodoSettings();
+  const targetEmployeeId = useOptionalTargetEmployeeId();
+
+  // When show_todo_for_self_only is enabled, hide Todo during impersonation
+  const isTodoHiddenBySettings =
+    !!todoSettings?.show_todo_for_self_only &&
+    !!targetEmployeeId &&
+    targetEmployeeId !== currentEmployee?.name;
 
   // Returns the badge count for a nav item — todo uses its own API, others use notification counts
   const getNavItemCount = (label: string): number => {
@@ -687,6 +696,11 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
           return null;
         }
 
+        // Hide Todo when show_todo_for_self_only is enabled and impersonating
+        if (item.permissionKey === "Todo" && isTodoHiddenBySettings) {
+          return null;
+        }
+
         if (!item.subItems || item.subItems.length === 0) {
           return item;
         }
@@ -761,7 +775,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
       })
       .filter((item): item is NavigationItem => item !== null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [uiPermissions, recognitionFlags.hideRewardsPointSummary]);
+  }, [uiPermissions, recognitionFlags.hideRewardsPointSummary, isTodoHiddenBySettings]);
 
   const isSubSubItemActive = (subSubItem: SubSubMenuItem) => {
     if (location.pathname === subSubItem.href) {
