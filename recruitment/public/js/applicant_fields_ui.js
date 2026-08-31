@@ -766,13 +766,23 @@ frappe.provide("recruitment.applicant_fields_ui");
 			const btn = e.target.closest && e.target.closest(".apf-expand");
 			if (!btn) return;
 			const ref = btn.getAttribute("data-ref");
-			const row = host.querySelector(`.apf-child-row[data-parent-ref="${ref}"]`);
 			const panel = host.querySelector(`.apf-child-dock > [data-parent-ref="${ref}"]`);
 			if (!panel) return;
-			const open = row && row.style.display !== "none";
+
+			// The panel's own visibility IS the state. This used to read the marker
+			// row's inline display, on the assumption that the screen toggled it —
+			// which only job_opening.js ever did. Here nothing did, so `open` was
+			// permanently false: the panel could never be shown, and anchorDock was
+			// always told nothing was open.
+			const open = panel.hidden;
+
 			// One panel at a time — two docked panels would push the grid off-screen.
 			host.querySelectorAll(".apf-child-dock > .apf-child-container").forEach((p) => {
 				p.hidden = p !== panel || !open;
+			});
+			host.querySelectorAll(".apf-expand").forEach((b) => {
+				const shown = b === btn && open;
+				b.textContent = `${shown ? "▼" : "▶"} ${__("Child Fields")}`;
 			});
 			// ...and end the grid just above whichever one is now showing.
 			AFU.anchorDock(host);

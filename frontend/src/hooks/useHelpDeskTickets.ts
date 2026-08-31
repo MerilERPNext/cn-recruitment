@@ -4,6 +4,38 @@ import { TicketStatsV2 } from "../types/helpdesk";
 import { FormIOComponent } from "../types/formio";
 
 // Types
+
+/**
+ * Remaining Escalation Business Time, computed per ticket by
+ * `helpdesk.escalation.get_ticket_escalation_status` -- there is no stored
+ * field behind it. The countdown runs to level 1 (first response target +
+ * escalation point), then to level 2 (resolution target + escalation point)
+ * once level 1 has fired, measured in the SLA's working hours.
+ */
+export interface TicketEscalation {
+  // "pending" -- next level is coming up, "breached" -- escalation point passed
+  // or every level has fired, "paused" -- ticket waiting on the customer,
+  // "none" -- nothing to escalate
+  status: "pending" | "breached" | "paused" | "none";
+  enabled: boolean;
+  level: number;
+  next_level: number | null;
+  next_level_name: string | null;
+  due_on: string | null;
+  // Working seconds left until `due_on`
+  remaining_seconds: number | null;
+  // Ticket is awaiting the customer, so the SLA resolution clock is on hold
+  sla_paused: boolean;
+  // False when the desk is shut; the running clock keeps going either way
+  is_working_now: boolean;
+  // Server clock at read time, so the UI counts against it not the browser's
+  server_now: string | null;
+  working_until: string | null;
+  next_working_start: string | null;
+  last_escalated_on: string | null;
+  last_escalated_to: string | null;
+}
+
 export interface HDTicket {
   name: string;
   subject: string;
@@ -22,10 +54,14 @@ export interface HDTicket {
   custom_closure_requested?: boolean;
   custom_closure_requested_by?: string;
   resolution_details?: string;
-  custom_second_level_escalation_delay_hours?: number;
   owner: string;
   resolution_by: string;
+  resolution_date?: string | null;
+  first_responded_on?: string | null;
+  // Server clock at read time, so countdowns run against it not the browser's
+  server_now?: string | null;
   agreement_status: "First Response Due" | "Resolution Due" | "Failed" | "Fulfilled" | "Paused";
+  escalation?: TicketEscalation | null;
   response_by: string;
   custom_sub_category_name?: string;
 }
@@ -141,8 +177,9 @@ export const useTicketList = (
           "raised_by",
           "resolution_by",
           "response_by",
+          "first_responded_on",
+          "resolution_date",
           "creation",
-          "custom_second_level_escalation_delay_hours",
           "custom_archived",
           "custom_closure_requested",
           "custom_closure_requested_by",

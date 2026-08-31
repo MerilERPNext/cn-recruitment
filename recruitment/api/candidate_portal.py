@@ -355,6 +355,65 @@ def _apply_onboarding_automation_fields(doc, applicant, job_offer_name=None):
         frappe.log_error(frappe.get_traceback(), "materialize_onboarding: apply automation fields failed")
 
 
+ONBOARDING_TEMPLATE = "Employee Onboarding Template"
+
+
+def _default_onboarding_template():
+    """The Employee Onboarding Template flagged as the default, or None.
+
+    Guarded by ``has_column``: the flag is a custom field created by
+    sync_customizations, so a site mid-migrate simply has no default and the
+    onboarding is created without a template, exactly as before.
+
+    Marking two templates is a misconfiguration rather than a supported state;
+    the most recently edited one wins so that re-flagging a template is what
+    takes effect, instead of whichever happens to sort first.
+    """
+    if not frappe.db.has_column(ONBOARDING_TEMPLATE, "custom_is_default"):
+        return None
+    return frappe.db.get_value(
+        ONBOARDING_TEMPLATE, {"custom_is_default": 1}, "name", order_by="modified desc"
+    )
+
+
+def _apply_default_onboarding_template(doc):
+    """Put the default template — and its activities — on a new onboarding.
+
+    The activities have to be copied here, not just the link. HRMS fills that
+    table from a handler on the Desk form only (employee_onboarding.js reacting
+    to the field being changed by hand), so an onboarding created in code with
+    only the link set would name a template and carry NO tasks — worse than the
+    blank one it replaced, and silently so. The rows are read through
+    ``get_onboarding_details``, the same helper that form handler calls, so both
+    routes produce identical activities.
+
+    Only ever fills a blank: an onboarding that already names a template, or that
+    already carries activities, is left exactly as it is.
+
+    Never raises. A missing or misconfigured template must not stop a candidate's
+    onboarding from being created — the field stays empty and HR picks one, which
+    is the behaviour this feature replaces.
+    """
+    try:
+        if doc.get("employee_onboarding_template") or doc.get("activities"):
+            return
+
+        template = _default_onboarding_template()
+        if not template:
+            return
+
+        from hrms.controllers.employee_boarding_controller import get_onboarding_details
+
+        doc.employee_onboarding_template = template
+        for activity in get_onboarding_details(template, ONBOARDING_TEMPLATE) or []:
+            doc.append("activities", activity)
+    except Exception:
+        frappe.log_error(
+            frappe.get_traceback(),
+            "materialize_onboarding: default onboarding template failed",
+        )
+
+
 # Employee Onboarding fields that materialize_onboarding_from_applicant manages
 # explicitly (or that must never be auto-overwritten) — auto-map leaves these alone.
 _ONBOARDING_AUTOMAP_SKIP = frozenset({
@@ -587,7 +646,23 @@ def materialize_onboarding_from_applicant(job_applicant_id, prefill=None):
     )
     if doj:
         doc.date_of_joining = doj
-    bbo = prefill.get("boarding_begins_on") or doc.date_of_joining
+    # Onboarding begins the day the candidate accepted, not the day they join:
+    # that is when the joining formalities actually start, and it is usually weeks
+    # earlier than the DOJ this used to copy.
+    #
+    # Read from the offer's stamped acceptance date rather than from "today",
+    # because the onboarding is not always created at the moment of acceptance —
+    # it is deferred behind DPDP consent, and can be raised by hand from the
+    # Action Center days later (see job_offer.stamp_offer_accepted_on).
+    #
+    # The DOJ stays as the last fallback, so an offer accepted before that stamp
+    # existed produces exactly the date it produces today.
+    bbo = (
+        prefill.get("boarding_begins_on")
+        or (frappe.db.get_value("Job Offer", job_offer, "custom_offer_accepted_on")
+            if job_offer else None)
+        or doc.date_of_joining
+    )
     if bbo:
         doc.boarding_begins_on = bbo
 
@@ -598,6 +673,11 @@ def materialize_onboarding_from_applicant(job_applicant_id, prefill=None):
 
     # Onboarding Automation tab — Recruiter / SPOC / Buddy-Manager links.
     _apply_onboarding_automation_fields(doc, applicant, job_offer)
+
+    # The onboarding template marked as the default, with its activities, so the
+    # draft opens with its task list already on it rather than waiting for HR to
+    # pick the same template every time.
+    _apply_default_onboarding_template(doc)
 
     doc.insert(ignore_permissions=True)
 

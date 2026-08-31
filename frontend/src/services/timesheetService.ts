@@ -27,9 +27,13 @@ export const getWeeklyTimesheetData = async (params: WeeklyTimesheetParams): Pro
 
 export const createOrUpdateTimesheetEntries = async (payload: TimesheetEntryPayload): Promise<unknown> => {
   const res = await FrappeAPI.callMethod(
-    "cn_hrms_core.cn_hrms_core.timesheet.create_or_update_timesheet_entries",
+    "cn_leave_shift_managment.cn_leave_shift_managment.timesheet.create_or_update_timesheet_entries ",
     payload as Record<string, unknown>
   );
   return res;
 };
 
+export const getTimesheetSettings = async (): Promise<{ show_subtask: number }> => {
+  const res = await FrappeAPI.getDocument("Timesheet Settings", "Timesheet Settings", ["show_subtask"]);
+  return res as { show_subtask: number };
+};
