@@ -546,7 +546,11 @@ export const attendanceService = {
 
   // Attendance Settings resource API fetcher
   getAttendanceSettings: async (
-  ): Promise<{ enable_approval_confirm_modal: number, enable_rejection_confirm_modal: number } | null> => {
+  ): Promise<{
+    enable_approval_confirm_modal: number;
+    enable_rejection_confirm_modal: number;
+    show_all_employees_by_default_in_directory?: number;
+  } | null> => {
     try {
       const res = (await FrappeAPI.getDocument(
         "Attendance Settings",
@@ -554,8 +558,13 @@ export const attendanceService = {
         [
           "enable_approval_confirm_modal",
           "enable_rejection_confirm_modal",
+          "show_all_employees_by_default_in_directory",
         ]
-      )) as { enable_approval_confirm_modal: number, enable_rejection_confirm_modal: number } | undefined;
+      )) as {
+        enable_approval_confirm_modal: number;
+        enable_rejection_confirm_modal: number;
+        show_all_employees_by_default_in_directory?: number;
+      } | undefined;
       return res || null;
     } catch (error) {
       console.error("📡 Error while reading Attendance Settings:", error);
