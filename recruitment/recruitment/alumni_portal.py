@@ -2859,3 +2859,462 @@ def get_alumni_feed(**kwargs) -> dict:
         p["user_reaction"] = reactions.get(pid)
 
     return result
+
+
+# ── Post creation ─────────────────────────────────────────────────────────────
+#
+# The ESS composer uploads to /api/method/upload_file, then POSTs the resulting
+# file_url to `post.create_post`. Neither half of that works unmodified here:
+#
+#   1. `upload_file` is not in the alumni allowlist, so step 1 returns 403.
+#   2. `create_post` accepts a caller-supplied `visibility` and takes
+#      `attachments[].file` verbatim, with no check that the caller owns the
+#      file. For an ESS user that is fine -- they can enumerate groups, users
+#      and departments anyway. For an alumnus it is not: it would let them
+#      target internal audiences by id, and attach ANY file_url on the site --
+#      including private HR documents -- to a Public post.
+#
+# So the portal gets its own pair of endpoints. They delegate the actual write
+# to `post.create_post` (no fork of the doc-building logic), but normalise the
+# payload first. `chatnext_work_connect` is not modified.
+
+# Posts render to other viewers, so their attachments are public, unlike the
+# private todo/referral uploads above.
+_POST_UPLOAD_EXTS = {
+    "jpg": "Image",
+    "jpeg": "Image",
+    "png": "Image",
+    "gif": "Image",
+    "webp": "Image",
+    "mp4": "Video",
+    "webm": "Video",
+    "pdf": "Document",
+}
+_POST_UPLOAD_MAX_BYTES = 10 * 1024 * 1024  # 10 MB
+
+# Visibilities an alumnus may publish to. The four that are excluded --
+# Team, Group, Custom, User Assignment -- all target an internal audience
+# (a department, a Work Connect group, named employees). The guard already
+# blocks group.* and user.*, so the portal cannot even enumerate those; not
+# accepting them here is what stops an alumnus reaching one by guessing an id.
+_ALUMNI_POST_VISIBILITY = {"Public", "Private"}
+_ALUMNI_POST_TYPES = {"Text", "Image", "Video", "Poll"}
+
+_POLL_MIN_OPTIONS = 2
+_POLL_MAX_OPTIONS = 10
+_POLL_OPTION_MAX_LEN = 140
+_POST_CONTENT_MAX_LEN = 5000
+
+
+@frappe.whitelist(methods=["POST"])
+def upload_alumni_post_attachment() -> dict:
+    """Upload one image/video/PDF for a post (multipart/form-data, field ``file``).
+
+    Stored **public** -- unlike the todo and referral uploads, a post attachment
+    has to be readable by everyone the post reaches.
+
+    Returns ``{success, file_url, file_type, file_size, file_name}``; drop
+    ``file_url``/``file_type``/``file_size`` straight into the ``attachments``
+    list of :func:`create_alumni_post`.
+    """
+    _require_alumni_session()
+
+    uploaded = None
+    if getattr(frappe, "request", None) and getattr(frappe.request, "files", None):
+        uploaded = frappe.request.files.get("file") or frappe.request.files.get("attachment")
+    if not uploaded:
+        frappe.local.response["http_status_code"] = 400
+        return {"success": False, "message": _("A file is required.")}
+
+    filename = uploaded.filename or "attachment"
+    ext = filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
+    file_type = _POST_UPLOAD_EXTS.get(ext)
+    if not file_type:
+        frappe.local.response["http_status_code"] = 400
+        return {
+            "success": False,
+            "message": _("Unsupported file type. Allowed: JPG, PNG, GIF, WEBP, MP4, WEBM, PDF."),
+        }
+
+    content = uploaded.stream.read()
+    size = len(content or b"")
+    if not size:
+        frappe.local.response["http_status_code"] = 400
+        return {"success": False, "message": _("The uploaded file is empty.")}
+    if size > _POST_UPLOAD_MAX_BYTES:
+        frappe.local.response["http_status_code"] = 400
+        return {
+            "success": False,
+            "message": _("File is too large. Maximum size is {0} MB.").format(
+                _POST_UPLOAD_MAX_BYTES // (1024 * 1024)
+            ),
+        }
+
+    from frappe.utils.file_manager import save_file
+
+    # Unattached (dt/dn None): the Post does not exist yet -- create_alumni_post
+    # runs after this and references the file by url. Naming the doctype without
+    # a name fails File.validate_attachment_references. This mirrors what the
+    # ESS composer gets from /api/method/upload_file, which also uploads first.
+    saved = save_file(filename, content, None, None, is_private=0)
+    frappe.db.commit()
+
+    return {
+        "success": True,
+        "file_url": saved.file_url,
+        "file_name": saved.file_name,
+        "file_size": saved.file_size,
+        "file_type": file_type,
+    }
+
+
+def _alumni_owned_file(file_url: str, user: str) -> bool:
+    """True if `file_url` is a public File this user uploaded.
+
+    Guards the hole in `create_post`, which trusts `attachments[].file`
+    blindly. Without this an alumnus could publish someone else's private
+    document by quoting its url.
+    """
+    from frappe.utils import cint
+
+    if not file_url:
+        return False
+    row = frappe.db.get_value(
+        "File", {"file_url": file_url}, ["owner", "is_private"], as_dict=True
+    )
+    if not row:
+        return False
+    return row.owner == user and not cint(row.is_private)
+
+
+def _clean_poll_options(raw) -> list[str]:
+    """Validated, de-duplicated poll option texts."""
+    from frappe.utils import strip_html
+
+    options, seen = [], set()
+    for option in raw or []:
+        text = strip_html(str(option or "")).strip()[:_POLL_OPTION_MAX_LEN]
+        if not text or text.lower() in seen:
+            continue
+        seen.add(text.lower())
+        options.append(text)
+
+    if len(options) < _POLL_MIN_OPTIONS:
+        frappe.throw(
+            _("A poll needs at least {0} distinct options.").format(_POLL_MIN_OPTIONS)
+        )
+    return options[:_POLL_MAX_OPTIONS]
+
+
+@frappe.whitelist(methods=["POST"])
+def create_alumni_post(data=None, **kwargs) -> dict:
+    """Publish a post as the signed-in alumnus.
+
+    Accepts the ESS ``CreatePostData`` shape (dict or JSON string) so the
+    portal composer can reuse it, but only the fields an alumnus may set are
+    forwarded. Everything else is dropped rather than rejected, so a composer
+    that sends the full ESS payload still works:
+
+    ==========================  =========================================
+    ``post_type``               Text | Image | Video | Poll
+    ``content``                 sanitised, {max} chars
+    ``visibility``              Public (default) or Private
+    ``attachments``             only files this user uploaded, public ones
+    ``poll_options``            2-10 distinct plain-text options
+    ==========================  =========================================
+
+    Dropped: ``visibility_groups``/``users``/``assignments`` and
+    ``target_department`` (internal audiences), ``tags``, ``scheduled_at``
+    (alumni posts publish immediately), and every ``celebration_*`` field --
+    ``banner_html`` in particular is stored and re-served as raw HTML, which
+    would be stored XSS if it came from a portal user.
+
+    Returns `post.create_post`'s envelope, with ``is_saved``/``user_reaction``
+    added so the new row matches what :func:`get_alumni_feed` returns.
+    """
+    import json
+
+    from frappe.utils import strip_html
+    from frappe.utils.html_utils import sanitize_html
+
+    user = _require_alumni_session()
+
+    if isinstance(data, str):
+        try:
+            data = json.loads(data)
+        except (TypeError, ValueError):
+            frappe.throw(_("Malformed post data."))
+    if not isinstance(data, dict):
+        # Portals that post the fields flat rather than under `data`.
+        data = {k: v for k, v in kwargs.items() if k not in ("cmd", "sid")}
+
+    post_type = (data.get("post_type") or "Text").strip()
+    if post_type not in _ALUMNI_POST_TYPES:
+        frappe.throw(
+            _("Posts of type {0} cannot be created from the Alumni Portal.").format(post_type)
+        )
+
+    visibility = (data.get("visibility") or "Public").strip()
+    if visibility not in _ALUMNI_POST_VISIBILITY:
+        frappe.throw(
+            _("Alumni posts can only be Public or Private."), frappe.PermissionError
+        )
+
+    content = sanitize_html(str(data.get("content") or "").strip())[:_POST_CONTENT_MAX_LEN]
+
+    attachments = []
+    for attachment in data.get("attachments") or []:
+        if not isinstance(attachment, dict):
+            continue
+        file_url = (attachment.get("file") or "").strip()
+        if not _alumni_owned_file(file_url, user):
+            frappe.throw(
+                _("You can only attach files you uploaded yourself."),
+                frappe.PermissionError,
+            )
+        attachments.append(
+            {
+                "file": file_url,
+                "file_type": attachment.get("file_type") or "Other",
+                "file_size": attachment.get("file_size"),
+                "description": strip_html(str(attachment.get("description") or ""))[:200]
+                or None,
+            }
+        )
+
+    poll_options = _clean_poll_options(data.get("poll_options")) if post_type == "Poll" else []
+
+    if not content and not attachments and not poll_options:
+        frappe.throw(_("A post needs some content."))
+
+    payload = {
+        "post_type": post_type,
+        "content": content,
+        "visibility": visibility,
+        "attachments": attachments,
+        "allow_comments": 1 if data.get("allow_comments", True) else 0,
+        "allow_reactions": 1 if data.get("allow_reactions", True) else 0,
+    }
+    if poll_options:
+        payload["poll_options"] = poll_options
+
+    from chatnext_work_connect.chatnext_work_connect.api import post as post_api
+    from chatnext_work_connect.chatnext_work_connect.api.work_connect_settings import (
+        can_create_content,
+    )
+
+    # Pre-flight the same gate create_post applies, purely to control how a
+    # refusal surfaces. create_post raises PermissionError -> HTTP 403, and the
+    # portal turns *any* 403 from this namespace into "Work Connect is not
+    # available for this account" -- which is wrong and unactionable when the
+    # real cause is an admin content-control setting (e.g. polls_allowed_for =
+    # "Only Group Admins", which no alumnus can satisfy: alumni belong to no
+    # groups). Raising a plain ValidationError instead keeps the specific
+    # message intact for the composer.
+    #
+    # This does not weaken anything -- create_post still runs the same check
+    # itself immediately after.
+    allowed, reason = can_create_content(
+        "polls" if post_type == "Poll" else "posts", surface="feed", user=user
+    )
+    if not allowed:
+        frappe.throw(_(reason) if reason else _("You are not allowed to post."))
+
+    # create_post runs require_work_connect_access() and can_create_content()
+    # itself, so the admin-configured "who may post" rules still apply here.
+    result = post_api.create_post(payload) or {}
+
+    created = (result.get("data") or {}).get("post") or {}
+    pid = created.get("id") or created.get("name")
+    if pid:
+        saved, reactions = _feed_viewer_state(user, [pid])
+        created["is_saved"] = pid in saved
+        created["user_reaction"] = reactions.get(pid)
+
+    return result
+
+
+# ── Editing and deleting ──────────────────────────────────────────────────────
+#
+# `post.update_post` and `post.delete_post` are not on the alumni allowlist, for
+# the same reason `create_post` is not: update_post takes a caller-supplied
+# `visibility` together with `visibility_groups` / `visibility_users` /
+# `visibility_assignments`, so reaching it directly would let an alumnus publish
+# a Public post and then retarget it at an internal group by id -- the exact
+# hole `create_alumni_post` exists to close. Both go through a wrapper instead.
+#
+# Only posts that are Public or Private *right now* may be touched. An alumnus
+# is an ex-employee, so they may well be the author of Team/Group/Custom posts
+# written back when they had ESS. Editing one of those from the portal would
+# mean reaching an internal audience, and would drag in the group-membership
+# bookkeeping `update_post` does; refusing costs nothing, because it is not a
+# post the portal could have created.
+#
+# Poll options are deliberately NOT editable. Votes are cast against option
+# rows, so rewriting them would silently reattribute tallies.
+
+
+def _alumni_editable_post(post_id: str, user: str):
+    """The caller's own Public/Private Post, or a throw explaining why not."""
+    if not post_id:
+        frappe.throw(_("A post id is required."))
+
+    if not frappe.db.exists("Post", post_id):
+        frappe.throw(_("That post no longer exists."))
+
+    post = frappe.get_doc("Post", post_id)
+
+    if post.author != user:
+        frappe.throw(_("You can only change your own posts."), frappe.PermissionError)
+
+    visibility = post.visibility
+    if isinstance(visibility, list):
+        visibility = visibility[0] if visibility else None
+    if visibility not in _ALUMNI_POST_VISIBILITY:
+        frappe.throw(
+            _("This post is shared with an internal audience and cannot be changed from the Alumni Portal."),
+            frappe.PermissionError,
+        )
+
+    return post
+
+
+@frappe.whitelist(methods=["POST"])
+def update_alumni_post(post_id=None, data=None, **kwargs) -> dict:
+    """Edit one of the signed-in alumnus's own posts.
+
+    Only the keys actually present in ``data`` are applied, so a caller can
+    change the text without resending the attachments:
+
+    ==========================  =========================================
+    ``content``                 sanitised, {max} chars
+    ``visibility``              Public or Private
+    ``attachments``             replaces the list; only files this user
+                                uploaded, and only public ones
+    ``allow_comments``          on/off
+    ``allow_reactions``         on/off
+    ==========================  =========================================
+
+    Everything else -- ``post_type``, ``poll_options``, the internal-audience
+    tables, ``celebration_*`` -- is ignored.
+
+    Returns the same envelope as :func:`create_alumni_post`, so the caller can
+    swap the updated row straight into a feed it already holds.
+    """
+    import json
+
+    from frappe.utils import strip_html
+    from frappe.utils.html_utils import sanitize_html
+
+    from chatnext_work_connect.chatnext_work_connect.api.permissions import (
+        require_work_connect_access,
+    )
+
+    user = _require_alumni_session()
+
+    # create_alumni_post gets this gate for free by delegating to
+    # `post.create_post`; the save below is direct, so it is applied here.
+    require_work_connect_access()
+
+    if isinstance(data, str):
+        try:
+            data = json.loads(data)
+        except (TypeError, ValueError):
+            frappe.throw(_("Malformed post data."))
+    if not isinstance(data, dict):
+        # Portals that post the fields flat rather than under `data`.
+        data = {k: v for k, v in kwargs.items() if k not in ("cmd", "sid", "post_id")}
+
+    post_id = post_id or data.get("post_id") or data.get("name")
+    post = _alumni_editable_post(post_id, user)
+
+    if "content" in data:
+        post.content = sanitize_html(str(data.get("content") or "").strip())[
+            :_POST_CONTENT_MAX_LEN
+        ]
+
+    if "visibility" in data:
+        visibility = (data.get("visibility") or "Public").strip()
+        if visibility not in _ALUMNI_POST_VISIBILITY:
+            frappe.throw(
+                _("Alumni posts can only be Public or Private."), frappe.PermissionError
+            )
+        post.visibility = visibility
+
+    if "attachments" in data:
+        # A full replacement, not a merge -- the caller sends the list it wants
+        # to end up with. Re-validated even for rows that are already on the
+        # post, because the request could name any file at all.
+        rows = []
+        for attachment in data.get("attachments") or []:
+            if not isinstance(attachment, dict):
+                continue
+            file_url = (attachment.get("file") or "").strip()
+            if not _alumni_owned_file(file_url, user):
+                frappe.throw(
+                    _("You can only attach files you uploaded yourself."),
+                    frappe.PermissionError,
+                )
+            rows.append(
+                {
+                    "file": file_url,
+                    "file_type": attachment.get("file_type") or "Other",
+                    "file_size": attachment.get("file_size"),
+                    "description": strip_html(str(attachment.get("description") or ""))[:200]
+                    or None,
+                }
+            )
+        post.set("attachments", [])
+        for row in rows:
+            post.append("attachments", row)
+
+        # Keep post_type describing what the post now carries, so the feed's
+        # "Post Type" filter does not go on listing a picture-less Image post.
+        # Polls keep their type -- their options are what defines them.
+        if post.post_type in ("Text", "Image", "Video"):
+            if not rows:
+                post.post_type = "Text"
+            else:
+                post.post_type = "Video" if rows[0]["file_type"] == "Video" else "Image"
+
+    if "allow_comments" in data:
+        post.allow_comments = 1 if data.get("allow_comments") else 0
+
+    if "allow_reactions" in data:
+        post.allow_reactions = 1 if data.get("allow_reactions") else 0
+
+    # A post stripped of everything it had would render as a blank card.
+    if not post.content and not post.get("attachments") and not post.get("poll_options"):
+        frappe.throw(_("A post needs some content."))
+
+    post.save()
+    frappe.db.commit()
+
+    from chatnext_work_connect.chatnext_work_connect.api import post as post_api
+
+    updated = post_api.serialize_post(post.name, user)
+    saved, reactions = _feed_viewer_state(user, [post.name])
+    updated["is_saved"] = post.name in saved
+    updated["user_reaction"] = reactions.get(post.name)
+
+    return {"data": {"post": updated, "message": _("Post updated successfully")}}
+
+
+@frappe.whitelist(methods=["POST"])
+def delete_alumni_post(post_id=None, **kwargs) -> dict:
+    """Delete one of the signed-in alumnus's own posts.
+
+    Authorship is checked here and again by `post.delete_post`, which is what
+    actually removes the row -- so the group-membership counts it maintains stay
+    correct even though the portal cannot create a Group post itself.
+    """
+    user = _require_alumni_session()
+
+    post_id = post_id or kwargs.get("name")
+    post = _alumni_editable_post(post_id, user)
+
+    from chatnext_work_connect.chatnext_work_connect.api import post as post_api
+
+    result = post_api.delete_post(post.name) or {}
+    frappe.db.commit()
+    return result

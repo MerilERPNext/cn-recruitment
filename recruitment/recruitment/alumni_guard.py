@@ -77,11 +77,10 @@ _ALUMNI_METHOD_ALLOWLIST = {
     # was the only thing refusing them, which is why the UI reported "no access
     # to Work Connect" when the backend was in fact fine.
     #
-    # Writes are deliberately absent: create/update/delete post, add/remove
-    # reaction, add comment, follow/unfollow, save/unsave, and everything under
-    # group.* and user.* (the employee directory). An alumnus reads the feed;
-    # they do not post to it or browse internal teams. Add those consciously,
-    # one at a time, if the business rule changes.
+    # user.* (the employee directory) stays out.
+    #
+    # group.* USED to be excluded here on the same grounds. It is now permitted
+    # -- see the group block further down, which spells out what that exposes.
     "chatnext_work_connect.chatnext_work_connect.api.post.get_feed",
     "chatnext_work_connect.chatnext_work_connect.api.post.get_post",
     "chatnext_work_connect.chatnext_work_connect.api.comment.get_comments",
@@ -103,6 +102,108 @@ _ALUMNI_METHOD_ALLOWLIST = {
     "chatnext_work_connect.chatnext_work_connect.api.work_connect_settings.get_content_control_settings",
     "chatnext_work_connect.chatnext_work_connect.api.notification.get_notifications",
     "chatnext_work_connect.chatnext_work_connect.api.notification.get_unread_count",
+    # ── Feed interactions (writes) ───────────────────────────────────────────
+    # Each of these drives a control the portal's Feed actually renders, so
+    # blocking them left those buttons throwing 403 rather than being hidden.
+    #
+    # They are safe to expose for the same reason the reads are: every one calls
+    # require_work_connect_access(), and every one derives the actor from
+    # frappe.session.user -- never from a caller-supplied parameter. An alumnus
+    # can therefore only ever act as themselves:
+    #   * remove_reaction, unsave_post  re-check ownership before deleting.
+    #   * follow_user     resolves the follower from the session, refuses self.
+    #
+    # post.create_post is deliberately NOT here, even though the portal creates
+    # posts. It accepts a caller-supplied `visibility` and trusts
+    # `attachments[].file` without checking who owns the file, so reaching it
+    # directly would let an alumnus target an internal audience by id and
+    # attach any file_url on the site. The portal goes through
+    # alumni_portal.create_alumni_post, which normalises the payload and then
+    # calls it. Allowlisting it here would make that wrapper bypassable.
+    #
+    # Comment writes ARE here now -- the portal's Feed renders a composer under
+    # each post (see the alumni portal's `CommentsSection`). They meet the same
+    # bar as the reaction and follow writes above, so they need no wrapper:
+    #   * add_comment     takes the author from frappe.session.user, and gates
+    #                     on check_post_visibility() -- an alumnus can only
+    #                     comment on a post they can already read. A
+    #                     parent_comment is verified to belong to the same post.
+    #   * update_comment  refuses unless comment.author == session user.
+    #   * delete_comment  refuses unless the caller wrote the comment, wrote the
+    #                     post, or holds delete permission on Post Comment.
+    # None of the three accepts a caller-supplied actor, and none takes a
+    # visibility or a file reference -- which is what forced the post writes
+    # through wrappers instead.
+    #
+    # Caveat worth knowing: add_comment does NOT check post.allow_comments, so
+    # a post with comments switched off can still be commented on by calling it
+    # directly. That is pre-existing Work Connect behaviour -- ESS relies on its
+    # UI disabling the box -- and the alumni portal disables its composer the
+    # same way. Enforcing it server-side belongs in chatnext_work_connect.
+    "chatnext_work_connect.chatnext_work_connect.api.comment.add_comment",
+    "chatnext_work_connect.chatnext_work_connect.api.comment.update_comment",
+    "chatnext_work_connect.chatnext_work_connect.api.comment.delete_comment",
+    # Poll voting. Same bar as the reaction and comment writes:
+    #   * voter comes from frappe.session.user, never a parameter;
+    #   * check_post_visibility() gates it, so an alumnus can only vote on a
+    #     poll they can already read — including the group-membership rule;
+    #   * the option is verified to belong to THIS post (`poll_option.parent !=
+    #     post_id` throws), so a valid option id from another poll is refused;
+    #   * one vote per user — an existing vote is moved, never stacked.
+    # It returns the refreshed counts and the caller's vote, which is what lets
+    # the card reconcile against the server instead of guessing.
+    "chatnext_work_connect.chatnext_work_connect.api.post.vote_poll",
+    "chatnext_work_connect.chatnext_work_connect.api.reaction.add_reaction",
+    "chatnext_work_connect.chatnext_work_connect.api.reaction.remove_reaction",
+    "chatnext_work_connect.chatnext_work_connect.api.saved_post.save_post",
+    "chatnext_work_connect.chatnext_work_connect.api.saved_post.unsave_post",
+    "chatnext_work_connect.chatnext_work_connect.api.follow.follow_user",
+    "chatnext_work_connect.chatnext_work_connect.api.follow.unfollow_user",
+    # ── Groups ───────────────────────────────────────────────────────────────
+    # Deliberately enabled, and a widening of what an alumnus can see. Recorded
+    # here in full because the earlier policy was the opposite -- "an alumnus
+    # does not browse internal teams" -- and this reverses it by choice, not by
+    # oversight:
+    #
+    #   * get_groups      lists Public groups plus any the caller created or
+    #                     belongs to. Private groups the caller is not in are
+    #                     filtered out server-side. Each row carries the group's
+    #                     name, description, DEPARTMENT and project labels, and
+    #                     its creator's name and picture -- i.e. an ex-employee
+    #                     can see the company's public team structure.
+    #   * get_group       additionally returns the MEMBER ROSTER, with each
+    #                     member's job title and department read off Employee.
+    #                     This is the same employee-directory data that keeping
+    #                     user.* excluded is meant to withhold. It is the single
+    #                     biggest disclosure in this block.
+    #   * get_group_attachments
+    #                     lists files posted into the group. Same guard as
+    #                     get_group_posts -- Public groups are readable by
+    #                     non-members, anything else needs membership. This is
+    #                     the "Documents" entry on the group header.
+    #   * get_group_posts returns the group's internal posts. Note the asymmetry
+    #                     this creates with _ALUMNI_POST_VISIBILITY, which still
+    #                     refuses to let an alumnus PUBLISH to a Team or Group
+    #                     audience: they may now read one, but not target one.
+    #   * join_group      self-service, no approval step. Refuses Private
+    #                     groups ("you need an invitation"), so the reachable
+    #                     set is exactly the Public ones.
+    #   * leave_group     removes only the caller's own membership row.
+    #   * create_group    creator comes from the session and no member list is
+    #                     accepted, so it cannot add employees to anything. It
+    #                     honours the `can_create_content("groups")` switch, so
+    #                     an admin turning group creation off stops alumni too.
+    #
+    # To reverse this, delete these six lines: the portal degrades to an empty
+    # Groups section rather than breaking, because each call surfaces a 403 as
+    # "unavailable" rather than an error.
+    "chatnext_work_connect.chatnext_work_connect.api.group.get_groups",
+    "chatnext_work_connect.chatnext_work_connect.api.group.get_group",
+    "chatnext_work_connect.chatnext_work_connect.api.group.get_group_posts",
+    "chatnext_work_connect.chatnext_work_connect.api.group.get_group_attachments",
+    "chatnext_work_connect.chatnext_work_connect.api.group.join_group",
+    "chatnext_work_connect.chatnext_work_connect.api.group.leave_group",
+    "chatnext_work_connect.chatnext_work_connect.api.group.create_group",
 }
 
 _MSG_API_BLOCKED = "This API is not available for Alumni users."
