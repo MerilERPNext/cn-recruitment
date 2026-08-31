@@ -491,8 +491,16 @@ frappe.provide("recruitment.applicant_fields_ui");
 			.apf-child-table thead th {
 				padding: 6px 8px; background: var(--apf-bg-head); color: var(--apf-text-dim); font-size: 9.5px;
 				font-weight: 700; text-align: center; border-bottom: 1px solid var(--apf-border); letter-spacing: .05em;
-				position: sticky; top: 0; z-index: 2;
+				position: sticky; z-index: 2;
 			}
+			/* BOTH rows freeze, and each needs its own offset — pinned at a shared
+			   top:0 they land on top of each other, and the column row (later in the
+			   DOM) paints over the channel band, so the first scroll loses exactly
+			   the CAREERS / IJP / REFER heading the freeze was there to keep. The
+			   band's height is font-dependent, so --apf-child-group-h is measured by
+			   AFU.freezeChildHeader; the fallback holds until that first measure. */
+			.apf-child-table thead tr.apf-child-group-row th { top: 0; }
+			.apf-child-table thead tr.apf-child-col-row th { top: var(--apf-child-group-h, 26px); }
 			.apf-child-table thead th.apf-child-col-field { text-align: left; }
 			.apf-child-group-header { color: var(--g); letter-spacing: .06em; }
 			.apf-child-table tbody td {
@@ -655,6 +663,23 @@ frappe.provide("recruitment.applicant_fields_ui");
 	};
 
 	/**
+	 * Same measure as freezeHeader, for a docked child panel: park the child's
+	 * column row directly beneath its channel band instead of on top of it.
+	 *
+	 * Measured on reveal, not at render time — a docked panel is hidden until its
+	 * Child Fields button is clicked, and a hidden box measures 0.
+	 */
+	AFU.freezeChildHeader = function (panel) {
+		const table = panel && panel.querySelector(".apf-child-table");
+		const band = table && table.querySelector("thead .apf-child-group-row");
+		if (!band) return;
+		// ceil, not round: half a pixel short and a sliver of the row scrolling
+		// underneath shows through the seam between the two frozen rows.
+		const h = Math.ceil(band.getBoundingClientRect().height);
+		if (h) table.style.setProperty("--apf-child-group-h", h + "px");
+	};
+
+	/**
 	 * Lift the child-field panels out of the scrolling table and dock them beneath
 	 * it.
 	 *
@@ -784,6 +809,7 @@ frappe.provide("recruitment.applicant_fields_ui");
 				const shown = b === btn && open;
 				b.textContent = `${shown ? "▼" : "▶"} ${__("Child Fields")}`;
 			});
+			if (!panel.hidden) AFU.freezeChildHeader(panel);
 			// ...and end the grid just above whichever one is now showing.
 			AFU.anchorDock(host);
 		});
@@ -810,13 +836,13 @@ frappe.provide("recruitment.applicant_fields_ui");
 			).join("")
 			: `<tr><td colspan="${AFU.CHILD_TOTAL_COLS}" class="apf-child-empty">No configurable child fields.</td></tr>`;
 
-		const groupHeaderRow = `<tr>
+		const groupHeaderRow = `<tr class="apf-child-group-row">
 			<th class="apf-child-col-field"></th>
 			${AFU.CHILD_CHANNEL_GROUPS.map((g) =>
 				`<th colspan="${g.cols.length}" class="apf-child-group-header apf-g-${g.cls}">${g.label}</th>`
 			).join("")}
 		</tr>`;
-		const colHeaderRow = `<tr>
+		const colHeaderRow = `<tr class="apf-child-col-row">
 			<th class="apf-child-col-field">FIELD</th>
 			${AFU.CHILD_CHANNEL_GROUPS.map((g) => g.cols.map((c) =>
 				`<th>${c.label}</th>`
