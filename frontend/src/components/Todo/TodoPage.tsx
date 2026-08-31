@@ -1,6 +1,6 @@
-import HeaderBar from "../HeaderBar";
-import DesktopLayoutWrapper from "../DesktopLayoutWrapper";
 import { useScreenSize } from "../../hooks/useScreenSize";
+import DesktopLayoutWrapper from "../DesktopLayoutWrapper";
+import HeaderBar from "../HeaderBar";
 import TodoAppShadowWrapper from "../TodoAppShadowWrapper.tsx";
 
 const TodoPage = () => {
