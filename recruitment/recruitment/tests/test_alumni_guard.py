@@ -95,6 +95,50 @@ class TestAlumniGuard(FrappeTestCase):
         ):
             self.assertFalse(allow("method", method), f"{method} must stay blocked")
 
+    def test_feed_interaction_writes_are_allowed(self):
+        """The Feed's own controls must reach their endpoints.
+
+        Every one of these is safe for the same reason the reads are: it calls
+        require_work_connect_access() and takes the actor from
+        frappe.session.user, never from a parameter.
+        """
+        allow = g._is_allowed_for_alumni
+        wc = "chatnext_work_connect.chatnext_work_connect.api."
+        for method in (
+            "reaction.add_reaction",
+            "reaction.remove_reaction",
+            "saved_post.save_post",
+            "saved_post.unsave_post",
+            "follow.follow_user",
+            "follow.unfollow_user",
+        ):
+            self.assertTrue(allow("method", wc + method), f"{wc + method} must be reachable")
+
+    def test_work_connect_grant_stays_method_scoped(self):
+        """Opening the writes must not open the modules they live in.
+
+        Comment writes have no composer in the portal; group.*/user.* are the
+        internal teams and employee directory, which alumni never see.
+
+        `post.create_post` in particular must stay blocked: it trusts
+        caller-supplied visibility and attachment file urls, so reaching it
+        directly would bypass alumni_portal.create_alumni_post.
+        """
+        allow = g._is_allowed_for_alumni
+        wc = "chatnext_work_connect.chatnext_work_connect.api."
+        for method in (
+            "post.create_post",
+            "comment.add_comment",
+            "comment.update_comment",
+            "comment.delete_comment",
+            "post.update_post",
+            "post.delete_post",
+            "group.get_groups",
+            "group.join_group",
+            "user.get_users",
+        ):
+            self.assertFalse(allow("method", wc + method), f"{wc + method} must stay blocked")
+
     # ── the hook ──
     def _run(self, user: str, path: str):
         frappe.set_user(user)
