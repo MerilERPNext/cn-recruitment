@@ -50,7 +50,7 @@ def submit_docs(status, appl,url=None):
 	job_applicant = frappe.db.get_value("Job Offer", jo_id, "job_applicant")
 	if status == "Accepted":
 		wf_url = url+"/"+settings.employee_onboarding_webform+"/new?job_offer="+jo_id+"&job_applicant="+appl
-		email_context = {"url":wf_url,"name": jo_id, "applicant_name": frappe.db.get_value("Job Offer", {"job_applicant": appl},"applicant_name"),"company":frappe.db.get_value("Job Offer", {"job_applicant": appl},"company"),"designation":frappe.db.get_value("Job Offer", {"job_applicant": appl},"designation")}
+		email_context = {"url":wf_url,"name": jo_id, "applicant_name": frappe.db.get_value("Job Offer", {"job_applicant": appl},"applicant_name"),"company":frappe.db.get_value("Job Offer", {"job_applicant": appl},"company"),"designation":frappe.db.get_value("Job Offer", {"job_applicant": appl},"designation"),"buddy_name": frappe.db.get_value("Job Offer", {"job_applicant": appl},"custom_buddy_name") or ""}
 		frappe.sendmail(
 			recipients=[job_applicant],
 			subject=frappe.render_template(
