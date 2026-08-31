@@ -7728,7 +7728,7 @@
   "is_virtual": 0,
   "label": "Offer Letter Template",
   "length": 0,
-  "link_filters": "[[\"Document Template\",\"doctype_name\",\"=\",\"Job Offer\"]]",
+  "link_filters": null,
   "mandatory_depends_on": null,
   "modified": "2026-04-21 11:53:34.697868",
   "module": "Recruitment",
