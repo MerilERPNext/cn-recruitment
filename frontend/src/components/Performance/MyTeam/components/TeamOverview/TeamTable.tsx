@@ -17,7 +17,7 @@ const TEAM_TABLE_TITLES = [
   "Self",
   "My Review",
   "Last Rating",
-  "Action",
+  // "Action",
 ];
 
 const FILTER_LABEL_MAP: Record<string, string> = {
