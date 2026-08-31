@@ -600,7 +600,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
           permissionKey: "Dashboard",
         },
         {
-          name: "History",
+          name: "Recognition History",
           icon: FileText,
           href: "/webapp/recognition/vibe/history",
           permissionKey: "History",
