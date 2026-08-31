@@ -1,14 +1,10 @@
-<<<<<<< Updated upstream
-=======
+
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
 import HeaderBar from "../HeaderBar";
 import DesktopLayoutWrapper from "../DesktopLayoutWrapper";
->>>>>>> Stashed changes
 import { useScreenSize } from "../../hooks/useScreenSize";
-import DesktopLayoutWrapper from "../DesktopLayoutWrapper";
-import HeaderBar from "../HeaderBar";
 import TodoAppShadowWrapper from "../TodoAppShadowWrapper.tsx";
 import { useTodoSettings } from "../../hooks/useTodo";
 import { useTargetUser } from "../../context/ViewedUserContext";
