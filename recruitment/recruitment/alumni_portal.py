@@ -2539,9 +2539,15 @@ def _require_own_todo(name: str) -> tuple[str, dict]:
         frappe.throw(_("A todo is required."))
 
     row = frappe.db.get_value(
-        "ToDo", name, ["name", "allocated_to", "assigned_by"], as_dict=True
+        "ToDo", name, ["name", "allocated_to", "assigned_by", "owner"], as_dict=True
     )
-    if not row or user not in (row.get("allocated_to"), row.get("assigned_by")):
+    if not row or not _user_owns_todo(user, name, row):
+        frappe.local.response["http_status_code"] = 403
+        frappe.throw(_("Not authorized for this todo."), frappe.PermissionError)
+
+    # Same gate as the list: a todo the portal would not show must not open
+    # either, or the category filter is bypassable by guessing a name.
+    if not _todo_type_visible_to_alumni(name):
         frappe.local.response["http_status_code"] = 403
         frappe.throw(_("Not authorized for this todo."), frappe.PermissionError)
 
@@ -2788,3 +2794,991 @@ def create_alumni_todo(
         "success": True,
         "todo": frappe.db.get_value("ToDo", doc.name, _existing_todo_fields(), as_dict=True),
     }
+
+
+# ── Alumni Todo list / types / actions ───────────────────────────────────────
+# Ported from 84a537d4: dev-microapps never received this work, so the portal
+# was calling endpoints that did not exist on this branch.
+
+
+# ── Alumni Todo: Todo Type visibility gate ───────────────────────────────────
+# `Todo Type.custom_show_in_alumni_portal` decides which categories the Alumni
+# Portal may see. Enforcement lives here, not in the frontend: the portal used
+# to call cn_todo_manager's `get_todo_list` directly, and anything the client
+# passes it can equally be left out.
+#
+# Opt-in: a type is invisible until ticked, so a Todo Type added by another team
+# cannot leak into the portal by default. Todos with no type ("Uncategorized")
+# have no flag to tick and are therefore not shown.
+
+ALUMNI_TODO_TYPE_FLAG = "custom_show_in_alumni_portal"
+
+
+def _alumni_visible_todo_types() -> list[str]:
+    """Todo Type names the Alumni Portal is allowed to show."""
+    if not frappe.db.has_column("Todo Type", ALUMNI_TODO_TYPE_FLAG):
+        return []
+    return frappe.get_all("Todo Type", filters={ALUMNI_TODO_TYPE_FLAG: 1}, pluck="name")
+
+
+def _todo_type_visible_to_alumni(todo: str) -> bool:
+    """Whether this ToDo's category is exposed to the portal."""
+    todo_type = frappe.db.get_value("ToDo", todo, "custom_todo_type")
+    if not todo_type:
+        return False
+    return bool(
+        frappe.db.get_value("Todo Type", todo_type, ALUMNI_TODO_TYPE_FLAG)
+    )
+
+
+def _user_owns_todo(user: str, name: str, row: dict) -> bool:
+    """Whether ``user`` may act on ToDo ``name``.
+
+    A ToDo can reach a user through four mechanisms, not one. Funnel-created
+    ToDos in particular leave `allocated_to` NULL and assign through child
+    tables — nextai's own code notes this ("users assigned via child tables
+    won't pass standard checks"). Checking only `allocated_to`/`assigned_by`
+    therefore rejected todos the list had just shown, giving a 403 the moment a
+    user opened one.
+
+    Membership is resolved by cn_todo_manager's OWN resolver so the detail
+    endpoints and `get_todo_list` can never disagree: a user may open exactly
+    what the list showed them, by construction. Nothing in cn_todo_manager is
+    modified — this only calls it.
+
+    Note this is membership, not a role grant: for a genuine alumnus (a
+    role-less Website User) the role-based arms of that query match nothing, so
+    it reduces to direct assignment.
+    """
+    # Cheap direct checks first — the common case, and no query needed.
+    # `owner` is included because the Team Todo scope lists by owner
+    # (`owner = user AND allocated_to != user`), i.e. work the user raised for
+    # someone else. Without it, opening a row from that tab 403s.
+    if user in (row.get("allocated_to"), row.get("assigned_by"), row.get("owner")):
+        return True
+
+    try:
+        from cn_todo_manager.chatnext_todo_manager.api.todo_api import (
+            OptimizedTodoQueryBuilder,
+        )
+
+        builder = OptimizedTodoQueryBuilder.__new__(OptimizedTodoQueryBuilder)
+        builder.user = user
+        return name in (builder.get_todo_names_for_users([user]) or [])
+    except Exception:
+        # If that resolver is unavailable or changes shape, fall back to the
+        # two child-table mechanisms rather than silently granting access.
+        frappe.logger("alumni_portal").warning(
+            "todo ownership: cn_todo_manager resolver unavailable, using fallback"
+        )
+
+    if frappe.db.exists(
+        "Nextai User Select", {"parent": name, "parenttype": "ToDo", "user": user}
+    ):
+        return True
+
+    roles = [r for r in (frappe.get_roles(user) or []) if r]
+    if not roles:
+        return False
+    if frappe.db.get_value("ToDo", name, "role") in roles:
+        return True
+    return bool(
+        frappe.db.exists(
+            "Nextai Role Select",
+            {"parent": name, "parenttype": "ToDo", "role": ["in", roles]},
+        )
+    )
+
+
+def _todo_declared_actions(todo: str) -> list[str]:
+    """The action labels a ToDo itself declares, from `custom_doctype_actions`.
+
+    Entries are plain strings or ``{label, value}`` objects, the same two shapes
+    the ESS SmartActions parser accepts.
+    """
+    raw = frappe.db.get_value("ToDo", todo, "custom_doctype_actions")
+    if not raw:
+        return []
+    try:
+        parsed = frappe.parse_json(raw)
+    except Exception:
+        return []
+    if not isinstance(parsed, list):
+        return []
+
+    actions = []
+    for item in parsed:
+        if isinstance(item, str):
+            actions.append(item)
+        elif isinstance(item, dict):
+            value = item.get("value") or item.get("label")
+            if value:
+                actions.append(value)
+    return actions
+
+
+def _assert_todo_actionable(name: str) -> None:
+    """Fail early, and specifically, when a todo cannot be actioned.
+
+    Without this the nextai handler raises deep inside — "Funnel Task None not
+    found", "Approval Log Entry not found" — and the caller only sees the
+    generic wrapper message. These are configuration problems, so they deserve
+    a message that says which piece is missing.
+    """
+    todo = frappe.db.get_value(
+        "ToDo", name, ["custom_approval_type", "custom_funnel_task"], as_dict=True
+    ) or {}
+
+    if todo.get("custom_approval_type") == "Approval Matrix":
+        log = frappe.db.get_value(
+            "Approval Log Entry", {"todo_reference": name},
+            ["name", "form_for_approval"], as_dict=True,
+        )
+        if not log:
+            frappe.local.response["http_status_code"] = 409
+            frappe.throw(
+                _("This todo has no approval record, so it cannot be actioned yet.")
+            )
+        # The handler only needs the Funnel Task when a form has to be shown.
+        if log.get("form_for_approval") and not todo.get("custom_funnel_task"):
+            frappe.local.response["http_status_code"] = 409
+            frappe.throw(
+                _("This todo has an approval form but no linked task, so the form cannot be opened.")
+            )
+
+    if todo.get("custom_funnel_task") and not frappe.db.exists(
+        "Funnel Task", todo["custom_funnel_task"]
+    ):
+        frappe.local.response["http_status_code"] = 409
+        frappe.throw(_("The task behind this todo no longer exists."))
+
+
+def _alumni_visible_stage_names(user: str, todo_id: str) -> set | None:
+    """Approval stage names ``user`` may see the form for, or None if unknown.
+
+    Stage rows and log rows are positional siblings on the Approval Tracker, so
+    they are zipped by index — the same way the ESS reader indexes them.
+    Returning None means "could not resolve", and the caller then leaves the
+    ESS result untouched rather than hiding everything.
+    """
+    parent = frappe.db.get_value("Approval Log Entry", {"todo_reference": todo_id}, "parent")
+    if not parent:
+        return None
+    try:
+        tracker = frappe.get_doc("Approval Tracker", parent)
+    except Exception:
+        return None
+
+    stages = tracker.get("approval_stages") or []
+    logs = tracker.get("approval_logs") or []
+    if not stages:
+        return None
+
+    visible = set()
+    for idx, stage in enumerate(stages):
+        name = stage.get("approval_name")
+        if not name or idx >= len(logs):
+            continue
+        if _alumni_stage_is_mine(user, logs[idx].as_dict()):
+            visible.add(name)
+    return visible
+
+
+def _alumni_stage_is_mine(user: str, log_row: dict) -> bool:
+    """Whether ``user`` is an approver for this Approval Log Entry.
+
+    Explicit `show_to_users` / `show_to_roles` win when set — they are the
+    author's deliberate override. Otherwise the approver fields decide.
+    """
+    roles = set(frappe.get_roles(user) or [])
+
+    def _split(value):
+        return {v.strip() for v in (value or "").split(",") if v.strip()}
+
+    show_users = _split(log_row.get("show_to_users"))
+    show_roles = _split(log_row.get("show_to_roles"))
+    if show_users or show_roles:
+        return user in show_users or bool(roles & show_roles)
+
+    if user in _split(log_row.get("user")) or user in _split(
+        log_row.get("custom_allocated_to_users")
+    ):
+        return True
+    return bool(
+        roles & (_split(log_row.get("role")) | _split(log_row.get("custom_assigned_to_roles")))
+    )
+
+
+@frappe.whitelist(methods=["POST"])
+def get_alumni_todo_list(**kwargs) -> dict:
+    """Paginated todo list, restricted to portal-visible Todo Types.
+
+    Delegates to cn_todo_manager's `get_todo_list` so paging, search, sorting,
+    `list_view_fields` and `reference_data` all behave identically — only the
+    category scope is narrowed. `todo_type_filter` is overwritten rather than
+    merged, so a caller cannot widen it.
+    """
+    _require_alumni_session()
+
+    allowed = _alumni_visible_todo_types()
+    if not allowed:
+        # Nothing is opted in yet — return an empty page rather than everything.
+        return {
+            "message": [],
+            "total_count": 0,
+            "total_pages": 0,
+            "current_page": frappe.utils.cint(kwargs.get("page") or 1),
+            "list_view_fields": [],
+        }
+
+    from cn_todo_manager.chatnext_todo_manager.api import todo_api
+
+    params = {k: v for k, v in kwargs.items() if k != "cmd"}
+    # Server decides the category scope, never the caller.
+    params["todo_type_filter"] = frappe.as_json(allowed)
+    if params.get("category_filter") and params["category_filter"] not in allowed:
+        frappe.local.response["http_status_code"] = 403
+        frappe.throw(_("That category is not available."), frappe.PermissionError)
+
+    return todo_api.get_todo_list(**params)
+
+
+@frappe.whitelist(methods=["POST"])
+def get_alumni_todo_categories(type: str = "My Todo") -> dict:
+    """Sidebar categories, narrowed to the portal-visible Todo Types."""
+    _require_alumni_session()
+
+    allowed = set(_alumni_visible_todo_types())
+    if not allowed:
+        return {"message": []}
+
+    from cn_todo_manager.chatnext_todo_manager.api import todo_api
+
+    result = todo_api.get_todo_categories(type=type) or {}
+    rows = result.get("message") or []
+    return {"message": [r for r in rows if r.get("name") in allowed]}
+
+
+@frappe.whitelist(methods=["GET", "POST"])
+def get_alumni_todo_types() -> dict:
+    """The Todo Types visible in the portal, for the UI to reason about."""
+    _require_alumni_session()
+    return {"success": True, "todo_types": _alumni_visible_todo_types()}
+
+
+@frappe.whitelist(methods=["GET", "POST"])
+def get_alumni_todo_form(name: str) -> dict:
+    """The form configured for this todo's category, as a form.io schema.
+
+    Read from `Todo Type.custom_alumni_form`. The ChatNext form is resolved from
+    the Funnel node instead, which the portal cannot reach — this is the portal's
+    own, directly renderable equivalent.
+
+    Returns `form: None` when the category has no form configured, which the UI
+    treats as "no form", not as an error.
+    """
+    _require_own_todo(name)
+
+    todo_type = frappe.db.get_value("ToDo", name, "custom_todo_type")
+    widget = (
+        frappe.db.get_value("Todo Type", todo_type, "custom_alumni_form")
+        if todo_type
+        else None
+    )
+    if not widget:
+        return {"success": True, "form": None}
+
+    row = frappe.db.get_value(
+        "Microapp Form Widget", widget, ["name", "label", "custom_form_data"], as_dict=True
+    ) or {}
+
+    schema = None
+    raw = row.get("custom_form_data")
+    if raw:
+        try:
+            schema = frappe.parse_json(raw) if isinstance(raw, str) else raw
+        except Exception:
+            frappe.logger("alumni_portal").warning(
+                f"Todo form {widget!r} has unparseable custom_form_data"
+            )
+
+    return {
+        "success": True,
+        "form": {
+            "widget": row.get("name"),
+            "label": row.get("label") or row.get("name"),
+            "schema": schema,
+        },
+    }
+
+
+@frappe.whitelist(methods=["POST"])
+def get_alumni_todo_activity_forms(todo_id: str) -> dict:
+    """Initiator / workflow / approval forms recorded against one of the
+    caller's own todos.
+
+    ESS reference: `cn_hrms_core…funnel_activity.get_forms_by_todo`.
+
+    That function is NOT exposed to alumni directly, for two reasons:
+
+      * it performs no ownership check — any todo_id returns its forms;
+      * it accepts a `session_user` argument and filters on
+        ``session_user or frappe.session.user``, so a caller can ask for the
+        view of a different user.
+
+    This wrapper checks ownership first (which also applies the Todo Type
+    portal gate) and calls through WITHOUT `session_user`, so the result is
+    always resolved against the real session. Nothing in cn_hrms_core changes.
+    """
+    _require_own_todo(todo_id)
+
+    try:
+        from cn_hrms_core.cn_hrms_core.apis.funnel_activity import get_forms_by_todo
+
+        # session_user deliberately omitted — never let the caller pick an identity.
+        result = get_forms_by_todo(todo_id=todo_id)
+    except Exception:
+        frappe.logger("alumni_portal").warning(
+            f"todo activity forms failed for {todo_id}"
+        )
+        frappe.log_error(
+            frappe.get_traceback(), f"Alumni todo activity forms failed: {todo_id}"
+        )
+        frappe.local.response["http_status_code"] = 500
+        frappe.throw(_("Could not load the forms for this todo."))
+
+    data = (result or {}).get("data") or {}
+    approval_stages = data.get("approval_stages") or []
+
+    # ESS returns every stage's form to everyone: its `can_view_form` check only
+    # bites when show_to_users/show_to_roles are set, and in practice they almost
+    # never are (3 of 887 rows on this site). In the portal one signed-in user
+    # would therefore see the HRBP form AND the final-approver form. Narrow it to
+    # the stages this user is actually an approver for.
+    caller = frappe.session.user
+    visible = _alumni_visible_stage_names(caller, todo_id)
+    if visible is not None:
+        approval_stages = [
+            s for s in approval_stages if s.get("stage_name") in visible
+        ]
+
+    return {
+        "success": True,
+        "initiator_forms": data.get("initiator_forms") or [],
+        "workflow_stages": data.get("workflow_stages") or [],
+        "approval_stages": approval_stages,
+    }
+
+
+@frappe.whitelist(methods=["POST"])
+def submit_alumni_todo_action(name: str, action: str) -> dict:
+    """Run a workflow action on one of the caller's own ToDos.
+
+    Returns the ChatNext ``session`` when the ToDo is configured to open the
+    assistant, so the portal can hand it to `trigger_chatnext_assistant` exactly
+    as ESS does. ``session`` is None when no assistant step is configured — the
+    action still runs.
+    """
+    _require_own_todo(name)
+
+    action = (action or "").strip()
+    if not action:
+        frappe.local.response["http_status_code"] = 400
+        frappe.throw(_("An action is required."))
+
+    # The ToDo's own declared actions are the allowlist — an alumnus cannot
+    # invent an option the workflow never offered them.
+    allowed = _todo_declared_actions(name)
+    if not allowed:
+        frappe.local.response["http_status_code"] = 400
+        frappe.throw(_("This todo has no actions."))
+    if action not in allowed:
+        frappe.local.response["http_status_code"] = 403
+        frappe.throw(_("That action is not available on this todo."), frappe.PermissionError)
+
+    if frappe.db.get_value("ToDo", name, "status") == "Closed":
+        frappe.local.response["http_status_code"] = 409
+        frappe.throw(_("This todo is already closed."))
+
+    _assert_todo_actionable(name)
+
+    # `select_event_from_options` reassigns frappe.session.user via
+    # set_funnel_user(). Capture and restore it so the rest of the request — and
+    # anything the portal does next — still runs as the alumnus.
+    original_user = frappe.session.user
+    try:
+        from nextai.funnel.doctype.funnel_task.awaiting_actions import (
+            chatnext_assistant_multi_actions as multi_actions,
+        )
+
+        result = multi_actions.select_event_from_options(
+            selected_option=action,
+            data=frappe.as_json({"name": name}),
+        )
+    except Exception as exc:
+        frappe.set_user(original_user)
+        frappe.logger("alumni_portal").warning(
+            f"Alumni todo action failed: todo={name} action={action}"
+        )
+        frappe.log_error(
+            frappe.get_traceback(), f"Alumni todo action failed: {name} / {action}"
+        )
+        frappe.local.response["http_status_code"] = 500
+        # Carry the underlying reason through. Flattening every failure to one
+        # string hid "Funnel Task None not found" behind "Could not complete
+        # that action", which is unactionable for whoever has to fix it.
+        reason = str(exc).strip()
+        frappe.throw(
+            _("Could not complete that action: {0}").format(reason)
+            if reason
+            else _("Could not complete that action.")
+        )
+    finally:
+        frappe.set_user(original_user)
+
+    session = (result or {}).get("session") if isinstance(result, dict) else None
+
+    return {
+        "success": True,
+        "action": action,
+        # Mirrors the ESS trigger condition so the portal can decide whether to
+        # open the assistant without re-reading the ToDo.
+        "session": session,
+        "open_assistant": bool(
+            session
+            and frappe.db.get_value("ToDo", name, "custom_open_chatnext_assistant_on_action")
+        ),
+        "todo": frappe.db.get_value(
+            "ToDo", name, ["name", "status", "custom_approval_type"], as_dict=True
+        ),
+    }
+
+
+# ── Alumni Workplace Feed ────────────────────────────────────────────────────
+# Work Connect's `post.get_feed` returns no per-viewer state: neither `is_saved`
+# nor `user_reaction` (its `get_post` returns `user_reaction`, but not
+# `is_saved` either). The portal therefore painted every bookmark empty and
+# every like un-liked until the user interacted, and a Save on an
+# already-saved post came back as "Post already saved" — an error for something
+# the user had already achieved.
+#
+# Fixed here rather than in `post.get_feed`, which ESS shares: this wrapper
+# delegates to it unchanged and enriches the rows on the way out. Two batched
+# queries, not one per post.
+
+_FEED_ENRICH_BATCH = 200
+
+
+def _feed_viewer_state(user: str, post_ids: list[str]) -> tuple[set, dict]:
+    """(saved post ids, {post id: reaction type}) for one viewer."""
+    if not post_ids:
+        return set(), {}
+
+    saved = set(
+        frappe.get_all(
+            "Saved Post",
+            filters={"user": user, "post": ["in", post_ids]},
+            pluck="post",
+        )
+        or []
+    )
+    reactions = {
+        r["post"]: r["reaction_type"]
+        for r in frappe.get_all(
+            "Post Reaction",
+            filters={"user": user, "post": ["in", post_ids]},
+            fields=["post", "reaction_type"],
+        )
+        or []
+    }
+    return saved, reactions
+
+
+@frappe.whitelist(methods=["POST"])
+def get_alumni_feed(**kwargs) -> dict:
+    """The workplace feed, with this viewer's saved/reaction state attached.
+
+    Same arguments and same envelope as
+    `chatnext_work_connect…post.get_feed` — only `is_saved` and
+    `user_reaction` are added to each post, so the portal can paint bookmarks
+    and like icons correctly on first render.
+    """
+    user = _require_alumni_session()
+
+    from chatnext_work_connect.chatnext_work_connect.api import post as post_api
+
+    params = {k: v for k, v in kwargs.items() if k not in ("cmd", "sid")}
+    result = post_api.get_feed(**params) or {}
+
+    data = result.get("data") or {}
+    posts = data.get("posts") or []
+
+    ids = [p.get("id") or p.get("name") for p in posts]
+    ids = [i for i in ids if i][:_FEED_ENRICH_BATCH]
+    saved, reactions = _feed_viewer_state(user, ids)
+
+    for p in posts:
+        pid = p.get("id") or p.get("name")
+        p["is_saved"] = pid in saved
+        p["user_reaction"] = reactions.get(pid)
+
+    return result
+
+
+# ── Post creation ─────────────────────────────────────────────────────────────
+#
+# The ESS composer uploads to /api/method/upload_file, then POSTs the resulting
+# file_url to `post.create_post`. Neither half of that works unmodified here:
+#
+#   1. `upload_file` is not in the alumni allowlist, so step 1 returns 403.
+#   2. `create_post` accepts a caller-supplied `visibility` and takes
+#      `attachments[].file` verbatim, with no check that the caller owns the
+#      file. For an ESS user that is fine -- they can enumerate groups, users
+#      and departments anyway. For an alumnus it is not: it would let them
+#      target internal audiences by id, and attach ANY file_url on the site --
+#      including private HR documents -- to a Public post.
+#
+# So the portal gets its own pair of endpoints. They delegate the actual write
+# to `post.create_post` (no fork of the doc-building logic), but normalise the
+# payload first. `chatnext_work_connect` is not modified.
+
+# Posts render to other viewers, so their attachments are public, unlike the
+# private todo/referral uploads above.
+_POST_UPLOAD_EXTS = {
+    "jpg": "Image",
+    "jpeg": "Image",
+    "png": "Image",
+    "gif": "Image",
+    "webp": "Image",
+    "mp4": "Video",
+    "webm": "Video",
+    "pdf": "Document",
+}
+_POST_UPLOAD_MAX_BYTES = 10 * 1024 * 1024  # 10 MB
+
+# Visibilities an alumnus may publish to. The four that are excluded --
+# Team, Group, Custom, User Assignment -- all target an internal audience
+# (a department, a Work Connect group, named employees). The guard already
+# blocks group.* and user.*, so the portal cannot even enumerate those; not
+# accepting them here is what stops an alumnus reaching one by guessing an id.
+_ALUMNI_POST_VISIBILITY = {"Public", "Private"}
+_ALUMNI_POST_TYPES = {"Text", "Image", "Video", "Poll"}
+
+_POLL_MIN_OPTIONS = 2
+_POLL_MAX_OPTIONS = 10
+_POLL_OPTION_MAX_LEN = 140
+_POST_CONTENT_MAX_LEN = 5000
+
+
+@frappe.whitelist(methods=["POST"])
+def upload_alumni_post_attachment() -> dict:
+    """Upload one image/video/PDF for a post (multipart/form-data, field ``file``).
+
+    Stored **public** -- unlike the todo and referral uploads, a post attachment
+    has to be readable by everyone the post reaches.
+
+    Returns ``{success, file_url, file_type, file_size, file_name}``; drop
+    ``file_url``/``file_type``/``file_size`` straight into the ``attachments``
+    list of :func:`create_alumni_post`.
+    """
+    _require_alumni_session()
+
+    uploaded = None
+    if getattr(frappe, "request", None) and getattr(frappe.request, "files", None):
+        uploaded = frappe.request.files.get("file") or frappe.request.files.get("attachment")
+    if not uploaded:
+        frappe.local.response["http_status_code"] = 400
+        return {"success": False, "message": _("A file is required.")}
+
+    filename = uploaded.filename or "attachment"
+    ext = filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
+    file_type = _POST_UPLOAD_EXTS.get(ext)
+    if not file_type:
+        frappe.local.response["http_status_code"] = 400
+        return {
+            "success": False,
+            "message": _("Unsupported file type. Allowed: JPG, PNG, GIF, WEBP, MP4, WEBM, PDF."),
+        }
+
+    content = uploaded.stream.read()
+    size = len(content or b"")
+    if not size:
+        frappe.local.response["http_status_code"] = 400
+        return {"success": False, "message": _("The uploaded file is empty.")}
+    if size > _POST_UPLOAD_MAX_BYTES:
+        frappe.local.response["http_status_code"] = 400
+        return {
+            "success": False,
+            "message": _("File is too large. Maximum size is {0} MB.").format(
+                _POST_UPLOAD_MAX_BYTES // (1024 * 1024)
+            ),
+        }
+
+    from frappe.utils.file_manager import save_file
+
+    # Unattached (dt/dn None): the Post does not exist yet -- create_alumni_post
+    # runs after this and references the file by url. Naming the doctype without
+    # a name fails File.validate_attachment_references. This mirrors what the
+    # ESS composer gets from /api/method/upload_file, which also uploads first.
+    saved = save_file(filename, content, None, None, is_private=0)
+    frappe.db.commit()
+
+    return {
+        "success": True,
+        "file_url": saved.file_url,
+        "file_name": saved.file_name,
+        "file_size": saved.file_size,
+        "file_type": file_type,
+    }
+
+
+def _alumni_owned_file(file_url: str, user: str) -> bool:
+    """True if `file_url` is a public File this user uploaded.
+
+    Guards the hole in `create_post`, which trusts `attachments[].file`
+    blindly. Without this an alumnus could publish someone else's private
+    document by quoting its url.
+    """
+    from frappe.utils import cint
+
+    if not file_url:
+        return False
+    row = frappe.db.get_value(
+        "File", {"file_url": file_url}, ["owner", "is_private"], as_dict=True
+    )
+    if not row:
+        return False
+    return row.owner == user and not cint(row.is_private)
+
+
+def _clean_poll_options(raw) -> list[str]:
+    """Validated, de-duplicated poll option texts."""
+    from frappe.utils import strip_html
+
+    options, seen = [], set()
+    for option in raw or []:
+        text = strip_html(str(option or "")).strip()[:_POLL_OPTION_MAX_LEN]
+        if not text or text.lower() in seen:
+            continue
+        seen.add(text.lower())
+        options.append(text)
+
+    if len(options) < _POLL_MIN_OPTIONS:
+        frappe.throw(
+            _("A poll needs at least {0} distinct options.").format(_POLL_MIN_OPTIONS)
+        )
+    return options[:_POLL_MAX_OPTIONS]
+
+
+@frappe.whitelist(methods=["POST"])
+def create_alumni_post(data=None, **kwargs) -> dict:
+    """Publish a post as the signed-in alumnus.
+
+    Accepts the ESS ``CreatePostData`` shape (dict or JSON string) so the
+    portal composer can reuse it, but only the fields an alumnus may set are
+    forwarded. Everything else is dropped rather than rejected, so a composer
+    that sends the full ESS payload still works:
+
+    ==========================  =========================================
+    ``post_type``               Text | Image | Video | Poll
+    ``content``                 sanitised, {max} chars
+    ``visibility``              Public (default) or Private
+    ``attachments``             only files this user uploaded, public ones
+    ``poll_options``            2-10 distinct plain-text options
+    ==========================  =========================================
+
+    Dropped: ``visibility_groups``/``users``/``assignments`` and
+    ``target_department`` (internal audiences), ``tags``, ``scheduled_at``
+    (alumni posts publish immediately), and every ``celebration_*`` field --
+    ``banner_html`` in particular is stored and re-served as raw HTML, which
+    would be stored XSS if it came from a portal user.
+
+    Returns `post.create_post`'s envelope, with ``is_saved``/``user_reaction``
+    added so the new row matches what :func:`get_alumni_feed` returns.
+    """
+    import json
+
+    from frappe.utils import strip_html
+    from frappe.utils.html_utils import sanitize_html
+
+    user = _require_alumni_session()
+
+    if isinstance(data, str):
+        try:
+            data = json.loads(data)
+        except (TypeError, ValueError):
+            frappe.throw(_("Malformed post data."))
+    if not isinstance(data, dict):
+        # Portals that post the fields flat rather than under `data`.
+        data = {k: v for k, v in kwargs.items() if k not in ("cmd", "sid")}
+
+    post_type = (data.get("post_type") or "Text").strip()
+    if post_type not in _ALUMNI_POST_TYPES:
+        frappe.throw(
+            _("Posts of type {0} cannot be created from the Alumni Portal.").format(post_type)
+        )
+
+    visibility = (data.get("visibility") or "Public").strip()
+    if visibility not in _ALUMNI_POST_VISIBILITY:
+        frappe.throw(
+            _("Alumni posts can only be Public or Private."), frappe.PermissionError
+        )
+
+    content = sanitize_html(str(data.get("content") or "").strip())[:_POST_CONTENT_MAX_LEN]
+
+    attachments = []
+    for attachment in data.get("attachments") or []:
+        if not isinstance(attachment, dict):
+            continue
+        file_url = (attachment.get("file") or "").strip()
+        if not _alumni_owned_file(file_url, user):
+            frappe.throw(
+                _("You can only attach files you uploaded yourself."),
+                frappe.PermissionError,
+            )
+        attachments.append(
+            {
+                "file": file_url,
+                "file_type": attachment.get("file_type") or "Other",
+                "file_size": attachment.get("file_size"),
+                "description": strip_html(str(attachment.get("description") or ""))[:200]
+                or None,
+            }
+        )
+
+    poll_options = _clean_poll_options(data.get("poll_options")) if post_type == "Poll" else []
+
+    if not content and not attachments and not poll_options:
+        frappe.throw(_("A post needs some content."))
+
+    payload = {
+        "post_type": post_type,
+        "content": content,
+        "visibility": visibility,
+        "attachments": attachments,
+        "allow_comments": 1 if data.get("allow_comments", True) else 0,
+        "allow_reactions": 1 if data.get("allow_reactions", True) else 0,
+    }
+    if poll_options:
+        payload["poll_options"] = poll_options
+
+    from chatnext_work_connect.chatnext_work_connect.api import post as post_api
+    from chatnext_work_connect.chatnext_work_connect.api.work_connect_settings import (
+        can_create_content,
+    )
+
+    # Pre-flight the same gate create_post applies, purely to control how a
+    # refusal surfaces. create_post raises PermissionError -> HTTP 403, and the
+    # portal turns *any* 403 from this namespace into "Work Connect is not
+    # available for this account" -- which is wrong and unactionable when the
+    # real cause is an admin content-control setting (e.g. polls_allowed_for =
+    # "Only Group Admins", which no alumnus can satisfy: alumni belong to no
+    # groups). Raising a plain ValidationError instead keeps the specific
+    # message intact for the composer.
+    #
+    # This does not weaken anything -- create_post still runs the same check
+    # itself immediately after.
+    allowed, reason = can_create_content(
+        "polls" if post_type == "Poll" else "posts", surface="feed", user=user
+    )
+    if not allowed:
+        frappe.throw(_(reason) if reason else _("You are not allowed to post."))
+
+    # create_post runs require_work_connect_access() and can_create_content()
+    # itself, so the admin-configured "who may post" rules still apply here.
+    result = post_api.create_post(payload) or {}
+
+    created = (result.get("data") or {}).get("post") or {}
+    pid = created.get("id") or created.get("name")
+    if pid:
+        saved, reactions = _feed_viewer_state(user, [pid])
+        created["is_saved"] = pid in saved
+        created["user_reaction"] = reactions.get(pid)
+
+    return result
+
+
+# ── Editing and deleting ──────────────────────────────────────────────────────
+#
+# `post.update_post` and `post.delete_post` are not on the alumni allowlist, for
+# the same reason `create_post` is not: update_post takes a caller-supplied
+# `visibility` together with `visibility_groups` / `visibility_users` /
+# `visibility_assignments`, so reaching it directly would let an alumnus publish
+# a Public post and then retarget it at an internal group by id -- the exact
+# hole `create_alumni_post` exists to close. Both go through a wrapper instead.
+#
+# Only posts that are Public or Private *right now* may be touched. An alumnus
+# is an ex-employee, so they may well be the author of Team/Group/Custom posts
+# written back when they had ESS. Editing one of those from the portal would
+# mean reaching an internal audience, and would drag in the group-membership
+# bookkeeping `update_post` does; refusing costs nothing, because it is not a
+# post the portal could have created.
+#
+# Poll options are deliberately NOT editable. Votes are cast against option
+# rows, so rewriting them would silently reattribute tallies.
+
+
+def _alumni_editable_post(post_id: str, user: str):
+    """The caller's own Public/Private Post, or a throw explaining why not."""
+    if not post_id:
+        frappe.throw(_("A post id is required."))
+
+    if not frappe.db.exists("Post", post_id):
+        frappe.throw(_("That post no longer exists."))
+
+    post = frappe.get_doc("Post", post_id)
+
+    if post.author != user:
+        frappe.throw(_("You can only change your own posts."), frappe.PermissionError)
+
+    visibility = post.visibility
+    if isinstance(visibility, list):
+        visibility = visibility[0] if visibility else None
+    if visibility not in _ALUMNI_POST_VISIBILITY:
+        frappe.throw(
+            _("This post is shared with an internal audience and cannot be changed from the Alumni Portal."),
+            frappe.PermissionError,
+        )
+
+    return post
+
+
+@frappe.whitelist(methods=["POST"])
+def update_alumni_post(post_id=None, data=None, **kwargs) -> dict:
+    """Edit one of the signed-in alumnus's own posts.
+
+    Only the keys actually present in ``data`` are applied, so a caller can
+    change the text without resending the attachments:
+
+    ==========================  =========================================
+    ``content``                 sanitised, {max} chars
+    ``visibility``              Public or Private
+    ``attachments``             replaces the list; only files this user
+                                uploaded, and only public ones
+    ``allow_comments``          on/off
+    ``allow_reactions``         on/off
+    ==========================  =========================================
+
+    Everything else -- ``post_type``, ``poll_options``, the internal-audience
+    tables, ``celebration_*`` -- is ignored.
+
+    Returns the same envelope as :func:`create_alumni_post`, so the caller can
+    swap the updated row straight into a feed it already holds.
+    """
+    import json
+
+    from frappe.utils import strip_html
+    from frappe.utils.html_utils import sanitize_html
+
+    from chatnext_work_connect.chatnext_work_connect.api.permissions import (
+        require_work_connect_access,
+    )
+
+    user = _require_alumni_session()
+
+    # create_alumni_post gets this gate for free by delegating to
+    # `post.create_post`; the save below is direct, so it is applied here.
+    require_work_connect_access()
+
+    if isinstance(data, str):
+        try:
+            data = json.loads(data)
+        except (TypeError, ValueError):
+            frappe.throw(_("Malformed post data."))
+    if not isinstance(data, dict):
+        # Portals that post the fields flat rather than under `data`.
+        data = {k: v for k, v in kwargs.items() if k not in ("cmd", "sid", "post_id")}
+
+    post_id = post_id or data.get("post_id") or data.get("name")
+    post = _alumni_editable_post(post_id, user)
+
+    if "content" in data:
+        post.content = sanitize_html(str(data.get("content") or "").strip())[
+            :_POST_CONTENT_MAX_LEN
+        ]
+
+    if "visibility" in data:
+        visibility = (data.get("visibility") or "Public").strip()
+        if visibility not in _ALUMNI_POST_VISIBILITY:
+            frappe.throw(
+                _("Alumni posts can only be Public or Private."), frappe.PermissionError
+            )
+        post.visibility = visibility
+
+    if "attachments" in data:
+        # A full replacement, not a merge -- the caller sends the list it wants
+        # to end up with. Re-validated even for rows that are already on the
+        # post, because the request could name any file at all.
+        rows = []
+        for attachment in data.get("attachments") or []:
+            if not isinstance(attachment, dict):
+                continue
+            file_url = (attachment.get("file") or "").strip()
+            if not _alumni_owned_file(file_url, user):
+                frappe.throw(
+                    _("You can only attach files you uploaded yourself."),
+                    frappe.PermissionError,
+                )
+            rows.append(
+                {
+                    "file": file_url,
+                    "file_type": attachment.get("file_type") or "Other",
+                    "file_size": attachment.get("file_size"),
+                    "description": strip_html(str(attachment.get("description") or ""))[:200]
+                    or None,
+                }
+            )
+        post.set("attachments", [])
+        for row in rows:
+            post.append("attachments", row)
+
+        # Keep post_type describing what the post now carries, so the feed's
+        # "Post Type" filter does not go on listing a picture-less Image post.
+        # Polls keep their type -- their options are what defines them.
+        if post.post_type in ("Text", "Image", "Video"):
+            if not rows:
+                post.post_type = "Text"
+            else:
+                post.post_type = "Video" if rows[0]["file_type"] == "Video" else "Image"
+
+    if "allow_comments" in data:
+        post.allow_comments = 1 if data.get("allow_comments") else 0
+
+    if "allow_reactions" in data:
+        post.allow_reactions = 1 if data.get("allow_reactions") else 0
+
+    # A post stripped of everything it had would render as a blank card.
+    if not post.content and not post.get("attachments") and not post.get("poll_options"):
+        frappe.throw(_("A post needs some content."))
+
+    post.save()
+    frappe.db.commit()
+
+    from chatnext_work_connect.chatnext_work_connect.api import post as post_api
+
+    updated = post_api.serialize_post(post.name, user)
+    saved, reactions = _feed_viewer_state(user, [post.name])
+    updated["is_saved"] = post.name in saved
+    updated["user_reaction"] = reactions.get(post.name)
+
+    return {"data": {"post": updated, "message": _("Post updated successfully")}}
+
+
+@frappe.whitelist(methods=["POST"])
+def delete_alumni_post(post_id=None, **kwargs) -> dict:
+    """Delete one of the signed-in alumnus's own posts.
+
+    Authorship is checked here and again by `post.delete_post`, which is what
+    actually removes the row -- so the group-membership counts it maintains stay
+    correct even though the portal cannot create a Group post itself.
+    """
+    user = _require_alumni_session()
+
+    post_id = post_id or kwargs.get("name")
+    post = _alumni_editable_post(post_id, user)
+
+    from chatnext_work_connect.chatnext_work_connect.api import post as post_api
+
+    result = post_api.delete_post(post.name) or {}
+    frappe.db.commit()
+    return result

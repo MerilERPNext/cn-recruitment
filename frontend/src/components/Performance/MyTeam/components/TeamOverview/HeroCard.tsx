@@ -92,9 +92,9 @@ const HeroCard: React.FC<HeroCardProps> = ({ isCompact }) => {
 
   return (
     <div className="space-y-4 sm:space-y-5">
-      <section className="overflow-hidden rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5 lg:p-6">
+      <section className="overflow-hidden rounded-xl border border-slate-200 bg-white p-4 sm:p-5 lg:p-6 shadow-sm">
         <div aria-label="Cycle Details" className="mb-5 flex min-w-0 flex-col justify-between gap-4 sm:mb-6 md:flex-row md:items-center">
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1">
             <div className="mb-2.5 flex flex-wrap items-center gap-2">
               <Badge
                 label={overview?.status ? `${overview.status.toUpperCase()}` : "CYCLE LIVE"}
@@ -103,15 +103,15 @@ const HeroCard: React.FC<HeroCardProps> = ({ isCompact }) => {
                 size="sm"
                 pulse={{ show: true, color: "bg-blue-600" }}
               />
-              <Typography variant="bodySmall" className="break-words text-gray-500">
+              <Typography variant="bodySmall" className="break-words text-xs text-gray-500 font-medium">
                 {formattedStartDate || "No date found"} &rarr; {formattedEndDate || "No date found"}{" "}
                 &middot; {overview?.company || "-"}
               </Typography>
             </div>
-            <Typography variant="h3" className="break-words text-xl leading-tight sm:text-2xl font-bold text-slate-900">
+            <Typography variant="h3" className="break-words text-lg sm:text-2xl font-bold leading-tight text-slate-900">
               {overview?.cycle_name || "-"}
             </Typography>
-            <Typography variant="bodySmall" className="mt-1 block break-words text-gray-500">
+            <Typography variant="bodySmall" className="mt-1 block break-words text-xs sm:text-sm text-gray-500">
               Your team &middot; {overview?.team_size ?? "-"} reportees &middot; {overview?.company || "-"}
             </Typography>
           </div>
@@ -127,7 +127,7 @@ const HeroCard: React.FC<HeroCardProps> = ({ isCompact }) => {
                 </Typography>
                 <Typography
                   variant="bodySmall"
-                  className="text-[#1a73e8] font-bold whitespace-nowrap"
+                  className="text-[#1a73e8] font-bold text-xs sm:text-sm whitespace-nowrap"
                 >
                   {overview?.days_remaining != null
                     ? `${overview.days_remaining} days remaining`
@@ -138,7 +138,7 @@ const HeroCard: React.FC<HeroCardProps> = ({ isCompact }) => {
                 variant="contain"
                 bgColor="primary"
                 onClick={() => navigate("/webapp/performance-app/team-reviews")}
-                className={`${isCompact ? "w-full sm:w-auto" : "px-5 py-2.5"} bg-[#1a73e8] hover:bg-blue-600 font-semibold rounded-lg shadow-sm text-sm inline-flex items-center justify-center shrink-0 whitespace-nowrap`}
+                className="w-full sm:w-auto px-4 py-2 sm:px-5 sm:py-2.5 bg-[#1a73e8] hover:bg-blue-600 font-semibold rounded-lg shadow-sm text-xs sm:text-sm inline-flex items-center justify-center shrink-0 whitespace-nowrap transition-colors"
               >
                 Continue Self-Review <ArrowRight className="w-4 h-4 ml-1.5" />
               </Button>

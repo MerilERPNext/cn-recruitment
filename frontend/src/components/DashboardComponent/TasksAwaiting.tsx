@@ -3,6 +3,7 @@ import React, { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import { useTodoCategories, useTodoList } from "../../hooks/useTodo";
+import { useOptionalTargetEmployeeId } from "../../context/ViewedUserContext";
 import type { ToDo } from "../../services/todoService";
 import { formatDateDDMonthYYYY } from "../../utils/formatToIndianDate";
 import { sanitizeToPlainText } from "../../utils/sanitizeToPlainText";
@@ -15,15 +16,24 @@ import { NoDataFound } from "../shared/atoms/NoDataFound";
 
 const MyToDoItem: React.FC<{ item: ToDo; index?: number }> = ({ item }) => {
   const navigate = useNavigate();
+  const targetEmployeeId = useOptionalTargetEmployeeId();
 
   const handleClick = () => {
+    const appendTargetUser = (baseRoute: string) => {
+      if (!targetEmployeeId) return baseRoute;
+      return baseRoute.includes("?")
+        ? `${baseRoute}&target_user=${targetEmployeeId}`
+        : `${baseRoute}?target_user=${targetEmployeeId}`;
+    };
+
     // if startes with /helpdesk then open in new tab 
-    if (item.custom_dynamic_route.startsWith("/helpdesk")) {
-      window.open(item.custom_dynamic_route, "_blank");
+    if (item.custom_dynamic_route?.startsWith("/helpdesk")) {
+      window.open(appendTargetUser(item.custom_dynamic_route), "_blank");
     } else if (item.custom_dynamic_route) {
-      navigate(item.custom_dynamic_route);
+      navigate(appendTargetUser(item.custom_dynamic_route));
     } else {
-      navigate(`/webapp/todo-app#/${item.name}`);
+      const queryParam = targetEmployeeId ? `?target_user=${targetEmployeeId}` : "";
+      navigate(`/webapp/todo-app${queryParam}#/${item.name}`);
     }
   };
 
@@ -75,8 +85,12 @@ const TasksAwaiting: React.FC = () => {
 
   const navigate = useNavigate();
   const { isDesktop } = useScreenSize();
+  const targetEmployeeId = useOptionalTargetEmployeeId();
 
-  const handleTodoClick = () => navigate("/webapp/todo-app");
+  const handleTodoClick = () => {
+    const queryParam = targetEmployeeId ? `?target_user=${targetEmployeeId}` : "";
+    navigate(`/webapp/todo-app${queryParam}`);
+  };
 
   const generatePastelColor = (index: number) => {
     const colors = [

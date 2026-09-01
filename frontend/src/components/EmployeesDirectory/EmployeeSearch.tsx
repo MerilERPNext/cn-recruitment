@@ -2,6 +2,7 @@ import { Check, Filter, RefreshCw, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTargetUser } from "../../context/ViewedUserContext";
 import useDebounce from "../../hooks/useDebounce";
+import { useAttendanceSettings } from "../../hooks/useAttendance";
 import {
   useCurrentEmployeeDetails,
   useGetEmployeesForDirectory,
@@ -190,6 +191,11 @@ const EmployeeSearch = ({
         (activeFilters[key] as string[]).length > 0),
   );
 
+  const { data: attendanceSettings } = useAttendanceSettings();
+  const showAllEmployeesByDefault = Boolean(
+    attendanceSettings?.show_all_employees_by_default_in_directory
+  );
+
   useEffect(() => {
     if (activeTab === "my_reportees" && appliedSearchEmployees.length === 0) {
       setEmployees(data);
@@ -197,7 +203,7 @@ const EmployeeSearch = ({
       activeTab === "directory" &&
       appliedSearchEmployees.length === 0
     ) {
-      if (hasNonStatusFilters) {
+      if (showAllEmployeesByDefault || hasNonStatusFilters) {
         setEmployees(data);
       } else {
         setEmployees([]);
@@ -210,6 +216,7 @@ const EmployeeSearch = ({
     setEmployees,
     appliedSearchEmployees,
     hasNonStatusFilters,
+    showAllEmployeesByDefault,
   ]);
 
   const handleFilterUpdate = (data: EmployeeDirectoryFilterData) => {
@@ -239,7 +246,7 @@ const EmployeeSearch = ({
     if (activeTab === "my_reportees" && pendingEmployees.length === 0) {
       setEmployees(data);
     } else if (activeTab === "directory" && pendingEmployees.length === 0) {
-      setEmployees(hasNonStatusFilters ? data : []);
+      setEmployees(showAllEmployeesByDefault || hasNonStatusFilters ? data : []);
     } else {
       setEmployees(pendingEmployees);
     }

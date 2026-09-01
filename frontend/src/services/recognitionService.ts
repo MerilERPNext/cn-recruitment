@@ -1327,17 +1327,76 @@ export const useNominationActions = () => {
     onSuccess: refresh,
   });
 
+  // Everything the "Points Allocation" form collects. Each optional part is
+  // omitted rather than sent empty, so the backend keeps whatever the program
+  // already supplies (the certificate template arrives via fetch_from).
   const publish = useMutation({
-    mutationFn: async (name: string) =>
-      FrappeAPI.callMethod(`${RECOGNITION_API}.set_nomination_published_status`, {
-        names: name,
+    mutationFn: async (
+      args:
+        | string
+        | {
+            name: string;
+            certificateTemplate?: string;
+            ccEmployees?: string[];
+            ccEmails?: string[];
+            voucher?: File;
+          },
+    ) => {
+      const opts = typeof args === "string" ? { name: args } : args;
+
+      // The voucher is attached to the appreciation first; the certificate
+      // email then picks up everything attached to that record.
+      if (opts.voucher) {
+        await FrappeAPI.uploadFile(
+          opts.voucher,
+          opts.voucher.name,
+          opts.name,
+          "Employee Appreciation",
+        );
+      }
+
+      return FrappeAPI.callMethod(`${RECOGNITION_API}.set_nomination_published_status`, {
+        names: opts.name,
         published: 1,
-      }),
+        ...(opts.certificateTemplate
+          ? { certificate_template: opts.certificateTemplate }
+          : {}),
+        ...(opts.ccEmployees?.length
+          ? { cc_employees: JSON.stringify(opts.ccEmployees) }
+          : {}),
+        ...(opts.ccEmails?.length ? { cc_email_ids: JSON.stringify(opts.ccEmails) } : {}),
+      });
+    },
     onSuccess: refresh,
   });
 
   return { shortlist, unshortlist, publish };
 };
+
+export type CertificateTemplate = {
+  name: string;
+  letter_name: string;
+  description?: string;
+  template_type?: string;
+};
+
+/**
+ * Certificate templates offered on the publish form.
+ *
+ * Backed by Document Template filtered to type_of_letter =
+ * "Certificate and Recognition", so offer/separation letters never appear.
+ */
+export const useCertificateTemplates = (enabled = true) =>
+  useQuery<CertificateTemplate[]>({
+    queryKey: ["recognition", "certificate-templates"],
+    enabled,
+    queryFn: async () => {
+      const response = (await FrappeAPI.callMethod(
+        `${RECOGNITION_API}.get_certificate_templates`,
+      )) as { templates?: CertificateTemplate[] };
+      return response?.templates ?? [];
+    },
+  });
 
 export const useProgramWinners = (program?: string, enabled = true) => {
   return useQuery<ProgramWinnersResponse>({

@@ -135,7 +135,7 @@ export const useAttendanceSettings = (
   options?: { enabled?: boolean; }
 ) => {
   return useQuery({
-    queryKey: ["attendance-settings", "{enable_rejection_confirm_modal, enable_approval_confirm_modal}"],
+    queryKey: ["attendance-settings", "{enable_rejection_confirm_modal, enable_approval_confirm_modal, show_all_employees_by_default_in_directory}"],
     queryFn: () => attendanceService.getAttendanceSettings(),
     enabled: options?.enabled ?? true,
     ...defaultQueryOptions,

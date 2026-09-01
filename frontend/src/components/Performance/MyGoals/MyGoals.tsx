@@ -243,33 +243,24 @@ const MyGoals: React.FC<MyGoalsProps> = ({ onCreateGoal, onSelectGoal }) => {
               </Typography>
             </div>
 
-            <div className="grid min-w-0 grid-cols-1 gap-2 min-[520px]:grid-cols-3 lg:w-[650px] lg:max-w-[650px]">
-              {[
-                { icon: Target, label: "Goals", value: String(totalGoals) },
-                { icon: Weight, label: "Weightage", value: `${totalWeightage}%` },
-                { icon: Timer, label: "Cycle", value: activeCycle },
-              ].map(({ icon: Icon, label, value }) => (
-                <div
-                  key={label}
-                  className="min-w-0 rounded-lg border border-slate-100 bg-slate-50 px-3 py-2"
-                >
-                  <div className="flex items-center gap-1.5 text-slate-500">
-                    <Icon className="h-3.5 w-3.5 shrink-0" />
-                    <Typography
-                      variant="caption"
-                      className="truncate text-slate-500"
-                    >
-                      {label}
-                    </Typography>
-                  </div>
-                  <Typography
-                    variant="bodySmall"
-                    className="mt-1 block truncate font-semibold text-slate-950"
-                  >
-                    {value}
-                  </Typography>
-                </div>
-              ))}
+            <div className="flex flex-wrap items-center gap-2.5">
+              <span className="inline-flex items-center gap-1.5 rounded-md border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700">
+                <Target className="h-3.5 w-3.5 shrink-0" />
+                <span>Goals:</span>
+                <span className="font-bold">{totalGoals ?? 0}</span>
+              </span>
+              <span className="inline-flex items-center gap-1.5 rounded-md border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-700">
+                <Weight className="h-3.5 w-3.5 shrink-0" />
+                <span>Weightage:</span>
+                <span className="font-bold">{totalWeightage ?? 0}%</span>
+              </span>
+              {activeCycle && (
+                <span className="inline-flex items-center gap-1.5 rounded-md border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-800">
+                  <Timer className="h-3.5 w-3.5 shrink-0" />
+                  <span>Cycle:</span>
+                  <span className="font-bold">{activeCycle}</span>
+                </span>
+              )}
             </div>
           </div>
 

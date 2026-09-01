@@ -14,6 +14,7 @@ import FilterPanel, {
   type FilterValues,
 } from "../../shared/molecules/FilterPanel";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
+import PublishNominationModal from "./PublishNominationModal";
 import {
   useAwardProgramDetail,
   useNominationActions,
@@ -168,6 +169,24 @@ const AwardProgramDetail: React.FC = () => {
       setConfirm(null);
     } catch (e) {
       setActionError((e as Error)?.message || "Action failed. Please try again.");
+    }
+  };
+
+  // Publish opens the "Points Allocation" form rather than a plain confirm —
+  // the certificate, voucher and CC list are all chosen at publish time.
+  const runPublish = async (payload: {
+    certificateTemplate?: string;
+    ccEmployees: string[];
+    ccEmails: string[];
+    voucher?: File;
+  }) => {
+    if (!confirm) return;
+    setActionError("");
+    try {
+      await publish.mutateAsync({ name: confirm.row.nomination_id, ...payload });
+      setConfirm(null);
+    } catch (e) {
+      setActionError((e as Error)?.message || "Publish failed. Please try again.");
     }
   };
 
@@ -455,8 +474,25 @@ const AwardProgramDetail: React.FC = () => {
         onApply={setFilterValues}
       />
 
-      {/* Confirm dialog for shortlist / unshortlist / publish */}
-      {confirm && (
+      {/* Publish gets the full "Points Allocation" form; the other two actions
+          keep the simple confirm below. */}
+      {confirm?.action === "publish" && (
+        <PublishNominationModal
+          row={confirm.row}
+          programTitle={prog?.title || decodeURIComponent(program)}
+          programCode={prog?.code}
+          busy={publish.isPending}
+          error={actionError}
+          onCancel={() => {
+            setConfirm(null);
+            setActionError("");
+          }}
+          onPublish={runPublish}
+        />
+      )}
+
+      {/* Confirm dialog for shortlist / unshortlist */}
+      {confirm && confirm.action !== "publish" && (
         <div className="fixed inset-0 z-[1100] flex items-center justify-center" role="dialog" aria-modal="true">
           <div className="absolute inset-0 bg-black/50" onClick={() => setConfirm(null)} />
           <div className="relative w-[calc(100%-2rem)] max-w-lg rounded-lg bg-white p-6 shadow-2xl">
@@ -464,6 +500,7 @@ const AwardProgramDetail: React.FC = () => {
               {CONFIRM_COPY[confirm.action].title}
             </h2>
             <p className="text-sm text-gray-700">{CONFIRM_COPY[confirm.action].body}</p>
+
             {actionError && (
               <p className="mt-3 text-sm text-red-600">{actionError}</p>
             )}
