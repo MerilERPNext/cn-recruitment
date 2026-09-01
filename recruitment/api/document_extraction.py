@@ -20,8 +20,13 @@ def _extraction_api():
 		from chatnext_expense_trips.document_extraction import api
 	except ImportError:
 		frappe.throw(
-			_("Document extraction is unavailable: the chatnext_expense_trips app is not installed on this site."),
-			title=_("App Not Installed"),
+			_(
+				"Document extraction is unavailable: chatnext_expense_trips.document_extraction"
+				" could not be imported. Either the app is not installed on this site, or it is"
+				" checked out on a branch that does not ship the document_extraction module"
+				" (main and version-16 do not; standard, pw-uat, relocation_expense and ocr do)."
+			),
+			title=_("Document Extraction Unavailable"),
 		)
 
 	return api
