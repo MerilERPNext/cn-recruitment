@@ -51,6 +51,8 @@ import { useGetUiPermission } from "../../hooks/userUiPermission";
 import { useRecognitionFlags } from "../../services/recognitionService";
 import { useTodoPendingCount, useTodoSettings } from "../../hooks/useTodo";
 import { useOptionalTargetEmployeeId } from "../../context/ViewedUserContext";
+import { useAttendanceSettings } from "../../hooks/useAttendance";
+import { getImpersonationFallbackRoute } from "../../utils/impersonationUtils";
 import Avatar from "./Avatar";
 import { Typography } from "./atoms/Typography";
 import SidebarSkeleton from "./molecules/Skeletons/SidebarSkeleton";
@@ -128,9 +130,17 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
   const { data: todoSettings } = useTodoSettings();
   const targetEmployeeId = useOptionalTargetEmployeeId();
 
+  const { data: attendanceSettings } = useAttendanceSettings();
+
   // When show_todo_for_self_only is enabled, hide Todo during impersonation
   const isTodoHiddenBySettings =
     !!todoSettings?.show_todo_for_self_only &&
+    !!targetEmployeeId &&
+    targetEmployeeId !== currentEmployee?.name;
+
+  // When show_dashboard_self_only is enabled, hide Dashboard during impersonation
+  const isDashboardHiddenBySettings =
+    Boolean(attendanceSettings?.show_dashboard_self_only) &&
     !!targetEmployeeId &&
     targetEmployeeId !== currentEmployee?.name;
 
@@ -696,6 +706,14 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
           return null;
         }
 
+        // Hide Dashboard when hide_dashboard_on_impersonation is enabled and impersonating
+        if (
+          (item.label === "Dashboard" || item.path === "/webapp/") &&
+          isDashboardHiddenBySettings
+        ) {
+          return null;
+        }
+
         // Hide Todo when show_todo_for_self_only is enabled and impersonating
         if (item.permissionKey === "Todo" && isTodoHiddenBySettings) {
           return null;
@@ -775,7 +793,12 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
       })
       .filter((item): item is NavigationItem => item !== null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [uiPermissions, recognitionFlags.hideRewardsPointSummary, isTodoHiddenBySettings]);
+  }, [
+    uiPermissions,
+    recognitionFlags.hideRewardsPointSummary,
+    isTodoHiddenBySettings,
+    isDashboardHiddenBySettings,
+  ]);
 
   const isSubSubItemActive = (subSubItem: SubSubMenuItem) => {
     if (location.pathname === subSubItem.href) {
@@ -952,7 +975,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
             className="px-4 bg-white py-3 border-b border-gray-200"
             style={{ height: "73px" }}
           >
-            <Link to="/webapp/">
+            <Link to={isDashboardHiddenBySettings ? getImpersonationFallbackRoute(uiPermissions) : "/webapp/"}>
               <div className="flex items-center  gap-3 h-full">
                 <div className="flex-shrink-0">
                   <Avatar
