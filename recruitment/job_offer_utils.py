@@ -771,19 +771,34 @@ def get_job_offer_summary(appl, token=None):
         stipend_val = flt(stipend)
         fixed_val = flt(jo.get("custom_total_fixed_pay") or jo.get("custom_base_salary"))
         variable_val = flt(jo.get("custom_variable_incentive"))
+        # Location Allowance defaults from the offer's Location master and is
+        # editable per offer; it is part of CTC (Total Fixed Pay + Incentive +
+        # Location Allowance) but was missing here, so the total came out short
+        # whenever it was filled.
+        location_val = flt(jo.get("custom_location_allowance"))
+        # The offer's own stored CTC. Preferred for the total so the portal shows
+        # exactly the figure on the letter rather than re-deriving it. Blank on
+        # offers that never went through the CTC computation, hence the fallback.
+        ctc_val = flt(jo.get("custom_ctc"))
         has_stipend = stipend_val > 0
-        has_fixed = fixed_val > 0 or variable_val > 0
+        has_fixed = fixed_val > 0 or variable_val > 0 or location_val > 0 or ctc_val > 0
+
+        total_val = ctc_val if ctc_val > 0 else (fixed_val + variable_val + location_val)
 
         compensation = {
             "compensation_type": None,
             "stipend": None,
             "fixed": None,
             "variable": None,
+            # Null when the offer carries no location allowance, so the UI can
+            # simply skip the row — same convention as every other field here.
+            "location_allowance": None,
             "total": None,
             # Comma-grouped display strings (match the doc); UI may use these directly.
             "stipend_formatted": None,
             "fixed_formatted": None,
             "variable_formatted": None,
+            "location_allowance_formatted": None,
             "total_formatted": None,
         }
 
@@ -793,10 +808,13 @@ def get_job_offer_summary(appl, token=None):
         if has_fixed:
             compensation["fixed"] = num(fixed_val)
             compensation["variable"] = num(variable_val)
-            compensation["total"] = num(fixed_val + variable_val)
+            compensation["total"] = num(total_val)
             compensation["fixed_formatted"] = fmt(fixed_val)
             compensation["variable_formatted"] = fmt(variable_val)
-            compensation["total_formatted"] = fmt(fixed_val + variable_val)
+            compensation["total_formatted"] = fmt(total_val)
+        if location_val > 0:
+            compensation["location_allowance"] = num(location_val)
+            compensation["location_allowance_formatted"] = fmt(location_val)
 
         # Nothing filled -> fall back to the original role-based default so the
         # response shape and values are unchanged for those offers.
@@ -807,10 +825,10 @@ def get_job_offer_summary(appl, token=None):
             else:
                 compensation["fixed"] = num(fixed_val)
                 compensation["variable"] = num(variable_val)
-                compensation["total"] = num(fixed_val + variable_val)
+                compensation["total"] = num(total_val)
                 compensation["fixed_formatted"] = fmt(fixed_val)
                 compensation["variable_formatted"] = fmt(variable_val)
-                compensation["total_formatted"] = fmt(fixed_val + variable_val)
+                compensation["total_formatted"] = fmt(total_val)
 
         # Hint for the UI: "both" when a stipend AND fixed pay are present (the
         # trainee dual-letter case), else the single kind as before.
