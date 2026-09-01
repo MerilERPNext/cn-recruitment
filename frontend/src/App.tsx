@@ -39,6 +39,8 @@ import GlobalLeaveRequestModal from "./components/Leaves/GlobalLeaveRequestModal
 import { useWebsiteBranding } from "./hooks/useBranding";
 import MandatoryHrProcessHandler from "./components/MandatoryHrProcessHandler";
 import MandatoryDocumentsHandler from "./components/MandatoryDocumentsHandler";
+import { useAttendanceSettings } from "./hooks/useAttendance";
+import { getImpersonationFallbackRoute } from "./utils/impersonationUtils";
 
 // Component to sync ViewedUserContext with frappeAPI
 // NOTE: Must be defined BEFORE App to avoid Vite HMR evaluating it outside the provider tree.
@@ -288,6 +290,7 @@ const App: React.FC = () => {
                 <MandatoryPoliciesHandler />
                 <MandatoryHrProcessHandler />
                 <MandatoryDocumentsHandler />
+                <ImpersonationDashboardHandler />
 
                 <div
                   className="min-h-screen bg-app"
@@ -296,7 +299,7 @@ const App: React.FC = () => {
                     <Route element={<ModalWrapper />}>
                       <Route path="/webapp/" element={<ResponsiveDashboard />} />
                       {renderRoutes(routesConfig)}
-                      <Route path="*" element={<Navigate to="/webapp/" replace />} />
+                      <Route path="*" element={<FallbackRedirect />} />
                     </Route>
                   </Routes>
                 </div>
@@ -401,6 +404,48 @@ const MandatoryPoliciesHandler = () => {
     isViewingOtherUser,
   ]);
 
+  return null;
+};
+
+const ImpersonationDashboardHandler: React.FC = () => {
+  const { isViewingOtherUser } = useTargetUser();
+  const { data: attendanceSettings } = useAttendanceSettings();
+  const { data: uiPermissions } = useGetUiPermission();
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const isDashboardHidden =
+    Boolean(attendanceSettings?.show_dashboard_self_only) &&
+    isViewingOtherUser;
+
+  useEffect(() => {
+    if (!isDashboardHidden) return;
+
+    const currentPath = location.pathname;
+    if (currentPath === "/webapp" || currentPath === "/webapp/") {
+      const fallbackRoute = getImpersonationFallbackRoute(uiPermissions);
+      toast.error("Dashboard is not accessible while viewing another user.", {
+        id: "impersonation-dashboard-restricted",
+      });
+      navigate(fallbackRoute, { replace: true });
+    }
+  }, [isDashboardHidden, location.pathname, uiPermissions, navigate]);
 
   return null;
+};
+
+const FallbackRedirect: React.FC = () => {
+  const { isViewingOtherUser } = useTargetUser();
+  const { data: attendanceSettings } = useAttendanceSettings();
+  const { data: uiPermissions } = useGetUiPermission();
+
+  const isDashboardHidden =
+    Boolean(attendanceSettings?.show_dashboard_self_only) &&
+    isViewingOtherUser;
+
+  const targetPath = isDashboardHidden
+    ? getImpersonationFallbackRoute(uiPermissions)
+    : "/webapp/";
+
+  return <Navigate to={targetPath} replace />;
 };
