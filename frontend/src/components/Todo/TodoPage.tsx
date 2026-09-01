@@ -9,6 +9,9 @@ import TodoAppShadowWrapper from "../TodoAppShadowWrapper.tsx";
 import { useTodoSettings } from "../../hooks/useTodo";
 import { useTargetUser } from "../../context/ViewedUserContext";
 import { useCurrentEmployeeDetails } from "../../hooks/useEmployee";
+import { useAttendanceSettings } from "../../hooks/useAttendance";
+import { useGetUiPermission } from "../../hooks/userUiPermission";
+import { getImpersonationFallbackRoute } from "../../utils/impersonationUtils";
 
 const TodoPage = () => {
   const { isDesktop } = useScreenSize();
@@ -18,17 +21,32 @@ const TodoPage = () => {
   const { data: currentEmployee } = useCurrentEmployeeDetails({
     logged_in_employee_details: true,
   });
+  const { data: attendanceSettings } = useAttendanceSettings();
+  const { data: uiPermissions } = useGetUiPermission();
 
-  // Redirect to dashboard when show_todo_for_self_only is enabled and impersonating
+  // Redirect when show_todo_for_self_only is enabled and impersonating
   const isImpersonating =
     !!targetEmployeeId && targetEmployeeId !== currentEmployee?.name;
+
+  const isDashboardHidden =
+    Boolean(attendanceSettings?.show_dashboard_self_only) &&
+    isImpersonating;
 
   useEffect(() => {
     if (todoSettings?.show_todo_for_self_only && isImpersonating) {
       toast.error("Todo is only available for your own profile.", { id: "todo-self-only" });
-      navigate("/webapp/", { replace: true });
+      const targetPath = isDashboardHidden
+        ? getImpersonationFallbackRoute(uiPermissions)
+        : "/webapp/";
+      navigate(targetPath, { replace: true });
     }
-  }, [todoSettings?.show_todo_for_self_only, isImpersonating, navigate]);
+  }, [
+    todoSettings?.show_todo_for_self_only,
+    isImpersonating,
+    isDashboardHidden,
+    uiPermissions,
+    navigate,
+  ]);
 
   // Don't render while redirecting
   if (todoSettings?.show_todo_for_self_only && isImpersonating) {
