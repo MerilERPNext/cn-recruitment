@@ -607,6 +607,120 @@ def preview_job_offer_html(appl, token=None):
         html = render_job_offer_html(jo_id, formats[0] if formats else None)
         return {"html": html, "jo_id": jo_id}
 
+# ---------------------------------------------------------------------------
+# Culture Book — an optional company PDF, attached to every offer email and
+# previewable from the candidate portal.
+#
+# Entirely driven by one setting (Recruitment Settings -> `culture_book`). With
+# it blank the feature does not exist: the endpoint reports it as unavailable
+# and the email attaches nothing. Every helper here is non-throwing for exactly
+# that reason — a missing, deleted or unreadable file must never break an offer
+# email or a portal page.
+# ---------------------------------------------------------------------------
+
+def get_culture_book_file_url():
+    """The configured Culture Book's file URL, or None when not set up.
+
+    Never raises — a site that has not migrated the field yet simply has no
+    Culture Book.
+    """
+    try:
+        return frappe.db.get_single_value("Recruitment Settings", "culture_book") or None
+    except Exception:
+        return None
+
+
+def get_culture_book():
+    """Return ``(pdf_bytes, filename)`` for the configured Culture Book.
+
+    ``(None, None)`` when nothing is configured, or when the file it points at
+    can no longer be read (deleted from disk, File doc removed). Callers treat
+    that as "no culture book" and carry on.
+    """
+    file_url = get_culture_book_file_url()
+    if not file_url:
+        return None, None
+
+    try:
+        # The attachment is usually private, and the candidate reading it is a
+        # guest — same reason every other candidate-facing read in this module
+        # runs elevated.
+        with as_administrator():
+            content = _read_template_file_bytes(file_url)
+        if not content:
+            frappe.log_error(
+                f"Culture Book file not readable: {file_url}", "Culture Book unavailable"
+            )
+            return None, None
+
+        filename = (
+            frappe.db.get_value("File", {"file_url": file_url}, "file_name")
+            or file_url.rsplit("/", 1)[-1]
+            or "Culture Book.pdf"
+        )
+        return content, filename
+    except Exception:
+        frappe.log_error(frappe.get_traceback(), "Culture Book read failed")
+        return None, None
+
+
+def get_culture_book_attachment():
+    """The Culture Book as a ``frappe.sendmail`` attachment dict, or None.
+
+    Used to append the document to offer emails. None whenever there is nothing
+    to attach, so callers can simply skip it.
+    """
+    content, filename = get_culture_book()
+    if not content:
+        return None
+    return {
+        "fname": filename,
+        "fcontent": content,
+        "content_type": "application/pdf",
+    }
+
+
+@frappe.whitelist(allow_guest=True)
+def preview_culture_book(appl, token=None):
+    """Stream the Culture Book PDF to the candidate — guest, token-gated.
+
+    Mirrors `download_job_offer_pdf`: a logged-in candidate viewing THEIR OWN
+    applicant needs no link token, anyone else needs the token (or Job Offer
+    permission). Streams the file rather than returning base64, since the
+    document can be large.
+
+    When no Culture Book is configured (or its file cannot be read) this returns
+    ``{"available": False}`` as JSON instead of throwing, so a portal that calls
+    it unconditionally simply gets "nothing to show" and can hide the button.
+    """
+    if not appl:
+        frappe.throw("Missing applicant parameter")
+    if not _candidate_owns_applicant(appl):
+        _authorize_offer(appl, token, "read")
+
+    content, filename = get_culture_book()
+    if not content:
+        return {"available": False}
+
+    frappe.local.response.filename = filename
+    frappe.local.response.filecontent = content
+    frappe.local.response.type = "pdf"
+
+
+@frappe.whitelist(allow_guest=True)
+def has_culture_book(appl=None, token=None):
+    """Whether a Culture Book is configured — for showing/hiding the portal button
+    without downloading the document.
+
+    ``appl``/``token`` are accepted and honoured when given, so the portal can call
+    it with the same arguments as the preview. Only ever reports the presence of a
+    site-wide setting, never candidate data.
+    """
+    if appl and not _candidate_owns_applicant(appl):
+        _authorize_offer(appl, token, "read")
+    return {"available": bool(get_culture_book_file_url())}
+
+
 @frappe.whitelist(allow_guest=True)
 def get_job_offer_status(appl, token=None):
     _authorize_offer(appl, token, "read")

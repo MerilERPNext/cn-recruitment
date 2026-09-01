@@ -22,6 +22,7 @@
   "section_break_xbvj",
   "job_offer_print_format",
   "job_offer_print_format_mapping",
+  "culture_book",
   "send_offer_via_document_template",
   "job_offer_template",
   "employee_onboarding_webform",
@@ -184,6 +185,12 @@
    "fieldtype": "Table",
    "label": "Job Offer Print Format by Employment Type",
    "options": "Job Offer Print Format Mapping"
+  },
+  {
+   "description": "Optional PDF sent with every Job Offer email and shown on the candidate portal's \"Preview Culture Book\" button. Leave blank to switch the feature off entirely — no button, no attachment.",
+   "fieldname": "culture_book",
+   "fieldtype": "Attach",
+   "label": "Culture Book"
   },
   {
    "default": "0",

@@ -457,6 +457,12 @@ def _trigger_one(task_name: str) -> dict:
         reference_name=onboarding.name,
     )
 
+    # frappe.sendmail only creates an Email Queue row — it never creates a
+    # Communication, so these interaction emails were invisible in the
+    # Communication log and on the Onboarding timeline. Log it explicitly, the
+    # same way the Job Offer send path does.
+    _log_communication(subject, message, recipient, onboarding.name, task.name)
+
     # Use task.save() (not db.set_value) so HRMS's Task.on_update hook fires —
     # that hook recalculates Project.percent_complete which in turn updates
     # Employee Onboarding's boarding_status. db.set_value would skip this.
@@ -469,6 +475,40 @@ def _trigger_one(task_name: str) -> dict:
     )
 
     return {"ok": True, "task": task.name, "sent_to": recipient, "interaction": template_name}
+
+
+def _log_communication(subject, message, recipient, onboarding_name, task_name=None):
+    """Record a sent interaction email as a Communication.
+
+    Called only after `frappe.sendmail` has succeeded, so a failure here means an
+    email that went out but was not logged — never a failed send. Swallowed and
+    logged for exactly that reason.
+
+    The Communication is anchored on the Employee Onboarding (its timeline is
+    where HR looks) and additionally linked to the Task, so the email also shows
+    on the task the button was pressed from.
+    """
+    try:
+        comm = frappe.new_doc("Communication")
+        comm.communication_type = "Communication"
+        comm.communication_medium = "Email"
+        comm.sent_or_received = "Sent"
+        comm.subject = subject
+        comm.content = message
+        comm.sender = (
+            frappe.db.get_value("Email Account", {"default_outgoing": 1}, "email_id")
+            or frappe.session.user
+        )
+        comm.recipients = recipient
+        comm.reference_doctype = "Employee Onboarding"
+        comm.reference_name = onboarding_name
+        if task_name:
+            comm.append("timeline_links", {"link_doctype": "Task", "link_name": task_name})
+        comm.insert(ignore_permissions=True)
+    except Exception:
+        frappe.log_error(
+            frappe.get_traceback(), "Onboarding interaction: Communication log failed"
+        )
 
 
 def _activity_name_from_task(task, onboarding) -> str:
