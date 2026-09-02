@@ -625,6 +625,7 @@ def get_alumni_profile() -> dict:
             ("custom__custom_marital_status", "custom__custom_marital_status"),
             ("date_of_joining", "date_of_joining"),
             ("relieving_date", "relieving_date"),
+            ("reason_for_leaving", "reason_for_leaving"),
             ("company_email", "company_email"),
             ("personal_email", "personal_email"),
             ("preferred_email", "prefered_email"),
@@ -663,12 +664,116 @@ def get_alumni_profile() -> dict:
         for fld in _ALUMNI_LINK_TITLE_FIELDS:
             emp[f"{fld}_title"] = _resolve_link_title("Employee", fld, emp.get(fld) or "")
 
+        emp["tenure_months"] = _tenure_months(
+            e.get("date_of_joining"), e.get("relieving_date")
+        )
+        emp["education"] = _alumni_education(emp_name)
+        emp["work_history"] = _alumni_work_history(emp_name)
+
         profile["employee"] = emp
 
         if not profile.get("image") and emp.get("image"):
             profile["image"] = emp["image"]
 
     return {"success": True, "profile": profile}
+
+
+def _child_rows(doctype: str, parent: str, wanted: dict, order_by: str) -> list[dict]:
+    """Rows of a child table, keyed by output name.
+
+    ``wanted`` maps ``{output key: column}`` or ``{output key: (col, fallback…)}``
+    -- these tables carry the same fact in both a standard and a custom column
+    depending on which form captured it (``qualification`` vs
+    ``custom_education_degree``), so the first non-empty candidate wins.
+
+    Columns absent from this database are skipped rather than queried: a field
+    present in the meta but missing a column would raise OperationalError 1054.
+    """
+    candidates = {
+        key: [c for c in ((cols,) if isinstance(cols, str) else cols)
+              if frappe.db.has_column(doctype, c)]
+        for key, cols in wanted.items()
+    }
+    columns = [c for cols in candidates.values() for c in cols]
+    if not columns:
+        return []
+
+    order = order_by if frappe.db.has_column(doctype, order_by.split()[0]) else "idx"
+    rows = frappe.get_all(
+        doctype,
+        filters={"parenttype": "Employee", "parent": parent},
+        fields=list(dict.fromkeys(columns + ["idx"])),
+        order_by=order,
+    ) or []
+
+    out = []
+    for row in rows:
+        item = {}
+        for key, cols in candidates.items():
+            val = next((row.get(c) for c in cols if row.get(c) not in (None, "", 0)), None)
+            item[key] = (
+                _d(val) if val and key.endswith(("_date", "_from", "_to")) else (val or "")
+            )
+        out.append(item)
+    return out
+
+
+def _alumni_education(emp_name: str) -> list[dict]:
+    """Education history — the portal's "Education" block."""
+    return _child_rows(
+        "Employee Education",
+        emp_name,
+        {
+            "qualification": ("qualification", "custom_education_degree", "custom_course_name"),
+            "specialization": ("maj_opt_subj", "custom_field_of_specialisation"),
+            "institution": ("school_univ", "custom_university", "custom_institute"),
+            "level": "level",
+            "year_of_passing": ("year_of_passing", "custom_passing_year"),
+            "from_date": "custom_start_date",
+            "to_date": ("custom_completion_date", "custom_to_date"),
+        },
+        "idx asc",
+    )
+
+
+def _alumni_work_history(emp_name: str) -> list[dict]:
+    """Employment outside this company — the portal's "Current company" block.
+
+    Newest first, so the portal can show the most recent row as the current
+    employer without sorting client-side.
+    """
+    return _child_rows(
+        "Employee External Work History",
+        emp_name,
+        {
+            "company_name": "company_name",
+            "designation": "designation",
+            "total_experience": "total_experience",
+            "from_date": "custom_from_datee",
+            "to_date": "custom_to_datee",
+        },
+        "idx desc",
+    )
+
+
+def _tenure_months(doj, relieving) -> int:
+    """Whole months served, 0 when the joining date is unknown.
+
+    Counts up to the relieving date, or to today for anyone still on the books.
+    """
+    from frappe.utils import getdate, now_datetime
+
+    if not doj:
+        return 0
+    try:
+        start = getdate(doj)
+        end = getdate(relieving) if relieving else now_datetime().date()
+        months = (end.year - start.year) * 12 + (end.month - start.month)
+        if end.day < start.day:
+            months -= 1
+        return max(months, 0)
+    except Exception:
+        return 0
 
 
 # Fields an alumnus may edit on their OWN profile. HR-controlled fields
@@ -3037,7 +3142,21 @@ def create_alumni_post(data=None, **kwargs) -> dict:
     from frappe.utils import strip_html
     from frappe.utils.html_utils import sanitize_html
 
+    from recruitment.recruitment.alumni_guard import is_alumni_user
+
     user = _require_alumni_session()
+
+    # Alumni read and interact with the feed; they do not publish to it. The
+    # direct method (chatnext…post.create_post) is deliberately absent from
+    # alumni_guard's allowlist too, so neither route reaches post creation.
+    #
+    # The check is kept rather than deleting this endpoint so a portal build
+    # that still calls it gets a clear 403 instead of "method not found".
+    if is_alumni_user():
+        frappe.local.response["http_status_code"] = 403
+        frappe.throw(
+            _("You do not have permission to create posts."), frappe.PermissionError
+        )
 
     if isinstance(data, str):
         try:
@@ -3318,3 +3437,284 @@ def delete_alumni_post(post_id=None, **kwargs) -> dict:
     result = post_api.delete_post(post.name) or {}
     frappe.db.commit()
     return result
+
+
+# ── Alumni feed permission model ──────────────────────────────────────────────
+# Three of the portal's feed actions are switchable per site: commenting,
+# reacting and saving. The switches live on the "Alumni Portal Settings" single
+# doctype, following chatnext_work_connect's "Work Connect Settings" precedent —
+# the client is never trusted, the server decides.
+#
+# Why wrappers rather than guarding the Work Connect methods directly: those
+# live in chatnext_work_connect, which ESS shares and which must not be edited.
+# So the direct methods come OFF the alumni allowlist and the portal calls these
+# wrappers instead, which check the setting and then delegate to the very same
+# functions. Response envelopes are passed through untouched.
+#
+# Note these wrappers need no allowlist entry: `alumni_guard.ALUMNI_NAMESPACES`
+# already admits everything under `recruitment.recruitment.alumni_portal.`.
+
+_ALUMNI_ACTION_SETTINGS = {
+    "comment": ("allow_alumni_comment", "Commenting is currently disabled for alumni users."),
+    "reaction": ("allow_alumni_reaction", "Reactions are currently disabled for alumni users."),
+    "save": ("allow_alumni_save", "Saving posts is currently disabled for alumni users."),
+}
+
+
+def alumni_action_allowed(action: str) -> tuple[bool, str]:
+    """(allowed, denial message) for one feed action.
+
+    Non-alumni are always allowed: this gate exists only to restrain the Alumni
+    Portal and must never change ESS behaviour, so it returns early before
+    reading any setting.
+
+    Fails OPEN on an unreadable setting — a missing doctype or a transient DB
+    error must not silently strip permissions that default to on.
+    """
+    from recruitment.recruitment.alumni_guard import is_alumni_user
+
+    if not is_alumni_user():
+        return True, ""
+
+    field, message = _ALUMNI_ACTION_SETTINGS.get(action, (None, ""))
+    if not field:
+        return False, _("Unknown action.")
+
+    try:
+        from frappe.utils import cint
+
+        # Read tabSingles with raw SQL, deliberately, on two counts:
+        #   * db.get_single_value casts through cast_fieldtype, which turns a
+        #     missing row into 0 for a Check field -- making "never configured"
+        #     look identical to "switched off". Every flag defaults to 1, so a
+        #     freshly migrated site would then deny the entire feed.
+        #   * db.get_value("Singles", ...) appends ORDER BY `modified`, a column
+        #     tabSingles does not have, and raises OperationalError 1054.
+        row = frappe.db.sql(
+            "select value from tabSingles where doctype=%s and field=%s limit 1",
+            ("Alumni Portal Settings", field),
+        )
+        stored = row[0][0] if row else None
+    except Exception:
+        frappe.log_error(frappe.get_traceback(), "Alumni Portal Settings unreadable")
+        return True, ""
+
+    if stored is None:
+        return True, ""
+
+    return (True, "") if cint(stored) else (False, _(message))
+
+
+def _require_alumni_action(action: str) -> None:
+    """Throw 403 with the configured message when `action` is switched off."""
+    allowed, message = alumni_action_allowed(action)
+    if not allowed:
+        frappe.local.response["http_status_code"] = 403
+        frappe.throw(message, frappe.PermissionError)
+
+
+# ── Comment wrappers ──────────────────────────────────────────────────────────
+@frappe.whitelist(methods=["POST"])
+def add_alumni_comment(post: str, content: str, parent_comment: str | None = None) -> dict:
+    """Comment on a feed post, subject to `allow_alumni_comment`."""
+    _require_alumni_session()
+    _require_alumni_action("comment")
+
+    from chatnext_work_connect.chatnext_work_connect.api import comment as comment_api
+
+    return comment_api.add_comment(post=post, content=content, parent_comment=parent_comment)
+
+
+@frappe.whitelist(methods=["POST"])
+def update_alumni_comment(comment_id: str, content: str = None, data=None) -> dict:
+    """Edit one's own comment, subject to `allow_alumni_comment`.
+
+    Ownership is enforced by the delegate, which refuses unless the comment's
+    author is the session user.
+    """
+    _require_alumni_session()
+    _require_alumni_action("comment")
+
+    from chatnext_work_connect.chatnext_work_connect.api import comment as comment_api
+
+    return comment_api.update_comment(comment_id=comment_id, content=content, data=data)
+
+
+@frappe.whitelist(methods=["POST"])
+def delete_alumni_comment(comment_id: str) -> dict:
+    """Delete one's own comment, subject to `allow_alumni_comment`."""
+    _require_alumni_session()
+    _require_alumni_action("comment")
+
+    from chatnext_work_connect.chatnext_work_connect.api import comment as comment_api
+
+    return comment_api.delete_comment(comment_id=comment_id)
+
+
+# ── Reaction wrappers ─────────────────────────────────────────────────────────
+@frappe.whitelist(methods=["POST"])
+def add_alumni_reaction(post: str, reaction_type: str) -> dict:
+    """React to a feed post, subject to `allow_alumni_reaction`."""
+    _require_alumni_session()
+    _require_alumni_action("reaction")
+
+    from chatnext_work_connect.chatnext_work_connect.api import reaction as reaction_api
+
+    return reaction_api.add_reaction(post=post, reaction_type=reaction_type)
+
+
+@frappe.whitelist(methods=["POST"])
+def remove_alumni_reaction(post: str) -> dict:
+    """Withdraw one's reaction, subject to `allow_alumni_reaction`."""
+    _require_alumni_session()
+    _require_alumni_action("reaction")
+
+    from chatnext_work_connect.chatnext_work_connect.api import reaction as reaction_api
+
+    return reaction_api.remove_reaction(post=post)
+
+
+# ── Saved post wrappers ───────────────────────────────────────────────────────
+@frappe.whitelist(methods=["POST"])
+def save_alumni_post(post_id: str) -> dict:
+    """Bookmark a feed post, subject to `allow_alumni_save`."""
+    _require_alumni_session()
+    _require_alumni_action("save")
+
+    from chatnext_work_connect.chatnext_work_connect.api import saved_post as saved_post_api
+
+    return saved_post_api.save_post(post_id=post_id)
+
+
+@frappe.whitelist(methods=["POST"])
+def unsave_alumni_post(post_id: str) -> dict:
+    """Remove a bookmark, subject to `allow_alumni_save`."""
+    _require_alumni_session()
+    _require_alumni_action("save")
+
+    from chatnext_work_connect.chatnext_work_connect.api import saved_post as saved_post_api
+
+    return saved_post_api.unsave_post(post_id=post_id)
+
+
+# ── Follow suggestions, alumni only ───────────────────────────────────────────
+@frappe.whitelist(methods=["POST"])
+def get_alumni_follow_suggestions(limit: int = 10) -> dict:
+    """Follow suggestions restricted to other alumni.
+
+    Work Connect suggests by department with no alumni filter, which would put
+    serving employees in front of an alumnus. This delegates to it and then
+    keeps only alumni who are still enabled, preserving the
+    ``{data: {suggestions: [...]}}`` shape.
+
+    Over-fetches because the filter runs after the delegate has already applied
+    its own limit; asking for `limit` alone would usually return far fewer.
+    """
+    from frappe.utils import cint
+
+    from chatnext_work_connect.chatnext_work_connect.api import follow as follow_api
+    from recruitment.recruitment.alumni_guard import is_alumni_user
+
+    user = _require_alumni_session()
+    want = max(cint(limit) or 10, 1)
+
+    result = follow_api.get_follow_suggestions(limit=want * _FOLLOW_OVERFETCH) or {}
+    data = result.get("data") or {}
+    suggestions = data.get("suggestions") or []
+
+    kept, seen = [], set()
+    for person in suggestions:
+        # Each suggestion is {"user": {...}, "reason": ...} -- the id lives on
+        # the nested user object, NOT at the top level.
+        who = person.get("user") or person
+        user_id = who.get("id") or who.get("user_id") or who.get("email")
+        if not user_id or user_id in seen or not is_alumni_user(user_id):
+            continue
+        seen.add(user_id)
+        kept.append(person)
+        if len(kept) >= want:
+            break
+
+    # Top up directly from the alumni population when the delegate cannot fill
+    # the list. It suggests by shared department and mutual follows, neither of
+    # which describes alumni: an alumnus is usually the last person left in
+    # their department, so that strategy returns nothing to filter. Without this
+    # the panel is empty for almost everyone.
+    if len(kept) < want:
+        kept.extend(_alumni_suggestion_fallback(user, want - len(kept), seen))
+
+    data["suggestions"] = kept
+    result["data"] = data
+    return result
+
+
+def _alumni_suggestion_fallback(user: str, need: int, seen: set) -> list[dict]:
+    """Other alumni to follow, in the delegate's payload shape.
+
+    Excludes the viewer, anyone already suggested, and anyone they already
+    follow. Emits the same ``{"user": {...}, "reason": ...}`` structure the
+    delegate produces so the portal renders both sources identically.
+    """
+    if need <= 0:
+        return []
+
+    already = set(
+        frappe.get_all("User Follow", filters={"follower": user}, pluck="following") or []
+    )
+    exclude = seen | already | {user}
+
+    candidates = frappe.get_all(
+        "User",
+        filters={"custom_is_alumni_employee": 1, "enabled": 1, "name": ["not in", list(exclude)]},
+        fields=["name", "full_name", "user_image"],
+        order_by="full_name asc",
+        limit_page_length=need,
+    ) or []
+
+    out = []
+    for row in candidates:
+        employee = frappe.db.get_value(
+            "Employee", {"user_id": row.name}, ["designation", "department"], as_dict=True
+        ) or frappe._dict()
+        out.append(
+            {
+                "user": {
+                    "id": row.name,
+                    "name": row.full_name or row.name,
+                    "full_name": row.full_name or row.name,
+                    "image": row.user_image,
+                    "email": row.name,
+                    "job_title": _resolve_link_title("Employee", "designation", employee.designation or ""),
+                    "designation": _resolve_link_title("Employee", "designation", employee.designation or ""),
+                    "department": _resolve_link_title("Employee", "department", employee.department or ""),
+                },
+                "reason": _("Alumni"),
+            }
+        )
+    return out
+
+
+#: Follow suggestions are filtered after the delegate applies its own limit, so
+#: ask it for more than we need. 5x keeps one round-trip enough in practice.
+_FOLLOW_OVERFETCH = 5
+
+
+@frappe.whitelist(methods=["POST"])
+def get_alumni_feed_permissions() -> dict:
+    """What the signed-in alumnus may do in the feed.
+
+    Lets the portal disable controls up front instead of surfacing a 403 after
+    the click. `can_create_post` is always False — alumni read and interact
+    with the feed, they do not publish to it.
+    """
+    _require_alumni_session()
+
+    return {
+        "success": True,
+        "permissions": {
+            "can_create_post": False,
+            "can_comment": alumni_action_allowed("comment")[0],
+            "can_react": alumni_action_allowed("reaction")[0],
+            "can_save": alumni_action_allowed("save")[0],
+        },
+    }

@@ -104,13 +104,14 @@ class TestAlumniGuard(FrappeTestCase):
         """
         allow = g._is_allowed_for_alumni
         wc = "chatnext_work_connect.chatnext_work_connect.api."
+        # Comment, reaction and saved-post writes deliberately moved OFF this
+        # list — they are switchable per site and now go through
+        # alumni_portal wrappers (see test_alumni_feed_permissions). What stays
+        # direct is what carries no site-level switch.
         for method in (
-            "reaction.add_reaction",
-            "reaction.remove_reaction",
-            "saved_post.save_post",
-            "saved_post.unsave_post",
             "follow.follow_user",
             "follow.unfollow_user",
+            "post.vote_poll",
         ):
             self.assertTrue(allow("method", wc + method), f"{wc + method} must be reachable")
 
@@ -133,8 +134,9 @@ class TestAlumniGuard(FrappeTestCase):
             "comment.delete_comment",
             "post.update_post",
             "post.delete_post",
-            "group.get_groups",
-            "group.join_group",
+            # group.* is intentionally NOT here any more — Teams & Groups was
+            # opened to the portal deliberately. user.* (the employee
+            # directory) remains closed.
             "user.get_users",
         ):
             self.assertFalse(allow("method", wc + method), f"{wc + method} must stay blocked")

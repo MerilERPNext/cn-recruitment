@@ -87,7 +87,6 @@ _ALUMNI_METHOD_ALLOWLIST = {
     "chatnext_work_connect.chatnext_work_connect.api.reaction.get_reactions",
     "chatnext_work_connect.chatnext_work_connect.api.saved_post.get_saved_posts",
     "chatnext_work_connect.chatnext_work_connect.api.saved_post.is_post_saved",
-    "chatnext_work_connect.chatnext_work_connect.api.follow.get_follow_suggestions",
     "chatnext_work_connect.chatnext_work_connect.api.follow.get_followers",
     "chatnext_work_connect.chatnext_work_connect.api.follow.get_following",
     "chatnext_work_connect.chatnext_work_connect.api.celebrations.get_upcoming_celebrations",
@@ -95,54 +94,39 @@ _ALUMNI_METHOD_ALLOWLIST = {
     "chatnext_work_connect.chatnext_work_connect.api.announcement.get_announcement_details",
     "chatnext_work_connect.chatnext_work_connect.api.event.get_upcoming_events",
     "chatnext_work_connect.chatnext_work_connect.api.event.get_event_details",
-    "chatnext_work_connect.chatnext_work_connect.api.recognition_points.get_top_winners",
-    "chatnext_work_connect.chatnext_work_connect.api.recognition_points.get_award_winners",
-    "chatnext_work_connect.chatnext_work_connect.api.recognition_points.get_award_winner_list",
     "chatnext_work_connect.chatnext_work_connect.api.work_connect_settings.get_app_identity",
     "chatnext_work_connect.chatnext_work_connect.api.work_connect_settings.get_content_control_settings",
     "chatnext_work_connect.chatnext_work_connect.api.notification.get_notifications",
     "chatnext_work_connect.chatnext_work_connect.api.notification.get_unread_count",
     # ── Feed interactions (writes) ───────────────────────────────────────────
-    # Each of these drives a control the portal's Feed actually renders, so
-    # blocking them left those buttons throwing 403 rather than being hidden.
+    # Comment, reaction and saved-post writes are NOT listed here any more.
+    # They are switchable per site via "Alumni Portal Settings", and that switch
+    # cannot be enforced inside chatnext_work_connect without editing an app ESS
+    # shares. So the portal calls wrappers instead --
+    #   alumni_portal.add_alumni_comment / update_alumni_comment /
+    #   delete_alumni_comment / add_alumni_reaction / remove_alumni_reaction /
+    #   save_alumni_post / unsave_alumni_post
+    # -- which consult alumni_action_allowed() and then delegate to these very
+    # functions. Re-adding the direct methods here would make that gate
+    # bypassable in one call, exactly as it would for create_post.
     #
-    # They are safe to expose for the same reason the reads are: every one calls
-    # require_work_connect_access(), and every one derives the actor from
-    # frappe.session.user -- never from a caller-supplied parameter. An alumnus
-    # can therefore only ever act as themselves:
-    #   * remove_reaction, unsave_post  re-check ownership before deleting.
-    #   * follow_user     resolves the follower from the session, refuses self.
+    # follow.get_follow_suggestions is likewise absent: it suggests by
+    # department with no alumni filter, so the portal uses
+    # alumni_portal.get_alumni_follow_suggestions, which restricts the result to
+    # other alumni. follow_user / unfollow_user stay direct -- they name a
+    # target the caller already chose, and carry no site-level switch.
     #
-    # post.create_post is deliberately NOT here, even though the portal creates
-    # posts. It accepts a caller-supplied `visibility` and trusts
-    # `attachments[].file` without checking who owns the file, so reaching it
-    # directly would let an alumnus target an internal audience by id and
-    # attach any file_url on the site. The portal goes through
-    # alumni_portal.create_alumni_post, which normalises the payload and then
-    # calls it. Allowlisting it here would make that wrapper bypassable.
+    # post.create_post is deliberately NOT here either. It accepts a
+    # caller-supplied `visibility` and trusts `attachments[].file` without
+    # checking who owns the file, so reaching it directly would let an alumnus
+    # target an internal audience by id and attach any file_url on the site.
+    # Alumni may not publish to the feed at all -- alumni_portal's own
+    # create_alumni_post refuses them too, so neither route works.
     #
-    # Comment writes ARE here now -- the portal's Feed renders a composer under
-    # each post (see the alumni portal's `CommentsSection`). They meet the same
-    # bar as the reaction and follow writes above, so they need no wrapper:
-    #   * add_comment     takes the author from frappe.session.user, and gates
-    #                     on check_post_visibility() -- an alumnus can only
-    #                     comment on a post they can already read. A
-    #                     parent_comment is verified to belong to the same post.
-    #   * update_comment  refuses unless comment.author == session user.
-    #   * delete_comment  refuses unless the caller wrote the comment, wrote the
-    #                     post, or holds delete permission on Post Comment.
-    # None of the three accepts a caller-supplied actor, and none takes a
-    # visibility or a file reference -- which is what forced the post writes
-    # through wrappers instead.
+    # What remains below is safe for the same reason the reads are: each calls
+    # require_work_connect_access() and derives the actor from
+    # frappe.session.user, never from a parameter.
     #
-    # Caveat worth knowing: add_comment does NOT check post.allow_comments, so
-    # a post with comments switched off can still be commented on by calling it
-    # directly. That is pre-existing Work Connect behaviour -- ESS relies on its
-    # UI disabling the box -- and the alumni portal disables its composer the
-    # same way. Enforcing it server-side belongs in chatnext_work_connect.
-    "chatnext_work_connect.chatnext_work_connect.api.comment.add_comment",
-    "chatnext_work_connect.chatnext_work_connect.api.comment.update_comment",
-    "chatnext_work_connect.chatnext_work_connect.api.comment.delete_comment",
     # Poll voting. Same bar as the reaction and comment writes:
     #   * voter comes from frappe.session.user, never a parameter;
     #   * check_post_visibility() gates it, so an alumnus can only vote on a
@@ -153,10 +137,6 @@ _ALUMNI_METHOD_ALLOWLIST = {
     # It returns the refreshed counts and the caller's vote, which is what lets
     # the card reconcile against the server instead of guessing.
     "chatnext_work_connect.chatnext_work_connect.api.post.vote_poll",
-    "chatnext_work_connect.chatnext_work_connect.api.reaction.add_reaction",
-    "chatnext_work_connect.chatnext_work_connect.api.reaction.remove_reaction",
-    "chatnext_work_connect.chatnext_work_connect.api.saved_post.save_post",
-    "chatnext_work_connect.chatnext_work_connect.api.saved_post.unsave_post",
     "chatnext_work_connect.chatnext_work_connect.api.follow.follow_user",
     "chatnext_work_connect.chatnext_work_connect.api.follow.unfollow_user",
     # ── Groups ───────────────────────────────────────────────────────────────
