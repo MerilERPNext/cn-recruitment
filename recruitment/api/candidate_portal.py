@@ -975,6 +975,27 @@ def _link_title(doctype, name):
         return name
 
 
+def _logo_includes_company_name(company):
+    """Whether this Company's logo already spells out the company name, so the UI
+    should render the logo alone instead of printing the name beside it.
+
+    Backed by an OPTIONAL Company field (`custom_logo_has_company_name`, added by
+    homefirst_customs). Read exactly as defensively as `company_logo` is below:
+    no company, no such field, or any read failure all return False — which is
+    the behaviour every site has today.
+    """
+    from frappe.utils import cint
+
+    if not company:
+        return False
+    try:
+        if not frappe.get_meta("Company").get_field("custom_logo_has_company_name"):
+            return False
+        return bool(cint(frappe.db.get_value("Company", company, "custom_logo_has_company_name")))
+    except Exception:
+        return False
+
+
 def _get_branding(eo_doc, applicant_doc):
     """Company badge shown atop the candidate portal. Sourced from the Employee
     Onboarding company, falling back to the Job Applicant's finalized company."""
@@ -982,7 +1003,10 @@ def _get_branding(eo_doc, applicant_doc):
     if not company and applicant_doc is not None:
         company = applicant_doc.get("custom_company_finalized") or applicant_doc.get("company")
     if not company:
-        return {"company": None, "company_name": None, "logo": None, "badge_label": None}
+        return {
+            "company": None, "company_name": None, "logo": None, "badge_label": None,
+            "logo_includes_company_name": False,
+        }
 
     name = frappe.db.get_value("Company", company, "company_name") or company
     # Company logo is optional / site-specific — read it defensively.
@@ -997,6 +1021,9 @@ def _get_branding(eo_doc, applicant_doc):
         "company_name": name,
         "logo": logo,
         "badge_label": f"{name} Candidate".upper(),
+        # Additive: company_name is still returned unchanged. This only tells the
+        # UI it may show the logo on its own.
+        "logo_includes_company_name": _logo_includes_company_name(company),
     }
 
 
@@ -1893,8 +1920,19 @@ def get_link_field_options(doctype, search_text=None, query=None, txt=None, limi
 
 @frappe.whitelist(allow_guest=True)
 def get_website_branding():
+    # Website Settings carries no company, so the flag is read off the site's
+    # default Company. Wrapped because Global Defaults may carry none — that,
+    # like a missing field, simply means False.
+    try:
+        default_company = frappe.db.get_single_value("Global Defaults", "default_company")
+    except Exception:
+        default_company = None
+
     settings = frappe.get_single("Website Settings")
     return {
         "title_prefix": settings.title_prefix,
         "app_logo": settings.app_logo,
+        # Additive: both keys above are unchanged. True only when the company's
+        # logo already spells out its name, so the UI can drop the text.
+        "logo_includes_company_name": _logo_includes_company_name(default_company),
     }

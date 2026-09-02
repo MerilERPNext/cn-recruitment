@@ -287,10 +287,17 @@ def update_onboarding_details(email, data, action="submit"):
 
                     updated.append(fn)
 
-                # On submit, lock the filled portal fields (mark Filled + snapshot
-                # value) BEFORE saving so values and statuses persist in one write.
-                if is_submit and updated:
-                    _lock_filled_portal_fields(doc, updated)
+                # Persist the portal `current_value` snapshot in the SAME save so the
+                # approval read endpoint (which shows current_value, not the live
+                # field) reflects this write immediately. On submit the fields also
+                # lock (mark Filled); on save the snapshot is refreshed but the field
+                # stays editable. Without the save branch a saved value sat in the
+                # doc while readers kept returning the previous snapshot.
+                if updated:
+                    if is_submit:
+                        _lock_filled_portal_fields(doc, updated)
+                    else:
+                        _snapshot_portal_values(doc, updated)
 
                 doc.save(ignore_permissions=True)
                 break
@@ -323,6 +330,10 @@ def update_onboarding_details(email, data, action="submit"):
                 doc.db_set("boarding_status", "In Process", update_modified=False)
 
         frappe.db.commit()
+
+        # Drop the cached copy so the immediately-following read (e.g. the portal
+        # refetch) sees this write straight away instead of a pre-update copy.
+        frappe.clear_document_cache(DOCTYPENAME, onboarding_name)
 
         # Value-aware counts: a field with a value counts as "filled" whether it
         # was just saved (still editable) or submitted, plus prefilled values

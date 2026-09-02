@@ -1,0 +1,153 @@
+{
+ "actions": [],
+ "creation": "2026-09-01 10:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "fieldname",
+  "applies_to",
+  "label_override",
+  "col_break_1",
+  "expose",
+  "mandatory_override",
+  "read_only_override",
+  "employment_type",
+  "layout_section",
+  "tab_override",
+  "section_override",
+  "col_break_2",
+  "order",
+  "options_override",
+  "child_section",
+  "selected_child_fields",
+  "mandatory_child_fields"
+ ],
+ "fields": [
+  {
+   "bold": 1,
+   "columns": 3,
+   "description": "An Employee field. Placed and ordered by the Form Builder above.",
+   "fieldname": "fieldname",
+   "fieldtype": "Autocomplete",
+   "in_list_view": 1,
+   "label": "Fieldname",
+   "reqd": 1
+  },
+  {
+   "default": "Parent",
+   "description": "Which part of the record this field belongs to. 'Parent' = an Employee field.",
+   "fieldname": "applies_to",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Applies To",
+   "options": "Parent"
+  },
+  {
+   "description": "Optional. Replaces the meta label on the New Hire form only.",
+   "fieldname": "label_override",
+   "fieldtype": "Data",
+   "label": "Label Override"
+  },
+  {
+   "fieldname": "col_break_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Default",
+   "description": "Default = follow the DocType meta. Show = force-include. Hide = exclude from the form (and from the write allowlist).",
+   "fieldname": "expose",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Expose",
+   "options": "Default\nShow\nHide"
+  },
+  {
+   "default": "Default",
+   "description": "Default = follow meta 'reqd'. Required/Optional force the form + server validation.",
+   "fieldname": "mandatory_override",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Mandatory",
+   "options": "Default\nRequired\nOptional"
+  },
+  {
+   "default": "Default",
+   "description": "Default = follow meta. Read Only shows the field but drops it from the write allowlist.",
+   "fieldname": "read_only_override",
+   "fieldtype": "Select",
+   "label": "Read Only",
+   "options": "Default\nRead Only\nEditable"
+  },
+  {
+   "default": "All",
+   "depends_on": "eval:parent.basis_employment_type",
+   "description": "Only used when 'Configure Basis Employment Type' is ticked on the parent. All = render for every request.",
+   "fieldname": "employment_type",
+   "fieldtype": "Data",
+   "label": "Employment Type"
+  },
+  {
+   "fieldname": "layout_section",
+   "fieldtype": "Section Break",
+   "label": "Layout (optional overrides)"
+  },
+  {
+   "description": "Optional. Regroup this field under a different tab than the DocType layout.",
+   "fieldname": "tab_override",
+   "fieldtype": "Data",
+   "label": "Tab Override"
+  },
+  {
+   "fieldname": "section_override",
+   "fieldtype": "Data",
+   "label": "Section Override"
+  },
+  {
+   "fieldname": "col_break_2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "description": "Optional sort hint within a section (lower first). 0 = keep meta order.",
+   "fieldname": "order",
+   "fieldtype": "Int",
+   "label": "Order"
+  },
+  {
+   "description": "Optional. Overrides Select options (newline separated) for the form.",
+   "fieldname": "options_override",
+   "fieldtype": "Small Text",
+   "label": "Options Override"
+  },
+  {
+   "fieldname": "child_section",
+   "fieldtype": "Section Break",
+   "label": "Child Table Columns (only when this field is a Table)"
+  },
+  {
+   "description": "JSON array of child column fieldnames to expose. Empty = all columns.",
+   "fieldname": "selected_child_fields",
+   "fieldtype": "Small Text",
+   "label": "Selected Child Fields (JSON)"
+  },
+  {
+   "description": "JSON array of child column fieldnames to force mandatory. Empty = follow child meta.",
+   "fieldname": "mandatory_child_fields",
+   "fieldtype": "Small Text",
+   "label": "Mandatory Child Fields (JSON)"
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-09-01 10:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Recruitment",
+ "name": "New Hire Form Field",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}
