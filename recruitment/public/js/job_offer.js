@@ -845,10 +845,15 @@ function choose_offer_position(frm, opts) {
 // Retrigger Welcome Email — manually re-send the configured welcome / offer email
 // (Recruitment Settings -> job_offer_template) to the candidate. Direct top-level
 // button; only for a saved offer that has a linked Job Applicant.
+//
+// Only after the email has actually gone out once (send_bulk_job_offer stamps
+// email_status = "Sent" / email_sent_on). Re-sending never clears those, so the
+// button stays available for any number of retriggers.
 // ---------------------------------------------------------------------------
 frappe.ui.form.on("Job Offer", {
     refresh(frm) {
         if (frm.is_new() || !frm.doc.job_applicant) return;
+        if (frm.doc.email_status !== "Sent" && !frm.doc.email_sent_on) return;
 
         frm.add_custom_button(__("Retrigger Welcome Email"), () => {
             frappe.confirm(

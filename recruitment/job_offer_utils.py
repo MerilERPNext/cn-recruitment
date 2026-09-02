@@ -607,6 +607,120 @@ def preview_job_offer_html(appl, token=None):
         html = render_job_offer_html(jo_id, formats[0] if formats else None)
         return {"html": html, "jo_id": jo_id}
 
+# ---------------------------------------------------------------------------
+# Culture Book — an optional company PDF, attached to every offer email and
+# previewable from the candidate portal.
+#
+# Entirely driven by one setting (Recruitment Settings -> `culture_book`). With
+# it blank the feature does not exist: the endpoint reports it as unavailable
+# and the email attaches nothing. Every helper here is non-throwing for exactly
+# that reason — a missing, deleted or unreadable file must never break an offer
+# email or a portal page.
+# ---------------------------------------------------------------------------
+
+def get_culture_book_file_url():
+    """The configured Culture Book's file URL, or None when not set up.
+
+    Never raises — a site that has not migrated the field yet simply has no
+    Culture Book.
+    """
+    try:
+        return frappe.db.get_single_value("Recruitment Settings", "culture_book") or None
+    except Exception:
+        return None
+
+
+def get_culture_book():
+    """Return ``(pdf_bytes, filename)`` for the configured Culture Book.
+
+    ``(None, None)`` when nothing is configured, or when the file it points at
+    can no longer be read (deleted from disk, File doc removed). Callers treat
+    that as "no culture book" and carry on.
+    """
+    file_url = get_culture_book_file_url()
+    if not file_url:
+        return None, None
+
+    try:
+        # The attachment is usually private, and the candidate reading it is a
+        # guest — same reason every other candidate-facing read in this module
+        # runs elevated.
+        with as_administrator():
+            content = _read_template_file_bytes(file_url)
+        if not content:
+            frappe.log_error(
+                f"Culture Book file not readable: {file_url}", "Culture Book unavailable"
+            )
+            return None, None
+
+        filename = (
+            frappe.db.get_value("File", {"file_url": file_url}, "file_name")
+            or file_url.rsplit("/", 1)[-1]
+            or "Culture Book.pdf"
+        )
+        return content, filename
+    except Exception:
+        frappe.log_error(frappe.get_traceback(), "Culture Book read failed")
+        return None, None
+
+
+def get_culture_book_attachment():
+    """The Culture Book as a ``frappe.sendmail`` attachment dict, or None.
+
+    Used to append the document to offer emails. None whenever there is nothing
+    to attach, so callers can simply skip it.
+    """
+    content, filename = get_culture_book()
+    if not content:
+        return None
+    return {
+        "fname": filename,
+        "fcontent": content,
+        "content_type": "application/pdf",
+    }
+
+
+@frappe.whitelist(allow_guest=True)
+def preview_culture_book(appl, token=None):
+    """Stream the Culture Book PDF to the candidate — guest, token-gated.
+
+    Mirrors `download_job_offer_pdf`: a logged-in candidate viewing THEIR OWN
+    applicant needs no link token, anyone else needs the token (or Job Offer
+    permission). Streams the file rather than returning base64, since the
+    document can be large.
+
+    When no Culture Book is configured (or its file cannot be read) this returns
+    ``{"available": False}`` as JSON instead of throwing, so a portal that calls
+    it unconditionally simply gets "nothing to show" and can hide the button.
+    """
+    if not appl:
+        frappe.throw("Missing applicant parameter")
+    if not _candidate_owns_applicant(appl):
+        _authorize_offer(appl, token, "read")
+
+    content, filename = get_culture_book()
+    if not content:
+        return {"available": False}
+
+    frappe.local.response.filename = filename
+    frappe.local.response.filecontent = content
+    frappe.local.response.type = "pdf"
+
+
+@frappe.whitelist(allow_guest=True)
+def has_culture_book(appl=None, token=None):
+    """Whether a Culture Book is configured — for showing/hiding the portal button
+    without downloading the document.
+
+    ``appl``/``token`` are accepted and honoured when given, so the portal can call
+    it with the same arguments as the preview. Only ever reports the presence of a
+    site-wide setting, never candidate data.
+    """
+    if appl and not _candidate_owns_applicant(appl):
+        _authorize_offer(appl, token, "read")
+    return {"available": bool(get_culture_book_file_url())}
+
+
 @frappe.whitelist(allow_guest=True)
 def get_job_offer_status(appl, token=None):
     _authorize_offer(appl, token, "read")
@@ -771,19 +885,34 @@ def get_job_offer_summary(appl, token=None):
         stipend_val = flt(stipend)
         fixed_val = flt(jo.get("custom_total_fixed_pay") or jo.get("custom_base_salary"))
         variable_val = flt(jo.get("custom_variable_incentive"))
+        # Location Allowance defaults from the offer's Location master and is
+        # editable per offer; it is part of CTC (Total Fixed Pay + Incentive +
+        # Location Allowance) but was missing here, so the total came out short
+        # whenever it was filled.
+        location_val = flt(jo.get("custom_location_allowance"))
+        # The offer's own stored CTC. Preferred for the total so the portal shows
+        # exactly the figure on the letter rather than re-deriving it. Blank on
+        # offers that never went through the CTC computation, hence the fallback.
+        ctc_val = flt(jo.get("custom_ctc"))
         has_stipend = stipend_val > 0
-        has_fixed = fixed_val > 0 or variable_val > 0
+        has_fixed = fixed_val > 0 or variable_val > 0 or location_val > 0 or ctc_val > 0
+
+        total_val = ctc_val if ctc_val > 0 else (fixed_val + variable_val + location_val)
 
         compensation = {
             "compensation_type": None,
             "stipend": None,
             "fixed": None,
             "variable": None,
+            # Null when the offer carries no location allowance, so the UI can
+            # simply skip the row — same convention as every other field here.
+            "location_allowance": None,
             "total": None,
             # Comma-grouped display strings (match the doc); UI may use these directly.
             "stipend_formatted": None,
             "fixed_formatted": None,
             "variable_formatted": None,
+            "location_allowance_formatted": None,
             "total_formatted": None,
         }
 
@@ -793,10 +922,13 @@ def get_job_offer_summary(appl, token=None):
         if has_fixed:
             compensation["fixed"] = num(fixed_val)
             compensation["variable"] = num(variable_val)
-            compensation["total"] = num(fixed_val + variable_val)
+            compensation["total"] = num(total_val)
             compensation["fixed_formatted"] = fmt(fixed_val)
             compensation["variable_formatted"] = fmt(variable_val)
-            compensation["total_formatted"] = fmt(fixed_val + variable_val)
+            compensation["total_formatted"] = fmt(total_val)
+        if location_val > 0:
+            compensation["location_allowance"] = num(location_val)
+            compensation["location_allowance_formatted"] = fmt(location_val)
 
         # Nothing filled -> fall back to the original role-based default so the
         # response shape and values are unchanged for those offers.
@@ -807,10 +939,10 @@ def get_job_offer_summary(appl, token=None):
             else:
                 compensation["fixed"] = num(fixed_val)
                 compensation["variable"] = num(variable_val)
-                compensation["total"] = num(fixed_val + variable_val)
+                compensation["total"] = num(total_val)
                 compensation["fixed_formatted"] = fmt(fixed_val)
                 compensation["variable_formatted"] = fmt(variable_val)
-                compensation["total_formatted"] = fmt(fixed_val + variable_val)
+                compensation["total_formatted"] = fmt(total_val)
 
         # Hint for the UI: "both" when a stipend AND fixed pay are present (the
         # trainee dual-letter case), else the single kind as before.

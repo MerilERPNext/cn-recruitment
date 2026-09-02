@@ -4,6 +4,7 @@ from frappe import _
 from frappe.utils import now, get_url, validate_email_address
 
 from recruitment.job_offer_utils import (
+    get_culture_book_attachment,
     get_job_offer_document_template,
     render_job_offer_via_document_template,
 )
@@ -57,12 +58,21 @@ def resend_welcome_email(job_offer):
     template variables never drift between paths. Unlike `send_bulk_job_offer`
     this is an explicit re-send: it does not skip already-responded candidates and
     does not overwrite the offer's `email_status` bookkeeping.
+
+    Requires the email to have gone out once already (`email_status` == "Sent",
+    stamped by `send_bulk_job_offer`) — the guard matching the hidden form button,
+    so this cannot be used as a first send. Repeat retriggers stay allowed.
     """
     frappe.has_permission("Job Offer", "write", throw=True)
 
     offer = frappe.get_doc("Job Offer", job_offer)
     if not offer.job_applicant:
         frappe.throw(_("This Job Offer has no linked Job Applicant."))
+
+    if offer.get("email_status") != "Sent" and not offer.get("email_sent_on"):
+        frappe.throw(
+            _("The welcome email has not been sent for this offer yet. Use 'Send Job Offer' first.")
+        )
 
     applicant = frappe.get_doc("Job Applicant", offer.job_applicant)
     email = (offer.get("applicant_email") or applicant.get("email_id") or "").strip()
@@ -83,10 +93,15 @@ def resend_welcome_email(job_offer):
     subject = frappe.render_template(subject_t, context)
     message = frappe.render_template(message_t, context)
 
+    # The Culture Book rides along when one is configured; None when it isn't, so
+    # the re-send carries exactly what the original send did.
+    culture_book = get_culture_book_attachment()
+
     frappe.sendmail(
         recipients=[email],
         subject=subject,
         message=message,
+        attachments=[culture_book] if culture_book else None,
         reference_doctype="Job Offer",
         reference_name=offer.name,
         args=context,
@@ -311,6 +326,14 @@ def send_bulk_job_offer(job_offers):
                         "fcontent": pdf_bytes,
                         "content_type": "application/pdf",
                     }]
+
+            # Culture Book (Recruitment Settings -> culture_book), appended after
+            # the letter so the offer stays the first attachment. None when the
+            # setting is blank or the file cannot be read, in which case the email
+            # goes out exactly as it did before the feature existed.
+            culture_book = get_culture_book_attachment()
+            if culture_book:
+                attachments = (attachments or []) + [culture_book]
 
             # ----------------------------
             # Send Email

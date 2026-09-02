@@ -2539,9 +2539,15 @@ def _require_own_todo(name: str) -> tuple[str, dict]:
         frappe.throw(_("A todo is required."))
 
     row = frappe.db.get_value(
-        "ToDo", name, ["name", "allocated_to", "assigned_by"], as_dict=True
+        "ToDo", name, ["name", "allocated_to", "assigned_by", "owner"], as_dict=True
     )
-    if not row or user not in (row.get("allocated_to"), row.get("assigned_by")):
+    if not row or not _user_owns_todo(user, name, row):
+        frappe.local.response["http_status_code"] = 403
+        frappe.throw(_("Not authorized for this todo."), frappe.PermissionError)
+
+    # Same gate as the list: a todo the portal would not show must not open
+    # either, or the category filter is bypassable by guessing a name.
+    if not _todo_type_visible_to_alumni(name):
         frappe.local.response["http_status_code"] = 403
         frappe.throw(_("Not authorized for this todo."), frappe.PermissionError)
 
@@ -2787,6 +2793,464 @@ def create_alumni_todo(
     return {
         "success": True,
         "todo": frappe.db.get_value("ToDo", doc.name, _existing_todo_fields(), as_dict=True),
+    }
+
+
+# ── Alumni Todo list / types / actions ───────────────────────────────────────
+# Ported from 84a537d4: dev-microapps never received this work, so the portal
+# was calling endpoints that did not exist on this branch.
+
+
+# ── Alumni Todo: Todo Type visibility gate ───────────────────────────────────
+# `Todo Type.custom_show_in_alumni_portal` decides which categories the Alumni
+# Portal may see. Enforcement lives here, not in the frontend: the portal used
+# to call cn_todo_manager's `get_todo_list` directly, and anything the client
+# passes it can equally be left out.
+#
+# Opt-in: a type is invisible until ticked, so a Todo Type added by another team
+# cannot leak into the portal by default. Todos with no type ("Uncategorized")
+# have no flag to tick and are therefore not shown.
+
+ALUMNI_TODO_TYPE_FLAG = "custom_show_in_alumni_portal"
+
+
+def _alumni_visible_todo_types() -> list[str]:
+    """Todo Type names the Alumni Portal is allowed to show."""
+    if not frappe.db.has_column("Todo Type", ALUMNI_TODO_TYPE_FLAG):
+        return []
+    return frappe.get_all("Todo Type", filters={ALUMNI_TODO_TYPE_FLAG: 1}, pluck="name")
+
+
+def _todo_type_visible_to_alumni(todo: str) -> bool:
+    """Whether this ToDo's category is exposed to the portal."""
+    todo_type = frappe.db.get_value("ToDo", todo, "custom_todo_type")
+    if not todo_type:
+        return False
+    return bool(
+        frappe.db.get_value("Todo Type", todo_type, ALUMNI_TODO_TYPE_FLAG)
+    )
+
+
+def _user_owns_todo(user: str, name: str, row: dict) -> bool:
+    """Whether ``user`` may act on ToDo ``name``.
+
+    A ToDo can reach a user through four mechanisms, not one. Funnel-created
+    ToDos in particular leave `allocated_to` NULL and assign through child
+    tables — nextai's own code notes this ("users assigned via child tables
+    won't pass standard checks"). Checking only `allocated_to`/`assigned_by`
+    therefore rejected todos the list had just shown, giving a 403 the moment a
+    user opened one.
+
+    Membership is resolved by cn_todo_manager's OWN resolver so the detail
+    endpoints and `get_todo_list` can never disagree: a user may open exactly
+    what the list showed them, by construction. Nothing in cn_todo_manager is
+    modified — this only calls it.
+
+    Note this is membership, not a role grant: for a genuine alumnus (a
+    role-less Website User) the role-based arms of that query match nothing, so
+    it reduces to direct assignment.
+    """
+    # Cheap direct checks first — the common case, and no query needed.
+    # `owner` is included because the Team Todo scope lists by owner
+    # (`owner = user AND allocated_to != user`), i.e. work the user raised for
+    # someone else. Without it, opening a row from that tab 403s.
+    if user in (row.get("allocated_to"), row.get("assigned_by"), row.get("owner")):
+        return True
+
+    try:
+        from cn_todo_manager.chatnext_todo_manager.api.todo_api import (
+            OptimizedTodoQueryBuilder,
+        )
+
+        builder = OptimizedTodoQueryBuilder.__new__(OptimizedTodoQueryBuilder)
+        builder.user = user
+        return name in (builder.get_todo_names_for_users([user]) or [])
+    except Exception:
+        # If that resolver is unavailable or changes shape, fall back to the
+        # two child-table mechanisms rather than silently granting access.
+        frappe.logger("alumni_portal").warning(
+            "todo ownership: cn_todo_manager resolver unavailable, using fallback"
+        )
+
+    if frappe.db.exists(
+        "Nextai User Select", {"parent": name, "parenttype": "ToDo", "user": user}
+    ):
+        return True
+
+    roles = [r for r in (frappe.get_roles(user) or []) if r]
+    if not roles:
+        return False
+    if frappe.db.get_value("ToDo", name, "role") in roles:
+        return True
+    return bool(
+        frappe.db.exists(
+            "Nextai Role Select",
+            {"parent": name, "parenttype": "ToDo", "role": ["in", roles]},
+        )
+    )
+
+
+def _todo_declared_actions(todo: str) -> list[str]:
+    """The action labels a ToDo itself declares, from `custom_doctype_actions`.
+
+    Entries are plain strings or ``{label, value}`` objects, the same two shapes
+    the ESS SmartActions parser accepts.
+    """
+    raw = frappe.db.get_value("ToDo", todo, "custom_doctype_actions")
+    if not raw:
+        return []
+    try:
+        parsed = frappe.parse_json(raw)
+    except Exception:
+        return []
+    if not isinstance(parsed, list):
+        return []
+
+    actions = []
+    for item in parsed:
+        if isinstance(item, str):
+            actions.append(item)
+        elif isinstance(item, dict):
+            value = item.get("value") or item.get("label")
+            if value:
+                actions.append(value)
+    return actions
+
+
+def _assert_todo_actionable(name: str) -> None:
+    """Fail early, and specifically, when a todo cannot be actioned.
+
+    Without this the nextai handler raises deep inside — "Funnel Task None not
+    found", "Approval Log Entry not found" — and the caller only sees the
+    generic wrapper message. These are configuration problems, so they deserve
+    a message that says which piece is missing.
+    """
+    todo = frappe.db.get_value(
+        "ToDo", name, ["custom_approval_type", "custom_funnel_task"], as_dict=True
+    ) or {}
+
+    if todo.get("custom_approval_type") == "Approval Matrix":
+        log = frappe.db.get_value(
+            "Approval Log Entry", {"todo_reference": name},
+            ["name", "form_for_approval"], as_dict=True,
+        )
+        if not log:
+            frappe.local.response["http_status_code"] = 409
+            frappe.throw(
+                _("This todo has no approval record, so it cannot be actioned yet.")
+            )
+        # The handler only needs the Funnel Task when a form has to be shown.
+        if log.get("form_for_approval") and not todo.get("custom_funnel_task"):
+            frappe.local.response["http_status_code"] = 409
+            frappe.throw(
+                _("This todo has an approval form but no linked task, so the form cannot be opened.")
+            )
+
+    if todo.get("custom_funnel_task") and not frappe.db.exists(
+        "Funnel Task", todo["custom_funnel_task"]
+    ):
+        frappe.local.response["http_status_code"] = 409
+        frappe.throw(_("The task behind this todo no longer exists."))
+
+
+def _alumni_visible_stage_names(user: str, todo_id: str) -> set | None:
+    """Approval stage names ``user`` may see the form for, or None if unknown.
+
+    Stage rows and log rows are positional siblings on the Approval Tracker, so
+    they are zipped by index — the same way the ESS reader indexes them.
+    Returning None means "could not resolve", and the caller then leaves the
+    ESS result untouched rather than hiding everything.
+    """
+    parent = frappe.db.get_value("Approval Log Entry", {"todo_reference": todo_id}, "parent")
+    if not parent:
+        return None
+    try:
+        tracker = frappe.get_doc("Approval Tracker", parent)
+    except Exception:
+        return None
+
+    stages = tracker.get("approval_stages") or []
+    logs = tracker.get("approval_logs") or []
+    if not stages:
+        return None
+
+    visible = set()
+    for idx, stage in enumerate(stages):
+        name = stage.get("approval_name")
+        if not name or idx >= len(logs):
+            continue
+        if _alumni_stage_is_mine(user, logs[idx].as_dict()):
+            visible.add(name)
+    return visible
+
+
+def _alumni_stage_is_mine(user: str, log_row: dict) -> bool:
+    """Whether ``user`` is an approver for this Approval Log Entry.
+
+    Explicit `show_to_users` / `show_to_roles` win when set — they are the
+    author's deliberate override. Otherwise the approver fields decide.
+    """
+    roles = set(frappe.get_roles(user) or [])
+
+    def _split(value):
+        return {v.strip() for v in (value or "").split(",") if v.strip()}
+
+    show_users = _split(log_row.get("show_to_users"))
+    show_roles = _split(log_row.get("show_to_roles"))
+    if show_users or show_roles:
+        return user in show_users or bool(roles & show_roles)
+
+    if user in _split(log_row.get("user")) or user in _split(
+        log_row.get("custom_allocated_to_users")
+    ):
+        return True
+    return bool(
+        roles & (_split(log_row.get("role")) | _split(log_row.get("custom_assigned_to_roles")))
+    )
+
+
+@frappe.whitelist(methods=["POST"])
+def get_alumni_todo_list(**kwargs) -> dict:
+    """Paginated todo list, restricted to portal-visible Todo Types.
+
+    Delegates to cn_todo_manager's `get_todo_list` so paging, search, sorting,
+    `list_view_fields` and `reference_data` all behave identically — only the
+    category scope is narrowed. `todo_type_filter` is overwritten rather than
+    merged, so a caller cannot widen it.
+    """
+    _require_alumni_session()
+
+    allowed = _alumni_visible_todo_types()
+    if not allowed:
+        # Nothing is opted in yet — return an empty page rather than everything.
+        return {
+            "message": [],
+            "total_count": 0,
+            "total_pages": 0,
+            "current_page": frappe.utils.cint(kwargs.get("page") or 1),
+            "list_view_fields": [],
+        }
+
+    from cn_todo_manager.chatnext_todo_manager.api import todo_api
+
+    params = {k: v for k, v in kwargs.items() if k != "cmd"}
+    # Server decides the category scope, never the caller.
+    params["todo_type_filter"] = frappe.as_json(allowed)
+    if params.get("category_filter") and params["category_filter"] not in allowed:
+        frappe.local.response["http_status_code"] = 403
+        frappe.throw(_("That category is not available."), frappe.PermissionError)
+
+    return todo_api.get_todo_list(**params)
+
+
+@frappe.whitelist(methods=["POST"])
+def get_alumni_todo_categories(type: str = "My Todo") -> dict:
+    """Sidebar categories, narrowed to the portal-visible Todo Types."""
+    _require_alumni_session()
+
+    allowed = set(_alumni_visible_todo_types())
+    if not allowed:
+        return {"message": []}
+
+    from cn_todo_manager.chatnext_todo_manager.api import todo_api
+
+    result = todo_api.get_todo_categories(type=type) or {}
+    rows = result.get("message") or []
+    return {"message": [r for r in rows if r.get("name") in allowed]}
+
+
+@frappe.whitelist(methods=["GET", "POST"])
+def get_alumni_todo_types() -> dict:
+    """The Todo Types visible in the portal, for the UI to reason about."""
+    _require_alumni_session()
+    return {"success": True, "todo_types": _alumni_visible_todo_types()}
+
+
+@frappe.whitelist(methods=["GET", "POST"])
+def get_alumni_todo_form(name: str) -> dict:
+    """The form configured for this todo's category, as a form.io schema.
+
+    Read from `Todo Type.custom_alumni_form`. The ChatNext form is resolved from
+    the Funnel node instead, which the portal cannot reach — this is the portal's
+    own, directly renderable equivalent.
+
+    Returns `form: None` when the category has no form configured, which the UI
+    treats as "no form", not as an error.
+    """
+    _require_own_todo(name)
+
+    todo_type = frappe.db.get_value("ToDo", name, "custom_todo_type")
+    widget = (
+        frappe.db.get_value("Todo Type", todo_type, "custom_alumni_form")
+        if todo_type
+        else None
+    )
+    if not widget:
+        return {"success": True, "form": None}
+
+    row = frappe.db.get_value(
+        "Microapp Form Widget", widget, ["name", "label", "custom_form_data"], as_dict=True
+    ) or {}
+
+    schema = None
+    raw = row.get("custom_form_data")
+    if raw:
+        try:
+            schema = frappe.parse_json(raw) if isinstance(raw, str) else raw
+        except Exception:
+            frappe.logger("alumni_portal").warning(
+                f"Todo form {widget!r} has unparseable custom_form_data"
+            )
+
+    return {
+        "success": True,
+        "form": {
+            "widget": row.get("name"),
+            "label": row.get("label") or row.get("name"),
+            "schema": schema,
+        },
+    }
+
+
+@frappe.whitelist(methods=["POST"])
+def get_alumni_todo_activity_forms(todo_id: str) -> dict:
+    """Initiator / workflow / approval forms recorded against one of the
+    caller's own todos.
+
+    ESS reference: `cn_hrms_core…funnel_activity.get_forms_by_todo`.
+
+    That function is NOT exposed to alumni directly, for two reasons:
+
+      * it performs no ownership check — any todo_id returns its forms;
+      * it accepts a `session_user` argument and filters on
+        ``session_user or frappe.session.user``, so a caller can ask for the
+        view of a different user.
+
+    This wrapper checks ownership first (which also applies the Todo Type
+    portal gate) and calls through WITHOUT `session_user`, so the result is
+    always resolved against the real session. Nothing in cn_hrms_core changes.
+    """
+    _require_own_todo(todo_id)
+
+    try:
+        from cn_hrms_core.cn_hrms_core.apis.funnel_activity import get_forms_by_todo
+
+        # session_user deliberately omitted — never let the caller pick an identity.
+        result = get_forms_by_todo(todo_id=todo_id)
+    except Exception:
+        frappe.logger("alumni_portal").warning(
+            f"todo activity forms failed for {todo_id}"
+        )
+        frappe.log_error(
+            frappe.get_traceback(), f"Alumni todo activity forms failed: {todo_id}"
+        )
+        frappe.local.response["http_status_code"] = 500
+        frappe.throw(_("Could not load the forms for this todo."))
+
+    data = (result or {}).get("data") or {}
+    approval_stages = data.get("approval_stages") or []
+
+    # ESS returns every stage's form to everyone: its `can_view_form` check only
+    # bites when show_to_users/show_to_roles are set, and in practice they almost
+    # never are (3 of 887 rows on this site). In the portal one signed-in user
+    # would therefore see the HRBP form AND the final-approver form. Narrow it to
+    # the stages this user is actually an approver for.
+    caller = frappe.session.user
+    visible = _alumni_visible_stage_names(caller, todo_id)
+    if visible is not None:
+        approval_stages = [
+            s for s in approval_stages if s.get("stage_name") in visible
+        ]
+
+    return {
+        "success": True,
+        "initiator_forms": data.get("initiator_forms") or [],
+        "workflow_stages": data.get("workflow_stages") or [],
+        "approval_stages": approval_stages,
+    }
+
+
+@frappe.whitelist(methods=["POST"])
+def submit_alumni_todo_action(name: str, action: str) -> dict:
+    """Run a workflow action on one of the caller's own ToDos.
+
+    Returns the ChatNext ``session`` when the ToDo is configured to open the
+    assistant, so the portal can hand it to `trigger_chatnext_assistant` exactly
+    as ESS does. ``session`` is None when no assistant step is configured — the
+    action still runs.
+    """
+    _require_own_todo(name)
+
+    action = (action or "").strip()
+    if not action:
+        frappe.local.response["http_status_code"] = 400
+        frappe.throw(_("An action is required."))
+
+    # The ToDo's own declared actions are the allowlist — an alumnus cannot
+    # invent an option the workflow never offered them.
+    allowed = _todo_declared_actions(name)
+    if not allowed:
+        frappe.local.response["http_status_code"] = 400
+        frappe.throw(_("This todo has no actions."))
+    if action not in allowed:
+        frappe.local.response["http_status_code"] = 403
+        frappe.throw(_("That action is not available on this todo."), frappe.PermissionError)
+
+    if frappe.db.get_value("ToDo", name, "status") == "Closed":
+        frappe.local.response["http_status_code"] = 409
+        frappe.throw(_("This todo is already closed."))
+
+    _assert_todo_actionable(name)
+
+    # `select_event_from_options` reassigns frappe.session.user via
+    # set_funnel_user(). Capture and restore it so the rest of the request — and
+    # anything the portal does next — still runs as the alumnus.
+    original_user = frappe.session.user
+    try:
+        from nextai.funnel.doctype.funnel_task.awaiting_actions import (
+            chatnext_assistant_multi_actions as multi_actions,
+        )
+
+        result = multi_actions.select_event_from_options(
+            selected_option=action,
+            data=frappe.as_json({"name": name}),
+        )
+    except Exception as exc:
+        frappe.set_user(original_user)
+        frappe.logger("alumni_portal").warning(
+            f"Alumni todo action failed: todo={name} action={action}"
+        )
+        frappe.log_error(
+            frappe.get_traceback(), f"Alumni todo action failed: {name} / {action}"
+        )
+        frappe.local.response["http_status_code"] = 500
+        # Carry the underlying reason through. Flattening every failure to one
+        # string hid "Funnel Task None not found" behind "Could not complete
+        # that action", which is unactionable for whoever has to fix it.
+        reason = str(exc).strip()
+        frappe.throw(
+            _("Could not complete that action: {0}").format(reason)
+            if reason
+            else _("Could not complete that action.")
+        )
+    finally:
+        frappe.set_user(original_user)
+
+    session = (result or {}).get("session") if isinstance(result, dict) else None
+
+    return {
+        "success": True,
+        "action": action,
+        # Mirrors the ESS trigger condition so the portal can decide whether to
+        # open the assistant without re-reading the ToDo.
+        "session": session,
+        "open_assistant": bool(
+            session
+            and frappe.db.get_value("ToDo", name, "custom_open_chatnext_assistant_on_action")
+        ),
+        "todo": frappe.db.get_value(
+            "ToDo", name, ["name", "status", "custom_approval_type"], as_dict=True
+        ),
     }
 
 
