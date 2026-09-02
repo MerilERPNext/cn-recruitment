@@ -1310,6 +1310,17 @@ export const useNominationDetail = (name?: string) => {
   });
 };
 
+/** What publishing actually did, beyond flipping the flag. */
+export type PublishNominationResult = {
+  success: boolean;
+  updated: string[];
+  published: number;
+  announced_on_vibe?: string[];
+  certificate_emailed?: string[];
+  /** nomination name -> why no certificate was mailed. Publishing still stood. */
+  certificate_errors?: Record<string, string>;
+};
+
 export const useNominationActions = () => {
   const queryClient = useQueryClient();
   const refresh = () =>
@@ -1355,17 +1366,21 @@ export const useNominationActions = () => {
         );
       }
 
-      return FrappeAPI.callMethod(`${RECOGNITION_API}.set_nomination_published_status`, {
-        names: opts.name,
-        published: 1,
-        ...(opts.certificateTemplate
-          ? { certificate_template: opts.certificateTemplate }
-          : {}),
-        ...(opts.ccEmployees?.length
-          ? { cc_employees: JSON.stringify(opts.ccEmployees) }
-          : {}),
-        ...(opts.ccEmails?.length ? { cc_email_ids: JSON.stringify(opts.ccEmails) } : {}),
-      });
+      const response = await FrappeAPI.callMethod(
+        `${RECOGNITION_API}.set_nomination_published_status`,
+        {
+          names: opts.name,
+          published: 1,
+          ...(opts.certificateTemplate
+            ? { certificate_template: opts.certificateTemplate }
+            : {}),
+          ...(opts.ccEmployees?.length
+            ? { cc_employees: JSON.stringify(opts.ccEmployees) }
+            : {}),
+          ...(opts.ccEmails?.length ? { cc_email_ids: JSON.stringify(opts.ccEmails) } : {}),
+        },
+      );
+      return response as PublishNominationResult;
     },
     onSuccess: refresh,
   });
