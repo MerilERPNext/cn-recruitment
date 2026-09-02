@@ -1,24 +1,24 @@
 @import url("https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Lexend+Deca:wght@100..900&display=swap");
 @import "formiojs/dist/formio.full.css";
 @import "./tailwind.css";
+@import "./styles/theme.css";
 @import url("https://fonts.googleapis.com/css2?family=Inconsolata:wght@200..900&family=Source+Sans+3:ital,wght@0,200..900;1,200..900&display=swap");
 @import url("https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css");
 @import "@tsed/tailwind-formio/styles/index.css";
 
 :root {
-  --primary-color: #5a4bda;
-  --secondary-color: #6172f3;
-  --text-primary: #1b2124;
-  --text-secondary: #3d3d3d;
-  --background-light: #eaecef;
-  --background-medium: #ffffff;
-  --border-light: #dbe0e6;
+  --primary-color: rgb(var(--text-primary-brand));
+  --secondary-color: rgb(var(--primary));
+  --text-primary: rgb(var(--text-title));
+  --text-secondary: rgb(var(--text-body1));
+  --background-light: rgb(var(--gray-10));
+  --background-medium: rgb(var(--surface));
+  --border-light: rgb(var(--border));
   --leave-header-height: 1.5rem;
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
 
-  color-scheme: light;
   color: var(--text-primary);
   background-color: var(--background-light);
 

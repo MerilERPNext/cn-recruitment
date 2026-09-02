@@ -5,6 +5,7 @@ import App from "./App.tsx";
 import { BrowserRouter } from "react-router-dom";
 import { installChunkErrorHandler } from "./utils/chunkErrorHandler";
 import QueryProvider from "./providers/QueryProvider";
+import ThemeProvider from "./providers/ThemeProvider";
 
 // Install chunk error handler before anything else
 installChunkErrorHandler();
@@ -15,10 +16,12 @@ link.rel = "stylesheet";
 document.head.append(link);
 createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <QueryProvider>
-      <BrowserRouter>
-        <App />
-      </BrowserRouter>
-    </QueryProvider>
+    <ThemeProvider>
+      <QueryProvider>
+        <BrowserRouter>
+          <App />
+        </BrowserRouter>
+      </QueryProvider>
+    </ThemeProvider>
   </React.StrictMode>
 );

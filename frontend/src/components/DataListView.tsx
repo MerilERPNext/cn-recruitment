@@ -930,7 +930,7 @@ const DataListView = <T extends BaseItem>({
                 key={pageNum}
                 onClick={() => goToPage(pageNum)}
                 className={`relative inline-flex items-center px-4 py-2 text-sm font-medium border rounded-md ${currentPage === pageNum
-                  ? "bg-blue-600 text-white border-blue-600"
+                  ? "bg-primary-600 text-white border-primary-600"
                   : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
                   }`}
               >
@@ -1054,7 +1054,7 @@ const DataListView = <T extends BaseItem>({
             </button>
             <button
               onClick={applyPendingFilters}
-              className="flex-1 px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700"
+              className="flex-1 px-4 py-2 rounded-md bg-primary-600 text-white hover:bg-primary-700"
             >
               Apply
             </button>

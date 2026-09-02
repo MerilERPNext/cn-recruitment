@@ -1,0 +1,299 @@
+/* =============================================================================
+ * Theme tokens — single source of truth for Light and Dark.
+ *
+ * WHY VARIABLES, NOT `dark:` CLASSES
+ * ---------------------------------
+ * This app has ~999 components carrying 1547 `bg-white`, 477 `text-gray-*` and
+ * 452 `border-gray-*` usages. Adding a `dark:` variant to each would be 2500+
+ * edits with a real chance of breaking approved Light Mode.
+ *
+ * Instead, tailwind.config.ts points its colour tokens at these variables. One
+ * definition here re-themes every existing utility class across the whole app,
+ * with no component edits at all.
+ *
+ * BOTH MODES USE THE NOVA PALETTE
+ * -------------------------------
+ * Per the client spec, Light and Dark share Nova Cyan (#18D9FF) as the action
+ * colour and Nebula Blue (#103448) as the anchor; only the canvas flips between
+ * Stellar White (#F6FBFF) and Cosmic Black (#040B12). Light Mode therefore does
+ * shift from the earlier PW indigo — that was an explicit instruction.
+ *
+ * FORMAT
+ * ------
+ * Values are space-separated RGB channels, not hex, so Tailwind's
+ * `<alpha-value>` works and `bg-white/50` keeps functioning.
+ * ========================================================================== */
+
+:root,
+[data-theme="light"] {
+  color-scheme: light;
+
+  /* NOVA light canvas. `white` is remapped to --surface, so every existing
+     `bg-white` becomes the themed card surface. */
+  --surface: 255 255 255; /* #FFFFFF */
+  --surface-raised: 255 255 255; /* modals/popovers sit on the same white */
+  --surface-sunken: 246 251 255; /* #F6FBFF */
+  --app: 246 251 255; /* #F6FBFF — page canvas */
+  --sidebar: 255 255 255; /* #FFFFFF, separated by --border */
+
+  /* Nova Cyan is the action colour in BOTH modes. Nebula Blue anchors it. */
+  --primary: 24 217 255; /* #18D9FF */
+  --primary-hover: 0 184 222; /* #00B8DE — deepens on hover in light */
+  --brand-deep: 16 52 72; /* #103448 */
+  --on-primary: 16 52 72; /* #103448 — cyan is too light for white text */
+
+  --text-title: 11 23 36; /* #0B1724 */
+  --text-body1: 44 57 69; /* #2C3945 */
+  --text-body2: 109 126 138; /* #6D7E8A — muted */
+  --text-disabled: 152 176 192; /* #98B0C0 */
+  --text-link: 10 147 176; /* #0A93B0 — cyan is unreadable as link text */
+  --text-primary-brand: 16 52 72;
+
+  /* Blue-tinted neutral ramp: gray-100 is the border, 500 the muted text and
+     900 the title colour, so existing utilities keep their intent. */
+  --gray-10: 238 244 248;
+  --gray-50: 228 237 243;
+  --gray-100: 221 234 240; /* #DDEAF0 */
+  --gray-200: 203 220 230;
+  --gray-300: 179 200 214;
+  --gray-400: 152 176 192;
+  --gray-500: 109 126 138; /* #6D7E8A */
+  --gray-600: 90 107 119;
+  --gray-700: 69 83 93;
+  --gray-800: 44 57 69;
+  --gray-900: 11 23 36; /* #0B1724 */
+
+  --border: 221 234 240; /* #DDEAF0 */
+  --border-strong: 203 220 230;
+
+  --success: 22 179 100;
+  --warning: 234 170 46;
+  --error: 191 39 52;
+  --info: 14 165 233;
+
+  --ring: 24 217 255;
+  /* Ink for text on fixed pale tints (badges, alerts). Same in both
+     themes because those backgrounds never darken. */
+  --ink-on-light: 11 23 36;
+  --shadow-color: 11 23 36 / 0.08;
+  --shadow-elevated: 0 14px 38px rgb(11 23 36 / 0.08);
+}
+
+/* =============================================================================
+ * DARK — the NOVA palette.
+ *   Cosmic Black  #040B12   page
+ *   Nebula Blue   #103448   surfaces / sidebar
+ *   Nova Cyan     #18D9FF   action, focus, links, active nav
+ *   Stellar White #F6FBFF   primary text
+ *
+ * Cyan is reserved for action and emphasis — surfaces stay blue-black so the
+ * result reads premium rather than neon.
+ * ========================================================================== */
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  --surface: 11 23 36; /* #0B1724 — cards */
+  --surface-raised: 16 52 72; /* #103448 — Nebula Blue, modals/popovers */
+  --surface-sunken: 4 11 18; /* #040B12 */
+  --app: 4 11 18; /* #040B12 — Cosmic Black */
+  --sidebar: 11 23 36; /* #0B1724 */
+
+  --primary: 24 217 255; /* #18D9FF — unchanged across modes */
+  --primary-hover: 106 228 255; /* lifts rather than deepens on dark */
+  --brand-deep: 16 52 72; /* #103448 */
+  --on-primary: 16 52 72; /* #103448 */
+
+  --text-title: 246 251 255; /* #F6FBFF */
+  --text-body1: 216 228 236;
+  --text-body2: 147 167 180; /* #93A7B4 — muted */
+  --text-disabled: 107 132 150;
+  --text-link: 24 217 255; /* Nova Cyan reads well on Cosmic Black */
+  --text-primary-brand: 24 217 255;
+
+  /* Same ramp inverted: 100 is still the border, 500 still muted, 900 still
+     the title colour. */
+  --gray-10: 14 30 44;
+  --gray-50: 18 36 51;
+  --gray-100: 23 51 67; /* #173343 */
+  --gray-200: 30 62 80;
+  --gray-300: 42 80 101;
+  --gray-400: 62 104 127;
+  --gray-500: 107 132 150;
+  --gray-600: 147 167 180; /* #93A7B4 */
+  --gray-700: 182 198 209;
+  --gray-800: 216 228 236;
+  --gray-900: 246 251 255; /* #F6FBFF */
+
+  --border: 23 51 67; /* #173343 */
+  --border-strong: 42 80 101;
+
+  --success: 52 211 153;
+  --warning: 251 191 36;
+  --error: 248 113 113;
+  --info: 56 189 248;
+
+  --ring: 24 217 255;
+  /* Ink for text on fixed pale tints (badges, alerts). Same in both
+     themes because those backgrounds never darken. */
+  --ink-on-light: 11 23 36;
+  --shadow-color: 0 0 0 / 0.28;
+  --shadow-elevated: 0 14px 38px rgb(0 0 0 / 0.28);
+}
+
+/* =============================================================================
+ * Base surface + theme transition
+ * ========================================================================== */
+html {
+  background-color: rgb(var(--app));
+}
+
+body {
+  background-color: rgb(var(--app));
+  color: rgb(var(--text-title));
+}
+
+/* Only colour properties transition, so layout and interaction stay instant.
+   Scoped away from elements that animate transforms, and disabled entirely for
+   users who prefer reduced motion. */
+@media (prefers-reduced-motion: no-preference) {
+  html.theme-transition,
+  html.theme-transition *:not(svg *) {
+    transition:
+      background-color 180ms ease,
+      border-color 180ms ease,
+      color 180ms ease,
+      fill 180ms ease;
+  }
+}
+
+/* =============================================================================
+ * Dark-mode corrections that a token remap alone cannot express
+ * ========================================================================== */
+[data-theme="dark"] {
+  /* `white` is remapped to --surface so `bg-white` themes. That also captures
+     `text-white`, which would otherwise turn dark-on-dark wherever it labels a
+     coloured button or sits over an image. Restore it to a readable light. */
+  .text-white {
+    color: rgb(246 251 255);
+  }
+
+  /* Same reasoning for fills in inline SVG icons. */
+  .fill-white {
+    fill: rgb(246 251 255);
+  }
+
+  /* Light shadows read as glow on a near-black page. */
+  .shadow,
+  .shadow-md,
+  .shadow-lg,
+  .shadow-xl,
+  .shadow-2xl {
+    --tw-shadow-color: rgb(0 0 0 / 0.5);
+    --tw-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.5);
+  }
+
+  /* Native form controls and scrollbars follow color-scheme, but placeholders
+     need help to stay legible. */
+  ::placeholder {
+    color: rgb(var(--text-disabled));
+    opacity: 1;
+  }
+}
+
+/* =============================================================================
+ * Contrast on Nova Cyan
+ *
+ * #18D9FF is a light colour: white text on it measures ~1.6:1, far below the
+ * 4.5:1 needed to be readable. The NOVA spec itself pairs cyan with Nebula Blue
+ * (its `.badge` is `color: brand-deep` on `background: brand`), so anything
+ * sitting on a primary surface takes --on-primary instead.
+ *
+ * Applies in BOTH themes, because the action colour is cyan in both.
+ *
+ * The compound selectors are deliberate: `.bg-primary.text-white` is two
+ * classes, so it outranks the single `.text-white` those ~43 components already
+ * carry. That fixes every primary button centrally, with no component edits.
+ * ========================================================================== */
+.bg-primary,
+.bg-primary-400,
+.bg-primary-500,
+.bg-primary-600 {
+  color: rgb(var(--on-primary));
+}
+
+/* -----------------------------------------------------------------------------
+ * Fixed light backgrounds vs themed text
+ *
+ * The numbered ramps (`bg-primary-400`, `bg-blue-50`, `bg-red-100` ...) are
+ * literals — they stay light in BOTH themes. The grey text utilities are not:
+ * `text-gray-700` inverts to a pale blue-grey in dark. Put them together and you
+ * get pale text on a bright background, which is how the CTC Proration table
+ * header rendered as unreadable cyan.
+ *
+ * Roughly 50 places do this: 7 same-element `bg-primary-N` + `text-gray-N`, 32
+ * uses of the light primary shades, and 19 tinted badges/alerts on the built-in
+ * palette. Rather than edit each, pin the text.
+ *
+ * Unconditional, not dark-only: these backgrounds are light in both themes, so
+ * dark ink is the right answer in both — no `[data-theme]` branch needed.
+ *
+ * `[class*="text-"]` rather than naming the utilities: Tailwind treats a rule
+ * whose selector IS one of its utilities as a redefinition and fails the build.
+ * It also outranks the single-class utility it overrides (0,2,0 vs 0,1,0).
+ * -------------------------------------------------------------------------- */
+:is(.bg-primary, .bg-primary-300, .bg-primary-400, .bg-primary-500, .bg-primary-600)
+  :is([class*="text-gray-"], [class*="text-text-"]) {
+  color: rgb(var(--on-primary));
+}
+
+/* Pale tints from the built-in palette: badges, alerts and status chips. Nebula
+   Blue would look wrong against a red or amber tint, so these take the neutral
+   ink instead — the same colour light-mode body copy already uses. */
+:is(
+    [class*="bg-blue-50"],
+    [class*="bg-blue-100"],
+    [class*="bg-green-50"],
+    [class*="bg-green-100"],
+    [class*="bg-red-50"],
+    [class*="bg-red-100"],
+    [class*="bg-amber-50"],
+    [class*="bg-amber-100"],
+    [class*="bg-yellow-50"],
+    [class*="bg-yellow-100"],
+    [class*="bg-emerald-50"],
+    [class*="bg-emerald-100"],
+    [class*="bg-indigo-50"],
+    [class*="bg-purple-50"],
+    [class*="bg-sky-50"],
+    [class*="bg-rose-50"],
+    [class*="bg-orange-50"]
+  )
+  :is([class*="text-gray-"], [class*="text-text-"]) {
+  color: rgb(var(--ink-on-light));
+}
+
+/* Written as attribute selectors, not `.bg-primary.text-white`: Tailwind treats
+   a top-level rule whose selector is one of its own utilities as a
+   redefinition and fails the build with a circular-dependency error.
+   `[class~="text-white"]` is invisible to that check and still outranks the
+   plain `.text-white` utility (0,2,0 against 0,1,0). */
+.bg-primary[class~="text-white"],
+.bg-primary-400[class~="text-white"],
+.bg-primary-500[class~="text-white"],
+.bg-primary-600[class~="text-white"] {
+  color: rgb(var(--on-primary));
+}
+
+/* Focus rings follow Nova Cyan in both modes. */
+:focus-visible {
+  outline-color: rgb(var(--ring));
+}
+
+/* An explicit escape hatch for the rare place that must stay literally white
+   regardless of theme — print views, document previews, image mattes. */
+.bg-pure-white {
+  background-color: #ffffff !important;
+}
+.text-pure-white {
+  color: #ffffff !important;
+}

@@ -5,6 +5,7 @@ import { useScreenSize } from "../hooks/useScreenSize";
 import { LogOut, ChevronDown, User, Dock, RotateCcwKey } from "lucide-react";
 import defaultProfile from "../assets/face-rec.png";
 import CollapsibleSidebar from "./shared/CollapsibleSidebar";
+import ThemeToggle from "./shared/ThemeToggle";
 import NotificationBell from "./Notification/NotificationBell";
 
 import { useCurrentEmployee, useCurrentEmployeeDetails } from "../hooks/useEmployee";
@@ -174,7 +175,7 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
       >
         {/* Header */}
         <div
-          className="bg-gradient-to-r from-primary-500 via-primary-400 to-primary-500 border-b border-gray-200 px-8 py-[0.3rem] flex items-center justify-between sticky top-0 z-[11] flex-shrink-0"
+          className="bg-gradient-to-r from-primary-900 via-primary-800 to-primary-900 border-b border-gray-200 px-8 py-[0.3rem] flex items-center justify-between sticky top-0 z-[11] flex-shrink-0"
           style={{ height: "73px", maxHeight: "73px" }}
         >
           <div>
@@ -195,6 +196,10 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
             </div>
           )}
           <div className="flex items-center gap-4 flex-shrink-0">
+            {/* Sits on the primary-gradient header, so it is styled against that
+                bar rather than with the default surface colours. */}
+            <ThemeToggle className="!border-white/30 !bg-white/10 !text-white hover:!bg-white/20" />
+
             <button
               onClick={handleNotificationClick}
               className="relative p-2 hover:bg-primary-400/20 rounded-lg transition-colors"

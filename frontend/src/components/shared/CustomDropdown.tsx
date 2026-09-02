@@ -135,7 +135,7 @@ const CustomDropdown: React.FC<CustomDropdownProps> = ({
               key={option.value}
               onClick={() => handleSelect(option.value)}
               contentAlign={contentAlign}
-              className="block whitespace-nowrap w-full text-left px-4 py-2.5 hover:bg-primary-50 transition-colors"
+              className="block whitespace-nowrap w-full bg-transparent border-primary-600 text-left px-4 py-2.5 hover:bg-primary-100 transition-colors"
             >
               {option.label}
             </Button>

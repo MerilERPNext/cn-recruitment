@@ -497,7 +497,7 @@ export default function SalaryAssignmentList() {
             <div className="flex-1 overflow-y-auto p-6 pt-2">
               <div className="border border-gray-200 rounded-lg overflow-x-auto">
                 <table className="w-full min-w-[500px] text-left text-sm">
-                  <thead className="bg-slate-50 border-b border-gray-200">
+                  <thead className="bg-primary-400 border-b border-gray-200">
                     <tr>
                       <th className="px-4 py-3 font-semibold text-gray-700 w-[50%]">Earnings</th>
                       <th className="px-4 py-3 font-semibold text-gray-700 text-center w-[25%]">Monthly</th>

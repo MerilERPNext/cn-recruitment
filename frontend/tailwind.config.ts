@@ -17,26 +17,41 @@ export default {
     "grid-cols-11",
     "grid-cols-12",
   ],
-  darkMode: "media",
+  // Driven by <html data-theme>, set by ThemeProvider. "media" was OS-only
+  // and could not be toggled.
+  darkMode: ["selector", '[data-theme="dark"]'],
   theme: {
     extend: {
       /* =============================== * COLORS (PW PALETTE) * =============================== */
       colors: {
-        app: "#F8F7FF",
-        surface: "#F8F7FF",
+        // Every token below resolves to a CSS variable, so one theme.css swap
+        // re-themes all existing utility classes. Light values are the exact
+        // literals the app rendered before, so Light Mode is unchanged.
+        white: "rgb(var(--surface) / <alpha-value>)",
+        app: "rgb(var(--app) / <alpha-value>)",
+        surface: "rgb(var(--surface-sunken) / <alpha-value>)",
+        card: "rgb(var(--surface) / <alpha-value>)",
+        raised: "rgb(var(--surface-raised) / <alpha-value>)",
+        sidebar: "rgb(var(--sidebar) / <alpha-value>)",
+        border: "rgb(var(--border) / <alpha-value>)",
+        "border-strong": "rgb(var(--border-strong) / <alpha-value>)",
+        "on-primary": "rgb(var(--on-primary) / <alpha-value>)",
         primary: {
-          DEFAULT: "#6172F3",
-          10: "#F5F8FF",
-          50: "#EEF4FF",
-          100: "#E0EAFF ",
-          200: "#C7D7FE",
-          300: "#A4BCFD",
-          400: "#8098F9",
-          500: "#6172F3", // Primary
-          600: "#444CE7",
-          700: "#3538CD ",
-          800: "#2D31A6",
-          900: "#2D3282",
+          // Nova Cyan ramp. The DEFAULT tracks the theme variable; the numbered
+          // steps are literal so gradients, charts and hover states keep fixed
+          // relationships. 900 lands on Nebula Blue, the palette's anchor.
+          DEFAULT: "rgb(var(--primary) / <alpha-value>)",
+          10: "#F2FCFF",
+          50: "#EAFBFF",
+          100: "#C9F5FF",
+          200: "#9DEDFF",
+          300: "#6BE4FF",
+          400: "#3ADEFF",
+          500: "#18D9FF",
+          600: "#00B8DE",
+          700: "#0A93B0",
+          800: "#0F6B80",
+          900: "#103448",
         },
         secondary: {
           DEFAULT: "#7A5AF8",
@@ -54,31 +69,31 @@ export default {
         },
 
         gray: {
-          10: "#EAECEF",
-          50: "#E4E7EA",
-          100: "#D9DCE1 ",
-          200: "#CDD1D8",
-          300: "#C1C6CE",
-          400: "#B5BBC5",
-          500: "#989DA5",
-          600: "#7B7F86",
-          700: "#5E6166 ",
-          800: "#414347",
-          900: "#26282D",
+          10: "rgb(var(--gray-10) / <alpha-value>)",
+          50: "rgb(var(--gray-50) / <alpha-value>)",
+          100: "rgb(var(--gray-100) / <alpha-value>)",
+          200: "rgb(var(--gray-200) / <alpha-value>)",
+          300: "rgb(var(--gray-300) / <alpha-value>)",
+          400: "rgb(var(--gray-400) / <alpha-value>)",
+          500: "rgb(var(--gray-500) / <alpha-value>)",
+          600: "rgb(var(--gray-600) / <alpha-value>)",
+          700: "rgb(var(--gray-700) / <alpha-value>)",
+          800: "rgb(var(--gray-800) / <alpha-value>)",
+          900: "rgb(var(--gray-900) / <alpha-value>)",
         },
         text: {
-          title: "#1B2124",
-          body1: "#3D3D3D",
-          body2: "#757575",
-          disabled: "#A1A3A4",
-          success: "#1B7938",
-          warning: "#EAAA2E",
-          error: "#BF2734",
-          primary: "#5A4BDA",
-          link: "#037CBF",
+          title: "rgb(var(--text-title) / <alpha-value>)",
+          body1: "rgb(var(--text-body1) / <alpha-value>)",
+          body2: "rgb(var(--text-body2) / <alpha-value>)",
+          disabled: "rgb(var(--text-disabled) / <alpha-value>)",
+          success: "rgb(var(--success) / <alpha-value>)",
+          warning: "rgb(var(--warning) / <alpha-value>)",
+          error: "rgb(var(--error) / <alpha-value>)",
+          primary: "rgb(var(--text-primary-brand) / <alpha-value>)",
+          link: "rgb(var(--text-link) / <alpha-value>)",
         },
         success: {
-          DEFAULT: "#16B364",
+          DEFAULT: "rgb(var(--success) / <alpha-value>)",
           50: "#EDFCF2",
           100: "#E0FBE7",
           200: "#AAF0C4",
@@ -87,7 +102,7 @@ export default {
         },
 
         warning: {
-          DEFAULT: "#EAAA2E",
+          DEFAULT: "rgb(var(--warning) / <alpha-value>)",
           50: "#FDEFD3",
           100: "#F7E0B4",
           200: "#F4D392",
@@ -96,7 +111,7 @@ export default {
         },
 
         error: {
-          DEFAULT: "#BF2734",
+          DEFAULT: "rgb(var(--error) / <alpha-value>)",
           50: "#F2D0D4",
           100: "#E8B1B6",
           200: "#DE8F95",
@@ -105,7 +120,7 @@ export default {
         },
 
         info: {
-          DEFAULT: "#0EA5E9",
+          DEFAULT: "rgb(var(--info) / <alpha-value>)",
           50: "#E0F2FE",
           100: "#C7E4FD",
           200: "#A4D1FE",
