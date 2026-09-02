@@ -879,12 +879,19 @@ def get_new_hire(name=None, filters=None, stage=None, search=None,
         for row in rows:
             row["can_initiate_onboarding"] = _can_initiate(row)
 
-        # Counted in SQL, through get_list so the total honours the same
-        # permissions and filters as the page above. Frappe v16 rejects a SQL
-        # function written as a string, so this uses the dict form.
-        count_row = frappe.get_list(DOCTYPE, filters=query_filters,
-                                    fields=[{"COUNT": "name"}])
-        total = list(count_row[0].values())[0] if count_row else 0
+        # Counted through get_list so the total honours the same permissions and
+        # filters as the page above — a total larger than the rows the caller can
+        # actually see is a bug they will report.
+        #
+        # Deliberately NOT a SQL COUNT: Frappe v16 rejects `count(name) as total`
+        # written as a string, and the `[{"COUNT": "name"}]` dict form only works
+        # on one of the two query engines — it returns a count under
+        # `frappe.get_list` in a script and raises "'dict' object has no
+        # attribute 'lower'" through the HTTP path, which is how this shipped
+        # broken once. Plucking names is engine-independent, and this list is
+        # hard-scoped to pending hires, so it is a short list by construction.
+        total = len(frappe.get_list(
+            DOCTYPE, filters=query_filters, pluck="name", limit_page_length=0))
 
         return _ok(_("New hires fetched."), {
             "columns": columns,

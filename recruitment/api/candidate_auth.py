@@ -32,6 +32,7 @@ SAFE_SETTINGS_FIELDS = (
     "mobile_delivery_mode",
     "redirect_to",
     "primary_color",
+    "enable_theme_mode",
 )
 
 
