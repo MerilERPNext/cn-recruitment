@@ -1,0 +1,30 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2026-08-28 00:00:00.000000",
+ "description": "Reconstructed from application code usage during the v16 upgrade. This DocType existed only in the production database and was never committed to any app. Export the authoritative definition from production and merge before this app is deployed there.",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "select_visibility_restriction"
+ ],
+ "fields": [
+  {
+   "fieldname": "select_visibility_restriction",
+   "fieldtype": "Data",
+   "label": "Select Visibility Restriction"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-08-28 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Recruitment",
+ "name": "Dynamic User Assignment Table",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}

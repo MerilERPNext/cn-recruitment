@@ -223,7 +223,7 @@ extend_bootinfo = "recruitment.api.list_columns.extend_bootinfo"
 # Installation
 # ------------
 
-# before_install = "recruitment.install.before_install"
+before_install = "recruitment.install.before_install"
 after_install = "recruitment.recruitment.install.after_install"
 after_migrate = [
     "recruitment.recruitment.install.after_migrate",

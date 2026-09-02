@@ -38,7 +38,7 @@
    "label": "Campus Hiring Workflow"
   },
   {
-   "description": "The rounds every campus drive runs. A new drive's Rounds table is built from this template, and any linked Job Opening with no hiring stages of its own is given the same list — without that, a round maps to a stage candidates can never reach. Leave blank to set drives up by hand.",
+   "description": "The rounds every campus drive runs. A new drive's Rounds table is built from this template, and any linked Job Opening with no hiring stages of its own is given the same list \u2014 without that, a round maps to a stage candidates can never reach. Leave blank to set drives up by hand.",
    "fieldname": "default_hiring_workflow",
    "fieldtype": "Link",
    "label": "Default Campus Hiring Workflow",
@@ -77,7 +77,7 @@
   },
   {
    "default": "1",
-   "description": "Emailed to an institute's Primary TPO when the institute is created — and to a Primary TPO added later. Once per contact. Jinja vars: tpo_name, email, role, institute, city, state, tier, login_url.",
+   "description": "Emailed to an institute's Primary TPO when the institute is created \u2014 and to a Primary TPO added later. Once per contact. Jinja vars: tpo_name, email, role, institute, city, state, tier, login_url.",
    "fieldname": "send_tpo_welcome_email",
    "fieldtype": "Check",
    "label": "Send TPO Welcome Email"
