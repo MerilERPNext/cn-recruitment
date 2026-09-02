@@ -35,6 +35,8 @@ import { PermissionProvider } from "./context/PermissionContext";
 import { LoadingOverlayProvider } from "./context/OverlayContext";
 import PermissionDeniedScreen from "./components/shared/PermissionDeniedScreen";
 import GlobalLeaveRequestModal from "./components/Leaves/GlobalLeaveRequestModal";
+import { GlobalModalProvider } from "./context/GlobalModalContext";
+import GlobalModalRenderer from "./components/GlobalModalRenderer";
 
 import { useWebsiteBranding } from "./hooks/useBranding";
 import MandatoryHrProcessHandler from "./components/MandatoryHrProcessHandler";
@@ -221,8 +223,10 @@ const App: React.FC = () => {
           <ViewedUserProvider>
             <TargetUserSync />
             <LoadingOverlayProvider>
+              <GlobalModalProvider>
               <RequestLeaveModalProvider>
                 <GlobalLeaveRequestModal />
+                <GlobalModalRenderer />
                 <Toaster
                   position="top-center"
                   containerClassName="z-50 !top-4 md:!top-6"
@@ -304,6 +308,7 @@ const App: React.FC = () => {
                   </Routes>
                 </div>
               </RequestLeaveModalProvider>
+              </GlobalModalProvider>
             </LoadingOverlayProvider>
           </ViewedUserProvider>
         </GlobalStoreProvider>
