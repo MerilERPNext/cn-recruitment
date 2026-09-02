@@ -125,6 +125,15 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
   };
 
   const companyName = getTruncatedCompanyName(originalCompanyName);
+  // `custom_logo_has_company_name` on Company drives the header layout: checked
+  // pairs a circular logo with the company name, unchecked shows the logo on its
+  // own, rendered wide so a wordmark isn't cropped into a circle. Until the
+  // Company doc loads — or when there is no logo to stand on its own — we keep the
+  // named layout so the header never renders empty.
+  const showCompanyName =
+    !singleCompanyLogo ||
+    !logoToShow ||
+    !!singleCompanyLogo.custom_logo_has_company_name;
   const { getCount, getSubModuleCount } = useAppNotificationCounts();
   const { data: todoPendingCount = 0 } = useTodoPendingCount();
   const { data: todoSettings } = useTodoSettings();
@@ -976,37 +985,49 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
             style={{ height: "73px" }}
           >
             <Link to={isDashboardHiddenBySettings ? getImpersonationFallbackRoute(uiPermissions) : "/webapp/"}>
-              <div className="flex items-center  gap-3 h-full">
-                <div className="flex-shrink-0">
-                  <Avatar
-                    src={logoToShow || undefined}
-                    name={originalCompanyName}
-                    size="h-12 w-12"
-                    avatarBgColor="bg-primary-50"
-                    avatarTextColor="text-primary-600"
+              {showCompanyName ? (
+                <div className="flex items-center  gap-3 h-full">
+                  <div className="flex-shrink-0">
+                    <Avatar
+                      src={logoToShow || undefined}
+                      name={originalCompanyName}
+                      size="h-12 w-12"
+                      avatarBgColor="bg-primary-50"
+                      avatarTextColor="text-primary-600"
+                    />
+                  </div>
+                  <div
+                    className={`transition-all duration-300 flex flex-col justify-center ${isExpanded ? "opacity-100" : "opacity-0 -translate-x-2"
+                      }`}
+                  >
+                    <Typography
+                      variant="subheading"
+                      color="title"
+                      className="whitespace-nowrap leading-tight"
+                      title={originalCompanyName}
+                    >
+                      {companyName}
+                    </Typography>
+                    <Typography
+                      variant="bodySmall"
+                      color="body2"
+                      className="whitespace-nowrap"
+                    >
+                      Employee Portal
+                    </Typography>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center h-full">
+                  <img
+                    src={logoToShow}
+                    alt={originalCompanyName}
+                    title={originalCompanyName}
+                    className={`object-contain object-left transition-all duration-300 ${isExpanded ? "h-12 max-w-full" : "h-10 w-12"
+                      }`}
                   />
                 </div>
-                <div
-                  className={`transition-all duration-300 flex flex-col justify-center ${isExpanded ? "opacity-100" : "opacity-0 -translate-x-2"
-                    }`}
-                >
-                  <Typography
-                    variant="subheading"
-                    color="title"
-                    className="whitespace-nowrap leading-tight"
-                    title={originalCompanyName}
-                  >
-                    {companyName}
-                  </Typography>
-                  <Typography
-                    variant="bodySmall"
-                    color="body2"
-                    className="whitespace-nowrap"
-                  >
-                    Employee Portal
-                  </Typography>
-                </div>
-              </div>
+              )}
             </Link>
           </div>
           <div className="flex-1 p-4 space-y-1">
