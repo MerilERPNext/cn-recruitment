@@ -1,0 +1,199 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "field:form_name",
+ "creation": "2026-09-01 10:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "help_section",
+  "help_html",
+  "identity_section",
+  "form_name",
+  "is_default",
+  "disabled",
+  "col_break_identity",
+  "company",
+  "employment_type",
+  "options_section",
+  "restrict_to_configured",
+  "basis_employment_type",
+  "col_break_options",
+  "onboarding_portal_form",
+  "auto_initiate_onboarding",
+  "builder_section",
+  "sync_html",
+  "builder_html",
+  "overrides_section",
+  "field_overrides"
+ ],
+ "fields": [
+  {
+   "fieldname": "help_section",
+   "fieldtype": "Section Break",
+   "label": "How to Use"
+  },
+  {
+   "fieldname": "help_html",
+   "fieldtype": "HTML",
+   "options": "<div class=\"alert alert-info\" style=\"padding:12px 16px;border-radius:6px;\">\n  <strong>\ud83e\uddd1\u200d\ud83d\udcbc New Hire Form</strong><br>\n  <ul style=\"margin-top:8px;margin-bottom:0;\">\n    <li>The New Hire form renders from the <strong>Employee</strong> DocType \u2014 the record it creates IS the Employee, held at <code>status = Pending</code> until onboarding completes.</li>\n    <li>Use the <strong>Form Builder</strong> below to choose which Employee fields appear, in which tab and section, and which are mandatory. Every Employee field is available.</li>\n    <li>A field with no row in <strong>Configured Fields</strong> follows the Employee DocType exactly. Employee\u2019s own mandatory fields always render \u2014 the record cannot be saved without them.</li>\n    <li>Nothing is mapped or copied: a value captured here is already on the person\u2019s Employee record.</li>\n  </ul>\n</div>"
+  },
+  {
+   "fieldname": "identity_section",
+   "fieldtype": "Section Break",
+   "label": "Form"
+  },
+  {
+   "fieldname": "form_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Form Name",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "default": "0",
+   "description": "The form used when no other profile matches the new hire's company / employment type.",
+   "fieldname": "is_default",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Is Default"
+  },
+  {
+   "default": "0",
+   "fieldname": "disabled",
+   "fieldtype": "Check",
+   "label": "Disabled"
+  },
+  {
+   "fieldname": "col_break_identity",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "Optional. Restricts this form to one company. Blank = applies to every company.",
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Company",
+   "options": "Company"
+  },
+  {
+   "description": "Optional. Restricts this form to one employment type. Blank = applies to every type.",
+   "fieldname": "employment_type",
+   "fieldtype": "Link",
+   "label": "Employment Type",
+   "options": "Employment Type"
+  },
+  {
+   "fieldname": "options_section",
+   "fieldtype": "Section Break",
+   "label": "Visibility"
+  },
+  {
+   "default": "1",
+   "description": "On (default) = render ONLY the fields listed below. Off = render every Employee field, minus any marked Hide \u2014 rarely what you want on a 405-field doctype.",
+   "fieldname": "restrict_to_configured",
+   "fieldtype": "Check",
+   "label": "Show Only Configured Fields"
+  },
+  {
+   "default": "0",
+   "description": "Off (default) = every configured field renders for all new hires. On = each field gets an Employment Type and the form renders only the fields matching the type the user picks.",
+   "fieldname": "basis_employment_type",
+   "fieldtype": "Check",
+   "label": "Configure Basis Employment Type"
+  },
+  {
+   "fieldname": "col_break_options",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "The Onboarding Portal Form released to the candidate when onboarding is initiated for a new hire raised on this form.",
+   "fieldname": "onboarding_portal_form",
+   "fieldtype": "Link",
+   "label": "Onboarding Portal Form",
+   "options": "Onboarding Portal Forms"
+  },
+  {
+   "default": "0",
+   "description": "On = onboarding is initiated the moment the approval matrix clears the new hire, with no second click. Off (default) = it waits in the pending list for HR to press Initiate Onboarding.",
+   "fieldname": "auto_initiate_onboarding",
+   "fieldtype": "Check",
+   "label": "Initiate Onboarding on Approval"
+  },
+  {
+   "fieldname": "builder_section",
+   "fieldtype": "Section Break",
+   "label": "Form Builder"
+  },
+  {
+   "fieldname": "sync_html",
+   "fieldtype": "HTML",
+   "label": "Sync"
+  },
+  {
+   "fieldname": "builder_html",
+   "fieldtype": "HTML",
+   "label": "Form Builder"
+  },
+  {
+   "collapsible": 1,
+   "collapsible_depends_on": "eval:false",
+   "fieldname": "overrides_section",
+   "fieldtype": "Section Break",
+   "label": "Configured Fields"
+  },
+  {
+   "fieldname": "field_overrides",
+   "fieldtype": "Table",
+   "label": "Configured Fields",
+   "options": "New Hire Form Field"
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "links": [],
+ "modified": "2026-09-01 10:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Recruitment",
+ "name": "New Hire Form",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "HR Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "HR User",
+   "share": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

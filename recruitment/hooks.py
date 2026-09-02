@@ -137,6 +137,7 @@ doctype_js = {
         "public/js/emp_OB_field_level_approval.js",
         "public/js/employee_onboarding_statutory.js",
     ],
+    "New Hire Form": ["public/js/new_hire_form_builder.js"],
     "Employee Referral": ["public/js/employee_referral_referral_reward.js"],
     "Employee Separation": ["public/js/employee_separation.js"],
     "Employee Promotion": ["public/js/employee_promotion.js"],
@@ -497,6 +498,11 @@ doc_events = {
             # company-email User and provision/restore the personal-email Alumni
             # User (and the reverse when the employee rejoins).
             "recruitment.recruitment.alumni_user_switch.handle_employee_status_change",
+            # New Hire: hand a pending Employee to onboarding the moment the
+            # approval matrix clears it — but only when its New Hire Form ticks
+            # "Initiate Onboarding on Approval". A no-op for every real employee
+            # (it returns immediately unless status is Pending).
+            "recruitment.api.new_hire.auto_initiate_on_approval",
         ],
     },
     "Job Applicant": {
@@ -548,7 +554,17 @@ doc_events = {
         "on_update": "recruitment.recruitment.alumni_employee_request_service.handle_workflow_transition",
     },
     "Employee Onboarding": {
-        "validate": "recruitment.customizations.job_applicant.validation_blacklist_on_doctypes",
+        # Mark an onboarding raised from a New Hire form. Must run before the
+        # mandatory check, because the flag is what makes `job_offer` optional
+        # for a direct hire — and only for a direct hire.
+        "validate": [
+            "recruitment.customizations.job_applicant.validation_blacklist_on_doctypes",
+            # Server-side half of the direct-hire exemption: `job_offer` is no
+            # longer `reqd` on the meta (so a direct hire can save), and Frappe
+            # does not enforce `mandatory_depends_on` outside the desk form — so
+            # the requirement is kept here for everyone else.
+            "recruitment.api.new_hire.require_job_offer_unless_direct_hire",
+        ],
         # "before_save": "recruitment.customizations.employee_onboarding.document_verification.update_verification_documents",
         "before_save": "recruitment.recruitment.onboarding_extras.auto_map_manager",
         # Tasks are no longer created on submit (see overide_class.on_submit) —
@@ -559,6 +575,10 @@ doc_events = {
         "on_update": [
             "recruitment.auto_fetch_fields.update_employee_fields",
             "recruitment.recruitment.onboarding_extras.handle_doj_outcome",
+            # New Hire: mark the pending Employee ready once field-level
+            # approval has cleared every portal field. Activation stays a
+            # deliberate act. No-op for a recruitment onboarding.
+            "recruitment.api.new_hire.stage_from_onboarding",
         ],
     },
     "Employee Separation": {
