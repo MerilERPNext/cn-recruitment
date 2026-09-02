@@ -89,7 +89,9 @@ _ALUMNI_METHOD_ALLOWLIST = {
     "chatnext_work_connect.chatnext_work_connect.api.saved_post.is_post_saved",
     "chatnext_work_connect.chatnext_work_connect.api.follow.get_followers",
     "chatnext_work_connect.chatnext_work_connect.api.follow.get_following",
-    "chatnext_work_connect.chatnext_work_connect.api.celebrations.get_upcoming_celebrations",
+    # celebrations.get_upcoming_celebrations is NOT here: it covers the whole
+    # workforce. The portal uses alumni_portal.get_alumni_celebrations, which
+    # filters the result to fellow alumni.
     "chatnext_work_connect.chatnext_work_connect.api.announcement.get_announcements",
     "chatnext_work_connect.chatnext_work_connect.api.announcement.get_announcement_details",
     "chatnext_work_connect.chatnext_work_connect.api.event.get_upcoming_events",

@@ -3718,3 +3718,291 @@ def get_alumni_feed_permissions() -> dict:
             "can_save": alumni_action_allowed("save")[0],
         },
     }
+
+
+# ── Profile child rows the alumnus maintains themselves ───────────────────────
+# The portal's "Add education" and "Add company" buttons. Both append to a child
+# table on the alumnus's OWN Employee -- the parent is resolved from
+# frappe.session.user and never accepted from the caller, so one alumnus can
+# never write onto another's record.
+#
+# Rows are inserted as child documents rather than by appending to the Employee
+# and saving it: this Employee doctype carries a great deal of customisation and
+# validation, and re-saving the whole record to add one education row risks
+# tripping over unrelated fields.
+#
+# Each field is written to the SAME column its reader treats as primary (see
+# _alumni_education / _alumni_work_history), so what goes in comes back out.
+
+_EDU_MAX_LEN = 140
+_WORK_MAX_LEN = 140
+
+
+def _own_employee_or_throw() -> str:
+    """The signed-in alumnus's Employee, or 403."""
+    user = _require_alumni_session()
+    emp = alumni_employee_name(user)
+    if not emp:
+        frappe.local.response["http_status_code"] = 403
+        frappe.throw(_("No employee record is linked to your account."), frappe.PermissionError)
+    return emp
+
+
+def _coerce_payload(data, kwargs) -> dict:
+    """Accept `data` as a dict or JSON string, else fall back to flat kwargs."""
+    import json
+
+    if isinstance(data, str):
+        try:
+            data = json.loads(data)
+        except (TypeError, ValueError):
+            frappe.throw(_("Malformed request data."))
+    if isinstance(data, dict):
+        return data
+    return {k: v for k, v in (kwargs or {}).items() if k not in ("cmd", "sid")}
+
+
+def _clean(value, limit: int) -> str:
+    from frappe.utils import strip_html
+
+    return strip_html(str(value or "")).strip()[:limit]
+
+
+def _child_insert(doctype: str, parent: str, parentfield: str, values: dict) -> str:
+    """Append one child row to an Employee, through the parent document.
+
+    Deliberately goes via ``Employee.append() + save()`` rather than inserting
+    the child doc directly. Inserting the child on its own does write the row,
+    and it does show on the form, but it bypasses everything the parent save
+    does for you:
+
+      * ``idx`` stays 0 on every row, so the grid has no stable order;
+      * ``Employee.modified`` is never touched, so the record looks untouched;
+      * no Version row is written, so the change is absent from the Employee's
+        edit history -- an audit gap on a record HR relies on.
+
+    Columns missing from this database are skipped, as elsewhere in this module.
+    """
+    row = {}
+    for column, value in values.items():
+        if value in (None, "") or not frappe.db.has_column(doctype, column):
+            continue
+        row[column] = value
+
+    # Inserted as a child document rather than by appending to the Employee and
+    # saving it. Employee.on_update fans out a very long way -- into
+    # cn_hrms_core's update_contact_details (which saves the linked Contact) and
+    # the alumni account-switch handlers, which touch the User record. That is
+    # far more blast radius than adding one education row warrants, and it fails
+    # outright anyway: the nested Contact save runs without ignore_permissions,
+    # and an alumnus has no write access to Contact.
+    #
+    # What the parent save WOULD have given us is reproduced explicitly below --
+    # a sequential idx, a refreshed `modified`, and a timeline entry naming the
+    # alumnus -- without firing a single Employee hook.
+    from frappe.utils import now_datetime
+
+    actor = frappe.session.user
+
+    last_idx = frappe.db.sql(
+        """select max(idx) from `tab{0}`
+           where parent=%s and parenttype='Employee' and parentfield=%s""".format(doctype),
+        (parent, parentfield),
+    )[0][0] or 0
+
+    row.update(
+        {
+            "doctype": doctype,
+            "parent": parent,
+            "parenttype": "Employee",
+            "parentfield": parentfield,
+            "idx": last_idx + 1,
+        }
+    )
+
+    child = frappe.get_doc(row)
+    child.insert(ignore_permissions=True)
+
+    # Touch the parent so the record does not look untouched. update_modified is
+    # off because `modified` is being written explicitly here, and because this
+    # must not trigger the Employee's hooks.
+    frappe.db.set_value(
+        "Employee",
+        parent,
+        {"modified": now_datetime(), "modified_by": actor},
+        update_modified=False,
+    )
+
+    _log_portal_edit(parent, parentfield, actor)
+    frappe.db.commit()
+    return child.name
+
+
+def _log_portal_edit(employee: str, parentfield: str, actor: str) -> None:
+    """Record who really made a portal edit on the Employee's timeline.
+
+    The save runs as Administrator (see above), so the Version row credits
+    Administrator. Without this the Employee's history would show the change
+    but not the alumnus behind it.
+    """
+    label = "education" if parentfield == "education" else "employment history"
+    try:
+        frappe.get_doc(
+            {
+                "doctype": "Comment",
+                "comment_type": "Info",
+                "reference_doctype": "Employee",
+                "reference_name": employee,
+                "content": _("Added {0} via the Alumni Portal ({1}).").format(label, actor),
+            }
+        ).insert(ignore_permissions=True)
+    except Exception:
+        # Never fail the edit over its own audit note.
+        frappe.log_error(frappe.get_traceback(), "Alumni portal edit comment failed")
+
+
+@frappe.whitelist(methods=["POST"])
+def add_alumni_education(data=None, **kwargs) -> dict:
+    """Append one education row to the signed-in alumnus's own Employee.
+
+    Payload: ``{qualification, specialization?, institution, year_of_passing?,
+    from_date?, to_date?}``.
+    """
+    from frappe.utils import cint, getdate
+
+    emp = _own_employee_or_throw()
+    payload = _coerce_payload(data, kwargs)
+
+    qualification = _clean(payload.get("qualification"), _EDU_MAX_LEN)
+    institution = _clean(payload.get("institution"), _EDU_MAX_LEN)
+    if not qualification:
+        frappe.throw(_("Qualification is required."))
+    if not institution:
+        frappe.throw(_("Institution is required."))
+
+    def _date(value):
+        if not value:
+            return None
+        try:
+            return getdate(value)
+        except Exception:
+            frappe.throw(_("{0} is not a valid date.").format(value))
+
+    from_date, to_date = _date(payload.get("from_date")), _date(payload.get("to_date"))
+    if from_date and to_date and to_date < from_date:
+        frappe.throw(_("The end date cannot be before the start date."))
+
+    # `qualification` looks like free text in the base doctype, but a Property
+    # Setter on this site turns it into a Link on "Education Stage" (relabelled
+    # "Education Stage"), so it accepts only the 9 stage records -- "10th",
+    # "Graduation", "Post Graduation" and so on. A degree like "MBA" is not one
+    # of them and inserting it raises LinkValidationError.
+    #
+    # So the degree goes to `custom_education_degree`, a plain Data column, and
+    # `qualification` is used only when the value really is a stage. The reader
+    # already falls back across both, so either way it comes back out.
+    values = {
+        "school_univ": institution,
+        "maj_opt_subj": _clean(payload.get("specialization"), _EDU_MAX_LEN),
+        "year_of_passing": cint(payload.get("year_of_passing")) or None,
+        "custom_start_date": from_date,
+        "custom_completion_date": to_date,
+    }
+    if frappe.db.exists("Education Stage", qualification):
+        values["qualification"] = qualification
+    else:
+        values["custom_education_degree"] = qualification
+
+    name = _child_insert("Employee Education", emp, "education", values)
+
+    return {"success": True, "name": name, "education": _alumni_education(emp)}
+
+
+@frappe.whitelist(methods=["POST"])
+def add_alumni_work_history(data=None, **kwargs) -> dict:
+    """Append one external-employer row to the alumnus's own Employee.
+
+    Payload: ``{company_name, designation, from_date?, to_date?}``. This is what
+    backs the portal's "Current company" block.
+    """
+    from frappe.utils import getdate
+
+    emp = _own_employee_or_throw()
+    payload = _coerce_payload(data, kwargs)
+
+    company_name = _clean(payload.get("company_name"), _WORK_MAX_LEN)
+    designation = _clean(payload.get("designation"), _WORK_MAX_LEN)
+    if not company_name:
+        frappe.throw(_("Company name is required."))
+    if not designation:
+        frappe.throw(_("Designation is required."))
+
+    def _date(value):
+        if not value:
+            return None
+        try:
+            return getdate(value)
+        except Exception:
+            frappe.throw(_("{0} is not a valid date.").format(value))
+
+    from_date, to_date = _date(payload.get("from_date")), _date(payload.get("to_date"))
+    if from_date and to_date and to_date < from_date:
+        frappe.throw(_("The end date cannot be before the start date."))
+
+    name = _child_insert(
+        "Employee External Work History",
+        emp,
+        "external_work_history",
+        {
+            "company_name": company_name,
+            "designation": designation,
+            "custom_from_datee": from_date,
+            "custom_to_datee": to_date,
+        },
+    )
+
+    return {"success": True, "name": name, "work_history": _alumni_work_history(emp)}
+
+
+# ── Upcoming celebrations, alumni only ────────────────────────────────────────
+@frappe.whitelist(methods=["POST"])
+def get_alumni_celebrations(days: int = 30, days_in_advance: int = None) -> dict:
+    """Birthdays and work anniversaries, restricted to fellow alumni.
+
+    Work Connect's `celebrations.get_upcoming_celebrations` covers the whole
+    workforce; an alumnus should see other alumni, not serving staff. This
+    delegates to it and keeps only rows whose user is an alumnus, preserving the
+    ``{data: {celebrations, birthdays, work_anniversaries, total}}`` envelope and
+    the ascending `days_until` order the delegate already applied.
+
+    Both arguments are passed through unchanged, including the legacy
+    ``days_in_advance`` alias, which wins over ``days`` in the delegate.
+    """
+    from chatnext_work_connect.chatnext_work_connect.api import celebrations as celebrations_api
+    from recruitment.recruitment.alumni_guard import is_alumni_user
+
+    _require_alumni_session()
+
+    result = celebrations_api.get_upcoming_celebrations(
+        days=days, days_in_advance=days_in_advance
+    ) or {}
+    data = result.get("data") or {}
+
+    def _mine(rows):
+        kept = []
+        for row in rows or []:
+            user_id = row.get("user_id")
+            if user_id and is_alumni_user(user_id):
+                kept.append(row)
+        return kept
+
+    # The delegate caps `celebrations` at 30 but leaves the split arrays
+    # uncapped, so filter each independently rather than deriving one from
+    # another -- a merged row dropped by that cap would otherwise vanish twice.
+    data["celebrations"] = _mine(data.get("celebrations"))
+    data["birthdays"] = _mine(data.get("birthdays"))
+    data["work_anniversaries"] = _mine(data.get("work_anniversaries"))
+    data["total"] = len(data["celebrations"])
+
+    result["data"] = data
+    return result
