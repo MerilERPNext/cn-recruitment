@@ -224,70 +224,38 @@ const App: React.FC = () => {
                 <Toaster
                   position="top-center"
                   containerClassName="z-[9999] !top-4 md:!top-6"
-                  toastOptions={{
-                    style: {
-                      maxWidth: "90vw",
-                      width: "380px",
-                    }
-                  }}
                 >
                   {(t) => (
-                    <ToastBar
-                      toast={t}
-                      style={{
-                        ...t.style,
-                        backgroundColor: "rgb(var(--surface-raised))",
-                        color: "rgb(var(--text-title))",
-                        borderLeft:
-                          t.type === "success"
-                            ? "4px solid #10B981"
-                            : "4px solid #EF4444",
-                        borderTop: "1px solid rgb(var(--border-strong))",
-                        borderRight: "1px solid rgb(var(--border-strong))",
-                        borderBottom: "1px solid rgb(var(--border-strong))",
-                        boxShadow:
-                          "0 10px 25px -5px rgba(0, 0, 0, 0.35)",
-                        minWidth: "280px",
-                        maxWidth: "90vw",
-                        padding: "0.75rem 1rem",
-                        borderRadius: "0.75rem",
-                        transition:
-                          "all 300ms cubic-bezier(0.175, 0.885, 0.32, 1.275)",
-                      }}
+                    <div
+                      className={`
+                        flex items-center gap-3 px-4 py-3 rounded-xl shadow-2xl transition-all duration-300 max-w-[90vw] w-[380px]
+                        bg-white dark:bg-[#102030] text-slate-800 dark:text-slate-100
+                        border border-slate-200 dark:border-[#1E3A4C]
+                        ${t.type === "success" ? "border-l-4 border-l-emerald-500" : t.type === "error" ? "border-l-4 border-l-rose-500" : "border-l-4 border-l-cyan-500"}
+                      `}
                     >
-                      {({ message }: { message: React.ReactNode }) => (
-                        <div className="flex items-center w-full min-w-0 gap-2.5">
-                          {t.type === "success" ? (
-                            <CheckCircle2
-                              className="h-5 w-5 text-emerald-500 shrink-0"
-                              strokeWidth={2}
-                            />
-                          ) : (
-                            <CircleX
-                              className="h-5 w-5 text-rose-500 shrink-0"
-                              strokeWidth={2}
-                            />
-                          )}
-                          <div
-                            className="flex-1 min-w-0 overflow-y-auto pr-1 text-sm font-semibold break-words custom-toast-scrollbar"
-                            style={{
-                              color: "rgb(var(--text-title))",
-                              scrollbarWidth: "thin",
-                            }}
-                          >
-                            {message}
-                          </div>
-                          {t.type !== "loading" && (
-                            <button
-                              className="ml-2 p-1 rounded-lg hover:bg-black/10 dark:hover:bg-white/10 focus:outline-none transition-colors duration-200 shrink-0"
-                              onClick={() => toast.dismiss(t.id)}
-                            >
-                              <X className="h-4 w-4" style={{ color: "rgb(var(--text-title))", opacity: 0.7 }} />
-                            </button>
-                          )}
-                        </div>
+                      {t.type === "success" ? (
+                        <CheckCircle2 className="h-5 w-5 text-emerald-500 shrink-0" strokeWidth={2} />
+                      ) : t.type === "error" ? (
+                        <CircleX className="h-5 w-5 text-rose-500 shrink-0" strokeWidth={2} />
+                      ) : (
+                        <CheckCircle2 className="h-5 w-5 text-cyan-500 shrink-0" strokeWidth={2} />
                       )}
-                    </ToastBar>
+
+                      <div className="flex-1 min-w-0 text-sm font-medium leading-snug break-words text-slate-800 dark:text-slate-100">
+                        {typeof t.message === "function" ? t.message(t) : t.message}
+                      </div>
+
+                      {t.type !== "loading" && (
+                        <button
+                          type="button"
+                          className="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-[#162A3E] text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors shrink-0"
+                          onClick={() => toast.dismiss(t.id)}
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      )}
+                    </div>
                   )}
                 </Toaster>
                 <MandatoryPoliciesHandler />

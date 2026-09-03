@@ -680,4 +680,20 @@ span.flatpickr-weekday {
   background-color: rgb(var(--gray-100)) !important;
 }
 
+/* =============================================================================
+ * TOAST NOTIFICATIONS (react-hot-toast)
+ * ========================================================================== */
+[role="status"],
+[data-toast],
+div[class*="go207"],
+div[class*="go396"],
+div[class*="go188"],
+.react-hot-toast-bar {
+  background: transparent !important;
+  background-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+
 
