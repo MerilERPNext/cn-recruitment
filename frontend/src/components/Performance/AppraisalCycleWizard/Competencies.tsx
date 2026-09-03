@@ -38,15 +38,15 @@ const Competencies = () => {
     <>
       {/* Left Column: Frameworks */}
       <aside className="w-full lg:w-[240px] shrink-0 flex flex-col gap-4">
-        <div className="flex flex-col bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
-          <div className="p-4 border-b border-gray-100">
+        <div className="flex flex-col bg-card rounded-xl border border-border overflow-hidden shadow-sm">
+          <div className="p-4 border-b border-border">
             <Typography
               variant="bodyMedium"
-              className="font-bold text-gray-900"
+              className="font-bold text-text-title"
             >
               Frameworks
             </Typography>
-            <Typography variant="caption" className="text-gray-500">
+            <Typography variant="caption" color="body2">
               3 published
             </Typography>
           </div>
@@ -58,27 +58,27 @@ const Competencies = () => {
                 type="button"
                 onClick={() => setActiveFramework(fw.id)}
                 className={clsx(
-                  "p-4 cursor-pointer transition-colors border-l-2 w-full text-left focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset",
+                  "p-4 cursor-pointer transition-colors border-l-2 w-full text-left focus:outline-none focus:ring-1 focus:ring-primary",
                   activeFramework === fw.id
-                    ? "border-blue-500 bg-blue-50/50"
-                    : "border-transparent bg-white hover:bg-gray-50",
+                    ? "border-primary bg-primary/10"
+                    : "border-transparent bg-card hover:bg-slate-500/10",
                 )}
               >
                 <Typography
                   variant="bodyMedium"
-                  className="font-bold text-gray-900 block mb-0.5"
+                  className="font-bold text-text-title block mb-0.5"
                 >
                   {fw.name}
                 </Typography>
-                <Typography variant="caption" className="text-gray-500">
+                <Typography variant="caption" color="body2">
                   {fw.count} competencies
                 </Typography>
               </button>
             ))}
           </div>
 
-          <div className="p-4 border-t border-gray-100">
-            <button className="w-full rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-blue-600 shadow-sm transition hover:bg-gray-50">
+          <div className="p-4 border-t border-border">
+            <button className="w-full rounded-lg border border-border bg-card px-4 py-2 text-sm font-semibold text-primary shadow-sm transition hover:bg-slate-500/10 cursor-pointer">
               + New framework
             </button>
           </div>
@@ -87,18 +87,18 @@ const Competencies = () => {
 
       {/* Center Column: Competency Mapping */}
       <section className="flex-1 flex flex-col min-w-0">
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden flex flex-col h-full">
+        <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden flex flex-col h-full">
           {/* Header */}
-          <div className="p-5 sm:p-6 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="p-5 sm:p-6 border-b border-border flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center gap-2 flex-wrap">
-              <Typography variant="h4" className="font-bold text-gray-900">
+              <Typography variant="h4" className="font-bold text-text-title">
                 PW Design
               </Typography>
-              <Typography variant="bodyMedium" className="text-gray-500">
+              <Typography variant="bodyMedium" color="body2">
                 8 competencies × 5 levels = 40 anchor descriptors
               </Typography>
             </div>
-            <button className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm transition hover:bg-gray-50 whitespace-nowrap">
+            <button className="rounded-lg border border-border bg-card px-4 py-2 text-sm font-semibold text-text-title shadow-sm transition hover:bg-slate-500/10 whitespace-nowrap cursor-pointer">
               + Add competency
             </button>
           </div>
@@ -107,32 +107,32 @@ const Competencies = () => {
           <div className="overflow-x-auto w-full">
             <table className="w-full text-left min-w-[600px]">
               <thead>
-                <tr className="border-b border-gray-100">
-                  <th className="px-5 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest w-1/3">
+                <tr className="border-b border-border">
+                  <th className="px-5 py-4 text-[10px] font-bold text-text-body2 uppercase tracking-widest w-1/3">
                     Competency
                   </th>
-                  <th className="px-2 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest text-center">
+                  <th className="px-2 py-4 text-[10px] font-bold text-text-body2 uppercase tracking-widest text-center">
                     <div className="flex justify-center gap-3 sm:gap-4">
                       {levels.map((l) => (
                         <span key={l}>{l}</span>
                       ))}
                     </div>
                   </th>
-                  <th className="px-5 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest text-right">
+                  <th className="px-5 py-4 text-[10px] font-bold text-text-body2 uppercase tracking-widest text-right">
                     Weight
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-50">
+              <tbody className="divide-y divide-border">
                 {competencies.map((comp) => (
                   <tr
                     key={comp.id}
-                    className="hover:bg-gray-50/50 transition-colors"
+                    className="hover:bg-slate-500/10 transition-colors"
                   >
                     <td className="px-5 py-3.5">
                       <Typography
                         variant="bodyMedium"
-                        className="font-bold text-gray-800"
+                        className="font-bold text-text-title"
                       >
                         {comp.name}
                       </Typography>
@@ -152,10 +152,10 @@ const Competencies = () => {
                               className={clsx(
                                 "flex h-5 w-5 items-center justify-center rounded transition-colors",
                                 isFocused
-                                  ? "bg-blue-600 text-white shadow-sm ring-2 ring-blue-100 ring-offset-1"
+                                  ? "bg-primary text-white shadow-sm ring-2 ring-primary/30 ring-offset-1"
                                   : isBlueCheck
-                                    ? "bg-blue-100 text-blue-500"
-                                    : "bg-gray-100 text-gray-300",
+                                    ? "bg-primary/20 text-primary"
+                                    : "bg-slate-500/20 text-text-body2",
                               )}
                             >
                               <Check
@@ -170,7 +170,7 @@ const Competencies = () => {
                     <td className="px-5 py-3.5 text-right">
                       <Typography
                         variant="bodyMedium"
-                        className="font-bold text-gray-900"
+                        className="font-bold text-text-title"
                       >
                         {comp.weight}
                       </Typography>
@@ -179,14 +179,14 @@ const Competencies = () => {
                 ))}
               </tbody>
               <tfoot>
-                <tr className="border-t border-gray-100 bg-gray-50/50">
+                <tr className="border-t border-border bg-slate-500/10">
                   <td
-                    className="px-5 py-4 font-bold text-gray-800 text-sm"
+                    className="px-5 py-4 font-bold text-text-title text-sm"
                     colSpan={2}
                   >
                     Total weight
                   </td>
-                  <td className="px-5 py-4 text-right flex items-center justify-end gap-1 text-emerald-600 font-bold text-sm">
+                  <td className="px-5 py-4 text-right flex items-center justify-end gap-1 text-emerald-500 font-bold text-sm">
                     100% <Check className="h-4 w-4" />
                   </td>
                 </tr>
@@ -195,17 +195,19 @@ const Competencies = () => {
           </div>
 
           {/* Anchor Preview Box */}
-          <div className="p-5 sm:p-6 bg-white border-t border-gray-100">
+          <div className="p-5 sm:p-6 bg-card border-t border-border">
             <Typography
               variant="caption"
-              className="font-bold text-gray-400 uppercase tracking-widest block mb-3"
+              color="body2"
+              className="font-bold uppercase tracking-widest block mb-3"
             >
               Behavioural Anchor - Design Craft × Senior
             </Typography>
-            <div className="rounded-lg bg-gray-50 border border-gray-100 p-4">
+            <div className="rounded-lg bg-slate-500/10 border border-border p-4">
               <Typography
                 variant="bodyMedium"
-                className="italic text-gray-600 leading-relaxed"
+                color="body2"
+                className="italic leading-relaxed"
               >
                 "Produces polished, brand-consistent designs across complex
                 flows. Sets craft bar for the team. Mentors mid-level designers
@@ -219,16 +221,16 @@ const Competencies = () => {
       {/* Right Column: Context Sidebars */}
       <aside className="w-full lg:w-[260px] xl:w-[280px] shrink-0 flex flex-col gap-4">
         {/* Specialist Toggle Note */}
-        <div className="rounded-xl border border-purple-100 bg-purple-50 p-5 shadow-sm">
+        <div className="rounded-xl border border-purple-500/30 bg-purple-500/10 p-5 shadow-sm">
           <Typography
             variant="bodyMedium"
-            className="font-bold text-purple-900 block mb-1"
+            className="font-bold text-purple-400 block mb-1"
           >
             Specialist toggle
           </Typography>
           <Typography
             variant="caption"
-            className="text-purple-800 leading-relaxed block"
+            className="text-purple-300 leading-relaxed block"
           >
             For specialist competencies (e.g. "Accessibility"), reviewers from
             outside the function are not asked to rate.
@@ -236,36 +238,37 @@ const Competencies = () => {
         </div>
 
         {/* Mapping Info */}
-        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+        <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
           <Typography
             variant="caption"
-            className="font-bold text-gray-400 uppercase tracking-widest block mb-4"
+            color="body2"
+            className="font-bold uppercase tracking-widest block mb-4"
           >
             Mapping
           </Typography>
 
           <div className="flex flex-col gap-3">
             <div className="flex justify-between items-start gap-2">
-              <span className="text-sm text-gray-500">Role</span>
-              <span className="text-sm font-semibold text-gray-900 text-right">
+              <span className="text-sm text-text-body2">Role</span>
+              <span className="text-sm font-semibold text-text-title text-right">
                 Sr. Product Designer
               </span>
             </div>
             <div className="flex justify-between items-start gap-2">
-              <span className="text-sm text-gray-500">Grade</span>
-              <span className="text-sm font-semibold text-gray-900 text-right">
+              <span className="text-sm text-text-body2">Grade</span>
+              <span className="text-sm font-semibold text-text-title text-right">
                 L3 / L4
               </span>
             </div>
             <div className="flex justify-between items-start gap-2">
-              <span className="text-sm text-gray-500">Function</span>
-              <span className="text-sm font-semibold text-gray-900 text-right">
+              <span className="text-sm text-text-body2">Function</span>
+              <span className="text-sm font-semibold text-text-title text-right">
                 Design
               </span>   
             </div>
             <div className="flex justify-between items-start gap-2">
-              <span className="text-sm text-gray-500">BU</span>
-              <span className="text-sm font-semibold text-gray-900 text-right">
+              <span className="text-sm text-text-body2">BU</span>
+              <span className="text-sm font-semibold text-text-title text-right">
                 All India BUs
               </span>
             </div>

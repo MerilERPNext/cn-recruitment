@@ -54,31 +54,31 @@ const finalEscalationOptions = [
 ];
 
 const slaSelectClass =
-  "relative w-full [&>button]:min-h-[42px] [&>button]:rounded-lg [&>button]:border-gray-300 [&>button]:px-3 [&>button]:py-2.5 [&>button]:text-sm [&>button]:font-medium [&>button]:shadow-sm [&>button_span]:font-medium [&>div]:mt-1 [&>div]:w-full [&>div]:rounded-none [&>div]:p-0 [&_li]:rounded-none [&_li]:px-3 [&_li]:py-2 [&_li]:text-sm";
+  "relative w-full [&>button]:min-h-[42px] [&>button]:rounded-lg [&>button]:border-border [&>button]:bg-card [&>button]:px-3 [&>button]:py-2.5 [&>button]:text-sm [&>button]:font-medium [&>button]:shadow-sm [&>button_span]:font-medium [&>div]:mt-1 [&>div]:w-full [&>div]:rounded-none [&>div]:p-0 [&_li]:rounded-none [&_li]:px-3 [&_li]:py-2 [&_li]:text-sm";
 
 const colorMap = {
-  blue: { bg: "bg-blue-500", border: "border-blue-500", text: "text-blue-500" },
+  blue: { bg: "bg-blue-500", border: "border-blue-500/30", text: "text-blue-500" },
   indigo: {
     bg: "bg-indigo-500",
-    border: "border-indigo-500",
+    border: "border-indigo-500/30",
     text: "text-indigo-500",
   },
   purple: {
     bg: "bg-purple-500",
-    border: "border-purple-500",
+    border: "border-purple-500/30",
     text: "text-purple-500",
   },
   yellow: {
     bg: "bg-amber-500",
-    border: "border-amber-500",
+    border: "border-amber-500/30",
     text: "text-amber-500",
   },
   green: {
     bg: "bg-emerald-500",
-    border: "border-emerald-500",
+    border: "border-emerald-500/30",
     text: "text-emerald-500",
   },
-  red: { bg: "bg-red-500", border: "border-red-500", text: "text-red-500" },
+  red: { bg: "bg-red-500", border: "border-red-500/30", text: "text-red-500" },
 };
 
 const Workflow = () => {
@@ -107,11 +107,11 @@ const Workflow = () => {
   return (
     <>
       {/* Approval Pattern */}
-      <section className="rounded-xl border border-gray-200 bg-white p-5 sm:p-6 shadow-sm">
-        <Typography variant="h4" className="font-bold text-gray-900 mb-1">
+      <section className="rounded-xl border border-border bg-card p-5 sm:p-6 shadow-sm">
+        <Typography variant="h4" className="font-bold text-text-title mb-1">
           Approval Pattern
         </Typography>
-        <Typography variant="bodySmall" className="text-gray-500 mb-6 block">
+        <Typography variant="bodySmall" color="body2" className="mb-6 block">
           Applies to all reviewer-completed stages
         </Typography>
 
@@ -123,21 +123,21 @@ const Workflow = () => {
               className={clsx(
                 "relative flex flex-col rounded-xl border p-4 cursor-pointer transition-all hover:shadow-sm",
                 activePattern === pattern.id
-                  ? "border-blue-500 bg-blue-50/10 shadow-sm"
-                  : "border-gray-200 bg-white hover:border-gray-300",
+                  ? "border-primary bg-primary/10 shadow-sm"
+                  : "border-border bg-card hover:border-primary/50",
               )}
             >
               <Typography
                 variant="bodyMedium"
-                className="font-bold text-gray-900 mb-1"
+                className="font-bold text-text-title mb-1"
               >
                 {pattern.title}
               </Typography>
-              <Typography variant="bodySmall" className="text-gray-500">
+              <Typography variant="bodySmall" color="body2">
                 {pattern.description}
               </Typography>
               {activePattern === pattern.id && (
-                <div className="mt-4 flex items-center gap-1.5 text-blue-600">
+                <div className="mt-4 flex items-center gap-1.5 text-primary">
                   <Check className="h-4 w-4" />
                   <span className="text-xs font-bold">Selected</span>
                 </div>
@@ -148,14 +148,14 @@ const Workflow = () => {
       </section>
 
       {/* SLA & Escalation */}
-      <section className="rounded-xl border border-gray-200 bg-white p-5 sm:p-6 shadow-sm">
-        <Typography variant="h4" className="font-bold text-gray-900 mb-6">
+      <section className="rounded-xl border border-border bg-card p-5 sm:p-6 shadow-sm">
+        <Typography variant="h4" className="font-bold text-text-title mb-6">
           SLA & Escalation
         </Typography>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="flex flex-col gap-2">
-            <label className="text-xs font-bold text-gray-700">
+            <label className="text-xs font-bold text-text-body2">
               Auto-approve after
             </label>
             <Select
@@ -166,7 +166,7 @@ const Workflow = () => {
             />
           </div>
           <div className="flex flex-col gap-2">
-            <label className="text-xs font-bold text-gray-700">
+            <label className="text-xs font-bold text-text-body2">
               First escalation
             </label>
             <Select
@@ -177,7 +177,7 @@ const Workflow = () => {
             />
           </div>
           <div className="flex flex-col gap-2">
-            <label className="text-xs font-bold text-gray-700">
+            <label className="text-xs font-bold text-text-body2">
               Final escalation
             </label>
             <Select
@@ -191,11 +191,11 @@ const Workflow = () => {
       </section>
 
       {/* Visual workflow */}
-      <section className="rounded-xl border border-gray-200 bg-white p-5 sm:p-6 shadow-sm">
-        <Typography variant="h4" className="font-bold text-gray-900 mb-1">
+      <section className="rounded-xl border border-border bg-card p-5 sm:p-6 shadow-sm">
+        <Typography variant="h4" className="font-bold text-text-title mb-1">
           Visual workflow
         </Typography>
-        <Typography variant="bodySmall" className="text-gray-500 mb-6 block">
+        <Typography variant="bodySmall" color="body2" className="mb-6 block">
           Sequential approvers between stages
         </Typography>
 
@@ -206,7 +206,7 @@ const Workflow = () => {
               <div
                 key={stage.id}
                 className={clsx(
-                  "flex flex-col rounded-xl border bg-white p-4 min-w-[160px] flex-shrink-0 relative",
+                  "flex flex-col rounded-xl border bg-card p-4 min-w-[160px] flex-shrink-0 relative",
                   colors.border,
                 )}
               >
@@ -220,11 +220,11 @@ const Workflow = () => {
                 </div>
                 <Typography
                   variant="bodyMedium"
-                  className="font-bold text-gray-900 mb-1"
+                  className="font-bold text-text-title mb-1"
                 >
                   {stage.title}
                 </Typography>
-                <Typography variant="caption" className="text-gray-500">
+                <Typography variant="caption" color="body2">
                   {stage.subtitle}
                 </Typography>
               </div>
@@ -234,17 +234,17 @@ const Workflow = () => {
       </section>
 
       {/* Lockdown rules */}
-      <section className="rounded-xl border border-gray-200 bg-white p-5 sm:p-6 shadow-sm">
-        <Typography variant="h4" className="font-bold text-gray-900 mb-1">
+      <section className="rounded-xl border border-border bg-card p-5 sm:p-6 shadow-sm">
+        <Typography variant="h4" className="font-bold text-text-title mb-1">
           Lockdown rules
         </Typography>
-        <Typography variant="bodySmall" className="text-gray-500 mb-6 block">
+        <Typography variant="bodySmall" color="body2" className="mb-6 block">
           After a stage closes, what's editable?
         </Typography>
 
-        <div className="flex flex-col divide-y divide-gray-100 border border-gray-100 rounded-lg overflow-hidden">
-          <div className="flex items-center justify-between p-4 bg-white hover:bg-gray-50 transition-colors">
-            <Typography variant="bodyMedium" className="text-gray-700">
+        <div className="flex flex-col divide-y divide-border border border-border rounded-lg overflow-hidden">
+          <div className="flex items-center justify-between p-4 bg-card hover:bg-slate-500/10 transition-colors">
+            <Typography variant="bodyMedium" className="text-text-title">
               Lock self-review on submit
             </Typography>
             <Switch
@@ -252,8 +252,8 @@ const Workflow = () => {
               onCheckedChange={() => handleRuleToggle("lockSelfReview")}
             />
           </div>
-          <div className="flex items-center justify-between p-4 bg-white hover:bg-gray-50 transition-colors">
-            <Typography variant="bodyMedium" className="text-gray-700">
+          <div className="flex items-center justify-between p-4 bg-card hover:bg-slate-500/10 transition-colors">
+            <Typography variant="bodyMedium" className="text-text-title">
               Lock manager rating on calibration submit
             </Typography>
             <Switch
@@ -261,8 +261,8 @@ const Workflow = () => {
               onCheckedChange={() => handleRuleToggle("lockManagerRating")}
             />
           </div>
-          <div className="flex items-center justify-between p-4 bg-white hover:bg-gray-50 transition-colors">
-            <Typography variant="bodyMedium" className="text-gray-700">
+          <div className="flex items-center justify-between p-4 bg-card hover:bg-slate-500/10 transition-colors">
+            <Typography variant="bodyMedium" className="text-text-title">
               Allow HR Admin to re-open any stage (with reason)
             </Typography>
             <Switch
@@ -270,8 +270,8 @@ const Workflow = () => {
               onCheckedChange={() => handleRuleToggle("allowHrReopen")}
             />
           </div>
-          <div className="flex items-center justify-between p-4 bg-white hover:bg-gray-50 transition-colors">
-            <Typography variant="bodyMedium" className="text-gray-700">
+          <div className="flex items-center justify-between p-4 bg-card hover:bg-slate-500/10 transition-colors">
+            <Typography variant="bodyMedium" className="text-text-title">
               Audit re-open events to Super Admin
             </Typography>
             <Switch
@@ -279,8 +279,8 @@ const Workflow = () => {
               onCheckedChange={() => handleRuleToggle("auditReopen")}
             />
           </div>
-          <div className="flex items-center justify-between p-4 bg-white hover:bg-gray-50 transition-colors">
-            <Typography variant="bodyMedium" className="text-gray-700">
+          <div className="flex items-center justify-between p-4 bg-card hover:bg-slate-500/10 transition-colors">
+            <Typography variant="bodyMedium" className="text-text-title">
               Allow rollback to previous rating
             </Typography>
             <Switch

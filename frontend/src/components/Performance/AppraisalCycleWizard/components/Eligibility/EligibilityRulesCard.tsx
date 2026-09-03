@@ -38,24 +38,24 @@ const EligibilityRulesCard = ({
   setRules,
 }: EligibilityRulesCardProps) => {
   return (
-    <section className="rounded-lg border border-gray-200 bg-white p-3 shadow-sm sm:p-5">
-      <div className="mb-5 grid grid-cols-2 rounded-lg bg-gray-50 p-1 sm:inline-flex">
+    <section className="rounded-lg border border-border bg-card p-3 shadow-sm sm:p-5">
+      <div className="mb-5 grid grid-cols-2 rounded-lg bg-slate-500/10 p-1 sm:inline-flex">
         <button
           onClick={() => setActiveMode("rules")}
-          className={`min-h-[40px] rounded-md px-3 py-2 text-sm font-bold sm:px-4 ${
+          className={`min-h-[40px] rounded-md px-3 py-2 text-sm font-bold sm:px-4 cursor-pointer ${
             activeMode === "rules"
-              ? "bg-white text-gray-900 shadow-sm"
-              : "text-gray-500"
+              ? "bg-card text-text-title shadow-sm"
+              : "text-text-body2"
           }`}
         >
           Dynamic rules
         </button>
         <button
           onClick={() => setActiveMode("csv")}
-          className={`min-h-[40px] rounded-md px-3 py-2 text-sm font-bold sm:px-4 ${
+          className={`min-h-[40px] rounded-md px-3 py-2 text-sm font-bold sm:px-4 cursor-pointer ${
             activeMode === "csv"
-              ? "bg-white text-gray-900 shadow-sm"
-              : "text-gray-500"
+              ? "bg-card text-text-title shadow-sm"
+              : "text-text-body2"
           }`}
         >
           Static CSV upload
@@ -64,7 +64,8 @@ const EligibilityRulesCard = ({
 
       <Typography
         variant="caption"
-        className="mb-3 block font-bold uppercase tracking-wider text-gray-500"
+        color="body2"
+        className="mb-3 block font-bold uppercase tracking-wider"
       >
         Include employees where
       </Typography>
@@ -73,14 +74,14 @@ const EligibilityRulesCard = ({
         {rules.map((rule) => (
           <div
             key={rule.id}
-            className="grid grid-cols-1 gap-2 rounded-lg border border-gray-100 bg-gray-50 p-3 sm:grid-cols-[72px_minmax(0,1fr)] xl:grid-cols-[70px_minmax(0,1fr)_110px_minmax(0,1.15fr)_32px] xl:border-0 xl:bg-transparent xl:p-0"
+            className="grid grid-cols-1 gap-2 rounded-lg border border-border bg-slate-500/10 p-3 sm:grid-cols-[72px_minmax(0,1fr)] xl:grid-cols-[70px_minmax(0,1fr)_110px_minmax(0,1.15fr)_32px] xl:border-0 xl:bg-transparent xl:p-0"
           >
             <div className="flex min-h-[38px] items-center sm:row-span-3 xl:row-span-1">
               <span
                 className={`rounded-md px-3 py-1.5 text-xs font-bold ${
                   rule.joiner === "WHERE"
-                    ? "bg-white text-gray-500 xl:bg-white"
-                    : "bg-blue-50 text-blue-600"
+                    ? "bg-card text-text-body2 xl:bg-card"
+                    : "bg-primary/20 text-primary"
                 }`}
               >
                 {rule.joiner}
@@ -121,25 +122,28 @@ const EligibilityRulesCard = ({
               }
               className={selectClass}
             />
-            <input
-              className={`${inputClass} bg-white`}
-              value={rule.value}
-              onChange={(event) =>
-                setRules((current) =>
-                  current.map((item) =>
-                    item.id === rule.id
-                      ? { ...item, value: event.target.value }
-                      : item,
-                  ),
-                )
-              }
-            />
+            <div className="flex min-h-[38px] items-center rounded-lg border border-border bg-card px-3 shadow-sm focus-within:border-primary focus-within:ring-1 focus-within:ring-primary">
+              <input
+                value={rule.value}
+                onChange={(event) =>
+                  setRules((current) =>
+                    current.map((item) =>
+                      item.id === rule.id
+                        ? { ...item, value: event.target.value }
+                        : item,
+                    ),
+                  )
+                }
+                className={inputClass}
+              />
+            </div>
             <button
               onClick={() =>
-                setRules((current) => current.filter((r) => r.id !== rule.id))
+                setRules((current) =>
+                  current.filter((item) => item.id !== rule.id),
+                )
               }
-              className="flex h-[38px] w-full items-center justify-center rounded-md border border-gray-200 bg-white text-gray-400 hover:bg-gray-50 hover:text-gray-700 sm:col-start-2 xl:col-start-auto xl:w-8 xl:border-0 xl:bg-transparent"
-              aria-label="Remove condition"
+              className="flex min-h-[38px] items-center justify-center rounded-lg text-text-body2 hover:bg-slate-500/10 hover:text-text-title cursor-pointer"
             >
               <X className="h-4 w-4" />
             </button>
@@ -148,22 +152,22 @@ const EligibilityRulesCard = ({
       </div>
 
       <button
-        onClick={() => {
+        onClick={() =>
           setRules((current) => [
             ...current,
             {
-              id: Math.max(0, ...current.map((r) => r.id)) + 1,
-              joiner: current.length === 0 ? "WHERE" : "AND",
-              field: fieldOptions[0]?.value || "",
-              operator: operatorOptions[0]?.value || "",
-              value: "",
+              id: Date.now(),
+              joiner: "AND",
+              field: "Department",
+              operator: "is",
+              value: "Engineering",
             },
-          ]);
-        }}
-        className="mt-4 inline-flex min-h-[38px] items-center gap-2 rounded-md border border-blue-100 bg-white px-3 text-sm font-bold text-blue-600 hover:bg-blue-50"
+          ])
+        }
+        className="mt-4 flex items-center gap-2 text-sm font-bold text-primary hover:text-primary/80 cursor-pointer"
       >
         <Plus className="h-4 w-4" />
-        Add condition
+        Add rule clause
       </button>
     </section>
   );
