@@ -188,10 +188,10 @@ const StartGoalSelection = ({ onContinue }: StartGoalSelectionProps) => {
                                             : () => toast('No manager goals available to cascade.')
                             }
                             buttonClass={
-                              teamGoalsLoading ? 'bg-slate-500/30 text-text-body2 cursor-not-allowed pointer-events-none'
+                              teamGoalsLoading ? 'bg-slate-500/20 text-slate-400 border border-slate-500/30 cursor-not-allowed pointer-events-none'
                                     : (teamGoals?.data?.goals?.length ?? 0) > 0
                                         ? 'bg-primary hover:bg-primary/90 text-white'
-                                        : 'bg-slate-500/30 text-text-body2 cursor-not-allowed pointer-events-none'
+                                        : 'bg-slate-500/20 text-slate-400 border border-slate-500/30 cursor-not-allowed pointer-events-none'
                             }
                             buttonText={'Use this'}
                         >
