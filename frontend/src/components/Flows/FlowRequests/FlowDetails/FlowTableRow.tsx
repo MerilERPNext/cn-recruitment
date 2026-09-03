@@ -66,7 +66,7 @@ const FlowTableRow = ({
   return (
     <div
       key={stage.stage_name}
-      className="hover:bg-primary-100 px-6 py-4 grid grid-cols-8 items-center text-center cursor-pointer text-xs w-full border-b gap-4"
+      className="hover:bg-gray-50 px-6 py-4 grid grid-cols-8 items-center text-center cursor-pointer text-xs w-full border-b border-border gap-4 transition-colors"
     >
       <div className="flex justify-center items-center">
         <Typography variant="bodySmall" className="font-medium text-center">

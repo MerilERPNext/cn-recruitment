@@ -43,11 +43,11 @@ const AllReports: React.FC<AllReportsProps> = ({ show, setShowAllReport }: AllRe
 
     return (
         <Modal isOpen={show} onClose={() => setShowAllReport(false)} size="md">
-            <div className="flex flex-col bg-white w-full">
+            <div className="flex flex-col bg-card text-text-body1 w-full">
                 {/* Header */}
-                <div className="sticky top-0 z-10 bg-white flex justify-between items-center px-6 py-4 border-b border-gray-100">
+                <div className="sticky top-0 z-10 bg-card flex justify-between items-center px-6 py-4 border-b border-border">
                     <div className="flex items-center gap-3">
-                        <Typography variant="h4" className="font-semibold text-slate-800">
+                        <Typography variant="h4" className="font-semibold text-text-title">
                             All Reports
                         </Typography>
                         <StatusBadge status="In Progress" />
@@ -66,62 +66,62 @@ const AllReports: React.FC<AllReportsProps> = ({ show, setShowAllReport }: AllRe
                 <div className="p-6 flex flex-col gap-8">
                     {dummyReportsData.map((report, index) => (
                         <div key={index} className="flex flex-col gap-3">
-                            <Typography variant="body" className="font-medium text-slate-800">
+                            <Typography variant="body" className="font-medium text-text-title">
                                 {report.title}
                             </Typography>
-                            <div className="bg-[#f8f9fc] p-5 rounded-xl flex flex-col gap-5">
+                            <div className="bg-gray-50 p-5 rounded-xl flex flex-col gap-5">
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-y-6 gap-x-4">
                                     <div className="flex flex-col gap-1">
-                                        <Typography variant="bodySmall" className="text-slate-500">
+                                        <Typography variant="bodySmall" className="text-text-body2">
                                             Verification Type
                                         </Typography>
-                                        <Typography variant="bodySmall" className="font-medium text-slate-900">
+                                        <Typography variant="bodySmall" className="font-medium text-text-title">
                                             {report.verification_type}
                                         </Typography>
                                     </div>
                                     <div className="flex flex-col gap-1">
-                                        <Typography variant="bodySmall" className="text-slate-500">
+                                        <Typography variant="bodySmall" className="text-text-body2">
                                             Partner Name
                                         </Typography>
-                                        <Typography variant="bodySmall" className="font-medium text-slate-900">
+                                        <Typography variant="bodySmall" className="font-medium text-text-title">
                                             {report.partner_name}
                                         </Typography>
                                     </div>
                                     <div className="flex flex-col gap-1">
-                                        <Typography variant="bodySmall" className="text-slate-500">
+                                        <Typography variant="bodySmall" className="text-text-body2">
                                             Assigned On
                                         </Typography>
-                                        <Typography variant="bodySmall" className="font-medium text-slate-900">
+                                        <Typography variant="bodySmall" className="font-medium text-text-title">
                                             {report.assigned_on}
                                         </Typography>
                                     </div>
 
                                     {report.last_updated_on && (
                                         <div className="flex flex-col gap-1">
-                                            <Typography variant="bodySmall" className="text-slate-500">
+                                            <Typography variant="bodySmall" className="text-text-body2">
                                                 Last Updated on
                                             </Typography>
-                                            <Typography variant="bodySmall" className="font-medium text-slate-900">
+                                            <Typography variant="bodySmall" className="font-medium text-text-title">
                                                 {report.last_updated_on}
                                             </Typography>
                                         </div>
                                     )}
                                     {report.report_status && (
                                         <div className="flex flex-col gap-1">
-                                            <Typography variant="bodySmall" className="text-slate-500">
+                                            <Typography variant="bodySmall" className="text-text-body2">
                                                 Report Status
                                             </Typography>
-                                            <Typography variant="bodySmall" className="font-medium text-slate-900">
+                                            <Typography variant="bodySmall" className="font-medium text-text-title">
                                                 {report.report_status}
                                             </Typography>
                                         </div>
                                     )}
                                     {report.report && (
                                         <div className="flex flex-col gap-1">
-                                            <Typography variant="bodySmall" className="text-slate-500">
+                                            <Typography variant="bodySmall" className="text-text-body2">
                                                 Report
                                             </Typography>
-                                            <Typography variant="bodySmall" className="font-medium text-slate-900">
+                                            <Typography variant="bodySmall" className="font-medium text-text-title">
                                                 {report.report}
                                             </Typography>
                                         </div>
@@ -129,10 +129,10 @@ const AllReports: React.FC<AllReportsProps> = ({ show, setShowAllReport }: AllRe
                                 </div>
                                 {report.comments && (
                                     <div className="flex flex-col gap-1 pt-1">
-                                        <Typography variant="bodySmall" className="text-slate-500">
+                                        <Typography variant="bodySmall" className="text-text-body2">
                                             Comments
                                         </Typography>
-                                        <Typography variant="bodySmall" className="font-medium text-slate-900">
+                                        <Typography variant="bodySmall" className="font-medium text-text-title">
                                             {report.comments}
                                         </Typography>
                                     </div>

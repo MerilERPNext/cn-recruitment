@@ -193,7 +193,7 @@ const NotificationList = () => {
     };
     const pageNumbers = getVisiblePages();
     return (
-      <div className="flex-shrink-0 flex gap-4 items-center justify-between overflow-x-scroll px-4 py-3 border-t bg-white">
+      <div className="flex-shrink-0 flex gap-4 items-center justify-between overflow-x-scroll px-4 py-3 border-t  border-gray-100 bg-white">
         <p className="text-sm text-gray-500 whitespace-nowrap">
           {filteredNotifications.length === 0
             ? "No results"
@@ -251,7 +251,7 @@ const NotificationList = () => {
       </div>
 
       {/* ✅ Sticky Tabs + Mark All as Read */}
-      <div className="flex-shrink-0 flex items-center justify-between border-b bg-white pr-3">
+      <div className="flex-shrink-0 flex items-center justify-between border-b border-gray-100 bg-white pr-3">
         {/* Tab buttons on left */}
         <div className="flex">
           {(["all", "read", "unread"] as const).map((tab) => (
@@ -411,7 +411,7 @@ const NotificationItem: React.FC<{
   return (
     <div
       onClick={onClick}
-      className={`flex items-center justify-between p-4 border rounded-lg cursor-pointer hover:bg-gray-50
+      className={`flex items-center justify-between p-4 border border-gray-100 rounded-lg cursor-pointer hover:bg-gray-50
       ${isRead ? "bg-white" : "bg-white shadow-sm"}`}
     >
       <div className="flex items-start gap-4 flex-1">

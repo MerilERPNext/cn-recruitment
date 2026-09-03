@@ -187,8 +187,8 @@ code {
   align-items: stretch !important;
   justify-content: stretch !important;
   margin: 0 !important;
-  border-right: 1px solid #e2e4e7 !important;
-  border-bottom: 1px solid #e2e4e7 !important;
+  border-right: 1px solid rgb(var(--border)) !important;
+  border-bottom: 1px solid rgb(var(--border)) !important;
   overflow: hidden !important;
   /* padding: 8px !important; */
 }
@@ -204,7 +204,7 @@ code {
 .desktop-att-cal .react-datepicker__day-name {
   flex: 1 1 0 !important;
   min-width: 0 !important;
-  border-right: 1px solid #e2e4e7 !important;
+  border-right: 1px solid rgb(var(--border)) !important;
   padding: 0.4rem 0.15rem !important;
   border-radius: 10px 10px 0 0 !important;
   overflow: hidden !important;
@@ -214,20 +214,20 @@ code {
 }
 
 .desktop-att-cal .react-datepicker__day-names {
-  background-color: #EEF4FF !important;
-  border: 1px solid #e2e4e7 !important;
+  background-color: rgb(var(--gray-10)) !important;
+  border: 1px solid rgb(var(--border)) !important;
   border-radius: 10px 10px 0 0 !important;
-  /* border-bottom: 2px solid #e5e7eb !important; */
+  /* border-bottom: 2px solid rgb(var(--border)) !important; */
 }
 
 .desktop-att-cal .react-datepicker__month {
-  border: 1px solid #e2e4e7 !important;
+  border: 1px solid rgb(var(--border)) !important;
   border-top: none !important;
 }
 
 .employee-datepicker-lg .react-datepicker__day--outside-month {
   opacity: 0.3 !important;
-  background-color: #f9fafb !important;
+  background-color: rgb(var(--surface-sunken)) !important;
 }
 
 .react-datepicker__day-names {
@@ -241,7 +241,7 @@ code {
   margin: 0 !important;
   text-align: center !important;
   font-weight: 600 !important;
-  color: #6b7280 !important;
+  color: rgb(var(--text-body2)) !important;
   font-size: 0.75rem !important;
   padding: 0.5rem 0 !important;
 }
@@ -255,7 +255,7 @@ code {
 .react-datepicker__current-month {
   font-size: 1.125rem !important;
   font-weight: 600 !important;
-  color: #111827 !important;
+  color: rgb(var(--text-title)) !important;
   margin-bottom: 0.5rem !important;
 }
 
@@ -263,8 +263,8 @@ code {
   top: 1rem !important;
   /* width: 1.5rem !important;
   height: 1.5rem !important; */
-  background-color: #f9fafb !important;
-  border: 1px solid #e5e7eb !important;
+  background-color: rgb(var(--surface-sunken)) !important;
+  border: 1px solid rgb(var(--border)) !important;
   border-radius: 8px;
 }
 
@@ -277,12 +277,11 @@ code {
 .popup-datepicker-reset .react-datepicker {
   width: auto !important;
   height: auto !important;
-  box-shadow: var(--shadow-elevated) !important;
-  border: 1px solid rgb(var(--border-strong)) !important;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
+  border: 1px solid rgb(var(--border)) !important;
   border-radius: 0.5rem !important;
   font-family: inherit !important;
-  background-color: rgb(var(--surface-raised)) !important;
-  color: rgb(var(--text-title)) !important;
+  background-color: rgb(var(--surface)) !important;
 }
 
 .popup-datepicker-reset .react-datepicker__month-container,
@@ -317,23 +316,20 @@ code {
   font-weight: 500 !important;
   border-radius: 0.375rem !important;
   transition: all 0.2s !important;
-  color: rgb(var(--text-title)) !important;
-  background-color: transparent !important;
+  color: rgb(var(--text-body1)) !important;
 }
 
-.popup-datepicker-reset .react-datepicker__day:hover,
-.popup-datepicker-reset.react-datepicker .react-datepicker__day:hover {
-  background-color: rgb(var(--primary) / 0.15) !important;
+.popup-datepicker-reset .react-datepicker__day:hover {
+  background-color: rgb(var(--gray-10)) !important;
   color: rgb(var(--text-title)) !important;
 }
 
 /* Today's date style */
-.popup-datepicker-reset .react-datepicker__day--today,
-.popup-datepicker-reset.react-datepicker .react-datepicker__day--today {
-  background-color: rgb(var(--primary) / 0.15) !important;
-  color: rgb(var(--primary)) !important;
+.popup-datepicker-reset .react-datepicker__day--today {
+  background-color: rgb(var(--gray-10)) !important;
+  color: var(--primary-color) !important;
   font-weight: 700 !important;
-  border: 1px solid rgb(var(--primary) / 0.4) !important;
+  border: 1px solid rgb(var(--border-strong)) !important;
 }
 
 /* Selected date style */
@@ -354,10 +350,9 @@ code {
   color: rgb(var(--on-primary)) !important;
 }
 
-/* Hide/dim dates from previous/next month */
-.popup-datepicker-reset .react-datepicker__day--outside-month,
-.popup-datepicker-reset.react-datepicker .react-datepicker__day--outside-month {
-  color: rgb(var(--text-disabled)) !important;
+/* Hide dates from previous/next month */
+.popup-datepicker-reset .react-datepicker__day--outside-month {
+  color: rgb(var(--border-strong)) !important; /* Tailwind text-gray-300 */
   pointer-events: none !important;
   visibility: visible !important;
   opacity: 0.4 !important;
@@ -366,8 +361,8 @@ code {
 .popup-datepicker-reset .react-datepicker__header,
 .popup-datepicker-reset.react-datepicker .react-datepicker__header {
   padding: 0.8rem 0.4rem 0.4rem 0.4rem !important;
-  background-color: rgb(var(--surface-raised)) !important;
-  border-bottom: 1px solid rgb(var(--border-strong)) !important;
+  background-color: rgb(var(--surface)) !important;
+  border-bottom: 1px solid rgb(var(--border)) !important;
   border-top-left-radius: 0.5rem !important;
   border-top-right-radius: 0.5rem !important;
 }
@@ -431,9 +426,8 @@ code {
   cursor: pointer !important;
 }
 
-.popup-datepicker-reset .react-datepicker__navigation:hover,
-.popup-datepicker-reset.react-datepicker .react-datepicker__navigation:hover {
-  background-color: rgb(var(--primary) / 0.15) !important;
+.popup-datepicker-reset .react-datepicker__navigation:hover {
+  background-color: rgb(var(--gray-10)) !important;
 }
 
 .popup-datepicker-reset .react-datepicker__navigation--previous,
@@ -446,9 +440,8 @@ code {
   right: 0.4rem !important;
 }
 
-.popup-datepicker-reset .react-datepicker__navigation-icon::before,
-.popup-datepicker-reset.react-datepicker .react-datepicker__navigation-icon::before {
-  border-color: rgb(var(--text-title)) !important;
+.popup-datepicker-reset .react-datepicker__navigation-icon::before {
+  border-color: rgb(var(--text-body2)) !important;
   border-width: 2px 2px 0 0 !important;
   top: 7px !important;
   left: -2px !important;
@@ -470,7 +463,7 @@ code {
 }
 
 .react-datepicker__navigation-icon::before {
-  border-color: #6b7280 !important;
+  border-color: rgb(var(--text-body2)) !important;
   border-width: 2px 2px 0 0 !important;
   top: 10px !important;
   left: -4px !important;
@@ -515,7 +508,7 @@ code {
 /* Description text below */
 .custom-halfday-toggle .form-text {
   font-size: 0.75rem;
-  color: #6b7280;
+  color: rgb(var(--text-body2));
   /* Tailwind gray-500 */
   margin-top: 0.5rem;
   width: 100%;
@@ -527,7 +520,7 @@ code {
   -webkit-appearance: none;
   width: 2.5rem;
   height: 1.25rem;
-  background-color: #d1d5db;
+  background-color: rgb(var(--border-strong));
   border-radius: 9999px;
   position: relative;
   cursor: pointer;
@@ -550,7 +543,7 @@ code {
 
 /* Checked state */
 .custom-halfday-toggle input[type="checkbox"]:checked {
-  background-color: #3b82f6;
+  background-color: rgb(var(--primary));
   /* Tailwind blue-500 */
 }
 
@@ -595,13 +588,13 @@ code {
   align-items: center;
   justify-content: center;
   padding: 0.5rem 1.5rem;
-  border: 1px dashed #ccc;
+  border: 1px dashed rgb(var(--border-strong));
   border-radius: 10px;
-  background-color: #f9fafb;
+  background-color: rgb(var(--surface-sunken));
   cursor: pointer;
   font-size: 14px;
   font-weight: 500;
-  color: #333;
+  color: rgb(var(--text-title));
   width: 100%;
 }
 
@@ -613,7 +606,7 @@ code {
   justify-content: space-between !important;
   padding: 0.75rem 1rem !important;
   background: transparent;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid rgb(var(--border));
 }
 
 /* Target the title text and any anchor/icon inside it */
@@ -624,7 +617,7 @@ code {
   /* make it bold */
   font-size: 1.1rem !important;
   /* match your injected h4 */
-  color: #111 !important;
+  color: rgb(var(--text-title)) !important;
   margin: 0 !important;
   line-height: 1.2 !important;
   display: inline-flex;
@@ -643,7 +636,7 @@ code {
 /* Style the disabled select field */
 .formio-component-select select:disabled,
 .formio-component-select .form-control[disabled] {
-  background-color: #e5e6e8;
+  background-color: rgb(var(--border));
   /* Light gray background */
   cursor: not-allowed;
   /* Optional: make it clear that the field is disabled */
@@ -652,7 +645,7 @@ code {
 /* Style the disabled dropdown */
 .formio-component-select .choices__list--dropdown[aria-expanded="false"]:disabled,
 .formio-component-select .choices__item[aria-disabled="true"] {
-  background-color: #e5e6e8;
+  background-color: rgb(var(--border));
   /* Same light gray background */
   cursor: not-allowed;
   /* Make it clear that the options are not clickable */
@@ -660,7 +653,7 @@ code {
 
 /* Make the input area in the dropdown look disabled */
 .formio-component-select .choices__input--cloned[disabled] {
-  background-color: #e5e6e8;
+  background-color: rgb(var(--border));
   /* Light gray */
   cursor: not-allowed;
 }
@@ -670,7 +663,7 @@ code {
   font-weight: 600;
   font-size: 1.1rem;
   margin: 8px 0 12px;
-  color: #111;
+  color: rgb(var(--text-title));
 }
 
 /* Hide the 'Size' column in header and rows for all file components */
@@ -743,7 +736,7 @@ code {
 .formio-component-file .progress {
   height: 8px !important;
   border-radius: 99px !important;
-  background-color: #e9ecef !important;
+  background-color: rgb(var(--border)) !important;
   overflow: hidden !important;
   box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.06) !important;
 }
@@ -751,8 +744,8 @@ code {
 /* Progress bar fill */
 .formio-component-file .progress .progress-bar {
   background: linear-gradient(90deg,
-      var(--primary-color, #5a4bda),
-      var(--secondary-color, #6172f3)) !important;
+      var(--primary-color, rgb(var(--primary))),
+      var(--secondary-color, rgb(var(--primary)))) !important;
   border-radius: 99px !important;
   transition: width 0.35s ease !important;
   background-size: 200% 100% !important;
@@ -771,9 +764,9 @@ code {
 
 /* "Starting upload..." / info status message */
 .formio-component-file .bg-info {
-  background: linear-gradient(135deg, #ede9fe, #e8e4fc) !important;
-  color: #4338ca !important;
-  border: 1px solid #c4b5fd !important;
+  background: linear-gradient(135deg, rgb(var(--gray-10)), rgb(var(--gray-10))) !important;
+  color: rgb(var(--primary-hover)) !important;
+  border: 1px solid rgb(var(--border-strong)) !important;
   border-radius: 8px !important;
   padding: 8px 14px !important;
   font-size: 13px !important;
@@ -788,7 +781,7 @@ code {
   display: inline-block !important;
   width: 16px !important;
   height: 16px !important;
-  border: 2px solid #7c3aed !important;
+  border: 2px solid rgb(var(--primary)) !important;
   border-top-color: transparent !important;
   border-radius: 50% !important;
   animation: formio-upload-spin 0.8s linear infinite !important;
@@ -803,8 +796,8 @@ code {
 
 /* Upload file status container */
 .formio-component-file .file {
-  background: #fafafa !important;
-  border: 1px solid #e5e7eb !important;
+  background: rgb(var(--surface-sunken)) !important;
+  border: 1px solid rgb(var(--border)) !important;
   border-radius: 10px !important;
   padding: 10px 14px !important;
   margin-top: 8px !important;
@@ -814,7 +807,7 @@ code {
 .formio-component-file .file .fileName {
   font-size: 13px !important;
   font-weight: 500 !important;
-  color: #374151 !important;
+  color: rgb(var(--text-body1)) !important;
 }
 
 /* File size text - Hidden to match V1 behavior */
@@ -824,21 +817,21 @@ code {
 
 /* Remove icon in upload status */
 .formio-component-file .file .fileName i[ref="fileStatusRemove"] {
-  color: #9ca3af !important;
+  color: rgb(var(--text-disabled)) !important;
   cursor: pointer !important;
   margin-left: 6px !important;
   transition: color 0.15s ease !important;
 }
 
 .formio-component-file .file .fileName i[ref="fileStatusRemove"]:hover {
-  color: #ef4444 !important;
+  color: rgb(var(--error)) !important;
 }
 
 /* Error status styling */
 .formio-component-file .alert-danger.bg-error,
 .formio-component-file .bg-error {
   background: #fef2f2 !important;
-  color: #991b1b !important;
+  color: rgb(var(--error)) !important;
   border: 1px solid #fecaca !important;
   border-radius: 8px !important;
   padding: 8px 14px !important;
@@ -953,26 +946,26 @@ code {
   font-weight: 700;
 }
 .prose a {
-  color: var(--primary-color, #6172f3);
+  color: var(--primary-color, rgb(var(--primary)));
   text-decoration: underline;
   font-weight: 500;
 }
 .prose blockquote {
   margin: 1.5em 0;
   padding-left: 1em;
-  border-left: 4px solid #e2e8f0;
-  color: #4a5568;
+  border-left: 4px solid rgb(var(--border));
+  color: rgb(var(--text-body1));
   font-style: italic;
 }
 .prose pre {
-  background-color: #f7fafc;
+  background-color: rgb(var(--surface-sunken));
   padding: 1em;
   border-radius: 0.375rem;
   overflow-x: auto;
   margin-bottom: 1em;
 }
 .prose code {
-  background-color: #edf2f7;
+  background-color: rgb(var(--gray-10));
   padding: 0.2em 0.4em;
   border-radius: 0.25rem;
   font-size: 0.9em;
@@ -1003,4 +996,203 @@ code {
 }
 .prose-lg h3 {
   font-size: 1.375em;
+}
+/* =============================================================================
+ * Attendance calendar — dark mode
+ *
+ * react-datepicker ships its own stylesheet (imported by TeamStatus and
+ * EmployeeDirectoryFilters), which hard-codes a white body, black day numbers
+ * and a grey header. Those literals are why the calendar stayed white while the
+ * page around it went dark, with date numbers almost invisible against it.
+ *
+ * The scoped `.desktop-att-cal` rules above are now tokenised, so they follow
+ * the theme on their own. What remains is overriding the library defaults, and
+ * that needs `!important` because the library sets them that way too.
+ * ========================================================================== */
+[data-theme="dark"] .react-datepicker,
+[data-theme="dark"] .react-datepicker__month-container,
+[data-theme="dark"] .react-datepicker__month,
+[data-theme="dark"] .react-datepicker__header {
+  background-color: rgb(var(--surface)) !important;
+  border-color: rgb(var(--border)) !important;
+  color: rgb(var(--text-title)) !important;
+}
+
+/* Day numbers, weekday labels and the month caption. */
+[data-theme="dark"] .react-datepicker__day,
+[data-theme="dark"] .react-datepicker__current-month,
+[data-theme="dark"] .react-datepicker__day-name,
+[data-theme="dark"] .react-datepicker-time__header {
+  color: rgb(var(--text-title)) !important;
+}
+
+/* Days outside the current month, and disabled dates: recessive but still
+   legible. --text-disabled was too dim against Cosmic Black to read at a
+   glance, so these use the muted body tone instead. */
+[data-theme="dark"] .react-datepicker__day--outside-month,
+[data-theme="dark"] .react-datepicker__day--disabled {
+  color: rgb(var(--text-body2)) !important;
+  background-color: transparent !important;
+  opacity: 1 !important;
+}
+
+/* Inline pickers (TeamAttendance renders <DatePicker inline /> with no wrapper
+   class) inherit their text from .react-datepicker. State it on the day itself
+   as well, so the number never falls back to the library's black. */
+[data-theme="dark"] .react-datepicker__month .react-datepicker__day,
+[data-theme="dark"] .react-datepicker__week .react-datepicker__day {
+  color: rgb(var(--text-title)) !important;
+}
+
+/* The library marks today and the selected day with a light background and
+   dark text. On a dark surface that inverts wrongly, so both are restated. */
+[data-theme="dark"] .react-datepicker__day--today {
+  background-color: rgb(var(--gray-10)) !important;
+  color: rgb(var(--primary)) !important;
+  font-weight: 700 !important;
+}
+
+[data-theme="dark"] .react-datepicker__day:hover {
+  background-color: rgb(var(--gray-10)) !important;
+}
+
+/* Selected / keyboard-focused day: Nova Cyan takes dark ink, not white — the
+   library pairs its blue with white, which is unreadable on cyan. */
+[data-theme="dark"] .react-datepicker__day--selected,
+[data-theme="dark"] .react-datepicker__day--keyboard-selected,
+[data-theme="dark"] .react-datepicker__day--in-range {
+  background-color: rgb(var(--primary)) !important;
+  color: rgb(var(--on-primary)) !important;
+}
+
+/* The weekday strip across the top of the attendance grid. */
+[data-theme="dark"] .desktop-att-cal .react-datepicker__day-names {
+  background-color: rgb(var(--gray-10)) !important;
+  border-color: rgb(var(--border)) !important;
+}
+
+/* Prev/next month controls. */
+[data-theme="dark"] .react-datepicker__navigation {
+  background-color: rgb(var(--surface-raised)) !important;
+  border-color: rgb(var(--border)) !important;
+}
+
+[data-theme="dark"] .react-datepicker__navigation-icon::before,
+[data-theme="dark"] .react-datepicker__year-read-view--down-arrow,
+[data-theme="dark"] .react-datepicker__month-read-view--down-arrow {
+  border-color: rgb(var(--text-body2)) !important;
+}
+
+/* Popover variant used by the filter pickers. */
+[data-theme="dark"] .react-datepicker-popper .react-datepicker,
+[data-theme="dark"] .popup-datepicker-reset .react-datepicker {
+  background-color: rgb(var(--surface-raised)) !important;
+  border-color: rgb(var(--border)) !important;
+  box-shadow: 0 14px 38px rgb(0 0 0 / 0.28) !important;
+}
+
+/* The two pale red tints left in the calendar block are an error/holiday state.
+   Kept as a tint rather than a token so the meaning survives, but darkened so
+   it does not glow against Cosmic Black. */
+[data-theme="dark"] [style*="#fef2f2"],
+[data-theme="dark"] .react-datepicker__day--highlighted-custom-error {
+  background-color: rgb(59 20 24) !important;
+  color: rgb(252 165 165) !important;
+}
+
+/* =============================================================================
+ * TeamAttendance calendar — inline-styled day contents
+ *
+ * That picker renders its days through `renderDayContents`, which returns a div
+ * carrying INLINE styles:
+ *
+ *     style={{ color: "black",
+ *              backgroundColor: isSelected ? "#f0f0f0" : "transparent" }}
+ *
+ * The number therefore lives on a child of `.react-datepicker__day`, not on the
+ * day itself, which is why the rules above never reached it — they coloured the
+ * parent while the child kept its own black.
+ *
+ * `!important` is what makes this work: an important declaration outranks an
+ * inline style that has no `!important` of its own. Targeting the child
+ * directly is the other half.
+ * ========================================================================== */
+[data-theme="dark"] .react-datepicker__day > div {
+  color: rgb(var(--text-title)) !important;
+}
+
+/* Outside-month and disabled days keep the muted tone, applied to the child. */
+[data-theme="dark"] .react-datepicker__day--outside-month > div,
+[data-theme="dark"] .react-datepicker__day--disabled > div {
+  color: rgb(var(--text-body2)) !important;
+}
+
+/* The selected day's inline #f0f0f0 is a light chip — on Cosmic Black it reads
+   as a white block (the "28" in the report). Nova Cyan with dark ink instead,
+   matching every other selected state in the app. */
+[data-theme="dark"] .react-datepicker__day--selected > div,
+[data-theme="dark"] .react-datepicker__day--keyboard-selected > div {
+  background-color: rgb(var(--primary)) !important;
+  color: rgb(var(--on-primary)) !important;
+}
+
+/* Today, when it is not the selected day. */
+[data-theme="dark"]
+  .react-datepicker__day--today:not(.react-datepicker__day--selected)
+  > div {
+  background-color: rgb(var(--gray-10)) !important;
+  color: rgb(var(--primary)) !important;
+  font-weight: 700 !important;
+}
+
+/* The month caption and the prev/next buttons in this picker's custom header
+   use `bg-gray-50`, which themes, but the chevrons inherit black. */
+[data-theme="dark"] .employee_datepicker--small .base-title {
+  color: rgb(var(--text-title)) !important;
+}
+
+/* =============================================================================
+ * Formio "select" fields (Choices.js) — dark mode
+ *
+ * Fields like the panel/approver-form picker in SimpleNominationPanel render
+ * through Form.io's Choices.js widget. formiojs/dist/formio.full.css ships its
+ * own literal styling for it (#f9f9f9 bg, #ddd border, #fff dropdown panel),
+ * and — because of how the CSS ends up ordered in the build — that literal
+ * rule wins over @tsed/tailwind-formio's tokenised version despite equal
+ * specificity. That is the light bar sitting on an otherwise dark form (the
+ * "AI Approver form (1.0)" picker).
+ *
+ * `!important` here is deliberate: relying on import order to keep winning is
+ * exactly what broke, so this is pinned rather than re-ordered.
+ * ========================================================================== */
+[data-theme="dark"] .choices__inner {
+  background-color: rgb(var(--surface)) !important;
+  border-color: rgb(var(--border)) !important;
+  color: rgb(var(--text-title)) !important;
+}
+
+[data-theme="dark"] .choices__list--single .choices__item {
+  color: rgb(var(--text-title)) !important;
+}
+
+[data-theme="dark"] .choices__list--dropdown,
+[data-theme="dark"] .choices__list[aria-expanded] {
+  background-color: rgb(var(--surface-raised)) !important;
+  border-color: rgb(var(--border)) !important;
+}
+
+[data-theme="dark"] .choices__list--dropdown .choices__item,
+[data-theme="dark"] .choices__list[aria-expanded] .choices__item {
+  color: rgb(var(--text-title)) !important;
+}
+
+[data-theme="dark"] .choices__list--dropdown .choices__item--selectable.is-highlighted,
+[data-theme="dark"] .choices__list[aria-expanded] .choices__item--selectable.is-highlighted {
+  background-color: rgb(var(--gray-10)) !important;
+}
+
+/* The closed-select chevron is a CSS-border triangle in #333 — invisible on a
+   dark bar. Flipped to the muted text tone used everywhere else. */
+[data-theme="dark"] .choices[data-type*="select-one"]::after {
+  border-color: rgb(var(--text-body2)) transparent transparent transparent !important;
 }

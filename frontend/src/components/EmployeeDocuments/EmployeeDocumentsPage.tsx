@@ -134,13 +134,13 @@ const EmployeeDocumentsPage: React.FC = () => {
   return (
     <DesktopLayoutWrapper title="My Documents">
       {isMobile && <HeaderBar title="My Documents" />}
-      <div className={`bg-transparent min-h-screen ${isMobile ? "px-4 py-4" : "px-0 py-3 md:p-6"}`}>
+      <div className={`bg-app min-h-screen text-text-body1 ${isMobile ? "px-4 py-4" : "px-0 py-3 md:p-6"}`}>
         {!isMobile && (
           <div className="flex items-start justify-between">
-            <div className="border-gray-200 my-2 pb-2">
+            <div className="border-border my-2 pb-2">
               <Typography
                 variant="h4"
-                className="font-bold text-slate-900 dark:text-slate-100 mb-2 text-xl sm:text-2xl"
+                className="font-bold text-text-title mb-2 text-xl sm:text-2xl"
               >
                 My Documents
               </Typography>
@@ -175,9 +175,9 @@ const EmployeeDocumentsPage: React.FC = () => {
                 variant="subtle"
                 size="sm"
                 onClick={() => setActiveTab(tab.key)}
-                className={`rounded-full px-4 py-1.5 text-xs font-semibold whitespace-nowrap transition-colors ${activeTab === tab.key
-                  ? "bg-cyan-50 dark:bg-[#102A3A] text-cyan-700 dark:text-cyan-300 border border-cyan-200 dark:border-cyan-800/60"
-                  : "bg-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-[#102030]"
+                className={`rounded-full px-4 py-1.5 text-xs font-semibold whitespace-nowrap ${activeTab === tab.key
+                  ? "bg-primary/15 text-text-link"
+                  : "text-text-body2 hover:text-text-title"
                   }`}
               >
                 {tab.label}
@@ -187,7 +187,7 @@ const EmployeeDocumentsPage: React.FC = () => {
           </div>
         )}
 
-        <div className={isMobile ? "" : "bg-white dark:bg-[#0B1724] border border-slate-200 dark:border-[#1E3A4C] rounded-xl overflow-hidden shadow-sm min-h-[45vh]"}>
+        <div className={isMobile ? "" : "bg-card border border-border rounded-xl overflow-hidden shadow-sm min-h-[45vh]"}>
           <CardTable
             titles={["Document Name", "Employee", "Date Uploaded", "Status", "Action"]}
             columnWidths={["3fr", "2fr", "1.5fr", "1.5fr", "2fr"]}
@@ -230,18 +230,18 @@ const EmployeeDocumentsPage: React.FC = () => {
 
         {/* PDF Modal */}
         {selectedFile && (
-          <div className="fixed inset-0 bg-black/70 backdrop-blur-xs flex items-center justify-center z-50">
-            <div className="bg-white dark:bg-[#0B1724] text-slate-800 dark:text-slate-100 shadow-2xl w-full h-screen flex flex-col">
-              <div className="flex justify-between items-center border-b border-slate-200 dark:border-[#1E3A4C] p-4 bg-slate-50 dark:bg-[#102030]">
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-card text-text-body1 shadow-lg w-full h-screen flex flex-col">
+              <div className="flex justify-between items-center border-b border-border p-4">
                 <Typography
                   variant="h3"
-                  className="font-semibold text-slate-800 dark:text-slate-100 text-lg"
+                  className="font-semibold text-text-title text-lg"
                 >
                   Document Preview
                 </Typography>
                 <button
                   onClick={closeModal}
-                  className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 text-xl font-bold p-1 rounded-lg transition-colors"
+                  className="flex h-9 w-9 items-center justify-center rounded-lg border border-transparent text-text-body2 hover:text-text-title hover:bg-gray-100 hover:border-border-strong text-xl transition-colors"
                 >
                   ✕
                 </button>
@@ -254,7 +254,7 @@ const EmployeeDocumentsPage: React.FC = () => {
                   className="h-full"
                 />
               </div>
-              <div className="flex justify-between items-center border-t border-slate-200 dark:border-[#1E3A4C] p-4 bg-white dark:bg-[#0B1724]">
+              <div className="flex justify-between items-center border-t border-border p-4">
                 <div>
                   {showAcknowledgement && (
                     <label className="flex items-center gap-2 cursor-pointer">
@@ -266,7 +266,7 @@ const EmployeeDocumentsPage: React.FC = () => {
                         className="accent-emerald-600 w-4 h-4 cursor-pointer"
                       />
                       <span
-                        className={`font-medium ${acknowledged ? "text-emerald-600 dark:text-emerald-400" : "text-slate-700 dark:text-slate-300"
+                        className={`font-medium ${acknowledged ? "text-success" : "text-text-body1"
                           }`}
                       >
                         I acknowledge this document

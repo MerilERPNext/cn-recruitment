@@ -28,7 +28,7 @@ const SeparationWorkflow: React.FC = () => {
   }, [refetchSeparationWorkflow]);
 
   return (
-    <div>
+    <div className="min-h-screen bg-app text-text-title">
       <HeaderBar
         title="Separation Workflow"
       />

@@ -196,9 +196,9 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
   };
 
   return (
-    <div className="address-form-container bg-white rounded-md">
+    <div className="address-form-container bg-card text-text-body1 rounded-md">
       <div className="px-0 md:px-6 py-2 md:p-8">
-        <div className="flex items-start justify-between border-b border-gray-200 pb-2 mb-4 md:pb-4 md:mb-8 rounded-md ">
+        <div className="flex items-start justify-between border-b border-border pb-2 mb-4 md:pb-4 md:mb-8 rounded-md">
           <div>
             <Typography variant="h4" className="font-bold text-gray-900 mb-2 text-xl sm:text-2xl">
               Employment History
@@ -233,7 +233,7 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
                   {[1, 2, 3].map((card) => (
                     <div
                       key={card}
-                      className="bg-white rounded-xl shadow-sm border p-6 animate-pulse"
+                      className="bg-card rounded-xl shadow-sm border border-border p-6 animate-pulse"
                     >
                       <div className="h-5 w-24 bg-gray-200 rounded mb-4" />
                       <div className="h-4 w-20 bg-gray-100 rounded mb-2" />
@@ -562,7 +562,7 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
       )}
       {isModalOpen && editType === "work_role" && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="bg-white rounded-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+          <div className="bg-card text-text-body1 border border-border rounded-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
             <EmploymentHistoryForm
               key={editItem ? `${editItem.from_date}-${(editItem as WorkRole).designation?.id}` : "add"}
               onCancel={handleCloseModal}

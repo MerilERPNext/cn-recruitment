@@ -54,7 +54,7 @@ const Form12B = ({ declarationId, docName, disabled = false }: Props) => {
         onClick={handleView}
         disabled={disabled}
         loading={isPending}
-        className="px-4 py-1 text-sm rounded-xl"
+        className="px-4 py-1 text-sm rounded-lg"
       >
         Form 12B
       </Button>

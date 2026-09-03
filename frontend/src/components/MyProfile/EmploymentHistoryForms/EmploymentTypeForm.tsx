@@ -209,10 +209,10 @@ const EmploymentTypeForm = ({
         }
       }}
     >
-      <div className="w-full h-full md:h-auto md:max-w-2xl md:max-h-[80vh] md:rounded-lg bg-white flex flex-col overflow-hidden relative">
+      <div className="w-full h-full md:h-auto md:max-w-2xl md:max-h-[80vh] md:rounded-lg bg-card text-text-body1 border border-border flex flex-col overflow-hidden relative">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white sticky top-0 z-20">
-          <h2 className="text-lg font-semibold text-gray-800">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-card sticky top-0 z-20">
+          <h2 className="text-lg font-semibold text-text-title">
             Employment Type
           </h2>
           <button
@@ -258,7 +258,7 @@ const EmploymentTypeForm = ({
         </div>
 
         {/* Footer */}
-        <div className="fixed md:static bottom-0 right-0 w-full bg-white py-4 px-4 z-50 border-t border-gray-200">
+        <div className="fixed md:static bottom-0 right-0 w-full bg-card py-4 px-4 z-50 border-t border-border">
           <Button
             onClick={handleSubmit}
             fullWidth

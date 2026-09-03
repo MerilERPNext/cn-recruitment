@@ -253,8 +253,8 @@ const AllocatedToTooltip: React.FC<AllocatedToTooltipProps> = ({
             className="
                 inline-flex flex-col items-start
                 text-[11px] font-brand font-medium
-                text-primary-700 bg-primary-50
-                border border-primary-200
+                text-text-link bg-primary/10
+                border border-primary/20
                 px-2 py-1 rounded-md max-w-full
             "
         >
@@ -277,13 +277,13 @@ const AllocatedToTooltip: React.FC<AllocatedToTooltipProps> = ({
             onMouseLeave={() => { if (!isTouchRef.current) hideDelayed(); }}
         >
             <div className="
-                bg-white rounded-xl shadow-xl
-                border border-primary-100
+                bg-raised text-text-body1 rounded-xl shadow-xl
+                border border-border-strong
                 min-w-[200px] max-w-[320px]
                 max-h-[60vh] overflow-y-auto
             ">
-                <div className="bg-primary-50 px-3.5 py-2 border-b border-primary-100">
-                    <span className="text-[11px] font-brand font-semibold uppercase tracking-wider text-primary-700">
+                <div className="bg-primary/10 px-3.5 py-2 border-b border-border">
+                    <span className="text-[11px] font-brand font-semibold uppercase tracking-wider text-text-link">
                         {title}
                     </span>
                 </div>
@@ -319,10 +319,10 @@ const AllocatedToTooltip: React.FC<AllocatedToTooltipProps> = ({
                                         className={`
                                             inline-flex items-center
                                             text-[11px] font-brand font-medium
-                                            text-secondary-700 bg-secondary-50
-                                            border border-secondary-200
+                                            text-text-body1 bg-secondary/15
+                                            border border-secondary/30
                                             px-2 py-0.5 rounded-md
-                                            ${hasUsers ? "cursor-pointer hover:bg-secondary-100 transition-colors" : ""}
+                                            ${hasUsers ? "cursor-pointer hover:bg-secondary/25 transition-colors" : ""}
                                         `}
                                     >
                                         {r} {hasUsers && `(${userCount})`}
@@ -334,8 +334,8 @@ const AllocatedToTooltip: React.FC<AllocatedToTooltipProps> = ({
 
                     {showUserRoleLables && hasUsers && (
                         <div className="flex items-start gap-2.5">
-                            <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-primary-50 shrink-0">
-                                <User className="w-3.5 h-3.5 text-primary-600" />
+                            <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-primary/10 shrink-0">
+                                <User className="w-3.5 h-3.5 text-text-link" />
                             </div>
 
                             <div className="flex flex-col gap-0.5 min-w-0">
@@ -354,7 +354,7 @@ const AllocatedToTooltip: React.FC<AllocatedToTooltipProps> = ({
 
                     {showUserRoleLables && hasRoles && (
                         <div className="flex items-start gap-2.5">
-                            <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-secondary-50 shrink-0">
+                            <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-secondary/15 shrink-0">
                                 <Shield className="w-3.5 h-3.5 text-secondary-600" />
                             </div>
 
@@ -382,10 +382,10 @@ const AllocatedToTooltip: React.FC<AllocatedToTooltipProps> = ({
                                                 className={`
                                                     inline-flex items-center
                                                     text-[11px] font-brand font-medium
-                                                    text-secondary-700 bg-secondary-50
-                                                    border border-secondary-200
+                                                    text-text-body1 bg-secondary/15
+                                                    border border-secondary/30
                                                     px-2 py-0.5 rounded-md
-                                                    ${hasUsers ? "cursor-pointer hover:bg-secondary-100 transition-colors" : ""}
+                                                    ${hasUsers ? "cursor-pointer hover:bg-secondary/25 transition-colors" : ""}
                                                 `}
                                             >
                                                 {r} {hasUsers && `(${userCount})`}

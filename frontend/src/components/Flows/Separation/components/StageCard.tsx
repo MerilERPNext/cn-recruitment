@@ -161,7 +161,7 @@ const CardStages = ({
   const approverInfoAvailable = isActive || ["Rejected", "Approved"].includes(stage.status);
 
   return (
-    <div className="grid w-full lg:hover:bg-primary/20 cursor-pointer  items-center text-sm  lg:px-6">
+    <div className="grid w-full hover:bg-gray-50 cursor-pointer items-center text-sm lg:px-6">
       <StatusTimelineRow
         timelineData={{
           isLast: isLastStage,
@@ -170,7 +170,7 @@ const CardStages = ({
       >
         <div className="grid lg:grid-cols-2 grid-cols-1 py-2">
           <div className="ml-4 flex flex-col">
-            <Typography variant="bodyMedium">{stage?.stage_name}</Typography>
+            <Typography variant="bodyMedium" className="text-text-title">{stage?.stage_name}</Typography>
             <Typography variant="bodySmall">
               {approverPerfix} {approverInfoAvailable ? stage?.role || stage?.user : ""}
             </Typography>

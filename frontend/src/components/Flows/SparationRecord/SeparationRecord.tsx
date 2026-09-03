@@ -50,7 +50,7 @@ const SeparationRecord: React.FC = () => {
             : "Employee Separation";
 
     return (
-        <div className="flex flex-col h-full bg-white">
+        <div className="flex flex-col min-h-screen bg-app text-text-title">
             <div className="max-md:fixed max-md:top-0 w-full">
                 <HeaderBar
                     title="Separation Record"
@@ -60,7 +60,7 @@ const SeparationRecord: React.FC = () => {
                         <Button
                             variant="outline"
                             onClick={() => setIsActivityLogOpen(true)}
-                            className="flex items-center gap-2 py-1.5 border-gray-300 text-gray-700 hover:bg-gray-50 transition-all rounded-md shadow-sm"
+                            className="flex items-center gap-2 py-1.5 bg-card border-border text-text-body1 hover:bg-primary/10 hover:text-text-link hover:border-primary/30 transition-all rounded-md shadow-sm"
                         >
                             <span>Activity Log</span>
                         </Button>

@@ -87,25 +87,21 @@ export default function IncomeTaxSheet() {
         {isDesktop && (
           <div className="sm:flex items-center justify-between h-[52px] px-7">
             <div className="flex items-center gap-4">
-              <span className="font-bold text-[17px] text-text-title tracking-tight">Tax Sheet</span>
+              <span className="font-bold text-[16px] text-text-title tracking-tight">Tax Sheet</span>
               <div className="flex gap-2">
                 <Button
-                  variant="outline"
+                  variant={activeTab === "taxsheet" ? "contain" : "outline"}
                   size="sm"
                   onClick={() => setActiveTab("taxsheet")}
-                  className={`px-3 py-1 font-medium rounded-lg border hover:bg-primary/10 hover:text-primary ${
-                    activeTab === "taxsheet" ? "bg-primary-600 text-white" : ""
-                  }`}
+                  className="rounded-lg font-medium"
                 >
                   Taxsheet
                 </Button>
                 <Button
-                  variant="outline"
+                  variant={activeTab === "income-computation" ? "contain" : "outline"}
                   size="sm"
                   onClick={() => setActiveTab("income-computation")}
-                  className={`px-3 py-1 font-medium rounded-lg border hover:bg-primary/10 hover:text-primary ${
-                    activeTab === "income-computation" ? "bg-primary-600 text-white" : ""
-                  }`}
+                  className="rounded-lg font-medium"
                 >
                   Income Tax Computation
                 </Button>
@@ -142,21 +138,21 @@ export default function IncomeTaxSheet() {
             <div className="flex items-center justify-between gap-2">
               <div className="flex gap-2 w-full">
                 <Button
-                  variant="outline"
+                  variant={activeTab === "taxsheet" ? "contain" : "outline"}
                   size="sm"
                   onClick={() => setActiveTab("taxsheet")}
-                  className={`w-full font-medium rounded-lg border text-xs py-1.5 ${
-                    activeTab === "taxsheet" ? "bg-primary-600 text-white animate-fade-in" : ""
+                  className={`w-full rounded-lg font-medium ${
+                    activeTab === "taxsheet" ? "animate-fade-in" : ""
                   }`}
                 >
                   Taxsheet
                 </Button>
                 <Button
-                  variant="outline"
+                  variant={activeTab === "income-computation" ? "contain" : "outline"}
                   size="sm"
                   onClick={() => setActiveTab("income-computation")}
-                  className={`w-full font-medium rounded-lg border text-xs py-1.5 ${
-                    activeTab === "income-computation" ? "bg-primary-600 text-white animate-fade-in" : ""
+                  className={`w-full rounded-lg font-medium ${
+                    activeTab === "income-computation" ? "animate-fade-in" : ""
                   }`}
                 >
                   Computation

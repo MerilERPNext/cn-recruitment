@@ -334,7 +334,7 @@ const ITDeclarationForm = () => {
                 )}
               <Button
                 variant="contain"
-                size="sm"
+                size="md"
                 onClick={handleSubmit}
                 disabled={PrrofOfITDeclaration?.status === "failed"}
               >

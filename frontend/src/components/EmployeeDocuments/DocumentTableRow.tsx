@@ -23,7 +23,7 @@ export const DocumentTableRow: React.FC<DocumentTableRowProps> = ({
 }) => {
   return (
     <div
-      className="border-b border-slate-100 dark:border-[#1E3A4C]/60 hover:bg-slate-50 dark:hover:bg-[#102030] transition-colors grid items-center px-6 py-4 gap-4 text-center text-slate-800 dark:text-slate-100"
+      className="border-b border-border hover:bg-gray-50 transition-colors grid items-center px-6 py-4 gap-4 text-center text-text-body1"
       style={{ gridTemplateColumns: "3fr 2fr 1.5fr 1.5fr 2fr" }}
     >
       <div className="font-semibold truncate pr-4 text-sm text-slate-800 dark:text-slate-100">
@@ -37,11 +37,11 @@ export const DocumentTableRow: React.FC<DocumentTableRowProps> = ({
       </div>
       <div>
         <span
-          className={`text-xs font-semibold px-3 py-1 whitespace-nowrap rounded-xl border ${doc.status === "Approved"
-            ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/50"
+        className={`text-xs font-medium px-3 py-1 whitespace-nowrap rounded-xl ${doc.status === "Approved"
+            ? "bg-success/15 text-success"
             : doc.status === "Acknowledgement Required"
-              ? "bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800/50"
-              : "bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800/50"
+              ? "bg-warning/15 text-warning"
+              : "bg-error/15 text-error"
             }`}
         >
           {doc.status}
@@ -55,6 +55,7 @@ export const DocumentTableRow: React.FC<DocumentTableRowProps> = ({
                 <Button
                   variant="outline"
                   size="sm"
+                  className="bg-primary/10 text-text-link hover:bg-primary/20"
                   onClick={() => setSelectedFile(doc.file_name)}
                   className="border-slate-300 dark:border-[#1E3A4C] text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-[#162A3E]"
                 >

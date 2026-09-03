@@ -52,7 +52,7 @@ const InvoicePDFview = ({ invoiceID, disabled = false, onClick, className }: Pro
   return (
     <>
       <Button
-        variant="soft"
+        variant="outline"
         onClick={handleView}
         disabled={disabled || isPending}
         className={`px-4 py-1 text-sm border rounded-xl

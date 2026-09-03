@@ -175,7 +175,7 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
       >
         {/* Header */}
         <div
-          className="bg-gradient-to-r from-primary-900 via-primary-800 to-primary-900 border-b border-gray-200 px-8 py-[0.3rem] flex items-center justify-between sticky top-0 z-[11] flex-shrink-0"
+          className="app-header bg-gradient-to-r from-primary-500 via-primary-400 to-primary-500 dark:from-primary-900 dark:via-primary-800 dark:to-primary-900 border-b border-gray-200 px-8 py-[0.3rem] flex items-center justify-between sticky top-0 z-[11] flex-shrink-0"
           style={{ height: "73px", maxHeight: "73px" }}
         >
           <div>
@@ -196,9 +196,11 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
             </div>
           )}
           <div className="flex items-center gap-4 flex-shrink-0">
-            {/* Sits on the primary-gradient header, so it is styled against that
-                bar rather than with the default surface colours. */}
-            <ThemeToggle className="!border-white/30 !bg-white/10 !text-white hover:!bg-white/20" />
+            {/* Sits on the header bar, so it is tinted from the bar rather than
+                given surface colours. Text colour is left alone deliberately —
+                `.app-header` supplies --header-ink, which flips between Nebula
+                Blue on the light cyan bar and Stellar White on the dark one. */}
+            <ThemeToggle className="!border-current/30 !bg-current/10 hover:!bg-current/20" />
 
             <button
               onClick={handleNotificationClick}

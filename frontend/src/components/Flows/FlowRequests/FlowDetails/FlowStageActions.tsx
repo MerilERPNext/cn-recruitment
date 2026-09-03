@@ -154,7 +154,7 @@ const FlowStageActions = ({
       label: "Review Form",
       tooltip: "Review Form",
       onClick: handleShowForm,
-      iconPill: <Eye className="w-4 h-4 text-slate-600 hover:text-slate-800 transition-colors" />,
+      iconPill: <Eye className="w-4 h-4 text-text-body2 hover:text-text-title transition-colors" />,
       iconButton: <Eye className="w-4 h-4 text-white" />,
     });
   }
@@ -166,7 +166,7 @@ const FlowStageActions = ({
       tooltip: "Nudge",
       loading: nudging,
       onClick: () => sendNudge(stage.todo.name),
-      iconPill: <BellRing className="w-4 h-4 text-blue-600 hover:text-blue-700 transition-colors" />,
+      iconPill: <BellRing className="w-4 h-4 text-primary hover:text-primary transition-colors" />,
       iconButton: <BellRing className="w-4 h-4 text-white" />,
     });
   }

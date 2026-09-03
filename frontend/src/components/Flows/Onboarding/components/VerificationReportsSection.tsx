@@ -9,17 +9,17 @@ const VerificationReportsSection = ({ setShowAllReport }: VerificationReportsSec
   <div className="space-y-5">
     <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
       <div className="flex flex-wrap items-center gap-3">
-        <Typography variant="bodyMedium" className="font-bold text-slate-800">
+        <Typography variant="bodyMedium" className="font-bold text-text-title">
           Intermediate Report
         </Typography>
         <Badge label="In Progress" variant="warning" size="sm" />
       </div>
-      <a href="#" className="text-blue-500 hover:text-blue-700 font-semibold text-sm transition-colors">
+      <a href="#" className="text-text-link hover:text-primary font-semibold text-sm transition-colors">
         Reassign Partner
       </a>
     </div>
 
-    <div className="bg-blue-50 border border-slate-100 rounded-xl p-5 space-y-5">
+    <div className="bg-gray-50 border border-border rounded-xl p-5 space-y-5">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <ReportField label="Verification Type" value="Onboarding BGV" />
         <ReportField label="Partner Name" value="OnGrid" />
@@ -29,14 +29,14 @@ const VerificationReportsSection = ({ setShowAllReport }: VerificationReportsSec
         <ReportField label="Report" value="-" />
       </div>
 
-      <div className="border-t border-slate-100 pt-4 space-y-1">
+      <div className="border-t border-border pt-4 space-y-1">
         <ReportField label="Comments" value="BGV initiated for the candidate" />
       </div>
     </div>
 
     <button
       onClick={() => setShowAllReport(true)}
-      className="inline-block text-blue-500 hover:text-blue-700 font-semibold text-sm transition-colors">
+      className="inline-block text-text-link hover:text-primary font-semibold text-sm transition-colors">
       View all Reports (2)
     </button>
   </div>
@@ -46,11 +46,11 @@ const ReportField = memo(({ label, value }: { label: string; value: string }) =>
   <div className="space-y-1">
     <Typography
       variant="bodySmall"
-      className="text-slate-400 font-medium text-xs uppercase tracking-wider block"
+      className="text-text-body2 font-medium text-xs uppercase tracking-wider block"
     >
       {label}
     </Typography>
-    <Typography variant="body" className="font-bold text-slate-800 block">
+    <Typography variant="body" className="font-bold text-text-title block">
       {value}
     </Typography>
   </div>

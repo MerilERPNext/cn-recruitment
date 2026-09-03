@@ -128,8 +128,8 @@ export default function EmployeeProfileSections() {
                 </div>
             </div>
             {tabs.length > 1 && (
-                <div className="px-0 md:px-6 sticky top-[114px] md:top-14 bg-white z-10 flex-shrink-0 w-full max-w-full pb-2">
-                    <div className="flex bg-white overflow-x-scroll scrollbar-hide gap-1 w-full py-2">
+                <div className="px-0 md:px-6 sticky top-[114px] md:top-14 bg-card z-10 flex-shrink-0 w-full max-w-full pb-2">
+                    <div className="flex bg-card overflow-x-scroll scrollbar-hide gap-1 w-full py-2">
                         {tabs.map(tab => (
                             <Button
                                 key={tab.key}
@@ -138,8 +138,8 @@ export default function EmployeeProfileSections() {
                                 size="sm"
                                 className={`rounded-full whitespace-nowrap px-4 py-1.5 text-xs font-semibold transition-all duration-200
                   ${activeTab === tab.key
-                                        ? "bg-primary-50 text-header-active border-primary-100"
-                                        : "border-transparent text-header-inactive hover:text-header-active"
+                                        ? "bg-primary/15 text-text-link border-primary/30"
+                                        : "border-transparent text-text-body2 hover:text-text-title hover:bg-gray-50"
                                     }`}
                             >
                                 {tab.label}
@@ -188,7 +188,7 @@ export default function EmployeeProfileSections() {
                                     return (
                                         <div key={section.key}>
                                             {section.label && (
-                                                <Typography variant="bodySmall" className="font-semibold text-gray-500 uppercase tracking-widest text-[10px] mb-3 block px-4 py-2 border-b">
+                                                <Typography variant="bodySmall" className="font-semibold text-gray-500 uppercase tracking-widest text-[10px] mb-3 block px-4 py-2 border-b border-border">
                                                     {section.label}
                                                 </Typography>
                                             )}
@@ -240,7 +240,7 @@ interface FieldCellProps {
 
 const FieldCell = ({ field, tabKey, tabLabel, canEdit, isTable, onEdit }: FieldCellProps) => (
     <div className={isTable ? "col-span-full mt-4 px-4" : "px-4 py-2 hover:border-primary-200 transition-colors"}>
-        <div className={`flex items-center justify-between mb-3 ${isTable ? "border-b pb-2" : ""}`}>
+        <div className={`flex items-center justify-between mb-3 ${isTable ? "border-b border-border pb-2" : ""}`}>
             <Typography variant="label" color="disabled" className="font-bold text-[10px] uppercase tracking-widest block">
                 {field.label || "-"}
             </Typography>
@@ -357,12 +357,12 @@ const GenericCard = ({ data, onEdit, canEdit }: { data: Record<string, any>, onE
     if (!data || typeof data !== "object") return null;
     // console.log(data, "data------------------------------------")
     return (
-        <Card shadow="none" radius="xl" padding="md" className="bg-gray-50/30 border border-gray-100 hover:border-primary-100 transition-all group/card h-full relative">
+        <Card shadow="none" radius="xl" padding="md" className="bg-gray-50/30 border border-border hover:border-primary/40 transition-all group/card h-full relative">
             {canEdit && (
                 <div className="absolute top-3 right-3 opacity-0 group-hover/card:opacity-100 transition-opacity">
                     <button
                         onClick={onEdit}
-                        className="p-1.5 bg-white border border-gray-100 rounded-lg text-primary-600 hover:text-primary-700 hover:bg-gray-50 shadow-sm transition-all"
+                        className="p-1.5 bg-card border border-border rounded-lg text-text-link hover:border-primary/40 hover:bg-primary/10 shadow-sm transition-all"
                         title="Edit entry"
                     >
                         <PencilIcon className="h-3.5 w-3.5" />
@@ -379,7 +379,7 @@ const GenericCard = ({ data, onEdit, canEdit }: { data: Record<string, any>, onE
                     return (
                         <div
                             key={key}
-                            className="grid grid-cols-2 items-center gap-6 border-b border-gray-100/50 pb-2 last:border-0 last:pb-0"
+                            className="grid grid-cols-2 items-center gap-6 border-b border-border pb-2 last:border-0 last:pb-0"
                         >
                             {/* Label */}
                             <Typography variant="label" color="disabled" className="font-bold text-[10px] uppercase tracking-widest truncate">

@@ -95,7 +95,7 @@ const CardTable = ({
     ? columnWidths.join(" ")
     : `repeat(${titles.length}, 1fr)`;
 
-  const borderClass = noBorder ? "" : "md:border border-slate-200 dark:border-[#1E3A4C]";
+  const borderClass = noBorder ? "" : "md:border border-border";
   const shadowClass = noShadow ? "" : "shadow-sm";
   const roundClass = noRound ? "" : "rounded-lg";
 
@@ -121,7 +121,7 @@ const CardTable = ({
           <div className={`${isDesktop ? "min-w-max" : ""} flex flex-col h-full`}>
             {isDesktop && (
               <div
-                className={`grid gap-4 px-6 py-4 bg-slate-50 dark:bg-[#102030] border-b border-slate-200 dark:border-[#1E3A4C] flex-shrink-0 sticky ${stickyTopClassName} z-10`}
+                className={`grid gap-4 px-6 py-4 bg-gray-50 border-b border-border flex-shrink-0 sticky ${stickyTopClassName} z-10`}
                 style={{ gridTemplateColumns }}
                 ref={stickyRef}
               >

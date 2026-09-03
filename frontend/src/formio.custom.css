@@ -76,7 +76,7 @@
   border: none !important;
   outline: none !important;
   /* padding: 6px !important; */
-  color: rgb(var(--text-title)) !important;
+  color: rgb(var(--text-body1)) !important;
   /* margin: 2px !important; */
 }
 
@@ -109,14 +109,14 @@
 .formio-select-item-main .secondary {
   font-size: 13px;
   font-weight: 400;
-  color: rgb(var(--text-body2)) !important;
+  color: rgb(var(--text-body2));
 }
 
 /* Second line: designation | branch */
 .formio-select-item-info span {
   font-size: 12px;
   font-weight: 400;
-  color: rgb(var(--text-body2)) !important;
+  color: rgb(var(--text-body2));
 }
 
 [data-testid="formioContainer"].profile-form .choices__item .choices__button {

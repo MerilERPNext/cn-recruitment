@@ -1009,7 +1009,7 @@ const TimesheetCreate: React.FC = () => {
         )}
 
         {/* Weekly Grid Sheet Table */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+        <div className="timesheet-week-grid overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
           {isDetailLoading ? (
             <div className="p-6">
               <TableSkeleton columns={8} rows={4} />
@@ -1018,7 +1018,7 @@ const TimesheetCreate: React.FC = () => {
             <div className="overflow-x-auto">
               <table className={`w-full text-sm text-left border-collapse ${isDesktop ? "min-w-[1000px]" : ""}`}>
                 {isDesktop && (
-                  <thead className="bg-gray-50/70 border-b border-gray-100">
+                  <thead className="bg-gray-50/70 border-b border-border">
                     <tr>
                       <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider min-w-[380px]">
                         Projects / Tasks
@@ -1029,7 +1029,7 @@ const TimesheetCreate: React.FC = () => {
                         return (
                           <th
                             key={dateKey}
-                            className="px-3 py-3 text-center border-l border-gray-50 min-w-[100px]"
+                            className="px-3 py-3 text-center border-l border-border min-w-[100px]"
                           >
                             <div className="text-gray-900 font-bold text-sm">
                               {format(day, "d MMM")}
@@ -1058,16 +1058,16 @@ const TimesheetCreate: React.FC = () => {
                           </th>
                         );
                       })}
-                      <th className="px-4 py-3 text-center border-l border-gray-50 text-xs font-bold text-gray-500 uppercase tracking-wider w-[120px]">
+                      <th className="px-4 py-3 text-center border-l border-border text-xs font-bold text-gray-500 uppercase tracking-wider w-[120px]">
                         Total Hours
                       </th>
-                      <th className="px-4 py-3 text-center border-l border-gray-50 text-xs font-bold text-gray-500 uppercase tracking-wider w-[60px]">
+                      <th className="px-4 py-3 text-center border-l border-border text-xs font-bold text-gray-500 uppercase tracking-wider w-[60px]">
 
                       </th>
                     </tr>
                   </thead>
                 )}
-                <tbody className="divide-y divide-gray-100">
+                <tbody className="divide-y divide-border">
                   {/* Attendance row */}
                   {weeklyData?.days && (
                     isDesktop ? (
@@ -1078,7 +1078,7 @@ const TimesheetCreate: React.FC = () => {
                         {daysOfWeek.map(day => {
                           const dateKey = format(day, "yyyy-MM-dd");
                           return (
-                            <td key={dateKey} className="px-3 py-3 text-center border-l border-gray-50">
+                            <td key={dateKey} className="px-3 py-3 text-center border-l border-border">
                               {weekOffDates.includes(dateKey) ? (
                                 <div className="flex w-full  justify-center"><Badge variant="danger" label="Week Off" size="sm" /></div>
                               ) : (
@@ -1087,7 +1087,7 @@ const TimesheetCreate: React.FC = () => {
                             </td>
                           );
                         })}
-                        <td className="px-4 py-3 text-center border-l border-gray-50 font-bold">
+                        <td className="px-4 py-3 text-center border-l border-border font-bold">
                           {/* sum up daily attendance hours */}
                           {formatCellOnBlur(
                             daysOfWeek.reduce((acc, day) => {
@@ -1097,7 +1097,7 @@ const TimesheetCreate: React.FC = () => {
                             }, 0)
                           ) || "0:00"}
                         </td>
-                        <td className="border-l border-gray-50"></td>
+                        <td className="border-l border-border"></td>
                       </tr>
                     ) : (
                       <tr className="block  border-none  px-2 py-3 sm:p-4">
@@ -1190,7 +1190,7 @@ const TimesheetCreate: React.FC = () => {
 
                   {/* Table Footer Totals */}
                   {isDesktop ? (
-                    <tr className="bg-gray-100/50 text-gray-900 font-bold border-t border-gray-200">
+                    <tr className="bg-gray-100/50 text-gray-900 font-bold border-t border-border">
                       <td className="px-6 py-4 font-bold text-gray-800">
                         Total hours/day
                       </td>
@@ -1198,15 +1198,15 @@ const TimesheetCreate: React.FC = () => {
                         const dateKey = format(day, "yyyy-MM-dd");
                         const dayHrs = totals.dailyTotals[dateKey] || 0;
                         return (
-                          <td key={dateKey} className="px-3 py-4 text-center border-l border-gray-100">
+                          <td key={dateKey} className="px-3 py-4 text-center border-l border-border">
                             {formatCellOnBlur(dayHrs) || "0:00"}
                           </td>
                         );
                       })}
-                      <td className="px-4 py-4 text-center border-l border-gray-100 text-base font-extrabold text-primary">
+                      <td className="px-4 py-4 text-center border-l border-border text-base font-extrabold text-primary">
                         {formatCellOnBlur(totals.totalWeeklyHours) || "0:00"}
                       </td>
-                      <td className="border-l border-gray-100"></td>
+                      <td className="border-l border-border"></td>
                     </tr>
                   ) : (
                     <tr className="block border-t border-gray-200 px-2 py-4 sm:p-4 bg-gray-50/50">

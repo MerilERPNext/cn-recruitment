@@ -273,10 +273,10 @@ const EmployeeSidebarForm = ({
         <div>
             <SideDrawer size="xxl" open={!!edit} onClose={() => setEdit(null)} title={edit?.label || ""}>
                 {schema ? (
-                    <div className="pb-16 overflow-hidden">
+                    <div className="pb-16 overflow-hidden bg-card text-text-body1">
                         <Form
                             key={`${edit?.key}-${edit?.fieldname}-${edit?.rowIndex}`} // Force re-render on edit change
-                            className="profile-form w-full max-w-full bg-white"
+                            className="profile-form w-full max-w-full bg-card text-text-body1"
                             form={schema}
                             submission={submissionData}
                             onChange={(payload: any) => {
@@ -324,7 +324,7 @@ const EmployeeSidebarForm = ({
                             }}
                         />
                         {/* Submit button */}
-                        <div className="w-full bg-white pt-4">
+                        <div className="w-full bg-card border-t border-border pt-4">
                             <Button
                                 onClick={handleSubmit}
                                 disabled={mutation?.isPending || !isDirty}

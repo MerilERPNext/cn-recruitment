@@ -117,7 +117,7 @@ const WorkflowStageActions = ({
       label: "Review Form",
       tooltip: "Review Form",
       onClick: handleShowForm,
-      iconPill: <Eye className="w-4 h-4 text-slate-600 hover:text-slate-800 transition-colors" />,
+      iconPill: <Eye className="w-4 h-4 text-text-body2 hover:text-text-title transition-colors" />,
       iconButton: <Eye className="w-4 h-4 text-white" />,
     });
   }

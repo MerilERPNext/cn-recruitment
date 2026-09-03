@@ -272,7 +272,11 @@ const AttendanceChart: React.FC<AttendanceChartProps> = ({
         </Card>
 
         {/* Summary Cards Grid - 30% */}
-        <div className="w-full lg:w-[30%] h-full content-start">
+        {/* flex-col rather than `h-full`: the row has no explicit height, so
+            height:100% had nothing definite to resolve against and the card
+            collapsed to its content. As a column the child can use flex-1 and
+            fill whatever height the chart card sets. */}
+        <div className="w-full lg:w-[30%] flex flex-col">
           {hasAnyCardPermission ? (
             <div className="grid grid-cols-2 gap-4">
               {enabledActions.show_total_days_card && (
@@ -379,12 +383,18 @@ const AttendanceChart: React.FC<AttendanceChartProps> = ({
           )}
             </div>
           ) : (
-            <div className="flex items-center justify-center h-full min-h-[200px]">
-              <NoDataFound 
-                title="No Metrics Available" 
-                subtitle="You don't have permission to view these metrics." 
+            /* Boxed to match the chart Card beside it. Only the empty state is
+               wrapped, not the whole column — when metrics do load they render
+               as individual SummaryCards, which would end up double-boxed. */
+            <Card
+              radius="xl"
+              className="flex-1 flex items-center justify-center p-6"
+            >
+              <NoDataFound
+                title="No Metrics Available"
+                subtitle="You don't have permission to view these metrics."
               />
-            </div>
+            </Card>
           )}
         </div>
       </div>

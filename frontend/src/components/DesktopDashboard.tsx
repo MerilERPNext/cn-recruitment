@@ -83,6 +83,7 @@ import ViewingAsBanner from "./ViewingAsBanner";
 import formatToIndianDate from "../utils/formatToIndianDate";
 import { RecommendationsForYou } from "./DashboardComponent/RecommendationsForYou";
 import Tooltip from "./shared/Tooltip";
+import ThemeToggle from "./shared/ThemeToggle";
 
 export default function DesktopDashboard() {
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -562,7 +563,7 @@ export default function DesktopDashboard() {
         className={`flex-1 ${contentMarginLeft} flex flex-col min-h-screen transition-all duration-300 ease-in-out min-w-0`}
       >
         {/* Header */}
-        <div className="bg-gradient-to-r from-primary-900 via-primary-800 to-primary-900 border-b border-gray-200 px-6 py-[0.3rem] flex items-center sticky top-0 z-10 gap-4">
+        <div className="app-header bg-gradient-to-r from-primary-500 via-primary-400 to-primary-500 dark:from-primary-900 dark:via-primary-800 dark:to-primary-900 border-b border-gray-200 px-6 py-[0.3rem] flex items-center sticky top-0 z-10 gap-4">
           <div className="flex flex-col min-w-0">
             {currentEmployee?.employee_name || currentUserIsAdmin ? (
               <>
@@ -595,6 +596,7 @@ export default function DesktopDashboard() {
           </div>
 
           <div className="flex items-center gap-4 flex-shrink-0">
+            <ThemeToggle className="!border-current/30 !bg-current/10 hover:!bg-current/20" />
             <button
               onClick={() => navigate("/webapp/notification-log")}
               className="relative p-2 hover:bg-primary-400/20 rounded-lg transition-colors"

@@ -79,7 +79,7 @@ const WorkflowTable: React.FC<WorkflowTableProps> = ({ data, noPadding = false }
         noRound={noPadding}
       >
         {isDesktop ? (
-          <div className={noPadding ? "w-full overflow-x-auto bg-white" : "w-full overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-sm"}>
+          <div className={noPadding ? "w-full overflow-x-auto bg-white" : "w-full overflow-x-auto rounded-lg border border-border bg-white shadow-sm"}>
             <div className="w-full">
               {data.workflow_stages.length > 0 ? (
                 data.workflow_stages.map((stage, idx) => (
@@ -217,7 +217,7 @@ const WorkflowCard = ({
       {isDesktop ? (
         <div
           key={idx}
-          className="hover:bg-primary-100 py-4 px-6 text-center grid cursor-pointer text-xs w-full border-b gap-4"
+          className="hover:bg-gray-50 py-4 px-6 text-center grid cursor-pointer text-xs w-full border-b border-border gap-4 transition-colors"
           style={{ gridTemplateColumns: gridTemplate }}
         >
           {/* Stage Name */}

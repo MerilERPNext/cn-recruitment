@@ -65,7 +65,7 @@ export const ActivePrograms: React.FC = () => {
 
   if (loading) {
     return (
-      <Card radius="xl" className="border p-4 md:p-6">
+      <Card radius="xl" className="border border-gray-100 p-4 md:p-6">
         <div className="animate-pulse space-y-4">
           <div className="h-6 bg-gray-200 rounded w-1/3"></div>
           <div className="space-y-3">
@@ -83,7 +83,7 @@ export const ActivePrograms: React.FC = () => {
   };
 
   return (
-    <Card radius="xl" className="border p-4 md:p-6">
+    <Card radius="xl" className="border border-gray-100 p-4 md:p-6">
       <Typography variant="subheading" className="font-semibold mb-4">
         All Programs
       </Typography>
@@ -98,12 +98,12 @@ export const ActivePrograms: React.FC = () => {
               <div key={program.id}>
                 <div
                   onClick={() => handleCardClick(program.id)}
-                  className="flex items-center gap-4 p-4 rounded-xl border hover:shadow-md transition-all cursor-pointer group"
+                  className="flex items-center gap-4 p-4 rounded-xl border border-gray-100 hover:shadow-md transition-all cursor-pointer group"
                   style={{
                     background: program.color
                       ? `linear-gradient(135deg, ${program.color}08, ${program.color}15)`
                       : undefined,
-                    borderColor: program.color
+                    borderColor: program.color  
                       ? `${program.color}30`
                       : "#e5e7eb",
                   }}
