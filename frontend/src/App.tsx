@@ -223,7 +223,7 @@ const App: React.FC = () => {
                 <GlobalLeaveRequestModal />
                 <Toaster
                   position="top-center"
-                  containerClassName="z-50 !top-4 md:!top-6"
+                  containerClassName="z-[9999] !top-4 md:!top-6"
                   toastOptions={{
                     style: {
                       maxWidth: "90vw",
@@ -236,37 +236,42 @@ const App: React.FC = () => {
                       toast={t}
                       style={{
                         ...t.style,
-                        background: "white",
+                        backgroundColor: "rgb(var(--surface-raised))",
+                        color: "rgb(var(--text-title))",
                         borderLeft:
                           t.type === "success"
-                            ? "4px solid #34D399"
+                            ? "4px solid #10B981"
                             : "4px solid #EF4444",
+                        borderTop: "1px solid rgb(var(--border-strong))",
+                        borderRight: "1px solid rgb(var(--border-strong))",
+                        borderBottom: "1px solid rgb(var(--border-strong))",
                         boxShadow:
-                          "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)",
+                          "0 10px 25px -5px rgba(0, 0, 0, 0.35)",
                         minWidth: "280px",
                         maxWidth: "90vw",
                         padding: "0.75rem 1rem",
-                        borderRadius: "0.5rem",
+                        borderRadius: "0.75rem",
                         transition:
                           "all 300ms cubic-bezier(0.175, 0.885, 0.32, 1.275)",
                       }}
                     >
                       {({ message }: { message: React.ReactNode }) => (
-                        <div className="flex items-start w-full min-w-0">
+                        <div className="flex items-center w-full min-w-0 gap-2.5">
                           {t.type === "success" ? (
                             <CheckCircle2
-                              className="h-5 w-5 text-green-500 mr-2 shrink-0 mt-0.5"
+                              className="h-5 w-5 text-emerald-500 shrink-0"
                               strokeWidth={2}
                             />
                           ) : (
                             <CircleX
-                              className="h-5 w-5 text-red-500 mr-2 shrink-0 mt-0.5"
+                              className="h-5 w-5 text-rose-500 shrink-0"
                               strokeWidth={2}
                             />
                           )}
                           <div
-                            className="flex-1 min-w-0 overflow-y-auto pr-1 text-sm text-gray-700 break-words custom-toast-scrollbar"
+                            className="flex-1 min-w-0 overflow-y-auto pr-1 text-sm font-semibold break-words custom-toast-scrollbar"
                             style={{
+                              color: "rgb(var(--text-title))",
                               scrollbarWidth: "thin",
                             }}
                           >
@@ -274,10 +279,10 @@ const App: React.FC = () => {
                           </div>
                           {t.type !== "loading" && (
                             <button
-                              className="ml-3 p-1 rounded-full text-gray-400 hover:bg-gray-100 hover:text-gray-600 focus:outline-none transition-colors duration-200 shrink-0"
+                              className="ml-2 p-1 rounded-lg hover:bg-black/10 dark:hover:bg-white/10 focus:outline-none transition-colors duration-200 shrink-0"
                               onClick={() => toast.dismiss(t.id)}
                             >
-                              <X className="h-4 w-4" />
+                              <X className="h-4 w-4" style={{ color: "rgb(var(--text-title))", opacity: 0.7 }} />
                             </button>
                           )}
                         </div>
