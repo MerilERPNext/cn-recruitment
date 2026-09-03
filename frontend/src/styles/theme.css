@@ -264,6 +264,28 @@ body {
   color: rgb(var(--on-primary));
 }
 
+/* =============================================================================
+ * Tailwind Slate text color overrides in Dark Mode
+ *
+ * Tailwind's `slate` utility classes (text-slate-700, text-slate-800 etc.) are
+ * hardcoded dark charcoal values. In Dark Mode, automatically map them to pale
+ * white and title text tokens for 100% legibility across all components.
+ * ========================================================================== */
+[data-theme="dark"] .text-slate-900,
+[data-theme="dark"] .text-slate-800 {
+  color: rgb(246 251 255) !important; /* #F6FBFF */
+}
+
+[data-theme="dark"] .text-slate-700,
+[data-theme="dark"] .text-slate-600 {
+  color: rgb(216 228 236) !important; /* #D8E4EC */
+}
+
+[data-theme="dark"] .text-slate-500,
+[data-theme="dark"] .text-slate-400 {
+  color: rgb(147 167 180) !important; /* #93A7B4 */
+}
+
 /* Opacity-suffixed pale tints -- same reasoning as the block above. */
 :is(
 [data-theme="dark"] [class*="bg-blue-50/"],
