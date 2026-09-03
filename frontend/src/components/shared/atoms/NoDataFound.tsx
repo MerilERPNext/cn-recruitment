@@ -22,7 +22,7 @@ export const NoDataFound: React.FC<NoDataFoundProps> = ({
     if (loading) {
         return (
             <div className={`flex flex-col items-center justify-center py-10 px-4 ${className}`}>
-                <BeatLoader color="#6172f3" size={10} />
+                <BeatLoader color="rgb(var(--primary))" size={10} />
             </div>
         );
     }
@@ -37,10 +37,10 @@ export const NoDataFound: React.FC<NoDataFoundProps> = ({
                 style={{ animation: "ndFloat 3s ease-in-out infinite" }}
             >
                 <div
-                    className="relative flex items-center justify-center w-20 h-20 rounded-2xl bg-primary-50 border border-primary-200"
-                    style={{ boxShadow: "0 4px 16px rgba(97,114,243,0.08)" }}
+                    className="relative flex items-center justify-center w-20 h-20 rounded-2xl bg-primary/10 border border-primary/30"
+                    style={{ boxShadow: "0 4px 16px rgb(var(--shadow-color))" }}
                 >
-                    <FolderSearch className="text-primary-500" size={32} strokeWidth={1.8} />
+                    <FolderSearch className="text-text-link" size={32} strokeWidth={1.8} />
                 </div>
                 <span
                     className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-primary-300"
@@ -64,6 +64,7 @@ export const NoDataFound: React.FC<NoDataFoundProps> = ({
                         variant="soft"
                         size="md"
                         onClick={onClick}
+                        className="bg-primary/10 text-text-link border border-primary/20 hover:bg-primary/20 hover:border-primary/40"
                     >
                         {subtitle}
                     </Button>

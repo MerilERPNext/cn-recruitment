@@ -152,23 +152,96 @@
 .profile-form .formio-form {
   max-width: 100%;
   width: 100%;
+  color: rgb(var(--text-body1));
+  background-color: rgb(var(--surface));
 }
 
 .profile-form .formio-form .card {
   border-radius: 6px;
   border: none;
   max-width: 100%;
+  color: rgb(var(--text-body1));
+  background-color: rgb(var(--surface));
 }
 
 .profile-form .formio-form .card-header {
-  background-color: white;
+  color: rgb(var(--text-title));
+  background-color: rgb(var(--surface));
   box-shadow: none;
   border: none;
-  border-bottom: 1px solid rgba(128, 128, 128, 0.319) !important;
+  border-bottom: 1px solid rgb(var(--border)) !important;
 }
 
 .profile-form .formio-form .card-body {
   max-width: 100%;
+  color: rgb(var(--text-body1));
+  background-color: rgb(var(--surface));
+}
+
+/* Employee Profile edit drawers render Bootstrap/Form.io wrappers that carry
+   fixed light defaults. Keep every panel, field and dropdown on theme so empty
+   grid space does not appear as white bands in dark mode. */
+.profile-form .formio-form,
+.profile-form .formio-form .form-group,
+.profile-form .formio-form .formio-component,
+.profile-form .formio-form .row,
+.profile-form .formio-form [class*="col-"],
+.address-form-container .formio-form,
+.address-form-container .formio-form .form-group,
+.address-form-container .formio-form .formio-component {
+  background-color: transparent !important;
+}
+
+.profile-form .form-control,
+.profile-form .choices__inner,
+.address-form-container .form-control,
+.address-form-container .choices__inner {
+  color: rgb(var(--text-title)) !important;
+  background-color: rgb(var(--surface)) !important;
+  border-color: rgb(var(--border)) !important;
+}
+
+.profile-form .choices__list--dropdown,
+.profile-form .choices__list[aria-expanded],
+.address-form-container .choices__list--dropdown,
+.address-form-container .choices__list[aria-expanded] {
+  color: rgb(var(--text-body1)) !important;
+  background-color: rgb(var(--surface-raised)) !important;
+  border-color: rgb(var(--border-strong)) !important;
+}
+
+.profile-form .choices__item--selectable.is-highlighted,
+.address-form-container .choices__item--selectable.is-highlighted {
+  color: rgb(var(--text-title)) !important;
+  background-color: rgb(var(--gray-100)) !important;
+}
+
+/* Choices.js uses a cloned search input and high-specificity item rules. These
+   states need explicit colors or the drawer shows a white search strip and
+   dark option text on the dark dropdown surface. */
+[data-testid="formioContainer"].profile-form .choices__input--cloned,
+.profile-form .choices__input--cloned,
+.address-form-container .choices__input--cloned {
+  color: rgb(var(--text-title)) !important;
+  background-color: rgb(var(--surface)) !important;
+  border-color: rgb(var(--border)) !important;
+}
+
+[data-testid="formioContainer"].profile-form .choices__list--single .choices__item,
+[data-testid="formioContainer"].profile-form .choices__list--dropdown .choices__item,
+[data-testid="formioContainer"].profile-form .choices__list[aria-expanded] .choices__item,
+.address-form-container .choices__list--single .choices__item,
+.address-form-container .choices__list--dropdown .choices__item,
+.address-form-container .choices__list[aria-expanded] .choices__item {
+  color: rgb(var(--text-body1)) !important;
+}
+
+[data-testid="formioContainer"].profile-form .choices__list--dropdown .choices__item.is-highlighted,
+[data-testid="formioContainer"].profile-form .choices__list[aria-expanded] .choices__item.is-highlighted,
+.address-form-container .choices__list--dropdown .choices__item.is-highlighted,
+.address-form-container .choices__list[aria-expanded] .choices__item.is-highlighted {
+  color: rgb(var(--text-title)) !important;
+  background-color: rgb(var(--gray-100)) !important;
 }
 
 /* Ensure all form components are responsive */
@@ -230,7 +303,7 @@
   font-size: 1.125rem;
   /* font-size: 2.125rem; */
   font-weight: 600;
-  color: #111827;
+  color: rgb(var(--text-title));
   text-transform: capitalize;
 }
 
@@ -331,6 +404,26 @@ body {
 .add-time-entry-form-inline .choices__inner {
   min-height: 38px !important;
   padding: 4px 8px !important;
+  color: rgb(var(--text-title)) !important;
+  background-color: rgb(var(--surface)) !important;
+  border-color: rgb(var(--border)) !important;
+}
+.add-time-entry-form-inline .choices__list--dropdown,
+.add-time-entry-form-inline .choices__list[aria-expanded] {
+  color: rgb(var(--text-body1)) !important;
+  background-color: rgb(var(--surface-raised)) !important;
+  border-color: rgb(var(--border-strong)) !important;
+}
+.add-time-entry-form-inline .choices__list--dropdown .choices__item--selectable.is-highlighted,
+.add-time-entry-form-inline .choices__list[aria-expanded] .choices__item--selectable.is-highlighted {
+  color: rgb(var(--text-title)) !important;
+  background-color: rgb(var(--gray-100)) !important;
+}
+.add-time-entry-form-inline .choices__input,
+.add-time-entry-form-inline .form-control {
+  color: rgb(var(--text-title)) !important;
+  background-color: rgb(var(--surface)) !important;
+  border-color: rgb(var(--border)) !important;
 }
 .add-time-entry-form-inline .choices__list--dropdown .choices__item {
   white-space: normal !important;
@@ -345,6 +438,82 @@ body {
 .add-time-entry-form-inline .control-label {
   font-size: 11px !important;
   font-weight: 600 !important;
-  color: #4b5563 !important;
+  color: rgb(var(--text-body1)) !important;
   margin-bottom: 2px !important;
+}
+
+/* Assignment Details module selector (Form.io / Choices.js). */
+.assignment-details-form .choices__inner,
+.assignment-details-form .form-control,
+.assignment-details-form .choices__input {
+  color: rgb(var(--text-title)) !important;
+  background-color: rgb(var(--surface)) !important;
+  border-color: rgb(var(--border)) !important;
+}
+
+.assignment-details-form .choices__list--dropdown,
+.assignment-details-form .choices__list[aria-expanded] {
+  color: rgb(var(--text-body1)) !important;
+  background-color: rgb(var(--surface-raised)) !important;
+  border-color: rgb(var(--border-strong)) !important;
+  box-shadow: var(--shadow-elevated);
+}
+
+.assignment-details-form .choices__list--dropdown .choices__item--selectable.is-highlighted,
+.assignment-details-form .choices__list[aria-expanded] .choices__item--selectable.is-highlighted {
+  color: rgb(var(--text-title)) !important;
+  background-color: rgb(var(--gray-100)) !important;
+}
+
+/* Bootstrap's table rules load with fixed light borders and can outrank the
+   utilities used by Employee Profile's Assignment Details view. Keep the
+   complete table grid and its surrounding card tied to the active theme. */
+.assignment-details-page,
+.assignment-details-table,
+.assignment-details-table table,
+.assignment-details-table thead,
+.assignment-details-table tbody,
+.assignment-details-table tr,
+.assignment-details-table th,
+.assignment-details-table td {
+  border-color: rgb(var(--border)) !important;
+}
+
+.assignment-details-table,
+.assignment-details-table table,
+.assignment-details-table tbody,
+.assignment-details-table td {
+  color: rgb(var(--text-body1)) !important;
+  background-color: rgb(var(--surface)) !important;
+}
+
+.assignment-details-table thead,
+.assignment-details-table thead tr,
+.assignment-details-table th {
+  color: rgb(var(--text-body2)) !important;
+  background-color: rgb(var(--gray-50)) !important;
+}
+
+.assignment-details-table tbody tr:hover,
+.assignment-details-table tbody tr:hover td {
+  background-color: rgb(var(--gray-50)) !important;
+}
+
+/* The weekly timesheet is also affected by fixed Bootstrap table borders.
+   Scope the override to structural grid lines so inputs, validation states,
+   badges, and action controls retain their semantic accent borders. */
+.timesheet-week-grid,
+.timesheet-week-grid table,
+.timesheet-week-grid thead,
+.timesheet-week-grid tbody,
+.timesheet-week-grid tr,
+.timesheet-week-grid th,
+.timesheet-week-grid td {
+  border-color: rgb(var(--border)) !important;
+}
+
+.timesheet-week-grid,
+.timesheet-week-grid table,
+.timesheet-week-grid tbody {
+  background-color: rgb(var(--surface)) !important;
 }

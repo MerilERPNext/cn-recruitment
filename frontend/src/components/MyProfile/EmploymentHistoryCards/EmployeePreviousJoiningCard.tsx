@@ -37,10 +37,10 @@ const EmployeePreviousJoiningCard: React.FC<EmployeePreviousJoiningCardProps> = 
     const [imageError, setImageError] = useState(false);
 
     return (
-        <div className="bg-white rounded-xl shadow-sm border p-6 relative hover-lift max-w-[90vw] min-w-[90vw] md:min-w-[400px] md:max-w-[400px]">
+        <div className="bg-card rounded-xl shadow-sm border border-border hover:border-primary/40 p-6 relative hover-lift max-w-[90vw] min-w-[90vw] md:min-w-[400px] md:max-w-[400px] transition-colors">
             {/* Header */}
             <div className="flex items-start gap-3 mb-4">
-                <div className="p-2 bg-blue-50 rounded-lg">
+                <div className="p-2 bg-primary/10 rounded-lg">
                     {image && !imageError ? (
                         <img
                             src={image}
@@ -124,7 +124,7 @@ const EmployeePreviousJoiningCard: React.FC<EmployeePreviousJoiningCardProps> = 
             </div>
 
             {/* Dates */}
-            <div className="space-y-3 border-t pt-4">
+            <div className="space-y-3 border-t border-border pt-4">
                 <div className="flex justify-between items-center">
                     <span className="text-sm text-gray-500">Joining Date</span>
                     <span className="text-sm font-medium bg-gray-50 px-3 py-1 rounded-md">

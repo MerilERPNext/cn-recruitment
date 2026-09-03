@@ -46,28 +46,28 @@ const RoleUsersModal: React.FC<RoleUsersModalProps> = ({ isOpen, onClose, roleDa
 
             {/* Modal Container */}
             <div
-                className="w-full max-w-md max-h-[80vh] rounded-2xl bg-white flex flex-col overflow-hidden shadow-2xl"
+                className="w-full max-w-md max-h-[80vh] rounded-2xl bg-raised text-text-body1 border border-border-strong flex flex-col overflow-hidden shadow-2xl"
                 style={{ animation: "roleModalSlideUp 280ms ease-out" }}
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* ============ Header ============ */}
-                <div className="relative px-5 py-4 border-b border-primary-100/60 bg-gradient-to-r from-primary-50 via-secondary-10 to-white shrink-0">
+                <div className="relative px-5 py-4 border-b border-border bg-gradient-to-r from-primary/15 via-secondary/10 to-raised shrink-0">
                     {/* Decorative background dot */}
                     <div className="absolute -top-3 -right-3 w-20 h-20 rounded-full bg-primary-100/30 blur-xl pointer-events-none" />
 
                     <div className="flex items-center justify-between relative z-10">
                         <div className="flex items-center gap-3 min-w-0">
-                            <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-primary-100 text-primary-600 shadow-sm shrink-0">
+                            <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-primary/15 text-text-link shadow-sm shrink-0">
                                 <Users className="w-5 h-5" strokeWidth={2} />
                             </div>
                             <div className="min-w-0">
                                 <Tooltip content={roleData.role} triggerClassName="block min-w-0 max-w-full">
-                                    <Typography variant={isDesktop ? "subheading" : "caption"} className="text-gray-900 truncate leading-tight">
+                                    <Typography variant={isDesktop ? "subheading" : "caption"} className="text-text-title truncate leading-tight">
                                         {roleData.role}
                                     </Typography>
                                 </Tooltip>
                                 <div className="flex items-center gap-1.5 mt-0.5">
-                                    <span className="inline-flex items-center gap-1 text-xs font-semibold font-brand text-primary-600 bg-primary-50 border border-primary-200/60 rounded-md px-1.5 py-0.5 tracking-wide">
+                                    <span className="inline-flex items-center gap-1 text-xs font-semibold font-brand text-text-link bg-primary/10 border border-primary/20 rounded-md px-1.5 py-0.5 tracking-wide">
                                         {usersList.length}
                                         <span className="font-medium text-primary-500">
                                             {usersList.length === 1 ? 'member' : 'members'}
@@ -87,7 +87,7 @@ const RoleUsersModal: React.FC<RoleUsersModalProps> = ({ isOpen, onClose, roleDa
                 </div>
 
                 {/* ============ Content ============ */}
-                <div className="flex-1 overflow-y-auto p-4 bg-gray-50/30">
+                <div className="flex-1 overflow-y-auto p-4 bg-gray-50/50">
                     {usersList.length === 0 ? (
                         <div className="flex flex-col items-center justify-center py-12 text-gray-400">
                             <div className="flex items-center justify-center w-14 h-14 rounded-full bg-gray-100 mb-4">
@@ -104,7 +104,7 @@ const RoleUsersModal: React.FC<RoleUsersModalProps> = ({ isOpen, onClose, roleDa
                         <div className="flex flex-col gap-2">
                             {usersList.map((u, index) => (
                                 <div
-                                    className="flex items-center gap-3 w-full text-left p-3 rounded-xl border border-gray-100 bg-white hover:border-primary-200 hover:shadow-[0_2px_12px_rgba(97,114,243,0.1)] hover:bg-gradient-to-r hover:from-primary-50/40 hover:to-white transition-all duration-200 cursor-pointer group"
+                                    className="flex items-center gap-3 w-full text-left p-3 rounded-xl border border-border bg-card hover:border-primary/40 hover:bg-primary/5 transition-all duration-200 cursor-pointer group"
                                     style={{
                                         animation: `roleCardReveal 250ms ease-out ${index * 40}ms both`,
                                     }}
@@ -119,7 +119,7 @@ const RoleUsersModal: React.FC<RoleUsersModalProps> = ({ isOpen, onClose, roleDa
                                             placement="bottom-right"
                                             className="block w-full"
                                         >
-                                            <Typography variant="bodyMedium" className="text-gray-800 group-hover:text-primary-700 transition-colors truncate">
+                                            <Typography variant="bodyMedium" className="text-text-title group-hover:text-text-link transition-colors truncate">
                                                 {u.name}
                                             </Typography>
                                         </WrapperHoverCard>
@@ -139,7 +139,7 @@ const RoleUsersModal: React.FC<RoleUsersModalProps> = ({ isOpen, onClose, roleDa
                 </div>
 
                 {/* ============ Footer ============ */}
-                <div className="px-5 py-3.5 border-t border-gray-100 bg-white/95 backdrop-blur-sm flex justify-end shrink-0">
+                <div className="px-5 py-3.5 border-t border-border bg-raised/95 backdrop-blur-sm flex justify-end shrink-0">
                     <Button onClick={onClose} size="sm" variant="outline" bgColor="primary">
                         Close
                     </Button>

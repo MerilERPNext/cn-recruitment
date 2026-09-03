@@ -38,7 +38,7 @@ const ShowHolidays = () => {
 
   return (
     <div className="w-full bg-white rounded-lg px-0 py-3 md:p-6">
-      <div className="border-b border-gray-200 pb-2 mb-4 md:pb-4 md:mb-8">
+      <div className="border-b border-border pb-2 mb-4 md:pb-4 md:mb-8">
         <div>
           <Typography variant="h4" className="font-bold text-gray-900 mb-2 text-xl sm:text-2xl">
             Employee Holidays
@@ -53,11 +53,11 @@ const ShowHolidays = () => {
         {holidays.map((holiday) => (
           <li
             key={`${holiday.date}-${holiday.holiday_name}`}
-            className="flex hover-lift items-center justify-between gap-3 bg-white shadow-sm rounded-xl p-2 mb-2"
+            className="flex hover-lift items-center justify-between gap-3 bg-card border border-border hover:border-primary/40 shadow-sm rounded-xl p-2 mb-2 transition-colors"
           >
             <div className="flex items-center justify-between">
               <div className="flex gap-2">
-                <div className="flex flex-col items-center justify-center w-12 h-12 rounded-xl bg-primary-50 text-primary-600 font-semibold text-xs">
+                <div className="flex flex-col items-center justify-center w-12 h-12 rounded-xl bg-primary/10 text-text-link font-semibold text-xs">
                   <span className="uppercase leading-none">
                     {holiday?.date && format(new Date(holiday?.date), "MMM")}
                   </span>

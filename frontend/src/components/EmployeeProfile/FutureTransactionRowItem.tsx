@@ -72,7 +72,7 @@ const FutureTransactionRowItem = ({ item }: { item: FutureTransaction }) => {
   if (isDesktop) {
     return (
       <div
-        className="grid items-center gap-4 px-6 h-14 border-b border-gray-50 transition-colors hover:bg-primary/5"
+        className="grid items-center gap-4 px-6 h-14 border-b border-border transition-colors hover:bg-primary/5"
         style={{ gridTemplateColumns }}
       >
         {/* Type (field_name) */}
@@ -142,7 +142,7 @@ const FutureTransactionRowItem = ({ item }: { item: FutureTransaction }) => {
 
   // Mobile Card Layout
   return (
-    <div className="border-t-4 border-x border-b border-x-primary/20 border-b-primary/20 shadow-sm border-primary bg-white rounded-xl mx-2 mb-3">
+    <div className="border-t-4 border-x border-b border-x-border border-b-border hover:border-x-primary/40 hover:border-b-primary/40 shadow-sm border-primary bg-card rounded-xl mx-2 mb-3 transition-colors">
       <div className="p-4 flex flex-col gap-4 w-full">
         {/* Header Row: Type + Effective Date */}
         <div className="flex items-start justify-between w-full">

@@ -289,10 +289,10 @@ const CostCenterForm = ({
         }
       }}
     >
-      <div className="w-full h-full md:h-auto md:max-w-3xl md:max-h-[85vh] md:rounded-lg bg-white flex flex-col overflow-hidden relative">
+      <div className="w-full h-full md:h-auto md:max-w-3xl md:max-h-[85vh] md:rounded-lg bg-card text-text-body1 border border-border flex flex-col overflow-hidden relative">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white sticky top-0 z-20">
-          <h2 className="text-lg font-semibold text-gray-800">Cost Center</h2>
+        <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-card sticky top-0 z-20">
+          <h2 className="text-lg font-semibold text-text-title">Cost Center</h2>
           {isDesktop && (
             <button
               onClick={(e) => {
@@ -320,7 +320,7 @@ const CostCenterForm = ({
             .formio-component-allocations table thead th {
               border: none !important;
               background: transparent !important;
-              color: #6b7280 !important;
+              color: rgb(var(--text-body2)) !important;
               font-size: 0.75rem !important;
               font-weight: 600 !important;
               text-transform: uppercase !important;
@@ -328,7 +328,7 @@ const CostCenterForm = ({
               padding: 0 10px 4px !important;
             }
             .formio-component-allocations table tbody tr {
-              background: #f9fafb !important;
+              background: rgb(var(--gray-50)) !important;
               border-radius: 10px !important;
               box-shadow: 0 1px 3px rgba(0,0,0,0.06) !important;
             }
@@ -348,12 +348,12 @@ const CostCenterForm = ({
             .formio-component-allocations .btn-danger {
               background: transparent !important;
               border: none !important;
-              color: #ef4444 !important;
+              color: rgb(var(--error)) !important;
               padding: 4px 8px !important;
               border-radius: 6px !important;
             }
             .formio-component-allocations .btn-danger:hover {
-              background: #fee2e2 !important;
+              background: rgb(var(--error) / 0.12) !important;
             }
 
           `}</style>
@@ -383,7 +383,7 @@ const CostCenterForm = ({
         </div>
 
         {/* Footer */}
-        <div className="fixed md:static bottom-0 right-0 w-full bg-white py-4 px-4 z-50 border-t border-gray-200">
+        <div className="fixed md:static bottom-0 right-0 w-full bg-card py-4 px-4 z-50 border-t border-border">
           <div className="flex flex-row gap-3 md:justify-end">
             {!isDesktop && (
               <Button

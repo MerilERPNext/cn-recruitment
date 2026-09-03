@@ -291,7 +291,7 @@ export const ConfirmationSkeleton: React.FC = () => {
 
   if (!isDesktop) {
     return (
-      <div className="min-h-screen px-4 pt-4 animate-pulse space-y-4">
+      <div className="min-h-screen bg-app px-4 pt-4 animate-pulse space-y-4">
         {/* Subtitle */}
         <div className="h-3 w-48 bg-gray-200 rounded" />
 
@@ -339,7 +339,7 @@ export const ConfirmationSkeleton: React.FC = () => {
 
   /* Desktop */
   return (
-    <div className="min-h-screen bg-blue-50 p-4 animate-pulse space-y-4">
+    <div className="min-h-screen bg-app p-4 animate-pulse space-y-4">
       {/* Title + subtitle */}
       <div className="space-y-2 p-2">
         <div className="h-6 w-32 bg-gray-200 rounded" />

@@ -366,7 +366,7 @@ const EmployeeProfile: React.FC = () => {
     );
   };
   const mobileLayout = (
-    <div className="bg-white font-sans scroll-smooth">
+    <div className="bg-card text-text-body1 font-sans scroll-smooth">
       {/* Sticky Header - always on top */}
       <HeaderBar
         title="Profile"
@@ -377,11 +377,11 @@ const EmployeeProfile: React.FC = () => {
           navigateBack();
         }}
       />
-      <div className="bg-white shadow">
+      <div className="bg-card shadow">
         {userIsLoading ? (
           <HeaderInfoSkeleton />
         ) : (
-          <div className="bg-white shadow">
+          <div className="bg-card shadow">
             <input
               ref={fileInputRef}
               type="file"
@@ -390,7 +390,7 @@ const EmployeeProfile: React.FC = () => {
               className="hidden"
               onChange={handleFileChange}
             />
-            <div className="flex items-start gap-5 px-6 py-6 border-b border-gray-50 bg-white">
+            <div className="flex items-start gap-5 px-6 py-6 border-b border-border bg-card">
               <div className="relative shrink-0">
                 <img
                   src={profileImageSrc}
@@ -510,7 +510,7 @@ const EmployeeProfile: React.FC = () => {
           </div>
         )}
         {/* Horizontal Tabs */}
-        <div className="bg-white border-b sticky top-[60px] z-20">
+        <div className="bg-card border-b border-border sticky top-[60px] z-20">
           <div className="flex overflow-x-auto scrollbar-hide px-4 py-2">
             {permittedTabs?.map((tab) => (
               <Button
@@ -518,8 +518,8 @@ const EmployeeProfile: React.FC = () => {
                 variant="subtle"
                 onClick={() => scrollToSection(tab.key)}
                 className={`whitespace-nowrap px-4 py-2 rounded-none text-sm font-medium transition-all duration-200 border-b-2 ${activeTab === tab.key
-                  ? "border-primary-600 text-primary-600"
-                  : "border-transparent text-gray-600 hover:text-primary-600"
+                  ? "border-primary text-text-link bg-primary/10"
+                  : "border-transparent text-text-body2 hover:text-text-title hover:bg-gray-50"
                   }`}
               >
                 {tab.label}
@@ -528,7 +528,7 @@ const EmployeeProfile: React.FC = () => {
           </div>
         </div>
         {/* All Sections Rendered */}
-        <div className="bg-white-100">
+        <div className="bg-app">
           {permittedTabs?.map((tab) => (
             <div
               key={tab.key}
@@ -536,7 +536,7 @@ const EmployeeProfile: React.FC = () => {
                 sectionRefs.current[tab.key] = el;
               }}
               data-section={tab.key}
-              className="px-4 py-3 md:py-6 scroll-mt-40 border-b border-gray-50 last:border-0"
+              className="px-4 py-3 md:py-6 scroll-mt-40 border-b border-border last:border-0"
             >
               {tabContent[tab.key]}
             </div>
@@ -696,6 +696,7 @@ const EmployeeProfile: React.FC = () => {
                               size="sm"
                               icon={<History size={14} />}
                               onClick={() => navigate("/webapp/employee-profile/assignment-details")}
+                              className="bg-primary/10 text-text-link border border-primary/20 hover:bg-primary/20 hover:border-primary/40"
                             >
                               Assignment Details
                             </Button>}
@@ -712,7 +713,7 @@ const EmployeeProfile: React.FC = () => {
           )}
           {/* Horizontal Tabs - Sticky inside scroll container */}
           <div className="rounded-md">
-            <div className="bg-white sticky top-0 rounded-t-md z-10">
+            <div className="bg-card border-b border-border sticky top-0 rounded-t-md z-10">
               <div className="flex items-center justify-between overflow-x-auto scrollbar-hide px-6 py-2 tracking-wide">
                 <div className="flex overflow-x-auto scrollbar-hide">
                   {permittedTabs?.map((tab) => (
@@ -720,8 +721,8 @@ const EmployeeProfile: React.FC = () => {
                       key={tab.key}
                       onClick={() => scrollToSection(tab.key)}
                       className={`whitespace-nowrap rounded-[0px] px-6 py-3 text-sm font-medium transition-all duration-200 border-b-2 ${activeTab === tab.key
-                        ? "border-primary text-primary"
-                        : "border-transparent text-gray-600 hover:text-primary"
+                        ? "border-primary text-text-link bg-primary/10"
+                        : "border-transparent text-text-body2 hover:text-text-title hover:bg-gray-50"
                         }`}
                     >
                       {tab.label}
@@ -749,7 +750,7 @@ const EmployeeProfile: React.FC = () => {
                   sectionRefs.current[tab.key] = el;
                 }}
                 data-section={tab.key}
-                className="bg-white mb-4 w-full max-w-full scroll-mt-8 rounded-md"
+                className="bg-card border border-border mb-4 w-full max-w-full scroll-mt-8 rounded-md"
               >
                 {tabContent[tab.key]}
               </div>

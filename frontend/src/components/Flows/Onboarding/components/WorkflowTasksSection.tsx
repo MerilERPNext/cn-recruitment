@@ -70,7 +70,7 @@ const WorkflowTasksSection = ({
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
         <SearchInput value={searchQuery} onChange={onSearchChange} />
 
-        <a href="#" className="shrink-0 text-blue-500 hover:text-blue-700 font-semibold text-sm transition-colors">
+        <a href="#" className="shrink-0 text-text-link hover:text-primary font-semibold text-sm transition-colors">
           View Detailed Task
         </a>
       </div>
@@ -94,7 +94,7 @@ const WorkflowTasksSection = ({
             )
           )
         ) : (
-          <div className="p-8 text-center text-slate-400 text-sm">
+          <div className="p-8 text-center text-text-body2 text-sm">
             No tasks found
           </div>
         )}
@@ -151,11 +151,11 @@ const WorkflowDesktopRow = memo(({ task, idx, handleAction }: { task: WorkflowSt
 
   return (
     <div
-      className="grid gap-4 px-6 py-4 border-b border-slate-100 items-center hover:bg-slate-50/50 transition-colors text-sm"
+      className="grid gap-4 px-6 py-4 border-b border-border items-center hover:bg-gray-50/50 transition-colors text-sm"
       style={{ gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr" }}
     >
       <div className="flex flex-col justify-center items-center min-w-0 px-2">
-        <Typography variant="bodySmall" className="font-medium text-center truncate w-full block text-slate-800">
+        <Typography variant="bodySmall" className="font-medium text-center truncate w-full block text-text-title">
           {task.trigger_title || "-"}
         </Typography>
       </div>
@@ -177,7 +177,7 @@ const WorkflowDesktopRow = memo(({ task, idx, handleAction }: { task: WorkflowSt
           (text) => (
             <Typography
               variant="bodySmall"
-              className="font-medium text-center text-primary-600 cursor-pointer underline"
+              className="font-medium text-center text-text-link cursor-pointer underline"
             >
               {text}
             </Typography>
@@ -185,7 +185,7 @@ const WorkflowDesktopRow = memo(({ task, idx, handleAction }: { task: WorkflowSt
         )}
       </div>
       <div className="flex justify-center items-center">
-        <Typography variant="bodySmall" className="font-medium text-center text-slate-600">
+        <Typography variant="bodySmall" className="font-medium text-center text-text-body1">
           {getTimeSinceTrigger(task.todo?.creation)}
         </Typography>
       </div>
@@ -206,10 +206,10 @@ const WorkflowMobileRow = memo(({ task, idx, handleAction }: { task: WorkflowSta
   const { stageForExtract, allocatedTo, canPerformActions } = useWorkflowStagePermission(task);
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-100 border-t-4 border-t-primary-500 shadow-sm p-4 sm:p-5 space-y-4 mb-4 transition-all">
+    <div className="bg-card rounded-2xl border border-border border-t-4 border-t-primary shadow-sm p-4 sm:p-5 space-y-4 mb-4 transition-all">
       <div className="flex justify-between items-start gap-2">
         <div className="min-w-0 flex-1">
-          <Typography variant="mobileCardTitle" className="font-medium text-slate-800 block break-words">
+          <Typography variant="mobileCardTitle" className="font-medium text-text-title block break-words">
             {task.trigger_title || "-"}
           </Typography>
         </div>
@@ -235,7 +235,7 @@ const WorkflowMobileRow = memo(({ task, idx, handleAction }: { task: WorkflowSta
           <Typography variant="mobileCardLabel" className="block text-gray-500 shrink-0 mt-0.5 whitespace-nowrap">
             Time Since Trigger
           </Typography>
-          <Typography variant="mobileCardValue" className="text-right flex-1 min-w-0 mt-0.5 text-slate-600">
+          <Typography variant="mobileCardValue" className="text-right flex-1 min-w-0 mt-0.5 text-text-body1">
             {getTimeSinceTrigger(task.todo?.creation)}
           </Typography>
         </div>

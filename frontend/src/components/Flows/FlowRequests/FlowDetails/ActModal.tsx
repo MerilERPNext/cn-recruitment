@@ -111,7 +111,7 @@ const SectionDivider: React.FC<{
   subtitle?: string;
 }> = ({ icon, title, subtitle }) => (
   <div className="flex items-center gap-4 px-1 pb-4">
-    <div className="flex items-center justify-center w-11 h-11 rounded-xl bg-primary-50 text-primary-600 shrink-0 shadow-sm">
+    <div className="flex items-center justify-center w-11 h-11 rounded-xl bg-primary/10 text-primary shrink-0 shadow-sm">
       {React.isValidElement(icon) ? React.cloneElement(icon as React.ReactElement) : icon}
     </div>
     <div className="flex-1 min-w-0">
@@ -200,9 +200,9 @@ const ActModal: React.FC<ActModalProps> = ({
         style={{ animation: "actModalSlideUp 250ms ease-out" }}
       >
         {/* ============ Header ============ */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 bg-gradient-to-r from-primary-50 to-white sticky top-0 z-20">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-border bg-gradient-to-r from-primary/10 to-transparent sticky top-0 z-20">
           <div className="flex items-center gap-3">
-            <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-primary-100 text-primary-600">
+            <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-primary/15 text-primary">
               <FileText size={18} strokeWidth={2} />
             </div>
             <div>
@@ -210,7 +210,7 @@ const ActModal: React.FC<ActModalProps> = ({
               <p className="text-xs text-gray-500 font-brand mt-0.5 flex items-center gap-1">
                 {stage.stage_name}
                 <ChevronRight size={12} className="text-gray-400" />
-                <span className="text-primary-600 font-medium">Take Action</span>
+                <span className="text-primary font-medium">Take Action</span>
               </p>
             </div>
           </div>
@@ -239,13 +239,13 @@ const ActModal: React.FC<ActModalProps> = ({
 
           {/* ---------- Initiation Form ---------- */}
           {initForm.schema && (
-            <div className="mb-8 p-6 border border-gray-100 rounded-2xl bg-white shadow-sm">
+            <div className="mb-8 p-6 border border-border rounded-2xl bg-white shadow-sm">
               <SectionDivider
                 icon={<Eye strokeWidth={2.5} size={22} />}
                 title="Initiation Form"
                 subtitle="Submitted by the initiator"
               />
-              <div className="border border-gray-100 rounded-xl p-4 bg-gray-50/30">
+              <div className="border border-border rounded-xl p-4 bg-gray-50/30">
                 <FormPreview
                   containerId={`act-modal-initiation-form`}
                   schema={initForm.schema}
@@ -259,13 +259,13 @@ const ActModal: React.FC<ActModalProps> = ({
 
           {/* ---------- Previous Stages ---------- */}
           {previousStagesWithForms.map(({ stage: prevStage, index: idx, parsed }) => (
-            <div key={`prev-stage-${idx}`} className="mb-8 p-6 border border-gray-100 rounded-2xl bg-white shadow-sm">
+            <div key={`prev-stage-${idx}`} className="mb-8 p-6 border border-border rounded-2xl bg-white shadow-sm">
               <SectionDivider
                 icon={<FileText strokeWidth={2.5} size={22} />}
                 title={`Stage ${idx + 1}: ${prevStage.stage_name}`}
                 subtitle={prevStage.user ? `Acted by ${prevStage.user}` : undefined}
               />
-              <div className="border border-gray-100 rounded-xl p-4 bg-gray-50/30">
+              <div className="border border-border rounded-xl p-4 bg-gray-50/30">
                 <FormPreview
                   containerId={`act-modal-stage-${idx}-form`}
                   schema={parsed.schema!}
@@ -279,7 +279,7 @@ const ActModal: React.FC<ActModalProps> = ({
         </div>
 
         {/* ============ Sticky Footer — Action Buttons ============ */}
-        <div className="sticky bottom-0 px-5 py-4 border-t border-gray-100 bg-white/95 backdrop-blur-sm z-20">
+        <div className="sticky bottom-0 px-5 py-4 border-t border-border bg-white/95 backdrop-blur-sm z-20">
           <TeamApprovalActionPill
             actions={actions}
             status={stage?.todo?.status ?? stage?.status}

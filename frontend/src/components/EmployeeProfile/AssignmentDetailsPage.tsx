@@ -74,10 +74,10 @@ const AssignmentDetailsPage = () => {
       });
 
       return (
-        <div className="mt-4 border border-gray-200 rounded-lg overflow-hidden">
-          <table className="w-full table-fixed text-sm">
+        <div className="assignment-details-table mt-4 overflow-hidden rounded-lg border border-border bg-card">
+          <table className="w-full table-fixed text-sm text-text-body1">
             <thead>
-              <tr className="bg-gray-50 border-b border-gray-200">
+              <tr className="bg-gray-50 border-b border-border">
                 {columns.map((col) => (
                   <th
                     key={col}
@@ -92,10 +92,10 @@ const AssignmentDetailsPage = () => {
               {Array.from(grouped.entries()).map(([sectionName, items], rowIdx) => (
                 <tr
                   key={rowIdx}
-                  className="border-b border-gray-100 last:border-0 hover:bg-gray-50 transition-colors"
+                  className="border-b border-border last:border-0 hover:bg-gray-50 transition-colors"
                 >
                   {columns.map((col) => (
-                    <td key={col} className="px-4 py-3 text-gray-700 align-top break-words min-w-0">
+                    <td key={col} className="min-w-0 break-words px-4 py-3 align-top text-text-body1">
                       {col === "Section" ? (
                         sectionName
                       ) : (
@@ -110,7 +110,7 @@ const AssignmentDetailsPage = () => {
                                   href={item.link}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="text-blue-600 hover:text-blue-800 hover:underline break-words"
+                                  className="text-text-link hover:text-primary hover:underline break-words"
                                 >
                                   {item[col] || "-"}
                                 </a>
@@ -140,10 +140,10 @@ const AssignmentDetailsPage = () => {
     const columns = allKeys.filter((k) => !linkKeySet.has(k));
 
     return (
-      <div className="mt-4 border border-gray-200 rounded-lg overflow-hidden">
-        <table className="w-full table-fixed text-sm">
+      <div className="assignment-details-table mt-4 overflow-hidden rounded-lg border border-border bg-card">
+        <table className="w-full table-fixed text-sm text-text-body1">
           <thead>
-            <tr className="bg-gray-50 border-b border-gray-200">
+            <tr className="bg-gray-50 border-b border-border">
               {columns.map((col) => (
                 <th
                   key={col}
@@ -158,19 +158,19 @@ const AssignmentDetailsPage = () => {
             {sections.map((row: any, rowIdx: number) => (
               <tr
                 key={rowIdx}
-                className="border-b border-gray-100 last:border-0 hover:bg-gray-50 transition-colors"
+                className="border-b border-border last:border-0 hover:bg-gray-50 transition-colors"
               >
                 {columns.map((col) => {
                   // Resolve link: prefer {col}_link, then fall back to "link"
                   const linkUrl = row[`${col}_link`] ?? row["link"] ?? null;
                   return (
-                    <td key={col} className="px-4 py-3 text-gray-700">
+                    <td key={col} className="px-4 py-3 text-text-body1">
                       {linkUrl ? (
                         <a
                           href={linkUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-blue-600 hover:text-blue-800 hover:underline break-words"
+                          className="text-text-link hover:text-primary hover:underline break-words"
                         >
                           {row[col] || "-"}
                         </a>
@@ -191,12 +191,12 @@ const AssignmentDetailsPage = () => {
   };
 
   const content = (
-    <div className="bg-white rounded-lg p-6">
+    <div className="assignment-details-page rounded-lg border border-border bg-card p-6 text-text-body1">
       {/* Header */}
       {employeeName && (
-        <Typography variant="bodyMedium" className="text-gray-600 mb-4">
+        <Typography variant="bodyMedium" className="text-text-body1 mb-4">
           Policies assigned to{" "}
-          <span className="font-semibold text-gray-900">{employeeName}</span>
+          <span className="font-semibold text-text-title">{employeeName}</span>
           {employeeId && (
             <span className="text-gray-500"> ({employeeId})</span>
           )}
@@ -204,7 +204,7 @@ const AssignmentDetailsPage = () => {
       )}
 
       {/* Form.io Select */}
-      <div className="max-w-xs">
+      <div className="assignment-details-form max-w-xs">
         <Form
           form={assignmentDetailsFormSchema}
           onFormReady={(form: any) => {
@@ -245,7 +245,7 @@ const AssignmentDetailsPage = () => {
   if (isDesktop) {
     return (
       <DesktopLayoutWrapper title="Assignment Details">
-        <div className="p-6 w-full">{content}</div>
+        <div className="bg-app min-h-full p-6 w-full">{content}</div>
       </DesktopLayoutWrapper>
     );
   }

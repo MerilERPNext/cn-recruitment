@@ -44,11 +44,11 @@ export const AwardBadge: React.FC<{ award: Award }> = ({ award }) => {
                 isOpen={isOpen}
                 onClose={() => setIsOpen(false)}
                 triggerRef={triggerRef}
-                className="!min-w-[280px] !max-w-[320px] p-5 !rounded-2xl !border-blue-200 !shadow-2xl !bg-white backdrop-blur-sm"
+                className="!min-w-[280px] !max-w-[320px] p-5 !rounded-2xl !border-border-strong !shadow-2xl !bg-raised backdrop-blur-sm"
             >
                 <div className="flex flex-col gap-4">
                     {/* Header */}
-                    <div className="flex items-start gap-3 pb-3 border-b border-gray-200">
+                    <div className="flex items-start gap-3 pb-3 border-b border-border">
                         <div className="relative w-14 h-14 rounded-full overflow-hidden bg-gradient-to-br from-blue-100 to-indigo-100 flex items-center justify-center shadow-sm flex-shrink-0">
                             {award.icon ? (
                                 <img
@@ -227,7 +227,7 @@ export const AwardsSection: React.FC<AwardsSectionProps> = ({ isDesktop, mobileC
             className={isDesktop ? "p-6" : "p-4"}
         >
             <div className={`flex flex-col h-full min-h-[50vh] ${isDesktop ? "max-h-[80vh]" : ""}`}>
-                <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-100">
+                <div className="flex items-center justify-between mb-6 pb-4 border-b border-border">
                     <div>
                         <Typography variant="h3" className="text-gray-900 font-bold">
                             All Appreciations
@@ -239,7 +239,7 @@ export const AwardsSection: React.FC<AwardsSectionProps> = ({ isDesktop, mobileC
                     <Button
                         variant="subtle"
                         onClick={() => setShowAllModal(false)}
-                        className="!p-2 hover:bg-gray-100 rounded-full"
+                        className="!p-2 text-text-body2 hover:text-text-title hover:bg-gray-100 rounded-full"
                     >
                         ✕
                     </Button>
@@ -253,7 +253,7 @@ export const AwardsSection: React.FC<AwardsSectionProps> = ({ isDesktop, mobileC
                     </div>
                 </div>
 
-                <div className="mt-6 pt-4 border-t border-gray-100 flex justify-end">
+                <div className="mt-6 pt-4 border-t border-border flex justify-end">
                     <Button variant="contain" onClick={() => setShowAllModal(false)}>
                         Close
                     </Button>
@@ -281,7 +281,7 @@ export const AwardsSection: React.FC<AwardsSectionProps> = ({ isDesktop, mobileC
     }
 
     return (
-        <div className="w-full border-t border-gray-100 mt-4 pt-4 px-6">
+        <div className="w-full border-t border-border mt-4 pt-4 px-6">
             <Typography variant="h4" className="font-bold text-gray-900 mb-4">
                 Appreciations
             </Typography>
@@ -295,7 +295,7 @@ export const AwardsSection: React.FC<AwardsSectionProps> = ({ isDesktop, mobileC
                         onClick={() => setShowAllModal(true)}
                         className="flex flex-col items-center gap-2 flex-shrink-0 cursor-pointer group"
                     >
-                        <div className="w-14 h-14 rounded-full bg-blue-50 border-2 border-primary-100 flex items-center justify-center shadow-sm transition-all duration-300 group-hover:bg-primary-50 group-hover:border-primary-200">
+                        <div className="w-14 h-14 rounded-full bg-primary/10 border-2 border-primary/20 flex items-center justify-center shadow-sm transition-all duration-300 group-hover:bg-primary/20 group-hover:border-primary/40">
                             <span className="text-primary-600 font-bold text-sm">+{remainingCount}</span>
                         </div>
                         <span className="text-[10px] font-semibold text-primary-500">View All</span>
@@ -306,4 +306,3 @@ export const AwardsSection: React.FC<AwardsSectionProps> = ({ isDesktop, mobileC
         </div>
     );
 };
-

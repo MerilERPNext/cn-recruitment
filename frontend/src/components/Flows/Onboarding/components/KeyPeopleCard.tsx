@@ -30,24 +30,24 @@ const KeyPeopleCard = ({
   onTeammatesToggle,
   isLoading,
 }: KeyPeopleCardProps) => (
-  <div className="bg-white rounded-2xl border border-slate-100 shadow-sm flex flex-col h-full min-h-0">
+  <div className="bg-white rounded-2xl border border-border shadow-sm flex flex-col h-full min-h-0">
     <div className="p-4 sm:p-6 pb-0 shrink-0">
-      <Typography variant="bodyMedium" className="font-bold text-slate-800">
+      <Typography variant="bodyMedium" className="font-bold text-text-title">
         Key People
       </Typography>
     </div>
 
-    <div className="pt-5 pb-4 space-y-2 divide-y divide-slate-100 overflow-y-auto no-scrollbar">
+    <div className="pt-5 pb-4 space-y-2 divide-y divide-border overflow-y-auto no-scrollbar">
       {isLoading ? (
         <div className="px-4 sm:px-6 space-y-6 pt-2 animate-pulse">
           {[1, 2, 3].map((i) => (
             <div key={i} className="flex flex-col gap-4">
-              <div className="h-4 bg-slate-200 rounded w-1/3 mb-2" />
+              <div className="h-4 bg-gray-200 rounded w-1/3 mb-2" />
               <div className="flex gap-3 sm:gap-4 items-start">
-                <div className="h-12 w-12 rounded-full bg-slate-200 shrink-0" />
+                <div className="h-12 w-12 rounded-full bg-gray-200 shrink-0" />
                 <div className="min-w-0 space-y-2 flex-1 pt-1.5">
-                  <div className="h-4 bg-slate-200 rounded w-1/2" />
-                  <div className="h-3 bg-slate-200 rounded w-1/3" />
+                  <div className="h-4 bg-gray-200 rounded w-1/2" />
+                  <div className="h-3 bg-gray-200 rounded w-1/3" />
                 </div>
               </div>
             </div>
@@ -140,18 +140,18 @@ const KeyPeopleSection = memo(({
   <div className={className}>
     <button
       onClick={onToggle}
-      className="w-full flex justify-between items-center py-3 px-4 sm:px-6 text-left transition-colors hover:bg-slate-50 group"
+      className="w-full flex justify-between items-center py-3 px-4 sm:px-6 text-left transition-colors hover:bg-gray-50 group"
     >
       <Typography
         variant="bodySmall"
-        className="font-semibold text-slate-500 uppercase tracking-wider text-xs group-hover:text-slate-700 transition-colors"
+        className="font-semibold text-text-body2 uppercase tracking-wider text-xs group-hover:text-text-title transition-colors"
       >
         {title}
       </Typography>
       {isOpen ? (
-        <ChevronUp size={16} className="text-slate-400 group-hover:text-slate-600 transition-colors" />
+        <ChevronUp size={16} className="text-text-body2 group-hover:text-primary transition-colors" />
       ) : (
-        <ChevronDown size={16} className="text-slate-400 group-hover:text-slate-600 transition-colors" />
+        <ChevronDown size={16} className="text-text-body2 group-hover:text-primary transition-colors" />
       )}
     </button>
 
@@ -168,11 +168,11 @@ const PersonRow = memo(({ person, avatarSize }: { person: OnboardingPerson; avat
     <Avatar name={person.full_name || person.employee || ""} src={person.image || ""} size={avatarSize} />
     <div className="min-w-0 space-y-1">
       <WrapperHoverCard employeeId={person.employee ?? ""}>
-        <Typography variant="body" className="font-bold text-slate-800 leading-tight block break-words hover:underline cursor-pointer">
+        <Typography variant="body" className="font-bold text-text-title leading-tight block break-words hover:underline cursor-pointer">
           {person.full_name || person.employee || "-"}
         </Typography>
       </WrapperHoverCard>
-      <Typography variant="caption" className="text-slate-500 leading-relaxed block break-words">
+      <Typography variant="caption" className="text-text-body2 leading-relaxed block break-words">
         {person.subtitle || "-"}
       </Typography>
     </div>

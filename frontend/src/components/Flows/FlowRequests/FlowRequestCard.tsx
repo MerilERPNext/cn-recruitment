@@ -49,7 +49,7 @@ const FlowRequestCard: React.FC<FlowRequestCardProps> = ({
                 onClick={() => handleShowDetails(request)}
             >
                 {/* Header: Flow Name + Approval Badge */}
-                <div className="bg-gradient-to-r from-primary/5 to-transparent px-5 pt-4 pb-3 border-b border-gray-100">
+                <div className="bg-gradient-to-r from-primary/5 to-transparent px-5 pt-4 pb-3 border-b border-border">
                     <div className="flex justify-between items-start gap-2">
                         <div className="flex flex-col gap-1 min-w-0 flex-1">
                             <Typography variant="mobileCardLabel" className="block">
@@ -71,14 +71,14 @@ const FlowRequestCard: React.FC<FlowRequestCardProps> = ({
                 {/* Body */}
                 <div className="px-5 py-3 flex flex-col gap-3">
                     {/* Flow ID */}
-                    <div className="flex items-center justify-between bg-slate-50/70 border border-slate-100/80 rounded-lg px-3 py-1.5 transition-colors duration-150">
-                        <div className="flex items-center gap-1 text-slate-400">
+                    <div className="flex items-center justify-between bg-gray-50/70 border border-border rounded-lg px-3 py-1.5 transition-colors duration-150">
+                        <div className="flex items-center gap-1 text-gray-400">
                             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14" />
                             </svg>
-                            <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 font-brand">Flow ID</span>
+                            <span className="text-[10px] uppercase font-bold tracking-wider text-gray-400 font-brand">Flow ID</span>
                         </div>
-                        <span className="font-mono text-xs font-semibold text-slate-600 select-all">
+                        <span className="font-mono text-xs font-semibold text-gray-600 select-all">
                             {request.request_id}
                         </span>
                     </div>
@@ -151,7 +151,7 @@ const FlowRequestCard: React.FC<FlowRequestCardProps> = ({
     }
 
     return (
-        <div className="px-4 py-3 grid grid-cols-[150px_1fr_1fr_150px_150px_150px_150px_150px] gap-4 text-center cursor-pointer hover:bg-blue-50" onClick={() => handleShowDetails(request)}>
+        <div className="px-4 py-3 grid grid-cols-[150px_1fr_1fr_150px_150px_150px_150px_150px] gap-4 text-center cursor-pointer hover:bg-gray-50 transition-colors" onClick={() => handleShowDetails(request)}>
             <div><Typography variant="bodySmall" className="font-medium text-center"><Tooltip content={request.request_id}>{truncateByChars(request.request_id, 15)}</Tooltip></Typography></div>
             <div>  <Typography variant="bodySmall" className="font-medium text-center"><Tooltip content={request.flow_name}>{truncateByChars(request.flow_name, 40)}</Tooltip></Typography></div>
             <div><Typography variant="bodySmall" className="font-medium text-center"><Tooltip content={request.category}>{truncateByChars(request.category, 40)}</Tooltip></Typography></div>

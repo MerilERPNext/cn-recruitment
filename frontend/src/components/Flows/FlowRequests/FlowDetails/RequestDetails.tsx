@@ -256,8 +256,8 @@ const RequestDetails: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="flex flex-col bg-white h-full animate-pulse">
-        <div className="bg-white">
+      <div className="flex flex-col bg-app h-full animate-pulse">
+        <div className="bg-app">
           <div className="sm:px-4 flex items-center justify-between p-4 sm:p-2 sm:py-3">
             <div className="flex items-center gap-3 md:gap-4">
               <div className="w-8 h-8 rounded bg-gray-200 shrink-0" />
@@ -300,18 +300,19 @@ const RequestDetails: React.FC = () => {
   }
 
   return (
-    <div className="flex flex-col bg-white h-full">
-      <div className="bg-white">
+    <div className="flex flex-col bg-app text-text-title h-full">
+      <div className="bg-app">
         <div className="sm:px-4">
           <HeaderBar
             title={data?.flow_name}
+            className="border-b border-border shadow-sm"
             rightSlot={
               <div className="flex items-center gap-2">
                 {isDesktop && haveInitiatorForm && (
                   <Button
                     variant="outline"
                     onClick={handleShowSelfForm}
-                    className="flex items-center gap-2 py-1.5 border-gray-300 text-gray-700 hover:bg-gray-50 transition-all rounded-md shadow-sm px-3"
+                    className="flex items-center gap-2 py-1.5 bg-card border-border text-text-body1 hover:bg-gray-50 hover:border-border-strong transition-all rounded-md shadow-sm px-3"
                   >
                     <Eye size={16} className="text-primary-600" />
                     <span>Initiation Form</span>
@@ -332,7 +333,7 @@ const RequestDetails: React.FC = () => {
                   <Button
                     variant="outline"
                     onClick={() => setIsActivityLogOpen(true)}
-                    className="flex items-center gap-2 py-1.5 border-gray-300 text-gray-700 hover:bg-gray-50 transition-all rounded-md shadow-sm px-3"
+                    className="flex items-center gap-2 py-1.5 bg-card border-border text-text-body1 hover:bg-gray-50 hover:border-border-strong transition-all rounded-md shadow-sm px-3"
                   >
                     <FileText size={16} className="text-gray-500" />
                     <span>Activity Log</span>
@@ -375,7 +376,7 @@ const RequestDetails: React.FC = () => {
                       ]}
                       placement="bottom-left"
                     >
-                      <button className="p-2 border border-gray-300 focus:bg-primary-100/30 focus:ring-primary focus:ring-2 ring-offset-1 text-gray-700 rounded-md flex items-center justify-center hover:bg-primary-50/30 bg-white shadow-sm">
+                      <button className="p-2 border border-border focus:bg-primary/10 focus:ring-primary focus:ring-2 ring-offset-1 text-text-body1 rounded-md flex items-center justify-center hover:bg-gray-50 bg-card shadow-sm">
                         <MoreVertical size={20} />
                       </button>
                     </DropdownMenu>
@@ -453,13 +454,13 @@ const RequestDetails: React.FC = () => {
                   const r = 20;
                   const circumference = 2 * Math.PI * r;
                   const offset = circumference * (1 - overallStats.percentage / 100);
-                  const strokeColor = overallStats.percentage === 100 ? "#22c55e" : "#6172F3";
+                  const strokeColor = overallStats.percentage === 100 ? "rgb(var(--success))" : "rgb(var(--primary))";
                   return (
                     <svg className="w-full h-full -rotate-90" viewBox="0 0 48 48">
                       <circle
                         cx="24" cy="24" r={r}
                         fill="none"
-                        stroke="#e5e7eb"
+                        stroke="rgb(var(--border))"
                         strokeWidth="4"
                       />
                       <circle
@@ -515,7 +516,7 @@ const RequestDetails: React.FC = () => {
           <div className="rounded-xl border border-gray-200/80 overflow-hidden shadow-[0_1px_3px_rgba(0,0,0,0.04)] bg-white">
             <button
               onClick={() => setApprovalExpanded((prev) => !prev)}
-              className="w-full flex items-center justify-between px-5 sm:px-6 py-3.5 sm:py-4 bg-gradient-to-r from-primary-50/60 to-white hover:from-primary-50 hover:to-primary-50/30 transition-all duration-200 group border-l-[3px] border-l-primary-500"
+              className="w-full flex items-center justify-between px-5 sm:px-6 py-3.5 sm:py-4 bg-gradient-to-r from-primary/10 to-transparent hover:bg-gray-50 transition-all duration-200 group border-l-[3px] border-l-primary"
             >
               <div className="flex items-center gap-3 flex-wrap">
                 <span className="text-[13px] sm:text-[15px] font-semibold text-gray-800">
@@ -547,7 +548,7 @@ const RequestDetails: React.FC = () => {
                   )}
                 </div>
               </div>
-              <div className="w-7 h-7 rounded-lg bg-gray-100 group-hover:bg-primary-100 flex items-center justify-center transition-colors duration-200 shrink-0 ml-3">
+              <div className="w-7 h-7 rounded-lg bg-gray-100 group-hover:bg-primary/15 flex items-center justify-center transition-colors duration-200 shrink-0 ml-3">
                 <ChevronDown
                   size={16}
                   className={`text-gray-500 group-hover:text-primary-600 transition-all duration-300 ${approvalExpanded ? "rotate-180" : "rotate-0"
@@ -572,7 +573,7 @@ const RequestDetails: React.FC = () => {
             <div className="rounded-xl border border-gray-200/80 overflow-hidden shadow-[0_1px_3px_rgba(0,0,0,0.04)] bg-white">
               <button
                 onClick={() => setWorkflowExpanded((prev) => !prev)}
-                className="w-full flex items-center justify-between px-5 sm:px-6 py-3.5 sm:py-4 bg-gradient-to-r from-amber-50/60 to-white hover:from-amber-50 hover:to-amber-50/30 transition-all duration-200 group border-l-[3px] border-l-amber-500"
+                className="w-full flex items-center justify-between px-5 sm:px-6 py-3.5 sm:py-4 bg-gradient-to-r from-warning/10 to-transparent hover:bg-gray-50 transition-all duration-200 group border-l-[3px] border-l-warning"
               >
                 <div className="flex items-center gap-3 flex-wrap">
                   <span className="text-[13px] sm:text-[15px] font-semibold text-gray-800">
@@ -604,7 +605,7 @@ const RequestDetails: React.FC = () => {
                     )}
                   </div>
                 </div>
-                <div className="w-7 h-7 rounded-lg bg-gray-100 group-hover:bg-amber-100 flex items-center justify-center transition-colors duration-200 shrink-0 ml-3">
+                <div className="w-7 h-7 rounded-lg bg-gray-100 group-hover:bg-warning/15 flex items-center justify-center transition-colors duration-200 shrink-0 ml-3">
                   <ChevronDown
                     size={16}
                     className={`text-gray-500 group-hover:text-amber-600 transition-all duration-300 ${workflowExpanded ? "rotate-180" : "rotate-0"
@@ -642,7 +643,7 @@ const RequestDetails: React.FC = () => {
                 size="sm"
                 onClick={() => setIsEditingForm((prev) => !prev)}
                 className={`flex items-center gap-1.5 py-1 px-2.5 transition-all rounded-md ${isEditingForm
-                  ? "border-primary-300 text-primary-700 bg-primary-50"
+                  ? "border-primary/40 text-primary bg-primary/10"
                   : "border-gray-300 text-gray-600 hover:bg-gray-50"
                   }`}
               >
@@ -706,4 +707,3 @@ const RequestDetails: React.FC = () => {
 };
 
 export default RequestDetails;
-
