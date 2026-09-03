@@ -17,12 +17,12 @@ const RecommendedTemplates = ({
 
     if (recommendedTemplatesData.length === 0) {
         return (
-            <div className="flex flex-col items-center justify-center py-12 text-center rounded-xl border border-dashed border-gray-200 bg-gray-50/50 p-6">
-                <Search className="h-8 w-8 text-gray-400 mb-2" />
-                <Typography variant="bodyMedium" className="font-semibold text-gray-700">
+            <div className="flex flex-col items-center justify-center py-12 text-center rounded-xl border border-dashed border-border bg-card p-6">
+                <Search className="h-8 w-8 text-text-body2 mb-2" />
+                <Typography variant="bodyMedium" className="font-semibold text-text-title">
                     No matching goals found
                 </Typography>
-                <Typography variant="caption" className="text-gray-500 mt-1">
+                <Typography variant="caption" className="text-text-body2 mt-1">
                     Try refining your search keyword or clearing department/designation filters.
                 </Typography>
             </div>

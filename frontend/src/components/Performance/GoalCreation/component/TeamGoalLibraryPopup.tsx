@@ -105,20 +105,20 @@ const TeamGoalLibraryPopup: React.FC<TeamGoalLibraryPopupProps> = ({ onClose, on
     };
 
     return (
-        <div className="flex h-[90vh] w-full max-w-full flex-col overflow-hidden bg-white shadow-2xl sm:h-auto sm:max-h-[90vh] sm:min-h-[580px] sm:rounded-xl sm:animate-slideUp">
+        <div className="flex h-[90vh] w-full max-w-full flex-col overflow-hidden bg-card text-text-title border border-border shadow-2xl sm:h-auto sm:max-h-[90vh] sm:min-h-[580px] sm:rounded-xl sm:animate-slideUp">
             {/* Header */}
-            <div className="relative z-30 shrink-0 border-b border-gray-100 bg-white px-4 py-2.5 sm:px-5 sm:py-4">
+            <div className="relative z-30 shrink-0 border-b border-border bg-card px-4 py-2.5 sm:px-5 sm:py-4">
                 <div className="flex items-center gap-3 pr-11">
-                    <Typography variant="h4" className="text-lg font-semibold leading-tight text-gray-900 sm:mt-2 sm:text-2xl">
+                    <Typography variant="h4" className="text-lg font-semibold leading-tight text-text-title sm:mt-2 sm:text-2xl">
                         Cascade Manager & Department Goals
                     </Typography>
-                    <span className="hidden sm:inline-block rounded-md bg-indigo-50 border border-indigo-100 px-2.5 py-0.5 text-xs font-bold text-indigo-700">
+                    <span className="hidden sm:inline-block rounded-md bg-primary/20 border border-primary/30 px-2.5 py-0.5 text-xs font-bold text-primary">
                         FY26 Cycle
                     </span>
                 </div>
                 <button
                     type="button"
-                    className="absolute right-3 top-2 flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-500 transition hover:bg-gray-50 hover:text-gray-700 sm:right-4 sm:top-4"
+                    className="absolute right-3 top-2 flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-card text-text-body2 transition hover:bg-slate-500/10 hover:text-text-title cursor-pointer sm:right-4 sm:top-4"
                     onClick={onClose}
                     aria-label="Close manager goals library"
                 >
@@ -129,15 +129,15 @@ const TeamGoalLibraryPopup: React.FC<TeamGoalLibraryPopupProps> = ({ onClose, on
             {/* mobile: one scrollable wrapper; desktop (sm:contents): div vanishes, restoring sticky layout */}
             <div className="flex min-h-0 flex-1 flex-col overflow-y-auto sm:contents">
                 {/* Filters */}
-                <div className="shrink-0 border-b border-gray-100 bg-white px-4 py-2.5 sm:px-5 sm:py-4">
+                <div className="shrink-0 border-b border-border bg-card px-4 py-2.5 sm:px-5 sm:py-4">
                     <div className="grid min-w-0 grid-cols-1 gap-2.5 sm:grid-cols-2 sm:gap-3 lg:grid-cols-[minmax(280px,1fr)_180px_minmax(180px,240px)]">
                         <div className="relative">
-                            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-body2" />
                             <input
                                 type="text"
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                className="h-full w-full rounded-lg border border-slate-200 bg-slate-50 pl-9 pr-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition-colors focus:border-blue-300 focus:bg-white focus:ring-2 focus:ring-blue-100"
+                                className="h-full w-full rounded-lg border border-border bg-card pl-9 pr-3 text-sm text-text-title placeholder:text-text-body2 outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-primary"
                                 placeholder="Search manager goals or team OKRs..."
                                 aria-label="Search goal templates"
                             />
@@ -145,7 +145,7 @@ const TeamGoalLibraryPopup: React.FC<TeamGoalLibraryPopupProps> = ({ onClose, on
                                 <button
                                     type="button"
                                     onClick={() => setSearchQuery('')}
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-text-body2 hover:text-text-title cursor-pointer"
                                     aria-label="Clear search"
                                 >
                                     <X className="h-4 w-4" />
@@ -179,18 +179,18 @@ const TeamGoalLibraryPopup: React.FC<TeamGoalLibraryPopupProps> = ({ onClose, on
                 </div>
 
                 {/* Content Area: GoalItemCard List / Skeleton / Error */}
-                <div className="px-4 py-4 sm:min-h-0 sm:flex-1 sm:overflow-y-auto sm:px-5 space-y-3.5">
+                <div className="px-4 py-4 sm:min-h-0 sm:flex-1 sm:overflow-y-auto sm:px-5 space-y-3.5 bg-card">
                     {teamGoalsLoading ? (
                         <TeamGoalSkeleton />
                     ) : error ? (
                         <TeamGoalError error={error} onRetry={refetch} />
                     ) : goals.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center py-12 text-center rounded-xl border border-dashed border-gray-200 bg-gray-50/50 p-6">
-                            <Search className="h-8 w-8 text-gray-400 mb-2" />
-                            <Typography variant="bodyMedium" className="font-semibold text-gray-700">
+                        <div className="flex flex-col items-center justify-center py-12 text-center rounded-xl border border-dashed border-border bg-card p-6">
+                            <Search className="h-8 w-8 text-text-body2 mb-2" />
+                            <Typography variant="bodyMedium" className="font-semibold text-text-title">
                                 No matching manager or team goals found
                             </Typography>
-                            <Typography variant="caption" className="text-gray-500 mt-1">
+                            <Typography variant="caption" className="text-text-body2 mt-1">
                                 Try refining your search keyword or clearing department/designation filters.
                             </Typography>
                         </div>
@@ -211,8 +211,8 @@ const TeamGoalLibraryPopup: React.FC<TeamGoalLibraryPopupProps> = ({ onClose, on
                 </div>
 
                 {/* Footer */}
-                <div className="flex flex-col gap-3 border-t border-gray-100 bg-blue-50/50 px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3 sm:flex-row sm:items-center sm:justify-between sm:px-5 sm:py-4">
-                    <Typography variant="caption" className="block break-words leading-relaxed text-gray-500">
+                <div className="flex flex-col gap-3 border-t border-border bg-card px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3 sm:flex-row sm:items-center sm:justify-between sm:px-5 sm:py-4">
+                    <Typography variant="caption" color="body2" className="block break-words leading-relaxed">
                         {selectedTemplates.length > 0
                             ? `${selectedTemplates.length} goal(s) selected for cascading`
                             : 'Select manager & team goals from the list above to cascade'}
@@ -221,7 +221,7 @@ const TeamGoalLibraryPopup: React.FC<TeamGoalLibraryPopupProps> = ({ onClose, on
                         type="button"
                         variant="contain"
                         bgColor="primary"
-                        className="h-10 w-full justify-center rounded-lg bg-blue-600 px-4 text-white hover:bg-blue-700 sm:h-9 sm:w-auto disabled:opacity-50"
+                        className="h-10 w-full justify-center rounded-lg bg-primary hover:bg-primary/90 text-white sm:h-9 sm:w-auto disabled:opacity-50 cursor-pointer"
                         disabled={selectedTemplates.length === 0}
                         onClick={handleSubmitFooter}
                     >
@@ -238,21 +238,21 @@ function TeamGoalSkeleton() {
         {Array.from({ length: 2 }).map((_, index) => (
             <div
                 key={index}
-                className="flex flex-col justify-between gap-5 rounded-2xl border border-gray-200/80 bg-white p-5 animate-pulse sm:flex-row sm:items-center sm:p-6"
+                className="flex flex-col justify-between gap-5 rounded-2xl border border-border bg-card p-5 animate-pulse sm:flex-row sm:items-center sm:p-6"
             >
                 <div className="flex items-start gap-4 min-w-0 flex-1">
-                    <div className="h-9 w-9 shrink-0 rounded-xl bg-gray-200" />
+                    <div className="h-9 w-9 shrink-0 rounded-xl bg-slate-500/20" />
                     <div className="min-w-0 flex-1 space-y-2">
                         <div className="flex flex-wrap items-center gap-2 mb-2">
-                            <div className="h-5 w-32 rounded-md bg-amber-100/60" />
-                            <div className="h-5 w-24 rounded-md bg-indigo-50/80" />
-                            <div className="h-4 w-16 rounded bg-gray-200" />
+                            <div className="h-5 w-32 rounded-md bg-amber-500/20" />
+                            <div className="h-5 w-24 rounded-md bg-primary/20" />
+                            <div className="h-4 w-16 rounded bg-slate-500/20" />
                         </div>
-                        <div className="h-5 w-3/4 rounded bg-gray-200" />
-                        <div className="h-4 w-1/2 rounded bg-gray-100 mt-1.5" />
+                        <div className="h-5 w-3/4 rounded bg-slate-500/30" />
+                        <div className="h-4 w-1/2 rounded bg-slate-500/20 mt-1.5" />
                     </div>
                 </div>
-                <div className="h-9 w-24 shrink-0 rounded-xl bg-gray-200 self-end sm:self-center" />
+                <div className="h-9 w-24 shrink-0 rounded-xl bg-slate-500/30 self-end sm:self-center" />
             </div>
         ))}
     </div>
@@ -260,20 +260,20 @@ function TeamGoalSkeleton() {
 
 
 function TeamGoalError({ error, onRetry }: { error: Error | null; onRetry: () => void }) {
-    return <div className="flex flex-col items-center justify-center py-12 text-center rounded-2xl border border-red-100 bg-red-50/40 p-6">
-        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-red-100/80 text-red-600 mb-3 shadow-2xs">
+    return <div className="flex flex-col items-center justify-center py-12 text-center rounded-2xl border border-red-500/30 bg-red-500/10 p-6">
+        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-red-500/20 text-red-500 mb-3 shadow-2xs">
             <AlertCircle className="h-6 w-6" />
         </div>
-        <Typography variant="bodyMedium" className="font-semibold text-gray-800 text-base">
+        <Typography variant="bodyMedium" className="font-semibold text-text-title text-base">
             Failed to load manager & department goals
         </Typography>
-        <Typography variant="caption" className="text-gray-500 mt-1 max-w-sm leading-relaxed">
+        <Typography variant="caption" className="text-text-body2 mt-1 max-w-sm leading-relaxed">
             {error?.message || "An unexpected error occurred while fetching cascade goals. Please check your connection and try again."}
         </Typography>
         <Button
             type="button"
             variant="outline"
-            className="mt-4 h-9 rounded-xl border-red-200 bg-white px-5 text-xs font-semibold text-red-600 shadow-2xs hover:bg-red-50 hover:border-red-300 transition-all"
+            className="mt-4 h-9 rounded-xl border-border bg-card px-5 text-xs font-semibold text-text-title shadow-2xs hover:bg-slate-500/10 transition-all cursor-pointer"
             onClick={onRetry}
         >
             Try Again

@@ -33,12 +33,12 @@ const AllOrgTemplates = ({
 
     if (allOrgTemplatesData.length === 0) {
         return (
-            <div className="flex flex-col items-center justify-center py-12 text-center rounded-xl border border-dashed border-gray-200 bg-gray-50/50 p-6">
-                <Search className="h-8 w-8 text-gray-400 mb-2" />
-                <Typography variant="bodyMedium" className="font-semibold text-gray-700">
+            <div className="flex flex-col items-center justify-center py-12 text-center rounded-xl border border-dashed border-border bg-card p-6">
+                <Search className="h-8 w-8 text-text-body2 mb-2" />
+                <Typography variant="bodyMedium" className="font-semibold text-text-title">
                     No matching goals found
                 </Typography>
-                <Typography variant="caption" className="text-gray-500 mt-1">
+                <Typography variant="caption" className="text-text-body2 mt-1">
                     Try refining your search keyword or clearing department/designation filters.
                 </Typography>
             </div>
@@ -47,17 +47,17 @@ const AllOrgTemplates = ({
 
     return (
         <div className="flex flex-col gap-4">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-xl bg-blue-50/60 px-4 py-2.5 border border-blue-100">
-                <div className="flex items-center gap-2 text-sm font-medium text-blue-900">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-xl bg-primary/10 px-4 py-2.5 border border-primary/30">
+                <div className="flex items-center gap-2 text-sm font-medium text-text-title">
                     <button
                         type="button"
                         onClick={() => onSelectAll?.(allOrgTemplatesData)}
-                        className="flex items-center gap-2 hover:text-blue-700 font-semibold"
+                        className="flex items-center gap-2 hover:text-primary font-semibold cursor-pointer"
                     >
                         {isAllSelected ? (
-                            <CheckSquare className="h-4 w-4 text-blue-600" />
+                            <CheckSquare className="h-4 w-4 text-primary" />
                         ) : (
-                            <Square className="h-4 w-4 text-gray-400" />
+                            <Square className="h-4 w-4 text-text-body2" />
                         )}
                         <span>
                             {selectedTemplates.length > 0

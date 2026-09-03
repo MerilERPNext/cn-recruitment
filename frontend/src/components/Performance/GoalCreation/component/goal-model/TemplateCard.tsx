@@ -31,10 +31,10 @@ const TemplateCard = memo(({
         <div
             className={`group flex min-w-0 flex-col rounded-xl border p-4 transition-shadow duration-200 hover:shadow-md sm:min-h-[148px] ${
                 isSelected
-                    ? 'border-blue-500 bg-blue-50/40 ring-2 ring-blue-500/20 shadow-sm'
+                    ? 'border-primary bg-primary/20 ring-1 ring-primary/30 shadow-sm'
                     : template?.recommended
-                    ? 'border-amber-200/90 bg-amber-50/30 hover:border-amber-300'
-                    : 'border-slate-400 bg-white hover:border-blue-300'
+                    ? 'border-amber-500/30 bg-amber-500/10 hover:border-amber-500/50'
+                    : 'border-border bg-card hover:border-primary/50'
             }`}
         >
             {/* Header Badges */}
@@ -43,23 +43,23 @@ const TemplateCard = memo(({
                     <span
                         className={`inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-semibold transition-colors ${
                             goalType === 'OKR'
-                                ? 'bg-blue-50 text-blue-700 border border-blue-100'
+                                ? 'bg-primary/20 text-primary border border-primary/30'
                                 : goalType === 'MBO'
-                                ? 'bg-purple-50 text-purple-700 border border-purple-100'
-                                : 'bg-slate-100 text-slate-700'
+                                ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30'
+                                : 'bg-slate-500/20 text-text-title'
                         }`}
                     >
                         {goalType}
                     </span>
                     {deptTitle && (
-                        <span className="truncate rounded-md bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600">
+                        <span className="truncate rounded-md bg-slate-500/20 px-2 py-0.5 text-[11px] font-medium text-text-body2">
                             {deptTitle}
                         </span>
                     )}
                 </div>
 
                 {template?.recommended && (
-                    <span className="shrink-0 rounded-md bg-amber-100/80 border border-amber-200/70 px-2 py-0.5 text-[11px] font-semibold text-amber-800">
+                    <span className="shrink-0 rounded-md bg-amber-500/20 border border-amber-500/30 px-2 py-0.5 text-[11px] font-semibold text-amber-400">
                         ★ For you
                     </span>
                 )}
@@ -69,7 +69,7 @@ const TemplateCard = memo(({
             <div className="flex-1 min-w-0">
                 <Typography
                     variant="bodyMedium"
-                    className="line-clamp-2 break-words text-sm font-semibold leading-snug text-slate-900 group-hover:text-blue-600 transition-colors"
+                    className="line-clamp-2 break-words text-sm font-semibold leading-snug text-text-title group-hover:text-primary transition-colors"
                 >
                     {template?.title}
                 </Typography>
@@ -77,7 +77,7 @@ const TemplateCard = memo(({
                 {template?.description && (
                     <Typography
                         variant="caption"
-                        className="mt-1.5 line-clamp-2 break-words text-xs leading-relaxed text-slate-500 font-normal"
+                        className="mt-1.5 line-clamp-2 break-words text-xs leading-relaxed text-text-body2 font-normal"
                     >
                         {template?.description}
                     </Typography>
@@ -85,28 +85,28 @@ const TemplateCard = memo(({
             </div>
 
             {/* Footer */}
-            <div className="mt-4 flex flex-col gap-2 border-t border-slate-400 pt-3 min-[420px]:flex-row min-[420px]:items-center min-[420px]:justify-between">
+            <div className="mt-4 flex flex-col gap-2 border-t border-border pt-3 min-[420px]:flex-row min-[420px]:items-center min-[420px]:justify-between">
                 <div className="flex flex-wrap items-center gap-2">
                     {template?.usedCount !== undefined && (
-                        <Typography variant="caption" className="break-words text-xs font-medium text-slate-500">
+                        <Typography variant="caption" className="break-words text-xs font-medium text-text-body2">
                             Used {template?.usedCount} times this cycle
                         </Typography>
                     )}
 
                     {template?.goal_count !== undefined && (
-                        <span className="inline-flex items-center rounded-md bg-slate-100 border border-slate-200/60 px-2 py-0.5 text-[11px] font-medium text-slate-700">
+                        <span className="inline-flex items-center rounded-md bg-slate-500/20 border border-border px-2 py-0.5 text-[11px] font-medium text-text-title">
                             {template.goal_count} Goal{template.goal_count > 1 ? 's' : ''}
                         </span>
                     )}
 
                     {template?.total_weightage !== undefined && (
-                        <span className="inline-flex items-center rounded-md bg-blue-50 border border-blue-100 px-2 py-0.5 text-[11px] font-semibold text-blue-700">
+                        <span className="inline-flex items-center rounded-md bg-primary/20 border border-primary/30 px-2 py-0.5 text-[11px] font-semibold text-primary">
                             {template.total_weightage}% Weight
                         </span>
                     )}
 
                     {template?.usedCount === undefined && template?.goal_count === undefined && (
-                        <Typography variant="caption" className="break-words text-xs font-medium text-slate-500">
+                        <Typography variant="caption" className="break-words text-xs font-medium text-text-body2">
                             {krCount > 0
                                 ? `${krCount} Key Result${krCount > 1 ? 's' : ''}`
                                 : `Weight: ${template?.weightage ?? 10}%`}
@@ -133,7 +133,7 @@ const TemplateCard = memo(({
                                 }
                             }}
                             placeholder="Weight %"
-                            className="h-8 w-22 rounded-lg border border-slate-200 bg-slate-50 px-2.5 text-xs font-semibold text-slate-800 outline-none transition-all hover:border-slate-300 focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-100 placeholder:font-normal placeholder:text-slate-400"
+                            className="h-8 w-22 rounded-lg border border-border bg-card px-2.5 text-xs font-semibold text-text-title outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary placeholder:font-normal placeholder:text-text-body2"
                             aria-label={`Weightage for ${template.title}`}
                         />
                     )}
@@ -142,10 +142,10 @@ const TemplateCard = memo(({
                             type="button"
                             variant={isSelected ? 'contain' : 'outline'}
                             bgColor="primary"
-                            className={`h-8 min-w-[120px] shrink-0 justify-center rounded-lg px-3 text-xs font-semibold !transition-none ${
+                            className={`h-8 min-w-[120px] shrink-0 justify-center rounded-lg px-3 text-xs font-semibold cursor-pointer !transition-none ${
                                 isSelected
-                                    ? 'bg-blue-600 text-white shadow-xs hover:bg-blue-700'
-                                    : 'border-blue-200 bg-white text-blue-600 hover:bg-blue-50'
+                                    ? 'bg-primary text-white shadow-xs hover:bg-primary/90'
+                                    : 'border-primary/40 bg-card text-primary hover:bg-primary/10'
                             }`}
                             onClick={() => onToggleSelect(template)}
                         >
@@ -165,7 +165,7 @@ const TemplateCard = memo(({
                             type="button"
                             variant="contain"
                             bgColor="primary"
-                            className="h-8 w-full shrink-0 justify-center rounded-lg bg-blue-600 px-3.5 text-xs font-semibold text-white shadow-xs hover:bg-blue-700 active:bg-blue-800 transition-all min-[420px]:w-auto"
+                            className="h-8 w-full shrink-0 justify-center rounded-lg bg-primary px-3.5 text-xs font-semibold text-white shadow-xs hover:bg-primary/90 cursor-pointer transition-all min-[420px]:w-auto"
                             onClick={() => onUseTemplate?.(template)}
                         >
                             Use template
