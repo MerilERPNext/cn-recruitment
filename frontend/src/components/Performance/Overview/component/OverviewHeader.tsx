@@ -25,17 +25,17 @@ const OverviewHeader = () => {
   const overview = overviewResponse?.data;
 
   return (
-     <article aria-label="Cycle Information" className="min-w-0 rounded-xl border border-gray-100 bg-white p-4 shadow-sm sm:p-6">
+     <article aria-label="Cycle Information" className="min-w-0 rounded-xl border border-border bg-card p-4 shadow-sm sm:p-6">
               <div aria-label="Cycle Details" className="mb-5 flex min-w-0 flex-col justify-between gap-4 sm:mb-8 lg:flex-row lg:items-end">
                 <div className="min-w-0">
                   <div className="mb-3 flex flex-wrap items-center gap-2">
-                    <Badge label={overview?.status ? `CYCLE ${overview.status.toUpperCase()}` : 'CYCLE LIVE'} backgroundColor="bg-blue-100 " textColor="text-blue-700" size="sm" pulse={{ show: true, color: "bg-blue-600" }} />
-                    <Typography variant="bodySmall" className="break-words text-gray-500">
+                    <Badge label={overview?.status ? `CYCLE ${overview.status.toUpperCase()}` : 'CYCLE LIVE'} backgroundColor="bg-blue-500/10" textColor="text-primary" size="sm" pulse={{ show: true, color: "bg-blue-500" }} />
+                    <Typography variant="bodySmall" color="body2" className="break-words">
                       {overview ? `${formatDate(overview.start_date)} → ${formatDate(overview.end_date)} · ${overview.company}` : 'Apr 2026 → Mar 2027 · India Tech'}
                     </Typography>
                   </div>
-                  <Typography variant="h3" className="break-words text-xl leading-tight sm:text-2xl">{overview?.cycle_name || 'FY26 Annual Performance Cycle'}</Typography>
-                  <Typography variant="bodySmall" className="mt-1 block break-words text-gray-500">
+                  <Typography variant="h3" className="break-words text-xl leading-tight sm:text-2xl font-bold">{overview?.cycle_name || 'FY26 Annual Performance Cycle'}</Typography>
+                  <Typography variant="bodySmall" color="body2" className="mt-1 block break-words">
                     {overview ? `Configured by ${overview.configured_by} · ${overview.framework} · ${overview.participants.toLocaleString()} participant${overview.participants === 1 ? '' : 's'}` : 'Configured by HR · India Tech BU · 2,140 participants'}
                   </Typography>
                 </div>
@@ -45,7 +45,7 @@ const OverviewHeader = () => {
               variant="contain"
               bgColor="primary"
               onClick={() => navigate("/webapp/performance-app/review")}
-              className={`${isCompact ? "w-full sm:w-auto" : "px-5 py-2.5"} bg-[#1a73e8] hover:bg-blue-600 font-semibold rounded-lg shadow-sm text-sm inline-flex items-center justify-center`}
+              className={`${isCompact ? "w-full sm:w-auto" : "px-5 py-2.5"} font-semibold rounded-lg shadow-sm text-sm inline-flex items-center justify-center`}
             >
               Continue Self-Review <ArrowRight className="w-4 h-4 ml-1.5" />
             </Button>
@@ -58,24 +58,24 @@ const OverviewHeader = () => {
                 <div className="flex items-center gap-0 overflow-x-auto pb-1 scrollbar-hide">
                   {steps.map((step, idx) => (
                     <React.Fragment key={step.label}>
-                      {idx > 0 && <div className="h-px w-10 shrink-0 bg-gray-200 mx-3" />}
+                      {idx > 0 && <div className="h-px w-10 shrink-0 bg-border mx-3" />}
                       <div
                         className={`flex items-center gap-2 shrink-0 ${!step.done && !step.active ? "opacity-40" : ""}`}
                       >
                         {step.done ? (
-                          <div className="w-5 h-5 rounded-full bg-green-500 text-white flex items-center justify-center">
+                          <div className="w-5 h-5 rounded-full bg-emerald-500 text-white flex items-center justify-center">
                             <Check className="w-3 h-3" />
                           </div>
                         ) : (
                           <div
-                            className={`w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold ${step.active ? "bg-[#1a73e8] text-white" : "bg-gray-100 text-gray-500"}`}
+                            className={`w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold ${step.active ? "bg-primary text-white" : "bg-slate-500/20 text-text-body2"}`}
                           >
                             {step.n}
                           </div>
                         )}
                         <Typography
                           variant="caption"
-                          className={`whitespace-nowrap font-medium text-[11px] ${step.active ? "text-[#1a73e8] font-bold" : step.done ? "text-green-600 font-bold" : "text-gray-500"}`}
+                          className={`whitespace-nowrap font-medium text-[11px] ${step.active ? "text-primary font-bold" : step.done ? "text-emerald-500 font-bold" : "text-text-body2"}`}
                         >
                           {step.label}
                         </Typography>
@@ -86,7 +86,7 @@ const OverviewHeader = () => {
               )}
             </article>
     
-  )
+  );
 }
 
 export default React.memo(OverviewHeader);
