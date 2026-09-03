@@ -10,69 +10,20 @@ import { useDeleteDocument } from "../../hooks/payroll/UseDeleteDocuemt";
 import toast from "react-hot-toast";
 import { Loader2, X, Check, AlertCircle } from "lucide-react";
 import { IoMdCloudUpload } from "react-icons/io";
-import RequisitionReviewStep from "./RequisitionReviewStep";
+import RequisitionReviewV2 from "./RequisitionReviewV2";
 import PositionColumnCopyButtons from "./PositionColumnCopyButtons";
 import BulkResumeUploadModal, { type UploadedResume } from "./BulkResumeUploadModal";
 import FormEmployeeHoverLayer from "./FormEmployeeHoverLayer";
 import "../../formio.custom.css";
-
-// ---------------------------------------------------------------------------
-// Types mirroring the backend API response
-// ---------------------------------------------------------------------------
-interface BackendField {
-  fieldname: string;
-  label: string;
-  fieldtype: string;
-  options?: string;
-  is_mandatory?: number;
-  read_only?: number;
-  depends_on?: string;
-  default?: any;
-  order?: number;
-  child_doctype?: string;
-  child_fields?: BackendField[];
-  is_nested_table?: number;
-  nested_label?: string;
-  nested_fields?: BackendField[];
-}
-
-interface BackendSection {
-  section: string;
-  fields: BackendField[];
-}
-
-interface BackendTab {
-  tab: string;
-  sections: BackendSection[];
-}
-
-interface FormConfig {
-  settings?: string;
-  hiring_type?: string;
-  tabs: BackendTab[];
-  child_groups?: Record<string, any>;
-}
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-const FIELDNAME_TO_FORM_KEY: Record<string, string> = {
-  requested_by: "hiring_manager",
-  custom_hiring_lead: "hiring_lead",
-  custom_experience_range_from: "experience_from",
-  custom_experience_range_to: "experience_to",
-  custom_experience_unit: "experience_unit",
-  custom_salary_range_currency: "salary_currency",
-  custom_salary_range_min: "salary_min",
-  custom_salary_range_max: "salary_max",
-  custom_salary_timeframe: "salary_timeframe",
-  custom_employment_type_link: "employment_type",
-  custom_location: "location",
-  custom_functional_area: "functional_area",
-  posting_date: "recruitment_start_date",
-  no_of_positions: "number_of_positions",
-  custom_position_details: "positions",
-};
+import {
+  BackendField,
+  FormConfig,
+  formKey,
+  translateDependsOn,
+  evalDependsOn,
+  mandatoryMatchesVisibility,
+  isBlankValue,
+} from "./requisitionV2Config";
 
 const LINK_FIELD_DEPENDENCIES: Record<string, { filter: string; on: string; doctype?: string; customConditional?: string }> = {
   custom_employment_type_link: { filter: "&company={{ data.company }}", on: "company" },
@@ -97,9 +48,9 @@ const REQUISITION_SCOPE_FILTERED: Record<string, string> = {
   designation: "&requisition_scope=1&req_company={{ data.company }}&req_department={{ data.department }}",
 };
 
-function formKey(fieldname: string): string {
-  return FIELDNAME_TO_FORM_KEY[fieldname] || fieldname;
-}
+// Link pickers that render the record's id next to its label (e.g.
+// "Human Resources (1125)") so two records sharing a label stay tellable apart.
+const LINK_FIELDS_SHOWING_ID = new Set(["department", "designation"]);
 
 const toBackendDate = (v: unknown): string => {
   const today = () => new Date().toISOString().split("T")[0];
@@ -222,7 +173,14 @@ function buildSelectData(data: Record<string, any>): Record<string, any> {
 // Generate Form.io Component Schema
 // ---------------------------------------------------------------------------
 function generateFormioComponent(field: BackendField, inGrid = false): any {
-  const required = Boolean(field.is_mandatory);
+  // A field whose mandatory condition is the same as its visibility condition
+  // (Replacement For / Employee Type: shown AND required only on a Replacement
+  // row) can carry a plain `required` — Form.io skips validation for a
+  // conditionally hidden component, so the rule still only bites where it
+  // should, and the field gets the normal asterisk (cell label off-grid,
+  // column header inside the Vacancy Details grid).
+  const requiredWhenVisible = mandatoryMatchesVisibility(field);
+  const required = Boolean(field.is_mandatory) || requiredWhenVisible;
   const isPositionFunctionalArea = inGrid && field.fieldname === "functional_area";
   const base: any = {
     key: formKey(field.fieldname),
@@ -238,19 +196,24 @@ function generateFormioComponent(field: BackendField, inGrid = false): any {
   };
 
   if (field.depends_on) {
-    let expr = field.depends_on.replace(/^eval:\s*/i, "");
-    expr = expr.replace(/(?:doc|data)\.([\w]+)/g, (_, key) => {
-      if (inGrid) {
-        // Backend Position Details conditions refer to the old requisition
-        // field name. In this grid the controlling value is the row's
-        // Vacancy Type instead.
-        if (key === "custom_type_of_position") return "row.vacancy_type";
-        return `row.${formKey(key)}`;
-      }
-      const fk = formKey(key);
-      return `data.${fk}`;
-    });
-    base.customConditional = `show = (${expr});`;
+    base.customConditional = `show = (${translateDependsOn(field.depends_on, inGrid)});`;
+  }
+
+  // Mandatory under a condition of its own (one that doesn't line up with the
+  // field's visibility). Form.io has no conditional `required`, so the rule is
+  // expressed as a custom validator that only fires when the condition holds.
+  if (!required && field.mandatory_depends_on && !isPositionFunctionalArea) {
+    const condition = translateDependsOn(field.mandatory_depends_on, inGrid);
+    const message = JSON.stringify(
+      `${field.label || field.fieldname} is required.`
+    );
+    base.validate = {
+      ...base.validate,
+      custom:
+        `valid = !(${condition}) || ` +
+        `!(input === undefined || input === null || input === "" || ` +
+        `(Array.isArray(input) && input.length === 0)) ? true : ${message};`,
+    };
   }
 
   if (field.fieldname === "designation") {
@@ -353,6 +316,36 @@ function generateFormioComponent(field: BackendField, inGrid = false): any {
 
   switch (field.fieldtype) {
     case "Link": {
+      // Hiring Lead is not a plain Employee link: a Hiring Lead Configuration
+      // (Company Wise, or Assignment Framework keyed on the Hiring Manager)
+      // decides who is selectable, falling back to every Employee when no
+      // config matches. Its endpoint returns richer employee rows keyed by
+      // `employee`, not the generic {id, label} shape — same call the v1 form
+      // made.
+      if (field.fieldname === "custom_hiring_lead") {
+        return {
+          ...base,
+          type: "select",
+          placeholder: `Select ${field.label}`,
+          dataSrc: "url",
+          data: {
+            url: "/api/method/recruitment.api.job_requisition.get_hiring_lead_employees?company={{ data.company }}&employee={{ data.hiring_manager }}",
+            headers: [{ key: "Accept", value: "application/json" }],
+          },
+          selectValues: "message.results",
+          valueProperty: "employee",
+          // `item.label` covers the offline selectData entry (see
+          // buildSelectData), which carries a label rather than employee_name.
+          template:
+            "<span>{{ item.employee_name || item.label || data.hiring_lead_title || item.employee || item }} <span style='color:#7f8c8d'>({{ item.employee || item.id || item }})</span></span>",
+          refreshOn: ["company", "hiring_manager"],
+          clearOnRefresh: false,
+          limit: 20,
+          lazyLoad: false,
+          searchField: "search_text",
+        };
+      }
+
       const dependency = LINK_FIELD_DEPENDENCIES[field.fieldname];
       const linkDoctype = dependency?.doctype || field.options || "";
       const activeEmployeeFilter = linkDoctype === "Employee" ? "&status=Active" : "";
@@ -369,7 +362,7 @@ function generateFormioComponent(field: BackendField, inGrid = false): any {
         },
         selectValues: "message.results",
         valueProperty: "id",
-        template: (field.fieldname === "designation" || field.options === "Employee")
+        template: (LINK_FIELDS_SHOWING_ID.has(field.fieldname) || field.options === "Employee")
           ? `<span>{{ item.label || ${inGrid ? `row.${formKey(field.fieldname)}_title` : `data.${formKey(field.fieldname)}_title`} || item.id || item }} <span style='color:#7f8c8d'>({{ item.id || item }})</span></span>`
           : `<span>{{ item.label || ${inGrid ? `row.${formKey(field.fieldname)}_title` : `data.${formKey(field.fieldname)}_title`} || item.id || item }}</span>`,
         limit: 20,
@@ -857,9 +850,42 @@ loading: false, title: "", source: "", html: ""
     fetchAndPrefill();
   }, [currentTab, steps, config]);
 
+  // Blank the Functional Area select (and the per-position column) directly on
+  // the form.io instance: re-feeding the submission does not repaint a url
+  // select that already resolved a label, so it would keep showing the old one.
+  const clearFunctionalAreaInForm = useCallback(() => {
+    setTimeout(() => {
+      try {
+        const instance = formInstanceRef.current;
+        if (!instance) return;
+        instance.getComponent("functional_area")?.setValue("");
+        const positionsComp = instance.getComponent("positions");
+        if (positionsComp) {
+          positionsComp.setValue(
+            (positionsComp.getValue() || []).map((row: any) => ({ ...row, functional_area: "" }))
+          );
+        }
+      } catch {}
+    }, 0);
+  }, []);
+
   const handleChange = (changed: any) => {
-    const newData = { ...formDataRef.current, ...changed.data };
+    const prevData: any = formDataRef.current;
+    const newData = { ...prevData, ...changed.data };
     const changedKey = changed.changed?.component?.key;
+
+    // Department -> Designation -> Functional Area is a derived chain: form.io
+    // clears Designation itself via clearOnRefresh, but that clear arrives as a
+    // "department" change, so the Functional Area it fed would otherwise keep
+    // the value of a designation that is no longer selected.
+    if (changedKey === "department" && newData.department !== prevData.department) {
+      newData.designation = "";
+      delete newData.designation_title;
+    }
+    // `changedKey` is only set for a real field change; form.io also emits
+    // change events while initialising/prefilling, and those must not wipe the
+    // functional area that was loaded with the record.
+    const designationChanged = !!changedKey && newData.designation !== prevData.designation;
 
     // Update the dedicated hiringType state when the user explicitly changes
     // the hiring type dropdown.  This triggers a config re-fetch via the
@@ -879,14 +905,6 @@ loading: false, title: "", source: "", html: ""
       changedKey === "number_of_positions" ||
       changedKey === "number_of_new_positions" ||
       changedKey === "number_of_replacement_positions";
-    if (changedKey === "designation") {
-      if (newData.designation) {
-        void autoFillFunctionalArea(newData.designation);
-      } else {
-        newData.functional_area = "";
-        delete newData.functional_area_title;
-      }
-    }
 
     if (positionCountsChanged) {
       const normalized = applyPositionCounts(newData, changedKey);
@@ -922,7 +940,8 @@ loading: false, title: "", source: "", html: ""
     
     const selectData = changed.metadata?.selectData;
     if (selectData && typeof selectData === "object") {
-      const labelOf = (v: any) => v && typeof v === "object" ? (v.label ?? v.name ?? v.title) : undefined;
+      const labelOf = (v: any) =>
+        v && typeof v === "object" ? (v.employee_name ?? v.label ?? v.name ?? v.title) : undefined;
       Object.keys(selectData).forEach((key) => {
         const sd = selectData[key];
         if (key === "positions" && Array.isArray(sd)) {
@@ -954,10 +973,26 @@ loading: false, title: "", source: "", html: ""
       });
     }
 
+    // Runs after the selectData merge above, which would otherwise re-apply the
+    // outgoing designation's functional_area_title from form.io's stale
+    // metadata. A designation with no functional area must leave the field
+    // empty, so clear first and let autoFillFunctionalArea repopulate it.
+    if (designationChanged) {
+      newData.functional_area = "";
+      delete newData.functional_area_title;
+      newData.positions = (newData.positions || []).map((position: any) => {
+        const next = { ...position, functional_area: "" };
+        delete next.functional_area_title;
+        return next;
+      });
+      clearFunctionalAreaInForm();
+      if (newData.designation) void autoFillFunctionalArea(newData.designation);
+    }
+
     setFormData(newData);
     // The count controls are programmatically updated, so re-feed their
     // normalized values to Form.io once the state change has been committed.
-    if (positionCountsChanged) setFormSyncTick((tick) => tick + 1);
+    if (positionCountsChanged || designationChanged) setFormSyncTick((tick) => tick + 1);
     setValidationErrors([]);
   };
 
@@ -1233,19 +1268,15 @@ loading: false, title: "", source: "", html: ""
     
     currentTabConfig.sections.forEach(section => {
       section.fields.forEach(field => {
-        if (field.depends_on) {
-          try {
-             let expr = field.depends_on.replace(/^eval:\s*/i, "");
-             expr = expr.replace(/(?:doc|data)\.([\w]+)/g, (_, key) => `data.${formKey(key)}`);
-             const isVisible = new Function("data", `return !!(${expr});`)(data);
-             if (!isVisible) return;
-          } catch(e) {}
-        }
+        if (field.depends_on && !evalDependsOn(field.depends_on, false, data)) return;
 
-        if (field.is_mandatory && field.fieldname !== "custom_functional_area") {
+        const isRequired =
+          Boolean(field.is_mandatory) ||
+          evalDependsOn(field.mandatory_depends_on, false, data);
+
+        if (isRequired && field.fieldname !== "custom_functional_area") {
           const fk = formKey(field.fieldname);
-          const val = data[fk];
-          if (val === undefined || val === null || val === "" || (Array.isArray(val) && val.length === 0)) {
+          if (isBlankValue(data[fk])) {
             errors.push(`${field.label || field.fieldname} is required.`);
           }
         }
@@ -1309,11 +1340,19 @@ loading: false, title: "", source: "", html: ""
           });
           return;
         }
-        if (!field.is_mandatory) return;
+        // A column is required either outright, or only for the rows its
+        // `mandatory_depends_on` matches (Replacement For / Employee Type are
+        // required on Replacement rows only).
+        if (!field.is_mandatory && !field.mandatory_depends_on) return;
         positions.forEach((position: any, index: number) => {
-          if (field.depends_on?.includes("custom_type_of_position") && position.vacancy_type !== "Replacement") return;
-          const value = position[field.fieldname];
-          if (value === undefined || value === null || value === "") {
+          // Hidden on this row (e.g. a Replacement-only column on a New row)
+          // is never required.
+          if (field.depends_on && !evalDependsOn(field.depends_on, true, data, position)) return;
+          const isRequired =
+            Boolean(field.is_mandatory) ||
+            evalDependsOn(field.mandatory_depends_on, true, data, position);
+          if (!isRequired) return;
+          if (isBlankValue(position[field.fieldname])) {
             errors.push(`Position ${index + 1}: ${field.label || field.fieldname} is required.`);
           }
         });
@@ -1340,21 +1379,41 @@ loading: false, title: "", source: "", html: ""
     return errors;
   };
 
+  // One place for "you can't leave this step yet": the inline error list, the
+  // Form.io field markers, a scroll to the first offender — and a toast, so the
+  // reason is visible even when the offending field is off-screen.
+  const MAX_TOASTED_ERRORS = 4;
+  const reportValidationErrors = (errors: string[]) => {
+    setValidationErrors(errors);
+    if (formInstanceRef.current) {
+      formInstanceRef.current.checkValidity(formSubmission.data, true, formSubmission.data);
+    }
+
+    const shown = errors.slice(0, MAX_TOASTED_ERRORS);
+    const hidden = errors.length - shown.length;
+    toast.error(
+      [
+        `Please fix ${errors.length} ${errors.length === 1 ? "issue" : "issues"} before continuing:`,
+        ...shown.map((message) => `• ${message}`),
+        ...(hidden > 0 ? [`• +${hidden} more`] : []),
+      ].join("\n"),
+      { style: { whiteSpace: "pre-line", maxWidth: "420px" }, duration: 6000 }
+    );
+
+    setTimeout(() => {
+      const firstError = document.querySelector('.formio-error-wrapper, .has-error, .required-field');
+      if (firstError) {
+        firstError.scrollIntoView({ behavior: "smooth", block: "center" });
+      } else {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+    }, 50);
+  };
+
   const handleNext = () => {
     const errors = validateCurrentTab();
     if (errors.length > 0) {
-      setValidationErrors(errors);
-      if (formInstanceRef.current) {
-        formInstanceRef.current.checkValidity(formSubmission.data, true, formSubmission.data);
-      }
-      setTimeout(() => {
-        const firstError = document.querySelector('.formio-error-wrapper, .has-error, .required-field');
-        if (firstError) {
-          firstError.scrollIntoView({ behavior: "smooth", block: "center" });
-        } else {
-          window.scrollTo({ top: 0, behavior: "smooth" });
-        }
-      }, 50);
+      reportValidationErrors(errors);
       return;
     }
 
@@ -1376,18 +1435,7 @@ loading: false, title: "", source: "", html: ""
       // Moving forward: validate current tab first
       const errors = validateCurrentTab();
       if (errors.length > 0) {
-        setValidationErrors(errors);
-        if (formInstanceRef.current) {
-          formInstanceRef.current.checkValidity(formSubmission.data, true, formSubmission.data);
-        }
-        setTimeout(() => {
-          const firstError = document.querySelector('.formio-error-wrapper, .has-error, .required-field');
-          if (firstError) {
-            firstError.scrollIntoView({ behavior: "smooth", block: "center" });
-          } else {
-            window.scrollTo({ top: 0, behavior: "smooth" });
-          }
-        }, 50);
+        reportValidationErrors(errors);
         return;
       }
     }
@@ -1603,7 +1651,8 @@ loading: false, title: "", source: "", html: ""
 
         <div className="p-6 md:p-8">
           {isReviewStep ? (
-            <RequisitionReviewStep
+            <RequisitionReviewV2
+              config={config}
               formData={formData as any}
               onSubmit={handleSubmit}
               onBack={handlePrevious}
