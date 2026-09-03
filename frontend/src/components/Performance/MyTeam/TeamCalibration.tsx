@@ -17,16 +17,16 @@ const getRatingColor = (rating: PerfRating) => {
   switch (rating) {
     case "Outstanding":
     case "Exceeds":
-      return { text: "text-green-700", dot: "bg-green-500", bg: "bg-green-50" };
+      return { text: "text-emerald-500", dot: "bg-emerald-500", bg: "bg-emerald-500/10" };
     case "Meets":
-      return { text: "text-blue-600", dot: "bg-blue-500", bg: "bg-blue-50" };
+      return { text: "text-primary", dot: "bg-blue-500", bg: "bg-blue-500/10" };
     case "Below":
-      return { text: "text-amber-600", dot: "bg-amber-500", bg: "bg-amber-50" };
+      return { text: "text-amber-500", dot: "bg-amber-500", bg: "bg-amber-500/10" };
     case "Unsatisfactory":
-      return { text: "text-red-600", dot: "bg-red-500", bg: "bg-red-50" };
+      return { text: "text-red-500", dot: "bg-red-500", bg: "bg-red-500/10" };
     default:
       return {
-        text: "text-gray-400",
+        text: "text-text-body2",
         dot: "bg-transparent",
         bg: "bg-transparent",
       };
@@ -44,7 +44,7 @@ const RATING_OPTIONS = [
 const RatingCell = ({ rating }: { rating: PerfRating }) => {
   if (rating === "-") {
     return (
-      <Typography variant="bodySmall" className="font-bold text-gray-400">
+      <Typography variant="bodySmall" color="body2" className="font-bold">
         —
       </Typography>
     );
@@ -91,7 +91,7 @@ const NineBox = ({ highlight }: { highlight: [number, number] }) => (
         return (
           <div
             key={`${r}-${c}`}
-            className={`w-[8px] h-[8px] rounded-[1px] flex items-center justify-center ${isHighlighted ? "bg-[#1a73e8]" : "bg-gray-100"}`}
+            className={`w-[8px] h-[8px] rounded-[1px] flex items-center justify-center ${isHighlighted ? "bg-primary" : "bg-slate-500/20"}`}
           >
             {isHighlighted && (
               <div className="w-[3px] h-[3px] bg-white rounded-full" />
@@ -119,53 +119,53 @@ const CalibrationEmployeeItem = ({
 
   if (!isDesktop) {
     return (
-      <div className="cursor-pointer border-t-4 border-x-1 border-b-1 border-x-primary/20 border-b-primary/20 shadow-sm border-primary bg-white rounded-xl mt-2 w-full">
+      <div className="cursor-pointer border-t-4 border-x-1 border-b-1 border-x-primary/20 border-b-primary/20 shadow-sm border-primary bg-card rounded-xl mt-2 w-full">
         <div className="p-4 flex items-start gap-3 w-full">
           <Avatar
             name={emp.name}
             fontSize="text-xs"
             size="h-9 w-9"
-            avatarBgColor="bg-blue-50"
-            avatarTextColor="text-blue-600"
+            avatarBgColor="bg-blue-500/20"
+            avatarTextColor="text-primary"
           />
           <div className="min-w-0 flex-1">
             <Typography variant="mobileCardTitle" className="break-words">
               {emp.name}
             </Typography>
-            <Typography variant="mobileCardSubtitle" className="block">
+            <Typography variant="mobileCardSubtitle" color="body2" className="block">
               {emp.role}
             </Typography>
 
             <div className="mt-4 grid grid-cols-2 gap-3">
               <div className="min-w-0">
-                <Typography variant="mobileCardLabel" className="block">
+                <Typography variant="mobileCardLabel" color="body2" className="block">
                   FY24
                 </Typography>
                 <RatingCell rating={emp.fy24} />
               </div>
               <div className="min-w-0">
-                <Typography variant="mobileCardLabel" className="block">
+                <Typography variant="mobileCardLabel" color="body2" className="block">
                   FY25
                 </Typography>
                 <RatingCell rating={emp.fy25} />
               </div>
               <div className="min-w-0">
-                <Typography variant="mobileCardLabel" className="block">
+                <Typography variant="mobileCardLabel" color="body2" className="block">
                   Self
                 </Typography>
                 <RatingCell rating={emp.self} />
               </div>
               <div className="min-w-0">
-                <Typography variant="mobileCardLabel" className="block">
+                <Typography variant="mobileCardLabel" color="body2" className="block">
                   Peer Avg
                 </Typography>
                 <RatingCell rating={emp.peerAvg} />
               </div>
             </div>
 
-            <div className="mt-4 flex items-end justify-between gap-3 border-t border-slate-100 pt-4">
+            <div className="mt-4 flex items-end justify-between gap-3 border-t border-border pt-4">
               <div className="min-w-0">
-                <Typography variant="mobileCardLabel" className="block">
+                <Typography variant="mobileCardLabel" color="body2" className="block">
                   My Proposal
                 </Typography>
                 <CustomDropdown
@@ -178,7 +178,7 @@ const CalibrationEmployeeItem = ({
                 />
               </div>
               <div className="shrink-0 text-right">
-                <Typography variant="mobileCardLabel" className="block">
+                <Typography variant="mobileCardLabel" color="body2" className="block">
                   9-Box
                 </Typography>
                 <div className="mt-1 flex justify-end">
@@ -194,7 +194,7 @@ const CalibrationEmployeeItem = ({
 
   return (
     <div
-      className="grid min-h-20 items-center gap-4 border-b border-gray-100 px-6 py-5 transition-colors hover:bg-primary/10"
+      className="grid min-h-20 items-center gap-4 border-b border-border px-6 py-5 transition-colors hover:bg-slate-500/10"
       style={{
         gridTemplateColumns: CALIBRATION_TABLE_COLUMN_WIDTHS.join(" "),
       }}
@@ -204,19 +204,20 @@ const CalibrationEmployeeItem = ({
           name={emp.name}
           fontSize="text-xs"
           size="h-8 w-8"
-          avatarBgColor="bg-blue-50"
-          avatarTextColor="text-blue-600"
+          avatarBgColor="bg-blue-500/20"
+          avatarTextColor="text-primary"
         />
         <div className="flex min-w-0 flex-col">
           <Typography
             variant="bodySmall"
-            className="truncate font-bold leading-tight text-gray-900"
+            className="truncate font-bold leading-tight"
           >
             {emp.name}
           </Typography>
           <Typography
             variant="caption"
-            className="mt-[1px] block truncate text-gray-500"
+            color="body2"
+            className="mt-[1px] block truncate"
           >
             {emp.role}
           </Typography>
@@ -300,7 +301,7 @@ const TeamCalibration: React.FC = () => {
 
   return (
     <main
-      className={`min-h-full overflow-y-auto overflow-x-hidden bg-[#f8fafc] font-sans ${isMobile ? "p-4" : "p-1 pb-10"}`}
+      className={`min-h-full overflow-y-auto overflow-x-hidden bg-app font-sans ${isMobile ? "p-4" : "p-1 pb-10"}`}
     >
       <div className="mx-auto w-full max-w-screen space-y-5">
         {/* ── Header ──────────────────────────────────────────────────── */}
@@ -310,19 +311,20 @@ const TeamCalibration: React.FC = () => {
           <div className="space-y-1">
             <Typography
               variant="label"
-              className="mb-1 inline-block rounded-xl bg-amber-100 px-2.5 py-0.5 text-amber-800"
+              className="mb-1 inline-block rounded-xl bg-amber-500/10 px-2.5 py-0.5 text-amber-500 font-bold"
             >
               Pre-calibration - Manager view
             </Typography>
             <Typography
               variant="h4"
-              className="tracking-tight leading-tight text-gray-900"
+              className="tracking-tight leading-tight"
             >
               Calibration Prep · Design Oxygen Team
             </Typography>
             <Typography
               variant="bodySmall"
-              className="block font-medium text-gray-500"
+              color="body2"
+              className="block font-medium"
             >
               Aditi Sharma's session · 5 Jun 2026 - 14:00 IST · Soft target
               distribution
@@ -336,7 +338,7 @@ const TeamCalibration: React.FC = () => {
               icon={
                 <div className="grid grid-cols-3 gap-[1px] w-3 h-3">
                   {[...Array(9)].map((_, i) => (
-                    <div key={i} className="bg-[#1a73e8] rounded-[1px]" />
+                    <div key={i} className="bg-primary rounded-[1px]" />
                   ))}
                 </div>
               }
@@ -350,19 +352,19 @@ const TeamCalibration: React.FC = () => {
         </div>
 
         {/* ── Distribution Card ───────────────────────────────────────── */}
-        <div className="bg-white rounded-2xl border border-gray-200 shadow-[0_1px_3px_rgba(0,0,0,0.02)] p-6">
+        <div className="bg-card rounded-2xl border border-border shadow-[0_1px_3px_rgba(0,0,0,0.02)] p-6">
           <div className="flex justify-between items-start mb-8">
             <div>
-              <Typography variant="subheading" className="text-gray-900">
+              <Typography variant="subheading">
                 Your team's distribution
               </Typography>
-              <Typography variant="caption" className="block text-gray-500">
+              <Typography variant="caption" color="body2" className="block">
                 vs target (soft curve)
               </Typography>
             </div>
-            <div className="flex items-center gap-1.5 text-green-700 font-bold text-xs">
+            <div className="flex items-center gap-1.5 text-emerald-500 font-bold text-xs">
               <Check className="w-3.5 h-3.5" />
-              <Typography variant="label" className="text-green-700">
+              <Typography variant="label" className="text-emerald-500">
                 Within ±5% of target
               </Typography>
             </div>
@@ -382,11 +384,11 @@ const TeamCalibration: React.FC = () => {
                     {/* Bars */}
                     <div className="flex items-end gap-1.5 h-full w-full justify-center">
                       <div
-                        className="w-[12px] bg-gray-200 rounded-t-[2px]"
+                        className="w-[12px] bg-slate-500/30 rounded-t-[2px]"
                         style={{ height: `${targetHeight}%` }}
                       />
                       <div
-                        className={`w-[12px] rounded-t-[2px] ${bucket.isRed ? "bg-[#e11d48]" : "bg-[#1a73e8]"}`}
+                        className={`w-[12px] rounded-t-[2px] ${bucket.isRed ? "bg-red-500" : "bg-primary"}`}
                         style={{ height: `${actualHeight}%` }}
                       />
                     </div>
@@ -395,13 +397,14 @@ const TeamCalibration: React.FC = () => {
                     <div className="text-center shrink-0">
                       <Typography
                         variant="label"
-                        className="block text-gray-900 leading-tight"
+                        className="block leading-tight"
                       >
                         {bucket.label}
                       </Typography>
                       <Typography
                         variant="caption"
-                        className="mt-[1px] block font-semibold text-gray-400"
+                        color="body2"
+                        className="mt-[1px] block font-semibold text-[10px]"
                       >
                         Target {bucket.target}% / Actual {bucket.actual}%
                       </Typography>
@@ -413,22 +416,22 @@ const TeamCalibration: React.FC = () => {
           </div>
 
           {/* Legend */}
-          <div className="flex flex-wrap justify-center items-center gap-4 sm:gap-6 text-xs font-bold text-gray-500">
+          <div className="flex flex-wrap justify-center items-center gap-4 sm:gap-6 text-xs font-bold text-text-body2">
             <div className="flex items-center gap-2">
-              <div className="w-2.5 h-2.5 bg-gray-200 rounded-sm" />
-              <Typography variant="label" className="text-gray-500">
+              <div className="w-2.5 h-2.5 bg-slate-500/30 rounded-sm" />
+              <Typography variant="label" color="body2">
                 Target distribution
               </Typography>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-2.5 h-2.5 bg-[#1a73e8] rounded-sm" />
-              <Typography variant="label" className="text-gray-500">
+              <div className="w-2.5 h-2.5 bg-primary rounded-sm" />
+              <Typography variant="label" color="body2">
                 Actual
               </Typography>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-2.5 h-2.5 bg-[#e11d48] rounded-sm" />
-              <Typography variant="label" className="text-gray-500">
+              <div className="w-2.5 h-2.5 bg-red-500 rounded-sm" />
+              <Typography variant="label" color="body2">
                 Outside band
               </Typography>
             </div>
@@ -436,7 +439,7 @@ const TeamCalibration: React.FC = () => {
         </div>
 
         {/* ── Employee Table ──────────────────────────────────────────── */}
-        <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
+        <div className="overflow-hidden rounded-xl border border-border bg-card shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
           <CardTable
             titles={CALIBRATION_TABLE_TITLES}
             columnWidths={CALIBRATION_TABLE_COLUMN_WIDTHS}
