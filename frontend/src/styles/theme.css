@@ -321,9 +321,29 @@ body {
   border-color: rgb(var(--primary)) !important;
 }
 
-/* Single select display value */
-.choices__list--single .choices__item {
+/* Single select display value in input box */
+.choices__list--single .choices__item,
+.choices__list--single .choices__item *,
+.choices__inner .choices__item,
+.choices__inner .choices__item * {
   color: rgb(var(--text-title)) !important;
+  background-color: transparent !important;
+}
+
+.choices__list--single .choices__item [style*="color:#6b7280"],
+.choices__list--single .choices__item [style*="color: #6b7280"],
+.choices__list--single .choices__item [style*="font-size:0.85em"],
+.choices__list--single .choices__item [style*="font-size: 0.85em"],
+.choices__list--single .choices__item .secondary,
+.choices__list--single .choices__item .formio-select-item-info span,
+.choices__inner .choices__item [style*="color:#6b7280"],
+.choices__inner .choices__item [style*="color: #6b7280"],
+.choices__inner .choices__item [style*="font-size:0.85em"],
+.choices__inner .choices__item [style*="font-size: 0.85em"],
+.choices__inner .choices__item .secondary,
+.choices__inner .choices__item .formio-select-item-info span {
+  color: rgb(var(--text-body2)) !important;
+  opacity: 0.85 !important;
 }
 
 /* Placeholder */
@@ -356,14 +376,34 @@ body {
   color: rgb(var(--text-disabled)) !important;
 }
 
-/* Dropdown item options */
-.choices__list--dropdown .choices__item,
-.choices__list[aria-expanded] .choices__item {
-  color: rgb(var(--text-title)) !important;
-  padding: 0.5rem 0.75rem !important;
+/* Ensure child elements inside dropdown options NEVER draw nested backgrounds */
+.choices__list--dropdown .choices__item *,
+.choices__list[aria-expanded] .choices__item * {
+  background-color: transparent !important;
 }
 
-/* Hovered / Highlighted option */
+/* Dropdown item options base text color */
+.choices__list--dropdown .choices__item,
+.choices__list--dropdown .choices__item *,
+.choices__list[aria-expanded] .choices__item,
+.choices__list[aria-expanded] .choices__item * {
+  color: rgb(var(--text-title)) !important;
+}
+
+/* Sub-labels / location text inside dropdown items */
+.choices__list--dropdown .choices__item [style*="color:#6b7280"],
+.choices__list--dropdown .choices__item [style*="color: #6b7280"],
+.choices__list--dropdown .choices__item [style*="font-size:0.85em"],
+.choices__list--dropdown .choices__item [style*="font-size: 0.85em"],
+.choices__list[aria-expanded] .choices__item [style*="color:#6b7280"],
+.choices__list[aria-expanded] .choices__item [style*="color: #6b7280"],
+.choices__list[aria-expanded] .choices__item [style*="font-size:0.85em"],
+.choices__list[aria-expanded] .choices__item [style*="font-size: 0.85em"] {
+  color: rgb(var(--text-body2)) !important;
+  opacity: 0.85 !important;
+}
+
+/* Background applied ONLY to the outer choices__item container (prevents nested hover box) */
 .choices__list--dropdown .choices__item.is-highlighted,
 .choices__list--dropdown .choices__item--selectable.is-highlighted,
 .choices__list--dropdown .choices__item:hover,
@@ -372,19 +412,55 @@ body {
 .choices__list[aria-expanded] .choices__item--selectable.is-highlighted,
 .choices__list[aria-expanded] .choices__item:hover,
 .choices__list[aria-expanded] .choices__item--selectable:hover {
-  background-color: rgb(var(--primary) / 0.2) !important;
-  color: rgb(var(--text-title)) !important;
+  background-color: rgb(var(--primary) / 0.25) !important;
   transition: background-color 120ms ease !important;
 }
 
-/* Selected option in dropdown list */
+/* Text color on hover / highlighted */
+.choices__list--dropdown .choices__item.is-highlighted,
+.choices__list--dropdown .choices__item.is-highlighted *,
+.choices__list--dropdown .choices__item--selectable.is-highlighted,
+.choices__list--dropdown .choices__item--selectable.is-highlighted *,
+.choices__list--dropdown .choices__item:hover,
+.choices__list--dropdown .choices__item:hover *,
+.choices__list--dropdown .choices__item--selectable:hover,
+.choices__list--dropdown .choices__item--selectable:hover *,
+.choices__list[aria-expanded] .choices__item.is-highlighted,
+.choices__list[aria-expanded] .choices__item.is-highlighted *,
+.choices__list[aria-expanded] .choices__item--selectable.is-highlighted,
+.choices__list[aria-expanded] .choices__item--selectable.is-highlighted *,
+.choices__list[aria-expanded] .choices__item:hover,
+.choices__list[aria-expanded] .choices__item:hover *,
+.choices__list[aria-expanded] .choices__item--selectable:hover,
+.choices__list[aria-expanded] .choices__item--selectable:hover * {
+  color: rgb(var(--text-title)) !important;
+}
+
+/* Selected option background */
 .choices__list--dropdown .choices__item.is-selected,
 .choices__list--dropdown .choices__item--selectable.is-selected,
 .choices__list[aria-expanded] .choices__item.is-selected,
 .choices__list[aria-expanded] .choices__item--selectable.is-selected {
-  background-color: rgb(var(--primary) / 0.3) !important;
+  background-color: rgb(var(--primary) / 0.35) !important;
+}
+
+/* Selected option text color */
+.choices__list--dropdown .choices__item.is-selected,
+.choices__list--dropdown .choices__item.is-selected *,
+.choices__list--dropdown .choices__item--selectable.is-selected,
+.choices__list--dropdown .choices__item--selectable.is-selected *,
+.choices__list[aria-expanded] .choices__item.is-selected,
+.choices__list[aria-expanded] .choices__item.is-selected *,
+.choices__list[aria-expanded] .choices__item--selectable.is-selected,
+.choices__list[aria-expanded] .choices__item--selectable.is-selected * {
   color: rgb(var(--text-title)) !important;
   font-weight: 600 !important;
+}
+
+/* Native select options styling */
+select option {
+  background-color: rgb(var(--surface-raised)) !important;
+  color: rgb(var(--text-title)) !important;
 }
 
 /* FormIO Labels */

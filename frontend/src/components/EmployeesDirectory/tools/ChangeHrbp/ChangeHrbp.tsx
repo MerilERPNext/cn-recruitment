@@ -25,7 +25,7 @@ const hrbpItemTemplate = (data: any) => {
     const department = isUsable(item.department) ? escapeHtml(item.department) : "";
     const branch = isUsable(item.branch) ? escapeHtml(item.branch) : "";
     const location = [department, branch].filter(Boolean).join(", ");
-    return `<span><div>${name} (${id})</div><div style="font-size:0.85em;color:#6b7280;">${location}</div></span>`;
+    return `<span><div>${name} (${id})</div><div style="font-size:0.85em;opacity:0.75;">${location}</div></span>`;
 };
 
 const EMP_FIELDS = encodeURIComponent('["name","employee_name","department","branch"]');
