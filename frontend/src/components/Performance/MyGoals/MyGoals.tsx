@@ -150,10 +150,10 @@ const MyGoals: React.FC<MyGoalsProps> = ({ onCreateGoal, onSelectGoal }) => {
     hasPositiveWeightageForEachGoal;
 
   const weightageColor = isTotalWeightageValid
-      ? 'text-green-600 font-bold' 
+      ? 'text-emerald-500 font-bold' 
       : selectedWeightageSum > 100
-          ? 'text-red-600 font-bold' 
-          : 'text-slate-700 font-medium';
+          ? 'text-red-500 font-bold' 
+          : 'text-text-body2 font-medium';
 
   const handleSubmitSelectedGoals = async () => {
     if (!canSubmitSelectedGoals) {
@@ -219,10 +219,10 @@ const MyGoals: React.FC<MyGoalsProps> = ({ onCreateGoal, onSelectGoal }) => {
 
   if (isError) {
     return (
-      <div className="flex min-h-[400px] items-center justify-center bg-[#f6f8fb]">
-        <div className="flex flex-col items-center gap-3 rounded-xl border border-red-200 bg-red-50 p-6">
+      <div className="flex min-h-[400px] items-center justify-center bg-app">
+        <div className="flex flex-col items-center gap-3 rounded-xl border border-red-500/20 bg-red-500/10 p-6">
           <AlertCircle className="h-8 w-8 text-red-500" />
-          <Typography variant="bodySmall" className="text-red-600">
+          <Typography variant="bodySmall" className="text-red-500">
             {error?.message || "Failed to load goals. Please try again."}
           </Typography>
         </div>
@@ -232,25 +232,26 @@ const MyGoals: React.FC<MyGoalsProps> = ({ onCreateGoal, onSelectGoal }) => {
 
   return (
     <div
-      className={`min-h-full overflow-y-auto overflow-x-hidden bg-[#f6f8fb] px-3 py-4 font-sans sm:px-4 sm:py-5 lg:px-1 lg:pt-1 ${
+      className={`min-h-full overflow-y-auto overflow-x-hidden bg-app px-3 py-4 font-sans sm:px-4 sm:py-5 lg:px-1 lg:pt-1 ${
         selectedGoals.length > 0 ? "pb-52 sm:pb-44 lg:pb-48" : "pb-16 sm:pb-20 lg:pb-24"
       }`}
     >
       <MandatoryGoalsBanner />
 
       <div className="mx-auto w-full  min-w-0 space-y-4 sm:space-y-5">
-        <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-          <div className="flex min-w-0 flex-col gap-4 border-b border-slate-100 p-4 sm:p-5 lg:flex-row lg:items-center lg:justify-between">
+        <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
+          <div className="flex min-w-0 flex-col gap-4 border-b border-border p-4 sm:p-5 lg:flex-row lg:items-center lg:justify-between">
             <div className="min-w-0">
               <Typography
                 variant="h3"
-                className="text-xl leading-tight text-slate-950 sm:text-2xl"
+                className="text-xl leading-tight sm:text-2xl font-bold"
               >
                 My Goals &middot; {activeCycle ?? "-"}
               </Typography>
               <Typography
                 variant="bodySmall"
-                className="mt-1 block break-words text-slate-500"
+                color="body2"
+                className="mt-1 block break-words"
               >
                 {totalGoals ?? "-"} goal{totalGoals !== 1 ? "s" : ""} &middot; {totalWeightage ?? "-"}% weightage
               </Typography>
@@ -264,20 +265,21 @@ const MyGoals: React.FC<MyGoalsProps> = ({ onCreateGoal, onSelectGoal }) => {
               ].map(({ icon: Icon, label, value }) => (
                 <div
                   key={label}
-                  className="min-w-0 rounded-lg border border-slate-100 bg-slate-50 px-3 py-2"
+                  className="min-w-0 rounded-lg border border-border bg-slate-500/10 px-3 py-2"
                 >
-                  <div className="flex items-center gap-1.5 text-slate-500">
+                  <div className="flex items-center gap-1.5 text-text-body2">
                     <Icon className="h-3.5 w-3.5 shrink-0" />
                     <Typography
                       variant="caption"
-                      className="truncate text-slate-500"
+                      color="body2"
+                      className="truncate"
                     >
                       {label}
                     </Typography>
                   </div>
                   <Typography
                     variant="bodySmall"
-                    className="mt-1 block truncate font-semibold text-slate-950"
+                    className="mt-1 block truncate font-semibold"
                   >
                     {value}
                   </Typography>
@@ -288,13 +290,13 @@ const MyGoals: React.FC<MyGoalsProps> = ({ onCreateGoal, onSelectGoal }) => {
 
           <div className="flex min-w-0 flex-col gap-3 p-4 sm:p-5 md:flex-row md:items-center md:justify-between">
             <div className="relative flex h-10 w-full min-w-0 items-center ">
-              <Search className="absolute left-3 h-4 w-4 text-slate-400 pointer-events-none" />
+              <Search className="absolute left-3 h-4 w-4 text-text-body2 pointer-events-none" />
               <input
                 type="text"
                 placeholder="Search goals…"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="h-full w-full rounded-lg border border-slate-200 bg-slate-50 pl-9 pr-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition-colors focus:border-blue-300 focus:bg-white focus:ring-2 focus:ring-blue-100"
+                className="h-full w-full rounded-lg border border-border bg-card pl-9 pr-3 text-sm text-text-title placeholder:text-text-body2 outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-primary"
               />
             </div>
 
@@ -329,13 +331,13 @@ const MyGoals: React.FC<MyGoalsProps> = ({ onCreateGoal, onSelectGoal }) => {
         </div>
 
         {/* Goals list */}
-        <div className="relative min-w-0 rounded-xl border border-slate-200 bg-white p-3 shadow-sm sm:p-4 lg:p-5">
+        <div className="relative min-w-0 rounded-xl border border-border bg-card p-3 shadow-sm sm:p-4 lg:p-5">
           {isLoading ? (
             <PerformanceSkeleton count={4} />
           ) : (
             <>
               {!isCompact && (
-                <div className="absolute bottom-8 left-[38px] top-5 w-px bg-slate-200" />
+                <div className="absolute bottom-8 left-[38px] top-5 w-px bg-border" />
               )}
 
               <div className="relative min-w-0 space-y-3 sm:space-y-4 md:pl-9 lg:pl-12">
@@ -350,12 +352,12 @@ const MyGoals: React.FC<MyGoalsProps> = ({ onCreateGoal, onSelectGoal }) => {
                           draftGoals.length > 0
                         }
                         onChange={handleToggleAll}
-                        className="h-4 w-4 cursor-pointer rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                        className="h-4 w-4 cursor-pointer rounded border-border text-primary focus:ring-primary"
                       />
                     </div>
                     <label
                       htmlFor="selectAllDrafts"
-                      className="text-sm font-medium text-slate-700 cursor-pointer select-none"
+                      className="text-sm font-medium text-text-title cursor-pointer select-none"
                     >
                       Select All ({selectedGoals.length}/{draftGoals.length})
                     </label>
@@ -363,11 +365,12 @@ const MyGoals: React.FC<MyGoalsProps> = ({ onCreateGoal, onSelectGoal }) => {
                 )}
 
                 {goals.length === 0 ? (
-                  <div className="flex items-center gap-2 justify-center py-8 px-4 text-center rounded-lg border border-dashed border-slate-200 bg-white shadow-sm">
-                    <Info className="h-5 w-5 text-blue-500 shrink-0" />
+                  <div className="flex items-center gap-2 justify-center py-8 px-4 text-center rounded-lg border border-dashed border-border bg-card shadow-sm">
+                    <Info className="h-5 w-5 text-primary shrink-0" />
                     <Typography
                       variant="bodySmall"
-                      className="text-slate-500 font-medium"
+                      color="body2"
+                      className="font-medium"
                     >
                       No goals found. Create a new goal to get started.
                     </Typography>
@@ -383,10 +386,10 @@ const MyGoals: React.FC<MyGoalsProps> = ({ onCreateGoal, onSelectGoal }) => {
                       navigate(`/webapp/performance-app/my-goals/${getGoalId(goal)}`);
                     }
                   }}
-                  className="relative z-5 min-w-0 cursor-pointer overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition-all hover:border-blue-300 hover:shadow-md"
+                  className="relative z-5 min-w-0 cursor-pointer overflow-hidden rounded-xl border border-border bg-card shadow-sm transition-all hover:border-primary/50 hover:shadow-md"
                 >
                   {!isCompact && (
-                    <div className="absolute left-[-28px] top-12 h-px w-[28px] bg-slate-200" />
+                    <div className="absolute left-[-28px] top-12 h-px w-[28px] bg-border" />
                   )}
 
                   <div className="relative z-10 flex min-w-0 flex-col gap-4 p-4 lg:flex-row lg:items-center lg:justify-between lg:p-5">
@@ -401,7 +404,7 @@ const MyGoals: React.FC<MyGoalsProps> = ({ onCreateGoal, onSelectGoal }) => {
                             type="checkbox"
                             checked={selectedGoals.includes(getGoalId(goal))}
                             onChange={() => handleToggleSelection(getGoalId(goal))}
-                            className="h-4 w-4 cursor-pointer rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                            className="h-4 w-4 cursor-pointer rounded border-border text-primary focus:ring-primary"
                             aria-label={`Select ${goal.title}`}
                           />
                         </div>
@@ -410,7 +413,8 @@ const MyGoals: React.FC<MyGoalsProps> = ({ onCreateGoal, onSelectGoal }) => {
                         <Badge label={goal.goal_type} variant="purple" size="sm" />
                         <Typography
                           variant="caption"
-                          className="text-slate-500 sm:ml-1"
+                          color="body2"
+                          className="sm:ml-1"
                         >
                           {goal.department_title}
                         </Typography>
@@ -418,13 +422,14 @@ const MyGoals: React.FC<MyGoalsProps> = ({ onCreateGoal, onSelectGoal }) => {
                       <div className="min-w-0 flex-1">
                         <Typography
                           variant="bodyMedium"
-                          className="mb-1 block break-words font-semibold leading-snug text-slate-950"
+                          className="mb-1 block break-words font-semibold leading-snug"
                         >
                           {goal.title}
                         </Typography>
                         <Typography
                           variant="caption"
-                          className="block break-words leading-relaxed text-slate-500"
+                          color="body2"
+                          className="block break-words leading-relaxed"
                         >
                           {goal.description}
                         </Typography>
@@ -432,14 +437,14 @@ const MyGoals: React.FC<MyGoalsProps> = ({ onCreateGoal, onSelectGoal }) => {
                     </div>
 
                     {/* Right: weightage bar + status + approval + chevron */}
-                    <div className="flex w-full min-w-0 shrink-0 flex-col gap-3 rounded-lg bg-slate-50 p-3 md:flex-row md:items-center md:justify-between lg:max-w-[400px] lg:bg-transparent lg:p-0">
-                      <div className="grid min-w-0 flex-1 grid-cols-[auto_minmax(0,1fr)] items-center gap-3 lg:border-r lg:border-slate-100 lg:pr-5">
+                    <div className="flex w-full min-w-0 shrink-0 flex-col gap-3 rounded-lg bg-slate-500/10 p-3 md:flex-row md:items-center md:justify-between lg:max-w-[400px] lg:bg-transparent lg:p-0">
+                      <div className="grid min-w-0 flex-1 grid-cols-[auto_minmax(0,1fr)] items-center gap-3 lg:border-r lg:border-border lg:pr-5">
                         <div className="min-w-0">
                           {selectedGoals.includes(getGoalId(goal)) ? (
                             <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
                               <input
                                 type="text"
-                                className="w-14 rounded border border-gray-300 px-2 py-1 text-sm font-semibold outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                                className="w-14 rounded border border-border bg-card px-2 py-1 text-sm font-semibold text-text-title outline-none focus:border-primary focus:ring-1 focus:ring-primary"
                                 value={editedWeightages[getGoalId(goal)] !== undefined ? editedWeightages[getGoalId(goal)] : goal.weightage}
                                 onChange={(e) => {
                                   const rawVal = e.target.value;
@@ -458,19 +463,20 @@ const MyGoals: React.FC<MyGoalsProps> = ({ onCreateGoal, onSelectGoal }) => {
                                   }
                                 }}
                               />
-                              <span className="text-sm font-bold text-slate-950">%</span>
+                              <span className="text-sm font-bold text-text-title">%</span>
                             </div>
                           ) : (
                             <Typography
                               variant="bodyMedium"
-                              className="block whitespace-nowrap font-bold text-slate-950"
+                              className="block whitespace-nowrap font-bold"
                             >
                               {editedWeightages[getGoalId(goal)] !== undefined ? editedWeightages[getGoalId(goal)] : goal.weightage}%
                             </Typography>
                           )}
                           <Typography
                             variant="caption"
-                            className="mt-0.5 block break-words text-slate-500"
+                            color="body2"
+                            className="mt-0.5 block break-words"
                           >
                             Weightage
                           </Typography>
@@ -478,11 +484,12 @@ const MyGoals: React.FC<MyGoalsProps> = ({ onCreateGoal, onSelectGoal }) => {
                         <div className="flex min-w-0 flex-col gap-1.5">
                           <Typography
                             variant="caption"
-                            className="text-right text-slate-500"
+                            color="body2"
+                            className="text-right"
                           >
                             {editedWeightages[getGoalId(goal)] !== undefined ? editedWeightages[getGoalId(goal)] : goal.weightage}%
                           </Typography>
-                          <div className="h-2 w-full overflow-hidden rounded-md bg-slate-200">
+                          <div className="h-2 w-full overflow-hidden rounded-md bg-slate-500/20">
                             <div
                               className={`h-2 rounded-md ${getBarColor(goal.status)} transition-all duration-300`}
                               style={{ width: `${editedWeightages[getGoalId(goal)] !== undefined ? editedWeightages[getGoalId(goal)] : goal.weightage}%` }}
@@ -507,7 +514,7 @@ const MyGoals: React.FC<MyGoalsProps> = ({ onCreateGoal, onSelectGoal }) => {
                         {isSelectableGoal(goal) && (
                           <button
                             onClick={(e) => handleDeleteDraftGoal(e, goal)}
-                            className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 transition-all hover:border-red-300 hover:bg-red-50 hover:text-red-600"
+                            className="flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-card text-text-body2 transition-all hover:border-red-500/50 hover:bg-red-500/10 hover:text-red-500"
                             title="Delete draft goal"
                             aria-label="Delete draft goal"
                           >
@@ -515,7 +522,7 @@ const MyGoals: React.FC<MyGoalsProps> = ({ onCreateGoal, onSelectGoal }) => {
                           </button>
                         )}
                         <ChevronRight
-                          className={`h-5 w-5 border-gray-500 border rounded-full transition-transform duration-200 cursor-pointer ${openGoalIndex === index ? "rotate-90" : ""}`}
+                          className={`h-5 w-5 border-border border rounded-full text-text-body2 transition-transform duration-200 cursor-pointer ${openGoalIndex === index ? "rotate-90" : ""}`}
                           onClick={(e) => {
                             e.stopPropagation();
                             setOpenGoalIndex(
@@ -532,19 +539,19 @@ const MyGoals: React.FC<MyGoalsProps> = ({ onCreateGoal, onSelectGoal }) => {
                     className={`grid transition-[grid-template-rows] duration-300 ease-in-out ${openGoalIndex === index ? "grid-rows-[1fr]" : "grid-rows-[0fr]"}`}
                   >
                     <div className="overflow-hidden">
-                      <div className="relative z-10 border-t border-slate-100 bg-slate-50/70 p-3 sm:p-4">
+                      <div className="relative z-10 border-t border-border bg-slate-500/10 p-3 sm:p-4">
                         {goal.key_results && goal.key_results.length > 0 ? (
                           <div className="relative min-w-0 space-y-3 md:pl-8">
                             {!isCompact && (
-                              <div className="absolute bottom-4 left-[16px] top-[-16px] w-px bg-slate-200" />
+                              <div className="absolute bottom-4 left-[16px] top-[-16px] w-px bg-border" />
                             )}
                             {goal.key_results.map((kr: MyGoalsKeyResult, kIdx: number) => (
                               <div
                                 key={kr.goal_key || kr.name}
-                                className="relative flex min-w-0 flex-col gap-2 rounded-lg border border-slate-100 bg-white p-3 lg:flex-row lg:items-center"
+                                className="relative flex min-w-0 flex-col gap-2 rounded-lg border border-border bg-card p-3 lg:flex-row lg:items-center"
                               >
                                 {!isCompact && (
-                                  <div className="absolute left-[-16px] top-[18px] h-px w-[16px] bg-slate-200" />
+                                  <div className="absolute left-[-16px] top-[18px] h-px w-[16px] bg-border" />
                                 )}
 
                                 <div className="flex min-w-0 flex-1 items-start gap-3 lg:items-center">
@@ -557,7 +564,8 @@ const MyGoals: React.FC<MyGoalsProps> = ({ onCreateGoal, onSelectGoal }) => {
                                   </div>
                                   <Typography
                                     variant="caption"
-                                    className="min-w-0 break-words leading-relaxed text-slate-600"
+                                    color="body2"
+                                    className="min-w-0 break-words leading-relaxed"
                                   >
                                     {kr.title}
                                   </Typography>
@@ -567,13 +575,14 @@ const MyGoals: React.FC<MyGoalsProps> = ({ onCreateGoal, onSelectGoal }) => {
                                   <div className="flex w-full min-w-0 flex-col gap-1">
                                     <Typography
                                       variant="caption"
-                                      className="text-right text-slate-500"
+                                      color="body2"
+                                      className="text-right"
                                     >
                                       {kr.weightage}%
                                     </Typography>
-                                    <div className="h-1.5 w-full overflow-hidden rounded-md bg-slate-200">
+                                    <div className="h-1.5 w-full overflow-hidden rounded-md bg-slate-500/20">
                                       <div
-                                        className="h-1.5 rounded-md bg-blue-500"
+                                        className="h-1.5 rounded-md bg-primary"
                                         style={{ width: `${kr.weightage}%` }}
                                       />
                                     </div>
@@ -583,11 +592,12 @@ const MyGoals: React.FC<MyGoalsProps> = ({ onCreateGoal, onSelectGoal }) => {
                             ))}
                           </div>
                         ) : (
-                          <div className="flex items-center gap-2 justify-center py-4 px-4 text-center rounded-lg border border-dashed border-slate-200 bg-white shadow-sm">
-                            <Info className="h-4 w-4 text-blue-500 shrink-0" />
+                          <div className="flex items-center gap-2 justify-center py-4 px-4 text-center rounded-lg border border-dashed border-border bg-card shadow-sm">
+                            <Info className="h-4 w-4 text-primary shrink-0" />
                             <Typography
                               variant="caption"
-                              className="text-slate-500 font-medium"
+                              color="body2"
+                              className="font-medium"
                             >
                               No Key Results (KRs) linked to this goal.
                             </Typography>
@@ -606,12 +616,12 @@ const MyGoals: React.FC<MyGoalsProps> = ({ onCreateGoal, onSelectGoal }) => {
 
         {/* Floating Bottom Bar for Selected Goals */}
         {selectedGoals.length > 0 && (
-          <div className="fixed bottom-3 left-3 right-3 z-50 flex max-h-[calc(100vh-1.5rem)] flex-col items-center justify-between gap-4 overflow-y-auto rounded-xl border border-slate-200 bg-white p-4 shadow-[0_8px_30px_rgb(0,0,0,0.12)] sm:bottom-4 sm:left-4 sm:right-4 sm:flex-row sm:px-6 lg:left-24">
+          <div className="fixed bottom-3 left-3 right-3 z-50 flex max-h-[calc(100vh-1.5rem)] flex-col items-center justify-between gap-4 overflow-y-auto rounded-xl border border-border bg-card p-4 shadow-[0_8px_30px_rgb(0,0,0,0.3)] sm:bottom-4 sm:left-4 sm:right-4 sm:flex-row sm:px-6 lg:left-24">
             <div className="flex items-center gap-3">
-              <Typography variant="bodyMedium" className="font-semibold text-slate-900">
+              <Typography variant="bodyMedium" className="font-semibold">
                 {selectedGoals.length} goal{selectedGoals.length > 1 ? "s" : ""} selected
               </Typography>
-              <div className="h-4 w-px bg-slate-300" />
+              <div className="h-4 w-px bg-border" />
               <Typography variant="bodyMedium" className={weightageColor}>
                 Total Weightage: {selectedWeightageSum}%
               </Typography>
@@ -652,16 +662,16 @@ const MyGoals: React.FC<MyGoalsProps> = ({ onCreateGoal, onSelectGoal }) => {
           isOpen={goalsToDelete.length > 0}
           onClose={() => !isDeleting && setGoalsToDelete([])}
           size="sm"
-          className="max-w-md p-6 sm:rounded-2xl"
+          className="max-w-md p-6 sm:rounded-2xl bg-card text-text-title border border-border"
         >
           <div className="flex flex-col items-center text-center">
-            <div className="mb-3.5 flex h-12 w-12 items-center justify-center rounded-2xl border border-red-100 bg-red-50 text-red-600">
+            <div className="mb-3.5 flex h-12 w-12 items-center justify-center rounded-2xl border border-red-500/20 bg-red-500/10 text-red-500">
               <Trash2 className="h-6 w-6" />
             </div>
-            <Typography variant="h4" className="font-semibold text-gray-900">
+            <Typography variant="h4" className="font-semibold">
               Delete {goalsToDelete.length > 1 ? "Goals" : "Goal"}?
             </Typography>
-            <Typography variant="bodyMedium" className="mt-2 text-sm leading-relaxed text-gray-500">
+            <Typography variant="bodyMedium" color="body2" className="mt-2 text-sm leading-relaxed">
               Are you sure you want to delete {goalsToDelete.length > 1 ? "these selected goals" : "this goal"}? This action cannot be undone.
             </Typography>
             <div className="mt-6 flex w-full items-center justify-end gap-3">
