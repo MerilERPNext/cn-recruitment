@@ -38,21 +38,21 @@ const PageLayoutWrapper: React.FC<PageLayoutWrapperProps> = ({
     }, [resetScrollKey]); 
        
     return (
-        <div className="relative flex-1 flex flex-col min-h-0 bg-[#f8fafc] font-sans">
-            <div className="md:sticky top-0 z-10 shrink-0 bg-white/95 backdrop-blur-md border-b border-gray-200 px-6 sm:px-10 py-5 shadow-2xs">
+        <div className="relative flex-1 flex flex-col min-h-0 bg-app font-sans text-text-title">
+            <div className="md:sticky top-0 z-10 shrink-0 bg-card/95 backdrop-blur-md border-b border-border px-6 sm:px-10 py-5 shadow-2xs">
                 <div className="max-w-screen mx-auto flex flex-col lg:flex-row md:items-center justify-between gap-6">
                     <div className="text-left w-full lg:min-w-0 lg:flex-1">
                         {titleSlot ? (
-                            <Typography variant="h3" className="text-gray-900 mb-1">
+                            <Typography variant="h3" className="text-text-title mb-1">
                                 {titleSlot}
                             </Typography>
                         ) : (
-                            <Typography variant="h3" className="text-gray-900 mb-1">
+                            <Typography variant="h3" className="text-text-title mb-1">
                                 {title}
                             </Typography>
                         )}
                         {subtitle ? (
-                            <Typography variant="bodyMedium" className="text-gray-500">
+                            <Typography variant="bodyMedium" color="body2">
                                 {subtitle}
                             </Typography>
                         ) : null}
@@ -63,16 +63,16 @@ const PageLayoutWrapper: React.FC<PageLayoutWrapperProps> = ({
                                 const isActive = index === activeStepIndex;
                                 const isCompleted = activeStepIndex > index;
                                 const stepTextClass = isActive
-                                    ? "text-blue-600"
+                                    ? "text-primary"
                                     : isCompleted
-                                        ? "text-green-600"
-                                        : "text-gray-400";
+                                        ? "text-emerald-500"
+                                        : "text-text-body2";
                                 const circleClass = isActive
-                                    ? "bg-blue-600 text-white"
+                                    ? "bg-primary text-white"
                                     : isCompleted
-                                        ? "bg-green-500 text-white"
-                                        : "bg-gray-100 text-gray-400";
-                                const connectorClass = activeStepIndex > index + 1 ? "bg-green-500" : "bg-gray-300";
+                                        ? "bg-emerald-500 text-white"
+                                        : "bg-slate-500/20 text-text-body2";
+                                const connectorClass = activeStepIndex > index + 1 ? "bg-emerald-500" : "bg-border";
 
                                 return (
                                     <React.Fragment key={step.label}>
@@ -97,7 +97,7 @@ const PageLayoutWrapper: React.FC<PageLayoutWrapperProps> = ({
                 </div>
             </div>
 
-            <div className="sticky bottom-0 z-20 shrink-0 bg-white/95 backdrop-blur-md border-t border-gray-200/80 px-4 py-3 sm:px-6 md:py-4 shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
+            <div className="sticky bottom-0 z-20 shrink-0 bg-card/95 backdrop-blur-md border-t border-border px-4 py-3 sm:px-6 md:py-4 shadow-sm">
                 <div className="max-w-5xl mx-auto flex flex-col gap-2.5 md:flex-row md:items-center md:justify-between">
                     <div className="w-full md:min-w-0 md:flex-1">{footerLeft}</div>
                     <div className="w-full md:w-auto md:flex-none">{footerRight}</div>
