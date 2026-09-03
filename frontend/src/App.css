@@ -498,3 +498,22 @@ body {
 .assignment-details-table tbody tr:hover td {
   background-color: rgb(var(--gray-50)) !important;
 }
+
+/* The weekly timesheet is also affected by fixed Bootstrap table borders.
+   Scope the override to structural grid lines so inputs, validation states,
+   badges, and action controls retain their semantic accent borders. */
+.timesheet-week-grid,
+.timesheet-week-grid table,
+.timesheet-week-grid thead,
+.timesheet-week-grid tbody,
+.timesheet-week-grid tr,
+.timesheet-week-grid th,
+.timesheet-week-grid td {
+  border-color: rgb(var(--border)) !important;
+}
+
+.timesheet-week-grid,
+.timesheet-week-grid table,
+.timesheet-week-grid tbody {
+  background-color: rgb(var(--surface)) !important;
+}

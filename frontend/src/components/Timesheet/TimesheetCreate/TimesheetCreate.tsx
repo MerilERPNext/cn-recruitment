@@ -1009,7 +1009,7 @@ const TimesheetCreate: React.FC = () => {
         )}
 
         {/* Weekly Grid Sheet Table */}
-        <div className="bg-white rounded-2xl border border-border shadow-sm overflow-hidden">
+        <div className="timesheet-week-grid overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
           {isDetailLoading ? (
             <div className="p-6">
               <TableSkeleton columns={8} rows={4} />

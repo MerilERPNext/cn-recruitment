@@ -8,7 +8,7 @@ interface TimesheetHeaderProps {
 
 export const TimesheetHeader: React.FC<TimesheetHeaderProps> = ({ isReadOnly }) => {
   return (
-    <div className="flex-shrink-0 bg-white border-b px-6 py-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div className="flex flex-shrink-0 flex-col justify-between gap-4 border-b border-border bg-card px-6 py-4 md:flex-row md:items-center">
       <div>
         <Typography variant="h4" className="text-gray-900 flex items-center gap-3">
           <span>Weekly Timesheet Entry</span>

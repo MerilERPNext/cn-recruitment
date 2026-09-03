@@ -42,12 +42,25 @@ const MultiSelectSection: React.FC<MultiSelectSectionProps> = ({
   const [isOpen, setIsOpen] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
 
+  const normalizedOptions = useMemo(
+    () =>
+      options.flatMap((option) => {
+        const value = String(option?.value ?? "").trim();
+        const optionLabel = String(option?.label ?? value).trim();
+
+        return value && optionLabel
+          ? [{ value, label: optionLabel }]
+          : [];
+      }),
+    [options],
+  );
+
   const filteredOptions = useMemo(
     () =>
-      options.filter((o) =>
+      normalizedOptions.filter((o) =>
         o.label.toLowerCase().includes(searchTerm.toLowerCase()),
       ),
-    [options, searchTerm],
+    [normalizedOptions, searchTerm],
   );
 
   const allSelected =
@@ -77,7 +90,9 @@ const MultiSelectSection: React.FC<MultiSelectSectionProps> = ({
     }
   };
 
-  const selectedCount = options.filter((o) => selected.includes(o.value)).length;
+  const selectedCount = normalizedOptions.filter((o) =>
+    selected.includes(o.value),
+  ).length;
 
   return (
     <div className="border border-gray-200 rounded-xl overflow-hidden bg-white">
@@ -97,7 +112,7 @@ const MultiSelectSection: React.FC<MultiSelectSectionProps> = ({
         </div>
         <div className="flex items-center gap-3">
           {/* Select All toggle — visible in header only when open */}
-          {isOpen && !disabled && options.length > 0 && (
+          {isOpen && !disabled && normalizedOptions.length > 0 && (
             <button
               type="button"
               onClick={(e) => {
@@ -129,7 +144,7 @@ const MultiSelectSection: React.FC<MultiSelectSectionProps> = ({
               <Loader2 size={16} className="animate-spin" />
               <span className="text-xs">Loading options…</span>
             </div>
-          ) : options.length === 0 ? (
+          ) : normalizedOptions.length === 0 ? (
             <p className="text-xs text-gray-400 text-center py-3">
               No options available
             </p>
@@ -180,7 +195,7 @@ const MultiSelectSection: React.FC<MultiSelectSectionProps> = ({
                       ) : null}
                     </span>
                     {allSelected ? "Deselect all" : "Select all"}
-                    {filteredOptions.length < options.length && (
+                    {filteredOptions.length < normalizedOptions.length && (
                       <span className="text-gray-400">
                         ({filteredOptions.length} results)
                       </span>
