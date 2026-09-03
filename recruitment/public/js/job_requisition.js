@@ -145,8 +145,16 @@ function gate_raise_requisition(frm) {
 // Hiring Lead Configuration — restrict the Hiring lead (Employee) and Assign to
 // Recruiter (User) dropdowns to the configured users when a config matches:
 // "Company Wise" by the requisition's company, or "Assignment Framework" by the
-// Hiring Manager (Requested By) via its Dynamic User Assignments. No matching
-// config → no filter (full lists), so the flow is never blocked.
+// *attributes* on its User Assignments, matched against this requisition's field
+// values. No matching config → no filter (full lists), so the flow is never
+// blocked, and a field an assignment scopes by that is still empty defers rather
+// than closes the picker.
+//
+// Every field that could be scoped by re-triggers the fetch. There is no list of
+// scopeable fieldnames here on purpose: which fields matter is configuration on
+// the assignments, so naming them client-side would mean a release every time
+// somebody scopes by a new one. `department` / `designation` are the common ones
+// and are wired explicitly; the rest arrive on the next refresh.
 frappe.ui.form.on("Job Requisition", {
     refresh(frm) {
         apply_hiring_lead_config_filters(frm);
@@ -155,6 +163,12 @@ frappe.ui.form.on("Job Requisition", {
         apply_hiring_lead_config_filters(frm);
     },
     requested_by(frm) {
+        apply_hiring_lead_config_filters(frm);
+    },
+    department(frm) {
+        apply_hiring_lead_config_filters(frm);
+    },
+    designation(frm) {
         apply_hiring_lead_config_filters(frm);
     },
 });
@@ -408,10 +422,33 @@ function apply_requisition_edit_locks(frm) {
         });
 }
 
+// The requisition's own values, as the attribute engine wants them: scalars only,
+// non-empty, no child tables and no framework bookkeeping. Sent whole rather than
+// cherry-picked so scoping by a new Link field stays a configuration change —
+// the engine reads only the fields its rows name and ignores everything else.
+function requisition_attribute_context(frm) {
+    const out = {};
+    Object.keys(frm.doc || {}).forEach((key) => {
+        if (key.startsWith("__")) {
+            return;
+        }
+        const value = frm.doc[key];
+        if (value === null || value === undefined || value === "" || typeof value === "object") {
+            return;
+        }
+        out[key] = value;
+    });
+    return out;
+}
+
 function apply_hiring_lead_config_filters(frm) {
     frappe.call({
         method: "recruitment.recruitment.doctype.hiring_lead_configuration.hiring_lead_configuration.get_hiring_lead_config_users",
-        args: { company: frm.doc.company, employee: frm.doc.requested_by },
+        args: {
+            company: frm.doc.company,
+            employee: frm.doc.requested_by,
+            context: JSON.stringify(requisition_attribute_context(frm)),
+        },
         callback: (r) => {
             const data = (r && r.message) || { hiring_leads: [], recruiters: [] };
             const leads = data.hiring_leads || [];

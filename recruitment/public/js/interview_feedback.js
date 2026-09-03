@@ -9,7 +9,9 @@
 //
 // The Work Location the panel picks becomes the candidate's final location on
 // submit, so the options are restricted to locations of the region that owns the
-// candidate — or of the region recommended above, when the panel ticked one.
+// candidate. Ticking "Recommend for a different Region" empties the field and locks
+// it instead: this panel is saying the candidate belongs to another region, so the
+// branch is that region's panel's to choose once HR moves the candidate.
 // The panel now arrives here straight from the Interview's "Submit Feedback" (see
 // public/js/interview_feedback_route.js), so this form is the first thing they see —
 // and on its own it shows an interview ID and nothing about the interview. The
@@ -170,14 +172,15 @@ function applyCampusSections(frm) {
         return;
     }
 
-    const recommended = frm.doc.custom_recommend_other_region
-        ? frm.doc.custom_recommended_region || null
-        : null;
+    // The tick defers the location on its own — before a region has been named — so
+    // it is sent as well as the region, not derived from it.
+    const recommending = Boolean(frm.doc.custom_recommend_other_region);
+    const recommended = recommending ? frm.doc.custom_recommended_region || null : null;
 
     // refresh() fires on load, after every save and on tab switches, so the answer is
-    // cached against the only two inputs that change it. Without this the form makes
-    // a server round trip every time the user glances at it.
-    const key = `${frm.doc.job_applicant}|${recommended || ""}`;
+    // cached against the only inputs that change it. Without this the form makes a
+    // server round trip every time the user glances at it.
+    const key = `${frm.doc.job_applicant}|${recommending ? 1 : 0}|${recommended || ""}`;
     if (frm.__work_location_key === key && frm.__work_location_ctx) {
         render(frm, frm.__work_location_ctx);
         return;
@@ -188,7 +191,11 @@ function applyCampusSections(frm) {
     frappe
         .call({
             method: "recruitment.api.interview_work_location.get_work_location_context",
-            args: { job_applicant: frm.doc.job_applicant, recommended_region: recommended },
+            args: {
+                job_applicant: frm.doc.job_applicant,
+                recommends_other_region: recommending ? 1 : 0,
+                recommended_region: recommended,
+            },
         })
         .then((r) => {
             const ctx = (r && r.message) || {};
@@ -269,19 +276,31 @@ function applyWorkLocation(frm, ctx) {
         frm.refresh_field("custom_work_location_region");
     }
 
+    // This panel ticked "Recommend for a different Region": they are arguing the
+    // candidate belongs somewhere else, so the branch is not theirs to pick. Empty
+    // and read-only — the panel of the region HR moves the candidate to sets it on
+    // their own feedback. Takes precedence over the lock below, because repeating a
+    // posting in the region the candidate is being recommended out of is exactly the
+    // record this avoids. The server clears it too on save; read-only on a form is
+    // only a hint.
+    const deferred = Boolean(ctx.deferred);
+    if (deferred && frm.doc.docstatus === 0 && frm.doc.custom_work_location) {
+        frm.set_value("custom_work_location", null);
+    }
+
     // An earlier round already settled where this candidate goes. Carry that value
     // and lock it, so a later panel records the same posting instead of quietly
-    // moving the candidate somewhere else. The server enforces this too — read-only
-    // on a form is only a hint.
-    const locked = Boolean(ctx.locked_to);
+    // moving the candidate somewhere else. The server enforces this too.
+    const locked = !deferred && Boolean(ctx.locked_to);
     if (locked) {
         if (frm.doc.docstatus === 0 && frm.doc.custom_work_location !== ctx.locked_to) {
             frm.set_value("custom_work_location", ctx.locked_to);
         }
     } else if (
-        // Region changed under a location that was already picked (the panel ticked a
-        // recommendation, say) — drop it rather than submit a location the new region
-        // does not run.
+        !deferred &&
+        // The region changed under a location that was already picked — HR re-routed
+        // the candidate while this feedback sat open. Drop it rather than submit a
+        // location the new region does not run.
         frm.doc.docstatus === 0 &&
         frm.doc.custom_work_location &&
         ctx.restricted &&
@@ -290,11 +309,18 @@ function applyWorkLocation(frm, ctx) {
         frm.set_value("custom_work_location", null);
     }
 
-    frm.set_df_property("custom_work_location", "read_only", locked ? 1 : 0);
+    frm.set_df_property("custom_work_location", "read_only", deferred || locked ? 1 : 0);
     frm.set_df_property("custom_work_location", "description", describe(ctx));
 }
 
 function describe(ctx) {
+    if (ctx.deferred) {
+        return ctx.deferred_to
+            ? __("You are recommending this candidate for {0}, so the work location is not set here. If HR accepts, the {0} panel taking their next round picks a location of that region.", [
+                  `<b>${frappe.utils.escape_html(ctx.deferred_to)}</b>`,
+              ])
+            : __("You are recommending this candidate for another region, so the work location is not set here — the panel of the region HR moves them to picks it on their own feedback.");
+    }
     if (ctx.locked_to) {
         return __("Already set to {0} by {1} in an earlier round, so it cannot be changed here. HR can still change it on the candidate.", [
             `<b>${frappe.utils.escape_html(ctx.locked_to)}</b>`,

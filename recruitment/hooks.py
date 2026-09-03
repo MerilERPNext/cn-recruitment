@@ -34,6 +34,13 @@ app_include_js = [
 	# repeated `=` on one field into a single `in`. Global for the same reason as
 	# the column engine — the *_list.js files build on it. Bump ?v= when it changes.
 	"/assets/recruitment/js/list_filter_multi.js?v=1",
+	# The Group Discussion board — the group cards, the marking table and their CSS.
+	# Shared verbatim by the Campus Drive (HR's whole hall) and the Group Discussion
+	# doctype (one panel's own group), so the two can never drift into looking or
+	# behaving differently. Global rather than per-doctype because both of those load it
+	# and a doctype's own JS is evaluated before any doctype_js hook. Bump ?v= when it
+	# changes.
+	"/assets/recruitment/js/campus_gd_board.js?v=1",
 ]
 
 add_to_apps_screen = [
@@ -192,12 +199,17 @@ permission_query_conditions = {
     "Job Opening": "recruitment.permissions.doc_type_permissions.job_opening_query",
     "Campus Invite": "recruitment.permissions.doc_type_permissions.campus_invite_query",
     "Candidate Registration": "recruitment.permissions.doc_type_permissions.candidate_registration_query",
+    # A panel member's GD list holds their own groups only.
+    "Group Discussion": "recruitment.permissions.doc_type_permissions.group_discussion_query",
 }
 
 # A TPO may only read/act on the Candidate Registrations they own (mirrors the
 # query condition above at the document level). Everyone else defers to defaults.
 has_permission = {
     "Candidate Registration": "recruitment.permissions.doc_type_permissions.candidate_registration_has_permission",
+    # Same rule as the query above, applied to a single document — the query only
+    # scopes lists, and a GD opened straight by URL never goes through one.
+    "Group Discussion": "recruitment.permissions.doc_type_permissions.group_discussion_has_permission",
 }
 
 # Jinja

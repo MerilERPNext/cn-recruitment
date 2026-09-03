@@ -286,12 +286,30 @@ class TestTPOCandidateList(FrappeTestCase):
 		card = next((d for d in tpo_portal.get_my_campus_drives() if d["name"] == self.invite), None)
 		self.assertIsNotNone(card, "the invite is not on the drive list")
 		summary = self._list()["summary"]
-		self.assertEqual(card["candidate_count"], 2)   # submitted registrations only
+		# Two submitted registrations plus the walk-in: the card counts everyone the
+		# dialog lists, so the two numbers can never disagree.
+		self.assertEqual(card["candidate_count"], 3)
 		self.assertEqual(card["draft_count"], 1)       # one draft REGISTRATION
-		# The card counts the TPO's own registered candidates who applied; the walk-in
-		# is not one of theirs, so it is in the list but not in this number.
+		self.assertEqual(card["applied_count"], 2)     # one registered, one at the venue
+		self.assertEqual(summary["applied"], card["applied_count"])
+		# Everything the dialog lists is on the card: registered candidates and
+		# walk-ins under "candidates", the untouched draft under "drafts".
+		self.assertEqual(card["candidate_count"] + card["draft_count"], summary["total"])
+
+	def test_a_drive_with_only_walk_ins_still_counts_them(self):
+		"""A drive nobody registered for is not an empty drive if people turned up."""
+		frappe.delete_doc("Candidate Registration", self.draft, force=True,
+		                  ignore_permissions=True)
+		frappe.get_doc("Candidate Registration", self.submitted).cancel()
+		frappe.delete_doc("Candidate Registration", self.submitted, force=True,
+		                  ignore_permissions=True)
+		frappe.delete_doc("Job Applicant", self.applicant, force=True, ignore_permissions=True)
+
+		card = next((d for d in tpo_portal.get_my_campus_drives() if d["name"] == self.invite), None)
+		self.assertIsNotNone(card, "the invite is not on the drive list")
+		self.assertEqual(card["candidate_count"], 1)   # the walk-in
 		self.assertEqual(card["applied_count"], 1)
-		self.assertEqual(summary["applied"], card["applied_count"] + 1)
+		self.assertEqual(self._list()["summary"]["total"], 1)
 
 	# ── access ──
 

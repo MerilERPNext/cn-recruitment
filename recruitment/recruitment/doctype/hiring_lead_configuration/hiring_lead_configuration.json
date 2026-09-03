@@ -37,7 +37,7 @@
   },
   {
    "default": "Company Wise",
-   "description": "Company Wise: applies to the selected companies. Assignment Framework: applies via the configured assignment grouping.",
+   "description": "Company Wise: applies to the selected companies. Assignment Framework: applies when the requisition satisfies the attributes on the selected User Assignments.",
    "fieldname": "assignment_type",
    "fieldtype": "Select",
    "label": "Assignment Type",
@@ -55,7 +55,7 @@
   },
   {
    "depends_on": "eval:doc.assignment_type=='Assignment Framework'",
-   "description": "User Assignments (Dynamic User Assignment) this configuration applies to.",
+   "description": "User Assignments of purpose <b>Attributes</b>, tagged for Job Requisition. This configuration applies when a requisition satisfies their attribute values (Company, Department, Designation, or any other Link field).",
    "fieldname": "applicable_assignments",
    "fieldtype": "Table MultiSelect",
    "label": "Applicable To",

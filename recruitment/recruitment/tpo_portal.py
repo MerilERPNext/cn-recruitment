@@ -257,6 +257,11 @@ def _registration_stats(invites):
 	``candidate_registration_query`` scopes a TPO to the registrations they own —
 	the numbers on a drive card are always "what I have submitted", never another
 	college's.
+
+	Candidates who registered at the venue on the day carry no Candidate Registration
+	at all, but they are still this college's candidates on this drive — and the
+	candidate list dialog already lists them. They are counted here too, so the card
+	and the dialog never disagree about how many candidates a drive has.
 	"""
 	registrations = frappe.get_list(
 		"Candidate Registration",
@@ -265,7 +270,9 @@ def _registration_stats(invites):
 		limit_page_length=0,
 	)
 	if not registrations:
-		return {}
+		# No registrations does not mean no candidates: a drive can be made up
+		# entirely of walk-ins.
+		return _spot_stats(invites, {})
 
 	# Child table, already fenced to the parents resolved above. The email comes along
 	# so the same rows can say who has since applied, without a second read.
@@ -316,6 +323,40 @@ def _registration_stats(invites):
 		key = (invite, (row.email_id or "").strip().lower())
 		if applications.get(key):
 			stats[invite]["applied"] += 1
+
+	# Everyone the TPO typed in is now counted; add the ones who turned up at the
+	# venue instead. Emails already on a registration are excluded, exactly as the
+	# dialog does, so a candidate who was both registered and scanned in at the desk
+	# is one candidate, not two.
+	seen = {}
+	for row in rows:
+		invite = invite_of.get(row.parent)
+		seen.setdefault(invite, set()).add((row.email_id or "").strip().lower())
+	return _spot_stats(invites, seen, stats)
+
+
+def _spot_stats(invites, seen_by_invite, stats=None):
+	"""Fold the venue registrations of each invite into ``stats``.
+
+	A walk-in has applied by definition — the Job Applicant is what the desk creates —
+	so each one counts once as a candidate and once as applied.
+	"""
+	stats = stats if stats is not None else {}
+	counted = {}
+	for row in _spot_rows(invites, ["custom_campus_invite", "email_id"]):
+		invite = row.custom_campus_invite
+		email = (row.email_id or "").strip().lower()
+		if email in (seen_by_invite.get(invite) or set()):
+			continue
+		# One walk-in can be put up for two openings on the same drive; that is still
+		# one candidate, the same way it is for a registered one.
+		if email in counted.setdefault(invite, set()):
+			continue
+		counted[invite].add(email)
+		bucket = stats.setdefault(invite,
+		                          {"registrations": 0, "candidates": 0, "drafts": 0, "applied": 0})
+		bucket["candidates"] += 1
+		bucket["applied"] += 1
 	return stats
 
 
@@ -424,30 +465,31 @@ def _spot_candidates(invite, exclude_emails):
 	Scoped to the caller's own colleges when they are a TPO: the walk-in carries the
 	institute they picked at the desk, and a TPO must only ever see their own.
 	"""
-	filters = {"custom_campus_invite": invite, "custom_spot_registered": 1}
-	if is_tpo_only():
-		mine = _primary_institutes(frappe.session.user)
-		if not mine:
-			return []
-		filters["custom_institute"] = ["in", mine]
-
-	rows = frappe.get_all(
-		"Job Applicant",
-		filters=filters,
-		fields=["name", "custom_full_name", "applicant_name", "email_id", "phone_number",
-		        "custom_institute", "status", "custom_current_stage", "job_title"],
-		order_by="creation asc",
-		limit_page_length=0,
-		# Same reasoning as _applications_by_candidate: a TPO has no access to Job
-		# Applicant, and the filter above is what fences this to their own college.
-		ignore_permissions=True,
+	rows = _spot_rows(
+		[invite],
+		["name", "custom_full_name", "applicant_name", "email_id", "phone_number",
+		 "custom_institute", "status", "custom_current_stage", "job_title"],
 	)
 	titles = _opening_titles([r.job_title for r in rows])
 	out = []
+	by_email = {}
 	for r in rows:
-		if (r.email_id or "").strip().lower() in exclude_emails:
+		email = (r.email_id or "").strip().lower()
+		if email in exclude_emails:
 			continue
-		out.append({
+		application = {
+			"job_applicant": r.name,
+			"job_title": titles.get(r.job_title) or r.job_title,
+			"status": r.status,
+			"stage": r.custom_current_stage,
+			"spot_registered": True,
+		}
+		# A walk-in put up for two openings is one candidate with two applications,
+		# the same as a registered one — not two people on the list.
+		if email and email in by_email:
+			by_email[email]["applications"].append(application)
+			continue
+		candidate = {
 			"full_name": r.custom_full_name or r.applicant_name or r.email_id,
 			"email_id": r.email_id,
 			"mobile_number": r.phone_number,
@@ -456,12 +498,38 @@ def _spot_candidates(invite, exclude_emails):
 			"submitted": True,
 			"spot_registered": True,
 			"state": STATE_APPLIED,
-			"applications": [{
-				"job_applicant": r.name,
-				"job_title": titles.get(r.job_title) or r.job_title,
-				"status": r.status,
-				"stage": r.custom_current_stage,
-				"spot_registered": True,
-			}],
-		})
+			"applications": [application],
+		}
+		if email:
+			by_email[email] = candidate
+		out.append(candidate)
 	return out
+
+
+def _spot_rows(invites, fields):
+	"""Job Applicants created at the venue desk on these invites.
+
+	Scoped to the caller's own colleges when they are a TPO: the walk-in carries the
+	institute they picked at the desk, and a TPO must only ever see their own.
+
+	ignore_permissions for the same reason as ``_applications_by_candidate``: a TPO
+	has no read access to Job Applicant, and the filters below are what fence this
+	to their own drives and their own college.
+	"""
+	invites = [i for i in dict.fromkeys(invites) if i]
+	if not invites:
+		return []
+	filters = {"custom_campus_invite": ["in", invites], "custom_spot_registered": 1}
+	if is_tpo_only():
+		mine = _primary_institutes(frappe.session.user)
+		if not mine:
+			return []
+		filters["custom_institute"] = ["in", mine]
+	return frappe.get_all(
+		"Job Applicant",
+		filters=filters,
+		fields=fields,
+		order_by="creation asc",
+		limit_page_length=0,
+		ignore_permissions=True,
+	)

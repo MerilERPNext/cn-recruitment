@@ -3198,19 +3198,24 @@ def get_allowed_replacement_employee_statuses():
 
 
 @frappe.whitelist()
-def get_hiring_lead_options(company=None, employee=None, search_text=None, query=None, txt=None, limit=20, include=None):
+def get_hiring_lead_options(company=None, employee=None, search_text=None, query=None, txt=None, limit=20, include=None, context=None):
     """Employee options for the Job Requisition 'Hiring lead' field.
 
     Limited to configured hiring leads when a Hiring Lead Configuration matches —
-    **Company Wise** by `company`, or **Assignment Framework** by `employee` (the
-    requisition's Hiring Manager / Requested By). Falls back to ALL Employees when
-    no configuration matches, so requisition creation is never blocked. Same
-    response shape as get_link_field_options."""
+    **Company Wise** by `company`, or **Assignment Framework** by the attributes on
+    its User Assignments, matched against the requisition `context`. Falls back to
+    ALL Employees when no configuration matches, so requisition creation is never
+    blocked. Same response shape as get_link_field_options.
+
+    `context` is the requisition's field values as a dict (or a JSON string of
+    one). It is deliberately untyped: attribute rows name the fields they scope by,
+    so listing them here would re-introduce the coupling the attribute engine
+    removed. `company` and `employee` fold in as `company` / `requested_by`."""
     from recruitment.recruitment.doctype.hiring_lead_configuration.hiring_lead_configuration import (
         get_config_users,
     )
 
-    leads, _ = get_config_users(company, employee)
+    leads, _ = get_config_users(company, employee, context)
     filters = {"user_id": ["in", list(leads)]} if leads else None
     return get_link_field_options(
         "Employee", search_text=search_text, query=query, txt=txt,
@@ -3219,18 +3224,19 @@ def get_hiring_lead_options(company=None, employee=None, search_text=None, query
 
 
 @frappe.whitelist()
-def get_recruiter_options(company=None, employee=None, search_text=None, query=None, txt=None, limit=20, include=None):
+def get_recruiter_options(company=None, employee=None, search_text=None, query=None, txt=None, limit=20, include=None, context=None):
     """User options for the Job Requisition 'Assign to Recruiter' field.
 
     Limited to configured recruiters when a Hiring Lead Configuration matches —
-    **Company Wise** by `company`, or **Assignment Framework** by `employee` (the
-    requisition's Hiring Manager / Requested By). Falls back to ALL users when no
-    configuration matches. Same response shape as get_link_field_options."""
+    **Company Wise** by `company`, or **Assignment Framework** by the attributes on
+    its User Assignments, matched against the requisition `context` (see
+    get_hiring_lead_options). Falls back to ALL users when no configuration
+    matches. Same response shape as get_link_field_options."""
     from recruitment.recruitment.doctype.hiring_lead_configuration.hiring_lead_configuration import (
         get_config_users,
     )
 
-    _, recruiters = get_config_users(company, employee)
+    _, recruiters = get_config_users(company, employee, context)
     filters = {"name": ["in", list(recruiters)]} if recruiters else None
     return get_link_field_options(
         "User", search_text=search_text, query=query, txt=txt,
@@ -3239,21 +3245,26 @@ def get_recruiter_options(company=None, employee=None, search_text=None, query=N
 
 
 @frappe.whitelist()
-def get_hiring_lead_employees(company=None, employee=None, search_text=None, limit=20, skip=0):
+def get_hiring_lead_employees(company=None, employee=None, search_text=None, limit=20, skip=0, context=None):
     """UI-facing list of Employees selectable as the Job Requisition 'Hiring lead'.
 
     Mirrors the Desk form behaviour so the external/React UI shows the SAME list:
       * When a **Company Wise** Hiring Lead Configuration matches `company`, the
         result is limited to the configured hiring leads (Employees whose linked
         User is configured for that company).
-      * When an **Assignment Framework** Hiring Lead Configuration matches
-        `employee` (the requisition's Hiring Manager / Requested By, via its
-        Dynamic User Assignments), the configured hiring leads are added too.
-      * When no configuration matches either key, ALL Employees are returned, so
+      * When an **Assignment Framework** Hiring Lead Configuration's User
+        Assignments admit the requisition — their **Attributes** permit the values
+        in `context` for the fields they scope — its hiring leads are added too.
+      * When no configuration matches either way, ALL Employees are returned, so
         the flow is never blocked — identical to the Desk fallback.
 
-    `employee` is the Employee ID whose Assignment Framework membership drives the
-    match; pass the requisition's Hiring Manager. Company Wise callers may omit it.
+    `context` is the requisition's field values as a dict (or a JSON string of
+    one) — pass whatever the form has filled. A field an assignment restricts but
+    the context has not filled *defers* rather than fails, so a half-filled form
+    stays unrestricted and narrows as Company / Department / Designation arrive.
+    `company` and `employee` fold into that context as the Job Requisition fields
+    they are (`company` and `requested_by`), so a caller with only those two keeps
+    working and an assignment may legitimately scope by either.
 
     Unlike `get_hiring_lead_options` (which returns the Desk link-widget
     ``{id, label}`` shape), this returns the richer employee fields a form needs
@@ -3277,10 +3288,10 @@ def get_hiring_lead_employees(company=None, employee=None, search_text=None, lim
         get_config_users,
     )
 
-    leads, _ = get_config_users(company, employee)
+    leads, _ = get_config_users(company, employee, context)
     # `leads` is the set of configured hiring-lead Users matched via the Company
-    # Wise (`company`) and/or Assignment Framework (`employee`) paths. An empty set
-    # means "no config matched" -> no restriction (show everyone).
+    # Wise (`company`) and/or Assignment Framework (attributes vs `context`) paths.
+    # An empty set means "no config matched" -> no restriction (show everyone).
     filters = {"user_id": ["in", list(leads)]} if leads else {}
 
     search = (search_text or "").strip()
