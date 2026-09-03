@@ -186,7 +186,7 @@ export const GoalActionButtons: React.FC<GoalActionButtonsProps> = ({
                   e.stopPropagation();
                   onViewGoal();
                 }}
-                className="inline-flex items-center justify-center h-8 w-8 rounded-lg border border-slate-200 bg-white text-slate-600 shadow-sm transition-all hover:border-slate-300 hover:bg-slate-100 hover:text-slate-900 active:scale-95"
+                className="inline-flex items-center justify-center h-8 w-8 rounded-lg border border-border bg-card text-text-body2 shadow-sm transition-all hover:border-border/80 hover:bg-slate-500/10 hover:text-text-title active:scale-95"
               >
                 <Eye className="h-4 w-4" />
               </button>
@@ -228,7 +228,7 @@ export const GoalActionButtons: React.FC<GoalActionButtonsProps> = ({
                   e.stopPropagation();
                   setActionModalType("send_back");
                 }}
-                className="inline-flex items-center justify-center h-8 w-8 rounded-lg border border-slate-200 bg-white text-slate-600 shadow-sm transition-all hover:border-amber-300 hover:bg-amber-50 hover:text-amber-700 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="inline-flex items-center justify-center h-8 w-8 rounded-lg border border-border bg-card text-text-body2 shadow-sm transition-all hover:border-amber-500/50 hover:bg-amber-500/10 hover:text-amber-500 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Undo2 className="h-4 w-4" />
               </button>
