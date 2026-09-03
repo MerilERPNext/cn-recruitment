@@ -20,22 +20,22 @@ export const KRCheckInsAccordion: React.FC<KRCheckInsAccordionProps> = memo(
     const checkIns = krCheckInsResponse?.data?.check_ins ?? [];
 
     return (
-      <div className="border border-gray-200 rounded-xl overflow-hidden mb-3 bg-white shadow-2xs transition-shadow hover:shadow-xs">
+      <div className="border border-border rounded-xl overflow-hidden mb-3 bg-card shadow-2xs transition-shadow hover:shadow-xs">
         <button
           type="button"
           onClick={onToggle}
-          className="w-full flex items-center justify-between p-3 bg-gray-50/80 hover:bg-gray-100 transition-colors text-left cursor-pointer select-none"
+          className="w-full flex items-center justify-between p-3 bg-slate-500/10 hover:bg-slate-500/20 transition-colors text-left cursor-pointer select-none"
         >
           <div className="flex items-center gap-2 min-w-0 pr-2">
             <Badge label={`KR ${index + 1}`} variant="purple" size="sm" />
-            <span className="text-xs font-semibold text-gray-800 truncate" title={kr.title}>
+            <span className="text-xs font-semibold text-text-title truncate" title={kr.title}>
               {kr.title || `KR ${index + 1}`}
             </span>
-            <span className="text-[10px] text-gray-500 font-medium shrink-0 bg-gray-200/60 px-1.5 py-0.5 rounded-md">
+            <span className="text-[10px] text-text-body2 font-medium shrink-0 bg-slate-500/20 px-1.5 py-0.5 rounded-md">
               {checkIns.length} {checkIns.length === 1 ? 'check-in' : 'check-ins'}
             </span>
           </div>
-          <div className="flex items-center gap-1 shrink-0 text-gray-400 hover:text-gray-600">
+          <div className="flex items-center gap-1 shrink-0 text-text-body2 hover:text-text-title">
             <ChevronDown
               className={`w-4 h-4 transform transition-transform duration-300 ease-in-out ${
                 isOpen ? 'rotate-180' : 'rotate-0'
@@ -50,7 +50,7 @@ export const KRCheckInsAccordion: React.FC<KRCheckInsAccordionProps> = memo(
           }`}
         >
           <div className="overflow-hidden">
-            <div className="p-3 space-y-2.5 max-h-[280px] overflow-y-auto border-t border-gray-100 bg-white">
+            <div className="p-3 space-y-2.5 max-h-[280px] overflow-y-auto border-t border-border bg-card">
               {isError ? (
                 <div className="flex flex-col items-center justify-center p-4 text-center rounded-lg border border-red-100 bg-red-50/60 my-1">
                   <AlertCircle className="w-5 h-5 text-red-500 mb-1.5" />

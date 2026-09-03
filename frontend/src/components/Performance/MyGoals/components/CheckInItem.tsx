@@ -38,9 +38,9 @@ export const formatCheckInDateTime = (value?: string) => {
 };
 
 export const sentimentStyles: Record<GoalCheckInSentiment, { active: string; dot: string }> = {
-  'On Track': { active: 'border-green-300 bg-green-50 text-green-700 ring-1 ring-green-200', dot: 'bg-green-500' },
-  'At Risk': { active: 'border-amber-300 bg-amber-50 text-amber-700 ring-1 ring-amber-200', dot: 'bg-amber-500' },
-  Blocked: { active: 'border-red-300 bg-red-50 text-red-700 ring-1 ring-red-200', dot: 'bg-red-500' },
+  'On Track': { active: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-500 ring-1 ring-emerald-500/20', dot: 'bg-emerald-500' },
+  'At Risk': { active: 'border-amber-500/30 bg-amber-500/10 text-amber-500 ring-1 ring-amber-500/20', dot: 'bg-amber-500' },
+  Blocked: { active: 'border-red-500/30 bg-red-500/10 text-red-500 ring-1 ring-red-500/20', dot: 'bg-red-500' },
 };
 
 export interface CheckInItemProps {
@@ -51,24 +51,24 @@ export const CheckInItem: React.FC<CheckInItemProps> = memo(({ checkIn }) => {
   const hasManagerComment = Boolean(checkIn.manager_comment && checkIn.manager_comment.trim());
 
   return (
-    <div className="rounded-lg border border-gray-100 p-2.5 bg-gray-50/40 hover:border-gray-200 transition-colors">
+    <div className="rounded-lg border border-border p-2.5 bg-card hover:border-primary/50 transition-colors">
       <div className="flex items-start justify-between gap-2">
         <div>
-          <Typography variant="bodySmall" className="font-semibold text-gray-800">
+          <Typography variant="bodySmall" className="font-semibold text-text-title">
             {checkIn.progress}% progress
           </Typography>
-          <Typography variant="caption" className="text-gray-400">
+          <Typography variant="caption" color="body2">
             {formatCheckInDate(checkIn.checkin_date || checkIn.creation)}
           </Typography>
         </div>
         <span
           className={`inline-flex items-center gap-1 whitespace-nowrap rounded-xl px-2 py-0.5 text-[10px] font-semibold ${
-            sentimentStyles[checkIn.sentiment]?.active ?? 'bg-gray-100 text-gray-600'
+            sentimentStyles[checkIn.sentiment]?.active ?? 'bg-slate-500/10 text-text-body2'
           }`}
         >
           <span
             className={`h-1.5 w-1.5 rounded-full ${
-              sentimentStyles[checkIn.sentiment]?.dot ?? 'bg-gray-400'
+              sentimentStyles[checkIn.sentiment]?.dot ?? 'bg-slate-400'
             }`}
           />
           {checkIn.sentiment}
@@ -77,7 +77,8 @@ export const CheckInItem: React.FC<CheckInItemProps> = memo(({ checkIn }) => {
       {checkIn.note && (
         <Typography
           variant="caption"
-          className="mt-1.5 block whitespace-pre-wrap break-words [word-break:break-word] text-gray-600"
+          color="body2"
+          className="mt-1.5 block whitespace-pre-wrap break-words [word-break:break-word]"
         >
           {checkIn.note}
         </Typography>
@@ -87,7 +88,7 @@ export const CheckInItem: React.FC<CheckInItemProps> = memo(({ checkIn }) => {
           href={checkIn.attachment}
           target="_blank"
           rel="noreferrer"
-          className="mt-1.5 inline-flex items-center gap-1 text-xs font-medium text-blue-600 hover:text-blue-800"
+          className="mt-1.5 inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
         >
           <Paperclip className="h-3 w-3" />
           View attachment
@@ -95,9 +96,9 @@ export const CheckInItem: React.FC<CheckInItemProps> = memo(({ checkIn }) => {
         </a>
       )}
       {hasManagerComment && (
-        <div className="mt-2.5 rounded-lg border border-blue-100 bg-blue-50/60 p-2.5 text-xs">
+        <div className="mt-2.5 rounded-lg border border-blue-500/30 bg-blue-500/10 p-2.5 text-xs">
           <div className="flex items-center justify-between gap-2 mb-1">
-            <span className="font-semibold text-blue-900 inline-flex items-center gap-1">
+            <span className="font-semibold text-primary inline-flex items-center gap-1">
               <MessageSquare className="h-3 w-3 text-blue-600" />
               Manager Comment
             </span>
