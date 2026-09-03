@@ -9,7 +9,6 @@ import DataListView from "../../DataListView";
 import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 import { useNavigate } from "react-router-dom";
-import WrapperHoverCard from "../../shared/WrapperHoverCard";
 
 
 // ─── Raw API shape ────────────────────────────────────────────────────────────
@@ -306,9 +305,7 @@ export default function EmployeeOnboardingList() {
                   style={{ gridTemplateColumns: columnWidths.join(" ") }}
                 >
                   <Typography variant="bodySmall" className="font-medium text-center">
-                    <WrapperHoverCard employeeId={item.employee}>
-                      {item.employeeName}
-                    </WrapperHoverCard>
+                    {item.employeeName}
                   </Typography>
                   <Typography variant="bodySmall" className="font-medium text-center">
                     {item.department}
@@ -382,7 +379,7 @@ export default function EmployeeOnboardingList() {
                       <div className="flex flex-col gap-1">
                         <Typography variant="mobileCardLabel">Employee Name</Typography>
                         <Typography variant="mobileCardValue">
-                          <WrapperHoverCard employeeId={item.employee}>{item.employeeName}</WrapperHoverCard></Typography>
+                          {item.employeeName}</Typography>
                       </div>
                       <StatusBadge status={item.boardingStatus} />
                     </div>
