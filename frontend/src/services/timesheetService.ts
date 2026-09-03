@@ -5,6 +5,7 @@ import {
   WeeklyTimesheetParams,
   WeeklyTimesheetResponse,
   TimesheetEntryPayload,
+  TimesheetSettings,
 } from "../types/timesheet";
 
 export const createTimesheet = async (payload: TimesheetPayload): Promise<{ data: TimesheetResponse }> => {
@@ -33,7 +34,12 @@ export const createOrUpdateTimesheetEntries = async (payload: TimesheetEntryPayl
   return res;
 };
 
-export const getTimesheetSettings = async (): Promise<{ show_subtask: number }> => {
-  const res = await FrappeAPI.getDocument("Timesheet Settings", "Timesheet Settings", ["show_subtask"]);
-  return res as { show_subtask: number };
+export const getTimesheetSettings = async (): Promise<TimesheetSettings> => {
+  const res = await FrappeAPI.getDocument("Timesheet Settings", "Timesheet Settings", [
+    "show_subtask",
+    "hide_holiday_timesheet",
+    "allow_weekoff_timesheet",
+    "show_select_days_to_submit",
+  ]);
+  return res as TimesheetSettings;
 };
