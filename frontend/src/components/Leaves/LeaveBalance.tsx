@@ -300,11 +300,10 @@ const LeaveBalance: React.FC = () => {
                 <div className="grid grid-cols-3 gap-4">
                   {showTotalLeavesCard && (
                     <div
-                      // style={{ backgroundColor: "#EFF6FF" }}
-                      className="rounded-xl flex flex-col items-center p-3 gap-2 bg-primary/10"
+                      className="rounded-xl flex flex-col items-center p-3 gap-2 bg-primary/10 border border-primary/20 transition-colors"
                     >
-                      <span className="bg-white rounded-lg w-12 h-12 flex items-center justify-center">
-                        <Calendar size={24} className="text-primary-600" />
+                      <span className="bg-card/90 rounded-lg w-12 h-12 flex items-center justify-center border border-border/50 shadow-xs">
+                        <Calendar size={24} className="text-primary" />
                       </span>
 
                       <Typography
@@ -318,19 +317,22 @@ const LeaveBalance: React.FC = () => {
                         )}
                       </Typography>
 
-                      <p className="text-sm text-gray-500 font-medium leading-none">
+                      <Typography
+                        variant="bodySmall"
+                        color="body2"
+                        className="font-medium leading-none text-center"
+                      >
                         Total Leaves
-                      </p>
+                      </Typography>
                     </div>
                   )}
 
                   {showAvailedLeavesCard && (
                     <div
-                      style={{ backgroundColor: "#FFF4ED" }}
-                      className="rounded-xl flex flex-col items-center p-3 gap-2"
+                      className="rounded-xl flex flex-col items-center p-3 gap-2 bg-[#FFF4ED] dark:bg-[#2A1C12] border border-orange-200 dark:border-orange-900/50 transition-colors"
                     >
-                      <span className="bg-white rounded-lg w-12 h-12 flex items-center justify-center">
-                        <Plane size={24} className="text-[#E17100]" />
+                      <span className="bg-card/90 rounded-lg w-12 h-12 flex items-center justify-center border border-border/50 shadow-xs">
+                        <Plane size={24} className="text-orange-600 dark:text-orange-400" />
                       </span>
 
                       <Typography
@@ -344,19 +346,22 @@ const LeaveBalance: React.FC = () => {
                         )}
                       </Typography>
 
-                      <p className="text-sm text-gray-500 font-medium leading-none">
+                      <Typography
+                        variant="bodySmall"
+                        color="body2"
+                        className="font-medium leading-none text-center"
+                      >
                         Availed Leaves
-                      </p>
+                      </Typography>
                     </div>
                   )}
 
                   {showBalanceLeavesCard && (
                     <div
-                      style={{ backgroundColor: "#F0FDF4" }}
-                      className="rounded-xl flex flex-col items-center p-3 gap-2"
+                      className="rounded-xl flex flex-col items-center p-3 gap-2 bg-[#F0FDF4] dark:bg-[#0D281E] border border-emerald-200 dark:border-emerald-900/50 transition-colors"
                     >
-                      <span className="bg-white rounded-lg w-12 h-12 flex items-center justify-center">
-                        <Calendar size={24} className="text-[#00A63E]" />
+                      <span className="bg-card/90 rounded-lg w-12 h-12 flex items-center justify-center border border-border/50 shadow-xs">
+                        <Calendar size={24} className="text-emerald-600 dark:text-emerald-400" />
                       </span>
 
                       <Typography
@@ -370,9 +375,13 @@ const LeaveBalance: React.FC = () => {
                         )}
                       </Typography>
 
-                      <p className="text-sm text-gray-500 font-medium leading-none">
+                      <Typography
+                        variant="bodySmall"
+                        color="body2"
+                        className="font-medium leading-none text-center"
+                      >
                         Balance Leaves
-                      </p>
+                      </Typography>
                     </div>
                   )}
                 </div>
@@ -381,14 +390,21 @@ const LeaveBalance: React.FC = () => {
 
             <div className="space-y-4 p-4">
               <div>
-                <h3 className="text-lg font-semibold text-gray-900">
+                <Typography
+                  variant="subheading"
+                  color="title"
+                  className="font-semibold"
+                >
                   Leave Balance
-                </h3>
-                <p className="text-sm text-gray-500">
+                </Typography>
+                <Typography
+                  variant="bodySmall"
+                  color="body2"
+                >
                   {isEmployeeInactive
                     ? `Balances as of Last Working Day ${formatToIndianDate(leaveBalanceDate)}`
                     : "Balances as of today"}
-                </p>
+                </Typography>
               </div>
               {leaveBalance.length < 1 ? (
                 <NoDataFound
@@ -400,27 +416,32 @@ const LeaveBalance: React.FC = () => {
                   {leaveBalance.map((leave) => (
                     <div
                       key={leave?.type}
-                      className="border border-primary/20 rounded-2xl p-4 flex items-start gap-4 bg-white"
+                      className="border border-primary/20 rounded-2xl p-4 flex items-start gap-4 bg-card hover:border-primary/40 transition-colors cursor-pointer"
                       onClick={() => toggleTransactions(leave.type)}
                     >
                       <div className="bg-primary/10 rounded-lg p-3">
-                        <Briefcase className="text-primary-600" size={20} />
+                        <Briefcase className="text-primary" size={20} />
                       </div>
 
                       <div className="flex-1">
                         <div className="flex flex-col justify-between items-start">
                           <div className="flex items-center gap-1 justify-between w-full">
                             <div className="flex items-center gap-2 min-w-0 flex-1 overflow-hidden">
-                              <div className="text-base font-semibold text-gray-900">
-                                {/* {leave.entitled} */}
+                              <Typography
+                                variant="bodyMedium"
+                                color="title"
+                                className="font-semibold"
+                              >
                                 {leave.balance}
-                              </div>
-                              <p
-                                className="text-sm text-gray-600 truncate whitespace-nowrap max-w-[120px] overflow-hidden text-ellipsis cursor-pointer flex-shrink-0"
+                              </Typography>
+                              <Typography
+                                variant="bodySmall"
+                                color="body2"
+                                className="truncate whitespace-nowrap max-w-[120px] overflow-hidden text-ellipsis cursor-pointer flex-shrink-0"
                                 title={leave.type}
                               >
                                 {leave.type}
-                              </p>
+                              </Typography>
                             </div>
 
                             {canRequestLeave && (
@@ -432,7 +453,7 @@ const LeaveBalance: React.FC = () => {
                                     leaveType: leave?.leave_id,
                                   });
                                 }}
-                                className="text-[#98A9CD] hover:text-[#98b1e6] ml-auto  mr-2.5"
+                                className="text-gray-400 hover:text-primary transition-colors ml-auto mr-2.5"
                               >
                                 <Plus size={18} />
                               </button>
@@ -443,7 +464,7 @@ const LeaveBalance: React.FC = () => {
                                 e.stopPropagation();
                                 handleOpenDrawer(leave);
                               }}
-                              className="text-[#98A9CD] hover:text-[#98b1e6]"
+                              className="text-gray-400 hover:text-primary transition-colors"
                             >
                               <ScrollText size={18} />
                             </button>
@@ -452,7 +473,7 @@ const LeaveBalance: React.FC = () => {
                           {leave?.visibility_flags?.show_carry_over && (
                             <Typography
                               variant="bodySmall"
-                              className=" mr-2.5 text-primary whitespace-nowrap items-start"
+                              className="mr-2.5 text-primary whitespace-nowrap items-start"
                             >
                               <span className="font-semibold">
                                 {leave.carry_over}
@@ -462,26 +483,40 @@ const LeaveBalance: React.FC = () => {
                           )}
                         </div>
 
-                        <div className="my-3 h-px bg-primary/20" />
+                        <div className="my-3 h-px bg-border" />
 
                         <div className="grid grid-cols-2 gap-4">
                           <div>
-                            <p className="text-sm font-semibold text-gray-900">
+                            <Typography
+                              variant="bodyMedium"
+                              color="title"
+                              className="font-semibold"
+                            >
                               {leave.availed}
-                            </p>
-                            <p className="text-xs text-gray-600">
+                            </Typography>
+                            <Typography
+                              variant="bodySmall"
+                              color="body2"
+                            >
                               Already taken
-                            </p>
+                            </Typography>
                           </div>
 
                           {showCardTotalLeavesData && (
                             <div>
-                              <p className="text-sm font-semibold text-gray-900">
+                              <Typography
+                                variant="bodyMedium"
+                                color="title"
+                                className="font-semibold"
+                              >
                                 {leave.entitled}
-                              </p>
-                              <p className="text-xs text-gray-600">
+                              </Typography>
+                              <Typography
+                                variant="bodySmall"
+                                color="body2"
+                              >
                                 Total Leaves
-                              </p>
+                              </Typography>
                             </div>
                           )}
                         </div>

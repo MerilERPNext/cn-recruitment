@@ -81,7 +81,7 @@ const ContextualPopup: FC<ContextualPopupProps> = ({
   return (
     <div
       ref={popupRef}
-      className={`fixed z-50 bg-white border border-gray-200 rounded-md shadow-md min-w-[150px] ${className}`}
+      className={`fixed z-50 bg-white dark:bg-[#102030] border border-slate-200 dark:border-[#1E3A4C] rounded-xl shadow-xl min-w-[160px] ${className}`}
       style={
         position
           ? { top: `${position.top}px`, right: `${position.right}px` }

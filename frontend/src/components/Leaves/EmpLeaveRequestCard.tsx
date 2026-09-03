@@ -290,7 +290,7 @@ const EmpLeaveRequestCard = ({
         <div
           className="cursor-pointer border-t-4 border-x border-b 
       border-x-primary/20 border-b-primary/20 
-      shadow-sm border-primary bg-white rounded-xl"
+      shadow-sm border-primary bg-card rounded-xl"
           onClick={() => onClick?.()}
         >
           <div className="p-4 flex flex-col gap-3 w-full">
@@ -358,7 +358,7 @@ const EmpLeaveRequestCard = ({
                     e.stopPropagation();
                     setShowDescriptionModal(true);
                   }}
-                  className="absolute bottom-0 right-0 text-primary text-sm bg-white pl-1"
+                  className="absolute bottom-0 right-0 text-primary text-sm bg-card pl-1"
                 >
                   Read more
                 </button>

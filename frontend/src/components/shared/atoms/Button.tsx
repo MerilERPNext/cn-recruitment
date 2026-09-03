@@ -77,7 +77,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     const COLOR_STYLES: Record<string, Record<ButtonVariant, string>> = {
       primary: {
         contain:
-          "bg-primary text-white hover:bg-primary-600 active:bg-primary-700",
+          "bg-primary !text-white hover:bg-primary-600 active:bg-primary-700",
         outline: "border border-primary text-primary hover:bg-primary-50",
         subtle: "text-primary hover:bg-primary/10",
         soft: "bg-primary-50 text-primary-600 hover:bg-primary-100",

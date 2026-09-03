@@ -109,7 +109,8 @@ const EmployeeDocumentsPage: React.FC = () => {
   const getFileUrl = (path: string) => {
     if (!path) return "";
     if (path.startsWith("http")) return path;
-    return `${window.location.origin}${path}`;
+    const cleanPath = path.startsWith("/") ? path : `/${path}`;
+    return `${window.location.origin}${cleanPath.split("/").map((s) => encodeURIComponent(s)).join("/")}`;
   };
 
   const tabs = [
@@ -146,7 +147,7 @@ const EmployeeDocumentsPage: React.FC = () => {
               <Typography
                 variant="bodyMedium"
                 color="body2"
-                className="max-sm:text-sm"
+                className="max-sm:text-sm text-slate-500 dark:text-slate-400"
               >
                 View and manage all your employee documents in one place
               </Typography>
@@ -167,7 +168,7 @@ const EmployeeDocumentsPage: React.FC = () => {
             />
           </div>
         ) : (
-          <div className="flex overflow-x-auto gap-1 py-2 mb-4 scrollbar-hide">
+          <div className="flex overflow-x-auto gap-1.5 py-2 mb-4 scrollbar-hide">
             {tabs.map((tab) => (
               <Button
                 key={tab.key}
@@ -246,7 +247,7 @@ const EmployeeDocumentsPage: React.FC = () => {
                 </button>
               </div>
 
-              <div className="flex-1 overflow-hidden">
+              <div className="flex-1 overflow-hidden bg-slate-100 dark:bg-[#040B12]">
                 <FilePreview
                   fileUrl={getFileUrl(selectedFile)}
                   fileName={selectedFile}
@@ -262,7 +263,7 @@ const EmployeeDocumentsPage: React.FC = () => {
                         id="acknowledgeCheckbox"
                         checked={acknowledged}
                         onChange={handleCheckboxChange}
-                        className="accent-green-600 w-4 h-4 cursor-pointer"
+                        className="accent-emerald-600 w-4 h-4 cursor-pointer"
                       />
                       <span
                         className={`font-medium ${acknowledged ? "text-success" : "text-text-body1"
@@ -275,11 +276,19 @@ const EmployeeDocumentsPage: React.FC = () => {
                 </div>
 
                 <div className="flex gap-2">
-                  <Button variant="soft" onClick={closeModal}>
+                  <Button
+                    variant="outline"
+                    onClick={closeModal}
+                    className="border-slate-300 dark:border-[#1E3A4C] text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-[#162A3E]"
+                  >
                     Close
                   </Button>
                   {showAcknowledgement && acknowledged && (
-                    <Button variant="contain" onClick={handleSubmit}>
+                    <Button
+                      variant="contain"
+                      onClick={handleSubmit}
+                      className="bg-cyan-600 dark:bg-cyan-500 hover:bg-cyan-700 dark:hover:bg-cyan-600 !text-white"
+                    >
                       Submit
                     </Button>
                   )}

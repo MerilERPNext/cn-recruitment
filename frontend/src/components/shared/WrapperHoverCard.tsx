@@ -311,7 +311,7 @@ const WrapperHoverCard: React.FC<WrapperHoverCardProps> = ({
               }}
             >
               <div
-                className={`relative w-[320px] p-5 rounded-xl bg-white shadow-sm hover:shadow-2xl  transition-all duration-300 ${cardClassName}`}
+                className={`relative w-[320px] p-5 rounded-xl bg-white dark:bg-[#0B1724] border border-slate-200 dark:border-[#1E3A4C] shadow-sm hover:shadow-2xl transition-all duration-300 ${cardClassName}`}
               >
                 {/* Close Button for Mobile */}
                 <button
@@ -321,7 +321,7 @@ const WrapperHoverCard: React.FC<WrapperHoverCardProps> = ({
                     handleLeave(true);
                   }}
                   type="button"
-                  className="md:hidden absolute top-3 right-3 p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 rounded-full transition-colors z-10"
+                  className="md:hidden absolute top-3 right-3 p-1.5 text-slate-400 hover:bg-slate-100 dark:hover:bg-[#162A3E] hover:text-slate-600 dark:hover:text-slate-200 rounded-full transition-colors z-10"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -329,17 +329,17 @@ const WrapperHoverCard: React.FC<WrapperHoverCardProps> = ({
                 {/* Loading */}
                 {isLoading && (
                   <div className="flex justify-center py-6">
-                    <Loader2 className="w-7 h-7 animate-spin text-gray-600" />
+                    <Loader2 className="w-7 h-7 animate-spin text-slate-500 dark:text-slate-400" />
                   </div>
                 )}
 
                 {/* Error */}
                 {!isLoading && isError && (
                   <div className="py-6 text-center">
-                    <p className="text-sm font-medium text-red-600">
+                    <p className="text-sm font-medium text-rose-600 dark:text-rose-400">
                       Failed to load employee info
                     </p>
-                    <p className="text-xs text-gray-400 mt-1">
+                    <p className="text-xs text-slate-400 mt-1">
                       {(error as { message?: string })?.message || "Please try again"}
                     </p>
                   </div>
@@ -359,7 +359,7 @@ const WrapperHoverCard: React.FC<WrapperHoverCardProps> = ({
                           {emp?.Image && typeof emp.Image === "string" && !imgError ? (
                             <img
                               src={emp.Image}
-                              className="w-16 h-16 rounded-full object-cover"
+                              className="w-16 h-16 rounded-full object-cover border border-slate-200 dark:border-[#1E3A4C]"
                               alt="avatar"
                               onError={() => setImgError(true)}
                             />
@@ -377,21 +377,21 @@ const WrapperHoverCard: React.FC<WrapperHoverCardProps> = ({
                           )}
 
                           <div className="flex-1 min-w-0 group pr-6">
-                            <p className="text-sm font-semibold text-gray-900 truncate group-hover:whitespace-normal group-hover:overflow-visible">
+                            <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate group-hover:whitespace-normal group-hover:overflow-visible">
                               {emp["Full Name"]}
                             </p>
 
-                            <p className="text-sm text-gray-600 mt-0.5 truncate group-hover:whitespace-normal group-hover:overflow-visible">
+                            <p className="text-sm text-slate-600 dark:text-slate-300 mt-0.5 truncate group-hover:whitespace-normal group-hover:overflow-visible">
                               {emp.Designation}
                             </p>
 
-                            <p className="text-sm text-gray-500 mt-1 truncate group-hover:whitespace-normal group-hover:overflow-visible">
+                            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 truncate group-hover:whitespace-normal group-hover:overflow-visible">
                               {emp["Company Email"] || emp["Personal Email"]}
                             </p>
                           </div>
                         </div>
 
-                        <hr className="my-3 border-gray-200" />
+                        <hr className="my-3 border-slate-200 dark:border-[#1E3A4C]" />
 
                         {/* Details */}
                         <div className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
@@ -421,12 +421,12 @@ const WrapperHoverCard: React.FC<WrapperHoverCardProps> = ({
                               return (
                                 <div key={idx} className="min-w-0">
                                   <p
-                                    className="text-gray-500 truncate"
+                                    className="text-slate-500 dark:text-slate-400 truncate"
                                     title={item.label}
                                   >
                                     {item.label}
                                   </p>
-                                  <p className="font-medium text-gray-900 break-words">
+                                  <p className="font-medium text-slate-900 dark:text-slate-100 break-words">
                                     {displayValue}
                                   </p>
                                 </div>

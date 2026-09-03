@@ -35,8 +35,8 @@ const DateBadge: React.FC<DateBadgeProps> = ({ date, type }) => {
 
   const isOptional = type === "Optional" || type === "Optional Holiday";
   const colorClass = isOptional
-    ? "bg-blue-50 text-blue-600"
-    : "bg-primary/10 text-primary";
+    ? "bg-[#EEF2FF] dark:bg-[#1E1B4B]/60 border border-[#C7D2FE] dark:border-[#3730A3]/60 text-[#4F46E5] dark:text-[#A5B4FC]"
+    : "bg-primary/10 dark:bg-primary/15 border border-primary/20 dark:border-primary/30 text-primary";
 
   return (
     <div
@@ -74,7 +74,7 @@ const HolidayRow: React.FC<{
   };
 
   return (
-    <tr className="border-b border-gray-100 last:border-0 hover:bg-gray-50/50 transition-colors">
+    <tr className="border-b border-border last:border-0 hover:bg-primary/5 transition-colors">
       <td className="py-4 pl-4 pr-3 align-middle">
         <DateBadge
           date={holiday.date}
@@ -108,7 +108,7 @@ const HolidayRow: React.FC<{
                 hideHalfDayToggle: true,
               })
             }
-            className="px-4 py-1.5 rounded-md border border-primary-200 text-primary text-sm font-medium hover:bg-purple-50 transition-colors"
+            className="px-4 py-1.5 rounded-md border border-primary/30 text-primary text-sm font-medium hover:bg-primary/10 transition-colors"
           >
             Request
           </button>
@@ -247,7 +247,7 @@ const Holidays: React.FC = () => {
   }
 
   return (
-    <div className="px-3 py-4 sm:p-6 min-h-full pb-24 flex bg-white/50">
+    <div className="px-3 py-4 sm:p-6 min-h-full pb-24 flex bg-app">
       <div className="w-full">
         <div className="flex items-center justify-between mb-6">
           <CustomDropdown
@@ -289,7 +289,7 @@ const Holidays: React.FC = () => {
         )}
 
         {!attendancePolicy && showOptionalOnly && (
-          <p className="text-center text-red-500 mb-6 text-sm flex items-center justify-center gap-2 bg-red-50 py-2 rounded-lg border border-red-100">
+          <p className="text-center text-red-500 mb-6 text-sm flex items-center justify-center gap-2 bg-red-50 dark:bg-red-950/40 py-2 rounded-lg border border-red-100 dark:border-red-900/50">
             <span className="font-bold">!</span> Please contact HR to assign an
             attendance policy
           </p>
@@ -301,10 +301,10 @@ const Holidays: React.FC = () => {
             subtitle="There are no holidays available for the selected year."
           />
         ) : (
-          <div className="rounded-2xl border border-gray-100 overflow-x-auto bg-white shadow-sm ring-1 ring-gray-900/5">
+          <div className="rounded-2xl border border-border overflow-x-auto bg-card shadow-sm">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="bg-gray-50/50">
+                <tr className="bg-surface-sunken/40">
                   <th className="py-4 pl-4 pr-3 text-sm font-semibold text-gray-900">
                     Date
                   </th>
@@ -325,7 +325,7 @@ const Holidays: React.FC = () => {
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-border">
                 {listToShow.map((h, i) => (
                   <HolidayRow
                     key={h.name}

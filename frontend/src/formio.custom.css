@@ -102,6 +102,7 @@
 .formio-select-item-main .primary {
   font-size: 14px;
   font-weight: 600;
+  color: rgb(var(--text-title)) !important;
 }
 
 /* Optional secondary text */

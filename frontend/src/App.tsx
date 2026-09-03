@@ -15,7 +15,7 @@ import ResponsiveDashboard from "./components/ResponsiveDashboard";
 import { useFrappeDocumentCount } from "./hooks/useFrappeQuery";
 import { useCurrentEmployeeDetails } from "./hooks/useEmployee";
 
-import toast, { ToastBar, Toaster } from "react-hot-toast";
+import toast, { Toaster } from "react-hot-toast";
 import ModalWrapper from "./components/ModalWrapper";
 import { RequestLeaveModalProvider } from "./components/Leaves/RequestLeaveModalContext";
 import EmployeeErrorBoundary from "./components/EmployeeErrorBoundary";
@@ -223,66 +223,39 @@ const App: React.FC = () => {
                 <GlobalLeaveRequestModal />
                 <Toaster
                   position="top-center"
-                  containerClassName="z-50 !top-4 md:!top-6"
-                  toastOptions={{
-                    style: {
-                      maxWidth: "90vw",
-                      width: "380px",
-                    }
-                  }}
+                  containerClassName="z-[9999] !top-4 md:!top-6"
                 >
                   {(t) => (
-                    <ToastBar
-                      toast={t}
-                      style={{
-                        ...t.style,
-                        background: "white",
-                        borderLeft:
-                          t.type === "success"
-                            ? "4px solid #34D399"
-                            : "4px solid #EF4444",
-                        boxShadow:
-                          "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)",
-                        minWidth: "280px",
-                        maxWidth: "90vw",
-                        padding: "0.75rem 1rem",
-                        borderRadius: "0.5rem",
-                        transition:
-                          "all 300ms cubic-bezier(0.175, 0.885, 0.32, 1.275)",
-                      }}
+                    <div
+                      className={`
+                        flex items-center gap-3 px-4 py-3 rounded-xl shadow-2xl transition-all duration-300 max-w-[90vw] w-[380px]
+                        bg-white dark:bg-[#102030] text-slate-800 dark:text-slate-100
+                        border border-slate-200 dark:border-[#1E3A4C]
+                        ${t.type === "success" ? "border-l-4 border-l-emerald-500" : t.type === "error" ? "border-l-4 border-l-rose-500" : "border-l-4 border-l-cyan-500"}
+                      `}
                     >
-                      {({ message }: { message: React.ReactNode }) => (
-                        <div className="flex items-start w-full min-w-0">
-                          {t.type === "success" ? (
-                            <CheckCircle2
-                              className="h-5 w-5 text-green-500 mr-2 shrink-0 mt-0.5"
-                              strokeWidth={2}
-                            />
-                          ) : (
-                            <CircleX
-                              className="h-5 w-5 text-red-500 mr-2 shrink-0 mt-0.5"
-                              strokeWidth={2}
-                            />
-                          )}
-                          <div
-                            className="flex-1 min-w-0 overflow-y-auto pr-1 text-sm text-gray-700 break-words custom-toast-scrollbar"
-                            style={{
-                              scrollbarWidth: "thin",
-                            }}
-                          >
-                            {message}
-                          </div>
-                          {t.type !== "loading" && (
-                            <button
-                              className="ml-3 p-1 rounded-full text-gray-400 hover:bg-gray-100 hover:text-gray-600 focus:outline-none transition-colors duration-200 shrink-0"
-                              onClick={() => toast.dismiss(t.id)}
-                            >
-                              <X className="h-4 w-4" />
-                            </button>
-                          )}
-                        </div>
+                      {t.type === "success" ? (
+                        <CheckCircle2 className="h-5 w-5 text-emerald-500 shrink-0" strokeWidth={2} />
+                      ) : t.type === "error" ? (
+                        <CircleX className="h-5 w-5 text-rose-500 shrink-0" strokeWidth={2} />
+                      ) : (
+                        <CheckCircle2 className="h-5 w-5 text-cyan-500 shrink-0" strokeWidth={2} />
                       )}
-                    </ToastBar>
+
+                      <div className="flex-1 min-w-0 text-sm font-medium leading-snug break-words text-slate-800 dark:text-slate-100">
+                        {typeof t.message === "function" ? t.message(t) : t.message}
+                      </div>
+
+                      {t.type !== "loading" && (
+                        <button
+                          type="button"
+                          className="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-[#162A3E] text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors shrink-0"
+                          onClick={() => toast.dismiss(t.id)}
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      )}
+                    </div>
                   )}
                 </Toaster>
                 <MandatoryPoliciesHandler />

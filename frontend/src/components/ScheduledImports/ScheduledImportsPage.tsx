@@ -341,12 +341,11 @@ const ScheduledImportsPage: React.FC = () => {
                 <Typography
                   variant="h3"
                   component="h1"
-                  color="title"
-                  className="font-bold"
+                  className="font-bold text-slate-900 dark:text-slate-100"
                 >
                   Imports Center
                 </Typography>
-                <Typography variant="bodySmall" color="body2">
+                <Typography variant="bodySmall" className="text-slate-500 dark:text-slate-400">
                   Track and manage all your scheduled data imports
                 </Typography>
               </div>
@@ -354,7 +353,7 @@ const ScheduledImportsPage: React.FC = () => {
                 <div className="flex items-center">
                   <input
                     type="month"
-                    className="border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-gray-700"
+                    className="border border-slate-300 dark:border-[#1E3A4C] rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500 bg-white dark:bg-[#102030] text-slate-800 dark:text-slate-100"
                     value={monthFilter}
                     onChange={(e) => setMonthFilter(e.target.value)}
                   />
@@ -363,7 +362,7 @@ const ScheduledImportsPage: React.FC = () => {
                   size="md"
                   bgColor="primary"
                   onClick={handleImport}
-                  className="flex items-center gap-2"
+                  className="flex items-center gap-2 bg-cyan-600 dark:bg-cyan-500 hover:bg-cyan-700 dark:hover:bg-cyan-600 !text-white"
                 >
                   <Upload size={16} />
                   Import

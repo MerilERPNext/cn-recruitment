@@ -49,6 +49,11 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     const root = document.documentElement;
     root.dataset.theme = theme;
+    if (theme === "dark") {
+      root.classList.add("dark");
+    } else {
+      root.classList.remove("dark");
+    }
 
     // Skip the transition on the very first paint, otherwise the whole page
     // visibly fades in on load. Only user-driven switches animate.

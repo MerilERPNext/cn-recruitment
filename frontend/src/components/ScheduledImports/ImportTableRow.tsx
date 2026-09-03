@@ -47,12 +47,12 @@ const ImportTableRow: React.FC<ImportTableRowProps> = ({
 
   return (
     <div
-      className="grid gap-4 px-6 py-4 border-t border-gray-100 hover:bg-blue-50/30 transition-colors items-center min-w-max bg-white"
+      className="grid gap-4 px-6 py-4 border-t border-slate-100 dark:border-[#1E3A4C]/60 hover:bg-slate-50 dark:hover:bg-[#102030] transition-colors items-center min-w-max bg-white dark:bg-[#0B1724]"
       style={{ gridTemplateColumns: columnWidths.join(" ") }}
     >
       {/* Import ID */}
       <div className="flex items-center justify-center">
-        <Typography variant="bodySmall" className="font-semibold text-gray-800">
+        <Typography variant="bodySmall" className="font-semibold text-slate-800 dark:text-slate-100">
           {item.name}
         </Typography>
       </div>
@@ -65,7 +65,7 @@ const ImportTableRow: React.FC<ImportTableRowProps> = ({
         >
           <Typography
             variant="bodySmall"
-            className="font-medium text-gray-800 truncate block cursor-pointer"
+            className="font-medium text-slate-800 dark:text-slate-100 truncate block cursor-pointer"
           >
             {item.import_type || "—"}
           </Typography>
@@ -76,9 +76,9 @@ const ImportTableRow: React.FC<ImportTableRowProps> = ({
       <div className="flex items-center justify-center gap-1.5">
         <FileText
           size={14}
-          className="font-medium text-gray-800 flex-shrink-0"
+          className="font-medium text-slate-600 dark:text-slate-400 flex-shrink-0"
         />
-        <Typography variant="bodySmall" className="text-gray-600">
+        <Typography variant="bodySmall" className="text-slate-600 dark:text-slate-300">
           File
         </Typography>
       </div>
@@ -91,7 +91,7 @@ const ImportTableRow: React.FC<ImportTableRowProps> = ({
         >
           <Typography
             variant="bodySmall"
-            className="font-medium text-gray-800 truncate block cursor-pointer"
+            className="font-medium text-slate-800 dark:text-slate-100 truncate block cursor-pointer"
           >
             {fileName}
           </Typography>
@@ -100,7 +100,7 @@ const ImportTableRow: React.FC<ImportTableRowProps> = ({
 
       {/* Initiated On */}
       <div className="flex items-center justify-center">
-        <Typography variant="bodySmall" className="font-medium text-gray-800">
+        <Typography variant="bodySmall" className="font-medium text-slate-700 dark:text-slate-300">
           {initiatedOn}
         </Typography>
       </div>
@@ -118,7 +118,7 @@ const ImportTableRow: React.FC<ImportTableRowProps> = ({
           >
             <Typography
               variant="bodySmall"
-              className="font-medium text-gray-800 truncate block"
+              className="font-medium text-slate-800 dark:text-slate-100 hover:text-cyan-600 dark:hover:text-cyan-400 truncate block transition-colors"
             >
               {employeeData?.employee_name || employeeData?.name}
             </Typography>
@@ -130,7 +130,7 @@ const ImportTableRow: React.FC<ImportTableRowProps> = ({
       <div className="flex items-center justify-center min-w-0">
         <Typography
           variant="bodySmall"
-          className="font-medium text-gray-800 truncate block"
+          className="font-medium text-slate-700 dark:text-slate-300 truncate block"
         >
           {item.schedule_the_import ?? "—"}
         </Typography>
@@ -149,7 +149,7 @@ const ImportTableRow: React.FC<ImportTableRowProps> = ({
         >
           <Typography
             variant="bodySmall"
-            className="font-medium text-gray-800 text-center truncate block w-full cursor-pointer"
+            className="font-medium text-slate-700 dark:text-slate-300 text-center truncate block w-full cursor-pointer"
           >
             {truncatedLog}
           </Typography>
@@ -176,7 +176,7 @@ const ImportTableRow: React.FC<ImportTableRowProps> = ({
             variant="contain"
             bgColor="primary"
             onClick={() => onDownloadFile(item)}
-            className="text-xs flex items-center gap-1 flex-shrink-0"
+            className="text-xs flex items-center gap-1 flex-shrink-0 bg-cyan-600 dark:bg-cyan-500 hover:bg-cyan-700 dark:hover:bg-cyan-600 !text-white"
           >
             <Download size={12} />
             Download File

@@ -143,12 +143,12 @@ const EmployeeTable = ({
   return (
     <>
       {isDesktop ? (
-        <div className="overflow-x-auto rounded-xl border border-gray-100 bg-white shadow-sm scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
+        <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-[#1E3A4C] bg-white dark:bg-[#0B1724] shadow-sm scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-slate-700 scrollbar-track-transparent">
           <table className="min-w-full border-separate border-spacing-0">
-            <thead className="bg-gray-50">
+            <thead className="bg-slate-50 dark:bg-[#102030]">
               <tr className="sticky top-0 z-10 shadow-sm">
                 {hasCheckboxesOrChevrons && (
-                  <th className="whitespace-nowrap sticky top-0 bg-gray-50 border-b border-r border-gray-100 px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-gray-700 group first:rounded-tl-xl transition-colors hover:bg-gray-100 w-[48px]">
+                  <th className="whitespace-nowrap sticky top-0 bg-slate-50 dark:bg-[#102030] border-b border-r border-slate-200 dark:border-[#1E3A4C] px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 group first:rounded-tl-xl transition-colors hover:bg-slate-100 dark:hover:bg-[#162A3E] w-[48px]">
                     {showCheckboxColumn ? (
                       <div className="flex items-center gap-2">
                         <input
@@ -158,7 +158,7 @@ const EmployeeTable = ({
                             if (el) el.indeterminate = isSomeSelected;
                           }}
                           onChange={handleSelectAll}
-                          className="w-4 h-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 cursor-pointer shadow-sm"
+                          className="w-4 h-4 rounded border-slate-300 dark:border-slate-600 text-cyan-600 focus:ring-cyan-500 cursor-pointer shadow-sm bg-white dark:bg-[#102030]"
                         />
                       </div>
                     ) : (
@@ -166,28 +166,28 @@ const EmployeeTable = ({
                     )}
                   </th>
                 )}
-                <th className="whitespace-nowrap sticky top-0 bg-gray-50 border-b border-r border-gray-100 px-5 py-3 text-left text-xs font-bold uppercase tracking-wider text-gray-700 transition-colors hover:bg-gray-100">
+                <th className="whitespace-nowrap sticky top-0 bg-slate-50 dark:bg-[#102030] border-b border-r border-slate-200 dark:border-[#1E3A4C] px-5 py-3 text-left text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 transition-colors hover:bg-slate-100 dark:hover:bg-[#162A3E]">
                   Employee
                 </th>
-                <th className="whitespace-nowrap sticky top-0 bg-gray-50 border-b border-r border-gray-100 px-5 py-3 text-left text-xs font-bold uppercase tracking-wider text-gray-700 transition-colors hover:bg-gray-100">
+                <th className="whitespace-nowrap sticky top-0 bg-slate-50 dark:bg-[#102030] border-b border-r border-slate-200 dark:border-[#1E3A4C] px-5 py-3 text-left text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 transition-colors hover:bg-slate-100 dark:hover:bg-[#162A3E]">
                   Employee ID
                 </th>
-                <th className="whitespace-nowrap sticky top-0 bg-gray-50 border-b border-r border-gray-100 px-5 py-3 text-left text-xs font-bold uppercase tracking-wider text-gray-700 transition-colors hover:bg-gray-100">
+                <th className="whitespace-nowrap sticky top-0 bg-slate-50 dark:bg-[#102030] border-b border-r border-slate-200 dark:border-[#1E3A4C] px-5 py-3 text-left text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 transition-colors hover:bg-slate-100 dark:hover:bg-[#162A3E]">
                   Designation
                 </th>
-                <th className="whitespace-nowrap sticky top-0 bg-gray-50 border-b border-r border-gray-100 px-5 py-3 text-left text-xs font-bold uppercase tracking-wider text-gray-700 transition-colors hover:bg-gray-100">
+                <th className="whitespace-nowrap sticky top-0 bg-slate-50 dark:bg-[#102030] border-b border-r border-slate-200 dark:border-[#1E3A4C] px-5 py-3 text-left text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 transition-colors hover:bg-slate-100 dark:hover:bg-[#162A3E]">
                   Department
                 </th>
-                <th className="whitespace-nowrap sticky top-0 bg-gray-50 border-b border-r border-gray-100 px-5 py-3 text-left text-xs font-bold uppercase tracking-wider text-gray-700 transition-colors hover:bg-gray-100">
+                <th className="whitespace-nowrap sticky top-0 bg-slate-50 dark:bg-[#102030] border-b border-r border-slate-200 dark:border-[#1E3A4C] px-5 py-3 text-left text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 transition-colors hover:bg-slate-100 dark:hover:bg-[#162A3E]">
                   Email
                 </th>
-                <th className="whitespace-nowrap sticky top-0 bg-gray-50 border-b border-gray-100 px-5 py-3 text-left text-xs font-bold uppercase tracking-wider text-gray-700 transition-colors hover:bg-gray-100">
+                <th className="whitespace-nowrap sticky top-0 bg-slate-50 dark:bg-[#102030] border-b border-slate-200 dark:border-[#1E3A4C] px-5 py-3 text-left text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 transition-colors hover:bg-slate-100 dark:hover:bg-[#162A3E]">
                   Office Location
                 </th>
               </tr>
             </thead>
 
-            <tbody className="bg-white">
+            <tbody className="bg-white dark:bg-[#0B1724]">
               {employees.map((item: Employee) => {
                 const isItemSelected = selectedEmployees.some(
                   (emp) => emp.name === item.name,
@@ -195,24 +195,28 @@ const EmployeeTable = ({
                 return (
                   <React.Fragment key={item.name}>
                     <tr
-                      className={`group transition-all duration-200 ${isItemSelected ? "bg-primary-50/70" : "hover:bg-primary-50/40"}`}
+                      className={`group transition-all duration-200 ${
+                        isItemSelected
+                          ? "bg-cyan-50/80 dark:bg-[#102A3A]"
+                          : "bg-white dark:bg-[#0B1724] hover:bg-slate-50 dark:hover:bg-[#102030]"
+                      }`}
                     >
                       {hasCheckboxesOrChevrons && (
-                        <td className="whitespace-nowrap border-r border-gray-100 px-4 py-4 text-sm font-medium border-b">
+                        <td className="whitespace-nowrap border-r border-b border-slate-200 dark:border-[#1E3A4C] px-4 py-4 text-sm font-medium">
                           <div className="flex items-center gap-2">
                             {isSelectableStatus(item.status) && (
                               <input
                                 type="checkbox"
                                 checked={isItemSelected}
                                 onChange={() => handleSelectOne(item)}
-                                className="w-4 h-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 cursor-pointer shadow-sm"
+                                className="w-4 h-4 rounded border-slate-300 dark:border-slate-600 text-cyan-600 focus:ring-cyan-500 cursor-pointer shadow-sm bg-white dark:bg-[#102030]"
                               />
                             )}
                             {(isInactiveStatus(item.status) ||
                               item.status === "Pending") && (
                               <button
                                 onClick={() => toggleRow(item.name)}
-                                className="p-1 text-gray-500 hover:text-primary-600 transition-colors rounded-full hover:bg-primary-50"
+                                className="p-1 text-slate-500 dark:text-slate-400 hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors rounded-full hover:bg-cyan-50 dark:hover:bg-cyan-950/40"
                                 aria-label={
                                   expandedRows.includes(item.name)
                                     ? "Hide details"
@@ -234,14 +238,14 @@ const EmployeeTable = ({
                           </div>
                         </td>
                       )}
-                      <td className="whitespace-nowrap border-r px-5 py-2.5 text-sm border-b border-gray-100">
+                      <td className="whitespace-nowrap border-r border-b border-slate-200 dark:border-[#1E3A4C] px-5 py-2.5 text-sm">
                         <div className="flex items-center gap-3 justify-between w-full">
                           <Link
                             to={`/webapp/employee-profile?target_user=${item?.employee}`}
                             target="_blank"
                             className="group/link"
                           >
-                            <div className="font-semibold text-gray-700 group-hover/link:text-primary-600 transition-colors flex gap-2 justify-between w-full">
+                            <div className="font-semibold text-slate-800 dark:text-slate-100 group-hover/link:text-cyan-600 dark:group-hover/link:text-cyan-400 transition-colors flex gap-2 justify-between w-full">
                               <WrapperHoverCard employeeId={item.employee}>
                                 {item.employee_name}
                               </WrapperHoverCard>
@@ -268,7 +272,7 @@ const EmployeeTable = ({
                                         : item.name,
                                     )
                                   }
-                                  className="p-1"
+                                  className="p-1 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100"
                                 >
                                   <EllipsisVertical size={16} />
                                 </Button>
@@ -389,7 +393,7 @@ const EmployeeTable = ({
                                       size="md"
                                       contentAlign="start"
                                       fullWidth
-                                      className="text-red-600 hover:bg-red-50"
+                                      className="text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40"
                                       onClick={() => {
                                         setSelectedRowEmployee(item);
                                         setActiveTool("delete");
@@ -404,22 +408,22 @@ const EmployeeTable = ({
                           </div>
                         </div>
                       </td>
-                      <td className="whitespace-nowrap border-r px-5 py-2.5 text-sm text-gray-700 font-medium border-b border-gray-100">
+                      <td className="whitespace-nowrap border-r border-b border-slate-200 dark:border-[#1E3A4C] px-5 py-2.5 text-sm text-slate-700 dark:text-slate-300 font-medium">
                         {item.employee}
                       </td>
-                      <td className="whitespace-nowrap border-r px-5 py-2.5 text-sm border-b border-gray-100">
+                      <td className="whitespace-nowrap border-r border-b border-slate-200 dark:border-[#1E3A4C] px-5 py-2.5 text-sm">
                         <div className="flex flex-col">
-                          <span className="font-semibold text-gray-800">
+                          <span className="font-semibold text-slate-800 dark:text-slate-100">
                             {item.designation_name || "-"}
                           </span>
                         </div>
                       </td>
-                      <td className="whitespace-nowrap border-r px-5 py-2.5 text-sm border-b border-gray-100">
-                        <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-gray-100 text-gray-700 border border-gray-200">
+                      <td className="whitespace-nowrap border-r border-b border-slate-200 dark:border-[#1E3A4C] px-5 py-2.5 text-sm">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-slate-100 dark:bg-[#162A3E] text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-[#1E3A4C]">
                           {item.department_name || "-"}
                         </span>
                       </td>
-                      <td className="whitespace-nowrap border-r px-5 py-2.5 text-sm text-gray-700 border-b border-gray-100 font-brand">
+                      <td className="whitespace-nowrap border-r border-b border-slate-200 dark:border-[#1E3A4C] px-5 py-2.5 text-sm text-slate-700 dark:text-slate-300 font-brand">
                         <div className="flex items-center gap-2 group/copy">
                           <span className="truncate max-w-[150px] font-medium">
                             {item.user_id || "-"}
@@ -433,7 +437,7 @@ const EmployeeTable = ({
                                 setCopiedId(item.name);
                                 setTimeout(() => setCopiedId(null), 2000);
                               }}
-                              className={`p-1 rounded flex items-center justify-center transition-colors ${copiedId === item.name ? "text-success-600 bg-success-50" : "text-gray-400 hover:text-primary-600 hover:bg-primary-50 opacity-0 group-hover/copy:opacity-100"}`}
+                              className={`p-1 rounded flex items-center justify-center transition-colors ${copiedId === item.name ? "text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40" : "text-slate-400 hover:text-cyan-600 dark:hover:text-cyan-400 hover:bg-cyan-50 dark:hover:bg-cyan-950/40 opacity-0 group-hover/copy:opacity-100"}`}
                             >
                               {copiedId === item.name ? (
                                 <CopyCheck size={14} />
@@ -444,7 +448,7 @@ const EmployeeTable = ({
                           )}
                         </div>
                       </td>
-                      <td className="whitespace-nowrap px-5 py-2.5 text-sm text-gray-700 font-medium border-b border-gray-100">
+                      <td className="whitespace-nowrap border-b border-slate-200 dark:border-[#1E3A4C] px-5 py-2.5 text-sm text-slate-700 dark:text-slate-300 font-medium">
                         {item.branch_name || "-"}
                       </td>
                     </tr>

@@ -316,15 +316,16 @@ const EmployeeSearch = ({
           )}
           <div className="relative">
             <Button
-              variant="soft"
+              variant="outline"
               size="sm"
               onClick={() => {
                 setIsFilterOpen(true);
               }}
+              className="border-slate-200 dark:border-[#1E3A4C] bg-white dark:bg-[#102030] text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-[#162A3E] transition-colors"
             >
-              <Filter size={16} />
+              <Filter size={16} className="text-cyan-600 dark:text-cyan-400" />
               {activeFilterCount > 0 && (
-                <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-white shadow-sm ring-1 ring-white">
+                <span className="absolute -top-1.5 -right-1.5 flex h-4.5 min-w-[1.125rem] px-1 items-center justify-center rounded-full bg-cyan-600 dark:bg-cyan-500 text-[10px] font-bold text-white shadow-sm ring-2 ring-white dark:ring-[#0B1724]">
                   {activeFilterCount}
                 </span>
               )}
@@ -336,7 +337,7 @@ const EmployeeSearch = ({
       {/* Active Filter Chips */}
       {activeFilterCount > 0 && (
         <div className="flex flex-wrap items-center gap-2 mt-1">
-          <span className="text-xs font-medium text-gray-500 mr-1">
+          <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 mr-1">
             Active Filters:
           </span>
           {Object.entries(activeFilters).map(([key, value]) => {
@@ -351,8 +352,11 @@ const EmployeeSearch = ({
               .replace(/_/g, " ")
               .replace(/\b\w/g, (l) => l.toUpperCase());
             return (
-              <Button key={key} variant="soft" size="sm">
-                <span className="font-medium text-gray-500">{label}:</span>
+              <div
+                key={key}
+                className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium bg-cyan-50 dark:bg-cyan-950/40 text-cyan-900 dark:text-cyan-200 border border-cyan-200 dark:border-cyan-800/50 shadow-sm transition-colors"
+              >
+                <span className="font-semibold text-cyan-700 dark:text-cyan-300">{label}:</span>
                 <span>
                   {Array.isArray(value)
                     ? value.join(", ")
@@ -367,20 +371,20 @@ const EmployeeSearch = ({
                           : "No"
                         : String(value)}
                 </span>
-                <span
-                  role="button"
+                <button
+                  type="button"
                   onClick={() => clearFilter(key)}
-                  className="ml-0.5 hover:text-red-600 transition-colors cursor-pointer"
+                  className="ml-0.5 text-cyan-600 dark:text-cyan-400 hover:text-red-600 dark:hover:text-red-400 transition-colors p-0.5 rounded-full hover:bg-cyan-100 dark:hover:bg-cyan-900/50"
                 >
                   <X size={12} />
-                </span>
-              </Button>
+                </button>
+              </div>
             );
           })}
           <span
             role="button"
             onClick={clearAllFilters}
-            className="text-xs font-medium text-primary-600 hover:text-primary-700 ml-1 underline-offset-2 hover:underline cursor-pointer"
+            className="text-xs font-semibold text-cyan-600 dark:text-cyan-400 hover:text-cyan-700 dark:hover:text-cyan-300 ml-1 underline-offset-2 hover:underline cursor-pointer transition-colors"
           >
             Clear All
           </span>

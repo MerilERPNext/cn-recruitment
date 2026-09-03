@@ -26,13 +26,13 @@ export const DocumentTableRow: React.FC<DocumentTableRowProps> = ({
       className="border-b border-border hover:bg-gray-50 transition-colors grid items-center px-6 py-4 gap-4 text-center text-text-body1"
       style={{ gridTemplateColumns: "3fr 2fr 1.5fr 1.5fr 2fr" }}
     >
-      <div className="font-medium truncate pr-4 text-sm">
+      <div className="font-semibold truncate pr-4 text-sm text-slate-800 dark:text-slate-100">
         {getFileNameFromUrl(doc.file_name)}
       </div>
-      <div className="text-gray-600 truncate pr-4 text-sm">
+      <div className="text-slate-600 dark:text-slate-300 truncate pr-4 text-sm">
         {doc.employee_name}
       </div>
-      <div className="text-gray-600 text-sm">
+      <div className="text-slate-600 dark:text-slate-300 text-sm">
         {formatToIndianDate(doc.creation)}
       </div>
       <div>
@@ -53,17 +53,20 @@ export const DocumentTableRow: React.FC<DocumentTableRowProps> = ({
             <>
               {canViewDocument && (
                 <Button
-                  variant="soft"
+                  variant="outline"
                   size="sm"
                   className="bg-primary/10 text-text-link hover:bg-primary/20"
                   onClick={() => setSelectedFile(doc.file_name)}
+                  className="border-slate-300 dark:border-[#1E3A4C] text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-[#162A3E]"
                 >
                   View
                 </Button>
               )}
               {canDownloadDocument && (
                 <a href={getFileUrl(doc.file_name)} download>
-                  <Button variant="contain" size="sm">Download</Button>
+                  <Button variant="contain" size="sm" className="bg-cyan-600 dark:bg-cyan-500 hover:bg-cyan-700 dark:hover:bg-cyan-600 !text-white">
+                    Download
+                  </Button>
                 </a>
               )}
             </>
@@ -76,6 +79,7 @@ export const DocumentTableRow: React.FC<DocumentTableRowProps> = ({
                 setSelectedFile(doc.file_name);
                 setSelectedDocId(doc.name);
               }}
+              className="bg-cyan-600 dark:bg-cyan-500 hover:bg-cyan-700 dark:hover:bg-cyan-600 !text-white"
             >
               Acknowledge
             </Button>

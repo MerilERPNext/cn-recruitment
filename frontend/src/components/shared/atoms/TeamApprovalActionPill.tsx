@@ -38,32 +38,32 @@ const ACTION_CONFIG: Record<
 > = {
   approve: {
     tooltip: "Approve",
-    icon: <Check className="w-4 h-4 text-green-600" strokeWidth={2} />,
+    icon: <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400" strokeWidth={2} />,
     buttonClasses:
-      "bg-green-50 text-green-600 hover:bg-green-100 focus:ring-green-500",
+      "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-900 focus:ring-emerald-500",
   },
   reject: {
     tooltip: "Reject",
-    icon: <X className="w-4 h-4 text-red-500" strokeWidth={2} />,
-    buttonClasses: "bg-red-50 text-red-500 hover:bg-red-100 focus:ring-red-500",
+    icon: <X className="w-4 h-4 text-red-500 dark:text-red-400" strokeWidth={2} />,
+    buttonClasses: "bg-red-50 dark:bg-red-950/40 text-red-500 dark:text-red-400 border border-red-200 dark:border-red-800 hover:bg-red-100 dark:hover:bg-red-900 focus:ring-red-500",
   },
   sendback: {
     tooltip: "Send Back",
-    icon: <SendToBack className="w-4 h-4 text-amber-600" strokeWidth={2} />,
+    icon: <SendToBack className="w-4 h-4 text-amber-600 dark:text-amber-400" strokeWidth={2} />,
     buttonClasses:
-      "bg-amber-50 text-amber-600 hover:bg-amber-100 focus:ring-amber-500",
+      "bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-800 hover:bg-amber-100 dark:hover:bg-amber-900 focus:ring-amber-500",
   },
   hold: {
     tooltip: "Put on Hold",
-    icon: <Pause className="w-4 h-4 text-blue-600" strokeWidth={2} />,
+    icon: <Pause className="w-4 h-4 text-blue-600 dark:text-blue-400" strokeWidth={2} />,
     buttonClasses:
-      "bg-blue-50 text-blue-600 hover:bg-blue-100 focus:ring-blue-500",
+      "bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-900 focus:ring-blue-500",
   },
   unhold: {
     tooltip: "Unhold",
-    icon: <Play className="w-4 h-4 text-emerald-600" strokeWidth={2} />,
+    icon: <Play className="w-4 h-4 text-emerald-600 dark:text-emerald-400" strokeWidth={2} />,
     buttonClasses:
-      "bg-emerald-50 text-emerald-600 hover:bg-emerald-100 focus:ring-emerald-500",
+      "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-900 focus:ring-emerald-500",
   },
 };
 
