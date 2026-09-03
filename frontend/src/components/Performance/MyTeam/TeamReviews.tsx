@@ -120,11 +120,11 @@ const ratingScore: Record<Rating, string> = {
 };
 
 const ratingTone: Record<Rating, { bg: string; text: string; dot: string }> = {
-  Unsatisfactory: { bg: "bg-red-50", text: "text-red-700", dot: "bg-red-500" },
-  Below: { bg: "bg-amber-50", text: "text-amber-700", dot: "bg-amber-500" },
-  Meets: { bg: "bg-blue-50", text: "text-blue-700", dot: "bg-blue-500" },
-  Exceeds: { bg: "bg-emerald-50", text: "text-emerald-700", dot: "bg-emerald-500" },
-  Outstanding: { bg: "bg-emerald-50", text: "text-emerald-700", dot: "bg-emerald-500" },
+  Unsatisfactory: { bg: "bg-red-500/10", text: "text-red-500", dot: "bg-red-500" },
+  Below: { bg: "bg-amber-500/10", text: "text-amber-500", dot: "bg-amber-500" },
+  Meets: { bg: "bg-blue-500/10", text: "text-primary", dot: "bg-blue-500" },
+  Exceeds: { bg: "bg-emerald-500/10", text: "text-emerald-500", dot: "bg-emerald-500" },
+  Outstanding: { bg: "bg-emerald-500/10", text: "text-emerald-500", dot: "bg-emerald-500" },
 };
 
 const RatingPill = ({ rating }: { rating: Rating }) => {
@@ -151,26 +151,27 @@ const TeamReviews: React.FC = () => {
   );
 
   return (
-    <main className="min-h-full overflow-y-auto overflow-x-hidden bg-[#f4f7fb] px-3 py-4 font-sans text-gray-900 sm:px-4 lg:px-1 lg:py-1">
+    <main className="min-h-full overflow-y-auto overflow-x-hidden bg-app px-3 py-4 font-sans text-text-title sm:px-4 lg:px-1 lg:py-1">
       <div className="mx-auto grid w-full  min-w-0 gap-4 xl:grid-cols-[260px_minmax(0,1fr)] 2xl:grid-cols-[260px_minmax(0,1fr)_300px]">
         <aside className="order-2 min-w-0 xl:order-1 xl:sticky  xl:self-start">
-          <section className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+          <section className="rounded-xl border border-border bg-card p-4 shadow-sm">
             <Typography
               variant="caption"
-              className="block text-[11px] font-bold uppercase tracking-wider text-gray-400"
+              color="body2"
+              className="block text-[11px] font-bold uppercase tracking-wider"
             >
               Reviewing
             </Typography>
 
-            <div className="mt-3 flex items-center gap-3 rounded-lg border border-blue-200 bg-blue-50 p-3">
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-100 text-sm font-bold text-blue-700">
+            <div className="mt-3 flex items-center gap-3 rounded-lg border border-border bg-blue-500/10 p-3">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-500/20 text-sm font-bold text-primary">
                 {reportee.initials}
               </span>
               <div className="min-w-0">
-                <Typography variant="bodySmall" className="block truncate font-bold text-gray-900">
+                <Typography variant="bodySmall" className="block truncate font-bold">
                   {reportee.name}
                 </Typography>
-                <Typography variant="caption" className="block truncate text-gray-500">
+                <Typography variant="caption" color="body2" className="block truncate">
                   {reportee.role}
                 </Typography>
               </div>
@@ -178,7 +179,8 @@ const TeamReviews: React.FC = () => {
 
             <Typography
               variant="caption"
-              className="mt-5 block text-[11px] font-bold uppercase tracking-wider text-gray-400"
+              color="body2"
+              className="mt-5 block text-[11px] font-bold uppercase tracking-wider"
             >
               Sections
             </Typography>
@@ -191,29 +193,30 @@ const TeamReviews: React.FC = () => {
                     key={section.id}
                     type="button"
                     className={`flex min-h-9 w-full items-center gap-2 rounded-md px-2.5 text-left text-[13px] font-semibold transition ${
-                      isActive ? "bg-blue-50 text-blue-700" : "text-gray-600 hover:bg-gray-50"
+                      isActive ? "bg-blue-500/10 text-primary" : "text-text-body2 hover:bg-slate-500/10"
                     }`}
                   >
                     <span
                       className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold ${
                         section.done
                           ? "bg-emerald-500 text-white"
-                          : "bg-gray-100 text-gray-500"
+                          : "bg-slate-500/20 text-text-body2"
                       }`}
                     >
                       {section.done ? <Check className="h-3 w-3" /> : section.number}
                     </span>
                     <span className="min-w-0 flex-1 truncate">{section.label}</span>
-                    {section.done && !isActive ? <FileText className="h-3.5 w-3.5 text-gray-400" /> : null}
+                    {section.done && !isActive ? <FileText className="h-3.5 w-3.5 text-text-body2" /> : null}
                   </button>
                 );
               })}
             </nav>
 
-            <div className="my-4 h-px bg-gray-100" />
+            <div className="my-4 h-px bg-border" />
             <Typography
               variant="caption"
-              className="block text-[11px] font-bold uppercase tracking-wider text-gray-400"
+              color="body2"
+              className="block text-[11px] font-bold uppercase tracking-wider"
             >
               Other reportees
             </Typography>
@@ -222,18 +225,18 @@ const TeamReviews: React.FC = () => {
                 <button
                   key={member.id}
                   type="button"
-                  className="flex min-w-0 items-center gap-2 rounded-md px-1 py-1.5 text-left hover:bg-gray-50"
+                  className="flex min-w-0 items-center gap-2 rounded-md px-1 py-1.5 text-left hover:bg-slate-500/10"
                 >
-                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-50 text-[10px] font-bold text-blue-600">
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-500/20 text-[10px] font-bold text-primary">
                     {member.initials}
                   </span>
-                  <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-gray-700">
+                  <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-text-title">
                     {member.name}
                   </span>
-                  <span className="hidden text-[11px] font-medium text-gray-400 sm:inline xl:hidden">
+                  <span className="hidden text-[11px] font-medium text-text-body2 sm:inline xl:hidden">
                     {member.role}
                   </span>
-                  <span className={member.signal === "up" ? "text-emerald-500" : "text-gray-400"}>
+                  <span className={member.signal === "up" ? "text-emerald-500" : "text-text-body2"}>
                     {member.signal === "up" ? "+" : "-"}
                   </span>
                 </button>
@@ -243,16 +246,17 @@ const TeamReviews: React.FC = () => {
         </aside>
 
         <section className="order-1 min-w-0 space-y-4 xl:order-2">
-          <header className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm sm:p-6">
+          <header className="rounded-xl border border-border bg-card p-4 shadow-sm sm:p-6">
             <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div className="min-w-0">
                 <Typography
                   variant="caption"
-                  className="block text-[11px] font-bold uppercase tracking-wider text-gray-500"
+                  color="body2"
+                  className="block text-[11px] font-bold uppercase tracking-wider"
                 >
                   Section 4 of 7
                 </Typography>
-                <Typography variant="h2" className="mt-1 text-xl font-bold leading-tight text-gray-900 sm:text-2xl">
+                <Typography variant="h2" className="mt-1 text-xl font-bold leading-tight sm:text-2xl">
                   Competencies
                 </Typography>
               </div>
@@ -260,7 +264,7 @@ const TeamReviews: React.FC = () => {
                 type="button"
                 variant="soft"
                 bgColor="primary"
-                className="min-h-9 w-full justify-center rounded-md bg-purple-50 px-3 text-[12px] font-bold text-purple-700 hover:bg-purple-100 sm:w-auto"
+                className="min-h-9 w-full justify-center rounded-md px-3 text-[12px] font-bold sm:w-auto"
               >
                 <Sparkles className="h-4 w-4" />
                 AI summary of self+peers
@@ -274,18 +278,18 @@ const TeamReviews: React.FC = () => {
             return (
               <article
                 key={competency.id}
-                className="min-w-0 rounded-xl border border-gray-200 bg-white p-4 shadow-sm sm:p-6"
+                className="min-w-0 rounded-xl border border-border bg-card p-4 shadow-sm sm:p-6"
               >
                 <div className="min-w-0">
-                  <Typography variant="bodyMedium" className="font-bold text-gray-900">
+                  <Typography variant="bodyMedium" className="font-bold">
                     {competency.title} <span className="text-red-500">*</span>
                   </Typography>
-                  <Typography variant="caption" className="mt-1 block break-words text-gray-500">
+                  <Typography variant="caption" color="body2" className="mt-1 block break-words">
                     {competency.description}
                   </Typography>
                 </div>
 
-                <div className="mt-5 grid gap-3 rounded-lg bg-[#f4f7fb] p-3 sm:grid-cols-3">
+                <div className="mt-5 grid gap-3 rounded-lg bg-app p-3 border border-border sm:grid-cols-3">
                   {[
                     { label: "Self", value: competency.self },
                     { label: "Peer avg (4)", value: competency.peer },
@@ -294,7 +298,8 @@ const TeamReviews: React.FC = () => {
                     <div key={item.label} className="min-w-0">
                       <Typography
                         variant="caption"
-                        className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-gray-500"
+                        color="body2"
+                        className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider"
                       >
                         {item.label}
                       </Typography>
@@ -304,7 +309,7 @@ const TeamReviews: React.FC = () => {
                 </div>
 
                 <div className="mt-5">
-                  <Typography variant="caption" className="mb-2 block font-semibold text-gray-700">
+                  <Typography variant="caption" color="body2" className="mb-2 block font-semibold">
                     Your rating
                   </Typography>
                   <div className="grid gap-2 min-[420px]:grid-cols-2 md:grid-cols-3 min-[1500px]:grid-cols-5">
@@ -318,12 +323,12 @@ const TeamReviews: React.FC = () => {
                           onClick={() => setRatings((current) => ({ ...current, [competency.id]: rating }))}
                           className={`min-h-[54px] rounded-lg border px-3 py-2 text-center transition ${
                             isSelected
-                              ? "border-emerald-500 bg-emerald-50 text-emerald-700"
-                              : "border-gray-200 bg-white text-gray-700 hover:border-blue-300"
+                              ? "border-emerald-500 bg-emerald-500/10 text-emerald-500 font-bold"
+                              : "border-border bg-card text-text-title hover:border-primary/50"
                           }`}
                         >
                           <span className="block text-sm font-semibold">{rating}</span>
-                          <span className="block text-[11px] font-medium text-gray-500">
+                          <span className="block text-[11px] font-medium text-text-body2">
                             {ratingScore[rating]}
                           </span>
                         </button>
@@ -333,25 +338,25 @@ const TeamReviews: React.FC = () => {
                 </div>
 
                 <label className="mt-5 block">
-                  <Typography variant="caption" className="mb-2 block font-semibold text-gray-700">
+                  <Typography variant="caption" color="body2" className="mb-2 block font-semibold">
                     Manager comment
                   </Typography>
                   <textarea
                     rows={3}
                     defaultValue={competency.comment ?? ""}
-                    className="min-h-[74px] w-full resize-none rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm leading-relaxed text-gray-700 outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+                    className="min-h-[74px] w-full resize-none rounded-lg border border-border bg-card px-3 py-2 text-sm leading-relaxed text-text-title placeholder-text-body2 outline-none transition focus:border-primary focus:ring-1 focus:ring-primary"
                   />
                 </label>
               </article>
             );
           })}
 
-          <footer className="flex flex-col gap-3 rounded-xl border border-gray-200 bg-white p-3 shadow-sm lg:flex-row lg:items-center lg:justify-between">
+          <footer className="flex flex-col gap-3 rounded-xl border border-border bg-card p-3 shadow-sm lg:flex-row lg:items-center lg:justify-between">
             <Button
               type="button"
               variant="outline"
               bgColor="text"
-              className="h-10 w-full justify-center rounded-lg border-gray-200 bg-white px-4 text-gray-700 lg:w-auto"
+              className="h-10 w-full justify-center rounded-lg px-4 lg:w-auto"
             >
               <ArrowLeft className="h-4 w-4" />
               Back
@@ -361,7 +366,7 @@ const TeamReviews: React.FC = () => {
                 type="button"
                 variant="outline"
                 bgColor="error"
-                className="h-10 w-full justify-center rounded-lg border-red-300 bg-white px-4 text-red-600 hover:bg-red-50 lg:w-auto"
+                className="h-10 w-full justify-center rounded-lg px-4 lg:w-auto"
               >
                 Send back to Pallavi
               </Button>
@@ -369,7 +374,7 @@ const TeamReviews: React.FC = () => {
                 type="button"
                 variant="outline"
                 bgColor="text"
-                className="h-10 w-full justify-center rounded-lg border-gray-200 bg-white px-4 text-gray-700 lg:w-auto"
+                className="h-10 w-full justify-center rounded-lg px-4 lg:w-auto"
               >
                 Save Draft
               </Button>
@@ -377,7 +382,7 @@ const TeamReviews: React.FC = () => {
                 type="button"
                 variant="contain"
                 bgColor="primary"
-                className="h-10 w-full justify-center rounded-lg bg-blue-600 px-4 text-white hover:bg-blue-700 sm:col-span-2 lg:w-auto"
+                className="h-10 w-full justify-center rounded-lg px-4 sm:col-span-2 lg:w-auto"
                 onClick={() => navigate("/webapp/performance-app/team-reviews/team-pre-release-preview")}
               >
                 Next: Achievements
@@ -388,14 +393,14 @@ const TeamReviews: React.FC = () => {
         </section>
 
         <aside className="order-3 min-w-0 space-y-4 xl:order-3 xl:col-start-2 2xl:col-start-auto 2xl:sticky  2xl:self-start">
-          <section className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+          <section className="rounded-xl border border-border bg-card p-4 shadow-sm">
             <div className="mb-3 flex items-center gap-2">
-              <MessageSquareText className="h-4 w-4 text-gray-500" />
-              <Typography variant="bodySmall" className="font-bold text-gray-900">
+              <MessageSquareText className="h-4 w-4 text-text-body2" />
+              <Typography variant="bodySmall" className="font-bold">
                 Self-Review · Design Craft
               </Typography>
             </div>
-            <p className="text-sm italic leading-relaxed text-gray-600">
+            <p className="text-sm italic leading-relaxed text-text-body2">
               "Pushed prototyping fidelity significantly this cycle. Built two clickable prototypes that became the basis for spec; saved the team an estimated 3 weeks vs. waterfall handoffs."
             </p>
             <div className="mt-3">
@@ -403,35 +408,35 @@ const TeamReviews: React.FC = () => {
             </div>
           </section>
 
-          <section className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+          <section className="rounded-xl border border-border bg-card p-4 shadow-sm">
             <div className="mb-3 flex min-w-0 flex-col gap-2 min-[420px]:flex-row min-[420px]:items-center min-[420px]:justify-between min-[420px]:gap-3">
               <div className="flex min-w-0 items-center gap-2">
-                <FileText className="h-4 w-4 text-gray-500" />
-                <Typography variant="bodySmall" className="font-bold text-gray-900">
+                <FileText className="h-4 w-4 text-text-body2" />
+                <Typography variant="bodySmall" className="font-bold">
                   Peer aggregate (4 of 4)
                 </Typography>
               </div>
               <RatingPill rating="Outstanding" />
             </div>
-            <Typography variant="caption" className="block font-semibold text-gray-500">
+            <Typography variant="caption" color="body2" className="block font-semibold">
               Avg score
             </Typography>
-            <Typography variant="caption" className="mt-3 block font-semibold text-gray-500">
+            <Typography variant="caption" color="body2" className="mt-3 block font-semibold">
               Top comment
             </Typography>
-            <p className="mt-1 text-sm italic leading-relaxed text-gray-600">
+            <p className="mt-1 text-sm italic leading-relaxed text-text-body2">
               "Her craft sets a bar for the whole team. Best designer I've worked with at PW."
             </p>
           </section>
 
-          <section className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+          <section className="rounded-xl border border-border bg-card p-4 shadow-sm">
             <div className="mb-3 flex items-center gap-2">
-              <Sparkles className="h-4 w-4 text-purple-600" />
-              <Typography variant="bodySmall" className="font-bold text-gray-900">
+              <Sparkles className="h-4 w-4 text-primary" />
+              <Typography variant="bodySmall" className="font-bold">
                 AI bias check
               </Typography>
             </div>
-            <Typography variant="caption" className="block leading-relaxed text-gray-600">
+            <Typography variant="caption" color="body2" className="block leading-relaxed">
               No flagged language detected. Self + peer + your ratings are tightly aligned (var = 0.4 on 5-pt).
             </Typography>
           </section>
