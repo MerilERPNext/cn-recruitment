@@ -31,8 +31,8 @@ export const MandatoryGoalsBanner: React.FC<MandatoryGoalsBannerProps> = ({
   }, [pushedBy, lockDate]);
   return (
     <>
-    <div className="bg-[#fff8f6] border border-red-100 rounded-xl p-4 sm:p-5 mb-6 sm:mb-8 flex flex-col md:flex-row gap-4 sm:gap-5 items-start">
-            <div className="bg-white border border-red-100 text-red-500 w-12 h-12 rounded-xl flex items-center justify-center shrink-0 shadow-sm">
+    <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 sm:p-5 mb-6 sm:mb-8 flex flex-col md:flex-row gap-4 sm:gap-5 items-start">
+            <div className="bg-card border border-red-500/30 text-red-500 w-12 h-12 rounded-xl flex items-center justify-center shrink-0 shadow-sm">
               <FileText className="w-6 h-6" />
             </div>
             {error ? (
@@ -43,16 +43,16 @@ export const MandatoryGoalsBanner: React.FC<MandatoryGoalsBannerProps> = ({
               <>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center flex-wrap gap-2 mb-2">
-                    <span className="bg-red-100 text-red-700 text-xs font-bold px-2 py-0.5 rounded-md tracking-wider">
+                    <span className="bg-red-500/20 text-red-500 text-xs font-bold px-2 py-0.5 rounded-md tracking-wider">
                       {goalsCount} MANDATORY OKRs ASSIGNED
                     </span>
                     {metadataText && goalsCount > 0 && (
-                      <span className="text-gray-500 text-sm">{metadataText}</span>
+                      <span className="text-text-body2 text-sm">{metadataText}</span>
                     )}
                   </div>
                   <Typography
                     variant="subheading"
-                    className="font-semibold text-gray-900 mb-4"
+                    className="font-semibold text-text-title mb-4"
                   >
                     {goalsCount > 0
                       ? `You have ${goalsCount} mandatory OKRs to acknowledge before adding your own.`
@@ -69,12 +69,12 @@ export const MandatoryGoalsBanner: React.FC<MandatoryGoalsBannerProps> = ({
                           return (
                             <div
                               key={Goal?.template}
-                              className="w-full sm:w-auto bg-white border border-gray-200 rounded-lg px-3 py-2 flex items-start sm:items-center gap-2 text-sm shadow-sm"
+                              className="w-full sm:w-auto bg-card border border-border rounded-lg px-3 py-2 flex items-start sm:items-center gap-2 text-sm shadow-sm"
                             >
                               <div
                                 className={`w-2 h-2 rounded-full ${colorConfig.dot}`}
                               ></div>
-                              <span className="min-w-0 flex-1 text-gray-700">
+                              <span className="min-w-0 flex-1 text-text-title">
                                 {Goal?.title ?? "no title"}
                               </span>
                               <span
@@ -87,8 +87,8 @@ export const MandatoryGoalsBanner: React.FC<MandatoryGoalsBannerProps> = ({
                         },
                       )
                     ) : (
-                      <div className="flex items-center gap-2 text-gray-400 text-sm">
-                        <CheckCircle className="w-4 h-4 text-gray-400" />
+                      <div className="flex items-center gap-2 text-text-body2 text-sm">
+                        <CheckCircle className="w-4 h-4 text-text-body2" />
                         <span>
                           You're all set! You can proceed to create your custom
                           OKRs.
