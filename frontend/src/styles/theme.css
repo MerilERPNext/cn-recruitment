@@ -297,3 +297,108 @@ body {
 .text-pure-white {
   color: #ffffff !important;
 }
+
+/* =============================================================================
+ * FormIO & Choices.js Theme Styling (Light & Dark Mode)
+ * ========================================================================== */
+
+/* Main Choices container */
+.choices {
+  color: rgb(var(--text-title));
+}
+
+/* Selected input box */
+.choices__inner {
+  background-color: rgb(var(--surface)) !important;
+  border: 1px solid rgb(var(--border)) !important;
+  border-radius: 0.5rem !important;
+  color: rgb(var(--text-title)) !important;
+  min-height: 42px !important;
+}
+
+.is-focused .choices__inner,
+.is-open .choices__inner {
+  border-color: rgb(var(--primary)) !important;
+}
+
+/* Single select display value */
+.choices__list--single .choices__item {
+  color: rgb(var(--text-title)) !important;
+}
+
+/* Placeholder */
+.choices__placeholder {
+  color: rgb(var(--text-disabled)) !important;
+  opacity: 1 !important;
+}
+
+/* Dropdown list panel */
+.choices__list--dropdown,
+.choices__list[aria-expanded] {
+  background-color: rgb(var(--surface-raised)) !important;
+  border: 1px solid rgb(var(--border-strong)) !important;
+  box-shadow: var(--shadow-elevated) !important;
+  border-radius: 0.5rem !important;
+  z-index: 9999 !important;
+}
+
+/* Search input inside open dropdown */
+.choices__list--dropdown .choices__input,
+.choices__list[aria-expanded] .choices__input {
+  background-color: rgb(var(--surface)) !important;
+  border: 1px solid rgb(var(--border)) !important;
+  color: rgb(var(--text-title)) !important;
+  border-radius: 0.375rem !important;
+  margin-bottom: 0.5rem !important;
+}
+
+.choices__list--dropdown .choices__input::placeholder {
+  color: rgb(var(--text-disabled)) !important;
+}
+
+/* Dropdown item options */
+.choices__list--dropdown .choices__item,
+.choices__list[aria-expanded] .choices__item {
+  color: rgb(var(--text-title)) !important;
+  padding: 0.5rem 0.75rem !important;
+}
+
+/* Hovered / Highlighted option */
+.choices__list--dropdown .choices__item.is-highlighted,
+.choices__list--dropdown .choices__item--selectable.is-highlighted,
+.choices__list--dropdown .choices__item:hover,
+.choices__list--dropdown .choices__item--selectable:hover,
+.choices__list[aria-expanded] .choices__item.is-highlighted,
+.choices__list[aria-expanded] .choices__item--selectable.is-highlighted,
+.choices__list[aria-expanded] .choices__item:hover,
+.choices__list[aria-expanded] .choices__item--selectable:hover {
+  background-color: rgb(var(--primary) / 0.2) !important;
+  color: rgb(var(--text-title)) !important;
+  transition: background-color 120ms ease !important;
+}
+
+/* Selected option in dropdown list */
+.choices__list--dropdown .choices__item.is-selected,
+.choices__list--dropdown .choices__item--selectable.is-selected,
+.choices__list[aria-expanded] .choices__item.is-selected,
+.choices__list[aria-expanded] .choices__item--selectable.is-selected {
+  background-color: rgb(var(--primary) / 0.3) !important;
+  color: rgb(var(--text-title)) !important;
+  font-weight: 600 !important;
+}
+
+/* FormIO Labels */
+.formio-component label,
+.formio-component .col-form-label,
+.formio-component .control-label,
+.formio-component .form-check-label {
+  color: rgb(var(--text-title)) !important;
+}
+
+/* FormIO inputs */
+.formio-component .form-control {
+  background-color: rgb(var(--surface)) !important;
+  color: rgb(var(--text-title)) !important;
+  border-color: rgb(var(--border)) !important;
+}
+
