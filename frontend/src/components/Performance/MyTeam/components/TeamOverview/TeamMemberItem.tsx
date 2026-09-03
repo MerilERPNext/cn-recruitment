@@ -207,25 +207,26 @@ export const TeamMemberItem = memo(({ item: m }: { item: TeamMemberItemType }) =
           <div className="min-w-0">
             <Typography
               variant="bodySmall"
-              className="block truncate font-semibold text-gray-900"
+              className="block truncate font-semibold"
             >
               {name}
             </Typography>
-            <Typography variant="caption" className="block truncate text-gray-500">
+            <Typography variant="caption" color="body2" className="block truncate">
               {designation} · {tenure}
             </Typography>
           </div>
         </div>
       </div>
       <div className="flex justify-center">
-        <Typography variant="caption" className="text-gray-500">
-          <span className="font-semibold text-gray-900">{goalCount}</span> goals
+        <Typography variant="caption" color="body2">
+          <span className="font-semibold">{goalCount}</span> goals
         </Typography>
       </div>
       <div className="flex flex-col items-center">
         <Typography
           variant="caption"
-          className="mb-1 block font-medium text-gray-600"
+          color="body2"
+          className="mb-1 block font-medium"
         >
           {progress}%
         </Typography>

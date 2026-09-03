@@ -52,11 +52,11 @@ const Overview: React.FC = () => {
   }, [location.pathname]);
 
   return (
-    <main ref={topRef} aria-label="Performance Overview" className="min-h-full bg-[#f8fafc] font-sans flex flex-col">
+    <main ref={topRef} aria-label="Performance Overview" className="min-h-full bg-app font-sans flex flex-col">
       <div className="mx-auto w-full min-w-0 flex flex-col flex-1">
         
         {/* Tab Navigation */}
-        <div className="sticky overflow-x-auto top-0 z-10 border-b border-gray-200 px-4 sm:px-6 bg-white flex-shrink-0 pb-1">
+        <div className="sticky overflow-x-auto top-0 z-10 border-b border-border px-4 sm:px-6 bg-card flex-shrink-0 pb-1">
           <nav className="-mb-px flex space-x-8 min-w-max" aria-label="Tabs">
             {[
               { id: 'overview', name: 'Overview', path: '/webapp/performance-app/overview' },
@@ -76,7 +76,7 @@ const Overview: React.FC = () => {
                     whitespace-nowrap border-b-2 py-4 px-1 text-sm font-semibold transition-all duration-200
                     ${isActive
                       ? 'border-blue-500 text-blue-600'
-                      : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
+                      : 'border-transparent text-text-body2 hover:border-border hover:text-text-title'
                     }
                   `}
                 >
