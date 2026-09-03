@@ -20,19 +20,19 @@ export const getWeightageColor = (weightage?: number, index: number = 0) => {
     if (weightage !== undefined) {
         if (weightage <= 10) {
             return index % 2 === 0
-                ? { dot: 'bg-red-500', text: 'text-red-500' }
-                : { dot: 'bg-orange-400', text: 'text-orange-500' };
+                ? { dot: 'bg-red-500', text: 'text-red-400' }
+                : { dot: 'bg-amber-400', text: 'text-amber-400' };
         } else if (weightage <= 20) {
-            return { dot: 'bg-blue-500', text: 'text-blue-500' };
+            return { dot: 'bg-sky-400', text: 'text-sky-400' };
         } else if (weightage <= 50) {
-            return { dot: 'bg-indigo-500', text: 'text-indigo-500' };
+            return { dot: 'bg-purple-400', text: 'text-purple-400' };
         }
-        return { dot: 'bg-emerald-500', text: 'text-emerald-500' };
+        return { dot: 'bg-emerald-400', text: 'text-emerald-400' };
     }
     const colors = [
-        { dot: 'bg-red-500', text: 'text-red-500' },
-        { dot: 'bg-orange-400', text: 'text-orange-500' },
-        { dot: 'bg-blue-500', text: 'text-blue-500' },
+        { dot: 'bg-red-500', text: 'text-red-400' },
+        { dot: 'bg-amber-400', text: 'text-amber-400' },
+        { dot: 'bg-sky-400', text: 'text-sky-400' },
     ];
     return colors[index % colors.length];
 };

@@ -105,7 +105,7 @@ export const MandatoryGoalsBanner: React.FC<MandatoryGoalsBannerProps> = ({
                     variant="contain"
                     bgColor="error"
                     disabled={goalsCount === 0}
-                    className="w-full md:w-auto justify-center bg-[#E35D6A] hover:bg-[#cb4f5b] text-white disabled:bg-gray-300 disabled:text-gray-500 disabled:opacity-60"
+                    className="w-full md:w-auto justify-center bg-red-500 hover:bg-red-600 text-white cursor-pointer disabled:bg-slate-500/20 disabled:text-text-body2 disabled:border disabled:border-border disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Acknowledge {goalsCount} <ArrowRight className="w-4 h-4 ml-1" />
                   </Button>
