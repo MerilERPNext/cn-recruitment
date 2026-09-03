@@ -54,7 +54,7 @@ const createInitialKeyResults = (minimumKeyResults: number): KeyResult[] =>
         weight: '',
     }));
 
-const labelClass = 'mb-1.5 block text-xs font-medium text-gray-600';
+const labelClass = 'mb-1.5 block text-xs font-medium text-text-body2';
 
 const DefineGoal = ({ goalType, formConfig, onGoalsChange }: DefineGoalProps) => {
     const { draftGoals, removeDraftGoal } = useGoalModel(); 

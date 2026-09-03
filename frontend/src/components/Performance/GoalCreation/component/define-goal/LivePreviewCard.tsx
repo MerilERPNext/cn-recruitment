@@ -53,16 +53,16 @@ export const LivePreviewCard = ({
   return (
     <aside className="space-y-4">
       <Card
-        className="overflow-hidden border border-gray-200 bg-white shadow-sm"
+        className="overflow-hidden border border-border bg-card shadow-sm"
         radius="xl"
         padding="none"
       >
-        <div className="border-b border-gray-100 bg-gray-50 px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-gray-500">
+        <div className="border-b border-border bg-slate-500/10 px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-text-body2">
           Live Preview {goalNumber ? `— Goal ${goalNumber}` : ""}
         </div>
 
         <div className="p-4">
-          <div className="rounded-xl border border-gray-100 bg-slate-50/50 p-4 text-gray-900">
+          <div className="rounded-xl border border-border bg-slate-500/10 p-4 text-text-title">
             <div className="mb-3 flex flex-wrap gap-2">
               <Badge label={goalType || "OKR"} variant="purple" size="sm" />
               {department && <Badge label={department} variant="default" size="sm" />}
@@ -71,12 +71,12 @@ export const LivePreviewCard = ({
 
             <Typography
               variant="bodyMedium"
-              className="text-sm break-words font-semibold text-gray-900"
+              className="text-sm break-words font-semibold text-text-title"
             >
               {goalTitle.trim() ? goalTitle : "Untitled Objective"}
             </Typography>
 
-            <div className="mt-3 grid grid-cols-3 gap-2 text-[11px] text-gray-500">
+            <div className="mt-3 grid grid-cols-3 gap-2 text-[11px] text-text-body2">
               <span>{weightage}% weight</span>
               <span>Q1-Q3 FY26</span>
               <span>{keyResults.length} KRs</span>
@@ -91,22 +91,20 @@ export const LivePreviewCard = ({
                     className="grid grid-cols-[auto_1fr_60px] items-center gap-2 text-[11px]"
                   >
                     <Badge label={result.id} variant="purple" size="sm" />
-                    <span className="truncate text-gray-600 font-medium">
+                    <span className="truncate text-text-body2 font-medium">
                       {result.title.trim()
                         ? result.title
                         : "Untitled Key Result"}
                     </span>
                     <div className="flex items-center gap-1.5">
-                      <div className="h-1 flex-1 rounded-md bg-gray-200 overflow-hidden">
+                      <div className="h-1 flex-1 rounded-md bg-slate-500/20 overflow-hidden">
                         <div
-                          className="h-full rounded-md bg-blue-500 transition-all duration-300"
-                          style={{
-                            width: `${Math.min(100, Math.max(0, weightNum))}%`,
-                          }}
+                          className="h-full rounded-md bg-primary transition-all"
+                          style={{ width: `${Math.min(weightNum, 100)}%` }}
                         />
                       </div>
-                      <span className="text-[10px] text-gray-400 font-medium shrink-0">
-                        {weightNum > 0 ? `${weightNum}%` : "0%"}
+                      <span className="shrink-0 font-medium text-text-body2">
+                        {weightNum}%
                       </span>
                     </div>
                   </div>
@@ -115,53 +113,54 @@ export const LivePreviewCard = ({
             </div>
           </div>
 
-          <Typography variant="caption" className="mt-3 block text-gray-500">
-            Updates as you type - approval required from {approverName}
-          </Typography>
+          <div className="mt-3 text-[11px] text-text-body2">
+            Updates as you type — approval required from {approverName}
+          </div>
         </div>
       </Card>
 
-      <Card
-        className="border border-amber-200 bg-[#fffdf1] p-4 shadow-sm"
-        radius="xl"
-      >
+      <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4">
         <Typography
-          variant="bodyMedium"
-          className="font-semibold text-amber-800"
+          variant="subheading"
+          className="font-bold text-amber-500 mb-1"
         >
-          No minimum · {maximumKeyResults === null ? "No maximum" : `${maximumKeyResults} KRs maximum`}
+          No minimum - No maximum
         </Typography>
-        <Typography variant="caption" className="mt-1 block text-amber-700">
-          Most high-performing PW OKRs have 3-4 KRs. More than 5 dilutes focus.
+        <Typography variant="bodyMedium" className="text-xs text-amber-400/90 leading-relaxed">
+          Most high-performing PW OKRs have 3–4 KRs. More than 5 dilutes focus.
         </Typography>
-      </Card>
+      </div>
 
       <Card
-        className="overflow-hidden border border-gray-200 bg-white shadow-sm"
+        className="border border-border bg-card p-4 shadow-sm"
         radius="xl"
-        padding="none"
       >
-        <div className="border-b border-gray-100 bg-gray-50 px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-gray-500">
+        <div className="mb-3 text-[11px] font-semibold uppercase tracking-wide text-text-body2">
           Required Fields
         </div>
-        <div className="p-4">
-          <ul className="space-y-2.5">
-          {checklist.map((item, index) => (
-            <li key={index} className="flex items-center gap-2">
+
+        <div className="space-y-2">
+          {checklist.map((item) => (
+            <div
+              key={item.label}
+              className="flex items-center gap-2 text-xs"
+            >
               {item.isCompleted ? (
-                <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" />
+                <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
               ) : (
-                <Circle className="h-4 w-4 text-gray-300 shrink-0" />
+                <Circle className="h-4 w-4 text-text-body2 shrink-0" />
               )}
-              <Typography
-                variant="caption"
-                className={item.isCompleted ? "text-gray-700" : "text-gray-500"}
+              <span
+                className={
+                  item.isCompleted
+                    ? "font-medium text-text-title"
+                    : "text-text-body2"
+                }
               >
                 {item.label}
-              </Typography>
-            </li>
+              </span>
+            </div>
           ))}
-          </ul>
         </div>
       </Card>
     </aside>
