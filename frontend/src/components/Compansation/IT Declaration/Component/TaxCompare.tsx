@@ -50,7 +50,7 @@ const CompareTaxSheetHandler = ({ declarationId, disabled = false }: Props) => {
         onClick={handleView}
         disabled={disabled}
         loading={isPending}
-        className="px-4 py-1 text-sm rounded-xl"
+        className="px-4 py-1 text-sm rounded-lg"
       >
         Compare Tax
       </Button>

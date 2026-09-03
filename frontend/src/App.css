@@ -106,10 +106,10 @@
   height: 2px;
 }
 .scrollbar-visible::-webkit-scrollbar-track {
-  background: #e5e7eb;
+  background: rgb(var(--gray-100));
 }
 .scrollbar-visible::-webkit-scrollbar-thumb {
-  background: #474747;
+  background: rgb(var(--gray-500));
   border-radius: 4px;
 }
 .address-form-container .row {
@@ -294,7 +294,7 @@
   /* 16px */
   font-weight: 500;
   /* Medium */
-  color: #1f2937;
+  color: rgb(var(--text-title));
   /* Tailwind's gray-800 */
   text-transform: capitalize;
 }
@@ -310,25 +310,25 @@
 .base-title {
   font-size: 1rem;
   font-weight: 600;
-  color: #111827;
+  color: rgb(var(--text-title));
 }
 
 .card-title {
   font-size: 0.935rem;
   font-weight: 600;
-  color: #111827;
+  color: rgb(var(--text-title));
 }
 
 .card-subtitle {
   font-size: 0.875rem;
   font-weight: 500;
-  color: #6b7280;
+  color: rgb(var(--text-body2));
 }
 
 .card-subtitle-sm {
   font-size: 0.8rem;
   font-weight: 500;
-  color: #6b7280;
+  color: rgb(var(--text-body2));
 }
 
 body {
@@ -347,7 +347,7 @@ body {
 }
 
 .simplified-chat-view-quoted-message-a li a:hover {
-  color: white !important;
+  color: rgb(var(--on-primary)) !important;
   font-weight: 400;
 }
 
@@ -363,12 +363,12 @@ body {
 }
 
 .custom-toast-scrollbar::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: rgb(var(--gray-200));
   border-radius: 9999px;
 }
 
 .custom-toast-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: rgb(var(--gray-400));
 }
 
 .custom-toast-scrollbar {
@@ -386,7 +386,7 @@ body {
 .formio-component .control-label.field-required::after,
 .formio-component .col-form-label.field-required::after {
   content: " *";
-  color: #ef4444;
+  color: rgb(var(--error));
   font-weight: 600;
 }
 

@@ -124,8 +124,11 @@
   --gray-800: 216 228 236;
   --gray-900: 246 251 255; /* #F6FBFF */
 
-  --border: 23 51 67; /* #173343 */
-  --border-strong: 42 80 101;
+  /* Lifted from #173343: against the #0B1724 card that sat only ~4% apart and
+     read as a barely-there smudge rather than a rule. #1E3A4D keeps the line
+     clearly visible while staying soft — the tone the tables were specced at. */
+  --border: 30 58 77; /* #1E3A4D */
+  --border-strong: 47 88 111; /* #2F586F */
 
   --success: 52 211 153;
   --warning: 251 191 36;
@@ -180,6 +183,21 @@ body {
   /* Same reasoning for fills in inline SVG icons. */
   .fill-white {
     fill: rgb(246 251 255);
+  }
+
+  /* `black` is deliberately NOT tokenized: 65 of its 166 uses are `bg-black/NN`
+     modal and drawer scrims, which must stay black in both themes. But text and
+     borders drawn in black vanish on Cosmic Black, so those flip here. */
+  [class~="text-black"] {
+    color: rgb(var(--text-title));
+  }
+
+  [class~="border-black"] {
+    border-color: rgb(var(--border-strong));
+  }
+
+  [class~="fill-black"] {
+    fill: rgb(var(--text-title));
   }
 
   /* Light shadows read as glow on a near-black page. */
@@ -246,6 +264,42 @@ body {
   color: rgb(var(--on-primary));
 }
 
+/* Opacity-suffixed pale tints -- same reasoning as the block above. */
+:is(
+[data-theme="dark"] [class*="bg-blue-50/"],
+[data-theme="dark"] [class*="bg-blue-100/"],
+[data-theme="dark"] [class*="bg-indigo-50/"],
+[data-theme="dark"] [class*="bg-indigo-100/"],
+[data-theme="dark"] [class*="bg-sky-50/"],
+[data-theme="dark"] [class*="bg-sky-100/"],
+[data-theme="dark"] [class*="bg-cyan-50/"],
+[data-theme="dark"] [class*="bg-cyan-100/"],
+[data-theme="dark"] [class*="bg-violet-50/"],
+[data-theme="dark"] [class*="bg-violet-100/"],
+[data-theme="dark"] [class*="bg-purple-50/"],
+[data-theme="dark"] [class*="bg-purple-100/"],
+[data-theme="dark"] [class*="bg-green-50/"],
+[data-theme="dark"] [class*="bg-green-100/"],
+[data-theme="dark"] [class*="bg-emerald-50/"],
+[data-theme="dark"] [class*="bg-emerald-100/"],
+[data-theme="dark"] [class*="bg-teal-50/"],
+[data-theme="dark"] [class*="bg-teal-100/"],
+[data-theme="dark"] [class*="bg-red-50/"],
+[data-theme="dark"] [class*="bg-red-100/"],
+[data-theme="dark"] [class*="bg-rose-50/"],
+[data-theme="dark"] [class*="bg-rose-100/"],
+[data-theme="dark"] [class*="bg-pink-50/"],
+[data-theme="dark"] [class*="bg-pink-100/"],
+[data-theme="dark"] [class*="bg-amber-50/"],
+[data-theme="dark"] [class*="bg-amber-100/"],
+[data-theme="dark"] [class*="bg-yellow-50/"],
+[data-theme="dark"] [class*="bg-yellow-100/"],
+[data-theme="dark"] [class*="bg-orange-50/"],
+[data-theme="dark"] [class*="bg-orange-100/"]
+) :is([class*="text-gray-"], [class*="text-text-"]) {
+  color: rgb(var(--text-title)) !important;
+}
+
 /* Pale tints from the built-in palette: badges, alerts and status chips. Nebula
    Blue would look wrong against a red or amber tint, so these take the neutral
    ink instead — the same colour light-mode body copy already uses. */
@@ -278,15 +332,527 @@ body {
    `[class~="text-white"]` is invisible to that check and still outranks the
    plain `.text-white` utility (0,2,0 against 0,1,0). */
 .bg-primary[class~="text-white"],
+.bg-primary-300[class~="text-white"],
 .bg-primary-400[class~="text-white"],
 .bg-primary-500[class~="text-white"],
 .bg-primary-600[class~="text-white"] {
   color: rgb(var(--on-primary));
 }
 
+/* Same fix, but for a NESTED element rather than the coloured one itself --
+   e.g. the active item in Onboarding Approval's sidebar: the button carries
+   `bg-primary-500 text-white`, which the rule above does correct, but its
+   label and "x/y approved" line are separate <div>s each carrying their own
+   `text-white` (and `text-blue-100`, a pale literal with no contrast on cyan
+   either). A child's OWN class always beats a colour merely inherited from an
+   ancestor rule, no matter that ancestor rule's specificity, so those divs
+   stayed white-on-cyan regardless of the same-element fix above. 42 files
+   carry a `bg-primary-*` container with nested white/blue-100 text, so this is
+   fixed once here rather than in each of them. */
+.bg-primary [class~="text-white"],
+.bg-primary-300 [class~="text-white"],
+.bg-primary-400 [class~="text-white"],
+.bg-primary-500 [class~="text-white"],
+.bg-primary-600 [class~="text-white"],
+.bg-primary [class~="text-blue-100"],
+.bg-primary-300 [class~="text-blue-100"],
+.bg-primary-400 [class~="text-blue-100"],
+.bg-primary-500 [class~="text-blue-100"],
+.bg-primary-600 [class~="text-blue-100"] {
+  color: rgb(var(--on-primary));
+  opacity: 0.85;
+}
+
 /* Focus rings follow Nova Cyan in both modes. */
 :focus-visible {
   outline-color: rgb(var(--ring));
+}
+
+/* =============================================================================
+ * App header bar
+ *
+ * Light: a Nova Cyan gradient (#18D9FF → #3ADEFF). Dark: Nebula Blue, so the
+ * bar recedes against Cosmic Black instead of glowing.
+ *
+ * The bar's contents are written as `color="white"` / `text-white`, which is
+ * correct on the dark bar and unreadable on the cyan one — white on #18D9FF is
+ * about 1.6:1. `--header-ink` flips with the theme and is applied to the title,
+ * subtitle, icons and the toggle in one place, so no component needs to know
+ * which theme is active.
+ * ========================================================================== */
+.app-header {
+  --header-ink: rgb(var(--on-primary)); /* #103448 on cyan */
+}
+
+[data-theme="dark"] .app-header {
+  --header-ink: rgb(246 251 255); /* Stellar White on Nebula Blue */
+}
+
+/* `[class~="text-white"]` rather than `.text-white`: naming the utility
+   directly makes Tailwind treat this as a redefinition and fail the build. */
+.app-header,
+.app-header [class~="text-white"],
+.app-header [class~="text-pure-white"] {
+  color: var(--header-ink);
+}
+
+.app-header svg {
+  color: var(--header-ink);
+}
+
+/* The search field and toggle sit on the bar and are tinted from it, so they
+   follow the same ink rather than a fixed white. */
+.app-header input::placeholder {
+  color: var(--header-ink);
+  opacity: 0.7;
+}
+
+/* =============================================================================
+ * Light border tints on a dark canvas
+ *
+ * Border colours from the built-in palette (`border-blue-200`, `border-red-100`
+ * ...) are literals — they never theme. On Cosmic Black a #BFDBFE hairline
+ * reads as a bright white grid line, which is why the attendance table looked
+ * like it had white rules through it.
+ *
+ * 408 occurrences across 146 files, so this is fixed centrally rather than per
+ * component. Two groups, because they mean different things:
+ *
+ *   Brand/neutral hues carry no meaning in a border — they become the standard
+ *   subtle divider, matching every other table in the app.
+ *
+ *   Semantic hues DO carry meaning (a red-edged error card, an amber warning),
+ *   so those keep their hue and only lose luminance.
+ * ========================================================================== */
+[data-theme="dark"] [class~="border-blue-50"],
+[data-theme="dark"] [class~="border-blue-100"],
+[data-theme="dark"] [class~="border-blue-200"],
+[data-theme="dark"] [class~="border-blue-300"],
+[data-theme="dark"] [class~="border-purple-50"],
+[data-theme="dark"] [class~="border-purple-100"],
+[data-theme="dark"] [class~="border-purple-200"],
+[data-theme="dark"] [class~="border-purple-300"],
+[data-theme="dark"] [class~="border-indigo-50"],
+[data-theme="dark"] [class~="border-indigo-100"],
+[data-theme="dark"] [class~="border-indigo-200"],
+[data-theme="dark"] [class~="border-indigo-300"],
+[data-theme="dark"] [class~="border-violet-50"],
+[data-theme="dark"] [class~="border-violet-100"],
+[data-theme="dark"] [class~="border-violet-200"],
+[data-theme="dark"] [class~="border-violet-300"],
+[data-theme="dark"] [class~="border-sky-50"],
+[data-theme="dark"] [class~="border-sky-100"],
+[data-theme="dark"] [class~="border-sky-200"],
+[data-theme="dark"] [class~="border-sky-300"],
+[data-theme="dark"] [class~="border-cyan-50"],
+[data-theme="dark"] [class~="border-cyan-100"],
+[data-theme="dark"] [class~="border-cyan-200"],
+[data-theme="dark"] [class~="border-cyan-300"],
+[data-theme="dark"] [class~="border-teal-50"],
+[data-theme="dark"] [class~="border-teal-100"],
+[data-theme="dark"] [class~="border-teal-200"],
+[data-theme="dark"] [class~="border-teal-300"],
+[data-theme="dark"] [class~="border-pink-50"],
+[data-theme="dark"] [class~="border-pink-100"],
+[data-theme="dark"] [class~="border-pink-200"],
+[data-theme="dark"] [class~="border-pink-300"] {
+  border-color: rgb(var(--border)) !important;
+}
+
+[data-theme="dark"] [class~="border-red-50"],
+[data-theme="dark"] [class~="border-red-100"],
+[data-theme="dark"] [class~="border-red-200"],
+[data-theme="dark"] [class~="border-red-300"],
+[data-theme="dark"] [class~="border-rose-50"],
+[data-theme="dark"] [class~="border-rose-100"],
+[data-theme="dark"] [class~="border-rose-200"],
+[data-theme="dark"] [class~="border-rose-300"] {
+  border-color: rgb(88 28 35) !important; /* muted red */
+}
+
+[data-theme="dark"] [class~="border-green-50"],
+[data-theme="dark"] [class~="border-green-100"],
+[data-theme="dark"] [class~="border-green-200"],
+[data-theme="dark"] [class~="border-green-300"],
+[data-theme="dark"] [class~="border-emerald-50"],
+[data-theme="dark"] [class~="border-emerald-100"],
+[data-theme="dark"] [class~="border-emerald-200"],
+[data-theme="dark"] [class~="border-emerald-300"] {
+  border-color: rgb(20 66 48) !important; /* muted green */
+}
+
+[data-theme="dark"] [class~="border-amber-50"],
+[data-theme="dark"] [class~="border-amber-100"],
+[data-theme="dark"] [class~="border-amber-200"],
+[data-theme="dark"] [class~="border-amber-300"],
+[data-theme="dark"] [class~="border-yellow-50"],
+[data-theme="dark"] [class~="border-yellow-100"],
+[data-theme="dark"] [class~="border-yellow-200"],
+[data-theme="dark"] [class~="border-yellow-300"],
+[data-theme="dark"] [class~="border-orange-50"],
+[data-theme="dark"] [class~="border-orange-100"],
+[data-theme="dark"] [class~="border-orange-200"],
+[data-theme="dark"] [class~="border-orange-300"] {
+  border-color: rgb(74 55 16) !important; /* muted amber */
+}
+
+/* =============================================================================
+ * The app's own semantic ramps on a dark canvas
+ *
+ * `bg-success-50`, `bg-error-50`, `bg-primary-50` and friends are fixed
+ * literals in tailwind.config.ts — pale tints designed for a white page. On
+ * Cosmic Black they render as near-white blocks, which is how the FlexiBenefit
+ * notice ended up as a white slab with pale green text on it.
+ *
+ * 365 occurrences across 30 files, so this is handled centrally. Each tint
+ * keeps its hue and only drops luminance, so an alert still reads as success /
+ * error / warning at a glance.
+ *
+ * The paired `text-success` / `text-error` utilities need no help: those follow
+ * --success / --error, which already lift for dark.
+ * ========================================================================== */
+/* success — green family */
+[data-theme="dark"] [class~="bg-success-10"],
+[data-theme="dark"] [class~="bg-success-50"],
+[data-theme="dark"] [class~="bg-success-100"],
+[data-theme="dark"] [class~="bg-success-200"] {
+  background-color: rgb(13 51 36) !important;
+}
+
+[data-theme="dark"] [class~="border-success-10"],
+[data-theme="dark"] [class~="border-success-50"],
+[data-theme="dark"] [class~="border-success-100"],
+[data-theme="dark"] [class~="border-success-200"] {
+  border-color: rgb(28 81 56) !important;
+}
+
+/* error — red family */
+[data-theme="dark"] [class~="bg-error-10"],
+[data-theme="dark"] [class~="bg-error-50"],
+[data-theme="dark"] [class~="bg-error-100"],
+[data-theme="dark"] [class~="bg-error-200"] {
+  background-color: rgb(59 20 24) !important;
+}
+
+[data-theme="dark"] [class~="border-error-10"],
+[data-theme="dark"] [class~="border-error-50"],
+[data-theme="dark"] [class~="border-error-100"],
+[data-theme="dark"] [class~="border-error-200"] {
+  border-color: rgb(91 33 38) !important;
+}
+
+/* warning — amber family */
+[data-theme="dark"] [class~="bg-warning-10"],
+[data-theme="dark"] [class~="bg-warning-50"],
+[data-theme="dark"] [class~="bg-warning-100"],
+[data-theme="dark"] [class~="bg-warning-200"] {
+  background-color: rgb(58 43 12) !important;
+}
+
+[data-theme="dark"] [class~="border-warning-10"],
+[data-theme="dark"] [class~="border-warning-50"],
+[data-theme="dark"] [class~="border-warning-100"],
+[data-theme="dark"] [class~="border-warning-200"] {
+  border-color: rgb(92 68 19) !important;
+}
+
+/* info — blue family */
+[data-theme="dark"] [class~="bg-info-10"],
+[data-theme="dark"] [class~="bg-info-50"],
+[data-theme="dark"] [class~="bg-info-100"],
+[data-theme="dark"] [class~="bg-info-200"] {
+  background-color: rgb(12 44 63) !important;
+}
+
+[data-theme="dark"] [class~="border-info-10"],
+[data-theme="dark"] [class~="border-info-50"],
+[data-theme="dark"] [class~="border-info-100"],
+[data-theme="dark"] [class~="border-info-200"] {
+  border-color: rgb(23 71 95) !important;
+}
+
+/* primary — cyan family */
+[data-theme="dark"] [class~="bg-primary-10"],
+[data-theme="dark"] [class~="bg-primary-50"],
+[data-theme="dark"] [class~="bg-primary-100"],
+[data-theme="dark"] [class~="bg-primary-200"] {
+  background-color: rgb(14 42 60) !important;
+}
+
+[data-theme="dark"] [class~="border-primary-10"],
+[data-theme="dark"] [class~="border-primary-50"],
+[data-theme="dark"] [class~="border-primary-100"],
+[data-theme="dark"] [class~="border-primary-200"] {
+  border-color: rgb(30 74 99) !important;
+}
+
+/* secondary — cyan family */
+[data-theme="dark"] [class~="bg-secondary-10"],
+[data-theme="dark"] [class~="bg-secondary-50"],
+[data-theme="dark"] [class~="bg-secondary-100"],
+[data-theme="dark"] [class~="bg-secondary-200"] {
+  background-color: rgb(14 42 60) !important;
+}
+
+[data-theme="dark"] [class~="border-secondary-10"],
+[data-theme="dark"] [class~="border-secondary-50"],
+[data-theme="dark"] [class~="border-secondary-100"],
+[data-theme="dark"] [class~="border-secondary-200"] {
+  border-color: rgb(30 74 99) !important;
+}
+
+/* =============================================================================
+ * Pale background tints on a dark canvas
+ *
+ * `bg-blue-50`, `bg-purple-50`, `bg-orange-50` ... are literals meant for a
+ * white page. On Cosmic Black they are near-white slabs — the three
+ * Compensation summary cards being the clearest example.
+ *
+ * 1101 occurrences across 274 files. Each family keeps its hue and drops
+ * luminance, so a blue card still reads blue and a red one still reads red.
+ *
+ * IMPORTANT: the "Fixed light backgrounds vs themed text" rule above puts DARK
+ * ink on these tints, which is right while they are pale. Once they darken that
+ * ink would be invisible, so the text is flipped back to light here. These
+ * rules carry a [data-theme="dark"] prefix, so they outrank the unconditional
+ * ones regardless of order.
+ * ========================================================================== */
+[data-theme="dark"] [class~="bg-blue-50"],
+[data-theme="dark"] [class~="bg-blue-100"],
+[data-theme="dark"] [class~="bg-indigo-50"],
+[data-theme="dark"] [class~="bg-indigo-100"],
+[data-theme="dark"] [class~="bg-sky-50"],
+[data-theme="dark"] [class~="bg-sky-100"],
+[data-theme="dark"] [class~="bg-cyan-50"],
+[data-theme="dark"] [class~="bg-cyan-100"],
+[data-theme="dark"] [class~="bg-violet-50"],
+[data-theme="dark"] [class~="bg-violet-100"],
+[data-theme="dark"] [class~="bg-purple-50"],
+[data-theme="dark"] [class~="bg-purple-100"] {
+  background-color: rgb(14 42 60) !important;
+}
+
+[data-theme="dark"] [class~="bg-green-50"],
+[data-theme="dark"] [class~="bg-green-100"],
+[data-theme="dark"] [class~="bg-emerald-50"],
+[data-theme="dark"] [class~="bg-emerald-100"],
+[data-theme="dark"] [class~="bg-teal-50"],
+[data-theme="dark"] [class~="bg-teal-100"] {
+  background-color: rgb(13 51 36) !important;
+}
+
+[data-theme="dark"] [class~="bg-red-50"],
+[data-theme="dark"] [class~="bg-red-100"],
+[data-theme="dark"] [class~="bg-rose-50"],
+[data-theme="dark"] [class~="bg-rose-100"],
+[data-theme="dark"] [class~="bg-pink-50"],
+[data-theme="dark"] [class~="bg-pink-100"] {
+  background-color: rgb(59 20 24) !important;
+}
+
+[data-theme="dark"] [class~="bg-amber-50"],
+[data-theme="dark"] [class~="bg-amber-100"],
+[data-theme="dark"] [class~="bg-yellow-50"],
+[data-theme="dark"] [class~="bg-yellow-100"],
+[data-theme="dark"] [class~="bg-orange-50"],
+[data-theme="dark"] [class~="bg-orange-100"] {
+  background-color: rgb(58 43 12) !important;
+}
+
+
+/* Same families, opacity-suffixed (`bg-blue-50/40`, `bg-red-50/60`, ...).
+   `[class~=...]` only matches an exact class token, so it never caught these --
+   121 occurrences across the app, including the redemption-history table
+   header (`bg-blue-50/40`), which is what rendered as a flat grey bar instead
+   of a subtle tint. Same darkened fills, opacity dropped: a solid dark tint
+   reads more consistently than a translucent one layered over Cosmic Black. */
+[data-theme="dark"] [class*="bg-blue-50/"],
+[data-theme="dark"] [class*="bg-blue-100/"],
+[data-theme="dark"] [class*="bg-indigo-50/"],
+[data-theme="dark"] [class*="bg-indigo-100/"],
+[data-theme="dark"] [class*="bg-sky-50/"],
+[data-theme="dark"] [class*="bg-sky-100/"],
+[data-theme="dark"] [class*="bg-cyan-50/"],
+[data-theme="dark"] [class*="bg-cyan-100/"],
+[data-theme="dark"] [class*="bg-violet-50/"],
+[data-theme="dark"] [class*="bg-violet-100/"],
+[data-theme="dark"] [class*="bg-purple-50/"],
+[data-theme="dark"] [class*="bg-purple-100/"] {
+  background-color: rgb(14 42 60) !important;
+}
+
+[data-theme="dark"] [class*="bg-green-50/"],
+[data-theme="dark"] [class*="bg-green-100/"],
+[data-theme="dark"] [class*="bg-emerald-50/"],
+[data-theme="dark"] [class*="bg-emerald-100/"],
+[data-theme="dark"] [class*="bg-teal-50/"],
+[data-theme="dark"] [class*="bg-teal-100/"] {
+  background-color: rgb(13 51 36) !important;
+}
+
+[data-theme="dark"] [class*="bg-red-50/"],
+[data-theme="dark"] [class*="bg-red-100/"],
+[data-theme="dark"] [class*="bg-rose-50/"],
+[data-theme="dark"] [class*="bg-rose-100/"],
+[data-theme="dark"] [class*="bg-pink-50/"],
+[data-theme="dark"] [class*="bg-pink-100/"] {
+  background-color: rgb(59 20 24) !important;
+}
+
+[data-theme="dark"] [class*="bg-amber-50/"],
+[data-theme="dark"] [class*="bg-amber-100/"],
+[data-theme="dark"] [class*="bg-yellow-50/"],
+[data-theme="dark"] [class*="bg-yellow-100/"],
+[data-theme="dark"] [class*="bg-orange-50/"],
+[data-theme="dark"] [class*="bg-orange-100/"] {
+  background-color: rgb(58 43 12) !important;
+}
+
+/* Text sitting on the darkened tints. */
+:is(
+[data-theme="dark"] [class~="bg-blue-50"],
+[data-theme="dark"] [class~="bg-blue-100"],
+[data-theme="dark"] [class~="bg-indigo-50"],
+[data-theme="dark"] [class~="bg-indigo-100"],
+[data-theme="dark"] [class~="bg-sky-50"],
+[data-theme="dark"] [class~="bg-sky-100"],
+[data-theme="dark"] [class~="bg-cyan-50"],
+[data-theme="dark"] [class~="bg-cyan-100"],
+[data-theme="dark"] [class~="bg-violet-50"],
+[data-theme="dark"] [class~="bg-violet-100"],
+[data-theme="dark"] [class~="bg-purple-50"],
+[data-theme="dark"] [class~="bg-purple-100"],
+[data-theme="dark"] [class~="bg-green-50"],
+[data-theme="dark"] [class~="bg-green-100"],
+[data-theme="dark"] [class~="bg-emerald-50"],
+[data-theme="dark"] [class~="bg-emerald-100"],
+[data-theme="dark"] [class~="bg-teal-50"],
+[data-theme="dark"] [class~="bg-teal-100"],
+[data-theme="dark"] [class~="bg-red-50"],
+[data-theme="dark"] [class~="bg-red-100"],
+[data-theme="dark"] [class~="bg-rose-50"],
+[data-theme="dark"] [class~="bg-rose-100"],
+[data-theme="dark"] [class~="bg-pink-50"],
+[data-theme="dark"] [class~="bg-pink-100"],
+[data-theme="dark"] [class~="bg-amber-50"],
+[data-theme="dark"] [class~="bg-amber-100"],
+[data-theme="dark"] [class~="bg-yellow-50"],
+[data-theme="dark"] [class~="bg-yellow-100"],
+[data-theme="dark"] [class~="bg-orange-50"],
+[data-theme="dark"] [class~="bg-orange-100"]
+) :is([class*="text-gray-"], [class*="text-text-"]) {
+  color: rgb(var(--text-title)) !important;
+}
+
+/* =============================================================================
+ * Same-hue dark ink on the now-darkened tints
+ *
+ * Badges across the app (StatusBadge and several inline ones) pair a pale fill
+ * with dark text of the SAME hue -- `bg-yellow-100 text-yellow-800`,
+ * `bg-red-100 text-red-700`, `bg-emerald-100 text-emerald-700`. The rule above
+ * darkens the fill; this is the text half. Without it, "Draft" measured
+ * 2.00:1 -- dark-brown ink on a dark-amber chip, functionally invisible.
+ *
+ * Each family gets a light tint of ITSELF (amber text stays amber, just
+ * lighter), so a status badge keeps its colour identity rather than every
+ * badge converging on one neutral ink. Retheming 600/700/800 outright is safe
+ * here: those steps exist to be dark ink on a light ground, and in dark mode
+ * that ground no longer exists.
+ * ========================================================================== */
+[data-theme="dark"] [class~="text-yellow-600"],
+[data-theme="dark"] [class~="text-yellow-700"],
+[data-theme="dark"] [class~="text-yellow-800"],
+[data-theme="dark"] [class~="text-amber-600"],
+[data-theme="dark"] [class~="text-amber-700"],
+[data-theme="dark"] [class~="text-amber-800"],
+[data-theme="dark"] [class~="text-orange-600"],
+[data-theme="dark"] [class~="text-orange-700"],
+[data-theme="dark"] [class~="text-orange-800"] {
+  color: rgb(252 211 77) !important;
+}
+
+/* The app's OWN success/error/warning ramps have the identical gap: their
+   50/100/200 fills were darkened earlier, but the matching text-success-800 /
+   text-error-600 / text-warning-800 literals were never flipped -- this is
+   the "Approve Section" / "Return Section" buttons measuring 1.71:1 / 2.12:1
+   in Onboarding Approval's header. Same treatment, using the app's own
+   --success / --error / --warning tokens (already lifted for dark) rather
+   than a hand-picked tint, so these track the palette if it ever changes. */
+[data-theme="dark"] [class~="text-success-600"],
+[data-theme="dark"] [class~="text-success-800"] {
+  color: rgb(var(--success)) !important;
+}
+
+[data-theme="dark"] [class~="text-error-600"],
+[data-theme="dark"] [class~="text-error-800"] {
+  color: rgb(var(--error)) !important;
+}
+
+[data-theme="dark"] [class~="text-warning-600"],
+[data-theme="dark"] [class~="text-warning-800"] {
+  color: rgb(var(--warning)) !important;
+}
+
+[data-theme="dark"] [class~="text-green-600"],
+[data-theme="dark"] [class~="text-green-700"],
+[data-theme="dark"] [class~="text-green-800"],
+[data-theme="dark"] [class~="text-emerald-600"],
+[data-theme="dark"] [class~="text-emerald-700"],
+[data-theme="dark"] [class~="text-emerald-800"],
+[data-theme="dark"] [class~="text-teal-600"],
+[data-theme="dark"] [class~="text-teal-700"],
+[data-theme="dark"] [class~="text-teal-800"] {
+  color: rgb(110 231 183) !important;
+}
+
+[data-theme="dark"] [class~="text-red-600"],
+[data-theme="dark"] [class~="text-red-700"],
+[data-theme="dark"] [class~="text-red-800"],
+[data-theme="dark"] [class~="text-rose-600"],
+[data-theme="dark"] [class~="text-rose-700"],
+[data-theme="dark"] [class~="text-rose-800"],
+[data-theme="dark"] [class~="text-pink-600"],
+[data-theme="dark"] [class~="text-pink-700"],
+[data-theme="dark"] [class~="text-pink-800"] {
+  color: rgb(252 165 165) !important;
+}
+
+[data-theme="dark"] [class~="text-blue-600"],
+[data-theme="dark"] [class~="text-blue-700"],
+[data-theme="dark"] [class~="text-blue-800"],
+[data-theme="dark"] [class~="text-indigo-600"],
+[data-theme="dark"] [class~="text-indigo-700"],
+[data-theme="dark"] [class~="text-indigo-800"],
+[data-theme="dark"] [class~="text-sky-600"],
+[data-theme="dark"] [class~="text-sky-700"],
+[data-theme="dark"] [class~="text-sky-800"],
+[data-theme="dark"] [class~="text-cyan-600"],
+[data-theme="dark"] [class~="text-cyan-700"],
+[data-theme="dark"] [class~="text-cyan-800"],
+[data-theme="dark"] [class~="text-violet-600"],
+[data-theme="dark"] [class~="text-violet-700"],
+[data-theme="dark"] [class~="text-violet-800"],
+[data-theme="dark"] [class~="text-purple-600"],
+[data-theme="dark"] [class~="text-purple-700"],
+[data-theme="dark"] [class~="text-purple-800"] {
+  color: rgb(147 197 253) !important;
+}
+
+
+/* =============================================================================
+ * Off-brand "hero" gradient cards, dark mode
+ *
+ * A handful of stat/highlight cards (Points Summary's Redeemed card among
+ * them) use a hand-picked `from-blue-600 to-cyan-500` gradient rather than the
+ * app's own brand colours. It is legible on Cosmic Black, but it is a
+ * different blue from Nova Cyan, so it visually clashes with every actual
+ * primary-coloured element around it. Restated in Nebula Blue -> Nova Cyan,
+ * matching the header bar's dark treatment. Light mode is left as-is -- it
+ * was not reported as broken there.
+ * ========================================================================== */
+[data-theme="dark"] [class~="from-blue-600"][class~="to-cyan-500"] {
+  --tw-gradient-from: rgb(var(--brand-deep)) var(--tw-gradient-from-position) !important;
+  --tw-gradient-to: rgb(var(--primary)) var(--tw-gradient-to-position) !important;
 }
 
 /* An explicit escape hatch for the rare place that must stay literally white

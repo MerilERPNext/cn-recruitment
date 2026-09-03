@@ -356,7 +356,7 @@ const RecognitionHistory: React.FC = () => {
       <HistoryTabs activeTab={activeTab} onTabChange={setActiveTab} />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
-        <main className="min-h-full bg-[#f6f7fb] p-3 font-sans sm:p-5 lg:p-6">
+        <main className="min-h-full bg-app p-3 font-sans sm:p-5 lg:p-6">
           <Card
             radius="xl"
             className="mx-auto w-full max-w-screen overflow-hidden border border-gray-100 shadow-sm"
@@ -400,8 +400,8 @@ const RecognitionHistory: React.FC = () => {
             {isDesktop ? (
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[1000px] text-left">
-                  <thead>
-                    <tr className="bg-blue-50/40 text-sm text-gray-600">
+                  <thead className="bg-gray-100 border ">
+                    <tr className=" text-sm text-gray-600">
                       <th className="px-5 py-3 font-semibold">Type</th>
                       <th className="px-5 py-3 font-semibold">Program</th>
                       <th className="px-5 py-3 font-semibold">Values</th>
@@ -420,7 +420,7 @@ const RecognitionHistory: React.FC = () => {
                       : rows.map((row) => (
                           <tr
                             key={`${row.history_type}-${row.name}`}
-                            className="border-t border-gray-100 hover:bg-gray-50/60"
+                            className="border-t border-gray-200 hover:bg-gray-50/60"
                           >
                             <td className="px-5 py-4">
                               <HistoryTypeBadge type={row.history_type} />

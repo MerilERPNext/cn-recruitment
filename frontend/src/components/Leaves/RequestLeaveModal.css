@@ -1,40 +1,40 @@
 /* FormIO styling for RequestLeaveModal */
 .formio-modal .formio-component-select .form-control {
-  background: white !important;
-  border: 1px solid #d1d5db !important;
+  background: rgb(var(--surface)) !important;
+  border: 1px solid rgb(var(--border-strong)) !important;
   border-radius: 0.5rem !important;
   padding: 0.75rem 1rem !important;
 }
 
 .formio-modal .formio-component-select .form-control:focus {
   outline: none !important;
-  border-color: #3b82f6 !important;
+  border-color: rgb(var(--primary)) !important;
   box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1) !important;
 }
 
 .formio-modal .formio-component-datetime .form-control {
-  background: white !important;
-  border: 1px solid #d1d5db !important;
+  background: rgb(var(--surface)) !important;
+  border: 1px solid rgb(var(--border-strong)) !important;
   border-radius: 0.5rem !important;
   padding: 0.75rem 1rem !important;
 }
 
 .formio-modal .formio-component-datetime .form-control:focus {
   outline: none !important;
-  border-color: #3b82f6 !important;
+  border-color: rgb(var(--primary)) !important;
   box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1) !important;
 }
 
 .formio-modal .formio-component-textarea .form-control {
-  background: white !important;
-  border: 1px solid #d1d5db !important;
+  background: rgb(var(--surface)) !important;
+  border: 1px solid rgb(var(--border-strong)) !important;
   border-radius: 0.5rem !important;
   padding: 0.75rem 1rem !important;
 }
 
 .formio-modal .formio-component-textarea .form-control:focus {
   outline: none !important;
-  border-color: #3b82f6 !important;
+  border-color: rgb(var(--primary)) !important;
   box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1) !important;
 }
 
@@ -51,8 +51,8 @@
 }
 
 .formio-modal .formio-component-file .file-upload {
-  border: 2px dashed #d1d5db !important;
+  border: 2px dashed rgb(var(--border-strong)) !important;
   border-radius: 0.5rem !important;
   padding: 1rem !important;
-  background: #f9fafb !important;
+  background: rgb(var(--surface-sunken)) !important;
 }

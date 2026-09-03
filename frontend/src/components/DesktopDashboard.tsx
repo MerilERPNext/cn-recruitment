@@ -562,7 +562,7 @@ export default function DesktopDashboard() {
         className={`flex-1 ${contentMarginLeft} flex flex-col min-h-screen transition-all duration-300 ease-in-out min-w-0`}
       >
         {/* Header */}
-        <div className="bg-gradient-to-r from-primary-900 via-primary-800 to-primary-900 border-b border-gray-200 px-6 py-[0.3rem] flex items-center sticky top-0 z-10 gap-4">
+        <div className="app-header bg-gradient-to-r from-primary-500 via-primary-400 to-primary-500 dark:from-primary-900 dark:via-primary-800 dark:to-primary-900 border-b border-gray-200 px-6 py-[0.3rem] flex items-center sticky top-0 z-10 gap-4">
           <div className="flex flex-col min-w-0">
             {currentEmployee?.employee_name || currentUserIsAdmin ? (
               <>

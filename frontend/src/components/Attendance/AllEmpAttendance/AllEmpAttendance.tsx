@@ -739,7 +739,7 @@ const AllEmpAttendance = () => {
                 )}
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-white border border-gray-200 divide-y divide-gray-200">
               {completeMonthData.map((item, index) => {
                 const { date, statusInfo } = item;
                 const record = statusInfo.record;
@@ -868,7 +868,7 @@ const AllEmpAttendance = () => {
                         events: statusInfo.events,
                       });
                     }}
-                    className={`hover:bg-primary-50 transition-colors cursor-pointer`}
+                    className={`hover:bg-primary-600 transition-colors cursor-pointer`}
                   >
                     <td className="w-px px-4 py-3">
                       {(() => {
