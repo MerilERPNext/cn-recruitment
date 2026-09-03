@@ -158,30 +158,30 @@ const OverviewSidebar: React.FC = () => {
                       setIsCheckInModalOpen(false);
                       navigate(`/webapp/performance-app/my-goals/${goal.goal_key || goal.name}`);
                     }}
-                    className="group flex w-full flex-col gap-2.5 rounded-xl border border-gray-100 bg-white p-3.5 text-left transition-all hover:border-blue-200 hover:bg-blue-50/50 hover:shadow-sm sm:flex-row sm:items-center sm:justify-between sm:p-4"
+                    className="group flex w-full flex-col gap-2.5 rounded-xl border border-border bg-card p-3.5 text-left transition-all hover:border-primary/50 hover:bg-slate-500/10 hover:shadow-sm sm:flex-row sm:items-center sm:justify-between sm:p-4"
                   >
                     <div className="flex min-w-0 flex-1 items-start gap-2.5 sm:gap-3">
                       <div className="mt-0.5 shrink-0">
                         <Badge label={goal.goal_type} variant="purple" size="sm" />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <Typography variant="bodySmall" className="font-semibold text-gray-900 leading-snug break-words">
+                        <Typography variant="bodySmall" className="font-semibold leading-snug break-words">
                           {goal.title}
                         </Typography>
-                        <Typography variant="caption" className="mt-0.5 block text-xs text-gray-500 break-words">
-                          Weightage <span className="font-semibold text-gray-700">{goal.weightage}%</span>
+                        <Typography variant="caption" color="body2" className="mt-0.5 block text-xs break-words">
+                          Weightage <span className="font-semibold text-text-title">{goal.weightage}%</span>
                           {goal.department_title && <> &middot; {goal.department_title}</>}
                         </Typography>
                       </div>
                     </div>
-                    <div className="flex shrink-0 items-center justify-between gap-3 pt-2 border-t border-gray-100/60 sm:border-t-0 sm:pt-0 sm:justify-end">
+                    <div className="flex shrink-0 items-center justify-between gap-3 pt-2 border-t border-border sm:border-t-0 sm:pt-0 sm:justify-end">
                       <Badge
                         label={goal.status}
                         variant={getStatusVariant(goal.status)}
                         size="sm"
                         pulse={{ show: true }}
                       />
-                      <ChevronRight className="h-4 w-4 shrink-0 text-gray-400 transition-colors group-hover:text-blue-500" />
+                      <ChevronRight className="h-4 w-4 shrink-0 text-text-body2 transition-colors group-hover:text-primary" />
                     </div>
                   </button>
                 ))}
