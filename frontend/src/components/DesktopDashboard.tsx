@@ -83,6 +83,7 @@ import ViewingAsBanner from "./ViewingAsBanner";
 import formatToIndianDate from "../utils/formatToIndianDate";
 import { RecommendationsForYou } from "./DashboardComponent/RecommendationsForYou";
 import Tooltip from "./shared/Tooltip";
+import ThemeToggle from "./shared/ThemeToggle";
 
 export default function DesktopDashboard() {
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -595,6 +596,7 @@ export default function DesktopDashboard() {
           </div>
 
           <div className="flex items-center gap-4 flex-shrink-0">
+            <ThemeToggle className="!border-current/30 !bg-current/10 hover:!bg-current/20" />
             <button
               onClick={() => navigate("/webapp/notification-log")}
               className="relative p-2 hover:bg-primary-400/20 rounded-lg transition-colors"
