@@ -148,7 +148,7 @@ const Feedback = () => {
     }));
   }, []);
   return (
-    <div className="min-h-full bg-[#f8fafc]  p-4 sm:p-1 font-sans">
+    <div className="min-h-full bg-app p-4 sm:p-1 font-sans">
       <div className="max-w-[1300px] mx-auto flex flex-col xl:flex-row gap-6">
         <div className="flex-1 flex flex-col min-w-0">
           {!isDesktop && (
@@ -178,15 +178,15 @@ const Feedback = () => {
             />
           ) : (
             <>
-              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6 mb-6 flex flex-col sm:flex-row justify-between items-start">
+              <div className="bg-card rounded-xl shadow-sm border border-border p-4 sm:p-6 mb-6 flex flex-col sm:flex-row justify-between items-start">
                 <div className="flex flex-col md:flex-row gap-4">
-                  <div className="w-14 h-14 mx-auto rounded-full bg-blue-50 text-blue-700 flex items-center justify-center text-xl font-bold shrink-0">
+                  <div className="w-14 h-14 mx-auto rounded-full bg-primary/20 text-primary flex items-center justify-center text-xl font-bold shrink-0">
                     {headerInitials}
                   </div>
                   <div className="flex flex-col justify-center">
-                    <Typography variant="caption" className="text-gray-500 mb-1">You are giving peer feedback on</Typography>
+                    <Typography variant="caption" color="body2" className="mb-1">You are giving peer feedback on</Typography>
                     <div className="flex flex-wrap items-center gap-3 mb-2">
-                      <Typography variant="h3" className="text-gray-900 font-bold">
+                      <Typography variant="h3" className="text-text-title font-bold">
                         {headerSubjectName ?? "-"} {headerDesignation ? `· ${headerDesignation}` : ''}
                       </Typography>
                       {reviewFeedbackResponse?.status && (
@@ -210,22 +210,22 @@ const Feedback = () => {
                           size="sm"
                         />
                       )}
-                      <Typography variant="caption" className="text-gray-500 text-xs">
+                      <Typography variant="caption" color="body2" className="text-xs">
                         • Manager will see aggregated scores only
                       </Typography>
                     </div>
                   </div>
                 </div>
                 <div className="flex flex-col items-start sm:items-end text-left sm:text-right shrink-0 mt-4 sm:mt-0">
-                  <Typography variant="caption" className="text-gray-500 font-semibold tracking-wider mb-1">DUE IN</Typography>
-                  <Typography variant="h3" className="text-amber-600 font-bold">{headerDueDays != null ? `${headerDueDays} days` : "—"}</Typography>
+                  <Typography variant="caption" color="body2" className="font-semibold tracking-wider mb-1">DUE IN</Typography>
+                  <Typography variant="h3" className="text-amber-500 font-bold">{headerDueDays != null ? `${headerDueDays} days` : "—"}</Typography>
                 </div>
               </div>
 
               <div className="flex flex-col">
                 {!reviewFeedbackResponse?.items || reviewFeedbackResponse.items.length === 0 ? (
-                  <div className="bg-white rounded-xl border border-gray-100 p-8 flex flex-col items-center justify-center text-center shadow-sm mb-6">
-                    <Typography variant="bodyMedium" className="text-gray-500 font-medium text-sm">
+                  <div className="bg-card rounded-xl border border-border p-8 flex flex-col items-center justify-center text-center shadow-sm mb-6">
+                    <Typography variant="bodyMedium" color="body2" className="font-medium text-sm">
                       No evaluation objectives or goals are configured for this employee.
                     </Typography>
                   </div>
@@ -256,7 +256,7 @@ const Feedback = () => {
                     size="md"
                     loading={saveFeedbackLoading}
                     disabled={isAnyLoading || !hasItems || isSubmitted}
-                    className="h-11 w-full justify-center border-gray-200 bg-white px-5 text-gray-700 hover:bg-gray-50 sm:w-auto"
+                    className="h-11 w-full justify-center border-border bg-card text-text-title hover:bg-slate-500/10 sm:w-auto"
                   >
                     Save Draft
                   </Button>
@@ -267,7 +267,7 @@ const Feedback = () => {
                     size="md"
                     loading={submitfeedbackLoading}
                     disabled={isAnyLoading || !hasItems || isSubmitted}
-                    className="h-11 w-full justify-center bg-blue-600 px-6 text-white hover:bg-blue-700 sm:w-auto"
+                    className="h-11 w-full justify-center bg-primary text-white hover:bg-primary/90 sm:w-auto"
                   >
                     Submit Feedback
                   </Button>

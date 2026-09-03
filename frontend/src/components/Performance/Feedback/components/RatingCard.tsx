@@ -31,18 +31,18 @@ export const RatingCard: React.FC<RatingCardProps> = memo(({
   const selectedOption = scale.find(o => o.value === value);
 
   return (
-    <div className={`bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6 mb-6 transition-all ${disabled ? 'bg-gray-50/60 opacity-90' : ''}`}>
+    <div className={`bg-card rounded-xl shadow-sm border border-border p-4 sm:p-6 mb-6 transition-all ${disabled ? 'bg-slate-500/10 opacity-90' : ''}`}>
       <div className="flex flex-col sm:flex-row justify-between items-start mb-4">
         <div className="mb-2 sm:mb-0">
-          <Typography variant="h3" className="text-gray-900 font-semibold mb-1">
+          <Typography variant="h3" className="text-text-title font-semibold mb-1">
             {title} {required && <span className="text-red-500">*</span>}
           </Typography>
-          <Typography variant="bodyMedium" className="text-gray-600">
+          <Typography variant="bodyMedium" color="body2">
             {description}
           </Typography>
         </div>
         {selectedOption && value >= 4 && (
-          <Badge label={selectedOption.label} variant="success" size="sm" pulse={{show: false}} icon={<div className="w-1.5 h-1.5 rounded-full bg-green-500"></div>} />
+          <Badge label={selectedOption.label} variant="success" size="sm" pulse={{show: false}} icon={<div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>} />
         )}
       </div>
       <div className="flex items-center gap-2 shrink-0">
@@ -56,9 +56,9 @@ export const RatingCard: React.FC<RatingCardProps> = memo(({
           const isSelected = value === opt.value;
           const isHighRating = opt.value >= 4;
           
-          const selectedBgClass = isHighRating ? "bg-green-50 border-green-500" : "bg-blue-50 border-blue-500";
-          const selectedTextClass = isHighRating ? "text-green-600" : "text-blue-600";
-          const scoreTextClass = isHighRating ? "text-green-500" : "text-blue-500";
+          const selectedBgClass = isHighRating ? "bg-emerald-500/10 border-emerald-500/50" : "bg-primary/10 border-primary/50";
+          const selectedTextClass = isHighRating ? "text-emerald-500" : "text-primary";
+          const scoreTextClass = isHighRating ? "text-emerald-500" : "text-primary";
 
           return (
             <button
@@ -66,20 +66,20 @@ export const RatingCard: React.FC<RatingCardProps> = memo(({
               aria-label={`Select ${opt.label} rating`}
               disabled={disabled}
               onClick={() => !disabled && onChange(opt.value)}
-              className={`flex flex-col items-center justify-center p-3 rounded-lg border transition-all ${
+              className={`flex flex-col items-center justify-center p-3 rounded-lg border transition-all cursor-pointer ${
                 disabled
                   ? isSelected
                     ? `${selectedBgClass} opacity-80 cursor-not-allowed`
-                    : 'border-gray-200 bg-gray-100/60 text-gray-400 cursor-not-allowed'
+                    : 'border-border bg-slate-500/10 text-text-body2 cursor-not-allowed'
                   : isSelected 
                     ? selectedBgClass 
-                    : 'border-gray-200 hover:border-gray-300 bg-white'
+                    : 'border-border hover:border-primary/50 bg-card'
               }`}
             >
-              <span className={`text-sm font-medium mb-1 ${isSelected ? selectedTextClass : disabled ? 'text-gray-400' : 'text-gray-700'}`}>
+              <span className={`text-sm font-medium mb-1 ${isSelected ? selectedTextClass : disabled ? 'text-text-body2' : 'text-text-title'}`}>
                 {opt.label}
               </span>
-              <span className={`text-xs ${isSelected ? scoreTextClass : 'text-gray-400'}`}>
+              <span className={`text-xs ${isSelected ? scoreTextClass : 'text-text-body2'}`}>
                 {opt.value} / {scale.length}
               </span>
             </button>
@@ -88,7 +88,7 @@ export const RatingCard: React.FC<RatingCardProps> = memo(({
       </div>
 
       <div className="flex flex-col gap-2">
-        <Typography variant="caption" className="text-gray-700 font-medium tracking-wide">Comment (optional)</Typography>
+        <Typography variant="caption" color="body2" className="font-medium tracking-wide">Comment (optional)</Typography>
         <textarea
           aria-label="Rating comment"
           value={comment}
@@ -96,10 +96,8 @@ export const RatingCard: React.FC<RatingCardProps> = memo(({
           readOnly={disabled}
           onChange={(e) => onCommentChange(e.target.value)}
           placeholder="A specific example that supports your rating..."
-          className={`w-full border rounded-lg p-3 text-sm resize-none min-h-[80px] transition-all ${
-            disabled
-              ? 'bg-gray-100/60 border-gray-200 text-gray-500 cursor-not-allowed'
-              : 'border-gray-200 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500'
+          className={`w-full border border-border bg-card rounded-lg p-3 text-sm text-text-title placeholder:text-text-body2 resize-none min-h-[80px] transition-all focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary ${
+            disabled ? 'opacity-70 cursor-not-allowed' : ''
           }`}
         />
       </div>
