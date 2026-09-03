@@ -260,25 +260,26 @@ function TeamGoalSkeleton() {
 
 
 function TeamGoalError({ error, onRetry }: { error: Error | null; onRetry: () => void }) {
-    return <div className="flex flex-col items-center justify-center py-12 text-center rounded-2xl border border-red-500/30 bg-red-500/10 p-6">
-        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-red-500/20 text-red-500 mb-3 shadow-2xs">
-            <AlertCircle className="h-6 w-6" />
+    return (
+        <div className="flex flex-col items-center justify-center py-12 text-center rounded-2xl border border-red-500/30 bg-red-500/10 p-6">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-red-500/20 text-red-400 mb-3 shadow-2xs">
+                <AlertCircle className="h-6 w-6" />
+            </div>
+            <Typography variant="bodyMedium" className="font-semibold text-red-400 text-base">
+                Failed to load manager & department goals
+            </Typography>
+            <Typography variant="caption" className="text-red-300/90 mt-1 max-w-sm leading-relaxed text-xs">
+                {error?.message || "An unexpected error occurred while fetching cascade goals. Please check your connection and try again."}
+            </Typography>
+            <button
+                type="button"
+                className="mt-4 inline-flex items-center gap-1.5 h-9 rounded-xl border border-red-500/40 bg-red-500/20 px-5 text-xs font-semibold text-red-400 hover:bg-red-500/30 hover:text-red-200 transition-all cursor-pointer"
+                onClick={onRetry}
+            >
+                Try Again
+            </button>
         </div>
-        <Typography variant="bodyMedium" className="font-semibold text-text-title text-base">
-            Failed to load manager & department goals
-        </Typography>
-        <Typography variant="caption" className="text-text-body2 mt-1 max-w-sm leading-relaxed">
-            {error?.message || "An unexpected error occurred while fetching cascade goals. Please check your connection and try again."}
-        </Typography>
-        <Button
-            type="button"
-            variant="outline"
-            className="mt-4 h-9 rounded-xl border-border bg-card px-5 text-xs font-semibold text-text-title shadow-2xs hover:bg-slate-500/10 transition-all cursor-pointer"
-            onClick={onRetry}
-        >
-            Try Again
-        </Button>
-    </div>
+    );
 };
 
 export default React.memo(TeamGoalLibraryPopup);
