@@ -143,7 +143,7 @@ const CompensatoryRequestCard = ({
     <div
       className="cursor-pointer border-t-4 border-x border-b 
       border-x-primary/20 border-b-primary/20 
-      shadow-sm border-primary bg-white rounded-xl mt-2"
+      shadow-sm border-primary bg-card rounded-xl mt-2"
       onClick={onClick}
     >
       <div className="p-4 flex flex-col gap-4 w-full">
