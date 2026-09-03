@@ -2,9 +2,10 @@
 
 The record a New Hire form creates IS the Employee, held at ``status = "Pending"``
 until onboarding completes. There is no intake doctype in between, and nothing is
-mirrored or mapped: the form renders from the Employee DocType's own meta, so all
-~405 of its fields are available to place, in Employee's own tabs and sections,
-and a value captured at intake is already on the person's record.
+mirrored or mapped: the form renders from the Employee DocType's own meta, so
+every one of its several hundred fields is available to place, in Employee's own
+tabs and sections, and a value captured at intake is already on the person's
+record.
 
 Naming
 ------
@@ -43,17 +44,14 @@ FORM_DOCTYPE = "New Hire Form"
 JOB_APPLICANT = "Job Applicant"
 EMPLOYEE_ONBOARDING = "Employee Onboarding"
 
-# A new hire sits here until onboarding finishes. The option already exists on
-# this site (Property Setter: "Pending\nActive\nInactive").
+# "Pending" is not a stock Employee status — a Property Setter on this site
+# widens the options to "Pending\nActive\nInactive".
 PENDING_STATUS = "Pending"
 ACTIVE_STATUS = "Active"
 
-# Pending records are named out of their own series.
 PENDING_SERIES = "PEND-.#####"
 PENDING_PREFIX = "PEND-"
 
-# The intake lifecycle, kept off `status` so the approval matrix can drive it
-# without touching the person's employment status.
 STAGE_FIELD = "custom_new_hire_stage"
 FORM_FIELD = "custom_new_hire_form"
 STAGES = (
@@ -148,8 +146,8 @@ def setup_new_hire_support():
     matrix and this module, and `custom_new_hire_form` records which profile the
     person was raised on so the edit screen renders the same field set.
     """
-    frappe.only_for("System Manager")
     try:
+        frappe.only_for("System Manager")
         meta = frappe.get_meta(DOCTYPE)
         created = []
 
@@ -310,9 +308,10 @@ def _build_form_config(form_doc, doc=None, employment_type=None):
     DocType with the form's overrides applied.
 
     With `Show Only Configured Fields` on (the default) a field renders only when
-    it has a config row — the strict allowlist that keeps a 405-field doctype
-    from becoming a 405-field form. A field Employee itself marks `reqd` always
-    renders regardless, because the record cannot be saved without it.
+    it has a config row — the strict allowlist that keeps a several-hundred-field
+    doctype from becoming a several-hundred-field form. A field Employee itself
+    marks `reqd` always renders regardless, because the record cannot be saved
+    without it.
     """
     overrides = _load_form_overrides(form_doc)
     restrict = bool(form_doc and form_doc.get("restrict_to_configured"))
@@ -541,8 +540,8 @@ def seed_default_fields(form=None):
     required — this only puts them ON the form. Idempotent: a field already
     configured is left exactly as it is.
     """
-    frappe.has_permission(FORM_DOCTYPE, "write", throw=True)
     try:
+        frappe.has_permission(FORM_DOCTYPE, "write", throw=True)
         form_doc = resolve_form(form=form)
         if not form_doc:
             return _err(_("No New Hire Form is configured."), http=412)
@@ -651,9 +650,9 @@ def _validate_mandatory(doc, form_doc, employment_type=None, config=None):
     contract, so a field the config forces Required is validated here too —
     Employee's own `reqd` only covers a handful.
 
-    `config` lets the caller pass a tree it has already built. Employee carries
-    ~405 fields and this walks all of them; building it twice in one request is
-    pure waste.
+    `config` lets the caller pass a tree it has already built. This walks every
+    Employee field, and there are several hundred; building it twice in one
+    request is pure waste.
     """
     if config is None:
         config = _build_form_config(form_doc, doc=None, employment_type=employment_type)
@@ -743,10 +742,15 @@ def update_new_hire(name=None, payload=None, submit=0):
         doc = frappe.get_doc(DOCTYPE, name)
         doc.check_permission("write")
 
-        stage = doc.get(STAGE_FIELD)
+        # A blank stage is an intake that never got one — raised before the field
+        # existed, or saved through a path that dropped it. That is the
+        # not-yet-submitted case, so read it as Draft: left blank it fell through
+        # to `doc.status` ("Pending") and the record became permanently
+        # uneditable, because no endpoint can set the stage back.
+        stage = doc.get(STAGE_FIELD) or "Draft"
         if stage not in EDITABLE_STAGES:
             return _err(
-                _("{0} is {1} and can no longer be edited here.").format(name, stage or doc.status),
+                _("{0} is {1} and can no longer be edited here.").format(name, stage),
                 http=409,
             )
 
@@ -756,6 +760,7 @@ def update_new_hire(name=None, payload=None, submit=0):
             return _err(_("The form this new hire was raised on no longer exists."), http=412)
 
         applied = _apply_payload(doc, payload, form_doc)
+        doc.set(STAGE_FIELD, stage)
         if frappe.utils.sbool(submit):
             _validate_mandatory(
                 doc, form_doc,
@@ -839,6 +844,10 @@ def get_new_hire(name=None, filters=None, stage=None, search=None,
                 return _err(_("Employee not found: {0}").format(name), http=404)
             doc = frappe.get_doc(DOCTYPE, name)
             doc.check_permission("read")
+            # Employee carries several hundred fields, a few permlevel-guarded.
+            # `as_dict` does not honour field-level read permissions on its own,
+            # so without this the whole record goes out to anyone who can read it.
+            doc.apply_fieldlevel_read_permissions()
             data = doc.as_dict()
             data["can_initiate_onboarding"] = _can_initiate(data)
             return _ok(_("New hire fetched."), data)
@@ -1228,10 +1237,14 @@ def activate_employee(name=None):
                                force=True, ignore_permissions=True, show_alert=False)
             renamed = True
 
-        frappe.db.set_value(DOCTYPE, final, {
-            "status": ACTIVE_STATUS,
-            STAGE_FIELD: "Completed",
-        })
+        # Saved through the document, not `db.set_value`: the hierarchy role
+        # grants in `cn_hrms_core` hang off `Employee.on_update`, and set_value
+        # writes straight to SQL without firing a single document event — so
+        # activating that way granted the new employee nothing.
+        active = frappe.get_doc(DOCTYPE, final)
+        active.status = ACTIVE_STATUS
+        active.set(STAGE_FIELD, "Completed")
+        active.save(ignore_permissions=True)
 
         return _ok(_("{0} is now active.").format(final), {
             "name": final, "previous_name": name if renamed else None,
@@ -1265,7 +1278,12 @@ def cancel_new_hire(name=None, reason=None):
         if doc.status != PENDING_STATUS:
             return _err(_("{0} is {1}, not Pending.").format(name, doc.status), http=409)
 
-        frappe.db.set_value(DOCTYPE, name, {STAGE_FIELD: "Cancelled", "status": "Inactive"})
+        # Through the document for the same reason as activation: Inactive is what
+        # `cn_hrms_core`'s `disable_user_on_employee_inactive` hangs off, and a
+        # set_value would leave a withdrawn hire's login enabled.
+        doc.set(STAGE_FIELD, "Cancelled")
+        doc.status = "Inactive"
+        doc.save(ignore_permissions=True)
         if reason:
             doc.add_comment("Comment", _("Cancelled: {0}").format(reason))
 
@@ -1354,8 +1372,8 @@ def setup_direct_hire_support():
     `mandatory_depends_on`. The second half only changes the desk form — the real
     enforcement is :func:`require_job_offer_unless_direct_hire`.
     """
-    frappe.only_for("System Manager")
     try:
+        frappe.only_for("System Manager")
         created = []
         if not frappe.get_meta(EMPLOYEE_ONBOARDING).has_field(DIRECT_HIRE_FLAG):
             create_custom_field(EMPLOYEE_ONBOARDING, {
