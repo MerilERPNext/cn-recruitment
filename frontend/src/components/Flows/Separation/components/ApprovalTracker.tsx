@@ -121,12 +121,12 @@ export default function ApprovalTracker({ data, For, isLoading }: ApprovalTracke
       </div>
       <Card>
         <div className="w-full  rounded-lg">
-          <Typography className="mb-2" variant="subheading">
+          <Typography className="mb-2 text-text-title" variant="subheading">
             {For === "Employee Separation" ? "Separation Approval Timeline" : "Termination Workflow Timeline"}
           </Typography>
           <div className="flex flex-col pt-1">
             {haveInitiatorForm && (
-              <div className="grid w-full lg:hover:bg-primary/20 cursor-pointer text-sm lg:px-6">
+              <div className="grid w-full hover:bg-gray-50 cursor-pointer text-sm lg:px-6">
                 <StatusTimelineRow
                   timelineData={{
                     isLast: data?.approval_stages.length === 0 ? true : false,

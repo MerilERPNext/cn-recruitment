@@ -96,7 +96,7 @@ const SideDrawer: React.FC<SideDrawerProps> = ({
                 {showBackButton ? <HeaderBar title={title} onBack={onClose} /> :
                     <div className="flex items-center justify-between px-4 py-3 border-b">
                         <div className="flex items-center justify-center gap-2">
-                            <h2 className="text-sm font-semibold">{title}</h2>
+                            <h2 className="text-sm font-semibold text-text-title">{title}</h2>
                         </div>
                         {!showBackButton &&
                             <Button

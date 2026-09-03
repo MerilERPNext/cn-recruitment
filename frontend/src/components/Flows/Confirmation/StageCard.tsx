@@ -155,7 +155,7 @@ const StageCard: React.FC<StageCardProps> = ({
 
       <div className="grid lg:grid-cols-2 grid-cols-1 py-2">
         <div className="ml-4 flex flex-col">
-          <Typography variant="bodyMedium">{stage?.stage_name}</Typography>
+          <Typography variant="bodyMedium" className="text-text-title">{stage?.stage_name}</Typography>
           <Typography variant="bodySmall">
             {approverPerfix} {status == "pending" ? "" : stage?.role || stage?.user}
           </Typography>

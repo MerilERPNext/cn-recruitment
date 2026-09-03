@@ -38,7 +38,7 @@ const Modal: FC<ModalProps> = ({ isOpen, onClose, children, size = 'md', classNa
 
     if (isFullScreenMobile) {
         return createPortal(
-            <div className="fixed inset-0 z-50 bg-white">
+            <div className="fixed inset-0 z-50 bg-card text-text-body1">
                 <div className={`w-full h-full overflow-auto ${className}`}>
                     {children}
                 </div>
@@ -53,7 +53,7 @@ const Modal: FC<ModalProps> = ({ isOpen, onClose, children, size = 'md', classNa
             onClick={onClose}
         >
             <div
-                className={`bg-white rounded-lg shadow-lg ${getSizeClasses()} ${heightClasses} overflow-auto ${className}`}
+                className={`bg-card text-text-body1 border border-border rounded-lg shadow-lg ${getSizeClasses()} ${heightClasses} overflow-auto ${className}`}
                 onClick={(e) => e.stopPropagation()}
             >
                 {children}

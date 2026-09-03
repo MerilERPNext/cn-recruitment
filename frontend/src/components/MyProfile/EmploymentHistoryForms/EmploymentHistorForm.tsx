@@ -290,10 +290,10 @@ const EmploymentHistoryForm = ({
         }
       }}
     >
-      <div className="w-full h-full md:h-auto md:max-w-2xl md:max-h-[80vh] md:rounded-lg bg-white flex flex-col overflow-hidden relative">
+      <div className="w-full h-full md:h-auto md:max-w-2xl md:max-h-[80vh] md:rounded-lg bg-card text-text-body1 border border-border flex flex-col overflow-hidden relative">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white sticky top-0 z-20">
-          <h2 className="text-lg font-semibold text-gray-800">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-card sticky top-0 z-20">
+          <h2 className="text-lg font-semibold text-text-title">
             Employment History
           </h2>
           <button
@@ -311,7 +311,7 @@ const EmploymentHistoryForm = ({
         {/* Form.io Form */}
         <div className="flex-1 min-h-0 overflow-y-auto px-6 py-4 pb-12 relative">
           {empDesignationHierarchyCurrentDetailsPending && !initialEditData && (
-            <div className="absolute inset-0 z-30 flex justify-center items-center bg-white bg-opacity-70">
+            <div className="absolute inset-0 z-30 flex justify-center items-center bg-card/80">
               <CircularLoader />
             </div>
           )}
@@ -394,7 +394,7 @@ const EmploymentHistoryForm = ({
           />
         </div>
         {/* Footer */}
-        <div className="fixed md:static bottom-0 right-0 w-full bg-white py-4 px-4 z-50 border-t border-gray-200">
+        <div className="fixed md:static bottom-0 right-0 w-full bg-card py-4 px-4 z-50 border-t border-border">
           <Button
             onClick={handleSubmit}
             fullWidth

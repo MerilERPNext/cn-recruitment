@@ -133,13 +133,13 @@ const EmployeeDocumentsPage: React.FC = () => {
   return (
     <DesktopLayoutWrapper title="My Documents">
       {isMobile && <HeaderBar title="My Documents" />}
-      <div className={`bg-white min-h-screen ${isMobile ? "px-4 py-4" : "px-0 py-3 md:p-6"}`}>
+      <div className={`bg-app min-h-screen text-text-body1 ${isMobile ? "px-4 py-4" : "px-0 py-3 md:p-6"}`}>
         {!isMobile && (
           <div className="flex items-start justify-between">
-            <div className="border-gray-200 my-2 pb-2">
+            <div className="border-border my-2 pb-2">
               <Typography
                 variant="h4"
-                className="font-bold text-gray-900 mb-2 text-xl sm:text-2xl"
+                className="font-bold text-text-title mb-2 text-xl sm:text-2xl"
               >
                 My Documents
               </Typography>
@@ -175,8 +175,8 @@ const EmployeeDocumentsPage: React.FC = () => {
                 size="sm"
                 onClick={() => setActiveTab(tab.key)}
                 className={`rounded-full px-4 py-1.5 text-xs font-semibold whitespace-nowrap ${activeTab === tab.key
-                  ? "bg-primary-50 text-header-active"
-                  : "text-header-inactive hover:text-header-active"
+                  ? "bg-primary/15 text-text-link"
+                  : "text-text-body2 hover:text-text-title"
                   }`}
               >
                 {tab.label}
@@ -186,7 +186,7 @@ const EmployeeDocumentsPage: React.FC = () => {
           </div>
         )}
 
-        <div className={isMobile ? "" : "bg-white border rounded-xl overflow-hidden shadow-sm min-h-[45vh]"}>
+        <div className={isMobile ? "" : "bg-card border border-border rounded-xl overflow-hidden shadow-sm min-h-[45vh]"}>
           <CardTable
             titles={["Document Name", "Employee", "Date Uploaded", "Status", "Action"]}
             columnWidths={["3fr", "2fr", "1.5fr", "1.5fr", "2fr"]}
@@ -230,17 +230,17 @@ const EmployeeDocumentsPage: React.FC = () => {
         {/* PDF Modal */}
         {selectedFile && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white shadow-lg w-full h-screen flex flex-col">
-              <div className="flex justify-between items-center border-b p-4">
+            <div className="bg-card text-text-body1 shadow-lg w-full h-screen flex flex-col">
+              <div className="flex justify-between items-center border-b border-border p-4">
                 <Typography
                   variant="h3"
-                  className="font-semibold text-gray-800 text-lg"
+                  className="font-semibold text-text-title text-lg"
                 >
                   Document Preview
                 </Typography>
                 <button
                   onClick={closeModal}
-                  className="text-gray-500 hover:text-gray-700 text-xl"
+                  className="flex h-9 w-9 items-center justify-center rounded-lg border border-transparent text-text-body2 hover:text-text-title hover:bg-gray-100 hover:border-border-strong text-xl transition-colors"
                 >
                   ✕
                 </button>
@@ -253,7 +253,7 @@ const EmployeeDocumentsPage: React.FC = () => {
                   className="h-full"
                 />
               </div>
-              <div className="flex justify-between items-center border-t p-4">
+              <div className="flex justify-between items-center border-t border-border p-4">
                 <div>
                   {showAcknowledgement && (
                     <label className="flex items-center gap-2 cursor-pointer">
@@ -265,7 +265,7 @@ const EmployeeDocumentsPage: React.FC = () => {
                         className="accent-green-600 w-4 h-4 cursor-pointer"
                       />
                       <span
-                        className={`font-medium ${acknowledged ? "text-green-700" : "text-gray-700"
+                        className={`font-medium ${acknowledged ? "text-success" : "text-text-body1"
                           }`}
                       >
                         I acknowledge this document

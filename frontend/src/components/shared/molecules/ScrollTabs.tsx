@@ -55,7 +55,7 @@ export const ScrollTabs = ({
         <>
             {/* Tabs */}
             {tabs.length > 1 && (
-                <div className={`sticky ${stickyTopClassName} bg-white z-10 px-0 md:px-6 pb-2`}>
+                <div className={`sticky ${stickyTopClassName} bg-card z-10 px-0 md:px-6 pb-2`}>
                     <div className="flex overflow-x-auto gap-1 py-2 scrollbar-hide">
                         {tabs.map(tab => (
                             <Button
@@ -65,8 +65,8 @@ export const ScrollTabs = ({
                                 size="sm"
                                 className={`rounded-full px-4 py-1.5 text-xs font-semibold
                   ${activeTab === tab.key
-                                        ? "bg-primary-50 text-header-active"
-                                        : "text-header-inactive hover:text-header-active"
+                                        ? "bg-primary/15 text-text-link border border-primary/30"
+                                        : "text-text-body2 border border-transparent hover:text-text-title hover:bg-gray-50"
                                     }`}
                             >
                                 {tab.label}

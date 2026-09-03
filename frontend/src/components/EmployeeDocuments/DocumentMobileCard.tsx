@@ -24,7 +24,7 @@ export const DocumentMobileCard: React.FC<DocumentMobileCardProps> = ({
   setSelectedDocId,
 }) => {
   return (
-    <div className="flex flex-col gap-3 p-4 border-1 shadow-sm mt-3 rounded-lg bg-white ">
+    <div className="flex flex-col gap-3 p-4 border border-border shadow-sm mt-3 rounded-lg bg-card text-text-body1">
       <div className="flex justify-between items-start mb-1 gap-2 pb-2">
         <div className="flex flex-col min-w-0 flex-1">
           <Tooltip content={getFileNameFromUrl(doc.file_name)} position="tl" triggerClassName="w-full">
@@ -35,10 +35,10 @@ export const DocumentMobileCard: React.FC<DocumentMobileCardProps> = ({
         </div>
         <span
           className={`text-[10px] font-medium px-2 py-0.5 whitespace-nowrap rounded-lg flex-shrink-0 ${doc.status === "Approved"
-            ? "bg-green-100 text-green-700"
+            ? "bg-success/15 text-success"
             : doc.status === "Acknowledgement Required"
-              ? "bg-yellow-100 text-yellow-700"
-              : "bg-red-100 text-red-700"
+              ? "bg-warning/15 text-warning"
+              : "bg-error/15 text-error"
             }`}
         >
           {doc.status}
@@ -72,7 +72,7 @@ export const DocumentMobileCard: React.FC<DocumentMobileCardProps> = ({
               <Button
                 variant="soft"
                 size="sm"
-                className="flex-1 justify-center"
+                className="flex-1 justify-center bg-primary/10 text-text-link hover:bg-primary/20"
                 onClick={() => setSelectedFile(doc.file_name)}
               >
                 View

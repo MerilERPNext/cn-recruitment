@@ -319,7 +319,7 @@ const ConfirmationWorkflow = () => {
   );
 
   return (
-    <div className=" md:bg-blue-50  min-h-screen sm:p-4  text-gray-800  font-sans">
+    <div className="min-h-screen bg-app p-2 sm:p-4 text-text-title font-sans">
       <div className="flex items-start justify-between gap-3 md:mb-4 p-2">
         <div className="flex flex-col">
           {isDesktop && <Typography variant="h4">Confirmation</Typography>}
@@ -340,7 +340,7 @@ const ConfirmationWorkflow = () => {
           <Button
             variant="outline"
             onClick={() => setIsActivityLogOpen(true)}
-            className="flex items-center gap-2 py-1.5 border-gray-300 text-gray-700 hover:bg-gray-50 transition-all rounded-md shadow-sm"
+            className="flex items-center gap-2 py-1.5 bg-card border-border text-text-body1 hover:bg-gray-50 hover:border-border-strong transition-all rounded-md shadow-sm"
             disabled={!funnelActivityId}
           >
             Activity Log
@@ -374,7 +374,7 @@ const ConfirmationWorkflow = () => {
       />
 
       <Card>
-        <div className="max-md:bg-blue-50 rounded-lg p-4 grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="max-md:bg-gray-10 rounded-lg p-4 grid grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Confirmation Cards Section */}
           {confirmationCards.map((data, index) => (
             <ConfirmationStateCard key={index} data={data} />
@@ -384,7 +384,7 @@ const ConfirmationWorkflow = () => {
 
       {/* Workflow Section  */}
       <Card className="mt-4">
-        <Typography variant="subheading">
+        <Typography variant="subheading" className="text-text-title">
           {(item?.category && item.category === "Recommend for Separation") ? "Recommend for Separation " : "Confirmation "}Workflow Timeline
         </Typography>
 
@@ -396,7 +396,7 @@ const ConfirmationWorkflow = () => {
             : td.status;
           return (
             <div
-              className="grid sm:grid-cols-[80px_1fr] grid-cols-[30px_1fr] hover:bg-primary-10"
+              className="grid sm:grid-cols-[80px_1fr] grid-cols-[30px_1fr] hover:bg-gray-50"
               key={td.id}
             >
               <StatusTimelineItem
@@ -435,7 +435,7 @@ const ConfirmationWorkflow = () => {
         })}
         {/* Approval Stages Timeline  */}
         {stages?.map((_, idx) => (
-          <div className="grid sm:grid-cols-[80px_1fr] grid-cols-[30px_1fr] hover:bg-primary-10">
+          <div className="grid sm:grid-cols-[80px_1fr] grid-cols-[30px_1fr] hover:bg-gray-50">
             <StageCard
               handleAct={handleAct}
               showActButton={enabledActions.act_confirmation}

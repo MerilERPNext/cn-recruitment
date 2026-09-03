@@ -187,7 +187,7 @@ const ReportingDetails = ({ onActionSuccess }: ReportingDetailsProps) => {
     const isCurrent = !endDate;
 
     return (
-      <div className="bg-white rounded-xl shadow-sm border p-6 relative hover-lift max-w-[90vw] min-w-[90vw] md:min-w-[400px] md:max-w-[400px] min-h-[100%] flex flex-col justify-between">
+      <div className="bg-card rounded-xl shadow-sm border border-border hover:border-primary/40 p-6 relative hover-lift max-w-[90vw] min-w-[90vw] md:min-w-[400px] md:max-w-[400px] min-h-[100%] flex flex-col justify-between transition-colors">
         <div className="flex items-start gap-3 mb-3 md:mb-6">
           <div className="p-2 bg-blue-50 rounded-lg">
             <Building2 className="w-5 h-5 text-blue-600" />
@@ -277,11 +277,7 @@ const ReportingDetails = ({ onActionSuccess }: ReportingDetailsProps) => {
           <div className="flex justify-between items-center">
             <span className="text-sm text-gray-500">End Date</span>
             <span
-              style={{
-                backgroundColor: isCurrent ? "#DCFCE7" : "#F9FAFB",
-                color: isCurrent ? "#166534" : undefined,
-              }}
-              className="text-sm font-medium px-3 py-1 rounded-md"
+              className={`text-sm font-medium px-3 py-1 rounded-md ${isCurrent ? "bg-success/10 text-success" : "bg-gray-50 text-text-body1"}`}
             >
               {endDate ? formatToIndianDate(endDate) : "Present"}
             </span>
@@ -298,10 +294,10 @@ const ReportingDetails = ({ onActionSuccess }: ReportingDetailsProps) => {
 
   const hierarchySections = hierarchyData?.data || {};
   return (
-    <div className="address-form-container bg-white rounded-lg gray-200">
+    <div className="address-form-container bg-card text-text-body1 rounded-lg">
       <div className="px-0 py-3 md:p-6">
         {/* Header */}
-        <div className="flex items-start justify-between border-b border-gray-200 pb-2 mb-4 md:pb-4 md:mb-8">
+        <div className="flex items-start justify-between border-b border-border pb-2 mb-4 md:pb-4 md:mb-8">
           <div className="">
             <Typography variant="h4" className="font-bold text-gray-900 mb-2 text-xl sm:text-2xl">
               Reporting Details

@@ -22,6 +22,7 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
   className = "",
 }) => {
   const navigateBack = useNavigateBack();
+  const backgroundClass = bgColor === "white" ? "bg-card" : `bg-${bgColor}`;
 
   const handleBack = () => {
     if (onBack) {
@@ -33,19 +34,19 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
 
   return (
     <div
-      className={`relative flex w-full min-h-[60px] md:rounded-lg items-center sticky top-0 z-50 justify-center px-4 py-3 md:z-1 bg-${bgColor} ${className}`}
+      className={`relative flex w-full min-h-[60px] md:rounded-lg items-center sticky top-0 z-50 justify-center px-4 py-3 md:z-1 ${backgroundClass} ${className}`}
     >
       {showBackButton && (
         <button
           onClick={handleBack}
-          className="absolute left-4 text-gray-700 hover:text-black focus:outline-none z-10"
+          className="absolute left-4 text-text-body1 hover:text-primary focus:outline-none z-10 transition-colors"
           aria-label="Go back"
         >
           {leftIcon || <IoChevronBackOutline size={20} />}
         </button>
       )}
       {title && (
-        <h1 className="w-full text-center px-12 module-title truncate">
+        <h1 className="w-full text-center px-12 module-title truncate text-text-title">
           {title}
         </h1>
       )}

@@ -291,8 +291,12 @@ export default {
     plugin(({ addComponents }) => {
       addComponents({
         ".hover-lift": {
-          "@apply hover:-translate-y-1 hover:shadow-xl hover:shadow-slate-200/50":
-            {},
+          transitionProperty: "transform, box-shadow, border-color",
+          transitionDuration: "150ms",
+          "&:hover": {
+            transform: "translateY(-0.25rem)",
+            boxShadow: "var(--shadow-elevated)",
+          },
         },
       });
     }),

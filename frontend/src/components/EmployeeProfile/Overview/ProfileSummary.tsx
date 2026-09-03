@@ -30,7 +30,7 @@ const ProfileSummary = () => {
 
     return (
         <div className="px-0 md:px-6">
-            <div className="flex items-center rounded-xl justify-between mb-6 py-2 max-sm:px-4 px-6 bg-gray-50/50 border border-gray-100/50">
+            <div className="flex items-center rounded-xl justify-between mb-6 py-2 max-sm:px-4 px-6 bg-gray-50/50 border border-border">
                 <Typography variant="subheading" className="font-bold text-gray-800 max-sm:text-md">
                     Profile Summary
                 </Typography>

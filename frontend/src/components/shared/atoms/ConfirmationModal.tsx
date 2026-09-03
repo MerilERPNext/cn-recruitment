@@ -25,9 +25,9 @@ const ConfirmationModal = ({
         if (e.target === e.currentTarget) onCancel();
       }}
     >
-      <div className="bg-white rounded-xl shadow-lg w-full max-w-sm mx-4 p-6 flex flex-col gap-5">
+      <div className="bg-raised text-text-body1 border border-border-strong rounded-xl shadow-lg w-full max-w-sm mx-4 p-6 flex flex-col gap-5">
         <div className="flex items-start justify-between gap-3">
-          <p className="text-sm text-gray-700 leading-relaxed">{message}</p>
+          <p className="text-sm text-text-body1 leading-relaxed">{message}</p>
           <button
             onClick={onCancel}
             className="p-1.5 rounded-full hover:bg-gray-100 transition-colors shrink-0"
@@ -45,6 +45,7 @@ const ConfirmationModal = ({
             variant="soft"
             size="sm"
             bgColor="error"
+            className="bg-error/10 text-error border border-error/30 hover:bg-error/20"
             onClick={onConfirm}
             loading={isLoading}
             disabled={isLoading}

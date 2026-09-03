@@ -308,7 +308,7 @@ const Separation = () => {
             <Button
               variant="outline"
               onClick={() => setIsActivityLogOpen(true)}
-              className="flex items-center gap-2 py-1.5 border-gray-300 text-gray-700 hover:bg-gray-50 transition-all rounded-md shadow-sm"
+              className="flex items-center gap-2 py-1.5 bg-card border-border text-text-body1 hover:bg-gray-50 hover:border-border-strong transition-all rounded-md shadow-sm"
               disabled={!item?.request_id}
             >
               Activity Log
@@ -374,7 +374,7 @@ const Separation = () => {
       ) : (
         <div className="">
           <div className="flex items-center justify-between"></div>
-          <div className="bg-white rounded-xl shadow-sm w-full max-w-full overflow-hidden">
+          <div className="bg-card border border-border rounded-xl shadow-sm w-full max-w-full overflow-hidden">
             {/* Main content */}
             <div className="flex flex-col md:flex-row items-center justify-between">
               {/* Left Section */}

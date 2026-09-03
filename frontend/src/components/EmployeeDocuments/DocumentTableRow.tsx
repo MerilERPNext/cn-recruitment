@@ -23,7 +23,7 @@ export const DocumentTableRow: React.FC<DocumentTableRowProps> = ({
 }) => {
   return (
     <div
-      className="border-b border-gray-100 hover:bg-gray-50 transition-colors grid items-center px-6 py-4 gap-4 text-center"
+      className="border-b border-border hover:bg-gray-50 transition-colors grid items-center px-6 py-4 gap-4 text-center text-text-body1"
       style={{ gridTemplateColumns: "3fr 2fr 1.5fr 1.5fr 2fr" }}
     >
       <div className="font-medium truncate pr-4 text-sm">
@@ -37,11 +37,11 @@ export const DocumentTableRow: React.FC<DocumentTableRowProps> = ({
       </div>
       <div>
         <span
-          className={`text-xs font-medium px-3 py-1 whitespace-nowrap rounded-xl ${doc.status === "Approved"
-            ? "bg-green-100 text-green-700"
+        className={`text-xs font-medium px-3 py-1 whitespace-nowrap rounded-xl ${doc.status === "Approved"
+            ? "bg-success/15 text-success"
             : doc.status === "Acknowledgement Required"
-              ? "bg-yellow-100 text-yellow-700"
-              : "bg-red-100 text-red-700"
+              ? "bg-warning/15 text-warning"
+              : "bg-error/15 text-error"
             }`}
         >
           {doc.status}
@@ -55,6 +55,7 @@ export const DocumentTableRow: React.FC<DocumentTableRowProps> = ({
                 <Button
                   variant="soft"
                   size="sm"
+                  className="bg-primary/10 text-text-link hover:bg-primary/20"
                   onClick={() => setSelectedFile(doc.file_name)}
                 >
                   View

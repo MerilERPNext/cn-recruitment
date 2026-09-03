@@ -26,7 +26,7 @@ const ActivityLog: React.FC<ActivityLogProps> = ({
             <div className="flex flex-col bg-white w-full">
                 {/* Header */}
                 <div className="sticky top-0 z-10 bg-white flex justify-between items-center px-6 py-4 border-b border-gray-100">
-                    <Typography variant="h4" className="font-semibold text-slate-800">
+                    <Typography variant="h4" className="font-semibold text-text-title">
                         Activity Logs
                     </Typography>
                     <button
@@ -74,7 +74,7 @@ const ActivityLog: React.FC<ActivityLogProps> = ({
                         entries.map((log, index) => (
                             <div key={index} className="flex flex-col gap-3">
                                 <div className="flex flex-col gap-0.5">
-                                    <Typography variant="body" className="text-slate-800">
+                                    <Typography variant="body" className="text-text-title">
                                         {log.title}
                                     </Typography>
                                     <Typography variant="bodySmall" className="text-slate-400">
@@ -88,11 +88,11 @@ const ActivityLog: React.FC<ActivityLogProps> = ({
                                 </div>
 
                                 {log.details && log.details.length > 0 && (
-                                    <div className="bg-[#f8f9fc] p-5 rounded-xl flex flex-col gap-5">
+                                    <div className="bg-gray-50 p-5 rounded-xl flex flex-col gap-5">
                                         <div className={`grid gap-y-6 gap-x-4 ${log.details.length > 1 ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1'}`}>
                                             {log.details.map((detail, idx) => (
                                                 <div key={idx} className="flex flex-col gap-1">
-                                                    <Typography variant="bodySmall" className="font-semibold text-slate-800">
+                                                    <Typography variant="bodySmall" className="font-semibold text-text-title">
                                                         {detail.label}
                                                     </Typography>
                                                     <Typography variant="bodySmall" className="text-slate-500 leading-relaxed">

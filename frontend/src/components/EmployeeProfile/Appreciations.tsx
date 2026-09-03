@@ -126,7 +126,7 @@ const Appreciations = () => {
             <button
                 type="button"
                 onClick={() => setOpen((o) => !o)}
-                className="inline-flex items-center gap-2 rounded-lg border border-primary-200 bg-white px-4 py-2 text-sm font-medium text-primary-700 hover:bg-primary-50 transition-colors"
+                className="inline-flex items-center gap-2 rounded-lg border border-primary/30 bg-card px-4 py-2 text-sm font-medium text-text-link hover:bg-primary/10 transition-colors"
             >
                 Appreciate
                 {open ? (
@@ -138,7 +138,7 @@ const Appreciations = () => {
 
             {/* Horizontally scrollable award cards */}
             {open && (
-                <div className="absolute left-0 top-full z-50 mt-2 w-[684px] max-w-[90vw] rounded-xl border border-gray-200 bg-white p-3 shadow-lg">
+                <div className="absolute left-0 top-full z-50 mt-2 w-[684px] max-w-[90vw] rounded-xl border border-border-strong bg-raised p-3 shadow-lg">
                     {programsLoading ? (
                         <div className="flex items-center justify-center py-8">
                             <CircularLoader size="sm" />
@@ -154,7 +154,7 @@ const Appreciations = () => {
                                     type="button"
                                     key={p.program_name}
                                     onClick={() => selectAward(p.program_name, p.program_title)}
-                                    className="flex flex-col items-center gap-2 rounded-xl border border-gray-100 p-3 text-center transition-all hover:border-primary-200 hover:shadow-md"
+                                    className="flex flex-col items-center gap-2 rounded-xl border border-border p-3 text-center transition-all hover:border-primary/40 hover:bg-primary/5 hover:shadow-md"
                                 >
                                     {p.program_logo ? (
                                         <img
@@ -163,7 +163,7 @@ const Appreciations = () => {
                                             className="size-16 rounded-lg object-cover"
                                         />
                                     ) : (
-                                        <div className="flex size-16 items-center justify-center rounded-lg bg-primary-50">
+                                        <div className="flex size-16 items-center justify-center rounded-lg bg-primary/10">
                                             <Trophy className="size-7 text-primary-500" />
                                         </div>
                                     )}
@@ -184,11 +184,11 @@ const Appreciations = () => {
             >
                 <div className="space-y-4 p-2">
                     {/* Selected award */}
-                    <div className="bg-primary-50 p-3 rounded-lg border border-primary-100">
+                    <div className="bg-primary/10 p-3 rounded-lg border border-primary/20">
                         <Typography variant="label" color="primary" className="block mb-1 font-semibold">
                             Award
                         </Typography>
-                        <Typography variant="bodyMedium" className="font-bold text-primary-900">
+                        <Typography variant="bodyMedium" className="font-bold text-text-title">
                             {modal.programTitle || modal.programName}
                         </Typography>
                     </div>
@@ -204,7 +204,7 @@ const Appreciations = () => {
                             value={modal.note}
                             onChange={(e) => setModal({ ...modal, note: e.target.value })}
                             placeholder="Add a note for this appreciation (e.g., Outstanding performance on Project X)"
-                            className="w-full min-h-[100px] p-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all text-sm resize-none"
+                            className="w-full min-h-[100px] p-3 rounded-lg border border-border bg-card text-text-title focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all text-sm resize-none"
                         />
                         {minimumNominationCharacters > 0 && (
                             <p
@@ -228,7 +228,7 @@ const Appreciations = () => {
                             <button
                                 type="button"
                                 onClick={() => setValuesOpen((v) => !v)}
-                                className="flex w-full items-center bg-white justify-between rounded-lg border border-gray-300 px-3 py-2.5 text-sm text-left hover:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                                className="flex w-full items-center bg-card justify-between rounded-lg border border-border px-3 py-2.5 text-sm text-left hover:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
                             >
                                 <span className={selectedValues.length ? "text-gray-800" : "text-gray-400"}>
                                     {selectedValues.length
@@ -247,7 +247,7 @@ const Appreciations = () => {
                                     {selectedValues.map((v) => (
                                         <span
                                             key={v}
-                                            className="inline-flex items-center gap-1 rounded-lg bg-primary-50 px-2.5 py-1 text-xs font-medium text-primary-600"
+                                            className="inline-flex items-center gap-1 rounded-lg bg-primary/10 px-2.5 py-1 text-xs font-medium text-text-link"
                                         >
                                             {v}
                                             <button
@@ -264,7 +264,7 @@ const Appreciations = () => {
                             )}
 
                             {valuesOpen && (
-                                <div className="mt-2 w-full max-h-56 overflow-y-auto rounded-lg border border-gray-200 bg-white p-1">
+                                <div className="mt-2 w-full max-h-56 overflow-y-auto rounded-lg border border-border-strong bg-raised p-1">
                                     {programValues.map((v) => (
                                         <label
                                             key={v}
@@ -290,6 +290,7 @@ const Appreciations = () => {
                             variant="subtle"
                             onClick={() => setModal({ ...modal, open: false })}
                             disabled={isSubmitting}
+                            className="text-text-body1 hover:bg-gray-100 hover:text-text-title"
                         >
                             Cancel
                         </Button>

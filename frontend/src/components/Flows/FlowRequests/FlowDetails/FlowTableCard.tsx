@@ -140,7 +140,7 @@ const FlowTableRow = ({
             </div>
             {/* Stage Card */}
             <div className="flex-1 min-w-0">
-                <div className="bg-white rounded-2xl border-t-4 border-x-1 border-b-1 border-x-primary/20 border-b-primary/20 shadow-sm border-primary px-4 py-4 transition-all overflow-hidden">
+                <div className="bg-white rounded-2xl border-t-4 border-x border-b border-x-border border-b-border shadow-sm border-t-primary px-4 py-4 transition-all overflow-hidden">
                     {/* Header: Stage Info & Status */}
                     <div className="flex justify-between items-start gap-3 mb-3">
                         <div className="flex flex-col gap-1">
