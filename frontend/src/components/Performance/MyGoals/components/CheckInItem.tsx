@@ -96,23 +96,23 @@ export const CheckInItem: React.FC<CheckInItemProps> = memo(({ checkIn }) => {
         </a>
       )}
       {hasManagerComment && (
-        <div className="mt-2.5 rounded-lg border border-blue-500/30 bg-blue-500/10 p-2.5 text-xs">
+        <div className="mt-2.5 rounded-lg border border-primary/30 bg-primary/10 p-2.5 text-xs">
           <div className="flex items-center justify-between gap-2 mb-1">
             <span className="font-semibold text-primary inline-flex items-center gap-1">
-              <MessageSquare className="h-3 w-3 text-blue-600" />
+              <MessageSquare className="h-3 w-3 text-primary" />
               Manager Comment
             </span>
             {checkIn.manager_comment_on && (
-              <span className="text-[10px] text-blue-500 font-medium">
+              <span className="text-[10px] text-primary/80 font-medium">
                 {formatCheckInDateTime(checkIn.manager_comment_on)}
               </span>
             )}
           </div>
-          <p className="whitespace-pre-wrap break-words [word-break:break-word] text-gray-700 text-xs">
+          <p className="whitespace-pre-wrap break-words [word-break:break-word] text-text-title text-xs font-medium">
             {checkIn.manager_comment}
           </p>
           {checkIn.manager_comment_by && (
-            <span className="mt-1 block text-[10px] text-gray-500">
+            <span className="mt-1 block text-[10px] text-text-body2">
               — {checkIn.manager_comment_by}
             </span>
           )}
