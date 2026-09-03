@@ -58,31 +58,31 @@ export function FilePreviewModal({ fileUrl, fileName: customFileName, onClose }:
           <div className="flex items-center gap-1.5 flex-shrink-0">
             {/* Zoom — images only */}
             {category === "image" && (
-              <div className="flex items-center gap-1 bg-white border border-gray-200 rounded-lg px-1.5 py-0.5 mr-1">
+              <div className="flex items-center gap-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-1.5 py-0.5 mr-1">
                 <button
                   onClick={handleZoomOut}
                   disabled={imageZoom <= 50}
-                  className="p-1 rounded hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                  className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                   title="Zoom Out"
                 >
-                  <ZoomOut className="h-3.5 w-3.5 text-gray-600" />
+                  <ZoomOut className="h-3.5 w-3.5 text-gray-600 dark:text-gray-300" />
                 </button>
-                <span className="text-xs font-medium text-gray-600 min-w-[36px] text-center">{imageZoom}%</span>
+                <span className="text-xs font-medium text-gray-600 dark:text-gray-300 min-w-[36px] text-center">{imageZoom}%</span>
                 <button
                   onClick={handleZoomIn}
                   disabled={imageZoom >= 200}
-                  className="p-1 rounded hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                  className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                   title="Zoom In"
                 >
-                  <ZoomIn className="h-3.5 w-3.5 text-gray-600" />
+                  <ZoomIn className="h-3.5 w-3.5 text-gray-600 dark:text-gray-300" />
                 </button>
-                <div className="w-px h-3.5 bg-gray-300 mx-0.5" />
+                <div className="w-px h-3.5 bg-gray-300 dark:bg-gray-600 mx-0.5" />
                 <button
                   onClick={handleResetZoom}
-                  className="p-1 rounded hover:bg-gray-100 transition-colors"
+                  className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                   title="Reset Zoom"
                 >
-                  <RotateCcw className="h-3.5 w-3.5 text-gray-600" />
+                  <RotateCcw className="h-3.5 w-3.5 text-gray-600 dark:text-gray-300" />
                 </button>
               </div>
             )}
@@ -91,10 +91,10 @@ export function FilePreviewModal({ fileUrl, fileName: customFileName, onClose }:
               <a
                 href={fileUrl}
                 download={fileName}
-                className="p-1.5 rounded-md hover:bg-gray-200 transition-colors"
+                className="p-1.5 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors text-gray-600 dark:text-gray-300"
                 title="Download"
               >
-                <Download className="h-4 w-4 text-gray-600" />
+                <Download className="h-4 w-4 text-gray-600 dark:text-gray-300" />
               </a>
             )}
 
@@ -102,20 +102,20 @@ export function FilePreviewModal({ fileUrl, fileName: customFileName, onClose }:
               href={fileUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="p-1.5 rounded-md hover:bg-gray-200 transition-colors"
+              className="p-1.5 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors text-gray-600 dark:text-gray-300"
               title="Open in New Tab"
             >
-              <ExternalLink className="h-4 w-4 text-gray-600" />
+              <ExternalLink className="h-4 w-4 text-gray-600 dark:text-gray-300" />
             </a>
 
-            <div className="w-px h-4 bg-gray-300 mx-0.5" />
+            <div className="w-px h-4 bg-gray-300 dark:bg-gray-600 mx-0.5" />
 
             <button
               onClick={onClose}
-              className="p-1.5 rounded-md hover:bg-red-100 transition-colors"
+              className="p-1.5 rounded-md bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-red-500 hover:text-white dark:hover:bg-red-600 transition-colors flex items-center justify-center"
               title="Close"
             >
-              <X className="h-4 w-4 text-gray-500 hover:text-red-600" />
+              <X className="h-4 w-4 text-current" />
             </button>
           </div>
         </div>
