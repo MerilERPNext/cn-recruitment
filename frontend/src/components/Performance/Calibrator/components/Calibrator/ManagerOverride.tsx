@@ -20,14 +20,14 @@ type ManagerOverrideProps = {
 
 const generatePastelColor = (index: number) => {
   const colors = [
-    "bg-blue-100 text-blue-700 ring-blue-300",
-    "bg-purple-100 text-purple-700 ring-purple-300",
-    "bg-green-100 text-green-700 ring-green-300",
-    "bg-pink-100 text-pink-700 ring-pink-300",
-    "bg-yellow-100 text-yellow-700 ring-yellow-300",
-    "bg-orange-100 text-orange-700 ring-orange-300",
-    "bg-cyan-100 text-cyan-700 ring-cyan-300",
-    "bg-red-100 text-red-700 ring-red-300",
+    "bg-primary/20 text-primary border-primary/30",
+    "bg-purple-500/20 text-purple-400 border-purple-500/30",
+    "bg-emerald-500/20 text-emerald-500 border-emerald-500/30",
+    "bg-pink-500/20 text-pink-400 border-pink-500/30",
+    "bg-amber-500/20 text-amber-500 border-amber-500/30",
+    "bg-orange-500/20 text-orange-400 border-orange-500/30",
+    "bg-cyan-500/20 text-cyan-400 border-cyan-500/30",
+    "bg-red-500/20 text-red-500 border-red-500/30",
   ];
   return colors[index % colors.length];
 };
@@ -85,11 +85,11 @@ const ManagerOverride = ({
 
   return (
     <div
-      className="fixed inset-0 z-[9999] flex items-stretch justify-center overflow-hidden bg-black/35 p-0 font-sans text-gray-900 animate-in fade-in duration-200 lg:items-center lg:p-4"
+      className="fixed inset-0 z-[9999] flex items-stretch justify-center overflow-hidden bg-black/60 backdrop-blur-xs p-0 font-sans text-text-title animate-in fade-in duration-200 lg:items-center lg:p-4"
       onClick={onClose}
     >
       <section
-        className="flex h-dvh w-full max-w-[1100px] flex-col overflow-hidden bg-white shadow-xl animate-in fade-in zoom-in-95 slide-in-from-bottom-3 duration-200 lg:h-auto lg:max-h-[calc(100dvh-2rem)] lg:rounded-md"
+        className="flex h-dvh w-full max-w-[1100px] flex-col overflow-hidden bg-card border border-border shadow-xl animate-in fade-in zoom-in-95 slide-in-from-bottom-3 duration-200 lg:h-auto lg:max-h-[calc(100dvh-2rem)] lg:rounded-md"
         onClick={(event) => event.stopPropagation()}
       >
         <header className="flex shrink-0 items-start justify-between gap-3 px-4 pt-4 sm:gap-4 sm:px-6">
@@ -100,11 +100,11 @@ const ManagerOverride = ({
               textColor=""
               size="sm"
             />
-            <Typography variant="h2" className="mt-1.5 text-lg font-bold leading-tight text-gray-900">
+            <Typography variant="h2" className="mt-1.5 text-lg font-bold leading-tight text-text-title">
               Override Manager Rating
             </Typography>
-            <div className="mt-1 flex min-w-0 flex-wrap items-center gap-1.5 text-xs font-medium text-gray-500">
-              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-50 text-[10px] font-bold text-blue-600">
+            <div className="mt-1 flex min-w-0 flex-wrap items-center gap-1.5 text-xs font-medium text-text-body2">
+              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/20 text-[10px] font-bold text-primary">
                 {employee.initials}
               </span>
               <Badge
@@ -117,7 +117,7 @@ const ManagerOverride = ({
             </div>
           </div>
           <button
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-gray-200 bg-white text-gray-400 hover:text-gray-700"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-border bg-card text-text-body2 hover:text-text-title cursor-pointer"
             onClick={onClose}
           >
             <X className="h-4 w-4" />
@@ -126,10 +126,11 @@ const ManagerOverride = ({
 
         <div className="min-h-0 flex-1 overflow-y-auto pb-3">
         <div className="grid gap-3 px-4 py-3 sm:gap-4 sm:px-6 md:grid-cols-[1fr_1fr]">
-          <section className="rounded-md border border-gray-200 bg-white p-3">
+          <section className="rounded-md border border-border bg-card p-3">
             <Typography
               variant="caption"
-              className="block font-bold uppercase tracking-wider text-gray-500"
+              color="body2"
+              className="block font-bold uppercase tracking-wider"
             >
               Manager ({employee.manager}) said
             </Typography>
@@ -145,14 +146,14 @@ const ManagerOverride = ({
               rows={4}
               value={managerComment}
               onChange={(event) => setManagerComment(event.target.value)}
-              className="mt-3 min-h-[86px] w-full resize-none rounded-md border border-gray-200 bg-white px-3 py-2 text-xs italic leading-relaxed text-gray-600 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+              className="mt-3 min-h-[86px] w-full resize-none rounded-md border border-border bg-card px-3 py-2 text-xs italic leading-relaxed text-text-title outline-none focus:border-primary focus:ring-1 focus:ring-primary"
             />
           </section>
 
-          <section className="rounded-md border border-blue-400 bg-blue-50 p-3">
+          <section className="rounded-md border border-primary/30 bg-primary/10 p-3">
             <Typography
               variant="caption"
-              className="block font-bold uppercase tracking-wider text-blue-600"
+              className="block font-bold uppercase tracking-wider text-primary"
             >
               Your override → {rating} ({ratingScore[rating].split(" / ")[0]})
             </Typography>
@@ -161,14 +162,14 @@ const ManagerOverride = ({
                 <button
                   key={option}
                   onClick={() => onRatingChange(option)}
-                  className={`min-h-[46px] min-w-0 rounded-md border px-2 py-1.5 text-center text-xs font-semibold transition-colors ${
+                  className={`min-h-[46px] min-w-0 rounded-md border px-2 py-1.5 text-center text-xs font-semibold transition-colors cursor-pointer ${
                     option === rating
-                      ? "border-blue-500 bg-blue-100 text-blue-700"
-                      : "border-gray-200 bg-white text-gray-700 hover:border-blue-300"
+                      ? "border-primary bg-primary/20 text-primary"
+                      : "border-border bg-card text-text-title hover:border-primary/50"
                   }`}
                 >
                   <span className="block truncate">{option}</span>
-                  <span className="mt-0.5 block text-[10px] text-gray-500">
+                  <span className="mt-0.5 block text-[10px] text-text-body2">
                     {ratingScore[option]}
                   </span>
                 </button>
@@ -177,17 +178,18 @@ const ManagerOverride = ({
           </section>
         </div>
 
-        <section className="mx-4 rounded-md bg-[#f3f7ff] p-3 sm:mx-6">
+        <section className="mx-4 rounded-md bg-slate-500/10 border border-border p-3 sm:mx-6">
           <Typography
             variant="caption"
-            className="block font-bold uppercase tracking-wider text-gray-500"
+            color="body2"
+            className="block font-bold uppercase tracking-wider"
           >
             Comparison data
           </Typography>
           <div className="mt-2 grid grid-cols-2 gap-3 sm:grid-cols-4">
             {comparisonData.map((item) => (
               <div key={item.label} className="min-w-0">
-                <div className="mb-1 text-[11px] font-semibold text-gray-500">{item.label}</div>
+                <div className="mb-1 text-[11px] font-semibold text-text-body2">{item.label}</div>
                 {item.rating ? (
                   <Badge
                     label={item.rating}
@@ -196,12 +198,12 @@ const ManagerOverride = ({
                     size="sm"
                   />
                 ) : (
-                  <span className="text-sm font-medium text-gray-400">-</span>
+                  <span className="text-sm font-medium text-text-body2">-</span>
                 )}
               </div>
             ))}
             <div className="min-w-0">
-              <div className="mb-1 text-[11px] font-semibold text-gray-500">Manager</div>
+              <div className="mb-1 text-[11px] font-semibold text-text-body2">Manager</div>
               <Badge
                 label={employee.managerSuggested}
                 backgroundColor={generatePastelColor(ratingColorIndex[employee.managerSuggested])}
@@ -214,13 +216,13 @@ const ManagerOverride = ({
 
         <div className="space-y-2.5 px-4 py-3 sm:px-6">
           <div>
-            <label className="mb-1.5 block text-xs font-semibold text-gray-700">
+            <label className="mb-1.5 block text-xs font-semibold text-text-title">
               Reason for override <span className="text-red-500">*</span>
             </label>
             <select
               value={reason}
               onChange={(event) => setReason(event.target.value)}
-              className="min-h-[38px] w-full rounded-md border border-gray-200 bg-white px-3 text-sm text-gray-700 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+              className="min-h-[38px] w-full rounded-md border border-border bg-card px-3 text-sm text-text-title outline-none focus:border-primary focus:ring-1 focus:ring-primary"
             >
               <option>Significant external factors not reflected in manager rating</option>
               <option>Peer feedback materially changes rating</option>
@@ -230,19 +232,19 @@ const ManagerOverride = ({
 
           <textarea
             rows={3}
-            className="min-h-[72px] w-full resize-none rounded-md border border-gray-200 bg-white px-3 py-2 text-sm leading-relaxed text-gray-700 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+            className="min-h-[72px] w-full resize-none rounded-md border border-border bg-card px-3 py-2 text-sm leading-relaxed text-text-title outline-none focus:border-primary focus:ring-1 focus:ring-primary"
             value={notes}
             onChange={(event) => setNotes(event.target.value)}
           />
 
-          <section className="rounded-md border border-yellow-200 bg-yellow-50 p-3">
+          <section className="rounded-md border border-amber-500/30 bg-amber-500/10 p-3">
             <div className="flex items-start gap-2">
-              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-yellow-700" />
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
               <div>
-                <Typography variant="bodyMedium" className="text-sm font-bold text-yellow-800">
+                <Typography variant="bodyMedium" className="text-sm font-bold text-amber-500">
                   This override will:
                 </Typography>
-                <ul className="mt-1 list-disc space-y-0.5 pl-4 text-xs leading-relaxed text-yellow-900">
+                <ul className="mt-1 list-disc space-y-0.5 pl-4 text-xs leading-relaxed text-amber-400">
                   <li>Notify {employee.manager}, manager, before release</li>
                   <li>
                     Move {employee.name} from {employee.managerSuggested} to {rating}
@@ -256,15 +258,15 @@ const ManagerOverride = ({
 
         </div>
 
-        <footer className="flex shrink-0 flex-col-reverse gap-3 border-t border-gray-200 bg-[#f3f7ff] px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-2.5">
+        <footer className="flex shrink-0 flex-col-reverse gap-3 border-t border-border bg-slate-500/10 px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-2.5">
           <button
-            className="min-h-[42px] w-full rounded-md border border-gray-200 bg-white px-4 text-sm font-semibold text-gray-700 shadow-sm sm:min-h-[38px] sm:w-auto"
+            className="min-h-[42px] w-full rounded-md border border-border bg-card px-4 text-sm font-semibold text-text-title shadow-sm hover:bg-slate-500/10 cursor-pointer sm:min-h-[38px] sm:w-auto"
             onClick={onClose}
           >
             Cancel
           </button>
           <button
-            className="inline-flex min-h-[42px] w-full items-center justify-center gap-2 rounded-md bg-blue-500 px-4 text-sm font-bold text-white shadow-sm hover:bg-blue-600 sm:min-h-[38px] sm:w-auto"
+            className="inline-flex min-h-[42px] w-full items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-bold text-white shadow-sm hover:bg-primary/90 cursor-pointer sm:min-h-[38px] sm:w-auto"
             onClick={onSaveOverride}
           >
             Save Override

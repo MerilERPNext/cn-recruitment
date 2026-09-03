@@ -94,8 +94,8 @@ export const Select = <
                 <div
                     className="
             absolute z-50 mt-2 w-64
-            rounded-xl border border-gray-200
-            bg-white shadow-lg
+            rounded-xl border border-border
+            bg-card shadow-lg
             animate-in fade-in zoom-in-95
           "
                 >
@@ -109,7 +109,7 @@ export const Select = <
                                     setVisibleOptionCount(20);
                                 }}
                                 placeholder="Search..."
-                                className="h-9 w-full rounded-lg border border-gray-200 px-3 text-sm outline-none focus:border-primary-400 focus:ring-2 focus:ring-primary-500/20"
+                                className="h-9 w-full rounded-lg border border-border bg-card px-3 text-sm text-text-title outline-none focus:border-primary focus:ring-1 focus:ring-primary"
                                 aria-label={`Search ${label ?? "options"}`}
                             />
                         </div>
@@ -138,8 +138,8 @@ export const Select = <
                     rounded-lg px-3 py-2 text-sm
                     transition
                     ${selected
-                                            ? "bg-primary-50 text-primary-600 font-medium"
-                                            : "text-gray-700 hover:bg-gray-100"
+                                            ? "bg-primary/20 text-primary font-medium"
+                                            : "text-text-title hover:bg-slate-500/10"
                                         }
                   `}
                                 >
@@ -148,7 +148,7 @@ export const Select = <
                             );
                         })}
                         {visibleOptions.length === 0 && (
-                            <li className="px-3 py-2 text-sm text-gray-500">No options found</li>
+                            <li className="px-3 py-2 text-sm text-text-body2">No options found</li>
                         )}
                     </ul>
                 </div>

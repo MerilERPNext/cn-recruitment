@@ -33,25 +33,25 @@ const boxes: {
   {
     label: "ENIGMA",
     count: 0,
-    color: "border-purple-100 bg-purple-50",
+    color: "border-purple-500/30 bg-purple-500/10",
     badgeVariant: "purple",
-    titleColor: "text-purple-700",
+    titleColor: "text-purple-400",
     employees: [],
   },
   {
     label: "FUTURE STAR",
     count: 0,
-    color: "border-green-100 bg-green-50",
+    color: "border-emerald-500/30 bg-emerald-500/10",
     badgeVariant: "success",
-    titleColor: "text-green-700",
+    titleColor: "text-emerald-400",
     employees: [],
   },
   {
     label: "STAR",
     count: 6,
-    color: "border-green-200 bg-green-100",
+    color: "border-emerald-500/40 bg-emerald-500/20",
     badgeVariant: "success",
-    titleColor: "text-green-700",
+    titleColor: "text-emerald-400",
     employees: [
       { initials: "PM", name: "Pallavi M." },
       { initials: "KI", name: "Karthik I." },
@@ -64,17 +64,17 @@ const boxes: {
   {
     label: "INCONSISTENT",
     count: 1,
-    color: "border-amber-200 bg-[#fffdf1]",
+    color: "border-amber-500/30 bg-amber-500/10",
     badgeVariant: "warning",
-    titleColor: "text-amber-700",
+    titleColor: "text-amber-500",
     employees: [{ initials: "VR", name: "Vikram R." }],
   },
   {
     label: "CORE PLAYER",
     count: 3,
-    color: "border-blue-100 bg-blue-50",
+    color: "border-primary/30 bg-primary/10",
     badgeVariant: "info",
-    titleColor: "text-blue-700",
+    titleColor: "text-primary",
     employees: [
       { initials: "MS", name: "Mohit S." },
       { initials: "AB", name: "Aman B." },
@@ -84,9 +84,9 @@ const boxes: {
   {
     label: "HIGH POTENTIAL",
     count: 2,
-    color: "border-green-100 bg-green-50",
+    color: "border-emerald-500/30 bg-emerald-500/10",
     badgeVariant: "success",
-    titleColor: "text-green-700",
+    titleColor: "text-emerald-400",
     employees: [
       { initials: "SD", name: "Shreya D." },
       { initials: "TM", name: "Tarun M." },
@@ -95,25 +95,25 @@ const boxes: {
   {
     label: "AT RISK",
     count: 0,
-    color: "border-red-100 bg-red-50",
+    color: "border-red-500/30 bg-red-500/10",
     badgeVariant: "danger",
-    titleColor: "text-red-600",
+    titleColor: "text-red-500",
     employees: [],
   },
   {
     label: "EFFECTIVE",
     count: 0,
-    color: "border-amber-100 bg-[#fffdf1]",
+    color: "border-amber-500/30 bg-amber-500/10",
     badgeVariant: "warning",
-    titleColor: "text-amber-700",
+    titleColor: "text-amber-500",
     employees: [],
   },
   {
     label: "SOLID PERFORMER",
     count: 0,
-    color: "border-blue-100 bg-blue-50",
+    color: "border-primary/30 bg-primary/10",
     badgeVariant: "info",
-    titleColor: "text-blue-700",
+    titleColor: "text-primary",
     employees: [],
   },
 ];
@@ -158,25 +158,25 @@ const BoxGrid = () => {
   };
 
   return (
-    <main className="min-h-dvh overflow-x-hidden bg-[#f4f7fb] p-2 font-sans text-gray-900 sm:p-3 lg:p-4">
-      <div className="mx-auto grid  gap-4 xl:grid-cols-[minmax(0,1fr)_330px]">
+    <main className="min-h-dvh overflow-x-hidden bg-app p-2 font-sans text-text-title sm:p-3 lg:p-4">
+      <div className="mx-auto grid gap-4 xl:grid-cols-[minmax(0,1fr)_330px]">
         <div className="min-w-0 space-y-4">
           {savedOverride && (
             <Card
-              className="border border-emerald-200 bg-emerald-50 px-3 py-2.5 shadow-sm sm:px-4"
+              className="border border-emerald-500/30 bg-emerald-500/10 px-3 py-2.5 shadow-sm sm:px-4 text-text-title"
               radius="xl"
               padding="none"
             >
               <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                 <div className="flex min-w-0 items-start gap-3">
-                  <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-white">
+                  <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-emerald-500 text-white">
                     <Check className="h-4 w-4" />
                   </span>
                   <div className="min-w-0">
-                    <Typography variant="bodyMedium" className="text-[13px] font-extrabold text-emerald-950">
+                    <Typography variant="bodyMedium" className="text-[13px] font-extrabold text-emerald-400">
                       Override saved · {savedOverride.employeeName} moved from {savedOverride.from} to {savedOverride.to}
                     </Typography>
-                    <p className="mt-0.5 text-[12px] font-semibold text-emerald-800">
+                    <p className="mt-0.5 text-[12px] font-semibold text-emerald-500">
                       FY26 calibrated rating updated. 9-box position recalculated from manager rating and dependency.
                     </p>
                   </div>
@@ -186,7 +186,7 @@ const BoxGrid = () => {
                     type="button"
                     variant="outline"
                     bgColor="text"
-                    className="h-8 rounded-md border-emerald-200 bg-white px-3 text-[12px] font-bold text-gray-700 hover:bg-emerald-50"
+                    className="h-8 rounded-md border-emerald-500/30 bg-card px-3 text-[12px] font-bold text-text-title hover:bg-slate-500/10"
                   >
                     Undo
                   </Button>
@@ -194,7 +194,7 @@ const BoxGrid = () => {
                     type="button"
                     variant="subtle"
                     bgColor="text"
-                    className="h-8 rounded-md px-3 text-[12px] font-bold text-blue-700 hover:bg-blue-50"
+                    className="h-8 rounded-md px-3 text-[12px] font-bold text-primary hover:bg-primary/20"
                     onClick={() => navigate("/webapp/performance-app/calibrator/session")}
                   >
                     View audit log →
@@ -204,13 +204,13 @@ const BoxGrid = () => {
             </Card>
           )}
 
-          <Card className="border border-gray-200 bg-white px-3 py-3 shadow-sm sm:px-4" radius="xl" padding="none">
+          <Card className="border border-border bg-card px-3 py-3 shadow-sm sm:px-4" radius="xl" padding="none">
             <div className="flex flex-col gap-3 2xl:flex-row 2xl:items-center 2xl:justify-between">
               <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                <Typography variant="h3" className="text-[15px] font-bold text-[#1f2937]">
+                <Typography variant="h3" className="text-[15px] font-bold text-text-title">
                   9-Box · India Tech · FY26
                 </Typography>
-                <Typography variant="bodyMedium" className="text-[13px] font-semibold text-[#697386]">
+                <Typography variant="bodyMedium" className="text-[13px] font-semibold text-text-body2">
                   12 of 142 employees · drag to reposition
                 </Typography>
               </div>
@@ -228,10 +228,10 @@ const BoxGrid = () => {
             </div>
           </Card>
 
-          <Card className="border border-gray-200 bg-white px-3 pb-5 pt-3 shadow-sm sm:px-4 sm:pt-4" radius="xl" padding="none">
+          <Card className="border border-border bg-card px-3 pb-5 pt-3 shadow-sm sm:px-4 sm:pt-4" radius="xl" padding="none">
             <div className="grid gap-3 md:grid-cols-[42px_minmax(0,1fr)]">
               <div className="flex items-center md:justify-center">
-                <span className="whitespace-nowrap text-[12px] font-bold uppercase text-[#536072] md:-rotate-90">
+                <span className="whitespace-nowrap text-[12px] font-bold uppercase text-text-body2 md:-rotate-90">
                   Potential →
                 </span>
               </div>
@@ -271,13 +271,13 @@ const BoxGrid = () => {
                             type="button"
                             variant="outline"
                             bgColor="text"
-                            className={`h-[54px] min-w-[78px] max-w-[112px] justify-start rounded-full bg-white px-2 text-left text-[10px] font-semibold text-gray-700 shadow-sm hover:bg-violet-50 sm:h-[62px] sm:min-w-[86px] sm:max-w-[124px] sm:px-2.5 sm:text-[11px] ${
+                            className={`h-[54px] min-w-[78px] max-w-[112px] justify-start rounded-full bg-card px-2 text-left text-[10px] font-semibold text-text-title shadow-sm hover:bg-slate-500/10 cursor-pointer sm:h-[62px] sm:min-w-[86px] sm:max-w-[124px] sm:px-2.5 sm:text-[11px] ${
                               isSavedEmployee
-                                ? "border-2 border-emerald-500 ring-2 ring-emerald-100"
-                                : "border-gray-100"
+                                ? "border-2 border-emerald-500 ring-2 ring-emerald-500/30"
+                                : "border-border"
                             }`}
                           >
-                            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#e9f3ff] text-[8px] font-extrabold text-[#2486e8] sm:h-6 sm:w-6 sm:text-[9px]">
+                            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/20 text-[8px] font-extrabold text-primary sm:h-6 sm:w-6 sm:text-[9px]">
                               {employee.initials}
                             </span>
                             <span className="truncate">{employee.name}</span>
@@ -289,12 +289,12 @@ const BoxGrid = () => {
                     );
                   })}
                 </div>
-                <div className="mt-3 hidden grid-cols-3 text-center text-[12px] font-bold uppercase text-[#536072] lg:grid">
+                <div className="mt-3 hidden grid-cols-3 text-center text-[12px] font-bold uppercase text-text-body2 lg:grid">
                   <span>Low</span>
                   <span>Mid</span>
                   <span>High</span>
                 </div>
-                <div className="mt-3 text-left text-[11px] font-extrabold uppercase tracking-[0.12em] text-[#536072] lg:mt-1 lg:text-center">
+                <div className="mt-3 text-left text-[11px] font-extrabold uppercase tracking-[0.12em] text-text-body2 lg:mt-1 lg:text-center">
                   Performance →
                 </div>
               </div>
@@ -303,11 +303,11 @@ const BoxGrid = () => {
         </div>
 
         <aside className="grid min-w-0 gap-4 md:grid-cols-2 xl:grid-cols-1">
-          <Card className="border border-gray-200 bg-white p-4 shadow-sm" radius="xl" padding="none">
-            <Typography variant="h3" className="text-[19px] font-extrabold text-[#1f2937]">
+          <Card className="border border-border bg-card p-4 shadow-sm" radius="xl" padding="none">
+            <Typography variant="h3" className="text-[19px] font-extrabold text-text-title">
               Promotion Filters
             </Typography>
-            <Typography variant="bodyMedium" className="mt-1 text-[12px] font-semibold text-[#697386]">
+            <Typography variant="bodyMedium" className="mt-1 text-[12px] font-semibold text-text-body2">
               Per Darwinbox handbook
             </Typography>
             <div className="mt-4 space-y-2">
@@ -317,11 +317,11 @@ const BoxGrid = () => {
                 return (
                 <div
                   key={filter.id}
-                  className="flex min-h-[40px] items-center justify-between gap-3 rounded-md bg-[#f2f6fc] px-3"
+                  className="flex min-h-[40px] items-center justify-between gap-3 rounded-md bg-slate-500/10 px-3 border border-border"
                 >
-                  <span className="min-w-0 text-[12px] font-semibold text-[#344054]">{filter.label}</span>
+                  <span className="min-w-0 text-[12px] font-semibold text-text-title">{filter.label}</span>
                   <div className="flex items-center gap-2">
-                    <span className={`text-[12px] font-extrabold ${isEnabled ? "text-blue-600" : "text-gray-400"}`}>
+                    <span className={`text-[12px] font-extrabold ${isEnabled ? "text-primary" : "text-text-body2"}`}>
                       {filter.value}
                     </span>
                     <button
@@ -329,8 +329,8 @@ const BoxGrid = () => {
                       aria-pressed={isEnabled}
                       aria-label={`${isEnabled ? "Disable" : "Enable"} ${filter.label}`}
                       onClick={() => toggleFilter(filter.id)}
-                      className={`relative h-5 w-9 shrink-0 rounded-md transition-colors ${
-                        isEnabled ? "bg-blue-500" : "bg-gray-200"
+                      className={`relative h-5 w-9 shrink-0 rounded-md transition-colors cursor-pointer ${
+                        isEnabled ? "bg-primary" : "bg-slate-500/30"
                       }`}
                     >
                       <span
@@ -344,18 +344,18 @@ const BoxGrid = () => {
                 );
               })}
             </div>
-            <div className="mt-4 rounded-lg bg-emerald-50 p-4">
-              <div className="text-3xl font-extrabold leading-none text-emerald-700">2</div>
-              <div className="mt-1 text-[12px] font-semibold text-emerald-700">
+            <div className="mt-4 rounded-lg bg-emerald-500/10 border border-emerald-500/30 p-4">
+              <div className="text-3xl font-extrabold leading-none text-emerald-400">2</div>
+              <div className="mt-1 text-[12px] font-semibold text-emerald-400">
                 promotion candidates in current view
               </div>
             </div>
           </Card>
 
-          <Card className="border border-gray-200 bg-white p-4 shadow-sm md:self-start xl:self-auto" radius="xl" padding="none">
+          <Card className="border border-border bg-card p-4 shadow-sm md:self-start xl:self-auto" radius="xl" padding="none">
             <Typography
               variant="caption"
-              className="block text-[12px] font-extrabold uppercase text-[#697386]"
+              className="block text-[12px] font-extrabold uppercase text-text-body2"
             >
               Quick-pick — stars
             </Typography>
@@ -368,23 +368,23 @@ const BoxGrid = () => {
                   bgColor="text"
                   fullWidth
                   contentAlign="between"
-                  className="min-h-[54px] rounded-lg border-emerald-200 bg-emerald-50/50 px-3 py-2 text-left hover:bg-emerald-50"
+                  className="min-h-[54px] rounded-lg border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-left hover:bg-emerald-500/20 cursor-pointer"
                 >
                   <div className="flex min-w-0 items-center gap-3">
-                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#e9f3ff] text-[10px] font-extrabold text-[#2486e8]">
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/20 text-[10px] font-extrabold text-primary">
                       {employee.initials}
                     </span>
                     <div className="min-w-0">
-                      <div className="truncate text-[13px] font-extrabold leading-tight text-[#344054]">
+                      <div className="truncate text-[13px] font-extrabold leading-tight text-text-title">
                         {employee.name}
                       </div>
-                      <div className="truncate text-[11px] font-semibold leading-tight text-[#697386]">
+                      <div className="truncate text-[11px] font-semibold leading-tight text-text-body2">
                         {employee.role}
                       </div>
                     </div>
                   </div>
-                  <span className="inline-flex shrink-0 items-center gap-1.5 rounded-md bg-emerald-50 px-2 py-1 text-[11px] font-extrabold text-emerald-700">
-                    <span className="h-1.5 w-1.5 rounded-md bg-emerald-600" />
+                  <span className="inline-flex shrink-0 items-center gap-1.5 rounded-md bg-emerald-500/20 px-2 py-1 text-[11px] font-extrabold text-emerald-400">
+                    <span className="h-1.5 w-1.5 rounded-md bg-emerald-500" />
                     {employee.rating}
                   </span>
                 </Button>
