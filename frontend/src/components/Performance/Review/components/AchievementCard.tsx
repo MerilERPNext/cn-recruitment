@@ -27,9 +27,9 @@ export const AchievementCard: React.FC<AchievementCardProps> = ({
   const [impact, setImpact] = React.useState(achievement.impact);
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6">
+    <div className="bg-card rounded-xl shadow-sm border border-border p-4 sm:p-6">
       <div className="flex justify-between items-start mb-4">
-        <label className="block text-sm font-medium text-gray-700">
+        <label className="block text-sm font-medium text-text-title">
           {titleLabel} <span className="text-red-500">*</span>
         </label>
         <Button
@@ -37,7 +37,7 @@ export const AchievementCard: React.FC<AchievementCardProps> = ({
           bgColor="text"
           size="sm"
           onClick={() => onRemove && onRemove(achievement.id)}
-          className="text-gray-600 h-8"
+          className="text-text-body2 h-8 hover:text-red-500"
           aria-label="Remove item"
         >
           Remove
@@ -48,10 +48,10 @@ export const AchievementCard: React.FC<AchievementCardProps> = ({
         type="text"
         value={title}
         onChange={(e) => setTitle(e.target.value)}
-        className="w-full border border-gray-200 rounded-lg p-3 text-gray-900 mb-6 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white"
+        className="w-full border border-border rounded-lg p-3 text-text-title mb-6 focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary bg-card"
       />
 
-      <label className="block text-sm font-medium text-gray-700 mb-2">
+      <label className="block text-sm font-medium text-text-title mb-2">
         {impactLabel} <span className="text-red-500">*</span>
       </label>
       <textarea
@@ -60,12 +60,12 @@ export const AchievementCard: React.FC<AchievementCardProps> = ({
         onChange={(e) => setImpact(e.target.value)}
         rows={4}
         maxLength={1000}
-        className="w-full border border-gray-200 rounded-lg p-3 text-gray-900 mb-3 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 resize-none bg-white"
+        className="w-full border border-border rounded-lg p-3 text-text-title mb-3 focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary resize-none bg-card placeholder:text-text-body2"
       />
 
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
         <button
-          className="flex items-center gap-1.5 text-gray-500 hover:text-gray-700 transition-colors text-sm font-medium text-left"
+          className="flex items-center gap-1.5 text-text-body2 hover:text-text-title transition-colors text-sm font-medium text-left cursor-pointer"
           aria-label="Attach evidence"
         >
           <Plus className="w-4 h-4 shrink-0" />{" "}
@@ -73,7 +73,7 @@ export const AchievementCard: React.FC<AchievementCardProps> = ({
             Attach evidence (Figma, doc, dashboard)
           </span>
         </button>
-        <Typography variant="caption" className="text-gray-400 self-end sm:self-auto">
+        <Typography variant="caption" color="body2" className="self-end sm:self-auto">
           {impact.length} / 1000
         </Typography>
       </div>

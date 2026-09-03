@@ -59,7 +59,7 @@ const Review = () => {
   };
 
   return (
-    <div className="min-h-full bg-[#f8fafc] overflow-y-auto p-3 sm:p-6 font-sans">
+    <div className="min-h-full bg-app overflow-y-auto p-3 sm:p-6 font-sans">
       <div className="max-w-[1400px] mx-auto flex flex-col xl:flex-row gap-4 sm:gap-6">
         <SelfReviewSidebar
           activeStepId={activeStepId}
@@ -68,23 +68,25 @@ const Review = () => {
 
         <div className="flex-1 flex flex-col gap-4 min-w-0">
          
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+            <div className="bg-card rounded-xl shadow-sm border border-border p-4 sm:p-6 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
               <div className="min-w-0">
                 <Typography
                   variant="caption"
-                  className="text-gray-500 font-semibold tracking-wider mb-1 block uppercase"
+                  color="body2"
+                  className="font-semibold tracking-wider mb-1 block uppercase"
                 >
                   {currentStepInfo.sectionText}
                 </Typography>
                 <Typography
                   variant="h3"
-                  className="mb-2 text-xl leading-tight sm:text-2xl"
+                  className="mb-2 text-xl leading-tight sm:text-2xl font-bold text-text-title"
                 >
                   {currentStepInfo.title}
                 </Typography>
                 <Typography
                   variant="bodyMedium"
-                  className="text-gray-600 max-w-xl"
+                  color="body2"
+                  className="max-w-xl"
                 >
                   {currentStepInfo.description}
                 </Typography>
@@ -108,7 +110,7 @@ const Review = () => {
                 size="md"
                 icon={<Plus className="w-4 h-4" />}
                 onClick={handleAddItem}
-                className="w-full justify-center border-blue-100 bg-blue-50 text-blue-600 hover:bg-blue-100 sm:w-fit"
+                className="w-full justify-center border-border bg-card text-primary hover:bg-slate-500/10 sm:w-fit"
               >
                 {currentStepInfo.addLabel} ({currentItems.length} of 5)
               </Button>
@@ -123,7 +125,7 @@ const Review = () => {
                   disabled={activeStepId === 1}
                   onClick={() => activeStepId > 1 && setActiveStepId(activeStepId - 1)}
                   icon={<ArrowLeft className="w-4 h-4" />}
-                  className="h-10 w-full justify-center border-gray-200 bg-white px-4 text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed sm:w-auto"
+                  className="h-10 w-full justify-center sm:w-auto"
                 >
                   Back{prevStepInfo ? `: ${prevStepInfo.label}` : ""}
                 </Button>
@@ -133,7 +135,7 @@ const Review = () => {
                     variant="outline"
                     bgColor="text"
                     size="md"
-                    className="h-10 w-full justify-center border-gray-200 bg-white px-4 text-gray-700 hover:bg-gray-50 sm:w-auto"
+                    className="h-10 w-full justify-center sm:w-auto"
                   >
                     Save Draft
                   </Button>
@@ -144,9 +146,9 @@ const Review = () => {
                       bgColor="primary"
                       size="md"
                       onClick={() => setActiveStepId(activeStepId + 1)}
-                      className="h-10 w-full justify-center bg-blue-600 px-4 text-white hover:bg-blue-700 sm:w-auto"
+                      className="h-10 w-full justify-center sm:w-auto"
                     >
-                      Next: {nextStepInfo?.label} <ArrowRight className="w-4 h-4" />
+                      Next: {nextStepInfo?.label} <ArrowRight className="w-4 h-4 ml-1" />
                     </Button>
                   ) : (
                     <Button
@@ -154,7 +156,7 @@ const Review = () => {
                       bgColor="primary"
                       size="md"
                       icon={<CheckCircle className="w-4 h-4" />}
-                      className="h-10 w-full justify-center bg-green-600 px-4 text-white hover:bg-green-700 sm:w-auto"
+                      className="h-10 w-full justify-center bg-emerald-600 hover:bg-emerald-700 text-white sm:w-auto"
                     >
                       Submit Self-Review
                     </Button>

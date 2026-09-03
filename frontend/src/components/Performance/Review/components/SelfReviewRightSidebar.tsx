@@ -5,15 +5,15 @@ export const SelfReviewRightSidebar = () => {
   return (
     <div className="w-full xl:w-80 shrink-0 grid gap-4 md:grid-cols-2 xl:flex xl:flex-col">
       {/* AI Highlight */}
-      <div className="bg-purple-50/50 rounded-xl border border-purple-100 p-4 sm:p-5 md:col-span-2 xl:col-span-1">
+      <div className="bg-purple-500/10 rounded-xl border border-purple-500/30 p-4 sm:p-5 md:col-span-2 xl:col-span-1">
         
         <Typography
           variant="bodyMedium"
-          className="text-gray-700 leading-relaxed"
+          className="text-text-title leading-relaxed"
         >
           From your 11 check-ins this quarter, the achievement most-mentioned by
           peers is the{" "}
-          <span className="font-semibold text-gray-900">
+          <span className="font-semibold text-primary">
             Oxygen 2.0 dashboard rebuild
           </span>{" "}
           — 6 of 4 peer reviewers cited it as their top callout.
@@ -21,10 +21,11 @@ export const SelfReviewRightSidebar = () => {
       </div>
 
       {/* Reviewer Visibility */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-5">
+      <div className="bg-card rounded-xl shadow-sm border border-border p-4 sm:p-5">
         <Typography
           variant="caption"
-          className="text-gray-500 font-semibold tracking-wider mb-4 block"
+          color="body2"
+          className="font-semibold tracking-wider mb-4 block uppercase"
         >
           REVIEWER VISIBILITY
         </Typography>
@@ -33,13 +34,14 @@ export const SelfReviewRightSidebar = () => {
           <div>
             <Typography
               variant="bodyMedium"
-              className="font-semibold text-gray-900"
+              className="font-semibold text-text-title"
             >
               Rohit Khanna &middot; Manager
             </Typography>
             <Typography
               variant="caption"
-              className="text-gray-500 mt-0.5 block"
+              color="body2"
+              className="mt-0.5 block"
             >
               Sees: All sections
             </Typography>
@@ -47,13 +49,14 @@ export const SelfReviewRightSidebar = () => {
           <div>
             <Typography
               variant="bodyMedium"
-              className="font-semibold text-gray-900"
+              className="font-semibold text-text-title"
             >
               Aditi Sharma &middot; Skip
             </Typography>
             <Typography
               variant="caption"
-              className="text-gray-500 mt-0.5 block"
+              color="body2"
+              className="mt-0.5 block"
             >
               Sees: Manager rating + comments
             </Typography>
@@ -61,13 +64,14 @@ export const SelfReviewRightSidebar = () => {
           <div>
             <Typography
               variant="bodyMedium"
-              className="font-semibold text-gray-900"
+              className="font-semibold text-text-title"
             >
               Peers (4)
             </Typography>
             <Typography
               variant="caption"
-              className="text-gray-500 mt-0.5 block"
+              color="body2"
+              className="mt-0.5 block"
             >
               Sees: Achievements + Development only
             </Typography>
@@ -76,17 +80,18 @@ export const SelfReviewRightSidebar = () => {
       </div>
 
       {/* Last Cycle */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-5">
+      <div className="bg-card rounded-xl shadow-sm border border-border p-4 sm:p-5">
         <Typography
           variant="caption"
-          className="text-gray-500 font-semibold tracking-wider mb-4 block"
+          color="body2"
+          className="font-semibold tracking-wider mb-4 block uppercase"
         >
           LAST CYCLE (FY25)
         </Typography>
 
         <div className="flex flex-wrap items-center gap-3 mb-4">
           <Badge label="Exceeds · 4/5" variant="success" size="md" />
-          <Typography variant="caption" className="text-gray-500 leading-tight">
+          <Typography variant="caption" color="body2" className="leading-tight">
             Final &middot; Released 12 Apr
             <br />
             2025
@@ -95,12 +100,13 @@ export const SelfReviewRightSidebar = () => {
 
         <Typography
           variant="bodyMedium"
-          className="text-gray-600 italic leading-relaxed"
+          color="body2"
+          className="italic leading-relaxed"
         >
           "Pallavi consistently demonstrates Learner's Mindset; ready to step
           into senior leadership."
         </Typography>
-        <Typography variant="caption" className="text-gray-400 mt-3 block">
+        <Typography variant="caption" color="body2" className="mt-3 block">
           — Rohit Khanna
         </Typography>
       </div>
