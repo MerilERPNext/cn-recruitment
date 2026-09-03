@@ -1,7 +1,6 @@
 import React from 'react';
 import { ArrowRight } from 'lucide-react';
 import { Typography } from '../../../shared/atoms/Typography';
-import Button from '../../../shared/atoms/Button';
 
 export interface TemplateCardProps {
     containerClass?: string;
@@ -48,15 +47,16 @@ export const TemplateCard: React.FC<TemplateCardProps> = ({
                             <Typography className="text-[13px] leading-5 text-text-body2">{description}</Typography>
                         </div>
                     </div>
-                    {onUse && (
-                        <Button
-                            variant="contain"
-                            className={`h-9 w-full sm:w-auto justify-center whitespace-nowrap rounded-lg px-4 text-sm font-medium cursor-pointer ${buttonClass}`}
+                    {(onUse || buttonClass.includes('disabled')) && (
+                        <button
+                            type="button"
+                            disabled={!onUse || buttonClass.includes('disabled') || buttonClass.includes('pointer-events-none')}
+                            className={`h-9 w-full sm:w-auto inline-flex items-center justify-center whitespace-nowrap rounded-lg px-4 text-sm font-semibold transition-colors ${buttonClass}`}
                             onClick={onUse}
                             aria-label={ariaLabel}
                         >
                             {buttonText} <ArrowRight className="w-4 h-4 ml-1" />
-                        </Button>
+                        </button>
                     )}
                 </div>
                 <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-6 text-[11px] text-text-body2 mt-3 sm:mt-4">
