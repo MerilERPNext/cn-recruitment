@@ -36,8 +36,8 @@ const SummaryCard: React.FC<SummaryCardProps> = ({
       flex items-center gap-2 xl:gap-3 p-3 xl:p-4 rounded-xl border transition-all duration-200 text-left w-full
       ${
         isActive
-          ? "border-primary-300 bg-primary-50 shadow-md"
-          : "border-gray-100 bg-white hover:shadow-md hover:border-gray-200"
+          ? "border-cyan-500/50 bg-cyan-50 dark:bg-[#102A3A] shadow-md"
+          : "border-slate-200 dark:border-[#1E3A4C] bg-white dark:bg-[#0B1724] hover:shadow-md hover:border-slate-300 dark:hover:border-[#2A4E66]"
       }
       ${onClick ? "cursor-pointer" : "cursor-default"}
     `}
@@ -50,12 +50,13 @@ const SummaryCard: React.FC<SummaryCardProps> = ({
     <div className="flex-1 min-w-0">
       <Typography
         variant="subheading"
-        color={isActive ? "primary" : "title"}
-        className="text-xl md:text-2xl font-bold leading-tight"
+        className={`text-xl md:text-2xl font-bold leading-tight ${
+          isActive ? "text-cyan-700 dark:text-cyan-300" : "text-slate-800 dark:text-slate-100"
+        }`}
       >
         {value}
       </Typography>
-      <Typography variant="label" color="body2" className="block break-words leading-tight text-xs mt-0.5">
+      <Typography variant="label" className="block break-words leading-tight text-xs mt-0.5 text-slate-600 dark:text-slate-400 font-medium">
         {label}
       </Typography>
     </div>
