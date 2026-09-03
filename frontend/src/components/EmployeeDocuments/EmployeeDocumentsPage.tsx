@@ -109,7 +109,8 @@ const EmployeeDocumentsPage: React.FC = () => {
   const getFileUrl = (path: string) => {
     if (!path) return "";
     if (path.startsWith("http")) return path;
-    return `${window.location.origin}${path}`;
+    const cleanPath = path.startsWith("/") ? path : `/${path}`;
+    return `${window.location.origin}${cleanPath.split("/").map((s) => encodeURIComponent(s)).join("/")}`;
   };
 
   const tabs = [
@@ -133,20 +134,20 @@ const EmployeeDocumentsPage: React.FC = () => {
   return (
     <DesktopLayoutWrapper title="My Documents">
       {isMobile && <HeaderBar title="My Documents" />}
-      <div className={`bg-white min-h-screen ${isMobile ? "px-4 py-4" : "px-0 py-3 md:p-6"}`}>
+      <div className={`bg-transparent min-h-screen ${isMobile ? "px-4 py-4" : "px-0 py-3 md:p-6"}`}>
         {!isMobile && (
           <div className="flex items-start justify-between">
             <div className="border-gray-200 my-2 pb-2">
               <Typography
                 variant="h4"
-                className="font-bold text-gray-900 mb-2 text-xl sm:text-2xl"
+                className="font-bold text-slate-900 dark:text-slate-100 mb-2 text-xl sm:text-2xl"
               >
                 My Documents
               </Typography>
               <Typography
                 variant="bodyMedium"
                 color="body2"
-                className="max-sm:text-sm"
+                className="max-sm:text-sm text-slate-500 dark:text-slate-400"
               >
                 View and manage all your employee documents in one place
               </Typography>
@@ -167,16 +168,16 @@ const EmployeeDocumentsPage: React.FC = () => {
             />
           </div>
         ) : (
-          <div className="flex overflow-x-auto gap-1 py-2 mb-4 scrollbar-hide">
+          <div className="flex overflow-x-auto gap-1.5 py-2 mb-4 scrollbar-hide">
             {tabs.map((tab) => (
               <Button
                 key={tab.key}
                 variant="subtle"
                 size="sm"
                 onClick={() => setActiveTab(tab.key)}
-                className={`rounded-full px-4 py-1.5 text-xs font-semibold whitespace-nowrap ${activeTab === tab.key
-                  ? "bg-primary-50 text-header-active"
-                  : "text-header-inactive hover:text-header-active"
+                className={`rounded-full px-4 py-1.5 text-xs font-semibold whitespace-nowrap transition-colors ${activeTab === tab.key
+                  ? "bg-cyan-50 dark:bg-[#102A3A] text-cyan-700 dark:text-cyan-300 border border-cyan-200 dark:border-cyan-800/60"
+                  : "bg-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-[#102030]"
                   }`}
               >
                 {tab.label}
@@ -186,7 +187,7 @@ const EmployeeDocumentsPage: React.FC = () => {
           </div>
         )}
 
-        <div className={isMobile ? "" : "bg-white border rounded-xl overflow-hidden shadow-sm min-h-[45vh]"}>
+        <div className={isMobile ? "" : "bg-white dark:bg-[#0B1724] border border-slate-200 dark:border-[#1E3A4C] rounded-xl overflow-hidden shadow-sm min-h-[45vh]"}>
           <CardTable
             titles={["Document Name", "Employee", "Date Uploaded", "Status", "Action"]}
             columnWidths={["3fr", "2fr", "1.5fr", "1.5fr", "2fr"]}
@@ -229,31 +230,31 @@ const EmployeeDocumentsPage: React.FC = () => {
 
         {/* PDF Modal */}
         {selectedFile && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white shadow-lg w-full h-screen flex flex-col">
-              <div className="flex justify-between items-center border-b p-4">
+          <div className="fixed inset-0 bg-black/70 backdrop-blur-xs flex items-center justify-center z-50">
+            <div className="bg-white dark:bg-[#0B1724] text-slate-800 dark:text-slate-100 shadow-2xl w-full h-screen flex flex-col">
+              <div className="flex justify-between items-center border-b border-slate-200 dark:border-[#1E3A4C] p-4 bg-slate-50 dark:bg-[#102030]">
                 <Typography
                   variant="h3"
-                  className="font-semibold text-gray-800 text-lg"
+                  className="font-semibold text-slate-800 dark:text-slate-100 text-lg"
                 >
                   Document Preview
                 </Typography>
                 <button
                   onClick={closeModal}
-                  className="text-gray-500 hover:text-gray-700 text-xl"
+                  className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 text-xl font-bold p-1 rounded-lg transition-colors"
                 >
                   ✕
                 </button>
               </div>
 
-              <div className="flex-1 overflow-hidden">
+              <div className="flex-1 overflow-hidden bg-slate-100 dark:bg-[#040B12]">
                 <FilePreview
                   fileUrl={getFileUrl(selectedFile)}
                   fileName={selectedFile}
                   className="h-full"
                 />
               </div>
-              <div className="flex justify-between items-center border-t p-4">
+              <div className="flex justify-between items-center border-t border-slate-200 dark:border-[#1E3A4C] p-4 bg-white dark:bg-[#0B1724]">
                 <div>
                   {showAcknowledgement && (
                     <label className="flex items-center gap-2 cursor-pointer">
@@ -262,10 +263,10 @@ const EmployeeDocumentsPage: React.FC = () => {
                         id="acknowledgeCheckbox"
                         checked={acknowledged}
                         onChange={handleCheckboxChange}
-                        className="accent-green-600 w-4 h-4 cursor-pointer"
+                        className="accent-emerald-600 w-4 h-4 cursor-pointer"
                       />
                       <span
-                        className={`font-medium ${acknowledged ? "text-green-700" : "text-gray-700"
+                        className={`font-medium ${acknowledged ? "text-emerald-600 dark:text-emerald-400" : "text-slate-700 dark:text-slate-300"
                           }`}
                       >
                         I acknowledge this document
@@ -275,11 +276,19 @@ const EmployeeDocumentsPage: React.FC = () => {
                 </div>
 
                 <div className="flex gap-2">
-                  <Button variant="soft" onClick={closeModal}>
+                  <Button
+                    variant="outline"
+                    onClick={closeModal}
+                    className="border-slate-300 dark:border-[#1E3A4C] text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-[#162A3E]"
+                  >
                     Close
                   </Button>
                   {showAcknowledgement && acknowledged && (
-                    <Button variant="contain" onClick={handleSubmit}>
+                    <Button
+                      variant="contain"
+                      onClick={handleSubmit}
+                      className="bg-cyan-600 dark:bg-cyan-500 hover:bg-cyan-700 dark:hover:bg-cyan-600 !text-white"
+                    >
                       Submit
                     </Button>
                   )}

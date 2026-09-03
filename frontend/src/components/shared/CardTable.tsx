@@ -95,18 +95,18 @@ const CardTable = ({
     ? columnWidths.join(" ")
     : `repeat(${titles.length}, 1fr)`;
 
-  const borderClass = noBorder ? "" : "md:border border-gray-100";
+  const borderClass = noBorder ? "" : "md:border border-slate-200 dark:border-[#1E3A4C]";
   const shadowClass = noShadow ? "" : "shadow-sm";
   const roundClass = noRound ? "" : "rounded-lg";
 
   return (
     <CardTableSortContext.Provider value={{ sortState, columnSortConfig }}>
-      <div className={`bg-white flex flex-col max-h-full ${roundClass} ${shadowClass} ${borderClass}`}>
+      <div className={`bg-white dark:bg-[#0B1724] flex flex-col max-h-full ${roundClass} ${shadowClass} ${borderClass}`}>
         <div
           ref={scrollRef}
           className={
             isDesktop
-              ? `overflow-x-auto bg-white flex flex-col h-full ${roundClass} ${shadowClass}`
+              ? `overflow-x-auto bg-white dark:bg-[#0B1724] flex flex-col h-full ${roundClass} ${shadowClass}`
               : "flex flex-col h-full"
           }
           style={
@@ -121,7 +121,7 @@ const CardTable = ({
           <div className={`${isDesktop ? "min-w-max" : ""} flex flex-col h-full`}>
             {isDesktop && (
               <div
-                className={`grid gap-4 px-6 py-4 bg-gray-50 border-b flex-shrink-0 sticky ${stickyTopClassName} z-10`}
+                className={`grid gap-4 px-6 py-4 bg-slate-50 dark:bg-[#102030] border-b border-slate-200 dark:border-[#1E3A4C] flex-shrink-0 sticky ${stickyTopClassName} z-10`}
                 style={{ gridTemplateColumns }}
                 ref={stickyRef}
               >
@@ -164,7 +164,7 @@ const CardTable = ({
                       {typeof title === "string" || typeof title === "number" ? (
                         <Typography
                           variant="bodySmall"
-                          className="font-bold text-center whitespace-nowrap"
+                          className="font-bold text-center whitespace-nowrap text-slate-700 dark:text-slate-300"
                         >
                           {title}
                         </Typography>
@@ -177,12 +177,12 @@ const CardTable = ({
                     <Typography
                       key={index}
                       variant="bodySmall"
-                      className="font-bold text-center whitespace-nowrap"
+                      className="font-bold text-center whitespace-nowrap text-slate-700 dark:text-slate-300"
                     >
                       {title}
                     </Typography>
                   ) : (
-                    <div key={index} className="flex justify-center items-center w-full">
+                    <div key={index} className="flex justify-center items-center w-full text-slate-700 dark:text-slate-300">
                       {title}
                     </div>
                   );
