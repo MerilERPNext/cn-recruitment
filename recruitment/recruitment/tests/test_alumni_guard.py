@@ -6,6 +6,8 @@ Run:  bench --site <site> run-tests --app recruitment \
 
 from __future__ import annotations
 
+from unittest.mock import MagicMock, patch
+
 import frappe
 from frappe.tests.utils import FrappeTestCase
 
@@ -168,6 +170,301 @@ class TestAlumniGuard(FrappeTestCase):
         self._run(ESS, "/api/method/frappe.client.get_list")
         self._run(ESS, "/api/resource/Employee")
         self._run(ESS, "/api/method/login")
+
+    @patch("recruitment.recruitment.alumni_portal._require_alumni_session", return_value="alumni@portal.test")
+    @patch("recruitment.recruitment.alumni_portal.frappe.db.commit")
+    @patch("recruitment.recruitment.alumni_portal.frappe.get_doc")
+    @patch("recruitment.recruitment.alumni_portal.frappe.db.get_value")
+    def test_create_alumni_todo_accepts_task_manager_payload(
+        self, get_value_mock, get_doc_mock, commit_mock, _session_mock
+    ):
+        from recruitment.recruitment import alumni_portal
+
+        doc = MagicMock()
+        doc.name = "TODO-001"
+        doc.flags = MagicMock()
+        doc.insert.return_value = doc
+        get_doc_mock.return_value = doc
+        get_value_mock.return_value = {"name": "TODO-001", "custom_subject": "Follow up"}
+
+        with (
+            patch.object(alumni_portal, "_alumni_visible_todo_types", return_value=["Support"]),
+            patch.object(
+                alumni_portal,
+                "_get_alumni_todo_delegation_summary",
+                return_value={"allowed_delegates": ["assignee@example.com"]},
+            ),
+            patch.object(alumni_portal.frappe.db, "get_single_value", return_value=1),
+        ):
+            result = alumni_portal.create_alumni_todo(
+                custom_subject="Follow up",
+                description="<p>Need a callback</p>",
+                custom_todo_type="Support",
+                date="2026-09-01",
+                allocated_to="assignee@example.com",
+                status="Open",
+            )
+
+        self.assertTrue(result["success"])
+        payload = get_doc_mock.call_args.args[0]
+        self.assertEqual(payload["custom_subject"], "Follow up")
+        self.assertEqual(payload["custom_todo_type"], "Support")
+        self.assertEqual(payload["allocated_to"], "assignee@example.com")
+        self.assertEqual(payload["assigned_by"], "alumni@portal.test")
+        self.assertEqual(payload["description"], "<p>Need a callback</p>")
+        self.assertEqual(payload["status"], "Open")
+
+    def test_create_alumni_todo_rejects_missing_description(self):
+        from recruitment.recruitment import alumni_portal
+
+        with (
+            patch.object(alumni_portal, "_require_alumni_session", return_value=ALUMNI),
+            patch.object(alumni_portal.frappe.db, "get_single_value", return_value=1),
+            self.assertRaises(frappe.ValidationError) as exc,
+        ):
+            alumni_portal.create_alumni_todo(
+                custom_subject="Follow up",
+                description="<p><br></p>",
+                custom_todo_type="Support",
+            )
+
+        self.assertEqual(str(exc.exception), "Description is mandatory.")
+        self.assertEqual(frappe.local.response.get("http_status_code"), 400)
+
+    def test_create_alumni_todo_rejects_missing_todo_type(self):
+        from recruitment.recruitment import alumni_portal
+
+        with (
+            patch.object(alumni_portal, "_require_alumni_session", return_value=ALUMNI),
+            patch.object(alumni_portal.frappe.db, "get_single_value", return_value=1),
+            patch.object(alumni_portal, "_alumni_visible_todo_types", return_value=["Support"]),
+            self.assertRaises(frappe.ValidationError) as exc,
+        ):
+            alumni_portal.create_alumni_todo(
+                custom_subject="Follow up",
+                description="<p>Need a callback</p>",
+                custom_todo_type="   ",
+            )
+
+        self.assertEqual(str(exc.exception), "Todo Type is mandatory.")
+        self.assertEqual(frappe.local.response.get("http_status_code"), 400)
+
+    def test_create_alumni_todo_rejects_disabled_creation(self):
+        from recruitment.recruitment import alumni_portal
+
+        with (
+            patch.object(alumni_portal, "_require_alumni_session", return_value=ALUMNI),
+            patch.object(alumni_portal.frappe.db, "get_single_value", return_value=0),
+            self.assertRaises(frappe.PermissionError),
+        ):
+            alumni_portal.create_alumni_todo(
+                custom_subject="Blocked",
+                description="<p>Test</p>",
+                custom_todo_type="Support",
+            )
+
+    def test_create_alumni_todo_rejects_invisible_type(self):
+        from recruitment.recruitment import alumni_portal
+
+        with (
+            patch.object(alumni_portal, "_require_alumni_session", return_value=ALUMNI),
+            patch.object(alumni_portal.frappe.db, "get_single_value", return_value=1),
+            patch.object(alumni_portal, "_alumni_visible_todo_types", return_value=["Support"]),
+            self.assertRaises(frappe.PermissionError),
+        ):
+            alumni_portal.create_alumni_todo(
+                custom_subject="Hidden",
+                description="<p>Need a callback</p>",
+                custom_todo_type="Private",
+            )
+
+    def test_create_alumni_todo_rejects_arbitrary_assignee(self):
+        from recruitment.recruitment import alumni_portal
+
+        with (
+            patch.object(alumni_portal, "_require_alumni_session", return_value=ALUMNI),
+            patch.object(alumni_portal.frappe.db, "get_single_value", return_value=1),
+            patch.object(alumni_portal, "_alumni_visible_todo_types", return_value=["Support"]),
+            patch.object(alumni_portal, "_get_alumni_todo_delegation_summary", return_value={"allowed_delegates": []}),
+            self.assertRaises(frappe.PermissionError),
+        ):
+            alumni_portal.create_alumni_todo(
+                custom_subject="Unsafe",
+                description="<p>Need a callback</p>",
+                custom_todo_type="Support",
+                allocated_to="stranger@test.local",
+            )
+
+    def test_todo_settings_include_creation_and_due_date_flags(self):
+        from recruitment.recruitment import alumni_portal
+
+        values = {"allow_to_create_task": "1", "disable_edit_due_date": "0"}
+        with (
+            patch.object(alumni_portal, "_require_alumni_session"),
+            patch.object(alumni_portal.frappe.db, "get_value", return_value=values),
+        ):
+            settings = alumni_portal.get_alumni_todo_settings()["settings"]
+        self.assertEqual(settings["allow_to_create_task"], 1)
+        self.assertEqual(settings["disable_edit_due_date"], 0)
+
+    def test_todo_type_filter_is_intersected(self):
+        from recruitment.recruitment import alumni_portal
+        from cn_todo_manager.chatnext_todo_manager.api import todo_api
+
+        with (
+            patch.object(alumni_portal, "_require_alumni_session"),
+            patch.object(alumni_portal, "_alumni_visible_todo_types", return_value=["Support"]),
+            patch.object(todo_api, "get_todo_list", return_value={"message": []}) as list_mock,
+        ):
+            alumni_portal.get_alumni_todo_list(
+                type="My Todo", todo_type_filter='["Support", "Private"]'
+            )
+        self.assertEqual(frappe.parse_json(list_mock.call_args.kwargs["todo_type_filter"]), ["Support"])
+
+    def test_category_rule_rejects_unauthorized_category_and_delegate(self):
+        from recruitment.recruitment import alumni_portal
+
+        base = {"rule_name": "Rule", "categories": ["Private"], "delegated_to": "bad@test.local"}
+        with (
+            patch.object(alumni_portal, "_require_alumni_session", return_value=ALUMNI),
+            patch.object(
+                alumni_portal,
+                "_get_alumni_todo_delegation_summary",
+                return_value={
+                    "allow_delegation_of_below_tasks": ["Support"],
+                    "allowed_delegates": ["delegate@test.local"],
+                },
+            ),
+            self.assertRaises(frappe.PermissionError),
+        ):
+            alumni_portal.create_alumni_category_rule(base)
+
+        base["categories"] = ["Support"]
+        with (
+            patch.object(alumni_portal, "_require_alumni_session", return_value=ALUMNI),
+            patch.object(
+                alumni_portal,
+                "_get_alumni_todo_delegation_summary",
+                return_value={
+                    "allow_delegation_of_below_tasks": ["Support"],
+                    "allowed_delegates": ["delegate@test.local"],
+                },
+            ),
+            self.assertRaises(frappe.PermissionError),
+        ):
+            alumni_portal.create_alumni_category_rule(base)
+
+    def test_delegation_summary_has_no_user_argument(self):
+        import inspect
+        from recruitment.recruitment import alumni_portal
+
+        self.assertEqual(
+            list(inspect.signature(alumni_portal.get_alumni_todo_delegation_summary).parameters),
+            [],
+        )
+
+    def test_delegation_history_checks_todo_ownership(self):
+        from recruitment.recruitment import alumni_portal
+        from cn_todo_manager.chatnext_todo_manager.api import delegation_api
+
+        with (
+            patch.object(alumni_portal, "_require_own_todo") as ownership_mock,
+            patch.object(
+                delegation_api,
+                "get_delegation_history",
+                return_value=[{"reference": "DEL-1"}],
+            ) as history_mock,
+        ):
+            result = alumni_portal.get_alumni_todo_delegation_history("TODO-001")
+
+        ownership_mock.assert_called_once_with("TODO-001")
+        history_mock.assert_called_once_with("TODO-001")
+        self.assertEqual(result, [{"reference": "DEL-1"}])
+
+    def test_filter_options_user_query_is_scoped(self):
+        from recruitment.recruitment import alumni_portal
+        from cn_todo_manager.chatnext_todo_manager.api import todo_api
+
+        builder = MagicMock()
+        builder.get_paginated_results.return_value = {
+            "message": [
+                frappe._dict(
+                    allocated_to=ALUMNI,
+                    assigned_by="assigner@test.local",
+                    owner="assigner@test.local",
+                )
+            ]
+        }
+
+        def get_all(doctype, **kwargs):
+            if doctype == "User":
+                return [frappe._dict(name=ALUMNI, full_name="Alumni")]
+            if doctype == "Employee":
+                return []
+            return []
+
+        with (
+            patch.object(alumni_portal, "_require_alumni_session", return_value=ALUMNI),
+            patch.object(alumni_portal, "_alumni_visible_todo_types", return_value=["Support"]),
+            patch.object(alumni_portal, "_get_alumni_todo_delegation_summary", return_value={}),
+            patch.object(todo_api, "OptimizedTodoQueryBuilder", return_value=builder),
+            patch.object(alumni_portal.frappe, "get_all", side_effect=get_all) as get_all_mock,
+        ):
+            result = alumni_portal.get_alumni_todo_filter_options()
+
+        user_call = next(call for call in get_all_mock.call_args_list if call.args[0] == "User")
+        self.assertEqual(
+            set(user_call.kwargs["filters"]["name"][1]),
+            {ALUMNI, "assigner@test.local"},
+        )
+        self.assertNotIn("outsider@test.local", [row["value"] for row in result["users"]])
+
+    def test_todo_attachments_use_reference_document(self):
+        from recruitment.recruitment import alumni_portal
+
+        todo = frappe._dict(reference_type="Expense Claim", reference_name="EXP-001")
+        with (
+            patch.object(alumni_portal, "_require_own_todo", return_value=(ALUMNI, todo)),
+            patch.object(alumni_portal.frappe, "get_all", return_value=[]) as get_all_mock,
+        ):
+            result = alumni_portal.get_alumni_todo_attachments("TODO-001")
+
+        self.assertEqual(result["reference_attachments"], [])
+        self.assertEqual(
+            get_all_mock.call_args.kwargs["filters"],
+            {
+                "attached_to_doctype": "Expense Claim",
+                "attached_to_name": "EXP-001",
+            },
+        )
+
+    def test_todo_print_preview_uses_configured_reference_format(self):
+        from recruitment.recruitment import alumni_portal
+
+        todo = frappe._dict(reference_type="Expense Claim", reference_name="EXP-001")
+        settings = frappe._dict(
+            format_allocations=[
+                frappe._dict(doctype_name="Expense Claim", print_format="Expense Preview")
+            ]
+        )
+        reference_doc = MagicMock()
+        reference_doc.meta = MagicMock()
+        with (
+            patch.object(alumni_portal, "_require_own_todo", return_value=(ALUMNI, todo)),
+            patch.object(alumni_portal.frappe, "get_cached_doc", return_value=settings),
+            patch.object(alumni_portal.frappe, "get_doc", return_value=reference_doc),
+            patch("frappe.www.printview.get_print_format_doc", return_value=MagicMock()),
+            patch("frappe.www.printview.set_link_titles"),
+            patch("frappe.www.printview.get_rendered_template", return_value="<p>Preview</p>"),
+            patch("frappe.www.printview.get_print_style", return_value=".print {}"),
+        ):
+            result = alumni_portal.get_alumni_todo_print_preview("TODO-001")
+
+        self.assertTrue(result["available"])
+        self.assertEqual(result["html"], "<p>Preview</p>")
+        self.assertEqual(result["style"], ".print {}")
+        self.assertEqual(result["reference_type"], "Expense Claim")
+        self.assertEqual(result["reference_name"], "EXP-001")
 
     def test_guest_never_blocked(self):
         self._run("Guest", "/api/resource/Employee")
