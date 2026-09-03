@@ -1,4 +1,9 @@
 import { LoanApplicationUpdatePayload } from "../hooks/useLoan";
+import {
+  EditInstallmentPayload,
+  HoldInstallmentPayload,
+  InstallmentActionResponse,
+} from "../types/loan";
 import FrappeAPI from "../utils/frappeAPI";
 
 export const getAllLoanProducts = async (): Promise<{
@@ -42,4 +47,37 @@ export const updateLoanApplication = async ({
     }
   );
   return response;
+};
+
+/** Check admin permissions for loan actions */
+export const checkLoanAdminPermission = async (
+  employee?: string
+): Promise<string[]> => {
+  const response = await FrappeAPI.callMethod(
+    "cn_indian_payroll.cn_indian_payroll.overrides.webapp_api.salary_slip_list.check_admin_permission",
+    { employee }
+  );
+  return Array.isArray(response) ? (response as string[]) : [];
+};
+
+/** Hold loan installments */
+export const holdLoanInstallment = async (
+  payload: HoldInstallmentPayload
+): Promise<InstallmentActionResponse> => {
+  const response = await FrappeAPI.callMethod(
+    "cn_indian_payroll.cn_indian_payroll.overrides.webapp_api.loan_application.hold_installments",
+    payload
+  );
+  return response as InstallmentActionResponse;
+};
+
+/** Edit loan installment repayment amount */
+export const editLoanInstallment = async (
+  payload: EditInstallmentPayload
+): Promise<InstallmentActionResponse> => {
+  const response = await FrappeAPI.callMethod(
+    "cn_indian_payroll.cn_indian_payroll.overrides.webapp_api.loan_application.edit_installment",
+    payload
+  );
+  return response as InstallmentActionResponse;
 };
