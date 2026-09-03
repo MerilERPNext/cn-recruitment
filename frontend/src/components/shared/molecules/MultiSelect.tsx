@@ -129,13 +129,13 @@ const MultiSelect = <T extends Option>({
                 onClick={() => setOpen(!open)}
                 className={`
           flex w-full items-center justify-between
-          rounded-lg border border-gray-300
-          bg-white px-4 py-2.5
-          text-gray-900 shadow-sm transition
-          focus:outline-none focus:ring-2 focus:ring-primary-500/30
-          hover:border-gray-400
+          rounded-lg border border-slate-200 dark:border-[#1E3A4C]
+          bg-white dark:bg-[#0B1724] px-4 py-2.5
+          text-slate-900 dark:text-slate-100 shadow-sm transition
+          focus:outline-none focus:ring-2 focus:ring-cyan-500/30
+          hover:border-slate-300 dark:hover:border-[#2A4E66]
           ${disabled
-                        ? "cursor-not-allowed bg-gray-100 text-gray-400 border-gray-200"
+                        ? "cursor-not-allowed bg-slate-100 dark:bg-slate-900 text-slate-400 border-slate-200 dark:border-slate-800"
                         : ""
                     }
         `}
@@ -145,10 +145,12 @@ const MultiSelect = <T extends Option>({
                         <span
                             key={String(opt[valueKey])}
                             className="
-                flex items-center gap-1
-                rounded-md bg-primary-50
+                flex items-center gap-1.5
+                rounded-md bg-cyan-50 dark:bg-cyan-950/60
+                border border-cyan-200 dark:border-cyan-800/60
                 px-2 py-0.5 text-xs
-                font-medium text-primary-600
+                font-medium text-cyan-800 dark:text-cyan-200
+                transition-colors
               "
                         >
                             {String(opt[labelKey])}
@@ -158,7 +160,7 @@ const MultiSelect = <T extends Option>({
                                     e.stopPropagation();
                                     removeOption(opt);
                                 }}
-                                className="hover:text-primary-800"
+                                className="text-cyan-600 dark:text-cyan-400 hover:text-cyan-900 dark:hover:text-cyan-100 ml-0.5 font-bold"
                             >
                                 ×
                             </button>
@@ -216,7 +218,7 @@ const MultiSelect = <T extends Option>({
                         className="
               flex-1 min-w-[60px]
               bg-transparent text-sm
-              text-gray-900 placeholder-gray-400
+              text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500
               outline-none
             "
                         disabled={disabled}
@@ -229,14 +231,14 @@ const MultiSelect = <T extends Option>({
                         <button
                             type="button"
                             onClick={clearAll}
-                            className="text-xs font-medium text-gray-400 hover:text-primary-600 transition-colors"
+                            className="text-xs font-medium text-slate-400 dark:text-slate-500 hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors"
                         >
                             Clear
                         </button>
                     )}
 
                     <ChevronDown
-                        className={`h-4 w-4 text-gray-400 transition-transform ${open ? "rotate-180" : ""
+                        className={`h-4 w-4 text-slate-400 dark:text-slate-500 transition-transform ${open ? "rotate-180" : ""
                             }`}
                     />
                 </div>
@@ -247,13 +249,13 @@ const MultiSelect = <T extends Option>({
                 <div
                     className="
             absolute z-50 mt-2 w-full
-            rounded-xl border border-gray-200
-            bg-white shadow-lg
+            rounded-xl border border-slate-200 dark:border-[#1E3A4C]
+            bg-white dark:bg-[#102030] shadow-lg
             animate-in fade-in zoom-in-95 flex flex-col gap-2 p-2
           "
                 >
                     {Array.from({ length: 3 }).map((_, i) => (
-                        <div key={i} className="h-6 w-full bg-gray-200 rounded" />
+                        <div key={i} className="h-6 w-full bg-slate-200 dark:bg-slate-800 rounded" />
                     ))}
                 </div>
             )}
@@ -263,8 +265,8 @@ const MultiSelect = <T extends Option>({
                 <div
                     className="
             absolute z-50 mt-2 w-full
-            rounded-xl border border-gray-200
-            bg-white shadow-lg
+            rounded-xl border border-slate-200 dark:border-[#1E3A4C]
+            bg-white dark:bg-[#102030] shadow-xl
             animate-in fade-in zoom-in-95
           "
                 >
@@ -277,10 +279,10 @@ const MultiSelect = <T extends Option>({
                                 className={`
                   flex cursor-pointer items-center
                   rounded-lg px-3 py-2 text-sm
-                  text-gray-700 transition
-                  hover:bg-gray-100
+                  text-slate-700 dark:text-slate-200 transition
+                  hover:bg-slate-100 dark:hover:bg-[#162A3E]
                   ${index === highlightedIndex
-                                        ? "bg-primary-50 border-l-2 border-primary-500"
+                                        ? "bg-cyan-50 dark:bg-[#162A3E] border-l-2 border-cyan-500 text-cyan-900 dark:text-cyan-200"
                                         : ""
                                     }
                 `}
