@@ -5,16 +5,7 @@ import Badge from "../../../../shared/Badge";
 import { Typography } from "../../../../shared/atoms/Typography";
 import { useScreenSize } from "../../../../../hooks/useScreenSize";
 import type { TeamMemberItem as TeamMemberItemType } from "../../../../../types/goal";
-
-export const TEAM_TABLE_COLUMN_WIDTHS = [
-  "minmax(260px, 2fr)",
-  "minmax(110px, 0.8fr)",
-  "minmax(170px, 1.2fr)",
-  "minmax(130px, 1fr)",
-  "minmax(140px, 1fr)",
-  "minmax(140px, 1fr)",
-  "minmax(130px, 0.9fr)",
-];
+import { TEAM_TABLE_COLUMN_WIDTHS } from "./teamOverview.constants";
 
 const getProgressColor = (progress: number) => {
   if (progress >= 70) return "bg-green-500";

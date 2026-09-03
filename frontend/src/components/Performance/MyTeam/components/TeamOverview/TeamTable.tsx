@@ -8,7 +8,8 @@ import { CardSkeleton } from "../../../../shared/molecules/Skeletons/TableSkelet
 import useDebounce from "../../../../../hooks/useDebounce";
 import { useGetTeamMembers } from "../../../../../hooks/usePerformance";
 import type { TeamMembersSortOption, TeamMembersStatusFilter } from "../../../../../types/goal";
-import { TeamMemberItem, TEAM_TABLE_COLUMN_WIDTHS } from "./TeamMemberItem";
+import { TeamMemberItem } from "./TeamMemberItem";
+import { TEAM_TABLE_COLUMN_WIDTHS } from "./teamOverview.constants";
 
 const TEAM_TABLE_TITLES = [
   "Employee",
