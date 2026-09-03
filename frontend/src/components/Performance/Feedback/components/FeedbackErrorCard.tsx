@@ -19,11 +19,11 @@ export const FeedbackErrorCard: React.FC<FeedbackErrorCardProps> = ({
     error instanceof Error ? error.message : typeof error === 'string' ? error : "Could not connect to backend server.";
 
   return (
-    <div className={`bg-red-50/80 rounded-xl border border-red-200 p-6 flex flex-col items-center justify-center text-center ${className}`}>
-      <Typography variant="bodyMedium" className="text-red-800 font-semibold text-sm mb-1">
+    <div className={`bg-red-500/10 rounded-xl border border-red-500/30 p-6 flex flex-col items-center justify-center text-center ${className}`}>
+      <Typography variant="bodyMedium" className="text-red-500 font-semibold text-sm mb-1">
         {title}
       </Typography>
-      <Typography variant="caption" className="text-red-600 text-xs mb-3">
+      <Typography variant="caption" className="text-red-400 text-xs mb-3">
         {errorMessage}
       </Typography>
       {onRetry && (
@@ -31,7 +31,7 @@ export const FeedbackErrorCard: React.FC<FeedbackErrorCardProps> = ({
           variant="outline"
           size="sm"
           onClick={onRetry}
-          className="border-red-300 text-red-700 bg-white hover:bg-red-50 text-xs px-3 h-8 justify-center"
+          className="border-red-500/30 text-red-500 bg-card hover:bg-red-500/20 text-xs px-3 h-8 justify-center cursor-pointer"
         >
           Retry / Refetch
         </Button>
