@@ -103,7 +103,9 @@ export const GoalApprovalItem: React.FC<GoalApprovalItemProps> = memo(({
     return (
       <div
         onClick={handleCheckChange}
-        className="grid gap-4 px-6 py-4 border-b border-gray-100 hover:bg-slate-50 transition-colors cursor-pointer items-center bg-white"
+        className={`grid gap-4 px-6 py-4 border-b border-border transition-colors cursor-pointer items-center ${
+          checked ? "bg-primary/20" : "bg-card hover:bg-slate-500/10"
+        }`}
         style={{ gridTemplateColumns: APPROVAL_TABLE_COLUMN_WIDTHS.join(" ") }}
       >
         <div onClick={(e) => e.stopPropagation()} className="flex items-center justify-center">
@@ -112,7 +114,7 @@ export const GoalApprovalItem: React.FC<GoalApprovalItemProps> = memo(({
             type="checkbox"
             checked={checked}
             onChange={handleCheckChange}
-            className="h-4 w-4 rounded border-gray-300 text-blue-500 accent-blue-500 focus:ring-blue-500 cursor-pointer"
+            className="h-4 w-4 rounded border-border text-primary accent-primary focus:ring-primary cursor-pointer"
           />
         </div>
 
@@ -123,10 +125,10 @@ export const GoalApprovalItem: React.FC<GoalApprovalItemProps> = memo(({
               name={empName}
               fontSize="text-xs"
               size="h-8 w-8"
-              avatarBgColor="bg-blue-50"
-              avatarTextColor="text-blue-600"
+              avatarBgColor="bg-blue-500/20"
+              avatarTextColor="text-primary"
             />
-            <Typography variant="caption" className="text-gray-600 font-medium">
+            <Typography variant="caption" color="body2" className="font-medium">
               {empName}
             </Typography>
             {flags.map((flag) => (
@@ -139,11 +141,11 @@ export const GoalApprovalItem: React.FC<GoalApprovalItemProps> = memo(({
               </span>
             ))}
           </div>
-          <Typography variant="bodySmall" className="font-semibold text-gray-900 truncate">
+          <Typography variant="bodySmall" className="font-semibold truncate">
             {goal.title}
           </Typography>
           {(submittedAgo || (submittedOn && submittedOn !== "-")) && (
-            <Typography variant="caption" className="text-gray-500 block truncate mt-0.5">
+            <Typography variant="caption" color="body2" className="block truncate mt-0.5">
               Submitted {submittedAgo ? submittedAgo : ""}{submittedAgo && submittedOn && submittedOn !== "-" ? " • " : ""}{submittedOn && submittedOn !== "-" ? submittedOn : ""}
             </Typography>
           )}
@@ -152,12 +154,12 @@ export const GoalApprovalItem: React.FC<GoalApprovalItemProps> = memo(({
         <div className="flex flex-col items-center justify-center">
           <Typography
             variant="bodySmall"
-            className={`font-bold ${goal.weightage > 30 ? "text-red-600" : "text-gray-900"}`}
+            className={`font-bold ${goal.weightage > 30 ? "text-red-500" : ""}`}
           >
             {goal.weightage}%
           </Typography>
           <div className="mt-1 flex items-center w-24">
-            <div className="h-2 flex-1 overflow-hidden rounded-md bg-gray-100">
+            <div className="h-2 flex-1 overflow-hidden rounded-md bg-slate-500/20">
               <div
                 className={`h-full rounded-md ${getWeightageColor(goal.weightage)}`}
                 style={{ width: `${Math.min(100, Math.max(0, goal.weightage))}%` }}
@@ -176,11 +178,11 @@ export const GoalApprovalItem: React.FC<GoalApprovalItemProps> = memo(({
 
         <div className="text-center whitespace-nowrap">
           {autoApproveOn && autoApproveOn !== "-" ? (
-            <Typography variant="caption" className="font-medium text-slate-600">
+            <Typography variant="caption" color="body2" className="font-medium">
               {autoApproveOn}
             </Typography>
           ) : (
-            <Typography variant="caption" className="text-gray-400">—</Typography>
+            <Typography variant="caption" color="body2">—</Typography>
           )}
         </div>
 
@@ -196,7 +198,9 @@ export const GoalApprovalItem: React.FC<GoalApprovalItemProps> = memo(({
   return (
     <article
       onClick={handleCheckChange}
-      className="border border-slate-200 bg-white rounded-xl p-4 shadow-sm space-y-3 cursor-pointer hover:border-slate-300 transition-colors mb-3"
+      className={`border rounded-xl p-4 shadow-sm space-y-3 cursor-pointer transition-colors mb-3 ${
+        checked ? "border-primary bg-primary/20" : "border-border bg-card hover:border-border/80"
+      }`}
     >
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2 min-w-0" onClick={(e) => e.stopPropagation()}>

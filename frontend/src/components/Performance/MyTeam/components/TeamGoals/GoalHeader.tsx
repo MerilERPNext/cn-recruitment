@@ -27,22 +27,23 @@ export const GoalHeader: React.FC<GoalHeaderProps> = React.memo(({ card: propCar
   const card = propCard || data?.data?.cards;
 
   return (
-    <header className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+    <header className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
       <div
         className={`flex min-w-0 ${
           isCompact ? "flex-col gap-4" : "items-center justify-between gap-4"
-        } border-b border-slate-100 p-4 sm:p-5`}
+        } border-b border-border p-4 sm:p-5`}
       >
         <div className="min-w-0">
           <Typography
             variant="h3"
-            className="text-xl leading-tight text-slate-950 sm:text-2xl"
+            className="text-xl leading-tight sm:text-2xl font-bold"
           >
             Team Goals
           </Typography>
           <Typography
             variant="bodySmall"
-            className="mt-1 block break-words text-slate-500"
+            color="body2"
+            className="mt-1 block break-words"
           >
             {card?.goals ?? "-"} goals across {card?.reportees ?? "-"} reportees ·{" "}
             {card?.pending_approval ?? "-"} pending your approval
@@ -59,7 +60,7 @@ export const GoalHeader: React.FC<GoalHeaderProps> = React.memo(({ card: propCar
             variant="outline"
             bgColor="text"
             size="sm"
-            className={`h-10 justify-center bg-white ${
+            className={`h-10 justify-center ${
               isCompact ? "w-full sm:w-fit" : ""
             }`}
           >
@@ -78,11 +79,11 @@ export const GoalHeader: React.FC<GoalHeaderProps> = React.memo(({ card: propCar
           </Button>
         </div>
       </div>
-      <div className="flex flex-wrap items-center gap-2.5 px-4 py-3 sm:px-5 border-t border-slate-100 bg-slate-50/50">
+      <div className="flex flex-wrap items-center gap-2.5 px-4 py-3 sm:px-5 border-t border-border bg-card">
         {[
-          { icon: Target, label: "Goals", value: card?.goals ?? 0, bg: "bg-blue-50 text-blue-700 border-blue-200" },
-          { icon: Users, label: "Reportees", value: card?.reportees ?? 0, bg: "bg-indigo-50 text-indigo-700 border-indigo-200" },
-          { icon: Weight, label: "Pending", value: card?.pending_approval ?? 0, bg: "bg-amber-50 text-amber-800 border-amber-200" },
+          { icon: Target, label: "Goals", value: card?.goals ?? 0, bg: "bg-blue-500/10 text-blue-500 border-blue-500/20" },
+          { icon: Users, label: "Reportees", value: card?.reportees ?? 0, bg: "bg-indigo-500/10 text-indigo-500 border-indigo-500/20" },
+          { icon: Weight, label: "Pending", value: card?.pending_approval ?? 0, bg: "bg-amber-500/10 text-amber-500 border-amber-500/20" },
         ].map(({ icon: Icon, label, value, bg }) => (
           <span
             key={label}

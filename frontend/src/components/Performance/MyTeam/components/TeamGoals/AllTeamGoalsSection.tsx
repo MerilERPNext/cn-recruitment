@@ -115,7 +115,7 @@ export const AllTeamGoalsSection: React.FC<AllTeamGoalsSectionProps> = () => {
   );
 
   return (
-    <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+    <section className="rounded-xl border border-border bg-card p-4 shadow-sm sm:p-5">
       <header
         className={`mb-4 flex min-w-0 ${
           isCompact ? "flex-col gap-3" : "items-start justify-between gap-4"
@@ -123,14 +123,14 @@ export const AllTeamGoalsSection: React.FC<AllTeamGoalsSectionProps> = () => {
       >
         <div className="min-w-0">
           <div className="flex min-w-0 items-center gap-3">
-            <Typography variant="h4" className="font-bold text-slate-950">
+            <Typography variant="h4" className="font-bold">
               All Team Goals
             </Typography>
-            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-600">
+            <span className="rounded-full bg-slate-500/10 px-2 py-0.5 text-xs font-semibold text-text-body2">
               {totalGoals}
             </span>
           </div>
-          <Typography variant="caption" className="text-slate-500">
+          <Typography variant="caption" color="body2">
             Approved & in progress · grouped by reportee
           </Typography>
         </div>
@@ -187,38 +187,40 @@ export const AllTeamGoalsSection: React.FC<AllTeamGoalsSectionProps> = () => {
             />
           ))
         ) : (
-          <div className="py-6 text-center text-xs italic text-slate-400">
+          <Typography variant="caption" color="body2" className="py-6 block text-center italic">
             No reportees or team goals found.
-          </div>
+          </Typography>
         )}
       </div>
 
       {totalReporteesCount > 0 && (
-        <div className="mt-4 flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-slate-100 pt-4 px-2 bg-white">
-          <Typography variant="caption" className="text-slate-500">
-            Showing <span className="font-semibold text-slate-700">{startItem}</span> to{" "}
-            <span className="font-semibold text-slate-700">{endItem}</span> of{" "}
-            <span className="font-semibold text-slate-700">{totalReporteesCount}</span> reportees
+        <div className="mt-4 flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-border pt-4 px-2 bg-card">
+          <Typography variant="caption" color="body2">
+            Showing <span className="font-semibold">{startItem}</span> to{" "}
+            <span className="font-semibold">{endItem}</span> of{" "}
+            <span className="font-semibold">{totalReporteesCount}</span> reportees
           </Typography>
           <div className="flex items-center gap-2">
             <Button
               variant="outline"
+              bgColor="text"
               size="sm"
               disabled={page === 1}
               onClick={handlePrevPage}
-              className="border-slate-200 text-slate-700 hover:bg-slate-50 disabled:opacity-40"
+              className="disabled:opacity-40"
             >
               Previous
             </Button>
-            <Typography variant="caption" className="font-semibold text-slate-700 px-2">
+            <Typography variant="caption" color="body2" className="font-semibold px-2">
               Page {page} of {totalPages}
             </Typography>
             <Button
               variant="outline"
+              bgColor="text"
               size="sm"
               disabled={!hasMore}
               onClick={handleNextPage}
-              className="border-slate-200 text-slate-700 hover:bg-slate-50 disabled:opacity-40"
+              className="disabled:opacity-40"
             >
               Next
             </Button>
