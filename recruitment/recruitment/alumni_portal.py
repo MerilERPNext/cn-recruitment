@@ -2362,21 +2362,13 @@ def get_alumni_company() -> dict:
 # `download_alumni_document` — keeps that blanket block intact and makes the
 # ownership rule explicit here rather than relying on a framework hook.
 
-# Fields an alumnus may change on their own ToDo. Delegated assignment and
-# category changes are allowed only to values permitted for this alumnus.
-_ALUMNI_TODO_WRITABLE_FIELDS = (
-    "status",
-    "priority",
-    "date",
-    "custom_todo_type",
-    "allocated_to",
-)
+# Fields an alumnus may change on their own ToDo. `allocated_to` is deliberately
+# absent: reassigning work to another user is not an alumni capability.
+_ALUMNI_TODO_WRITABLE_FIELDS = ("status", "priority", "date")
 
 # Only the flags the portal UI actually reads. ToDo Settings grants write access
 # to role "All" with no controller check, so it is never exposed for writing.
 _ALUMNI_TODO_SETTINGS_FIELDS = (
-    "allow_to_create_task",
-    "disable_edit_due_date",
     "enable_pagination",
     "default_page_size",
     "max_page_size",
@@ -2461,14 +2453,7 @@ def get_alumni_todo_settings() -> dict:
 
 
 @frappe.whitelist(methods=["POST"])
-def update_alumni_todo(
-    name: str,
-    status=None,
-    priority=None,
-    date=None,
-    custom_todo_type=None,
-    allocated_to=None,
-) -> dict:
+def update_alumni_todo(name: str, status=None, priority=None, date=None) -> dict:
     """Update one of the caller's own ToDos.
 
     Backs the inline status / priority / due-date controls. Only a ToDo the
@@ -2477,49 +2462,18 @@ def update_alumni_todo(
     does not depend on the request arriving through the resource API.
     """
     _require_own_todo(name)
-    current_user = _require_alumni_session()
 
-    incoming = {
-        "status": status,
-        "priority": priority,
-        "date": date,
-        "custom_todo_type": custom_todo_type,
-        "allocated_to": allocated_to,
-    }
+    incoming = {"status": status, "priority": priority, "date": date}
     patch = {f: incoming[f] for f in _ALUMNI_TODO_WRITABLE_FIELDS if incoming[f] is not None}
     if not patch:
         frappe.local.response["http_status_code"] = 400
         frappe.throw(_("Nothing to update."))
 
-    if "custom_todo_type" in patch:
-        todo_type = str(patch.get("custom_todo_type") or "").strip()
-        if not todo_type:
-            frappe.local.response["http_status_code"] = 400
-            frappe.throw(_("Todo Type is mandatory."))
-        if not frappe.db.exists("Todo Type", todo_type):
-            frappe.local.response["http_status_code"] = 400
-            frappe.throw(_("That todo type does not exist."))
-        allowed_types = set(_alumni_visible_todo_types())
-        if todo_type not in allowed_types:
-            frappe.local.response["http_status_code"] = 403
-            frappe.throw(_("That todo type is not available."), frappe.PermissionError)
-
-    if "allocated_to" in patch:
-        allocated_user = str(patch.get("allocated_to") or "").strip()
-        if allocated_user:
-            summary = _get_alumni_todo_delegation_summary(current_user)
-            if allocated_user not in set(summary.get("allowed_delegates") or []):
-                frappe.local.response["http_status_code"] = 403
-                frappe.throw(_("That assignee is not available."), frappe.PermissionError)
-
     # Through the document API, not frappe.db.set_value: ToDo.on_update keeps the
     # referenced document's `_assign` in step, which a direct DB write skips.
     doc = frappe.get_doc("ToDo", name)
     for field, value in patch.items():
-        if field == "custom_todo_type":
-            doc.set("custom_todo_type", value)
-        else:
-            doc.set(field, value)
+        doc.set(field, value)
 
     # Frappe only builds this list when the flag is unset, and _save() does not
     # clear it — so seeding it with the loadable alerts keeps this single save
@@ -2585,17 +2539,7 @@ def _require_own_todo(name: str) -> tuple[str, dict]:
         frappe.throw(_("A todo is required."))
 
     row = frappe.db.get_value(
-        "ToDo",
-        name,
-        [
-            "name",
-            "allocated_to",
-            "assigned_by",
-            "owner",
-            "reference_type",
-            "reference_name",
-        ],
-        as_dict=True,
+        "ToDo", name, ["name", "allocated_to", "assigned_by", "owner"], as_dict=True
     )
     if not row or not _user_owns_todo(user, name, row):
         frappe.local.response["http_status_code"] = 403
@@ -2685,101 +2629,19 @@ def add_alumni_todo_comment(name: str, content: str) -> dict:
 
 @frappe.whitelist(methods=["GET", "POST"])
 def get_alumni_todo_attachments(name: str) -> dict:
-    """Files attached to the permission-checked ToDo's reference document."""
-    _user, todo = _require_own_todo(name)
-    reference_type = todo.get("reference_type")
-    reference_name = todo.get("reference_name")
+    """Files attached to a ToDo. Replaces a File list query."""
+    _require_own_todo(name)
 
-    rows = []
-    if reference_type and reference_name:
-        rows = frappe.get_all(
-            "File",
-            filters={
-                "attached_to_doctype": reference_type,
-                "attached_to_name": reference_name,
-            },
-            fields=[
-                "name",
-                "file_name",
-                "file_url",
-                "file_type",
-                "file_size",
-                "is_private",
-                "creation",
-            ],
-            order_by="creation desc",
-        )
+    rows = frappe.get_all(
+        "File",
+        filters={"attached_to_doctype": "ToDo", "attached_to_name": name},
+        fields=["name", "file_name", "file_url", "file_size", "is_private", "creation"],
+        order_by="creation desc",
+    )
     for row in rows:
         row["creation"] = _d(row.get("creation"))
 
-    return {
-        "success": True,
-        "reference_attachments": rows,
-        "reference_type": reference_type,
-        "reference_name": reference_name,
-    }
-
-
-@frappe.whitelist(methods=["GET", "POST"])
-def get_alumni_todo_print_preview(name: str) -> dict:
-    """Render the configured print view for an accessible ToDo's reference."""
-    _user, todo = _require_own_todo(name)
-    reference_type = todo.get("reference_type")
-    reference_name = todo.get("reference_name")
-    unavailable = {
-        "available": False,
-        "html": None,
-        "style": None,
-        "reference_type": reference_type,
-        "reference_name": reference_name,
-    }
-    if not reference_type or not reference_name:
-        return unavailable
-
-    settings = frappe.get_cached_doc("ToDo Settings", "ToDo Settings")
-    allocation = next(
-        (
-            row
-            for row in (settings.get("format_allocations") or [])
-            if row.get("doctype_name") == reference_type and row.get("print_format")
-        ),
-        None,
-    )
-    if not allocation:
-        return unavailable
-
-    # The Todo ownership/category check above is the authorization boundary.
-    # Render internally so a Website User does not need generic read/resource
-    # permission for the referenced document.
-    from frappe.www.printview import (
-        get_print_format_doc,
-        get_print_style,
-        get_rendered_template,
-        set_link_titles,
-    )
-
-    reference_doc = frappe.get_doc(reference_type, reference_name)
-    print_format = get_print_format_doc(allocation.get("print_format"), meta=reference_doc.meta)
-    set_link_titles(reference_doc)
-    print_result = {
-        "html": get_rendered_template(
-            doc=reference_doc,
-            print_format=print_format,
-            meta=reference_doc.meta,
-            no_letterhead=1,
-            letterhead=None,
-            trigger_print=False,
-            settings={},
-        ),
-        "style": get_print_style(print_format=print_format),
-    }
-    return {
-        "available": True,
-        "html": print_result["html"],
-        "style": print_result["style"],
-        "reference_type": reference_type,
-        "reference_name": reference_name,
-    }
+    return {"success": True, "attachments": rows}
 
 
 @frappe.whitelist(methods=["POST"])
@@ -2887,62 +2749,41 @@ def get_alumni_todo_activity(name: str) -> dict:
 
 @frappe.whitelist(methods=["POST"])
 def create_alumni_todo(
-    custom_subject: str = "",
-    description=None,
-    custom_todo_type=None,
-    date=None,
-    allocated_to=None,
-    status="Open",
+    subject: str, description=None, priority=None, date=None
 ) -> dict:
-    """Create a personal todo for the caller using the task-manager payload."""
+    """Create a personal todo for the caller.
+
+    Backs the inline "type a title and press enter" create in the search bar.
+    Replaces ``POST /api/resource/ToDo``, which alumni_guard blocks.
+
+    The new ToDo is always allocated to the caller and carries no
+    reference_type/reference_name — an alumnus can only raise work for
+    themselves, never assign it to another user or attach it to an arbitrary
+    document.
+    """
     user = _require_alumni_session()
 
-    if not frappe.utils.cint(
-        frappe.db.get_single_value("ToDo Settings", "allow_to_create_task")
-    ):
-        frappe.local.response["http_status_code"] = 403
-        frappe.throw(_("Task creation is disabled."), frappe.PermissionError)
-
-    custom_subject = (custom_subject or "").strip()
-    description_value = (description or "").strip()
-    if not description_value:
+    subject = (subject or "").strip()
+    if not subject:
         frappe.local.response["http_status_code"] = 400
-        frappe.throw(_("Description is mandatory."))
-    # Rich-text editors can send blank placeholders such as <p><br></p>.
-    normalized_description = html.unescape(
-        __import__("re").sub(r"<[^>]+>", "", description_value)
-    ).strip()
-    if not normalized_description:
-        frappe.local.response["http_status_code"] = 400
-        frappe.throw(_("Description is mandatory."))
+        frappe.throw(_("A title is required."))
 
-    custom_todo_type = (custom_todo_type or "").strip()
-    if not custom_todo_type:
-        frappe.local.response["http_status_code"] = 400
-        frappe.throw(_("Todo Type is mandatory."))
-
-    allowed = set(_alumni_visible_todo_types())
-    if custom_todo_type not in allowed:
-        frappe.local.response["http_status_code"] = 403
-        frappe.throw(_("That todo type is not available."), frappe.PermissionError)
-
-    allocated_user = (allocated_to or user).strip() if allocated_to else user
-    if allocated_user != user:
-        summary = _get_alumni_todo_delegation_summary(user)
-        if allocated_user not in set(summary.get("allowed_delegates") or []):
-            frappe.local.response["http_status_code"] = 403
-            frappe.throw(_("That assignee is not available."), frappe.PermissionError)
+    if priority and priority not in ("Low", "Medium", "High"):
+        priority = None
 
     doc = frappe.get_doc(
         {
             "doctype": "ToDo",
-            "custom_subject": custom_subject,
-            "description": description_value,
-            "custom_todo_type": custom_todo_type,
-            "allocated_to": allocated_user,
+            "custom_subject": subject,
+            # The reference app stores the title as Quill markup so the editor
+            # round-trips it; matched here so both apps render identically.
+            "description": (description or "").strip()
+            or f'<div class="ql-editor"><p>{frappe.utils.escape_html(subject)}</p></div>',
+            "allocated_to": user,
             "assigned_by": user,
             "status": "Open",
-            "date": date or None,
+            "priority": priority or "Medium",
+            "date": date or frappe.utils.nowdate(),
         }
     )
     doc.flags.notifications = _loadable_todo_notifications()
@@ -2978,127 +2819,6 @@ def _alumni_visible_todo_types() -> list[str]:
     if not frappe.db.has_column("Todo Type", ALUMNI_TODO_TYPE_FLAG):
         return []
     return frappe.get_all("Todo Type", filters={ALUMNI_TODO_TYPE_FLAG: 1}, pluck="name")
-
-
-def _get_alumni_todo_delegation_summary(user: str) -> dict:
-    """Task-manager policy summary, narrowed to Alumni Portal categories/users."""
-    from cn_todo_manager.chatnext_todo_manager.doctype.delegation_policy.delegation_policy import (
-        get_user_delegation_summary,
-    )
-
-    result = get_user_delegation_summary(user=user) or {}
-    visible = set(_alumni_visible_todo_types())
-    result["applicable_policies"] = list(result.get("applicable_policies") or [])
-    result["allow_delegation_of_below_tasks"] = sorted(
-        visible.intersection(result.get("allow_delegation_of_below_tasks") or [])
-    )
-    result["allowed_delegates"] = sorted(
-        {value.strip() for value in (result.get("allowed_delegates") or [])
-         if isinstance(value, str) and value.strip() and value.strip() != user}
-    )
-    return result
-
-
-@frappe.whitelist(methods=["GET", "POST"])
-def get_alumni_todo_delegation_summary() -> dict:
-    """Return only the current alumnus's delegation policy summary."""
-    return _get_alumni_todo_delegation_summary(_require_alumni_session())
-
-
-@frappe.whitelist(methods=["GET", "POST"])
-def get_alumni_todo_delegation_history(todo_reference: str) -> list[dict]:
-    """Return delegation history only for a ToDo accessible to the alumnus."""
-    _require_own_todo(todo_reference)
-
-    from cn_todo_manager.chatnext_todo_manager.api.delegation_api import (
-        get_delegation_history,
-    )
-
-    return get_delegation_history(todo_reference)
-
-
-def _parse_alumni_list(value, fieldname: str) -> list:
-    if value in (None, ""):
-        return []
-    if isinstance(value, str):
-        try:
-            value = frappe.parse_json(value)
-        except Exception:
-            frappe.throw(_("{0} must be a JSON array.").format(fieldname))
-    if not isinstance(value, list):
-        frappe.throw(_("{0} must be an array.").format(fieldname))
-    return value
-
-
-@frappe.whitelist(methods=["POST"])
-def create_alumni_category_rule(rule_data) -> dict:
-    """Create a policy-authorized category delegation rule for this alumnus."""
-    user = _require_alumni_session()
-    if isinstance(rule_data, str):
-        try:
-            rule_data = frappe.parse_json(rule_data)
-        except Exception:
-            frappe.throw(_("rule_data must be valid JSON."))
-    if not isinstance(rule_data, dict):
-        frappe.throw(_("rule_data must be an object."))
-
-    rule_name = str(rule_data.get("rule_name") or "").strip()
-    categories = _parse_alumni_list(rule_data.get("categories"), "categories")
-    categories = list(dict.fromkeys(str(v).strip() for v in categories if str(v).strip()))
-    delegated_to = str(rule_data.get("delegated_to") or "").strip()
-    if not rule_name or not categories or not delegated_to:
-        frappe.throw(_("Rule name, categories, and delegated user are required."))
-
-    summary = _get_alumni_todo_delegation_summary(user)
-    permitted_categories = set(summary.get("allow_delegation_of_below_tasks") or [])
-    permitted_delegates = set(summary.get("allowed_delegates") or [])
-    if any(category not in permitted_categories for category in categories):
-        frappe.throw(_("One or more categories cannot be delegated."), frappe.PermissionError)
-    if delegated_to == user or delegated_to not in permitted_delegates:
-        frappe.throw(_("That delegate is not permitted."), frappe.PermissionError)
-
-    alternative = str(rule_data.get("alternative_delegate") or "").strip()
-    if alternative and (alternative == user or alternative not in permitted_delegates):
-        frappe.throw(_("That alternative delegate is not permitted."), frappe.PermissionError)
-    priority_filter = str(rule_data.get("priority_filter") or "").strip()
-    if priority_filter not in ("", "Low", "Medium", "High"):
-        frappe.throw(_("Priority filter must be Low, Medium, High, or empty."))
-    try:
-        priority = int(rule_data.get("priority", 1))
-    except (TypeError, ValueError):
-        frappe.throw(_("Priority must be a whole number."))
-
-    permissions = _parse_alumni_list(
-        rule_data.get("delegation_permissions", ["view", "edit", "complete"]),
-        "delegation_permissions",
-    )
-    if any(p not in {"view", "edit", "complete"} for p in permissions):
-        frappe.throw(_("Delegation permissions contain an unsupported value."))
-
-    effective_from = rule_data.get("effective_from") or None
-    effective_to = rule_data.get("effective_to") or None
-    if effective_from and effective_to:
-        from frappe.utils import getdate
-        if getdate(effective_from) > getdate(effective_to):
-            frappe.throw(_("Effective To cannot be before Effective From."))
-
-    doc_data = {
-        "doctype": "Category Delegation Rule", "rule_name": rule_name,
-        "delegated_to": delegated_to, "is_active": frappe.utils.cint(rule_data.get("is_active", 1)),
-        "priority": priority, "delegation_type": rule_data.get("delegation_type") or "Direct Assignment",
-        "notes": rule_data.get("notes") or "", "created_by": user,
-        "delegation_permissions": frappe.as_json(permissions),
-    }
-    for field, value in (("effective_from", effective_from), ("effective_to", effective_to),
-                         ("priority_filter", priority_filter), ("alternative_delegate", alternative)):
-        if value:
-            doc_data[field] = value
-    rule = frappe.get_doc(doc_data)
-    for category in categories:
-        rule.append("categories", {"todo_type": category})
-    rule.insert(ignore_permissions=True)
-    frappe.db.commit()
-    return {"success": True, "rule_name": rule.name, "message": _("Delegation rule created successfully.")}
 
 
 def _todo_type_visible_to_alumni(todo: str) -> bool:
@@ -3314,149 +3034,13 @@ def get_alumni_todo_list(**kwargs) -> dict:
     from cn_todo_manager.chatnext_todo_manager.api import todo_api
 
     params = {k: v for k, v in kwargs.items() if k != "cmd"}
-
-    sort_by = str(params.get("sort_by") or "modified").strip()
-    sort_order = str(params.get("sort_order") or "desc").strip().lower()
-    allowed_sort_fields = {
-        "modified",
-        "creation",
-        "date",
-        "priority",
-        "allocated_to",
-        "assigned_by",
-        "custom_subject",
-        "status",
-    }
-    if sort_by.lower() in allowed_sort_fields:
-        params["sort_by"] = sort_by.lower()
-    else:
-        params["sort_by"] = "modified"
-    if sort_order not in {"asc", "desc"}:
-        params["sort_order"] = "desc"
-    else:
-        params["sort_order"] = sort_order
-
-    # A supplied category selection may narrow the server scope, never widen it.
-    if params.get("todo_type_filter") not in (None, ""):
-        requested = _parse_alumni_list(params["todo_type_filter"], "todo_type_filter")
-        selected = [name for name in requested if name in set(allowed)]
-        if not selected:
-            return {"message": [], "total_count": 0, "total_pages": 0,
-                    "current_page": frappe.utils.cint(params.get("page") or 1), "list_view_fields": []}
-        params["todo_type_filter"] = frappe.as_json(selected)
-    else:
-        params["todo_type_filter"] = frappe.as_json(allowed)
+    # Server decides the category scope, never the caller.
+    params["todo_type_filter"] = frappe.as_json(allowed)
     if params.get("category_filter") and params["category_filter"] not in allowed:
         frappe.local.response["http_status_code"] = 403
         frappe.throw(_("That category is not available."), frappe.PermissionError)
 
     return todo_api.get_todo_list(**params)
-
-
-@frappe.whitelist(methods=["GET", "POST"])
-def get_alumni_todo_filter_options(type: str = "My Todo") -> dict:
-    """Return task filters derived only from people in the caller's task scope."""
-    user = _require_alumni_session()
-    if type not in ("My Todo", "Team Todo"):
-        frappe.throw(_("Type must be My Todo or Team Todo."))
-    visible_types = _alumni_visible_todo_types()
-    rows = []
-    try:
-        from cn_todo_manager.chatnext_todo_manager.api.todo_api import OptimizedTodoQueryBuilder
-
-        if visible_types:
-            builder = OptimizedTodoQueryBuilder(user, type)
-            builder.apply_filters(todo_type_filter=frappe.as_json(visible_types))
-            rows = (builder.get_paginated_results(1, 100000, "modified", "desc") or {}).get(
-                "message", []
-            )
-    except Exception:
-        names = frappe.get_all(
-            "ToDo",
-            filters={"allocated_to": user, "custom_todo_type": ["in", visible_types]},
-            pluck="name",
-        ) if visible_types else []
-        rows = (
-            frappe.get_all(
-                "ToDo",
-                filters={"name": ["in", names]},
-                fields=["allocated_to", "assigned_by", "owner"],
-            )
-            if names
-            else []
-        )
-    involved = {user}
-    for row in rows:
-        involved.update(v for v in (row.get("allocated_to"), row.get("assigned_by"), row.get("owner")) if v)
-    involved.update(_get_alumni_todo_delegation_summary(user).get("allowed_delegates") or [])
-    user_rows = frappe.get_all("User", filters={"name": ["in", sorted(involved)], "enabled": 1},
-                               fields=["name", "full_name"])
-    users = [{"value": row.name, "label": row.full_name or row.name} for row in user_rows if row.name in involved]
-
-    employees = frappe.get_all(
-        "Employee",
-        filters={"user_id": ["in", sorted(involved)]},
-        fields=["name", "user_id", "company", "branch", "employment_type", "employee_name"],
-    )
-
-    company_names = sorted({row.company for row in employees if row.company})
-    company_rows = (
-        frappe.get_all("Company", filters={"name": ["in", company_names]}, fields=["name", "company_name"])
-        if company_names
-        else []
-    )
-    company_lookup = {row.name: row.company_name or row.name for row in company_rows}
-
-    branch_names = sorted({row.branch for row in employees if row.branch})
-    branch_rows = (
-        frappe.get_all("Branch", filters={"name": ["in", branch_names]}, fields=["name", "branch"])
-        if branch_names
-        else []
-    )
-    branch_lookup = {row.name: row.branch or row.name for row in branch_rows}
-
-    employment_type_names = sorted({row.employment_type for row in employees if row.employment_type})
-    employment_type_rows = (
-        frappe.get_all(
-            "Employment Type",
-            filters={"name": ["in", employment_type_names]},
-            fields=["name", "employee_type_name"],
-        )
-        if employment_type_names
-        else []
-    )
-    employment_type_lookup = {
-        row.name: row.employee_type_name or row.name for row in employment_type_rows
-    }
-
-    employee_options = []
-    for row in employees:
-        label = row.employee_name and f"{row.employee_name.strip()} ({row.name})" or row.name
-        option = {"value": row.name, "label": label}
-        if row.user_id:
-            option["secondary"] = row.user_id
-        employee_options.append(option)
-
-    return {
-        "users": users,
-        "companies": [
-            {"value": company_name, "label": company_lookup.get(company_name, company_name)}
-            for company_name in company_names
-        ],
-        "locations": [
-            {"value": branch_name, "label": branch_lookup.get(branch_name, branch_name)}
-            for branch_name in branch_names
-        ],
-        "employee_types": [
-            {
-                "value": employment_type_name,
-                "label": employment_type_lookup.get(employment_type_name, employment_type_name),
-            }
-            for employment_type_name in employment_type_names
-        ],
-        "employees": employee_options,
-        "current_employee": next((row.name for row in employees if row.user_id == user), None),
-    }
 
 
 @frappe.whitelist(methods=["POST"])
