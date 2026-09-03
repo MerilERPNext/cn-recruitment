@@ -25,6 +25,7 @@ export const LivePreviewCard = ({
   weightage,
   keyResults,
   goalNumber,
+  minimumKeyResults,
   maximumKeyResults,
 }: LivePreviewCardProps) => {
   const { data: currentEmployee } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
@@ -124,7 +125,7 @@ export const LivePreviewCard = ({
           variant="subheading"
           className="font-bold text-amber-500 mb-1"
         >
-          No minimum - No maximum
+          {minimumKeyResults > 0 ? `Min: ${minimumKeyResults}` : "No minimum"} - {maximumKeyResults ? `Max: ${maximumKeyResults}` : "No maximum"}
         </Typography>
         <Typography variant="bodyMedium" className="text-xs text-amber-400/90 leading-relaxed">
           Most high-performing PW OKRs have 3–4 KRs. More than 5 dilutes focus.
