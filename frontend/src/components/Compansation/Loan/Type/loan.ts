@@ -41,10 +41,18 @@ export interface Loan {
   loan_name: string;
   name: string;
   creation: string;
-  posting_date: string;
+  posting_date?: string;
   repayment_schedule: RepaymentSchedule[];
   todo_list?: TodoType[];
-  [key: string]: unknown;
+  remaining_months?: number | string;
+  total_principal?: number;
+  paid_principal?: number;
+  pending_principal?: number;
+  total_principal_interest?: number;
+  paid_principal_with_interest?: number;
+  pending_principal_with_interest?: number;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  [key: string]: any;
 }
 
 export interface Installment {
