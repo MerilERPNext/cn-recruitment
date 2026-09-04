@@ -293,6 +293,19 @@ after_migrate = [
 # Hook on document methods and events
 
 doc_events = {
+    # Custom Doctype Fields (nextai) decides where a managed field sits on the
+    # Job Applicant form. Job Applicant Profile Settings groups fields into its
+    # own curated sections and never re-groups an existing row, so a managed
+    # field moved on the form kept its old settings section — and one deleted and
+    # re-added could stay suppressed for good. Re-place them on every config save.
+    "Custom Doctype Fields": {
+        "on_update": "recruitment.recruitment.managed_field_profile_sync.sync_managed_field_placement",
+    },
+    "Custom Field": {
+        # Forget the field in synced_field_refs the moment it is deleted, so one
+        # created later under the same name reads as new instead of "already seen".
+        "on_trash": "recruitment.recruitment.managed_field_profile_sync.forget_deleted_field",
+    },
     # "Salary Structure Assignment": {
     # 	"on_submit": "recruitment.customizations.salary_structure_assignment.salary_structure_assignment.on_submit",
     # },
