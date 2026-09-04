@@ -216,7 +216,7 @@ const Requisition = () => {
       if (apiColumns.length) {
         return (
           <div
-            className="grid gap-4 px-6 py-4 border-t border-gray-100 hover:bg-blue-50/50 transition-colors cursor-pointer items-center min-w-max bg-white"
+            className="grid gap-4 px-6 py-4 border-t border-gray-100 hover:bg-gray-50 transition-colors cursor-pointer items-center min-w-max bg-white"
             style={{ gridTemplateColumns: activeColumnWidths.join(" ") }}
             onClick={handleRowClick}
           >
@@ -231,7 +231,7 @@ const Requisition = () => {
 
       return (
         <div
-          className={`grid gap-4 px-6 py-4 border-t border-gray-100 hover:bg-blue-50/50 transition-colors cursor-pointer items-center min-w-max bg-white ${showRequesterCard ? "relative z-[60]" : ""}`}
+          className={`grid gap-4 px-6 py-4 border-t border-gray-100 hover:bg-gray-50 transition-colors cursor-pointer items-center min-w-max bg-white ${showRequesterCard ? "relative z-[60]" : ""}`}
           style={{ gridTemplateColumns: columnWidths.join(" ") }}
           onClick={handleRowClick}
         >
