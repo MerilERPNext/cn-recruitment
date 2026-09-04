@@ -153,12 +153,22 @@ def _drain_messages():
     if frappe.flags.get("new_hire_internal_call"):
         return []
 
+    # Read and clear `frappe.local.message_log` directly rather than through
+    # `get_message_log`/`clear_messages`: those helpers, and the shape of an
+    # entry (a dict now, a JSON string in older Frappe), both vary by version,
+    # and this module runs on more than one.
+    queue = getattr(frappe.local, "message_log", None) or []
     drained = []
-    for entry in frappe.get_message_log():
+    for entry in queue:
+        if isinstance(entry, str):
+            try:
+                entry = json.loads(entry)
+            except (TypeError, ValueError):
+                pass
         text = entry.get("message") if isinstance(entry, dict) else entry
         if text:
             drained.append(frappe.utils.strip_html(str(text)).strip())
-    frappe.clear_messages()
+    frappe.local.message_log = []
     return drained
 
 
@@ -189,6 +199,70 @@ def _fail(message, title):
     return _err(message, http=500, data={"error_log": getattr(log, "name", None)})
 
 
+def _has_native_commit_guard():
+    """Whether this Frappe carries its own commit guard on the connection.
+
+    Split out so it can be forced off in a test — v16 has the counter, older
+    versions raise `AttributeError: 'MariaDBDatabase' object has no attribute
+    '_disable_transaction_control'`, and both paths have to work.
+    """
+    return hasattr(frappe.db, "_disable_transaction_control")
+
+
+@contextmanager
+def _no_commit():
+    """Stop anything inside the block from committing the transaction.
+
+    A COMMIT destroys every open savepoint. The rollback that follows then fails
+    with "SAVEPOINT ... does not exist", which leaves the half-written record
+    committed AND replaces the real error with an OperationalError — so the
+    caller is told "could not be created" while the record sits there.
+
+    Frappe holds a counter for exactly this around every doc-event hook
+    (`Document.hook`), which is why a hook cannot commit. Two problems: the
+    attribute is not in every Frappe version, and a Server Script and the
+    outgoing-mail path run OUTSIDE that cover anyway — and those are precisely
+    what an Employee insert triggers. So use the counter where it exists and
+    shadow the connection's own methods where it does not, matching its
+    semantics either way: full commits and rollbacks are ignored, rollbacks to a
+    savepoint still go through.
+    """
+    if _has_native_commit_guard():
+        frappe.db._disable_transaction_control += 1
+        try:
+            yield
+        finally:
+            frappe.db._disable_transaction_control -= 1
+        return
+
+    # Resolve the connection once. `frappe.db` is a LocalProxy, and shadowing on
+    # the proxy but restoring against a re-resolved one would leave the shadow
+    # behind if the connection is replaced mid-block.
+    connection = getattr(frappe.db, "_get_current_object", lambda: frappe.db)()
+    own = connection.__dict__
+    previous = {field: own[field] for field in ("commit", "rollback") if field in own}
+    real_rollback = connection.rollback
+
+    def blocked_commit(*args, **kwargs):
+        return None
+
+    def savepoint_only_rollback(*args, save_point=None, **kwargs):
+        if save_point:
+            return real_rollback(save_point=save_point, **kwargs)
+        return None
+
+    connection.commit = blocked_commit
+    connection.rollback = savepoint_only_rollback
+    try:
+        yield
+    finally:
+        for field in ("commit", "rollback"):
+            if field in previous:
+                setattr(connection, field, previous[field])
+            else:
+                own.pop(field, None)
+
+
 @contextmanager
 def _atomic(name):
     """Undo a half-finished write before it is reported as failed.
@@ -204,19 +278,12 @@ def _atomic(name):
     Frappe ships `frappe.database.savepoint`, but it swallows the exception it
     catches; the handlers here have to see it to build the error response.
 
-    The transaction-control counter is not optional. A COMMIT anywhere inside
-    the block DESTROYS the savepoint, and the rollback then fails with
-    "SAVEPOINT ... does not exist" — which both leaves the half-written record
-    committed and replaces the real error with an OperationalError, so the
-    caller is told "could not be created" while the record sits there. Frappe
-    holds this same counter around every doc-event hook (`Document.hook`), which
-    is why a hook cannot commit; a Server Script and the outgoing-mail path run
-    OUTSIDE that cover, and those are exactly what run on an Employee insert.
+    Holding `_no_commit` is not optional — see there for why.
     """
     frappe.db.savepoint(name)
-    frappe.db._disable_transaction_control += 1
     try:
-        yield
+        with _no_commit():
+            yield
     except Exception:
         try:
             frappe.db.rollback(save_point=name)
@@ -228,8 +295,6 @@ def _atomic(name):
         raise
     else:
         frappe.db.release_savepoint(name)
-    finally:
-        frappe.db._disable_transaction_control -= 1
 
 
 def _coerce_payload(payload):

@@ -224,30 +224,36 @@ def _partner_message(body):
 
 
 def _fail_session(session, reason):
-    """Persist the failed attempt, then stop with the partner's own reason.
+    """Mark an already-recorded attempt failed, then stop with the partner's reason.
 
-    The commit is the point: ``frappe.throw`` rolls the request back, which would
-    discard the very record — request body, response body, HTTP status — that makes
-    a partner-side failure diagnosable. Committing first means a failed handover
-    always leaves evidence behind in DPDP Consent Session.
+    Only ever an UPDATE — the row was inserted before the outbound call — so nothing
+    here allocates a naming series. That matters: ``frappe.throw`` rolls the request
+    back, so the failure has to be committed to survive, and an insert at this point
+    would take the ``tabSeries`` row lock while the long HTTP call had just held the
+    transaction open, which is what produced "Record has changed since last read in
+    table 'tabSeries'".
 
-    The reason is passed through rather than hidden behind a generic message: it is
-    the partner's own validation text ("Mobile is required"), which tells whoever is
-    looking exactly what to correct.
+    The partner's own validation text ("Mobile is required") is passed through rather
+    than replaced with a generic message — it names exactly what to correct.
     """
-    session.status = "Failed"
-    session.error_message = cstr(reason)[:500]
-    session.insert(ignore_permissions=True)
-    frappe.db.commit()
+    reason = cstr(reason)[:500]
+    session.db_set(
+        {"status": "Failed", "error_message": reason}, update_modified=False, commit=True
+    )
     frappe.throw(
-        _("Could not start the consent session with the consent portal: {0}").format(
-            session.error_message
-        )
+        _("Could not start the consent session with the consent portal: {0}").format(reason)
     )
 
 
 def _create_session(appl):
-    """POST to the partner's consent-start API and record the session."""
+    """Start a consent session on the partner portal and record the handover.
+
+    The session row is inserted and committed BEFORE the outbound call, then updated
+    with the outcome. Doing it in that order keeps the naming-series allocation in a
+    short transaction of its own, holds no row locks across a network call that can
+    take seconds, and means a worker that dies mid-call still leaves a record of the
+    attempt behind.
+    """
     import requests
 
     _throttle_session_starts(appl)
@@ -287,6 +293,12 @@ def _create_session(appl):
     session.channel = payload["channel"]
     session.configuration_code = payload["configurationCode"]
     session.request_payload = frappe.as_json(payload)
+    session.status = "Pending"
+    session.insert(ignore_permissions=True)
+    # Committed here so the naming series is settled and no lock is carried into the
+    # call below. A row with no short_url is never handed to a candidate — _live_session
+    # skips it — so an abandoned attempt is inert rather than a broken link.
+    frappe.db.commit()
 
     body = None
     try:
@@ -297,8 +309,14 @@ def _create_session(appl):
             timeout=cint(settings.request_timeout) or DEFAULT_TIMEOUT,
         )
         body = _safe_json(response.text)
-        session.response_payload = frappe.as_json(body if body is not None else response.text)
-        session.http_status = response.status_code
+        session.db_set(
+            {
+                "http_status": response.status_code,
+                "response_payload": frappe.as_json(body if body is not None else response.text),
+            },
+            update_modified=False,
+            commit=True,
+        )
         response.raise_for_status()
     except Exception as exc:
         frappe.log_error(frappe.get_traceback(), "DPDP: consent session start failed")
@@ -313,14 +331,35 @@ def _create_session(appl):
             _partner_message(body) or "No sessionId/shortUrl in the consent portal response",
         )
 
-    session.session_id = session_id
-    session.short_url = short_url
-    session.status = "Pending"
-    session.expires_at = _parse_expiry(data.get("expiresAt"), settings)
-    session.insert(ignore_permissions=True)
+    expires_at = _parse_expiry(data.get("expiresAt"), settings)
+
+    # The portal de-duplicates: a customer who already has a live session gets that
+    # same sessionId back rather than a new one. Writing it onto a second row would
+    # violate the unique index, so the row already holding it is adopted and the
+    # placeholder just created is dropped — one row per portal session, always.
+    twin = frappe.db.get_value(SESSION_DOCTYPE, {"session_id": session_id}, "name")
+    if twin and twin != session.name:
+        frappe.delete_doc(SESSION_DOCTYPE, session.name, force=True, ignore_permissions=True)
+        frappe.db.commit()
+        session = frappe.get_doc(SESSION_DOCTYPE, twin)
+        if session.status == "Completed":
+            # Already consented through this session — never reopen it.
+            return {"name": session.name, "session_id": session_id,
+                    "short_url": session.short_url, "expires_at": session.expires_at}
+
+    session.db_set(
+        {
+            "session_id": session_id,
+            "short_url": short_url,
+            "status": "Pending",
+            "expires_at": expires_at,
+        },
+        update_modified=False,
+        commit=True,
+    )
 
     return {"name": session.name, "session_id": session_id, "short_url": short_url,
-            "expires_at": session.expires_at}
+            "expires_at": expires_at}
 
 
 def _parse_partner_datetime(value):
