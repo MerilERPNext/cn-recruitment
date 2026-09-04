@@ -203,15 +203,33 @@ def _atomic(name):
 
     Frappe ships `frappe.database.savepoint`, but it swallows the exception it
     catches; the handlers here have to see it to build the error response.
+
+    The transaction-control counter is not optional. A COMMIT anywhere inside
+    the block DESTROYS the savepoint, and the rollback then fails with
+    "SAVEPOINT ... does not exist" — which both leaves the half-written record
+    committed and replaces the real error with an OperationalError, so the
+    caller is told "could not be created" while the record sits there. Frappe
+    holds this same counter around every doc-event hook (`Document.hook`), which
+    is why a hook cannot commit; a Server Script and the outgoing-mail path run
+    OUTSIDE that cover, and those are exactly what run on an Employee insert.
     """
     frappe.db.savepoint(name)
+    frappe.db._disable_transaction_control += 1
     try:
         yield
     except Exception:
-        frappe.db.rollback(save_point=name)
+        try:
+            frappe.db.rollback(save_point=name)
+        except Exception:
+            # Cleanup must never replace what actually went wrong: the caller
+            # needs the original error, not this one.
+            frappe.log_error(frappe.get_traceback(),
+                             f"new_hire: could not roll back to savepoint {name}")
         raise
     else:
         frappe.db.release_savepoint(name)
+    finally:
+        frappe.db._disable_transaction_control -= 1
 
 
 def _coerce_payload(payload):
