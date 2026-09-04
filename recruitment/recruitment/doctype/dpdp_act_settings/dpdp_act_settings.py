@@ -6,8 +6,62 @@ LOG_DOCTYPE = "Job Applicant DPDP Consent Log"
 
 
 class DPDPActSettings(Document):
+    def onload(self):
+        self.show_callback_url()
+
     def validate(self):
         self.backfill_consent_keys()
+        self.show_callback_url()
+        self.validate_external_config()
+
+    def show_callback_url(self):
+        """Surface the URL the partner portal must POST completed consents to.
+
+        Read-only and derived, so it can never drift from the actual route and the
+        HR/integration user can copy it straight out of Settings."""
+        try:
+            from recruitment.dpdp_external_consent import callback_url
+
+            self.callback_url_display = callback_url()
+        except Exception:
+            pass
+
+    def validate_external_config(self):
+        """Fail loudly at save time rather than silently at handover time.
+
+        A half-configured external mode only shows up when a real candidate accepts
+        an offer, which is the worst possible moment to discover it."""
+        from recruitment.dpdp_external_consent import EXTERNAL_MODE
+
+        if not cint(self.enabled) or self.consent_mode != EXTERNAL_MODE:
+            return
+
+        missing = [
+            label
+            for field, label in (
+                ("consent_start_url", "Consent Start URL"),
+                ("partner_username", "Partner Username"),
+                ("partner_password", "Partner Password"),
+            )
+            if not cstr(self.get(field)).strip()
+        ]
+        if missing:
+            frappe.throw(
+                frappe._("External Portal mode needs these fields: {0}").format(", ".join(missing))
+            )
+
+        # The callback is guest-reachable; without a secret it would accept an
+        # anonymous POST, so it refuses to run at all — better to block the save.
+        # A Password field reads back as a mask once loaded, so the stored value is
+        # checked too rather than trusting the in-document one.
+        stored = self.get_password("callback_secret", raise_exception=False)
+        if not cstr(self.get("callback_secret")).strip() and not cstr(stored).strip():
+            frappe.throw(
+                frappe._(
+                    "Set a Callback Secret before enabling External Portal mode — "
+                    "use <b>Generate Callback Secret</b> and share it with the consent portal team."
+                )
+            )
 
     def backfill_consent_keys(self):
         """Give every consent statement a stable key so acceptance can be logged
@@ -78,6 +132,7 @@ class DPDPActSettings(Document):
 
         form = {
             "enabled": True,
+            "consent_mode": self.consent_mode or "Internal Form",
             "enforce_before_onboarding": cint(self.enforce_before_onboarding),
             "header": {
                 "title": self.form_title,
@@ -131,6 +186,33 @@ def get_consent_form(appl, token=None):
 
     if not is_dpdp_consent_enabled():
         return {"enabled": False}
+
+    from recruitment.dpdp_external_consent import EXTERNAL_MODE, is_external_consent_mode
+
+    # External mode: there is no form to render here — the notices live on the
+    # partner portal. Tell the caller to hand the candidate over instead, so a page
+    # that still calls this endpoint routes correctly rather than showing a blank
+    # form built from unused settings.
+    if is_external_consent_mode():
+        from recruitment.dpdp_external_consent import get_or_start_session
+
+        settings = frappe.get_cached_doc("DPDP Act Settings")
+        payload = {
+            "enabled": True,
+            "consent_mode": EXTERNAL_MODE,
+            "enforce_before_onboarding": cint(settings.enforce_before_onboarding),
+            "header": {"title": settings.form_title, "subtitle": settings.form_subtitle},
+        }
+        existing = frappe.db.get_value(
+            LOG_DOCTYPE, {"job_applicant": appl, "docstatus": 1, "consent_given": 1}, "name"
+        )
+        payload["already_consented"] = bool(existing)
+        payload["consent_log"] = existing
+        if not existing:
+            session = get_or_start_session(appl)
+            payload["consent_url"] = session["short_url"]
+            payload["session_id"] = session["session_id"]
+        return payload
 
     settings = frappe.get_cached_doc("DPDP Act Settings")
     return settings.as_consent_form(appl=appl)

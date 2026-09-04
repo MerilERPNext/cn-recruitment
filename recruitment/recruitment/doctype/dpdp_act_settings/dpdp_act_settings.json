@@ -11,6 +11,25 @@
   "activation_col_break",
   "form_title",
   "form_subtitle",
+  "mode_section",
+  "consent_mode",
+  "external_endpoint_section",
+  "consent_start_url",
+  "partner_username",
+  "partner_password",
+  "external_endpoint_col_break",
+  "org_id",
+  "configuration_code",
+  "consent_channel",
+  "request_timeout",
+  "external_callback_section",
+  "callback_url_display",
+  "callback_header_name",
+  "callback_secret",
+  "external_callback_col_break",
+  "return_url_template",
+  "send_urls_in_start_payload",
+  "session_validity_minutes",
   "intro_content_section",
   "intro_content",
   "information_section",
@@ -70,6 +89,142 @@
   },
   {
    "depends_on": "enabled",
+   "fieldname": "mode_section",
+   "fieldtype": "Section Break",
+   "label": "Consent Mode"
+  },
+  {
+   "default": "Internal Form",
+   "depends_on": "enabled",
+   "description": "Where the candidate actually gives consent. <b>Internal Form</b> renders the page built from the content below (the original behaviour). <b>External Portal</b> hands the candidate over to the HPCP consent portal \u2014 the content below is then owned by that portal and only the credentials/endpoint section applies.",
+   "fieldname": "consent_mode",
+   "fieldtype": "Select",
+   "label": "Consent Mode",
+   "options": "Internal Form\nExternal Portal"
+  },
+  {
+   "depends_on": "eval:doc.enabled && doc.consent_mode==\"External Portal\"",
+   "fieldname": "external_endpoint_section",
+   "fieldtype": "Section Break",
+   "label": "External Portal \u2014 Endpoint & Credentials"
+  },
+  {
+   "depends_on": "eval:doc.enabled && doc.consent_mode==\"External Portal\"",
+   "description": "Full URL of the partner <i>consent start</i> API. Called server-side once the candidate accepts the offer; its <code>shortUrl</code> is where the candidate is sent.",
+   "fieldname": "consent_start_url",
+   "fieldtype": "Data",
+   "label": "Consent Start URL"
+  },
+  {
+   "depends_on": "eval:doc.enabled && doc.consent_mode==\"External Portal\"",
+   "description": "Basic-auth username (partner id) issued by the consent portal.",
+   "fieldname": "partner_username",
+   "fieldtype": "Data",
+   "label": "Partner Username"
+  },
+  {
+   "depends_on": "eval:doc.enabled && doc.consent_mode==\"External Portal\"",
+   "description": "Basic-auth password issued by the consent portal. Stored encrypted.",
+   "fieldname": "partner_password",
+   "fieldtype": "Password",
+   "label": "Partner Password"
+  },
+  {
+   "fieldname": "external_endpoint_col_break",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "HRMS",
+   "depends_on": "eval:doc.enabled && doc.consent_mode==\"External Portal\"",
+   "description": "Sent as the <code>orgId</code> header on every call.",
+   "fieldname": "org_id",
+   "fieldtype": "Data",
+   "label": "Org ID"
+  },
+  {
+   "default": "EMPLOYEE_ONBOARDING",
+   "depends_on": "eval:doc.enabled && doc.consent_mode==\"External Portal\"",
+   "description": "Sent as <code>configurationCode</code> \u2014 selects which consent template the portal shows.",
+   "fieldname": "configuration_code",
+   "fieldtype": "Data",
+   "label": "Configuration Code"
+  },
+  {
+   "default": "EMAIL",
+   "depends_on": "eval:doc.enabled && doc.consent_mode==\"External Portal\"",
+   "description": "How the portal delivers the consent link / OTP to the candidate.",
+   "fieldname": "consent_channel",
+   "fieldtype": "Select",
+   "label": "Channel",
+   "options": "EMAIL\nSMS\nBOTH"
+  },
+  {
+   "default": "30",
+   "depends_on": "eval:doc.enabled && doc.consent_mode==\"External Portal\"",
+   "description": "Seconds to wait for the consent-start API before giving up.",
+   "fieldname": "request_timeout",
+   "fieldtype": "Int",
+   "label": "Request Timeout (seconds)"
+  },
+  {
+   "depends_on": "eval:doc.enabled && doc.consent_mode==\"External Portal\"",
+   "fieldname": "external_callback_section",
+   "fieldtype": "Section Break",
+   "label": "External Portal \u2014 Callback & Return"
+  },
+  {
+   "depends_on": "eval:doc.enabled && doc.consent_mode==\"External Portal\"",
+   "description": "Give this URL to the consent-portal team. They POST the completed consent here and we record it.",
+   "fieldname": "callback_url_display",
+   "fieldtype": "Data",
+   "label": "Our Callback URL (share with portal team)",
+   "read_only": 1
+  },
+  {
+   "default": "X-Consent-Token",
+   "depends_on": "eval:doc.enabled && doc.consent_mode==\"External Portal\"",
+   "description": "Header the portal must send the shared secret in. The callback is rejected without it.",
+   "fieldname": "callback_header_name",
+   "fieldtype": "Data",
+   "label": "Callback Secret Header"
+  },
+  {
+   "depends_on": "eval:doc.enabled && doc.consent_mode==\"External Portal\"",
+   "description": "Shared secret the portal sends in the header above. Use <b>Generate Callback Secret</b> and share it with them over a secure channel. Stored encrypted.",
+   "fieldname": "callback_secret",
+   "fieldtype": "Password",
+   "label": "Callback Secret"
+  },
+  {
+   "fieldname": "external_callback_col_break",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "/action-center",
+   "depends_on": "eval:doc.enabled && doc.consent_mode==\"External Portal\"",
+   "description": "Where the portal sends the candidate back to once consent is recorded. Relative paths are resolved against this site. Placeholders: <code>{applicant}</code>, <code>{session}</code>, <code>{status}</code>, <code>{token}</code>. <b>Note:</b> <code>{token}</code> is the candidate's signed offer token \u2014 including it hands that token to the consent portal, so use it only when the landing page genuinely needs to identify a not-logged-in candidate.",
+   "fieldname": "return_url_template",
+   "fieldtype": "Small Text",
+   "label": "Return URL Template"
+  },
+  {
+   "default": "0",
+   "depends_on": "eval:doc.enabled && doc.consent_mode==\"External Portal\"",
+   "description": "Also send <code>callbackUrl</code> / <code>redirectUrl</code> inside the consent-start payload. Leave OFF when the portal has them pre-configured against the Configuration Code \u2014 some partners reject unknown keys.",
+   "fieldname": "send_urls_in_start_payload",
+   "fieldtype": "Check",
+   "label": "Send URLs in Start Payload"
+  },
+  {
+   "default": "30",
+   "depends_on": "eval:doc.enabled && doc.consent_mode==\"External Portal\"",
+   "description": "Fallback lifetime for a consent session when the portal's response carries no <code>expiresAt</code>. A live session is reused instead of starting a new one.",
+   "fieldname": "session_validity_minutes",
+   "fieldtype": "Int",
+   "label": "Session Validity (minutes)"
+  },
+  {
+   "depends_on": "eval:doc.enabled && doc.consent_mode==\"Internal Form\"",
    "fieldname": "intro_content_section",
    "fieldtype": "Section Break",
    "label": "Introduction"
@@ -81,7 +236,7 @@
    "label": "Introduction Content"
   },
   {
-   "depends_on": "enabled",
+   "depends_on": "eval:doc.enabled && doc.consent_mode==\"Internal Form\"",
    "fieldname": "information_section",
    "fieldtype": "Section Break",
    "label": "Information Collected"
@@ -105,7 +260,7 @@
    "label": "Purpose Column Label"
   },
   {
-   "depends_on": "enabled",
+   "depends_on": "eval:doc.enabled && doc.consent_mode==\"Internal Form\"",
    "fieldname": "information_table_section",
    "fieldtype": "Section Break"
   },
@@ -117,7 +272,7 @@
    "options": "DPDP Information Clause"
   },
   {
-   "depends_on": "enabled",
+   "depends_on": "eval:doc.enabled && doc.consent_mode==\"Internal Form\"",
    "fieldname": "closing_content_section",
    "fieldtype": "Section Break",
    "label": "Closing Statement"
@@ -129,7 +284,7 @@
    "label": "Closing Content"
   },
   {
-   "depends_on": "enabled",
+   "depends_on": "eval:doc.enabled && doc.consent_mode==\"Internal Form\"",
    "fieldname": "declaration_section",
    "fieldtype": "Section Break",
    "label": "Declaration & Consent"
@@ -156,7 +311,7 @@
    "options": "DPDP Consent Statement"
   },
   {
-   "depends_on": "enabled",
+   "depends_on": "eval:doc.enabled && doc.consent_mode==\"Internal Form\"",
    "fieldname": "acknowledgement_section",
    "fieldtype": "Section Break",
    "label": "Acknowledgement Capture"
@@ -189,7 +344,7 @@
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2026-07-09 16:39:25.234307",
+ "modified": "2026-09-04 10:00:00.000000",
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "DPDP Act Settings",

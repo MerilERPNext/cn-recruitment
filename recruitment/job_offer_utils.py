@@ -793,11 +793,45 @@ def job_offer_update(status, appl, token=None, reason=None, message=None):
         # shown before onboarding. False (default) => behaves exactly as before.
         dpdp_consent_required = is_dpdp_consent_enabled() if status == "Accepted" else False
 
-        return {
+        result = {
             "jo_id": jo_id,
             "webform": webform,
             "dpdp_consent_required": dpdp_consent_required,
         }
+
+        # External consent mode: the notices live on a partner portal, so acceptance
+        # is also where we start the consent session and hand the frontend the link
+        # to redirect the candidate to. Internal-form sites get nothing extra here
+        # and keep using their own consent page. Best-effort — a partner outage must
+        # not undo an acceptance the candidate has already made; the candidate can be
+        # re-issued a link from the action center (start_consent_session).
+        if dpdp_consent_required:
+            from recruitment.dpdp_external_consent import (
+                get_or_start_session,
+                is_external_consent_mode,
+            )
+
+            if is_external_consent_mode():
+                result["dpdp_consent_mode"] = "External Portal"
+                try:
+                    session = get_or_start_session(appl)
+                    result["dpdp_consent_url"] = session["short_url"]
+                    result["dpdp_consent_session"] = session["session_id"]
+                except Exception:
+                    frappe.log_error(
+                        frappe.get_traceback(),
+                        "job_offer_update: DPDP consent session start failed",
+                    )
+                    # The acceptance itself stands. Drop the queued failure message so
+                    # the candidate is not shown an error for a step that runs behind
+                    # the scenes — the null URL tells the frontend to retry via
+                    # start_consent_session instead.
+                    frappe.clear_messages()
+                    result["dpdp_consent_url"] = None
+            else:
+                result["dpdp_consent_mode"] = "Internal Form"
+
+        return result
     finally:
         frappe.flags.ignore_permissions = original_ignore
 
