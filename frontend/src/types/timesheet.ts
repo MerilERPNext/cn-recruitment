@@ -140,3 +140,11 @@ export type TimesheetEntryPayload = Record<string, {
   status: string;
   rows?: TimesheetEntryRow[];
 }>;
+
+export interface TimesheetSettings {
+  show_subtask?: number | boolean;
+  hide_holiday_timesheet?: number | boolean;
+  allow_weekoff_timesheet?: number | boolean;
+  show_select_days_to_submit?: number | boolean;
+  [key: string]: unknown;
+}

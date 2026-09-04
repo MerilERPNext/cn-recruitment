@@ -37,7 +37,6 @@ export function AttendanceDetailView({
   label = "Attendance Request",
   isApproverView = false,
 }: {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   data?: any;
   documentName?: string;
   referenceName?: string;
@@ -84,8 +83,9 @@ export function AttendanceDetailView({
     enabled: isApproverView,
   });
   const canEditTimes =
+    isApproverView &&
     isAttendanceAdjustmentPending &&
-    (!isApproverView || !!isTimeEditableWhileApproving);
+    !!isTimeEditableWhileApproving;
 
   const [isEditingTimes, setIsEditingTimes] = useState(false);
   const [fromTime, setFromTime] = useState<string>("");
@@ -282,7 +282,11 @@ export function AttendanceDetailView({
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-32 md:pb-6">
+        <div
+          className={`flex-1 overflow-y-auto p-4 space-y-4 ${
+            isApproverView ? "pb-32 md:pb-6" : "pb-6"
+          }`}
+        >
           {/* Header Info */}
           <div className="flex justify-between items-start">
             <div className="flex flex-col gap-1">
@@ -330,9 +334,8 @@ export function AttendanceDetailView({
                 </Typography>
               </div>
             </div>
-            {((data?.reference_document?.custom_from_time ||
-              data?.reference_document?.custom_to_time) &&
-              isAttendanceAdjustmentPending) && (
+            {(data?.reference_document?.custom_from_time ||
+              data?.reference_document?.custom_to_time) && (
                 <div className="flex flex-col gap-2 w-full">
                   <div className="flex justify-between w-full">
                     <div className="flex flex-col gap-1">
@@ -455,31 +458,34 @@ export function AttendanceDetailView({
         </div>
 
         {/* Actions */}
-        {actions?.length > 0 &&
-          (data?.reference_document?.custom_status === "Pending" || data?.reference_document?.custom_status === "Open") && !isActed ? (
-          <div className="fixed md:static bottom-0 w-full bg-white border-t shadow-md p-4 z-20">
-            <TeamApprovalActionPill
-              variant={isDesktop ? "modal" : "buttons"}
-              actions={actions}
-              status={data?.reference_document?.custom_status}
-              recordId={data?.todo_id}
-              loadingAction={
-                currentAction
-                  ? { id: data?.todo_id, action: currentAction }
-                  : null
-              }
-              onAction={(action) => handleActionClick(action)}
-            />
-          </div>
-        ) : (
-          <div className="fixed md:static bottom-0 w-full bg-white border-t shadow-md p-4 z-20">
-            <div className="flex items-center justify-center">
-              <div className="h-8 px-3 flex items-center justify-center rounded-md bg-gray-10 text-gray-600 text-xs font-medium w-fit">
-                Action Taken
+        {isApproverView &&
+          (actions?.length > 0 &&
+          (data?.reference_document?.custom_status === "Pending" ||
+            data?.reference_document?.custom_status === "Open") &&
+          !isActed ? (
+            <div className="fixed md:static bottom-0 w-full bg-white border-t shadow-md p-4 z-20">
+              <TeamApprovalActionPill
+                variant={isDesktop ? "modal" : "buttons"}
+                actions={actions}
+                status={data?.reference_document?.custom_status}
+                recordId={data?.todo_id}
+                loadingAction={
+                  currentAction
+                    ? { id: data?.todo_id, action: currentAction }
+                    : null
+                }
+                onAction={(action) => handleActionClick(action)}
+              />
+            </div>
+          ) : (
+            <div className="fixed md:static bottom-0 w-full bg-white border-t shadow-md p-4 z-20">
+              <div className="flex items-center justify-center">
+                <div className="h-8 px-3 flex items-center justify-center rounded-md bg-gray-10 text-gray-600 text-xs font-medium w-fit">
+                  Action Taken
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          ))}
       </div>
       <ActionReasonModal
         isOpen={showCommentModal}

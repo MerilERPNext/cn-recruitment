@@ -184,12 +184,17 @@ export default function LoanInstallmentModal({
                     onChange={(e) => setHoldOption(e.target.value)}
                     className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary appearance-none bg-white text-gray-900 cursor-pointer"
                   >
-                    <option value="Distribute Across Future Months">
-                      Distribute Across Future Months
-                    </option>
                     <option value="Recover Pending in Next Month">
                       Recover Pending in Next Month
                     </option>
+                    <option value="Distribute Across Future Months">
+                      Distribute Across Future Months
+                    </option>
+                    {mode === "hold" && (
+                      <option value="Extend Repayment Period">
+                        Extend Repayment Period
+                      </option>
+                    )}
                   </select>
                   <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
                 </div>
