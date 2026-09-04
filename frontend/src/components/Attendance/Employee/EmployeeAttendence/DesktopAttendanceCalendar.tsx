@@ -273,6 +273,13 @@ const DesktopAttendanceCalendar: React.FC<attendanceProps> = ({
                 <CircleX className="w-4 h-4 text-gray-600 flex-shrink-0" />
             </div>;
         }
+
+        if (attendance?.status === "absent" || attendance?.status === "unpaid") {
+            return <div className="p-1 bg-red-50 rounded-lg">
+                <XCircle className="w-4 h-4 text-red-600 flex-shrink-0" />
+            </div>;
+        }
+
         const approvedLeave = attendance.events?.find((e) => e.status === "Approved" && e.doctype === "Leave Request");
         if (approvedLeave) {
             return <div className="p-1 bg-yellow-50 rounded-lg">
@@ -300,11 +307,6 @@ const DesktopAttendanceCalendar: React.FC<attendanceProps> = ({
                     <CheckCircle2 className="w-4 h-4 text-green-600 flex-shrink-0" />
                 </div>;
             }
-            case "absent":
-            case "unpaid":
-                return <div className="p-1 bg-red-50 rounded-lg">
-                    <XCircle className="w-4 h-4 text-red-600 flex-shrink-0" />
-                </div>
             case "work-from-home":
                 return <div className="p-1 bg-purple-50 rounded-lg">
                     <Home className="w-4 h-4 text-purple-600 flex-shrink-0" />
@@ -484,7 +486,7 @@ const DesktopAttendanceCalendar: React.FC<attendanceProps> = ({
                     <XCircle className="w-3.5 h-3.5 text-red-500" />
                     <span>Absent</span>
                 </div>
-                
+
                 <div className="flex items-center gap-1">
                     <Calendar className="w-3.5 h-3.5 text-yellow-500" />
                     <span>On Leave</span>
@@ -527,7 +529,7 @@ const DesktopAttendanceCalendar: React.FC<attendanceProps> = ({
 
                 <div className="w-px h-3.5 bg-gray-200 mx-1" />
 
-              
+
                 {/* <div className="flex items-center gap-1">
                     <span className="w-2.5 h-2.5 rounded-full bg-red-500 inline-block" />
                     <span>Rejected</span>
