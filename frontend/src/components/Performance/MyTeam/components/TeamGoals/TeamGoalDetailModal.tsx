@@ -40,9 +40,9 @@ export const TeamGoalDetailModal: React.FC<TeamGoalDetailModalProps> = ({
 
   return (
     <Modal isOpen onClose={onClose} size="md">
-      <div className="flex flex-col max-h-[90vh]">
+      <div className="flex flex-col max-h-[90vh] bg-card text-text-title">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-slate-100 p-5">
+        <div className="flex items-center justify-between border-b border-border p-5">
           <div className="flex flex-wrap items-center gap-2">
             <Badge
               label={goal.methodology || "OKR"}
@@ -61,7 +61,7 @@ export const TeamGoalDetailModal: React.FC<TeamGoalDetailModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg border border-slate-200 p-1 text-slate-400 hover:bg-slate-50 hover:text-slate-600 transition-colors"
+            className="rounded-lg border border-border p-1 text-text-body2 hover:bg-slate-500/10 hover:text-text-title transition-colors"
             aria-label="Close modal"
           >
             <X className="h-4 w-4" />
@@ -72,7 +72,7 @@ export const TeamGoalDetailModal: React.FC<TeamGoalDetailModalProps> = ({
         <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-6">
           {/* Goal Title & Employee Info */}
           <div>
-            <Typography variant="h3" className="font-bold text-slate-950 mb-2 break-words">
+            <Typography variant="h3" className="font-bold mb-2 break-words">
               {goal.title}
             </Typography>
             <div className="flex items-center gap-2.5">
@@ -80,47 +80,47 @@ export const TeamGoalDetailModal: React.FC<TeamGoalDetailModalProps> = ({
                 name={goal.employeeName || getInitials(goal.employeeName)}
                 size="h-8 w-8"
                 fontSize="text-xs"
-                avatarBgColor="bg-blue-50"
-                avatarTextColor="text-blue-600"
+                avatarBgColor="bg-blue-500/20"
+                avatarTextColor="text-primary"
               />
-              <Typography variant="bodySmall" className="text-slate-500">
-                <span className="font-medium text-slate-800">{goal.employeeName}</span>
+              <Typography variant="bodySmall" color="body2">
+                <span className="font-medium text-text-title">{goal.employeeName}</span>
                 {goal.designation ? ` · ${goal.designation}` : ""}
               </Typography>
             </div>
           </div>
 
           {/* Meta Cards / Details Grid */}
-          <div className={`grid ${isMobile ? "grid-cols-2" : "grid-cols-4"} gap-4 rounded-xl bg-slate-50 p-4 border border-slate-100`}>
+          <div className={`grid ${isMobile ? "grid-cols-2" : "grid-cols-4"} gap-4 rounded-xl bg-app p-4 border border-border`}>
             <div>
-              <Typography variant="caption" className="block text-[11px] font-semibold tracking-wider text-slate-400 uppercase mb-1">
+              <Typography variant="caption" color="body2" className="block text-[11px] font-semibold tracking-wider uppercase mb-1">
                 WEIGHTAGE
               </Typography>
-              <Typography variant="bodySmall" className="font-semibold text-slate-900">
+              <Typography variant="bodySmall" className="font-semibold">
                 {goal.weightage}%
               </Typography>
             </div>
             <div>
-              <Typography variant="caption" className="block text-[11px] font-semibold tracking-wider text-slate-400 uppercase mb-1">
+              <Typography variant="caption" color="body2" className="block text-[11px] font-semibold tracking-wider uppercase mb-1">
                 ACHIEVEMENT
               </Typography>
-              <Typography variant="bodySmall" className="font-semibold text-slate-900">
+              <Typography variant="bodySmall" className="font-semibold">
                 {goal.achievement}%
               </Typography>
             </div>
             <div>
-              <Typography variant="caption" className="block text-[11px] font-semibold tracking-wider text-slate-400 uppercase mb-1">
+              <Typography variant="caption" color="body2" className="block text-[11px] font-semibold tracking-wider uppercase mb-1">
                 EXPECTED
               </Typography>
-              <Typography variant="bodySmall" className="font-semibold text-slate-900">
+              <Typography variant="bodySmall" className="font-semibold">
                 {goal.expected_progress != null ? `${goal.expected_progress}%` : "-"}
               </Typography>
             </div>
             <div>
-              <Typography variant="caption" className="block text-[11px] font-semibold tracking-wider text-slate-400 uppercase mb-1">
+              <Typography variant="caption" color="body2" className="block text-[11px] font-semibold tracking-wider uppercase mb-1">
                 HEALTH
               </Typography>
-              <Typography variant="bodySmall" className="font-semibold capitalize text-slate-900">
+              <Typography variant="bodySmall" className="font-semibold capitalize">
                 {goal.health_label || goal.health || "-"}
               </Typography>
             </div>
@@ -129,11 +129,11 @@ export const TeamGoalDetailModal: React.FC<TeamGoalDetailModalProps> = ({
           {/* Description */}
           {goal.description && (
             <div>
-              <Typography variant="bodySmall" className="font-semibold text-slate-900 mb-1.5 block">
+              <Typography variant="bodySmall" className="font-semibold mb-1.5 block">
                 Description
               </Typography>
-              <div className="rounded-xl border border-slate-200/80 bg-slate-50/50 p-4 overflow-hidden">
-                <Typography variant="bodySmall" className="text-slate-700 leading-relaxed break-words whitespace-pre-wrap">
+              <div className="rounded-xl border border-border bg-app p-4 overflow-hidden">
+                <Typography variant="bodySmall" color="body2" className="leading-relaxed break-words whitespace-pre-wrap">
                   {goal.description}
                 </Typography>
               </div>
@@ -143,7 +143,7 @@ export const TeamGoalDetailModal: React.FC<TeamGoalDetailModalProps> = ({
           {/* Key Results */}
           <div>
             <div className="flex items-center justify-between mb-3">
-              <Typography variant="bodySmall" className="font-semibold text-slate-900">
+              <Typography variant="bodySmall" className="font-semibold">
                 Key Results ({keyResults.length})
               </Typography>
             </div>
@@ -152,18 +152,18 @@ export const TeamGoalDetailModal: React.FC<TeamGoalDetailModalProps> = ({
                 {keyResults.map((kr, index) => (
                   <div
                     key={kr.goal_key || index}
-                    className="flex flex-col gap-2 rounded-xl border border-slate-200 bg-white p-3.5 sm:flex-row sm:items-center sm:justify-between"
+                    className="flex flex-col gap-2 rounded-xl border border-border bg-card p-3.5 sm:flex-row sm:items-center sm:justify-between"
                   >
                     <div className="flex items-center gap-3">
-                      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-purple-100 text-xs font-bold text-purple-700">
+                      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-purple-500/20 text-xs font-bold text-primary">
                         {index + 1}
                       </span>
                       <div>
-                        <Typography variant="bodySmall" className="font-medium text-slate-900">
+                        <Typography variant="bodySmall" className="font-medium">
                           {kr.title}
                         </Typography>
                         {kr.metric && (
-                          <Typography variant="caption" className="text-slate-500">
+                          <Typography variant="caption" color="body2">
                             Metric: {kr.metric}
                           </Typography>
                         )}
@@ -171,12 +171,12 @@ export const TeamGoalDetailModal: React.FC<TeamGoalDetailModalProps> = ({
                     </div>
                     <div className="flex items-center gap-3 sm:shrink-0">
                       {kr.weightage > 0 && (
-                        <span className="text-xs text-slate-500 font-medium">
+                        <Typography variant="caption" color="body2" className="font-medium">
                           Weightage: {kr.weightage}%
-                        </span>
+                        </Typography>
                       )}
                       {kr.target != null && (
-                        <span className="rounded-md bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-700">
+                        <span className="rounded-md bg-slate-500/10 px-2 py-1 text-xs font-semibold text-text-title">
                           Target: {kr.target}
                         </span>
                       )}
@@ -185,16 +185,18 @@ export const TeamGoalDetailModal: React.FC<TeamGoalDetailModalProps> = ({
                 ))}
               </div>
             ) : (
-              <div className="rounded-xl border border-dashed border-slate-200 p-4 text-center text-xs italic text-slate-400">
-                No key results added for this goal.
+              <div className="rounded-xl border border-dashed border-border p-4 text-center">
+                <Typography variant="caption" color="body2" className="italic block">
+                  No key results added for this goal.
+                </Typography>
               </div>
             )}
           </div>
         </div>
 
         {/* Footer */}
-        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 bg-white px-6 py-4">
-          <Typography variant="caption" className="text-slate-500 font-medium">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border bg-card px-6 py-4">
+          <Typography variant="caption" color="body2" className="font-medium">
             {goal.goal ? `Goal ID: ${goal.goal}` : "Team Goal Details"}
           </Typography>
           <GoalActionButtons

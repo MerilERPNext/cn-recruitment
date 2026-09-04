@@ -92,7 +92,7 @@ const HeroCard: React.FC<HeroCardProps> = ({ isCompact }) => {
 
   return (
     <div className="space-y-4 sm:space-y-5">
-      <section className="overflow-hidden rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5 lg:p-6">
+      <section className="overflow-hidden rounded-xl border border-border bg-card p-4 shadow-sm sm:p-5 lg:p-6">
         <div aria-label="Cycle Details" className="mb-5 flex min-w-0 flex-col justify-between gap-4 sm:mb-6 md:flex-row md:items-center">
           <div className="min-w-0">
             <div className="mb-2.5 flex flex-wrap items-center gap-2">
@@ -103,15 +103,15 @@ const HeroCard: React.FC<HeroCardProps> = ({ isCompact }) => {
                 size="sm"
                 pulse={{ show: true, color: "bg-blue-600" }}
               />
-              <Typography variant="bodySmall" className="break-words text-gray-500">
+              <Typography variant="bodySmall" color="body2" className="break-words">
                 {formattedStartDate || "No date found"} &rarr; {formattedEndDate || "No date found"}{" "}
                 &middot; {overview?.company || "-"}
               </Typography>
             </div>
-            <Typography variant="h3" className="break-words text-xl leading-tight sm:text-2xl font-bold text-slate-900">
+            <Typography variant="h3" className="break-words text-xl leading-tight sm:text-2xl font-bold">
               {overview?.cycle_name || "-"}
             </Typography>
-            <Typography variant="bodySmall" className="mt-1 block break-words text-gray-500">
+            <Typography variant="bodySmall" color="body2" className="mt-1 block break-words">
               Your team &middot; {overview?.team_size ?? "-"} reportees &middot; {overview?.company || "-"}
             </Typography>
           </div>
@@ -121,13 +121,14 @@ const HeroCard: React.FC<HeroCardProps> = ({ isCompact }) => {
               <div className="flex flex-col items-start sm:items-end text-left sm:text-right shrink-0">
                 <Typography
                   variant="caption"
-                  className="text-gray-400 uppercase tracking-widest font-bold text-[10px]"
+                  color="body2"
+                  className="uppercase tracking-widest font-bold text-[10px]"
                 >
                   NEXT DEADLINE
                 </Typography>
                 <Typography
                   variant="bodySmall"
-                  className="text-[#1a73e8] font-bold whitespace-nowrap"
+                  className="text-primary font-bold whitespace-nowrap"
                 >
                   {overview?.days_remaining != null
                     ? `${overview.days_remaining} days remaining`
@@ -138,7 +139,7 @@ const HeroCard: React.FC<HeroCardProps> = ({ isCompact }) => {
                 variant="contain"
                 bgColor="primary"
                 onClick={() => navigate("/webapp/performance-app/team-reviews")}
-                className={`${isCompact ? "w-full sm:w-auto" : "px-5 py-2.5"} bg-[#1a73e8] hover:bg-blue-600 font-semibold rounded-lg shadow-sm text-sm inline-flex items-center justify-center shrink-0 whitespace-nowrap`}
+                className={`${isCompact ? "w-full sm:w-auto" : "px-5 py-2.5"} font-semibold rounded-lg shadow-sm text-sm inline-flex items-center justify-center shrink-0 whitespace-nowrap`}
               >
                 Continue Self-Review <ArrowRight className="w-4 h-4 ml-1.5" />
               </Button>
@@ -150,7 +151,7 @@ const HeroCard: React.FC<HeroCardProps> = ({ isCompact }) => {
           <div className="flex items-center gap-0 overflow-x-auto pb-1 scrollbar-hide">
             {steps.map((step, idx) => (
               <React.Fragment key={`${step.n}-${step.label}-${idx}`}>
-                {idx > 0 && <div className="h-px w-5 md:w-8 lg:w-10 shrink-0 bg-gray-200 mx-1.5 md:mx-2 lg:mx-3" />}
+                {idx > 0 && <div className="h-px w-5 md:w-8 lg:w-10 shrink-0 bg-border mx-1.5 md:mx-2 lg:mx-3" />}
                 <div
                   className={`flex items-center gap-2 shrink-0 ${!step.done && !step.active ? "opacity-40" : ""}`}
                 >
@@ -160,14 +161,15 @@ const HeroCard: React.FC<HeroCardProps> = ({ isCompact }) => {
                     </div>
                   ) : (
                     <div
-                      className={`w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${step.active ? "bg-[#1a73e8] text-white" : "bg-gray-100 text-gray-500"}`}
+                      className={`w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${step.active ? "bg-primary text-on-primary" : "bg-gray-100 text-text-body2"}`}
                     >
                       {step.n}
                     </div>
                   )}
                   <Typography
                     variant="caption"
-                    className={`whitespace-nowrap font-medium text-[11px] ${step.active ? "text-[#1a73e8] font-bold" : step.done ? "text-green-600 font-bold" : "text-gray-500"}`}
+                    className={`whitespace-nowrap font-medium text-[11px] ${step.active ? "text-primary font-bold" : step.done ? "text-green-600 font-bold" : ""}`}
+                    color={!step.active && !step.done ? "body2" : undefined}
                   >
                     {step.label}
                   </Typography>
@@ -176,9 +178,9 @@ const HeroCard: React.FC<HeroCardProps> = ({ isCompact }) => {
             ))}
           </div>
         ) : (
-          <div className="py-2 text-left text-xs text-gray-400 font-medium">
+          <Typography variant="caption" color="body2" className="py-2 block text-left font-medium">
             No active cycle stages configured.
-          </div>
+          </Typography>
         )}
       </section>
 

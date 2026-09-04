@@ -31,13 +31,13 @@ export const KeyResultsCard = ({
   );
 
   return (
-    <div className="mt-6 pt-5 border-t border-gray-100">
+    <div className="mt-6 pt-5 border-t border-border">
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div className="flex items-center gap-2">
             <Typography
               variant="subheading"
-              className="text-gray-900 font-semibold"
+              className="text-text-title font-semibold"
             >
               Key Results
             </Typography>
@@ -47,7 +47,7 @@ export const KeyResultsCard = ({
               size="sm"
             />
           </div>
-          <Typography variant="caption" className="text-gray-500">
+          <Typography variant="caption" className="text-text-body2">
             Quantitative, measurable outcomes that prove the Objective
           </Typography>
         </div>
@@ -57,17 +57,17 @@ export const KeyResultsCard = ({
         {keyResults.map((result) => (
           <div
             key={result.id}
-            className="flex flex-wrap sm:flex-nowrap items-center gap-3 rounded-xl border border-gray-200 bg-white p-3 shadow-sm transition-all focus-within:border-blue-300"
+            className="flex flex-wrap sm:flex-nowrap items-center gap-3 rounded-xl border border-border bg-card p-3 shadow-sm transition-all focus-within:border-primary"
           >
             <div className="shrink-0 [&>div]:h-7 [&>div]:rounded-md [&>div]:px-2 [&>div]:py-0">
               <Badge label={result.id} variant="purple" size="sm" />
             </div>
 
             <input
-              className={`h-10 flex-1 min-w-[200px] rounded-lg border px-3.5 text-sm outline-none transition placeholder:text-gray-400 ${
+              className={`h-10 flex-1 min-w-[200px] rounded-lg border px-3.5 text-sm outline-none transition placeholder:text-text-body2 ${
                 locked
-                  ? "border-gray-200 bg-gray-50/80 text-gray-700 cursor-not-allowed select-none pointer-events-none"
-                  : "border-gray-200 bg-white text-gray-900 focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+                  ? "border-border bg-slate-500/10 text-text-body2 cursor-not-allowed select-none pointer-events-none"
+                  : "border-border bg-card text-text-title focus:border-primary focus:ring-1 focus:ring-primary"
               }`}
               value={result.title}
               onChange={(e) =>
@@ -82,10 +82,10 @@ export const KeyResultsCard = ({
             <div className="w-24 shrink-0">
               <input
                 type="text"
-                className={`h-10 w-full rounded-lg border px-3 text-sm font-medium outline-none transition placeholder:text-gray-400 ${
+                className={`h-10 w-full rounded-lg border px-3 text-sm font-medium outline-none transition placeholder:text-text-body2 ${
                   locked
-                    ? "border-gray-200 bg-gray-50/80 text-gray-700 cursor-not-allowed select-none pointer-events-none"
-                    : "border-gray-200 bg-white text-gray-900 focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+                    ? "border-border bg-slate-500/10 text-text-body2 cursor-not-allowed select-none pointer-events-none"
+                    : "border-border bg-card text-text-title focus:border-primary focus:ring-1 focus:ring-primary"
                 }`}
                 value={result.weight}
                 onChange={(e) => {
@@ -102,16 +102,20 @@ export const KeyResultsCard = ({
                         (sum, kr) => sum + (parseFloat(kr.weight) || 0),
                         0,
                       );
-                    const maxAllowed = Math.max(0, 100 - otherSum);
                     const num = parseFloat(rawVal);
                     if (!isNaN(num)) {
+                      const maxAllowed = Math.max(0, 100 - otherSum);
                       const cappedVal = Math.min(num, maxAllowed);
-                      onUpdateKeyResult(result.id, "weight", String(cappedVal));
+                      onUpdateKeyResult(
+                        result.id,
+                        "weight",
+                        String(cappedVal),
+                      );
                     }
                   }
                 }}
                 placeholder="Weight %"
-                aria-label={`${result.id} weight`}
+                aria-label={`${result.id} weightage`}
                 disabled={locked}
                 readOnly={locked}
               />
@@ -121,7 +125,7 @@ export const KeyResultsCard = ({
               <button
                 type="button"
                 onClick={() => onDeleteKeyResult(result.id)}
-                className="shrink-0 rounded-lg p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-500 transition-colors"
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-text-body2 hover:bg-red-500/10 hover:text-red-500 transition-colors cursor-pointer"
                 aria-label={`Delete ${result.id}`}
               >
                 <X className="h-4 w-4" />
@@ -129,28 +133,30 @@ export const KeyResultsCard = ({
             )}
           </div>
         ))}
+
+        {!locked && (
+          <button
+            type="button"
+            onClick={onAddKeyResult}
+            disabled={
+              maximumKeyResults !== null && keyResults.length >= maximumKeyResults
+            }
+            className={`mt-2 flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-border py-3 text-sm font-semibold transition cursor-pointer ${
+              maximumKeyResults !== null && keyResults.length >= maximumKeyResults
+                ? "bg-slate-500/10 text-text-body2 border-border cursor-not-allowed"
+                : "bg-card text-primary hover:bg-slate-500/10 hover:border-primary"
+            }`}
+          >
+            <Plus className="h-4 w-4 text-primary" />
+            <span>Add Key Result</span>
+          </button>
+        )}
       </div>
 
-      {!locked && (maximumKeyResults === null || keyResults.length < maximumKeyResults) && (
-        <button
-          type="button"
-          onClick={onAddKeyResult}
-          className="mt-4 flex h-10 w-full items-center justify-center gap-2 rounded-xl border border-dashed border-gray-200 text-sm font-medium text-violet-700 hover:border-violet-200 hover:bg-violet-50 transition-colors"
-          aria-label="Add key result"
-        >
-          <Plus className="h-4 w-4" />
-          Add Key Result
-        </button>
-      )}
-
-      <div
-        className={`mt-4 flex items-center justify-between rounded-lg px-4 py-2.5 text-sm ${totalWeight === 100 ? "bg-emerald-50 text-emerald-900" : "bg-amber-50 text-amber-900"}`}
-      >
-        <span className="font-medium">KR weightage sum</span>
-        <span
-          className={`font-semibold ${totalWeight === 100 ? "text-emerald-700" : "text-amber-700"}`}
-        >
-          {totalWeight}% {totalWeight === 100 ? "→ valid" : "(Target: 100%)"}
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-2 rounded-xl bg-amber-500/10 border border-amber-500/30 px-4 py-3 text-xs font-semibold text-amber-500 shadow-2xs">
+        <span>KR weightage sum</span>
+        <span>
+          {totalWeight}% (Target: 100%)
         </span>
       </div>
     </div>

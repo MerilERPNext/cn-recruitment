@@ -24,16 +24,16 @@ export const PeerNominationFilterBar: React.FC<PeerNominationFilterBarProps> = (
   onBuChange,
 }) => {
   return (
-    <div className="flex min-w-0 flex-col gap-3 border-b border-gray-100 bg-white p-4 sm:flex-row sm:items-center">
-      <div className="flex h-10 w-full min-w-0 flex-1 items-center overflow-hidden rounded-lg border border-gray-200 bg-white transition-all focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20">
-        <div className="pl-3 pr-2 text-gray-400">
+    <div className="flex min-w-0 flex-col gap-3 border-b border-border bg-card p-4 sm:flex-row sm:items-center">
+      <div className="flex h-10 w-full min-w-0 flex-1 items-center overflow-hidden rounded-lg border border-border bg-card transition-all focus-within:border-primary focus-within:ring-1 focus-within:ring-primary">
+        <div className="pl-3 pr-2 text-text-body2">
           <Search className="w-4 h-4" />
         </div>
         <input 
           aria-label="Search peer nominees"
           type="text" 
           placeholder="Search employees" 
-          className="h-full min-w-0 flex-1 bg-transparent text-sm text-gray-900 outline-none placeholder:text-gray-400"
+          className="h-full min-w-0 flex-1 bg-transparent text-sm text-text-title outline-none placeholder:text-text-body2"
           value={searchTerm}
           onChange={(e) => onSearchChange(e.target.value)}
         />

@@ -31,7 +31,7 @@ const CircularProgress = ({ score }: { score: number }) => {
           stroke="currentColor"
           strokeWidth="8"
           fill="transparent"
-          className="text-gray-100"
+          className="text-slate-500/20"
         />
         <circle
           cx="48"
@@ -42,13 +42,13 @@ const CircularProgress = ({ score }: { score: number }) => {
           fill="transparent"
           strokeDasharray={circumference}
           strokeDashoffset={strokeDashoffset}
-          className="text-blue-500"
+          className="text-primary"
           strokeLinecap="round"
         />
       </svg>
       <div className="absolute flex flex-col items-center justify-center">
-        <span className="text-xl font-bold text-gray-900">{score}</span>
-        <span className="text-[10px] text-gray-500 font-medium uppercase tracking-wider">Score</span>
+        <span className="text-xl font-bold text-text-title">{score}</span>
+        <span className="text-[10px] text-text-body2 font-medium uppercase tracking-wider">Score</span>
       </div>
     </div>
   );
@@ -64,9 +64,9 @@ const getStatusVariant = (status?: string): BadgeVariant => {
 };
 
 const sentimentStyles: Record<GoalCheckInSentiment, { active: string; dot: string }> = {
-  'On Track': { active: 'border-green-300 bg-green-50 text-green-700 ring-1 ring-green-200', dot: 'bg-green-500' },
-  'At Risk': { active: 'border-amber-300 bg-amber-50 text-amber-700 ring-1 ring-amber-200', dot: 'bg-amber-500' },
-  Blocked: { active: 'border-red-300 bg-red-50 text-red-700 ring-1 ring-red-200', dot: 'bg-red-500' },
+  'On Track': { active: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-500 ring-1 ring-emerald-500/20', dot: 'bg-emerald-500' },
+  'At Risk': { active: 'border-amber-500/30 bg-amber-500/10 text-amber-500 ring-1 ring-amber-500/20', dot: 'bg-amber-500' },
+  Blocked: { active: 'border-red-500/30 bg-red-500/10 text-red-500 ring-1 ring-red-500/20', dot: 'bg-red-500' },
 };
 
 
@@ -226,7 +226,7 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, onBack }) => {
 
   if (!id) {
     return (
-      <div className="p-6">
+      <div className="p-6 bg-app">
         <Typography variant="bodyMedium">Goal not found.</Typography>
         <Button variant="outline" bgColor="text" onClick={() => (onBack ? onBack() : navigate(-1))} className="mt-4">
           Go Back
@@ -243,10 +243,10 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, onBack }) => {
 
   if (isError || !goalResponse?.data) {
     return (
-      <div className="flex min-h-[400px] items-center justify-center bg-[#f8fafc]">
-        <div className="flex flex-col items-center gap-3 rounded-xl border border-red-200 bg-red-50 p-6">
+      <div className="flex min-h-[400px] items-center justify-center bg-app">
+        <div className="flex flex-col items-center gap-3 rounded-xl border border-red-500/20 bg-red-500/10 p-6">
           <AlertCircle className="h-8 w-8 text-red-500" />
-          <Typography variant="bodySmall" className="text-red-600">
+          <Typography variant="bodySmall" className="text-red-500">
             {error?.message || 'Failed to load goal details. Please try again.'}
           </Typography>
           <Button variant="outline" bgColor="text" onClick={() => (onBack ? onBack() : navigate(-1))} className="mt-2">
@@ -266,21 +266,21 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, onBack }) => {
   const isCheckInsLoading = isParentCheckInsLoading;
  
   return (
-    <div ref={topRef} id="goal-details-container" className="min-h-full bg-[#f8fafc] overflow-y-auto p-3 font-sans sm:p-6">
+    <div ref={topRef} id="goal-details-container" className="min-h-full bg-app overflow-y-auto p-3 font-sans sm:p-6">
       <div className="mx-auto max-w-screen space-y-4 sm:space-y-6">
 
         {/* Back Button */}
         <button
           aria-label="Back to goals"
           onClick={() => (onBack ? onBack() : navigate(-1))}
-          className="flex items-center text-sm font-medium text-gray-500 hover:text-gray-700 transition-colors mb-2 cursor-pointer"
+          className="flex items-center text-sm font-medium text-text-body2 hover:text-text-title transition-colors mb-2 cursor-pointer"
         >
           <ArrowLeft className="w-4 h-4 mr-1" />
           Back to Goals
         </button>
 
         {/* Top Header Section */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6">
+        <div className="bg-card rounded-xl shadow-sm border border-border p-4 sm:p-6">
           <div className="flex flex-col lg:flex-row justify-between gap-6">
             <div className="min-w-0 space-y-4 flex-1">
               {/* Badges Row: OKR → Locked → Department → Designation → Status */}
@@ -303,35 +303,35 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, onBack }) => {
 
               {/* Title */}
               <div className="min-w-0">
-                <Typography variant="h3" className="mb-2 text-xl leading-tight sm:text-2xl break-words [word-break:break-word]">{goal.title || '-'}</Typography>
-                <Typography variant="bodySmall" className="text-gray-500 break-words [word-break:break-word]">{goal.description || '-'}</Typography>
+                <Typography variant="h3" className="mb-2 text-xl leading-tight sm:text-2xl break-words [word-break:break-word] font-bold">{goal.title || '-'}</Typography>
+                <Typography variant="bodySmall" color="body2" className="break-words [word-break:break-word]">{goal.description || '-'}</Typography>
               </div>
 
               {/* Meta grid: Owner, Start, End, Weightage */}
-              <div className="grid grid-cols-2 gap-3 pt-4 border-t border-gray-100 sm:grid-cols-4">
-                <div className="rounded-lg bg-gray-50 p-3 lg:bg-transparent lg:p-0">
-                  <Typography variant="caption" className="text-gray-500 uppercase tracking-wider block mb-1 font-semibold">Owner</Typography>
-                  <Typography variant="bodySmall" className="font-semibold text-gray-900">{ownerName}</Typography>
+              <div className="grid grid-cols-2 gap-3 pt-4 border-t border-border sm:grid-cols-4">
+                <div className="rounded-lg bg-slate-500/10 p-3 lg:bg-transparent lg:p-0">
+                  <Typography variant="caption" color="body2" className="uppercase tracking-wider block mb-1 font-semibold">Owner</Typography>
+                  <Typography variant="bodySmall" className="font-semibold">{ownerName}</Typography>
                 </div>
-                <div className="rounded-lg bg-gray-50 p-3 lg:bg-transparent lg:p-0">
-                  <Typography variant="caption" className="text-gray-500 uppercase tracking-wider block mb-1 font-semibold">Start</Typography>
-                  <Typography variant="bodySmall" className="font-semibold text-gray-900">{goal.start_date || '-'}</Typography>
+                <div className="rounded-lg bg-slate-500/10 p-3 lg:bg-transparent lg:p-0">
+                  <Typography variant="caption" color="body2" className="uppercase tracking-wider block mb-1 font-semibold">Start</Typography>
+                  <Typography variant="bodySmall" className="font-semibold">{goal.start_date || '-'}</Typography>
                 </div>
-                <div className="rounded-lg bg-gray-50 p-3 lg:bg-transparent lg:p-0">
-                  <Typography variant="caption" className="text-gray-500 uppercase tracking-wider block mb-1 font-semibold">End</Typography>
-                  <Typography variant="bodySmall" className="font-semibold text-gray-900">{goal.end_date || '-'}</Typography>
+                <div className="rounded-lg bg-slate-500/10 p-3 lg:bg-transparent lg:p-0">
+                  <Typography variant="caption" color="body2" className="uppercase tracking-wider block mb-1 font-semibold">End</Typography>
+                  <Typography variant="bodySmall" className="font-semibold">{goal.end_date || '-'}</Typography>
                 </div>
-                <div className="rounded-lg bg-gray-50 p-3 lg:bg-transparent lg:p-0">
-                  <Typography variant="caption" className="text-gray-500 uppercase tracking-wider block mb-1 font-semibold">Weightage</Typography>
-                  <Typography variant="bodySmall" className="font-semibold text-gray-900">{goal.weightage !== undefined ? `${goal.weightage}%` : '-'}</Typography>
+                <div className="rounded-lg bg-slate-500/10 p-3 lg:bg-transparent lg:p-0">
+                  <Typography variant="caption" color="body2" className="uppercase tracking-wider block mb-1 font-semibold">Weightage</Typography>
+                  <Typography variant="bodySmall" className="font-semibold">{goal.weightage !== undefined ? `${goal.weightage}%` : '-'}</Typography>
                 </div>
               </div>
             </div>
 
             {/* Right side: Score circle */}
-            <div className="shrink-0 flex flex-col items-center justify-center bg-gray-50 rounded-xl p-4 sm:p-6 lg:w-[200px]">
+            <div className="shrink-0 flex flex-col items-center justify-center bg-slate-500/10 rounded-xl p-4 sm:p-6 lg:w-[200px]">
               <CircularProgress score={goal.score ?? 0} />
-              <Typography variant="caption" className="text-gray-500 mt-3 text-center">
+              <Typography variant="caption" color="body2" className="mt-3 text-center">
                 {goal.achievement ? `${goal.achievement}% Achieved` : `${goal.score ?? 0} / 100`}
               </Typography>
             </div>
@@ -345,9 +345,9 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, onBack }) => {
           <div className="lg:col-span-2 space-y-4 sm:space-y-6">
 
             {/* Key Results */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6">
+            <div className="bg-card rounded-xl shadow-sm border border-border p-4 sm:p-6">
               <div className="flex items-center justify-between mb-4 sm:mb-6">
-                <Typography variant="h4">Key Results</Typography>
+                <Typography variant="h4" className="font-bold">Key Results</Typography>
                 {!isEditingKRs && isPendingGoal && (
                   <Button
                     variant="outline"
@@ -367,22 +367,22 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, onBack }) => {
                     {editingKRs.map((kr) => (
                       <div key={kr.id} className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
                         <div className="flex-1 w-full">
-                          <label className="block text-xs font-medium text-gray-600 mb-1">Key Result Title</label>
+                          <Typography variant="caption" color="body2" className="block font-medium mb-1">Key Result Title</Typography>
                           <input
                             type="text"
                             value={kr.title}
                             onChange={(e) => updateKRField(kr.id, 'title', e.target.value)}
-                            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 transition"
+                            className="w-full border border-border bg-card rounded-lg px-3 py-2 text-sm text-text-title focus:outline-none focus:ring-1 focus:ring-primary transition"
                             placeholder="Enter key result"
                           />
                         </div>
                         <div className="w-full sm:w-24 shrink-0">
-                          <label className="block text-xs font-medium text-gray-600 mb-1">Weight (%)</label>
+                          <Typography variant="caption" color="body2" className="block font-medium mb-1">Weight (%)</Typography>
                           <input
                             type="number"
                             value={kr.weightage}
                             onChange={(e) => updateKRField(kr.id, 'weightage', e.target.value)}
-                            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 transition"
+                            className="w-full border border-border bg-card rounded-lg px-3 py-2 text-sm text-text-title focus:outline-none focus:ring-1 focus:ring-primary transition"
                             placeholder="%"
                           />
                         </div>
@@ -390,7 +390,7 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, onBack }) => {
                           <button
                             type="button"
                             onClick={() => removeKRField(kr.id)}
-                            className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                            className="p-2 text-red-500 hover:bg-red-500/10 rounded-lg transition-colors"
                             aria-label="Remove KR"
                           >
                             <Trash2 className="w-4 h-4" />
@@ -402,7 +402,7 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, onBack }) => {
                     <button
                       type="button"
                       onClick={addKRField}
-                      className="flex items-center gap-2 text-sm font-medium text-blue-600 hover:text-blue-700 mt-2"
+                      className="flex items-center gap-2 text-sm font-medium text-primary hover:underline mt-2"
                     >
                       <Plus className="w-4 h-4" />
                       Add More
@@ -412,7 +412,7 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, onBack }) => {
                     {(() => {
                       const currentTotalWeight = editingKRs.reduce((sum, kr) => sum + Number(kr.weightage || 0), 0);
                       return (
-                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mt-6 pt-4 border-t border-gray-100">
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mt-6 pt-4 border-t border-border">
                           <div>
                             {currentTotalWeight !== 100 && (
                               <span className="text-xs font-medium text-red-500">
@@ -442,18 +442,18 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, onBack }) => {
                           <div className="shrink-0">
                             <Badge label={`KR ${idx + 1}`} variant="purple" size="sm" />
                           </div>
-                          <Typography variant="bodyMedium" className="font-medium leading-snug text-gray-900 break-words [word-break:break-word]">{kr.title || '-'}</Typography>
+                          <Typography variant="bodyMedium" className="font-medium leading-snug break-words [word-break:break-word]">{kr.title || '-'}</Typography>
                         </div>
                         <div className="flex items-center gap-3 text-left sm:text-right">
                           <div>
-                            <Typography variant="bodyMedium" className="font-bold text-gray-900">{kr.achievement ?? 0}% Achieved</Typography>
-                            <Typography variant="caption" className="text-gray-500">Weightage: {kr.weightage ?? 0}%</Typography>
+                            <Typography variant="bodyMedium" className="font-bold">{kr.achievement ?? 0}% Achieved</Typography>
+                            <Typography variant="caption" color="body2">Weightage: {kr.weightage ?? 0}%</Typography>
                           </div>
                          {isAutoCalculate && <Button
                             size="sm"
                             variant="outline"
                             bgColor="text"
-                            className={`text-xs border-blue-200 text-blue-600 transition-colors shrink-0 hover:bg-blue-50 hover:border-blue-300`}
+                            className={`text-xs border-border text-primary transition-colors shrink-0 hover:bg-primary/10`}
                             onClick={() => handleOpenKRCheckInModal(kr, idx)}
                            
                           >
@@ -461,28 +461,28 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, onBack }) => {
                           </Button>}
                         </div>
                       </div>
-                      <div className="w-full bg-gray-100 rounded-md h-2 overflow-hidden">
+                      <div className="w-full bg-slate-500/20 rounded-md h-2 overflow-hidden">
                         <div
-                          className={`h-2 rounded-md ${kr.achievement >= 75 ? 'bg-green-500' : kr.achievement >= 50 ? 'bg-yellow-500' : 'bg-blue-500'}`}
+                          className={`h-2 rounded-md ${kr.achievement >= 75 ? 'bg-emerald-500' : kr.achievement >= 50 ? 'bg-amber-500' : 'bg-primary'}`}
                           style={{ width: `${Math.min(kr.achievement ?? 0, 100)}%` }}
                         />
                       </div>
-                      {idx !== (goal.key_results?.length ?? 0) - 1 && <hr className="mt-6 border-gray-100" />}
+                      {idx !== (goal.key_results?.length ?? 0) - 1 && <hr className="mt-6 border-border" />}
                     </div>
                   ))
                 ) : (
-                  <Typography variant="bodyMedium" className="text-gray-500 text-center py-4">No Key Results found.</Typography>
+                  <Typography variant="bodyMedium" color="body2" className="text-center py-4">No Key Results found.</Typography>
                 )}
               </div>
             </div>
 
             {isAutoCalculate && (
-              <div className="flex items-start gap-3.5 rounded-xl border border-blue-100 bg-blue-50/70 p-4 sm:p-5 shadow-2xs">
+              <div className="flex items-start gap-3.5 rounded-xl border border-blue-500/30 bg-blue-500/10 p-4 sm:p-5 shadow-2xs">
                 <div className="min-w-0 flex-1">
-                  <Typography variant="bodyMedium" className="font-semibold text-blue-950">
+                  <Typography variant="bodyMedium" className="font-semibold text-primary">
                     Automatic Progress Calculation
                   </Typography>
-                  <Typography variant="caption" className="text-blue-700 mt-1 block leading-relaxed">
+                  <Typography variant="caption" color="body2" className="mt-1 block leading-relaxed">
                     Goal progress is automatically calculated from individual Key Result check-ins. Please use the <strong>"Check in"</strong> button on each Key Result above to update your progress.
                   </Typography>
                 </div>
@@ -493,12 +493,12 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, onBack }) => {
 
           {/* Right Column (1/3) — Check-ins Card */}
           <div className="space-y-4 sm:space-y-6">
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6">
+            <div className="bg-card rounded-xl shadow-sm border border-border p-4 sm:p-6">
               <div className="flex items-center gap-2 mb-1">
-                <ClipboardList className="w-4 h-4 text-blue-500" />
-                <Typography variant="h4">Check-ins</Typography>
+                <ClipboardList className="w-4 h-4 text-primary" />
+                <Typography variant="h4" className="font-bold">Check-ins</Typography>
               </div>
-              <Typography variant="bodySmall" className="text-gray-500 mb-6">Progress check-in history</Typography>
+              <Typography variant="bodySmall" color="body2" className="mb-6">Progress check-in history</Typography>
 
               {isAutoCalculate && goal.key_results?.length ? (
                 <div className="max-h-[480px]  overflow-y-auto pr-0.5">
@@ -519,13 +519,13 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, onBack }) => {
               ) : isCheckInsLoading ? (
                 <div className="space-y-3">
                   {[1, 2, 3].map((item) => (
-                    <div key={item} className="rounded-xl border border-gray-100 p-3 animate-pulse bg-white">
+                    <div key={item} className="rounded-xl border border-border p-3 animate-pulse bg-card">
                       <div className="flex items-start justify-between gap-2">
                         <div className="space-y-1.5 flex-1">
-                          <div className="h-4 w-24 rounded bg-slate-200" />
-                          <div className="h-3 w-16 rounded bg-slate-100" />
+                          <div className="h-4 w-24 rounded bg-slate-500/20" />
+                          <div className="h-3 w-16 rounded bg-slate-500/10" />
                         </div>
-                        <div className="h-6 w-16 rounded-md bg-slate-100" />
+                        <div className="h-6 w-16 rounded-md bg-slate-500/10" />
                       </div>
                     </div>
                   ))}
@@ -537,29 +537,28 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, onBack }) => {
                   ))}
                 </div>
               ) : (
-                <div className="flex flex-col items-center justify-center py-8 px-4 text-center rounded-lg border border-dashed border-gray-200 bg-gray-50">
-                  <ClipboardList className="h-8 w-8 text-gray-300 mb-3" />
-                  <Typography variant="bodySmall" className="text-gray-500 font-medium">No check-ins yet</Typography>
-                  <Typography variant="caption" className="text-gray-400 mt-1">Submit your first check-in to track progress</Typography>
+                <div className="flex flex-col items-center justify-center py-8 px-4 text-center rounded-lg border border-dashed border-border bg-slate-500/10">
+                  <ClipboardList className="h-8 w-8 text-text-body2 mb-3" />
+                  <Typography variant="bodySmall" color="body2" className="font-medium">No check-ins yet</Typography>
+                  <Typography variant="caption" color="body2" className="mt-1">Submit your first check-in to track progress</Typography>
                 </div>
               )}
             </div>
           </div>
 
           {/* Quick Check-in Card (Full Width 3/3 Across the Grid) */}
-          {/* Quick Check-in Card (Full Width 3/3 Across the Grid) */}
           {!isAutoCalculate && (
-            <Card radius="xl" padding="none" className="lg:col-span-3 overflow-hidden border border-gray-100 bg-white">
+            <Card radius="xl" padding="none" className="lg:col-span-3 overflow-hidden border border-border bg-card">
               <div className="p-4 sm:p-6">
-                <Typography variant="h4" className="mb-1 text-gray-900 font-semibold">Quick Check-in</Typography>
-                <Typography variant="bodySmall" className="text-gray-500 mb-5">Update your progress</Typography>
+                <Typography variant="h4" className="mb-1 font-semibold">Quick Check-in</Typography>
+                <Typography variant="bodySmall" color="body2" className="mb-5">Update your progress</Typography>
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
                   {/* Left Side: New Value, Auto Progress, Self-declared Health */}
                   <div className="flex flex-col justify-between space-y-4">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
-                        <Typography variant="caption" className="text-gray-700 font-medium block mb-1.5">New Value</Typography>
+                        <Typography variant="caption" color="body2" className="font-medium block mb-1.5">New Value</Typography>
                         <div className="flex items-center">
                           <input
                             type="number"
@@ -568,25 +567,25 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, onBack }) => {
                             min="0"
                             step="any"
                             inputMode="decimal"
-                            className="w-full h-[40px] border border-gray-200 rounded-l-xl px-3 text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition"
+                            className="w-full h-[40px] border border-border bg-card rounded-l-xl px-3 text-sm text-text-title focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition"
                             aria-label="New goal progress value"
                           />
-                          <span className="h-[40px] bg-gray-50 border border-l-0 border-gray-200 rounded-r-xl px-3 text-sm text-gray-500 flex items-center font-medium">
+                          <span className="h-[40px] bg-slate-500/10 border border-l-0 border-border rounded-r-xl px-3 text-sm text-text-body2 flex items-center font-medium">
                             %
                           </span>
                         </div>
                       </div>
 
                       <div>
-                        <Typography variant="caption" className="text-gray-700 font-medium block mb-1.5">Auto Progress</Typography>
-                        <div className="bg-blue-50/70 border border-blue-100 rounded-xl px-3 h-[40px] flex items-center">
-                          <span className="text-blue-600 font-bold text-sm">{displayedProgress}%</span>
+                        <Typography variant="caption" color="body2" className="font-medium block mb-1.5">Auto Progress</Typography>
+                        <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl px-3 h-[40px] flex items-center">
+                          <span className="text-primary font-bold text-sm">{displayedProgress}%</span>
                         </div>
                       </div>
                     </div>
 
                     <div>
-                      <Typography variant="caption" className="text-gray-700 font-medium block mb-1.5">Self-declared Health</Typography>
+                      <Typography variant="caption" color="body2" className="font-medium block mb-1.5">Self-declared Health</Typography>
                       <div className="flex flex-nowrap gap-2.5" role="radiogroup" aria-label="Self-declared health">
                         {(Object.keys(sentimentStyles) as GoalCheckInSentiment[]).map((option) => (
                           <button
@@ -598,7 +597,7 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, onBack }) => {
                             className={`flex h-[40px] min-w-0 flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-xl border px-3 text-xs font-semibold transition-colors ${
                               sentiment === option
                                 ? sentimentStyles[option].active
-                                : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'
+                                : 'border-border bg-card text-text-body2 hover:bg-slate-500/10'
                             }`}
                           >
                             <span className={`h-2 w-2 rounded-full ${sentimentStyles[option].dot}`} />
@@ -612,11 +611,11 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, onBack }) => {
                   {/* Right Side: Description Note, Attachment & Submit Button */}
                   <div className="flex flex-col justify-between space-y-3">
                     <div className="flex flex-col flex-1">
-                      <Typography variant="caption" className="text-gray-700 font-medium block mb-1.5">Description</Typography>
+                      <Typography variant="caption" color="body2" className="font-medium block mb-1.5">Description</Typography>
                       <textarea
                         value={note}
                         onChange={(event) => setNote(event.target.value)}
-                        className="w-full flex-1 min-h-[80px] rounded-xl border border-gray-200 p-3 text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition resize-none"
+                        className="w-full flex-1 min-h-[80px] rounded-xl border border-border bg-card p-3 text-sm text-text-title placeholder:text-text-body2 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition resize-none"
                         placeholder="Add details about your progress..."
                         aria-label="Goal progress details"
                       ></textarea>
@@ -636,18 +635,18 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, onBack }) => {
                           size="sm"
                           icon={<Paperclip className="w-4 h-4" />}
                           onClick={() => attachmentInputRef.current?.click()}
-                          className="rounded-lg border-gray-200 hover:bg-gray-50 text-gray-700"
+                          className="rounded-lg"
                         >
                           Attach
                         </Button>
                         {attachment && (
-                          <span className="flex min-w-0 items-center gap-1 rounded-lg bg-blue-50 border border-blue-100 px-2.5 py-1 text-xs text-blue-700 font-medium">
+                          <span className="flex min-w-0 items-center gap-1 rounded-lg bg-blue-500/10 border border-blue-500/20 px-2.5 py-1 text-xs text-primary font-medium">
                             <span className="truncate max-w-[140px]">{attachment.name}</span>
                             <button
                               type="button"
                               aria-label="Remove attachment"
                               onClick={() => { setAttachment(null); if (attachmentInputRef.current) attachmentInputRef.current.value = ''; }}
-                              className="shrink-0 text-blue-500 hover:text-blue-800 transition-colors ml-0.5"
+                              className="shrink-0 text-primary hover:text-primary/80 transition-colors ml-0.5"
                             >
                               <X className="h-3.5 w-3.5" />
                             </button>

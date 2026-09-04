@@ -14,11 +14,11 @@ export const AnonymousInfoCard: React.FC<AnonymousInfoCardProps> = ({
   className = "",
 }) => {
   return (
-    <div className={`bg-blue-50 rounded-xl border border-blue-100 p-5 ${className}`}>
-      <div className="flex items-center gap-2 mb-3 text-blue-700 font-semibold text-sm tracking-wide">
+    <div className={`bg-primary/10 rounded-xl border border-primary/20 p-5 ${className}`}>
+      <div className="flex items-center gap-2 mb-3 text-primary font-semibold text-sm tracking-wide">
         <FileText className="w-4 h-4" /> {title}
       </div>
-      <Typography variant="bodyMedium" className="text-gray-600 leading-relaxed text-sm">
+      <Typography variant="bodyMedium" color="body2" className="leading-relaxed text-sm">
         {note}
       </Typography>
     </div>

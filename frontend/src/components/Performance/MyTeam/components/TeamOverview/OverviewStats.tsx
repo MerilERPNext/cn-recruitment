@@ -19,22 +19,23 @@ const OverviewStats: React.FC<OverviewStatsProps> = ({ isCompact, stats }) => {
       {stats.map((stat, idx) => (
         <div
           key={idx}
-          className="flex min-h-[96px] min-w-0 flex-col justify-between rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:min-h-[104px] sm:p-5"
+          className="flex min-h-[96px] min-w-0 flex-col justify-between rounded-xl border border-border bg-card p-4 shadow-sm sm:min-h-[104px] sm:p-5"
         >
           <Typography
             variant="caption"
-            className="mb-2 block break-words text-[10px] font-semibold uppercase text-slate-400"
+            color="body2"
+            className="mb-2 block break-words text-[10px] font-semibold uppercase"
           >
             {stat.label}
           </Typography>
           <div>
             <Typography
               variant="h2"
-              className={`text-blue-600 mb-1 text-2xl font-bold leading-none`}
+              className={`text-primary mb-1 text-2xl font-bold leading-none`}
             >
               {stat.value}
             </Typography>
-            <Typography variant="caption" className="break-words text-slate-500">
+            <Typography variant="caption" color="body2" className="break-words">
               {stat.sub}
             </Typography>
           </div>

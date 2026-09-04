@@ -8,7 +8,8 @@ import { CardSkeleton } from "../../../../shared/molecules/Skeletons/TableSkelet
 import useDebounce from "../../../../../hooks/useDebounce";
 import { useGetTeamMembers } from "../../../../../hooks/usePerformance";
 import type { TeamMembersSortOption, TeamMembersStatusFilter } from "../../../../../types/goal";
-import { TeamMemberItem, TEAM_TABLE_COLUMN_WIDTHS } from "./TeamMemberItem";
+import { TeamMemberItem } from "./TeamMemberItem";
+import { TEAM_TABLE_COLUMN_WIDTHS } from "./teamOverview.constants";
 
 const TEAM_TABLE_TITLES = [
   "Employee",
@@ -115,10 +116,10 @@ const TeamTable: React.FC<TeamTableProps> = ({ isCompact }) => {
             {totalCount}
           </Typography>
           <div className="min-w-0">
-            <Typography variant="bodySmall" className="font-semibold text-slate-950">
+            <Typography variant="bodySmall" className="font-semibold">
               Team reviews
             </Typography>
-            <Typography variant="caption" className="text-slate-500">
+            <Typography variant="caption" color="body2">
               Track reportee progress and review status
             </Typography>
           </div>
@@ -225,31 +226,33 @@ const TeamTable: React.FC<TeamTableProps> = ({ isCompact }) => {
       )}
 
       {totalCount > 0 && (
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-slate-100 px-4 py-3 sm:px-6 bg-white">
-          <Typography variant="caption" className="text-slate-500">
-            Showing <span className="font-semibold text-slate-700">{start + 1}</span> to{" "}
-            <span className="font-semibold text-slate-700">{Math.min(start + limit, totalCount)}</span> of{" "}
-            <span className="font-semibold text-slate-700">{totalCount}</span> reportees
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-border px-4 py-3 sm:px-6 bg-card">
+          <Typography variant="caption" color="body2">
+            Showing <span className="font-semibold">{start + 1}</span> to{" "}
+            <span className="font-semibold">{Math.min(start + limit, totalCount)}</span> of{" "}
+            <span className="font-semibold">{totalCount}</span> reportees
           </Typography>
           <div className="flex items-center gap-2">
             <Button
               variant="outline"
+              bgColor="text"
               size="sm"
               disabled={page === 1 || isFetching}
               onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
-              className="border-slate-200 text-slate-700 hover:bg-slate-50 disabled:opacity-40"
+              className="disabled:opacity-40"
             >
               Previous
             </Button>
-            <Typography variant="caption" className="font-semibold text-slate-700 px-2">
+            <Typography variant="caption" color="body2" className="font-semibold px-2">
               Page {page} of {totalPages}
             </Typography>
             <Button
               variant="outline"
+              bgColor="text"
               size="sm"
               disabled={(!hasMore && page >= totalPages) || isFetching}
               onClick={() => setPage((prev) => prev + 1)}
-              className="border-slate-200 text-slate-700 hover:bg-slate-50 disabled:opacity-40"
+              className="disabled:opacity-40"
             >
               Next
             </Button>

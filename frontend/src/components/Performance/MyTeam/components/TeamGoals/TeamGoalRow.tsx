@@ -50,9 +50,9 @@ export const TeamGoalRow: React.FC<TeamGoalRowProps> = React.memo(({
   return (
     <div
       onClick={handleClick}
-      className={`grid cursor-pointer gap-3 transition-colors hover:bg-slate-50 ${
+      className={`grid cursor-pointer gap-3 transition-colors hover:bg-slate-500/10 ${
         isCompact
-          ? "grid-cols-1 rounded-lg border border-slate-100 bg-white p-3 shadow-sm hover:border-slate-200"
+          ? "grid-cols-1 rounded-lg border border-border bg-card p-3 shadow-sm hover:border-border/80"
           : "grid-cols-[minmax(0,1fr)_280px] items-center py-3"
       }`}
     >
@@ -60,7 +60,7 @@ export const TeamGoalRow: React.FC<TeamGoalRowProps> = React.memo(({
         <div className="flex flex-col gap-2.5">
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-1.5 min-w-0">
-              <CornerDownRight className="h-3.5 w-3.5 shrink-0 text-slate-400" />
+              <CornerDownRight className="h-3.5 w-3.5 shrink-0 text-text-body2" />
               <Badge
                 label={goal.methodology || "OKR"}
                 variant="purple"
@@ -77,14 +77,15 @@ export const TeamGoalRow: React.FC<TeamGoalRowProps> = React.memo(({
           <div className="min-w-0 pl-5">
             <Typography
               variant="bodySmall"
-              className="font-semibold text-slate-900 break-words text-xs leading-snug sm:text-sm"
+              className="font-semibold break-words text-xs leading-snug sm:text-sm"
             >
               {goal.title ?? "-"}
             </Typography>
             {goal.description && (
               <Typography
                 variant="caption"
-                className="mt-1 block text-slate-500 break-words text-[11px] leading-normal"
+                color="body2"
+                className="mt-1 block break-words text-[11px] leading-normal"
               >
                 {goal.description}
               </Typography>
@@ -93,21 +94,21 @@ export const TeamGoalRow: React.FC<TeamGoalRowProps> = React.memo(({
 
           <div className="flex flex-col gap-1 pl-5 pt-0.5">
             <div className="flex items-center justify-between text-xs">
-              <span className="font-semibold text-slate-700">
+              <Typography variant="caption" className="font-semibold">
                 {goal.achievement ?? 0}%
-              </span>
+              </Typography>
               {goal.expected_progress !== undefined &&
                 goal.expected_progress !== null && (
-                  <span className="text-[11px] font-medium text-slate-500">
+                  <Typography variant="caption" color="body2" className="text-[11px] font-medium">
                     Expected: {goal.expected_progress}%
-                  </span>
+                  </Typography>
                 )}
             </div>
-            <div className="relative h-2 w-full overflow-hidden rounded-md bg-slate-200">
+            <div className="relative h-2 w-full overflow-hidden rounded-md bg-slate-500/20">
               {goal.expected_progress !== undefined &&
                 goal.expected_progress !== null && (
                   <div
-                    className="absolute top-0 bottom-0 left-0 bg-slate-300/70 rounded-md"
+                    className="absolute top-0 bottom-0 left-0 bg-slate-500/30 rounded-md"
                     style={{
                       width: `${Math.min(100, Math.max(0, goal.expected_progress))}%`,
                     }}
@@ -132,7 +133,7 @@ export const TeamGoalRow: React.FC<TeamGoalRowProps> = React.memo(({
       ) : (
         <>
           <div className="flex min-w-0 items-start gap-3">
-            <CornerDownRight className="mt-1 h-4 w-4 shrink-0 text-slate-300" />
+            <CornerDownRight className="mt-1 h-4 w-4 shrink-0 text-text-body2" />
             <Badge
               label={goal.methodology || "OKR"}
               variant="purple"
@@ -141,14 +142,15 @@ export const TeamGoalRow: React.FC<TeamGoalRowProps> = React.memo(({
             <div className="min-w-0 flex-1">
               <Typography
                 variant="bodySmall"
-                className="min-w-0 font-medium text-slate-900 truncate"
+                className="min-w-0 font-medium truncate"
               >
                 {goal.title ?? "-"}
               </Typography>
               {goal.description && (
                 <Typography
                   variant="caption"
-                  className="mt-0.5 block min-w-0 text-slate-500 truncate"
+                  color="body2"
+                  className="mt-0.5 block min-w-0 truncate"
                 >
                   {goal.description}
                 </Typography>
@@ -158,21 +160,21 @@ export const TeamGoalRow: React.FC<TeamGoalRowProps> = React.memo(({
           <div className="flex min-w-0 items-center gap-3">
             <div className="flex flex-1 flex-col gap-1 min-w-[120px]">
               <div className="flex items-center justify-between text-xs">
-                <span className="font-semibold text-slate-700">
+                <Typography variant="caption" className="font-semibold">
                   {goal.achievement ?? 0}%
-                </span>
+                </Typography>
                 {goal.expected_progress !== undefined &&
                   goal.expected_progress !== null && (
-                    <span className="text-[11px] font-medium text-slate-500">
+                    <Typography variant="caption" color="body2" className="text-[11px] font-medium">
                       Expected: {goal.expected_progress}%
-                    </span>
+                    </Typography>
                   )}
               </div>
-              <div className="relative h-2 w-full overflow-hidden rounded-md bg-slate-200">
+              <div className="relative h-2 w-full overflow-hidden rounded-md bg-slate-500/20">
                 {goal.expected_progress !== undefined &&
                   goal.expected_progress !== null && (
                     <div
-                      className="absolute top-0 bottom-0 left-0 bg-slate-300/70 rounded-md"
+                      className="absolute top-0 bottom-0 left-0 bg-slate-500/30 rounded-md"
                       style={{
                         width: `${Math.min(100, Math.max(0, goal.expected_progress))}%`,
                       }}

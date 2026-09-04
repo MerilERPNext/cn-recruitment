@@ -25,32 +25,32 @@ export const TeamGoalGroupCard: React.FC<TeamGoalGroupCardProps> = React.memo(({
   onSelectGoal,
 }) => {
   return (
-    <article className="overflow-hidden rounded-xl border border-slate-200">
+    <article className="overflow-hidden rounded-xl border border-border bg-card">
       <button
         type="button"
         aria-label={`${isExpanded ? "Collapse" : "Expand"} ${group?.employee_name ?? "employee"} goals`}
         onClick={() => onToggle(group.employee)}
-        className="flex w-full items-start justify-between gap-3 bg-blue-50/70 px-4 py-3 text-left transition-colors hover:bg-blue-50 sm:items-center"
+        className="flex w-full items-start justify-between gap-3 bg-blue-500/10 px-4 py-3 text-left transition-colors hover:bg-blue-500/20 sm:items-center"
       >
         <div className="flex min-w-0 flex-1 items-start gap-3 sm:items-center">
           <Avatar
             name={group?.employee_name || getInitials(group?.employee_name || "")}
             size="h-8 w-8"
             fontSize="text-xs"
-            avatarBgColor="bg-blue-50"
-            avatarTextColor="text-blue-600"
+            avatarBgColor="bg-blue-500/20"
+            avatarTextColor="text-primary"
           />
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
               <Typography
                 variant="bodySmall"
-                className="font-semibold text-slate-950"
+                className="font-semibold"
               >
                 {group?.employee_name ?? "-"}
               </Typography>
               <Typography
                 variant="caption"
-                className="text-slate-500"
+                color="body2"
               >
                 {group?.designation ? `${group.designation} · ` : ""}
                 {group?.goal_count ?? 0} goals · {group?.avg_progress ?? 0}% avg
@@ -58,15 +58,15 @@ export const TeamGoalGroupCard: React.FC<TeamGoalGroupCardProps> = React.memo(({
             </div>
             {isCompact && (
               <div className="mt-2 flex items-center gap-2">
-                <div className="h-1.5 w-28 overflow-hidden rounded-md bg-blue-100">
+                <div className="h-1.5 w-28 overflow-hidden rounded-md bg-blue-500/20">
                   <div
-                    className="h-full rounded-md bg-blue-500"
+                    className="h-full rounded-md bg-primary"
                     style={{
                       width: `${Math.min(100, Math.max(0, group?.avg_progress ?? 0))}%`,
                     }}
                   />
                 </div>
-                <span className="text-xs font-semibold text-blue-700">
+                <span className="text-xs font-semibold text-primary">
                   {group?.avg_progress ?? 0}%
                 </span>
               </div>
@@ -74,8 +74,8 @@ export const TeamGoalGroupCard: React.FC<TeamGoalGroupCardProps> = React.memo(({
           </div>
         </div>
         <ChevronRight
-          className={`mt-2 h-4 w-4 shrink-0 text-slate-500 transition-transform duration-300 ease-in-out sm:mt-0 ${
-            isExpanded ? "rotate-90 text-blue-600" : ""
+          className={`mt-2 h-4 w-4 shrink-0 text-text-body2 transition-transform duration-300 ease-in-out sm:mt-0 ${
+            isExpanded ? "rotate-90 text-primary" : ""
           }`}
         />
       </button>

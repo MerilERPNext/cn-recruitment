@@ -196,18 +196,18 @@ const GoalLibraryPopup = ({ onClose, onUseTemplate }: GoalLibraryPopupProps) => 
         }
         if (goalRepoErr && activeTab === 'recommended') {
             return (
-                <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-red-200 bg-red-50/40 p-8 text-center sm:py-12">
+                <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-red-500/30 bg-red-500/10 p-8 text-center sm:py-12">
                     <AlertCircle className="mb-2 h-8 w-8 text-red-500" />
-                    <Typography variant="bodyMedium" className="font-semibold text-gray-800">
+                    <Typography variant="bodyMedium" className="font-semibold text-text-title">
                         Failed to load recommended goals
                     </Typography>
-                    <Typography variant="caption" className="mt-1 text-gray-500 max-w-sm">
+                    <Typography variant="caption" className="mt-1 text-text-body2 max-w-sm">
                         {goalRepoErr?.message || 'Something went wrong while fetching recommended goals.'}
                     </Typography>
                     <Button
                         type="button"
                         variant="outline"
-                        className="mt-4 text-xs font-medium"
+                        className="mt-4 text-xs font-medium border-border bg-card text-text-title hover:bg-slate-500/10 cursor-pointer"
                         onClick={() => refetchGoalRepo()}
                     >
                         Try Again
@@ -217,18 +217,18 @@ const GoalLibraryPopup = ({ onClose, onUseTemplate }: GoalLibraryPopupProps) => 
         }
         if (error && activeTab !== 'recommended') {
             return (
-                <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-red-200 bg-red-50/40 p-8 text-center sm:py-12">
+                <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-red-500/30 bg-red-500/10 p-8 text-center sm:py-12">
                     <AlertCircle className="mb-2 h-8 w-8 text-red-500" />
-                    <Typography variant="bodyMedium" className="font-semibold text-gray-800">
+                    <Typography variant="bodyMedium" className="font-semibold text-text-title">
                         Failed to load goals
                     </Typography>
-                    <Typography variant="caption" className="mt-1 text-gray-500 max-w-sm">
+                    <Typography variant="caption" className="mt-1 text-text-body2 max-w-sm">
                         {error?.message || 'Something went wrong while fetching reference goals from server.'}
                     </Typography>
                     <Button
                         type="button"
                         variant="outline"
-                        className="mt-4 text-xs font-medium"
+                        className="mt-4 text-xs font-medium border-border bg-card text-text-title hover:bg-slate-500/10 cursor-pointer"
                         onClick={() => refetchRefGoals()}
                     >
                         Try Again
@@ -261,16 +261,16 @@ const GoalLibraryPopup = ({ onClose, onUseTemplate }: GoalLibraryPopupProps) => 
     };
 
     return (
-        <div className="flex h-[90vh] w-full max-w-full flex-col overflow-hidden bg-white shadow-2xl  sm:h-[90vh] sm:min-h-[580px] sm:rounded-xl sm:animate-slideUp">
+        <div className="flex h-[90vh] w-full max-w-full flex-col overflow-hidden bg-card text-text-title border border-border shadow-2xl sm:h-[90vh] sm:min-h-[580px] sm:rounded-xl sm:animate-slideUp">
 
             {/* Header */}
-            <div className="relative z-30 shrink-0 border-b border-gray-100 bg-white px-4 py-2.5 sm:px-5 sm:py-4">
-                <Typography variant="h4" className="pr-11 text-lg font-semibold leading-tight text-gray-900 sm:mt-2 sm:text-2xl">
+            <div className="relative z-30 shrink-0 border-b border-border bg-card px-4 py-2.5 sm:px-5 sm:py-4">
+                <Typography variant="h4" className="pr-11 text-lg font-semibold leading-tight text-text-title sm:mt-2 sm:text-2xl">
                     Goal Library
                 </Typography>
                 <button
                     type="button"
-                    className="absolute right-3 top-2 flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-500 transition hover:bg-gray-50 hover:text-gray-700 sm:right-4 sm:top-4"
+                    className="absolute right-3 top-2 flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-card text-text-body2 transition hover:bg-slate-500/10 hover:text-text-title cursor-pointer sm:right-4 sm:top-4"
                     onClick={onClose}
                     aria-label="Close goal library"
                 >
@@ -282,15 +282,15 @@ const GoalLibraryPopup = ({ onClose, onUseTemplate }: GoalLibraryPopupProps) => 
             <div className="flex min-h-0 flex-1 flex-col overflow-y-auto sm:contents">
 
                 {/* Filters */}
-                <div className="shrink-0 border-b border-gray-100 bg-white px-4 py-2.5 sm:px-5 sm:py-4">
+                <div className="shrink-0 border-b border-border bg-card px-4 py-2.5 sm:px-5 sm:py-4">
                     <div className="grid min-w-0 grid-cols-1 gap-2.5 sm:grid-cols-2 sm:gap-3 lg:grid-cols-[minmax(280px,1fr)_180px_minmax(180px,240px)]">
                         <div className="relative">
-                            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-body2" />
                             <input
                                 type="text"
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                className="h-full w-full rounded-lg border border-slate-200 bg-slate-50 pl-9 pr-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition-colors focus:border-blue-300 focus:bg-white focus:ring-2 focus:ring-blue-100"
+                                className="h-full w-full rounded-lg border border-border bg-card pl-9 pr-3 text-sm text-text-title placeholder:text-text-body2 outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-primary"
                                 placeholder="Search templates · 'design'"
                                 aria-label="Search goal templates"
                             />
@@ -298,7 +298,7 @@ const GoalLibraryPopup = ({ onClose, onUseTemplate }: GoalLibraryPopupProps) => 
                                 <button
                                     type="button"
                                     onClick={() => setSearchQuery('')}
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-text-body2 hover:text-text-title cursor-pointer"
                                     aria-label="Clear search"
                                 >
                                     <X className="h-4 w-4" />
@@ -332,7 +332,7 @@ const GoalLibraryPopup = ({ onClose, onUseTemplate }: GoalLibraryPopupProps) => 
                 </div>
 
                 {/* Tabs */}
-                <div className="flex shrink-0 snap-x gap-3 overflow-x-auto border-b border-gray-100 px-4 sm:gap-6 sm:px-5">
+                <div className="flex shrink-0 snap-x gap-3 overflow-x-auto border-b border-border bg-card px-4 sm:gap-6 sm:px-5">
                     {tabs.map((tab) => {
                         const isActive = activeTab === tab.key;
                         return (
@@ -341,13 +341,13 @@ const GoalLibraryPopup = ({ onClose, onUseTemplate }: GoalLibraryPopupProps) => 
                                 type="button"
                                 aria-label={`Show ${tab.label} templates`}
                                 onClick={() => setActiveTab(tab.key)}
-                                className={`flex h-9 shrink-0 snap-start items-center gap-2 border-b-2 text-sm font-semibold transition sm:h-11 ${isActive
-                                    ? 'border-blue-500 text-blue-600'
-                                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                                className={`flex h-9 shrink-0 snap-start items-center gap-2 border-b-2 text-sm font-semibold transition cursor-pointer sm:h-11 ${isActive
+                                    ? 'border-primary text-primary'
+                                    : 'border-transparent text-text-body2 hover:text-text-title'
                                     }`}
                             >
                                 <span className="whitespace-nowrap">{tab.label}</span>
-                                <span className={`rounded-md px-2 py-0.5 text-xs ${isActive ? 'bg-blue-50 text-gray-500' : 'bg-gray-100 text-gray-500'}`}>
+                                <span className={`rounded-md px-2 py-0.5 text-xs ${isActive ? 'bg-primary/20 text-primary' : 'bg-slate-500/20 text-text-body2'}`}>
                                     {tab.count}
                                 </span>
                             </button>
@@ -356,15 +356,15 @@ const GoalLibraryPopup = ({ onClose, onUseTemplate }: GoalLibraryPopupProps) => 
                 </div>
 
                 {/* Template cards — on desktop only this section scrolls */}
-                <div className="px-4 py-4 sm:min-h-0 sm:flex-1 sm:overflow-y-auto sm:px-5">
+                <div className="px-4 py-4 sm:min-h-0 sm:flex-1 sm:overflow-y-auto sm:px-5 bg-card">
                     {renderTemplates()}
                 </div>
 
                 {/* Footer */}
-                <div className="flex flex-col gap-3 border-t border-gray-100 bg-blue-50/50 px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3 sm:flex-row sm:items-center sm:justify-between sm:px-5 sm:py-4">
-                    <Typography variant="caption" className="block break-words leading-relaxed text-gray-500">
+                <div className="flex flex-col gap-3 border-t border-border bg-card px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3 sm:flex-row sm:items-center sm:justify-between sm:px-5 sm:py-4">
+                    <Typography variant="caption" color="body2" className="block break-words leading-relaxed">
                         Can't find what you need?{' '}
-                        <button type="button" className="font-semibold text-blue-600 hover:text-blue-700" aria-label="Suggest a goal template">
+                        <button type="button" className="font-semibold text-primary hover:underline cursor-pointer" aria-label="Suggest a goal template">
                             Suggest a template <ArrowRight className="inline h-3.5 w-3.5" />
                         </button>
                     </Typography>
@@ -373,7 +373,7 @@ const GoalLibraryPopup = ({ onClose, onUseTemplate }: GoalLibraryPopupProps) => 
                         variant="contain"
                         disabled={selectedTemplates.length === 0 || activeTab === "recommended"}
                         bgColor="primary"
-                        className="h-10 w-full justify-center rounded-lg bg-blue-600 px-4 text-white hover:bg-blue-700 sm:h-9 sm:w-auto"
+                        className="h-10 w-full justify-center rounded-lg bg-primary hover:bg-primary/90 text-white disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer sm:h-9 sm:w-auto"
                         onClick={handleSubmitFooter}
                     >
                         Submit {selectedTemplates.length > 0 ? `(${selectedTemplates.length} Selected)` : ''}

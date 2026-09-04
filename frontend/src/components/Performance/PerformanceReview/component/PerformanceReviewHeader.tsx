@@ -2,9 +2,9 @@ import { Typography } from "../../../shared/atoms/Typography";
 
 const PerformanceReviewHeader = () => {
   return (
-    <div className="relative flex flex-col items-start justify-between gap-5 overflow-hidden rounded-xl bg-blue-500 p-4 text-white shadow-sm sm:rounded-2xl sm:p-6 md:flex-row md:gap-6 md:p-8">
+    <div className="relative flex flex-col items-start justify-between gap-5 overflow-hidden rounded-xl bg-primary p-4 text-white shadow-sm sm:rounded-2xl sm:p-6 md:flex-row md:gap-6 md:p-8">
       <div className="z-10 flex w-full min-w-0 flex-col">
-        <div className="mb-4 w-fit max-w-full rounded-md bg-white/20 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-blue-50 sm:text-xs">
+        <div className="mb-4 w-fit max-w-full rounded-md bg-white/20 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-white sm:text-xs">
           FINAL RATING · RELEASED 8 JUN 2026
         </div>
         <Typography
@@ -15,7 +15,7 @@ const PerformanceReviewHeader = () => {
         </Typography>
         <Typography
           variant="bodyMedium"
-          className="text-sm font-medium leading-relaxed text-blue-100 sm:text-base"
+          className="text-sm font-medium leading-relaxed text-white/90 sm:text-base"
         >
           Pallavi Mahar · Sr. Product Designer · Oxygen
         </Typography>
@@ -36,7 +36,7 @@ const PerformanceReviewHeader = () => {
         </Typography>
         <Typography
           variant="bodyMedium"
-          className="text-sm font-medium text-blue-100"
+          className="text-sm font-medium text-white/90"
         >
           4 / 5
         </Typography>

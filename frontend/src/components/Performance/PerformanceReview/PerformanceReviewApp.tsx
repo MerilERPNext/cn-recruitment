@@ -42,7 +42,7 @@ const PerformanceReviewApp = () => {
   const [comment, setComment] = useState("");
 
   return (
-    <div className="min-h-full overflow-y-auto bg-[#f8fafc] px-3 py-4 font-sans sm:p-6">
+    <div className="min-h-full overflow-y-auto bg-app px-3 py-4 font-sans sm:p-6">
       <div className="mx-auto flex w-full  flex-col gap-4 sm:gap-6">
           <PerformanceReviewHeader />
           <SectionBreakdownCard items={breakdownItems} />

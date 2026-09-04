@@ -179,10 +179,10 @@ export const ratingColorIndex: Record<Rating | "Unsatisfactory", number> = {
 };
 
 export const ratingTextColor: Record<Rating, string> = {
-  Outstanding: "text-emerald-700",
-  Exceeds: "text-emerald-700",
-  Meets: "text-blue-600",
-  Below: "text-amber-700",
+  Outstanding: "text-emerald-400",
+  Exceeds: "text-emerald-400",
+  Meets: "text-sky-400",
+  Below: "text-amber-400",
 };
 
 export const generatePastelColor = (index: number) => {

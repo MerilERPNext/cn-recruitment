@@ -128,15 +128,16 @@ export const GoalActionButtons: React.FC<GoalActionButtonsProps> = ({
               <Button
                 type="button"
                 variant="outline"
+                bgColor="warning"
                 size="sm"
                 disabled={disabled || isAnyLoading}
                 onClick={(e) => {
                   e?.stopPropagation?.();
                   setActionModalType("send_back");
                 }}
-                className="border-amber-300 text-amber-800 bg-amber-50/50 hover:bg-amber-100/80 active:bg-amber-200 text-xs px-2 sm:px-3 font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                className="text-xs px-2 sm:px-3 font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <Undo2 className="h-3.5 w-3.5 mr-1 shrink-0 text-amber-600" />
+                <Undo2 className="h-3.5 w-3.5 mr-1 shrink-0" />
                 <span>{sendBackTeamGoalLoading ? "Sending..." : "Send Back"}</span>
               </Button>
             )}
@@ -144,15 +145,16 @@ export const GoalActionButtons: React.FC<GoalActionButtonsProps> = ({
               <Button
                 type="button"
                 variant="outline"
+                bgColor="error"
                 size="sm"
                 disabled={disabled || isAnyLoading}
                 onClick={(e) => {
                   e?.stopPropagation?.();
                   setActionModalType("reject");
                 }}
-                className="border-red-300 text-red-700 bg-red-50/50 hover:bg-red-100/80 active:bg-red-200 text-xs px-2 sm:px-3 font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                className="text-xs px-2 sm:px-3 font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <X className="h-3.5 w-3.5 mr-1 shrink-0 text-red-600" />
+                <X className="h-3.5 w-3.5 mr-1 shrink-0" />
                 <span>{rejectGoalLoading ? "Rejecting..." : "Reject"}</span>
               </Button>
             )}
@@ -160,15 +162,16 @@ export const GoalActionButtons: React.FC<GoalActionButtonsProps> = ({
               <Button
                 type="button"
                 variant="contain"
+                bgColor="primary"
                 size="sm"
                 disabled={disabled || isAnyLoading}
                 onClick={(e) => {
                   e?.stopPropagation?.();
                   approveGoal();
                 }}
-                className="border border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-700 active:bg-emerald-800 shadow-xs text-xs px-2 sm:px-3 font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                className="text-xs px-2 sm:px-3 font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <Check className="h-3.5 w-3.5 mr-1 shrink-0 text-white" />
+                <Check className="h-3.5 w-3.5 mr-1 shrink-0" />
                 <span>{isPending ? "Approving..." : "Approve"}</span>
               </Button>
             )}
@@ -183,7 +186,7 @@ export const GoalActionButtons: React.FC<GoalActionButtonsProps> = ({
                   e.stopPropagation();
                   onViewGoal();
                 }}
-                className="inline-flex items-center justify-center h-8 w-8 rounded-lg border border-slate-200 bg-white text-slate-600 shadow-sm transition-all hover:border-slate-300 hover:bg-slate-100 hover:text-slate-900 active:scale-95"
+                className="inline-flex items-center justify-center h-8 w-8 rounded-lg border border-border bg-card text-text-body2 shadow-sm transition-all hover:border-border/80 hover:bg-slate-500/10 hover:text-text-title active:scale-95"
               >
                 <Eye className="h-4 w-4" />
               </button>
@@ -225,7 +228,7 @@ export const GoalActionButtons: React.FC<GoalActionButtonsProps> = ({
                   e.stopPropagation();
                   setActionModalType("send_back");
                 }}
-                className="inline-flex items-center justify-center h-8 w-8 rounded-lg border border-slate-200 bg-white text-slate-600 shadow-sm transition-all hover:border-amber-300 hover:bg-amber-50 hover:text-amber-700 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="inline-flex items-center justify-center h-8 w-8 rounded-lg border border-border bg-card text-text-body2 shadow-sm transition-all hover:border-amber-500/50 hover:bg-amber-500/10 hover:text-amber-500 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Undo2 className="h-4 w-4" />
               </button>
@@ -240,7 +243,7 @@ export const GoalActionButtons: React.FC<GoalActionButtonsProps> = ({
                 size="sm"
                 disabled={disabled || isAnyLoading}
                 onClick={() => setActionModalType("send_back")}
-                className="h-9 min-w-[92px] px-3 bg-white text-xs font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                className="h-9 min-w-[92px] px-3 text-xs font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {sendBackTeamGoalLoading ? "Sending..." : "Send back"}
               </Button>
@@ -252,7 +255,7 @@ export const GoalActionButtons: React.FC<GoalActionButtonsProps> = ({
                 size="sm"
                 disabled={disabled || isAnyLoading}
                 onClick={() => setActionModalType("reject")}
-                className="h-9 min-w-[70px] px-3 bg-white text-xs font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                className="h-9 min-w-[70px] px-3 text-xs font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {rejectGoalLoading ? "Rejecting..." : "Reject"}
               </Button>
@@ -260,7 +263,7 @@ export const GoalActionButtons: React.FC<GoalActionButtonsProps> = ({
             {canApprove && (
               <Button
                 variant="contain"
-                bgColor="success"
+                bgColor="primary"
                 size="sm"
                 disabled={disabled || isAnyLoading}
                 onClick={approveGoal}

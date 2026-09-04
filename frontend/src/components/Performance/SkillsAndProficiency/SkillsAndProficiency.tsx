@@ -127,7 +127,7 @@ const SkillsAndProficiency: React.FC = () => {
   ], [radarItems]);
 
   return (
-    <div className="min-h-full overflow-y-auto bg-surface p-3 font-brand text-text-title sm:p-2 lg:p-1">
+    <div className="min-h-full overflow-y-auto bg-app p-3 font-brand text-text-title sm:p-2 lg:p-1">
       <div className="mx-auto max-w-screen space-y-4 lg:space-y-5">
         {/* Loading state */}
         {isLoading && (
@@ -136,8 +136,8 @@ const SkillsAndProficiency: React.FC = () => {
 
         {/* Error state */}
         {isError && (
-          <div className="rounded-lg border border-error-200 bg-error-50 p-5 text-center shadow-sm">
-            <Typography variant="bodySmall" className="text-error-700">
+          <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-5 text-center shadow-sm">
+            <Typography variant="bodySmall" className="text-red-500">
               Unable to load skills overview. Please try again later.
             </Typography>
           </div>
@@ -145,10 +145,10 @@ const SkillsAndProficiency: React.FC = () => {
 
         {/* Header card — driven by API data */}
         {!isLoading && !isError && (
-          <div className="rounded-lg border border-primary-100 bg-white p-4 shadow-sm sm:p-5">
+          <div className="rounded-lg border border-border bg-card p-4 shadow-sm sm:p-5">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
               <div>
-                <Typography variant="h3" className="text-xl leading-tight text-text-title sm:text-2xl">
+                <Typography variant="h3" className="text-xl leading-tight text-text-title sm:text-2xl font-bold">
                   {overview?.total_skills ?? 0} tracked skills across {overview?.category_count ?? 0} categories
                 </Typography>
                 <Typography variant="bodySmall" className="mt-1 text-text-body2">
@@ -156,11 +156,11 @@ const SkillsAndProficiency: React.FC = () => {
                 </Typography>
               </div>
               <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:gap-3">
-                <button className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-gray-100 bg-white px-3 text-sm font-semibold text-gray-700 shadow-sm transition-colors hover:bg-primary-50 sm:px-4" aria-label="Export skills PDF">
+                <button className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-border bg-card px-3 text-sm font-semibold text-text-title shadow-sm transition-colors hover:bg-slate-500/10 sm:px-4 cursor-pointer" aria-label="Export skills PDF">
                   <Download className="h-4 w-4" />
                   Export PDF
                 </button>
-                <button className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-primary-500 px-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-primary-600 sm:px-4" aria-label="Add skill">
+                <button className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-primary px-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-primary/90 sm:px-4 cursor-pointer" aria-label="Add skill">
                   <Plus className="h-4 w-4" />
                   Add Skill
                 </button>
@@ -173,11 +173,11 @@ const SkillsAndProficiency: React.FC = () => {
         {!isLoading && !isError && metricCards.length > 0 && (
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
             {metricCards.map((metric) => (
-              <div key={metric.label} className="rounded-lg border border-primary-100 bg-white p-5 shadow-sm">
-                <Typography variant="caption" className="uppercase tracking-wide text-text-body2">
+              <div key={metric.label} className="rounded-lg border border-border bg-card p-5 shadow-sm">
+                <Typography variant="caption" className="uppercase tracking-wide text-text-body2 font-semibold">
                   {metric.label}
                 </Typography>
-                <div className={`mt-2 text-3xl font-bold ${PROJECT_TONES[metric.tone].badgeText}`}>{metric.value}</div>
+                <div className="mt-2 text-3xl font-bold text-primary">{metric.value}</div>
                 <Typography variant="caption" className="mt-1 block text-text-body2">
                   {metric.helper}
                 </Typography>
@@ -187,8 +187,8 @@ const SkillsAndProficiency: React.FC = () => {
         )}
 
         <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1fr)_300px]">
-          <div className="overflow-hidden rounded-lg border border-primary-100 bg-white shadow-sm">
-            <div className="flex flex-col gap-3 border-b border-primary-100 p-4 lg:flex-row lg:items-center">
+          <div className="overflow-hidden rounded-lg border border-border bg-card shadow-sm">
+            <div className="flex flex-col gap-3 border-b border-border p-4 lg:flex-row lg:items-center">
               <Typography variant="bodyMedium" className="shrink-0 whitespace-nowrap font-bold text-text-title">
                 My Skills
               </Typography>
@@ -197,8 +197,8 @@ const SkillsAndProficiency: React.FC = () => {
                   <div key={chip.key} className="shrink-0">
                     <Badge
                       label={`${chip.label} (${chip.count})`}
-                      backgroundColor={PROJECT_TONES.info.badgeBg}
-                      textColor={PROJECT_TONES.info.badgeText}
+                      backgroundColor="bg-blue-500/10 border border-blue-500/20"
+                      textColor="text-primary"
                       size="sm"
                     />
                   </div>
@@ -206,11 +206,11 @@ const SkillsAndProficiency: React.FC = () => {
               </div>
             </div>
 
-            <div className="divide-y divide-gray-50">
+            <div className="divide-y divide-border">
               {categories.map((category) => (
                 <div key={category.name}>
-                  <div className="flex items-center gap-3 bg-primary-50/60 px-4 py-3">
-                    <div className={`h-7 w-1.5 rounded-md ${PROJECT_TONES[category.tone].accent}`} />
+                  <div className="flex items-center gap-3 bg-slate-500/10 px-4 py-3 border-b border-border">
+                    <div className="h-7 w-1.5 rounded-md bg-primary" />
                     <Typography variant="bodySmall" className="font-bold text-text-title">
                       {category.name}
                     </Typography>
@@ -220,15 +220,15 @@ const SkillsAndProficiency: React.FC = () => {
                   </div>
 
                   {category.skills.map((skill) => (
-                    <div key={skill.name} className="grid gap-3 px-4 py-4 lg:grid-cols-[minmax(190px,1fr)_230px_72px_96px_20px_96px_32px] lg:items-center lg:gap-4">
+                    <div key={skill.name} className="grid gap-3 px-4 py-4 lg:grid-cols-[minmax(190px,1fr)_230px_72px_96px_20px_96px_32px] lg:items-center lg:gap-4 hover:bg-slate-500/5 transition-colors">
                       <div className="min-w-0">
                         <div className="flex flex-wrap items-center gap-2">
                           <Typography variant="bodySmall" className="font-semibold text-text-title">
                             {skill.name}
                           </Typography>
-                          {skill.growth && <TrendingUp className="h-3.5 w-3.5 text-success-600" />}
+                          {skill.growth && <TrendingUp className="h-3.5 w-3.5 text-emerald-500" />}
                           {skill.focus && (
-                            <Badge label="FY26 focus" backgroundColor="bg-warning-50 border border-warning-100" textColor="text-warning-800" size="sm" />
+                            <Badge label="FY26 focus" backgroundColor="bg-amber-500/10 border border-amber-500/30" textColor="text-amber-500" size="sm" />
                           )}
                         </div>
                         <Typography variant="caption" className="mt-1 block text-text-body2">
@@ -244,8 +244,8 @@ const SkillsAndProficiency: React.FC = () => {
                           const levelClass = isCurrent
                             ? `${getLevelTone(level)} text-white`
                             : isTargetOnly
-                              ? "border border-dashed border-primary-500 bg-white text-primary-700"
-                              : "bg-gray-100 text-gray-500";
+                              ? "border border-dashed border-primary bg-card text-primary"
+                              : "bg-slate-500/10 text-text-body2";
 
                           return (
                             <div
@@ -262,33 +262,25 @@ const SkillsAndProficiency: React.FC = () => {
                         <span className="text-xs font-medium text-text-body2 lg:hidden">Gap</span>
                         <Badge
                           label={skill.delta}
-                          backgroundColor={skill.delta === "Met" ? "bg-success-50 border border-success-100" : "bg-warning-50 border border-warning-100"}
-                          textColor={skill.delta === "Met" ? "text-success-800" : "text-warning-800"}
+                          backgroundColor={skill.delta === "Met" ? "bg-emerald-500/10 border border-emerald-500/30" : "bg-amber-500/10 border border-amber-500/30"}
+                          textColor={skill.delta === "Met" ? "text-emerald-500" : "text-amber-500"}
                           size="sm"
                         />
                       </div>
 
                       <div className="grid grid-cols-[minmax(0,1fr)_20px_minmax(0,1fr)_32px] items-center gap-2 lg:contents">
-                        <div
-                          className={`rounded-md px-2 py-1.5 text-center text-[11px] font-semibold lg:min-w-[96px] lg:px-3 ${
-                            PROJECT_TONES[skill.current >= 5 ? "success" : skill.current >= 4 ? "primary" : "info"].soft
-                          }`}
-                        >
+                        <div className="rounded-md px-2 py-1.5 text-center text-[11px] font-semibold lg:min-w-[96px] lg:px-3 bg-blue-500/10 text-primary border border-blue-500/20">
                           L{skill.current} · {getLevelLabel(skill.current)}
                         </div>
                         <span className="text-center text-text-body2 lg:block">→</span>
-                        <div
-                          className={`rounded-md px-2 py-1.5 text-center text-[11px] font-semibold lg:min-w-[96px] lg:px-3 ${
-                            PROJECT_TONES[skill.target >= 5 ? "success" : "primary"].soft
-                          }`}
-                        >
+                        <div className="rounded-md px-2 py-1.5 text-center text-[11px] font-semibold lg:min-w-[96px] lg:px-3 bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
                           L{skill.target} · {getLevelLabel(skill.target)}
                         </div>
 
                         <button
                           aria-label={`Edit ${skill.name}`}
                           type="button"
-                          className="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-100 text-gray-500 transition-colors hover:border-primary-200 hover:bg-primary-50 hover:text-primary-700"
+                          className="flex h-8 w-8 items-center justify-center rounded-lg border border-border text-text-body2 transition-colors hover:border-primary hover:bg-primary/10 hover:text-primary cursor-pointer"
                           onClick={() => setSelectedSkill(skill)}
                         >
                           <ChevronRight className="h-4 w-4" />
@@ -300,10 +292,10 @@ const SkillsAndProficiency: React.FC = () => {
               ))}
             </div>
 
-            <div className="border-t border-gray-50 p-4">
+            <div className="border-t border-border p-4">
               <button
                 type="button"
-                className="flex h-10 w-full items-center justify-center gap-2 rounded-lg border border-dashed border-gray-200 bg-white text-sm font-medium text-primary-700 transition-colors hover:border-primary-200 hover:bg-primary-50"
+                className="flex h-10 w-full items-center justify-center gap-2 rounded-lg border border-dashed border-border bg-card text-sm font-medium text-primary transition-colors hover:border-primary hover:bg-primary/10 cursor-pointer"
                 aria-label="Add a skill from the library"
               >
                 <Plus className="h-4 w-4" />
@@ -313,7 +305,7 @@ const SkillsAndProficiency: React.FC = () => {
           </div>
 
           <div className="space-y-4 lg:space-y-5">
-            <div className="rounded-lg border border-primary-100 bg-white p-4 shadow-sm sm:p-5">
+            <div className="rounded-lg border border-border bg-card p-4 shadow-sm sm:p-5">
               <Typography variant="bodyMedium" className="font-bold text-text-title">
                 Proficiency by category
               </Typography>
@@ -336,15 +328,15 @@ const SkillsAndProficiency: React.FC = () => {
               )}
             </div>
 
-            <div className="rounded-lg border border-primary-100 bg-white p-4 shadow-sm sm:p-5">
+            <div className="rounded-lg border border-border bg-card p-4 shadow-sm sm:p-5">
               <Typography variant="bodyMedium" className="font-bold text-text-title">
                 Focus areas
               </Typography>
               <div className="mt-4 space-y-3">
                 {focusAreas.length > 0 ? (
                   focusAreas.map((area) => (
-                    <div key={area.skill} className="flex items-center gap-3 rounded-lg border border-warning-200 bg-warning-50 p-3">
-                      <SquareCheck className="h-4 w-4 shrink-0 text-warning-600" />
+                    <div key={area.skill} className="flex items-center gap-3 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3">
+                      <SquareCheck className="h-4 w-4 shrink-0 text-amber-500" />
                       <div>
                         <Typography variant="bodySmall" className="font-semibold text-text-title">
                           {area.skill}
@@ -363,11 +355,11 @@ const SkillsAndProficiency: React.FC = () => {
               </div>
             </div>
 
-            <div className="rounded-lg border border-secondary-100 bg-secondary-50 p-4 sm:p-5">
-              <Typography variant="bodyMedium" className="font-bold text-secondary-800">
+            <div className="rounded-lg border border-primary/20 bg-primary/10 p-4 sm:p-5">
+              <Typography variant="bodyMedium" className="font-bold text-primary">
                 Independent track
               </Typography>
-              <Typography variant="caption" className="mt-2 block leading-5 text-gray-700">
+              <Typography variant="caption" className="mt-2 block leading-5 text-text-body2">
                 Skills are tracked separately from Goals and Competencies during quarterly check-ins. They feed development planning, not the final rating.
               </Typography>
             </div>

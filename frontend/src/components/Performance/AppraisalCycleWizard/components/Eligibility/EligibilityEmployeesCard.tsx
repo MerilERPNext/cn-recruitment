@@ -17,18 +17,18 @@ const EligibilityEmployeesCard = ({
   employees,
 }: EligibilityEmployeesCardProps) => {
   return (
-    <section className="rounded-lg border border-gray-200 bg-white p-3 shadow-sm sm:p-5">
+    <section className="rounded-lg border border-border bg-card p-3 shadow-sm sm:p-5">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <Typography variant="h3" className="text-base font-bold text-gray-900">
+        <Typography variant="h3" className="text-base font-bold text-text-title">
           Sample matching employees
         </Typography>
-        <button className="self-start text-sm font-bold text-blue-600 sm:self-auto hover:underline">
+        <button className="self-start text-sm font-bold text-primary sm:self-auto hover:underline cursor-pointer">
           View all 2,140 →
         </button>
       </div>
-      <div className="mt-4 overflow-x-auto rounded-lg border border-gray-100 shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
+      <div className="mt-4 overflow-x-auto rounded-lg border border-border">
         <table className="w-full text-left text-sm min-w-[650px] border-collapse">
-          <thead className="bg-gray-50 border-b border-gray-100 text-[11px] text-gray-500 uppercase tracking-widest font-bold">
+          <thead className="bg-slate-500/10 border-b border-border text-[11px] text-text-body2 uppercase tracking-widest font-bold">
             <tr>
               <th className="px-4 py-3.5 font-bold whitespace-nowrap">
                 Employee
@@ -45,32 +45,32 @@ const EligibilityEmployeesCard = ({
               </th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100 bg-white">
+          <tbody className="divide-y divide-border bg-card">
             {employees.map((employee) => (
               <tr
                 key={employee.name}
-                className="hover:bg-gray-50/50 transition-colors"
+                className="hover:bg-slate-500/10 transition-colors"
               >
                 <td className="px-4 py-3.5">
                   <div className="flex items-center gap-3">
-                    <span className="flex h-7 w-7 items-center justify-center rounded-full bg-blue-50 text-[10px] font-bold text-blue-600">
+                    <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/20 text-[10px] font-bold text-primary">
                       {employee.initials}
                     </span>
-                    <span className="font-semibold text-gray-800 whitespace-nowrap">
+                    <span className="font-semibold text-text-title whitespace-nowrap">
                       {employee.name}
                     </span>
                   </div>
                 </td>
-                <td className="px-4 py-3.5 text-gray-600 whitespace-nowrap">
+                <td className="px-4 py-3.5 text-text-body2 whitespace-nowrap">
                   {employee.department}
                 </td>
-                <td className="px-4 py-3.5 text-gray-600 whitespace-nowrap">
+                <td className="px-4 py-3.5 text-text-body2 whitespace-nowrap">
                   {employee.grade}
                 </td>
-                <td className="px-4 py-3.5 text-gray-600 whitespace-nowrap">
+                <td className="px-4 py-3.5 text-text-body2 whitespace-nowrap">
                   {employee.manager}
                 </td>
-                <td className="px-4 py-3.5 text-gray-600 whitespace-nowrap">
+                <td className="px-4 py-3.5 text-text-body2 whitespace-nowrap">
                   {employee.tenure}
                 </td>
               </tr>

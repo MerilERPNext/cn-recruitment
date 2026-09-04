@@ -17,29 +17,29 @@ const STATS = [
     icon: (
       <div className="w-2.5 h-2.5 bg-blue-500 transform rotate-45 rounded-sm" />
     ),
-    iconBg: "bg-blue-50",
+    iconBg: "bg-blue-500/10",
     sub: null,
   },
   {
     label: "AVG FEELING SCORE",
     value: "4.0",
-    icon: <TrendingUp className="w-4 h-4 text-green-600" />,
-    iconBg: "bg-green-50",
-    sub: <span className="text-gray-500">↓ 0.3 from last week</span>,
+    icon: <TrendingUp className="w-4 h-4 text-emerald-500" />,
+    iconBg: "bg-emerald-500/10",
+    sub: <span className="text-text-body2">↓ 0.3 from last week</span>,
   },
   {
     label: "ACTIVE BLOCKERS",
     value: "4",
-    icon: <AlertCircle className="w-4 h-4 text-orange-600" />,
-    iconBg: "bg-orange-50",
-    sub: <span className="text-gray-500">from 3 reportees</span>,
+    icon: <AlertCircle className="w-4 h-4 text-amber-500" />,
+    iconBg: "bg-amber-500/10",
+    sub: <span className="text-text-body2">from 3 reportees</span>,
   },
   {
     label: "TEAM AVG HOURS",
     value: "40.8h",
-    icon: <Clock className="w-4 h-4 text-purple-600" />,
-    iconBg: "bg-purple-50",
-    sub: <span className="text-gray-500">Aman, Vikram missing</span>,
+    icon: <Clock className="w-4 h-4 text-purple-500" />,
+    iconBg: "bg-purple-500/10",
+    sub: <span className="text-text-body2">Aman, Vikram missing</span>,
   },
 ];
 
@@ -49,28 +49,29 @@ const TeamCheckIns: React.FC = () => {
 
   return (
     <main
-      className={`min-h-full overflow-y-auto overflow-x-hidden bg-[#f8fafc] font-sans ${isMobile ? "p-3 sm:p-4" : "p-1"}`}
+      className={`min-h-full overflow-y-auto overflow-x-hidden bg-app font-sans ${isMobile ? "p-3 sm:p-4" : "p-1"}`}
     >
       <div className="mx-auto w-full max-w-screen space-y-5">
         <div
           className={`flex ${isCompact ? "flex-col gap-3" : "items-end justify-between"} mb-6`}
         >
           <div className="space-y-1 min-w-0">
-            <h1 className="text-xl font-bold text-gray-900 tracking-tight">
+            <Typography variant="h3" className="font-bold tracking-tight">
               Weekly Check-ins
-            </h1>
+            </Typography>
             <Typography
               variant="bodySmall"
-              className="text-gray-500 font-medium text-xs sm:text-sm leading-snug break-words"
+              color="body2"
+              className="font-medium text-xs sm:text-sm leading-snug break-words"
             >
               Week of 11 May 2026 · 15-minute employee · 5-minute manager cadence
             </Typography>
           </div>
           <div className="flex items-center gap-2 shrink-0">
-            <button className="flex items-center gap-1.5 px-3 py-1.5 border border-gray-200 rounded-md text-[11px] font-semibold text-gray-700 hover:bg-gray-50 bg-white transition-colors" aria-label="Previous week">
+            <button className="flex items-center gap-1.5 px-3 py-1.5 border border-border rounded-md text-[11px] font-semibold text-text-title hover:bg-slate-500/10 bg-card transition-colors" aria-label="Previous week">
               <ChevronLeft className="w-3.5 h-3.5" /> Prev week
             </button>
-            <button className="flex items-center px-4 py-1.5 border border-gray-200 rounded-md text-[11px] font-semibold text-gray-700 hover:bg-gray-50 bg-white transition-colors" aria-label="Go to this week">
+            <button className="flex items-center px-4 py-1.5 border border-border rounded-md text-[11px] font-semibold text-text-title hover:bg-slate-500/10 bg-card transition-colors" aria-label="Go to this week">
               This week
             </button>
           </div>
@@ -83,7 +84,7 @@ const TeamCheckIns: React.FC = () => {
           {STATS.map((stat, idx) => (
             <div
               key={idx}
-              className="bg-white rounded-xl border border-gray-200 p-3 sm:p-4 shadow-[0_1px_3px_rgba(0,0,0,0.02)] flex items-start gap-2.5 sm:gap-3 min-w-0"
+              className="bg-card rounded-xl border border-border p-3 sm:p-4 shadow-[0_1px_3px_rgba(0,0,0,0.02)] flex items-start gap-2.5 sm:gap-3 min-w-0"
             >
               <div
                 className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center shrink-0 ${stat.iconBg}`}
@@ -91,16 +92,18 @@ const TeamCheckIns: React.FC = () => {
                 {stat.icon}
               </div>
               <div className="min-w-0 flex-1">
-                <span className="text-gray-400 uppercase tracking-wider font-bold text-[9px] block mb-0.5 leading-tight break-words">
+                <Typography variant="caption" color="body2" className="uppercase tracking-wider font-bold text-[9px] block mb-0.5 leading-tight break-words">
                   {stat.label}
-                </span>
+                </Typography>
                 <div className="flex items-baseline gap-2">
-                  <span className="text-gray-900 font-bold text-base sm:text-lg leading-tight">
+                  <Typography variant="body" className="font-bold text-base sm:text-lg leading-tight">
                     {stat.value}
-                  </span>
+                  </Typography>
                 </div>
                 {stat.sub && (
-                  <div className="text-[10px] sm:text-[11px] mt-0.5 leading-tight text-gray-500">{stat.sub}</div>
+                  <Typography variant="caption" color="body2" className="text-[10px] sm:text-[11px] mt-0.5 leading-tight block">
+                    {stat.sub}
+                  </Typography>
                 )}
               </div>
             </div>

@@ -67,23 +67,23 @@ export const TeamTrackingView = ({
   }, []);
 
   return (
-    <div className={`flex flex-col h-full bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden ${className}`}>
+    <div className={`flex flex-col h-full bg-card rounded-xl shadow-sm border border-border overflow-hidden ${className}`}>
       {showHeader && (
-        <div className="flex items-center px-3.5 sm:px-6 py-3 sm:py-4 border-b border-gray-100 bg-gray-50/50 shrink-0">
+        <div className="flex items-center px-3.5 sm:px-6 py-3 sm:py-4 border-b border-border bg-card shrink-0">
           {viewState !== "employees" && (
             <button
               onClick={() => {
                 setViewState("employees");
                 setSelectedEmployeeId(null);
               }}
-              className="mr-2 sm:mr-3 p-1.5 rounded-lg hover:bg-gray-200 text-gray-600 transition-colors flex items-center justify-center"
+              className="mr-2 sm:mr-3 p-1.5 rounded-lg hover:bg-slate-500/10 text-text-body2 hover:text-text-title transition-colors flex items-center justify-center"
               aria-label="Back to employee list"
             >
               <ArrowLeft className="w-5 h-5" />
             </button>
           )}
           <div>
-            <Typography variant="h4" className="font-semibold text-gray-900 text-base sm:text-lg">
+            <Typography variant="h4" className="font-semibold text-base sm:text-lg">
               {viewState === "employees"
                 ? (title || "Team Tracking")
                 : `Goals for ${selectedEmployee?.label || "Employee"}`}
@@ -92,22 +92,22 @@ export const TeamTrackingView = ({
         </div>
       )}
 
-      <div className="flex-1 overflow-y-auto p-3 sm:p-6 bg-[#f8fafc]">
+      <div className="flex-1 overflow-y-auto p-3 sm:p-6 bg-app">
         {viewState === "employees" ? (
           <div className="space-y-4 max-w-3xl mx-auto">
             <div className="relative">
-              <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+              <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-text-body2 pointer-events-none" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search employee by name or ID..."
-                className="w-full pl-10 pr-10 py-2.5 bg-white border border-gray-200 rounded-xl text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all shadow-xs"
+                className="w-full pl-10 pr-10 py-2.5 bg-card border border-border rounded-xl text-sm text-text-title placeholder-text-body2 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all shadow-xs"
               />
               {searchQuery && (
                 <button
                   onClick={() => setSearchQuery("")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1 rounded-md hover:bg-gray-100 transition-colors"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-text-body2 hover:text-text-title p-1 rounded-md hover:bg-slate-500/10 transition-colors"
                   title="Clear search"
                 >
                   <X className="w-4 h-4" />
@@ -123,18 +123,18 @@ export const TeamTrackingView = ({
                 onRetry={refetchEmployees}
               />
             ) : filteredEmployees.length === 0 ? (
-              <div className="text-center py-12 bg-white rounded-xl border border-gray-100 p-6 shadow-xs">
-                <UserX className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                <Typography variant="h3" className="text-gray-700 font-medium mb-1 text-base">
+              <div className="text-center py-12 bg-card rounded-xl border border-border p-6 shadow-xs">
+                <UserX className="w-12 h-12 text-text-body2 mx-auto mb-3" />
+                <Typography variant="h3" className="font-medium mb-1 text-base">
                   No employees found
                 </Typography>
-                <Typography variant="body" className="text-gray-400 text-sm">
+                <Typography variant="body" color="body2" className="text-sm">
                   No employee matching "{searchQuery}" was found.
                 </Typography>
                 <Button
                   variant="outline"
                   onClick={() => setSearchQuery("")}
-                  className="mt-4 text-xs text-blue-600 border-blue-200 hover:bg-blue-50"
+                  className="mt-4 text-xs text-primary border-primary hover:bg-primary/10"
                 >
                   Clear Search
                 </Button>

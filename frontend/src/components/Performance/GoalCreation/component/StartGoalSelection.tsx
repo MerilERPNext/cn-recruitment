@@ -86,9 +86,9 @@ const StartGoalSelection = ({ onContinue }: StartGoalSelectionProps) => {
           <>
             {canStartBlank && (
               <TemplateCard
-                containerClass={`bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden flex flex-col ${!canUseLibrary ? "lg:col-span-2" : ""}`}
+                containerClass={`bg-card rounded-xl border border-border shadow-sm overflow-hidden flex flex-col ${!canUseLibrary ? "lg:col-span-2" : ""}`}
                 icon={<Plus className="w-6 h-6" />}
-                iconClass="w-12 h-12 rounded-xl bg-blue-50 text-blue-500 flex items-center justify-center shrink-0"
+                iconClass="w-12 h-12 rounded-xl bg-primary/20 text-primary flex items-center justify-center shrink-0"
                 title="Start from blank"
                 description="Write your own OKR from scratch — full creative control."
                 onUse={() => {
@@ -96,10 +96,10 @@ const StartGoalSelection = ({ onContinue }: StartGoalSelectionProps) => {
                   onContinue?.();
                 }}
                 ariaLabel="Use start from blank"
-                buttonClass="bg-blue-500 hover:bg-blue-600 text-white"
+                buttonClass="bg-primary hover:bg-primary/90 text-white"
               >
-                <div className="mt-4 rounded-xl border border-blue-100 bg-blue-50/60 p-4">
-                  <Typography className="text-xs sm:text-sm leading-relaxed text-slate-700 font-normal">
+                <div className="mt-4 rounded-xl border border-primary/30 bg-primary/10 p-4">
+                  <Typography className="text-xs sm:text-sm leading-relaxed text-text-title font-normal">
                     Build a completely customized OKR from scratch tailored to
                     your role. Set your own Objectives, Key Results, metrics,
                     and weightages with total flexibility.
@@ -110,29 +110,29 @@ const StartGoalSelection = ({ onContinue }: StartGoalSelectionProps) => {
 
             {canUseLibrary && (
               <TemplateCard
-                containerClass={`bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden flex flex-col ${!canStartBlank ? "lg:col-span-2" : ""}`}
+                containerClass={`bg-card rounded-xl border border-border shadow-sm overflow-hidden flex flex-col ${!canStartBlank ? "lg:col-span-2" : ""}`}
                 icon={<FileText className="w-6 h-6" />}
-                iconClass="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-500 flex items-center justify-center shrink-0"
+                iconClass="w-12 h-12 rounded-xl bg-purple-500/20 text-purple-400 flex items-center justify-center shrink-0"
                 title="From Goal Library"
                 description="Browse 500+ pre-built OKR templates by role, department, and grade."
                 onUse={() => setIsGoalLibraryOpen(true)}
                 ariaLabel="Use goal library"
-                buttonClass="bg-indigo-500 hover:bg-indigo-600 text-white"
+                buttonClass="bg-purple-600 hover:bg-purple-700 text-white"
               >
                 <div className="mt-4 flex flex-wrap gap-2">
-                  <span className="bg-indigo-50 text-indigo-600 text-xs px-2.5 py-1 rounded-md">
+                  <span className="bg-purple-500/20 text-purple-400 text-xs px-2.5 py-1 rounded-md">
                     Recommended for you
                   </span>
-                  <span className="bg-indigo-50 text-indigo-600 text-xs px-2.5 py-1 rounded-md">
+                  <span className="bg-purple-500/20 text-purple-400 text-xs px-2.5 py-1 rounded-md">
                     Org templates
                   </span>
-                  <span className="bg-indigo-50 text-indigo-600 text-xs px-2.5 py-1 rounded-md">
+                  <span className="bg-purple-500/20 text-purple-400 text-xs px-2.5 py-1 rounded-md">
                     Department
                   </span>
-                  <span className="bg-indigo-50 text-indigo-600 text-xs px-2.5 py-1 rounded-md">
+                  <span className="bg-purple-500/20 text-purple-400 text-xs px-2.5 py-1 rounded-md">
                     Designation
                   </span>
-                  <span className="bg-indigo-50 text-indigo-600 text-xs px-2.5 py-1 rounded-md">
+                  <span className="bg-purple-500/20 text-purple-400 text-xs px-2.5 py-1 rounded-md">
                     Role-based
                   </span>
                 </div>
@@ -143,21 +143,21 @@ const StartGoalSelection = ({ onContinue }: StartGoalSelectionProps) => {
                     {canCascade && (
                         <TemplateCard
                             containerClass={`overflow-hidden rounded-2xl border ${teamGoalsLoading
-                                ? 'border-slate-200 bg-white'
+                                ? 'border-border bg-card'
                                 : teamGoalerr
-                                    ? 'border-red-200 bg-red-50/20'
+                                    ? 'border-red-500/30 bg-red-500/10'
                                     : (teamGoals?.data?.goals?.length ?? 0) > 0
-                                        ? 'border-slate-200 bg-white'
-                                        : 'border-gray-200 bg-gray-50/60 opacity-80'
+                                        ? 'border-border bg-card'
+                                        : 'border-border bg-card opacity-80'
                                 } shadow-sm flex flex-col ${!canUseAI ? 'lg:col-span-2' : ''}`}
                             icon={<GitMerge className="h-4 w-4" />}
                             iconClass={`rounded-xl ${teamGoalsLoading
-                                ? 'bg-indigo-50 text-indigo-500 animate-pulse'
+                                ? 'bg-primary/20 text-primary animate-pulse'
                                 : teamGoalerr
-                                    ? 'bg-red-100 text-red-500'
+                                    ? 'bg-red-500/20 text-red-500'
                                     : (teamGoals?.data?.goals?.length ?? 0) > 0
-                                        ? 'bg-indigo-50 text-indigo-500'
-                                        : 'bg-gray-200 text-gray-400'
+                                        ? 'bg-primary/20 text-primary'
+                                        : 'bg-slate-500/30 text-text-body2'
                                 } p-2 flex items-center justify-center shrink-0`}
                             title="Cascade from Manager"
                             description={
@@ -188,44 +188,44 @@ const StartGoalSelection = ({ onContinue }: StartGoalSelectionProps) => {
                                             : () => toast('No manager goals available to cascade.')
                             }
                             buttonClass={
-                              teamGoalsLoading ? 'bg-gray-200 text-gray-400 cursor-not-allowed pointer-events-none'
+                              teamGoalsLoading ? 'bg-slate-500/30 text-text-title border border-border cursor-not-allowed pointer-events-none'
                                     : (teamGoals?.data?.goals?.length ?? 0) > 0
-                                        ? 'bg-indigo-500 hover:bg-indigo-600 text-white'
-                                        : 'bg-gray-200 text-gray-400 cursor-not-allowed pointer-events-none'
+                                        ? 'bg-primary hover:bg-primary/90 text-white cursor-pointer'
+                                        : 'bg-slate-500/30 text-text-title border border-border cursor-not-allowed pointer-events-none'
                             }
                             buttonText={'Use this'}
                         >
                             {teamGoalsLoading ? (
                                 <div className="mt-4 space-y-2 animate-pulse">
-                                    <div className="h-8 w-full rounded-lg bg-slate-100"></div>
-                                    <div className="h-8 w-full rounded-lg bg-slate-100"></div>
+                                    <div className="h-8 w-full rounded-lg bg-slate-500/20"></div>
+                                    <div className="h-8 w-full rounded-lg bg-slate-500/20"></div>
                                 </div>
                             ) : teamGoalerr ? (
-                                <div className="mt-4 flex flex-col items-center justify-center p-3.5 rounded-xl border border-dashed border-red-200 bg-red-50/60 text-center">
-                                    <div className="flex items-center gap-1.5 text-red-600 mb-1">
+                                <div className="mt-4 flex flex-col items-center justify-center p-3.5 rounded-xl border border-dashed border-red-500/30 bg-red-500/10 text-center">
+                                    <div className="flex items-center gap-1.5 text-red-500 mb-1">
                                         <AlertCircle className="w-4 h-4" />
                                         <Typography className="text-xs font-semibold">Failed to load manager goals</Typography>
                                     </div>
-                                    <Typography className="text-[11px] text-slate-500 mb-2">
+                                    <Typography className="text-[11px] text-text-body2 mb-2">
                                         {teamGoalerr?.message || 'Something went wrong while fetching manager goals.'}
                                     </Typography>
                                     <button
                                         type="button"
                                         onClick={() => refetchteamgoals()}
-                                        className="text-xs font-semibold text-blue-600 hover:text-blue-700 underline inline-flex items-center gap-1"
+                                        className="text-xs font-semibold text-primary hover:underline inline-flex items-center gap-1 cursor-pointer"
                                     >
                                         <RefreshCw className="w-3 h-3" /> Try Again
                                     </button>
                                 </div>
                             ) : (teamGoals?.data?.goals?.length ?? 0) > 0 ? (
-                                <div className="mt-3 rounded-xl border border-slate-200/80 bg-slate-50/50 p-2 space-y-1.5">
+                                <div className="mt-3 rounded-xl border border-border bg-slate-500/10 p-2 space-y-1.5">
                                                 {teamGoals?.data?.goals?.slice(0, 3).map((goal: CascadeGoal, index: number) => (
-                                        <div key={goal.goal || index} className="flex items-start justify-between gap-3 rounded-lg bg-white border border-slate-100 px-3 py-2 shadow-2xs">
-                                            <span className="min-w-0 text-[12px] text-slate-700 font-medium truncate">
+                                        <div key={goal.goal || index} className="flex items-start justify-between gap-3 rounded-lg bg-card border border-border px-3 py-2 shadow-2xs">
+                                            <span className="min-w-0 text-[12px] text-text-title font-medium truncate">
                                                 {goal.title}
                                             </span>
                                             {goal.weightage !== undefined && (
-                                                <span className="shrink-0 text-[12px] font-semibold text-indigo-600">
+                                                <span className="shrink-0 text-[12px] font-semibold text-primary">
                                                     {goal.weightage}%
                                                 </span>
                                             )}
@@ -233,8 +233,8 @@ const StartGoalSelection = ({ onContinue }: StartGoalSelectionProps) => {
                                     ))}
                                 </div>
                             ) : (
-                                <div className="mt-4 rounded-xl border border-dashed border-gray-300 bg-white/70 p-3.5 text-center">
-                                    <Typography className="text-xs text-gray-500 font-medium">
+                                <div className="mt-4 rounded-xl border border-dashed border-border bg-card p-3.5 text-center">
+                                    <Typography className="text-xs text-text-body2 font-medium">
                                         🚫 No active manager goals available to cascade.
                                     </Typography>
                                 </div>
@@ -243,16 +243,17 @@ const StartGoalSelection = ({ onContinue }: StartGoalSelectionProps) => {
                     )}
                 </>
         ) : (
-          <div className="col-span-full bg-white rounded-2xl border border-gray-200 shadow-sm p-8 sm:p-10 text-center flex flex-col items-center justify-center min-h-[240px]">
-            <div className="w-14 h-14 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center mb-4 border border-amber-100/80 shadow-xs">
+          <div className="col-span-full bg-card rounded-2xl border border-border shadow-sm p-8 sm:p-10 text-center flex flex-col items-center justify-center min-h-[240px]">
+            <div className="w-14 h-14 rounded-2xl bg-amber-500/10 text-amber-500 flex items-center justify-center mb-4 border border-amber-500/30 shadow-xs">
               <FolderX className="w-7 h-7" />
             </div>
-            <Typography variant="h4" className="font-bold text-gray-900 mb-1.5">
+            <Typography variant="h4" className="font-bold text-text-title mb-1.5">
               You don't have any template
             </Typography>
             <Typography
               variant="bodyMedium"
-              className="text-gray-500 max-w-md mx-auto text-sm leading-relaxed"
+              color="body2"
+              className="max-w-md mx-auto text-sm leading-relaxed"
             >
               You do not have permission to access any goal creation templates
               or options. Please contact your manager or HR administrator to
@@ -262,21 +263,22 @@ const StartGoalSelection = ({ onContinue }: StartGoalSelectionProps) => {
         )}
       </div>
       {canBulkImport && (
-        <div className="bg-white border border-gray-200 rounded-xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 shadow-sm mb-8 lg:mb-12">
+        <div className="bg-card border border-border rounded-xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 shadow-sm mb-8 lg:mb-12">
           <div className="flex w-full min-w-0 items-start sm:items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-green-50 text-green-500 flex items-center justify-center shrink-0">
+            <div className="w-12 h-12 rounded-xl bg-emerald-500/20 text-emerald-500 flex items-center justify-center shrink-0">
               <Inbox className="w-6 h-6" />
             </div>
             <div className="min-w-0">
               <Typography
                 variant="subheading"
-                className="font-semibold text-gray-900"
+                className="font-semibold text-text-title"
               >
                 Need to create many goals at once?
               </Typography>
               <Typography
                 variant="bodyMedium"
-                className="text-gray-500 text-sm"
+                color="body2"
+                className="text-sm"
               >
                 Bulk-import via CSV/XLSX — up to 5,000 rows with row-level
                 validation. Suitable for managers cascading to a team.
@@ -286,7 +288,7 @@ const StartGoalSelection = ({ onContinue }: StartGoalSelectionProps) => {
           <Button
             variant="outline"
             bgColor="text"
-            className="w-full sm:w-auto justify-center whitespace-nowrap bg-white"
+            className="w-full sm:w-auto justify-center whitespace-nowrap bg-card border-border text-text-title hover:bg-slate-500/10 cursor-pointer"
             onClick={() =>
               navigate("/webapp/performance-app/my-goals/bulk-import")
             }

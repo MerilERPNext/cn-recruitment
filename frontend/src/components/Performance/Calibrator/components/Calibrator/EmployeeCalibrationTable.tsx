@@ -29,75 +29,75 @@ const EmployeeCalibrationTable = ({
   ratingTextColor,
 }: EmployeeCalibrationTableProps) => {
   return (
-    <section className="overflow-hidden rounded-md border border-gray-200 bg-white shadow-sm">
+    <section className="overflow-hidden rounded-md border border-border bg-card shadow-sm">
       <div className="overflow-x-auto">
         <table className="min-w-[1320px] border-collapse text-left">
-          <thead className="sticky top-0 z-20 bg-[#f3f7ff] text-xs font-bold uppercase tracking-wider text-gray-500">
+          <thead className="sticky top-0 z-20 bg-slate-500/10 text-xs font-bold uppercase tracking-wider text-text-body2">
             <tr>
-              <th rowSpan={2} className="w-[230px] border-b border-r border-gray-200 px-4 py-4">
+              <th rowSpan={2} className="w-[230px] border-b border-r border-border px-4 py-4">
                 Employee
               </th>
-              <th rowSpan={2} className="w-[130px] border-b border-r border-gray-200 px-4 py-4">
+              <th rowSpan={2} className="w-[130px] border-b border-r border-border px-4 py-4">
                 Manager
               </th>
-              <th colSpan={3} className="border-b border-r border-gray-200 bg-[#f1f6ff] px-4 py-3">
+              <th colSpan={3} className="border-b border-r border-border bg-slate-500/20 px-4 py-3">
                 Prior cycles (culture amp pattern · up to 3)
               </th>
-              <th rowSpan={2} className="w-[120px] border-b border-r border-gray-200 px-4 py-4">
+              <th rowSpan={2} className="w-[120px] border-b border-r border-border px-4 py-4">
                 FY26 Self
               </th>
-              <th rowSpan={2} className="w-[170px] border-b border-r border-gray-200 px-4 py-4">
+              <th rowSpan={2} className="w-[170px] border-b border-r border-border px-4 py-4">
                 FY26 Manager Suggested
               </th>
-              <th rowSpan={2} className="w-[630px] border-b border-x border-blue-300 bg-blue-50 px-4 py-4">
+              <th rowSpan={2} className="w-[630px] border-b border-x border-primary/30 bg-primary/10 px-4 py-4 text-primary">
                 FY26 Calibrated
               </th>
-              <th rowSpan={2} className="w-[90px] border-b border-r border-gray-200 px-3 py-4">
+              <th rowSpan={2} className="w-[90px] border-b border-r border-border px-3 py-4">
                 9-Box
               </th>
-              <th rowSpan={2} className="w-[220px] border-b border-gray-200 px-4 py-4">
+              <th rowSpan={2} className="w-[220px] border-b border-border px-4 py-4">
                 Flag
               </th>
             </tr>
             <tr>
               {["FY23", "FY24", "FY25"].map((year) => (
-                <th key={year} className="w-[120px] border-b border-r border-gray-200 bg-[#f1f6ff] px-4 py-3">
+                <th key={year} className="w-[120px] border-b border-r border-border bg-slate-500/20 px-4 py-3">
                   {year}
                 </th>
               ))}
             </tr>
           </thead>
-          <tbody>
+          <tbody className="bg-card">
             {employees.map((employee) => {
               const selectedRating =
                 ratingOptions.find((option) => option.value === calibratedRatings[employee.id]) ??
                 ratingOptions[0];
 
               return (
-                <tr key={employee.id} className="border-b border-gray-100 last:border-b-0">
-                  <td className="border-r border-gray-100 px-4 py-4">
+                <tr key={employee.id} className="border-b border-border last:border-b-0 hover:bg-slate-500/5">
+                  <td className="border-r border-border px-4 py-4">
                     <div className="flex items-center gap-3">
-                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-50 text-xs font-bold text-blue-500">
+                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/20 text-xs font-bold text-primary">
                         {employee.initials}
                       </span>
                       <div className="min-w-0">
                         <button
-                          className="block max-w-full truncate text-left text-sm font-bold text-gray-800 hover:text-blue-600"
+                          className="block max-w-full truncate text-left text-sm font-bold text-text-title hover:text-primary cursor-pointer"
                           onClick={() => onOpenOverride(employee.id)}
                         >
                           {employee.name}
                         </button>
-                        <div className="truncate text-xs font-medium text-gray-500">
+                        <div className="truncate text-xs font-medium text-text-body2">
                           {employee.detail}
                         </div>
                       </div>
                     </div>
                   </td>
-                  <td className="border-r border-gray-100 px-4 py-4 text-sm font-semibold text-gray-600">
+                  <td className="border-r border-border px-4 py-4 text-sm font-semibold text-text-title">
                     {employee.manager}
                   </td>
                   {employee.prior.map((rating, index) => (
-                    <td key={`${employee.id}-${index}`} className="border-r border-gray-100 bg-[#f3f7ff] px-4 py-4">
+                    <td key={`${employee.id}-${index}`} className="border-r border-border bg-slate-500/10 px-4 py-4">
                       {rating ? (
                         <Badge
                           label={rating === "Unsatisfactory" ? "Unsati" : rating}
@@ -106,11 +106,11 @@ const EmployeeCalibrationTable = ({
                           size="sm"
                         />
                       ) : (
-                        <span className="text-sm font-medium text-gray-400">-</span>
+                        <span className="text-sm font-medium text-text-body2">-</span>
                       )}
                     </td>
                   ))}
-                  <td className="border-r border-gray-100 px-4 py-4">
+                  <td className="border-r border-border px-4 py-4">
                     <Badge
                       label={employee.self}
                       backgroundColor={getBadgeColor(ratingColorIndex[employee.self])}
@@ -118,7 +118,7 @@ const EmployeeCalibrationTable = ({
                       size="sm"
                     />
                   </td>
-                  <td className="border-r border-gray-100 px-4 py-4">
+                  <td className="border-r border-border px-4 py-4">
                     <Badge
                       label={employee.managerSuggested}
                       backgroundColor={getBadgeColor(ratingColorIndex[employee.managerSuggested])}
@@ -127,8 +127,8 @@ const EmployeeCalibrationTable = ({
                     />
                   </td>
                   <td
-                    className={`border-x border-blue-300 bg-blue-50 px-3 py-4 ${
-                      employee.override ? "bg-amber-50" : ""
+                    className={`border-x border-primary/30 bg-primary/10 px-3 py-4 ${
+                      employee.override ? "bg-amber-500/10" : ""
                     }`}
                   >
                     <Select
@@ -138,15 +138,15 @@ const EmployeeCalibrationTable = ({
                         onRatingChange(employee.id, option.value);
                         onOpenOverride(employee.id);
                       }}
-                      className={`relative w-[200px] [&>button]:min-h-[34px] [&>button]:rounded-md [&>button]:border-gray-200 [&>button]:px-2 [&>button]:py-1.5 [&>button]:text-xs [&>button]:font-bold [&>button]:shadow-sm [&>button_span]:font-bold [&>div]:mt-1 [&>div]:w-[130px] [&>div]:rounded-none [&>div]:p-0 [&_li]:rounded-none [&_li]:px-3 [&_li]:py-1.5 ${ratingTextColor[selectedRating.value]}`}
+                      className={`relative w-[200px] [&>button]:min-h-[34px] [&>button]:rounded-md [&>button]:border-border [&>button]:bg-card [&>button]:px-2 [&>button]:py-1.5 [&>button]:text-xs [&>button]:font-bold [&>button]:shadow-sm [&>button_span]:font-bold [&>div]:mt-1 [&>div]:w-[130px] [&>div]:rounded-md [&>div]:border-border [&>div]:bg-card [&>div]:p-0 [&_li]:rounded-none [&_li]:px-3 [&_li]:py-1.5 [&_li]:text-text-title hover:[&_li]:bg-slate-500/20 [&_li.bg-primary-50]:bg-primary/20 [&_li.bg-primary-50]:text-primary ${ratingTextColor[selectedRating.value]}`}
                     />
                     {employee.override && (
-                      <span className="mt-1 block text-[10px] font-bold uppercase text-amber-700">
+                      <span className="mt-1 block text-[10px] font-bold uppercase text-amber-500">
                         + Override
                       </span>
                     )}
                   </td>
-                  <td className="border-r border-gray-100 px-3 py-3">
+                  <td className="border-r border-border px-3 py-3">
                     <div className="grid h-[52px] w-[52px] grid-cols-3 gap-0.5">
                       {Array.from({ length: 9 }).map((_, index) => {
                         const row = Math.floor(index / 3);
@@ -157,7 +157,7 @@ const EmployeeCalibrationTable = ({
                           <span
                             key={index}
                             className={`rounded-[3px] ${
-                              active ? "bg-blue-500 ring-2 ring-white" : "bg-gray-200"
+                              active ? "bg-primary ring-2 ring-card" : "bg-slate-500/30"
                             }`}
                           />
                         );

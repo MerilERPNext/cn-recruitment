@@ -136,9 +136,9 @@ const PeerNominationPage = () => {
   };
 
   return (
-    <div className="min-h-full overflow-y-scroll overflow-x-hidden bg-[#f8fafc] p-2 font-sans sm:p-6">
+    <div className="min-h-full overflow-y-scroll overflow-x-hidden bg-app p-2 font-sans sm:p-6">
       <div className="mx-auto flex w-full max-w-5xl min-w-0 flex-col">
-        <div className="mb-6 flex min-w-0 flex-col rounded-xl border border-gray-100 bg-white shadow-sm">
+        <div className="mb-6 flex min-w-0 flex-col rounded-xl border border-border bg-card shadow-sm">
          
             <PeerNominationHeader selectedCount={selectedCount} />
 
@@ -150,22 +150,23 @@ const PeerNominationPage = () => {
             />
 
             {/* List Header */}
-            <div className="flex flex-col gap-1 border-b border-gray-100 bg-gray-50/50 p-4 min-[420px]:flex-row min-[420px]:items-center min-[420px]:justify-between">
+            <div className="flex flex-col gap-1 border-b border-border bg-slate-500/10 p-4 min-[420px]:flex-row min-[420px]:items-center min-[420px]:justify-between">
               <Typography
                 variant="caption"
-                className="font-semibold text-gray-500 tracking-wider"
+                color="body2"
+                className="font-semibold tracking-wider"
               >
                 SUGGESTED REVIEWERS ({filteredReviewers.length})
               </Typography>
-              <Typography variant="caption" className="text-gray-500">
+              <Typography variant="caption" color="body2">
                 Inferred from Slack, Jira & Figma · last 90 days
               </Typography>
             </div>
 
             {/* List Content */}
-            <div className="flex flex-col divide-y divide-gray-100">
+            <div className="flex flex-col divide-y divide-border">
               {filteredReviewers.length === 0 ? (
-                <div className="p-8 text-center text-sm text-gray-500 font-medium">
+                <div className="p-8 text-center text-sm text-text-body2 font-medium">
                   No reviewers found matching the selected filters.
                 </div>
               ) : (
@@ -179,20 +180,21 @@ const PeerNominationPage = () => {
               )}
             </div>
 
-            <div className="border-t border-gray-100 p-4">
-              <div className="flex flex-col gap-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="border-t border-border p-4">
+              <div className="flex flex-col gap-4 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-start gap-3">
-                  <CircleHelp className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
+                  <CircleHelp className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
                   <div>
                     <Typography
                       variant="bodySmall"
-                      className="font-semibold text-amber-900"
+                      className="font-semibold text-amber-500"
                     >
                       What happens next?
                     </Typography>
                     <Typography
                       variant="caption"
-                      className="mt-1 block text-amber-900/80"
+                      color="body2"
+                      className="mt-1 block"
                     >
                       Your nominations go to Rohit Khanna for approval. He can
                       replace anyone he disagrees with (HR is notified). Peer
@@ -205,7 +207,7 @@ const PeerNominationPage = () => {
                   variant="contain"
                   bgColor="primary"
                   size="md"
-                  className="h-10 w-full shrink-0 justify-center bg-blue-600 px-5 text-white hover:bg-blue-700 sm:w-auto"
+                  className="h-10 w-full shrink-0 justify-center px-5 sm:w-auto"
                 >
                   Submit to Manager
                 </Button>

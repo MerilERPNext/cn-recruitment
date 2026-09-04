@@ -63,30 +63,30 @@ export const GoalReasonModal: React.FC<GoalReasonModalProps> = ({
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} size="sm">
-      <div className="p-5 space-y-4">
-        <div className="flex items-center justify-between border-b border-gray-100 pb-3">
-          <Typography variant="h4" className="font-bold text-gray-900">
+      <div className="p-5 space-y-4 bg-card text-text-title">
+        <div className="flex items-center justify-between border-b border-border pb-3">
+          <Typography variant="h4" className="font-bold">
             {title}
           </Typography>
           <button
             onClick={onClose}
             aria-label="Close modal"
             disabled={isLoading}
-            className="text-gray-400 hover:text-gray-600 p-1 border border-gray-200 rounded-lg disabled:opacity-50"
+            className="text-text-body2 hover:text-text-title p-1 border border-border rounded-lg disabled:opacity-50"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
         {description && (
-          <Typography variant="caption" className="text-gray-500 block">
+          <Typography variant="caption" color="body2" className="block">
             {description}
           </Typography>
         )}
 
         <div>
           <div className="flex items-center justify-between mb-1.5">
-            <Typography variant="caption" className="font-semibold text-gray-700">
+            <Typography variant="caption" color="body2" className="font-semibold">
               Reason / Note {required && <span className="text-red-500 font-bold ml-0.5">*</span>}
             </Typography>
           </div>
@@ -102,8 +102,8 @@ export const GoalReasonModal: React.FC<GoalReasonModalProps> = ({
             placeholder={placeholder}
             rows={3}
             className={`w-full border ${
-              hasError ? "border-red-500 ring-1 ring-red-500" : "border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-            } rounded-xl p-3 text-sm text-gray-700 focus:outline-none shadow-sm resize-none disabled:bg-gray-50`}
+              hasError ? "border-red-500 ring-1 ring-red-500" : "border-border bg-card text-text-title placeholder-text-body2 focus:border-primary focus:ring-1 focus:ring-primary"
+            } rounded-xl p-3 text-sm focus:outline-none shadow-sm resize-none disabled:opacity-50`}
           />
           {hasError && (
             <span className="text-xs text-red-500 font-medium block mt-1">

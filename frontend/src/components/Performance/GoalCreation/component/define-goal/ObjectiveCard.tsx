@@ -241,7 +241,7 @@ export const ObjectiveCard = ({
   }), [startDate, endDate]);
   return (
     <Card
-      className="relative border border-violet-200 bg-white p-5 shadow-sm"
+      className="relative border border-border bg-card p-5 shadow-sm"
       radius="xl"
       padding="none"
     >
@@ -252,7 +252,7 @@ export const ObjectiveCard = ({
             e.stopPropagation();
             onDeleteGoal();
           }}
-          className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-red-100 text-red-500 shadow-sm transition-colors hover:bg-red-500 hover:text-white"
+          className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-red-500/20 text-red-500 shadow-sm transition-colors hover:bg-red-500 hover:text-white cursor-pointer"
           aria-label="Delete objective"
         >
           <X className="h-3.5 w-3.5" />
@@ -279,8 +279,8 @@ export const ObjectiveCard = ({
             variant="caption"
             className={
               isCollapsed && title.trim()
-                ? "font-semibold text-gray-900 text-sm"
-                : "text-gray-500"
+                ? "font-semibold text-text-title text-sm"
+                : "text-text-body2"
             }
           >
             {isCollapsed && title.trim()
@@ -293,7 +293,7 @@ export const ObjectiveCard = ({
           <button
             type="button"
             onClick={handleToggle}
-            className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
+            className="rounded-lg p-1.5 text-text-body2 hover:bg-slate-500/10 hover:text-text-title transition-colors cursor-pointer"
             aria-label={
               isCollapsed ? "Expand objective card" : "Collapse objective card"
             }
@@ -310,10 +310,10 @@ export const ObjectiveCard = ({
       {!isCollapsed && (
         <div className="mt-4">
           <input
-            className={`mb-3 h-12 w-full rounded-lg border px-4 text-base font-semibold outline-none transition placeholder:text-gray-400 ${
+            className={`mb-3 h-12 w-full rounded-lg border px-4 text-base font-semibold outline-none transition placeholder:text-text-body2 ${
               locked
-                ? "border-gray-200 bg-gray-50/80 text-gray-700 cursor-not-allowed select-none"
-                : "border-violet-200 bg-white text-gray-900 focus:border-violet-400 focus:ring-2 focus:ring-violet-100"
+                ? "border-border bg-slate-500/10 text-text-body2 cursor-not-allowed select-none"
+                : "border-border bg-card text-text-title focus:border-primary focus:ring-1 focus:ring-primary"
             }`}
             value={title}
             onChange={(e) => !locked && setTitle?.(e.target.value)}
@@ -324,10 +324,10 @@ export const ObjectiveCard = ({
           />
 
           <textarea
-            className={`mb-5 min-h-[76px] w-full resize-none rounded-lg border px-4 py-3 text-sm leading-5 outline-none transition placeholder:text-gray-400 ${
+            className={`mb-5 min-h-[76px] w-full resize-none rounded-lg border px-4 py-3 text-sm leading-5 outline-none transition placeholder:text-text-body2 ${
               locked
-                ? "border-gray-200 bg-gray-50/80 text-gray-700 cursor-not-allowed select-none"
-                : "border-gray-200 bg-white text-gray-600 focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+                ? "border-border bg-slate-500/10 text-text-body2 cursor-not-allowed select-none"
+                : "border-border bg-card text-text-title focus:border-primary focus:ring-1 focus:ring-primary"
             }`}
             value={description}
             onChange={(e) => !locked && setDescription?.(e.target.value)}
@@ -344,10 +344,10 @@ export const ObjectiveCard = ({
                 <input
                   type="text"
                   aria-label="Goal weightage"
-                  className={`h-10 w-full rounded-lg border px-3 text-sm font-medium outline-none transition placeholder:text-gray-400 ${
+                  className={`h-10 w-full rounded-lg border px-3 text-sm font-medium outline-none transition placeholder:text-text-body2 ${
                     locked
-                      ? "border-gray-200 bg-gray-50/80 text-gray-700 cursor-not-allowed select-none"
-                      : "border-gray-200 bg-white text-gray-900 focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+                      ? "border-border bg-slate-500/10 text-text-body2 cursor-not-allowed select-none"
+                      : "border-border bg-card text-text-title focus:border-primary focus:ring-1 focus:ring-primary"
                   }`}
                   value={weightage === 0 ? "" : weightage}
                   onFocus={(e) => locked && e.target.blur()}
@@ -374,7 +374,7 @@ export const ObjectiveCard = ({
 
             <div>
               <label className={labelClass}>Department</label>
-              <div className={locked ? "cursor-not-allowed bg-gray-50/80 rounded-lg [&_*]:!cursor-not-allowed" : ""}>
+              <div className={locked ? "cursor-not-allowed bg-slate-500/10 rounded-lg [&_*]:!cursor-not-allowed" : ""}>
                 <AsyncSelect
                   fetchOptions={fetchDepartmentOptions}
                   value={selectedDepartment}
@@ -388,7 +388,7 @@ export const ObjectiveCard = ({
 
             <div>
               <label className={labelClass}>Designation</label>
-              <div className={locked ? "cursor-not-allowed bg-gray-50/80 rounded-lg [&_*]:!cursor-not-allowed" : ""}>
+              <div className={locked ? "cursor-not-allowed bg-slate-500/10 rounded-lg [&_*]:!cursor-not-allowed" : ""}>
                 <AsyncSelect
                   fetchOptions={fetchDesignationOptions}
                   value={selectedDesignation || { label: 'Select', value: '' }}
@@ -400,7 +400,7 @@ export const ObjectiveCard = ({
               </div>
             </div>
 
-            <div className={`lg:col-span-2 ${locked ? "cursor-not-allowed bg-gray-50/80 rounded-lg px-2 [&_*]:!cursor-not-allowed" : ""} [&_.formio-component]:!mb-0 [&_.formio-component-datetime_input]:!mb-0 [&_label]:!mt-0 [&_label]:!pt-0 [&_label]:!pb-0 [&_label]:!mb-1.5 [&_label]:!text-xs [&_label]:!font-medium [&_label]:!text-gray-600 [&_label]:!h-auto [&_label]:!block [&_.form-group]:!mt-0 [&_.form-group]:!mb-0 [&_.formio-form]:!mt-0 [&_.form-control]:h-[40px] [&_.form-control]:w-full [&_.form-control]:rounded-lg [&_.form-control]:border [&_.form-control]:border-gray-200 [&_.form-control]:bg-white [&_.form-control]:px-4 [&_.form-control]:text-sm [&_.form-control]:text-gray-900 [&_.form-control]:shadow-sm [&_.form-control]:outline-none [&_.row]:-mx-2 [&_.row>div]:px-2`}>
+            <div className={`lg:col-span-2 ${locked ? "cursor-not-allowed bg-slate-500/10 rounded-lg px-2 [&_*]:!cursor-not-allowed" : ""} [&_.formio-component]:!mb-0 [&_.formio-component-datetime_input]:!mb-0 [&_label]:!mt-0 [&_label]:!pt-0 [&_label]:!pb-0 [&_label]:!mb-1.5 [&_label]:!text-xs [&_label]:!font-medium [&_label]:!text-text-body2 [&_label]:!h-auto [&_label]:!block [&_.form-group]:!mt-0 [&_.form-group]:!mb-0 [&_.formio-form]:!mt-0 [&_.form-control]:h-[40px] [&_.form-control]:w-full [&_.form-control]:rounded-lg [&_.form-control]:border [&_.form-control]:border-border [&_.form-control]:bg-card [&_.form-control]:px-4 [&_.form-control]:text-sm [&_.form-control]:text-text-title [&_.form-control]:shadow-sm [&_.form-control]:outline-none [&_.row]:-mx-2 [&_.row>div]:px-2`}>
               <Form
                 form={buildGoalPeriodFormSchema(formatGoalDateForForm(startDate), formatGoalDateForForm(endDate))}
                 submission={submissionData}

@@ -141,23 +141,24 @@ export const ApprovalQueueSection: React.FC<ApprovalQueueSectionProps> = ({
   const totalPages = Math.ceil(totalMatched / backendLimit) || 1;
 
   return (
-    <section className="overflow-hidden rounded-xl border border-amber-100 bg-white shadow-sm">
+    <section className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
       <div
-        className={`flex ${
-          isCompact ? "flex-col gap-3" : "items-center justify-between"
-        } border-b border-amber-100 bg-amber-50 px-4 py-3 sm:px-5`}
+        className={`flex min-w-0 ${
+          isCompact ? "flex-col gap-3" : "items-center justify-between gap-4"
+        } border-b border-border bg-card p-4 sm:p-5`}
       >
         <div className="flex min-w-0 items-start gap-3 sm:items-center">
           <Typography
             variant="bodySmall"
-            className="min-w-0 font-semibold text-amber-900"
+            className="min-w-0 font-semibold"
           >
             Approval Queue — {count} goals awaiting you
           </Typography>
           {!isMobile && autoApproveNote && autoApproveNote !== "-" && (
             <Typography
               variant="caption"
-              className="shrink-0 text-amber-800"
+              color="body2"
+              className="shrink-0"
             >
               - {autoApproveNote}
             </Typography>
@@ -182,7 +183,7 @@ export const ApprovalQueueSection: React.FC<ApprovalQueueSectionProps> = ({
           )}
 
           {selectedEmployees.length > 0 && (
-            <span className="inline-flex items-center rounded-md bg-amber-200/80 px-2.5 py-1 text-xs font-semibold text-amber-900 shrink-0">
+            <span className="inline-flex items-center rounded-md bg-amber-500/20 px-2.5 py-1 text-xs font-semibold text-amber-500 shrink-0">
               {selectedEmployees.length} Selected
             </span>
           )}
@@ -226,7 +227,7 @@ export const ApprovalQueueSection: React.FC<ApprovalQueueSectionProps> = ({
             </Button>
           )}
           {!hasBulkAction && (
-            <Typography variant="caption" className="text-amber-800 font-medium italic">
+            <Typography variant="caption" color="body2" className="font-medium italic">
               No action
             </Typography>
           )}
@@ -260,7 +261,7 @@ export const ApprovalQueueSection: React.FC<ApprovalQueueSectionProps> = ({
             <Typography variant="bodySmall">No goals pending approval.</Typography>
           </div>
         ) : isPlanAction && byEmployeeList.length > 0 ? (
-          <div className="p-3 sm:p-4 pr-2 sm:pr-3 space-y-3 bg-slate-50/60 max-h-[500px] overflow-y-auto">
+          <div className="p-3 sm:p-4 pr-2 sm:pr-3 space-y-3 bg-app max-h-[500px] overflow-y-auto">
             {byEmployeeList.map((empGroup: ApprovalQueueByEmployee) => (
               <EmployeeApprovalItem
                 key={empGroup.employee}
@@ -271,7 +272,7 @@ export const ApprovalQueueSection: React.FC<ApprovalQueueSectionProps> = ({
             ))}
           </div>
         ) : (
-          <div className="space-y-3 border-t border-slate-100 bg-slate-50/60 p-3 sm:p-4 max-h-[500px] overflow-y-auto">
+          <div className="space-y-3 border-t border-border bg-app p-3 sm:p-4 max-h-[500px] overflow-y-auto">
             {queueItems.map((item: ApprovalQueueItem) => {
               const itemId = item.employee || "";
               return (
@@ -312,7 +313,7 @@ export const ApprovalQueueSection: React.FC<ApprovalQueueSectionProps> = ({
           <Typography variant="bodySmall">No goals pending approval.</Typography>
         </div>
       ) : isPlanAction && byEmployeeList.length > 0 ? (
-        <div className="p-3 sm:p-4 pr-2 sm:pr-3 space-y-3 bg-slate-50/60 max-h-[500px] overflow-y-auto border-t border-slate-100">
+        <div className="p-3 sm:p-4 pr-2 sm:pr-3 space-y-3 bg-app max-h-[500px] overflow-y-auto border-t border-border">
           {byEmployeeList.map((empGroup: ApprovalQueueByEmployee) => (
             <EmployeeApprovalItem
               key={empGroup.employee}
@@ -345,34 +346,36 @@ export const ApprovalQueueSection: React.FC<ApprovalQueueSectionProps> = ({
       )}
 
       {!queueLoading && !error && (queueItems.length > 0 || byEmployeeList.length > 0) && (
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 border-t border-slate-200 bg-white">
-          <Typography variant="caption" className="text-slate-500">
-            Showing <span className="font-semibold text-slate-900">{totalMatched > 0 ? pageStart + 1 : 0}</span> to{" "}
-            <span className="font-semibold text-slate-900">{pageEnd}</span> of{" "}
-            <span className="font-semibold text-slate-900">{totalMatched}</span> {isPlanAction ? "reportees" : "items"}
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 border-t border-border bg-card">
+          <Typography variant="caption" color="body2">
+            Showing <span className="font-semibold">{totalMatched > 0 ? pageStart + 1 : 0}</span> to{" "}
+            <span className="font-semibold">{pageEnd}</span> of{" "}
+            <span className="font-semibold">{totalMatched}</span> {isPlanAction ? "reportees" : "items"}
           </Typography>
 
           <div className="flex items-center gap-2">
             <Button
               variant="outline"
+              bgColor="text"
               size="sm"
               disabled={pageStart === 0}
               onClick={() => setStart((prev) => Math.max(0, prev - backendLimit))}
-              className="px-3 py-1 text-xs font-medium border-slate-200 text-slate-600 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-50"
+              className="disabled:opacity-40"
             >
               Previous
             </Button>
 
-            <Typography variant="caption" className="font-semibold text-slate-700 px-2">
+            <Typography variant="caption" color="body2" className="font-semibold px-2">
               Page {currentPage} of {totalPages}
             </Typography>
 
             <Button
               variant="outline"
+              bgColor="text"
               size="sm"
               disabled={!hasMore && pageEnd >= totalMatched}
               onClick={() => setStart((prev) => prev + backendLimit)}
-              className="px-3 py-1 text-xs font-medium border-slate-200 text-slate-600 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-50"
+              className="disabled:opacity-40"
             >
               Next
             </Button>

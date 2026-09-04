@@ -46,12 +46,12 @@ const stepDefinitions: {
     ];
 
 const LazySectionFallback = () => (
-    <div className="min-h-[240px] rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
-        <div className="h-5 w-40 animate-pulse rounded bg-gray-100" />
+    <div className="min-h-[240px] rounded-xl border border-border bg-card p-6 shadow-sm">
+        <div className="h-5 w-40 animate-pulse rounded bg-slate-500/20" />
         <div className="mt-5 space-y-3">
-            <div className="h-20 animate-pulse rounded-lg bg-gray-100" />
-            <div className="h-20 animate-pulse rounded-lg bg-gray-100" />
-            <div className="h-20 animate-pulse rounded-lg bg-gray-100" />
+            <div className="h-20 animate-pulse rounded-lg bg-slate-500/20" />
+            <div className="h-20 animate-pulse rounded-lg bg-slate-500/20" />
+            <div className="h-20 animate-pulse rounded-lg bg-slate-500/20" />
         </div>
     </div>
 );
@@ -220,7 +220,7 @@ const NewGoal: React.FC<NewGoalProps> = ({ onClose }) => {
             case 'define':
                 if (isGoalFormConfigLoading) return <LazySectionFallback />;
                 if (isGoalFormConfigError || !goalFormConfig) {
-                    return <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">Unable to load goal form configuration. Please try again.</div>;
+                    return <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-500">Unable to load goal form configuration. Please try again.</div>;
                 }
                 return (
                     <DefineGoal
@@ -249,7 +249,7 @@ const NewGoal: React.FC<NewGoalProps> = ({ onClose }) => {
                         variant="outline"
                         bgColor="text"
                         fullWidth
-                        className="h-9 cursor-pointer  justify-center w-full  rounded-lg border-gray-200 bg-white px-4 text-gray-700 md:w-auto"
+                        className="h-9 cursor-pointer justify-center w-full rounded-lg border-border bg-card px-4 text-text-title hover:bg-slate-500/10 md:w-auto"
                         onClick={handleSecondaryAction}
                     >
                         <ArrowLeft className="w-4 h-4 mr-1" />
@@ -258,15 +258,15 @@ const NewGoal: React.FC<NewGoalProps> = ({ onClose }) => {
                 }
                 footerRight={
                     <div className="flex w-full flex-col gap-2 md:flex-row md:items-center md:justify-end md:gap-3">
-                        <div className="hidden items-center text-xs text-gray-500 md:flex">
-                            <span className="mr-1 text-gray-400">◷</span> 
+                        <div className="hidden items-center text-xs text-text-body2 md:flex">
+                            <span className="mr-1 text-text-body2">◷</span> 
                         </div>
                         <Button
                             type="button"
                             variant="contain"
                             bgColor="primary"
                             fullWidth
-                            className="h-9 justify-center rounded-lg bg-blue-600 px-4 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed md:w-auto"
+                            className="h-9 justify-center rounded-lg bg-primary px-4 text-white hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer md:w-auto"
                             onClick={handlePrimaryAction}
                             disabled={isSaveDisabled}
                         >

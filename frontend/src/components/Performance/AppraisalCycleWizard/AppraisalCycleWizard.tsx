@@ -433,10 +433,10 @@ export const CycleDetails = ({
   return (
     <>
       <div className="min-w-0 space-y-4 sm:space-y-5">
-        <section className="rounded-lg border border-gray-200 bg-white p-3 shadow-sm sm:p-5">
+        <section className="rounded-lg border border-border bg-card p-3 shadow-sm sm:p-5">
           <Typography
             variant="h3"
-            className="mb-5 text-base font-bold text-gray-900"
+            className="mb-5 text-base font-bold text-text-title"
           >
             Basics
           </Typography>
@@ -445,12 +445,13 @@ export const CycleDetails = ({
               <label className="mb-2 block">
                 <Typography
                   variant="caption"
-                  className="font-semibold text-gray-700"
+                  color="body2"
+                  className="font-semibold"
                 >
                   Cycle Name <span className="text-red-500">*</span>
                 </Typography>
               </label>
-              <div className="flex min-h-[44px] items-center justify-between rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-800 shadow-sm focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100">
+              <div className="flex min-h-[44px] items-center justify-between rounded-lg border border-border bg-card px-3 py-2 text-text-title shadow-sm focus-within:border-primary focus-within:ring-1 focus-within:ring-primary">
                 <input
                   value={basics.cycleName}
                   onChange={(event) =>
@@ -459,7 +460,7 @@ export const CycleDetails = ({
                       cycleName: event.target.value,
                     }))
                   }
-                  className="w-full bg-transparent text-sm font-normal text-gray-700 outline-none"
+                  className="w-full bg-transparent text-sm font-normal text-text-title outline-none"
                 />
               </div>
             </div>
@@ -467,12 +468,13 @@ export const CycleDetails = ({
               <label className="mb-2 block">
                 <Typography
                   variant="caption"
-                  className="font-semibold text-gray-700"
+                  color="body2"
+                  className="font-semibold"
                 >
                   Description
                 </Typography>
               </label>
-              <div className="min-h-[70px] rounded-lg border border-gray-200 bg-white px-3 py-3 shadow-sm focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100">
+              <div className="min-h-[70px] rounded-lg border border-border bg-card px-3 py-3 shadow-sm focus-within:border-primary focus-within:ring-1 focus-within:ring-primary">
                 <textarea
                   value={basics.description}
                   onChange={(event) =>
@@ -482,7 +484,7 @@ export const CycleDetails = ({
                     }))
                   }
                   rows={3}
-                  className="min-h-[44px] w-full resize-none bg-transparent text-sm font-normal leading-relaxed text-gray-700 outline-none"
+                  className="min-h-[44px] w-full resize-none bg-transparent text-sm font-normal leading-relaxed text-text-title outline-none"
                 />
               </div>
             </div>
@@ -491,7 +493,8 @@ export const CycleDetails = ({
                 <label className="mb-2 block">
                   <Typography
                     variant="caption"
-                    className="font-semibold text-gray-700"
+                    color="body2"
+                    className="font-semibold"
                   >
                     Cycle Type <span className="text-red-500">*</span>
                   </Typography>
@@ -505,14 +508,15 @@ export const CycleDetails = ({
                       cycleType: option.value,
                     }))
                   }
-                  className="relative w-full [&>button]:min-h-[48px] [&>button]:rounded-lg [&>button]:border-gray-200 [&>button]:px-3 [&>button]:text-left [&>button]:text-sm [&>button]:shadow-sm [&>div]:w-full sm:[&>button]:min-h-[54px] sm:[&>button]:px-4 sm:[&>button]:text-base"
+                  className="relative w-full [&>button]:min-h-[48px] [&>button]:rounded-lg [&>button]:border-border [&>button]:bg-card [&>button]:px-3 [&>button]:text-left [&>button]:text-sm [&>button]:shadow-sm [&>div]:w-full sm:[&>button]:min-h-[54px] sm:[&>button]:px-4 sm:[&>button]:text-base"
                 />
               </div>
               <div>
                 <label className="mb-2 block">
                   <Typography
                     variant="caption"
-                    className="font-semibold text-gray-700"
+                    color="body2"
+                    className="font-semibold"
                   >
                     Fiscal Year
                   </Typography>
@@ -526,10 +530,10 @@ export const CycleDetails = ({
                       fiscalYear: option.value,
                     }))
                   }
-                  className="relative w-full [&>button]:min-h-[48px] [&>button]:rounded-lg [&>button]:border-gray-200 [&>button]:px-3 [&>button]:text-left [&>button]:text-sm [&>button]:shadow-sm [&>div]:w-full sm:[&>button]:min-h-[54px] sm:[&>button]:px-4 sm:[&>button]:text-base"
+                  className="relative w-full [&>button]:min-h-[48px] [&>button]:rounded-lg [&>button]:border-border [&>button]:bg-card [&>button]:px-3 [&>button]:text-left [&>button]:text-sm [&>button]:shadow-sm [&>div]:w-full sm:[&>button]:min-h-[54px] sm:[&>button]:px-4 sm:[&>button]:text-base"
                 />
               </div>
-              <div className="md:col-span-2 [&_.formio-component]:mb-0 [&_.formio-component-datetime_input]:mb-0 [&_.formio-component-label]:mb-2 [&_.formio-component-label]:text-xs [&_.formio-component-label]:font-semibold [&_.formio-component-label]:text-gray-700 [&_.formio-component-label]:sm:text-sm [&_.form-control]:min-h-[48px] [&_.form-control]:rounded-lg [&_.form-control]:border-gray-200 [&_.form-control]:px-3 [&_.form-control]:py-2 [&_.form-control]:text-sm [&_.form-control]:font-normal [&_.form-control]:text-gray-700 [&_.form-control]:shadow-sm [&_.form-control:focus]:border-blue-400 [&_.form-control:focus]:shadow-none [&_.form-control:focus]:ring-2 [&_.form-control:focus]:ring-blue-100 [&_.row]:-mx-2 [&_.row>div]:px-2 sm:[&_.form-control]:min-h-[54px] sm:[&_.form-control]:px-4 sm:[&_.form-control]:text-base">
+              <div className="md:col-span-2 [&_.formio-component]:mb-0 [&_.formio-component-datetime_input]:mb-0 [&_.formio-component-label]:mb-2 [&_.formio-component-label]:text-xs [&_.formio-component-label]:font-semibold [&_.formio-component-label]:text-text-body2 [&_.formio-component-label]:sm:text-sm [&_.form-control]:min-h-[48px] [&_.form-control]:rounded-lg [&_.form-control]:border-border [&_.form-control]:bg-card [&_.form-control]:px-3 [&_.form-control]:py-2 [&_.form-control]:text-sm [&_.form-control]:font-normal [&_.form-control]:text-text-title [&_.form-control]:shadow-sm [&_.form-control:focus]:border-primary [&_.form-control:focus]:shadow-none [&_.form-control:focus]:ring-1 [&_.form-control:focus]:ring-primary [&_.row]:-mx-2 [&_.row>div]:px-2 sm:[&_.form-control]:min-h-[54px] sm:[&_.form-control]:px-4 sm:[&_.form-control]:text-base">
                 <Form
                   form={appraisalPeriodFormSchema}
                   submission={{
@@ -564,10 +568,10 @@ export const CycleDetails = ({
           </div>
         </section>
 
-        <section className="rounded-lg border border-gray-200 bg-white p-3 shadow-sm sm:p-5">
+        <section className="rounded-lg border border-border bg-card p-3 shadow-sm sm:p-5">
           <Typography
             variant="h3"
-            className="mb-5 text-base font-bold text-gray-900"
+            className="mb-5 text-base font-bold text-text-title"
           >
             Ownership & links
           </Typography>
@@ -576,7 +580,8 @@ export const CycleDetails = ({
               <label className="mb-2 block">
                 <Typography
                   variant="caption"
-                  className="font-semibold text-gray-700"
+                  color="body2"
+                  className="font-semibold"
                 >
                   Cycle Owner <span className="text-red-500">*</span>
                 </Typography>
@@ -592,26 +597,26 @@ export const CycleDetails = ({
                 <button
                   type="button"
                   onClick={() => setOwnerDropdownOpen((open) => !open)}
-                  className="flex min-h-[44px] w-full items-center justify-between gap-3 rounded-lg border border-gray-200 bg-white px-3 py-2 text-left shadow-sm transition hover:border-gray-300 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100"
+                  className="flex min-h-[44px] w-full items-center justify-between gap-3 rounded-lg border border-border bg-card px-3 py-2 text-left shadow-sm transition hover:border-primary/50 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer"
                 >
                   <span className="flex min-w-0 items-center gap-3">
-                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-blue-50 text-xs font-bold text-blue-600">
+                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/20 text-xs font-bold text-primary">
                       {selectedOwner.initials || "--"}
                     </span>
-                    <span className="min-w-0 truncate text-sm font-normal text-gray-700">
+                    <span className="min-w-0 truncate text-sm font-normal text-text-title">
                       {selectedOwner.value}
                       {selectedOwner.meta ? ` — ${selectedOwner.meta}` : ""}
                     </span>
                   </span>
                   <ChevronDown
-                    className={`h-4 w-4 shrink-0 text-gray-500 transition-transform ${
+                    className={`h-4 w-4 shrink-0 text-text-body2 transition-transform ${
                       ownerDropdownOpen ? "rotate-180" : ""
                     }`}
                   />
                 </button>
 
                 {ownerDropdownOpen && (
-                  <div className="absolute z-50 mt-2 w-full overflow-hidden rounded-lg border border-gray-200 bg-white shadow-lg">
+                  <div className="absolute z-50 mt-2 w-full overflow-hidden rounded-lg border border-border bg-card shadow-lg">
                     <ul className="max-h-60 overflow-auto p-1">
                       {ownerOptions.map((option) => {
                         const selected = option.value === selectedOwner.value;
@@ -630,13 +635,13 @@ export const CycleDetails = ({
                                 }));
                                 setOwnerDropdownOpen(false);
                               }}
-                              className={`flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm transition ${
+                              className={`flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm transition cursor-pointer ${
                                 selected
-                                  ? "bg-blue-50 text-blue-700"
-                                  : "text-gray-700 hover:bg-gray-50"
+                                  ? "bg-primary/20 text-primary"
+                                  : "text-text-title hover:bg-slate-500/10"
                               }`}
                             >
-                              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-blue-50 text-xs font-bold text-blue-600">
+                              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/20 text-xs font-bold text-primary">
                                 {option.initials || "--"}
                               </span>
                               <span className="min-w-0 truncate">
@@ -658,7 +663,8 @@ export const CycleDetails = ({
                 <label className="mb-2 block">
                   <Typography
                     variant="caption"
-                    className="font-semibold text-gray-700"
+                    color="body2"
+                    className="font-semibold"
                   >
                     Linked Goal Cycle
                   </Typography>
@@ -667,14 +673,15 @@ export const CycleDetails = ({
                   options={linkedGoalCycleOptions}
                   value={selectedLinkedGoalCycle}
                   onChange={() => undefined}
-                  className="relative w-full [&>button]:min-h-[44px] [&>button]:rounded-lg [&>button]:border-gray-200 [&>button]:px-3 [&>button]:text-left [&>button]:text-sm [&>button]:shadow-sm [&>div]:w-full"
+                  className="relative w-full [&>button]:min-h-[44px] [&>button]:rounded-lg [&>button]:border-border [&>button]:bg-card [&>button]:px-3 [&>button]:text-left [&>button]:text-sm [&>button]:shadow-sm [&>div]:w-full"
                 />
               </div>
               <div>
                 <label className="mb-2 block">
                   <Typography
                     variant="caption"
-                    className="font-semibold text-gray-700"
+                    color="body2"
+                    className="font-semibold"
                   >
                     Currency for Letters
                   </Typography>
@@ -683,7 +690,7 @@ export const CycleDetails = ({
                   options={currencyOptions}
                   value={selectedCurrency}
                   onChange={() => undefined}
-                  className="relative w-full [&>button]:min-h-[44px] [&>button]:rounded-lg [&>button]:border-gray-200 [&>button]:px-3 [&>button]:text-left [&>button]:text-sm [&>button]:shadow-sm [&>div]:w-full"
+                  className="relative w-full [&>button]:min-h-[44px] [&>button]:rounded-lg [&>button]:border-border [&>button]:bg-card [&>button]:px-3 [&>button]:text-left [&>button]:text-sm [&>button]:shadow-sm [&>div]:w-full"
                 />
               </div>
             </div>
@@ -692,12 +699,13 @@ export const CycleDetails = ({
               <label className="mb-2 block">
                 <Typography
                   variant="caption"
-                  className="font-semibold text-gray-700"
+                  color="body2"
+                  className="font-semibold"
                 >
                   Tags
                 </Typography>
               </label>
-              <div className="flex min-h-[48px] flex-wrap items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 shadow-sm focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100">
+              <div className="flex min-h-[48px] flex-wrap items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 shadow-sm focus-within:border-primary focus-within:ring-1 focus-within:ring-primary">
                 {ownership.tags.map((tag, idx) => (
                   <Badge
                     key={tag}
@@ -714,7 +722,7 @@ export const CycleDetails = ({
                             tags: curr.tags.filter((_, i) => i !== idx),
                           }))
                         }
-                        className="text-blue-600 hover:text-blue-800 focus:outline-none"
+                        className="text-primary hover:text-primary/80 focus:outline-none cursor-pointer"
                       >
                         <X className="h-3 w-3" />
                       </button>
@@ -724,7 +732,7 @@ export const CycleDetails = ({
                 <input
                   type="text"
                   placeholder="Add tag..."
-                  className="flex-1 min-w-[80px] bg-transparent text-sm font-normal text-gray-700 outline-none placeholder-gray-400"
+                  className="flex-1 min-w-[80px] bg-transparent text-sm font-normal text-text-title outline-none placeholder:text-text-body2"
                   onKeyDown={(e) => {
                     if (e.key === "Enter" || e.key === ",") {
                       e.preventDefault();
@@ -757,20 +765,22 @@ export const CycleDetails = ({
       <aside className="min-w-0 space-y-4 xl:pt-0">
         <Typography
           variant="caption"
-          className="hidden font-bold uppercase tracking-[0.2em] text-gray-500 xl:block"
+          color="body2"
+          className="hidden font-bold uppercase tracking-[0.2em] xl:block"
         >
           Little Preview
         </Typography>
-        <section className="rounded-lg border border-blue-200 bg-blue-50 p-4">
+        <section className="rounded-lg border border-primary/30 bg-primary/10 p-4">
           <Typography
             variant="h3"
-            className="break-words text-base font-bold text-gray-900"
+            className="break-words text-base font-bold text-text-title"
           >
             {cycleTitle}
           </Typography>
           <Typography
             variant="bodyMedium"
-            className="mt-1 text-sm font-normal leading-relaxed text-gray-600"
+            color="body2"
+            className="mt-1 text-sm font-normal leading-relaxed"
           >
             {data.preview.metaLines.map((line) => (
               <span key={line} className="block">
@@ -781,17 +791,19 @@ export const CycleDetails = ({
         </section>
         <Typography
           variant="bodyMedium"
-          className="break-words text-sm font-normal leading-relaxed text-gray-500"
+          color="body2"
+          className="break-words text-sm font-normal leading-relaxed"
         >
           {data.preview.launchNote}
         </Typography>
-        <section className="rounded-lg border border-blue-200 bg-blue-50 p-4">
-          <Typography variant="h3" className="text-sm font-bold text-blue-700">
+        <section className="rounded-lg border border-primary/30 bg-primary/10 p-4">
+          <Typography variant="h3" className="text-sm font-bold text-primary">
             {data.preview.infoTitle}
           </Typography>
           <Typography
             variant="bodyMedium"
-            className="mt-2 break-words text-sm font-normal leading-relaxed text-gray-600"
+            color="body2"
+            className="mt-2 break-words text-sm font-normal leading-relaxed"
           >
             {data.preview.infoDescription}
           </Typography>

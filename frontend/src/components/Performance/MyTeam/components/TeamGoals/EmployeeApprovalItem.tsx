@@ -35,8 +35,8 @@ export const EmployeeApprovalItem: React.FC<EmployeeApprovalItemProps> = memo(({
     <div
       onClick={handleToggle}
       className={`overflow-hidden rounded-xl border ${
-        isChecked ? "border-blue-400 bg-blue-50/20" : "border-slate-200 bg-white"
-      } shadow-sm hover:border-slate-300 transition-all ${onToggleCheck ? "cursor-pointer" : ""}`}
+        isChecked ? "border-primary bg-primary/20" : "border-border bg-card"
+      } shadow-sm hover:border-border/80 transition-all ${onToggleCheck ? "cursor-pointer" : ""}`}
     >
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 transition-colors">
         <div className="flex flex-wrap items-center gap-3">
@@ -47,7 +47,7 @@ export const EmployeeApprovalItem: React.FC<EmployeeApprovalItemProps> = memo(({
                 type="checkbox"
                 checked={isChecked}
                 onChange={handleToggle}
-                className="h-4 w-4 rounded border-gray-300 text-blue-500 accent-blue-500 focus:ring-blue-500 cursor-pointer"
+                className="h-4 w-4 rounded border-border text-primary accent-primary focus:ring-primary cursor-pointer"
               />
             </div>
           )}
@@ -56,17 +56,17 @@ export const EmployeeApprovalItem: React.FC<EmployeeApprovalItemProps> = memo(({
             name={empGroup.employee_name}
             fontSize="text-xs"
             size="h-9 w-9"
-            avatarBgColor="bg-blue-100"
-            avatarTextColor="text-blue-700"
+            avatarBgColor="bg-blue-500/20"
+            avatarTextColor="text-primary"
           />
 
           <div>
             <div className="flex flex-wrap items-center gap-2">
-              <Typography variant="bodySmall" className="font-bold text-slate-900">
+              <Typography variant="bodySmall" className="font-bold">
                 {empGroup.employee_name}
               </Typography>
               {empGroup.goal_plan && (
-                <span className="text-xs font-semibold text-slate-600 bg-slate-200 px-2 py-0.5 rounded">
+                <span className="text-xs font-semibold text-text-body2 bg-slate-500/10 px-2 py-0.5 rounded">
                   {empGroup.goal_plan}
                 </span>
               )}
@@ -78,7 +78,7 @@ export const EmployeeApprovalItem: React.FC<EmployeeApprovalItemProps> = memo(({
                 />
               )}
             </div>
-            <Typography variant="caption" className="text-slate-500 mt-0.5 block">
+            <Typography variant="caption" color="body2" className="mt-0.5 block">
               {empGroup.goals} goal(s) · {empGroup.submitted_total}% total weightage submitted
             </Typography>
           </div>
