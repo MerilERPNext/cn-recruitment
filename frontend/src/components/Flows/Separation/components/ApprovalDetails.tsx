@@ -175,7 +175,7 @@ function EmployeeSeparationDetails({ title, data }: ApprovalDetailsProps) {
   if (isLoading) {
     return (
       <div className="space-y-4 animate-pulse">
-        <div className="md:bg-white bg-blue-50 border border-slate-200 rounded-lg p-6">
+        <div className="bg-card border border-border rounded-lg p-6">
           <div className="h-5 w-40 bg-gray-200 rounded mb-4" />
 
           <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
@@ -193,10 +193,10 @@ function EmployeeSeparationDetails({ title, data }: ApprovalDetailsProps) {
 
   if (!separationDetails) {
     return (
-      <div className="flex flex-col items-center justify-center p-8 bg-blue-50/30 border border-dashed border-blue-200 rounded-lg text-center w-full">
-        <div className="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center mb-3">
+      <div className="flex flex-col items-center justify-center p-8 bg-surface border border-dashed border-border rounded-lg text-center w-full">
+        <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-3">
           <svg
-            className="w-6 h-6 text-blue-500"
+            className="w-6 h-6 text-primary"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -209,7 +209,7 @@ function EmployeeSeparationDetails({ title, data }: ApprovalDetailsProps) {
             />
           </svg>
         </div>
-        <Typography variant="bodyMedium" className="font-semibold text-slate-800 mb-1">
+        <Typography variant="bodyMedium" className="font-semibold text-text-title mb-1">
           No Details Available
         </Typography>
         <Typography variant="bodySmall" color="body2" className="max-w-xs">
@@ -221,8 +221,8 @@ function EmployeeSeparationDetails({ title, data }: ApprovalDetailsProps) {
 
   return (
     <div className="space-y-4">
-      <div className="md:bg-white bg-blue-50 border border-slate-200 rounded-lg p-6">
-        <h3 className="text-lg font-semibold text-slate-900 mb-4">{title}</h3>
+      <div className="bg-card border border-border rounded-lg p-6">
+        <h3 className="text-lg font-semibold text-text-title mb-4">{title}</h3>
 
         <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
           {detailsFields.map((field, index) => (
@@ -283,10 +283,10 @@ export default function ApprovalDetails({
 
   if (!detailsFields || detailsFields.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center p-8 bg-blue-50/30 border border-dashed border-blue-200 rounded-lg text-center w-full">
-        <div className="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center mb-3">
+      <div className="flex flex-col items-center justify-center p-8 bg-surface border border-dashed border-border rounded-lg text-center w-full">
+        <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-3">
           <svg
-            className="w-6 h-6 text-blue-500"
+            className="w-6 h-6 text-primary"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -299,7 +299,7 @@ export default function ApprovalDetails({
             />
           </svg>
         </div>
-        <Typography variant="bodyMedium" className="font-semibold text-slate-800 mb-1">
+        <Typography variant="bodyMedium" className="font-semibold text-text-title mb-1">
           No Details Available
         </Typography>
         <Typography variant="bodySmall" color="body2" className="max-w-xs">
@@ -311,8 +311,8 @@ export default function ApprovalDetails({
 
   return (
     <div className="space-y-4">
-      <div className="md:bg-white bg-blue-50 border border-slate-200 rounded-lg p-6">
-        <h3 className="text-lg font-semibold text-slate-900 mb-4">{title}</h3>
+      <div className="bg-card border border-border rounded-lg p-6">
+        <h3 className="text-lg font-semibold text-text-title mb-4">{title}</h3>
 
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {detailsFields.map((field, index) => (

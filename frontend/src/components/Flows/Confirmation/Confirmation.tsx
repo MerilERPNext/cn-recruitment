@@ -248,8 +248,8 @@ const ConfirmationWorkflow = () => {
         label: "Date of Joining",
         value: formatToIndianDate(activeEmployee?.date_of_joining || ""),
         Icon: Calendar,
-        bg: "bg-blue-50",
-        text: "text-blue-600",
+        bg: "bg-primary/10",
+        text: "text-primary",
       },
       {
         label: "Probation End Date",
@@ -340,7 +340,7 @@ const ConfirmationWorkflow = () => {
           <Button
             variant="outline"
             onClick={() => setIsActivityLogOpen(true)}
-            className="flex items-center gap-2 py-1.5 bg-card border-border text-text-body1 hover:bg-gray-50 hover:border-border-strong transition-all rounded-md shadow-sm"
+            className="flex items-center gap-2 py-1.5 bg-card border-border text-text-body1 hover:bg-primary/10 hover:text-primary hover:border-primary/40 transition-all rounded-md shadow-sm"
             disabled={!funnelActivityId}
           >
             Activity Log

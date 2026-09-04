@@ -197,15 +197,15 @@ const InitiateFlow: React.FC<InitiateFlowProps> = ({
 
           {/* Employee info banner when impersonating */}
           {isViewingOtherUser && impersonatedEmployee && (
-            <div className="flex items-center gap-2 mt-3 px-3 py-2 bg-blue-50 border border-blue-200 rounded-lg">
-              <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
-              <span className="text-sm text-blue-900">
+            <div className="flex items-center gap-2 mt-3 px-3 py-2 bg-primary/10 border border-primary/20 rounded-lg">
+              <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
+              <span className="text-sm text-text-title">
                 Showing actions for{" "}
                 <span className="font-semibold">
                   {impersonatedEmployee.employee_name || impersonatedEmployee.name}
                 </span>
                 {impersonatedEmployee.employee_name && (
-                  <span className="text-blue-600 ml-1">({impersonatedEmployee.name})</span>
+                  <span className="text-primary ml-1">({impersonatedEmployee.name})</span>
                 )}
               </span>
             </div>

@@ -55,9 +55,8 @@ export const DocumentTableRow: React.FC<DocumentTableRowProps> = ({
                 <Button
                   variant="outline"
                   size="sm"
-                  className="bg-primary/10 text-text-link hover:bg-primary/20"
+                  className="bg-primary/10 text-text-link hover:bg-primary/20 border-border"
                   onClick={() => setSelectedFile(doc.file_name)}
-                  className="border-slate-300 dark:border-[#1E3A4C] text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-[#162A3E]"
                 >
                   View
                 </Button>

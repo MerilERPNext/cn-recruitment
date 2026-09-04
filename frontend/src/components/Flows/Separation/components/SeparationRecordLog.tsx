@@ -76,11 +76,11 @@ const RecordItem = ({ record, handleShowDetails }: { record: FlowRequestItem, ha
   return (
     <div
       key={record.request_id}
-      className="cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-xl border border-gray-100 bg-white hover:border-blue-100 hover:shadow-md hover:shadow-blue-50/50 transition-all duration-300 max-w-3xl w-full group"
+      className="cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-xl border border-border bg-card hover:border-primary/30 hover:shadow-md transition-all duration-300 max-w-3xl w-full group"
       onClick={() => handleShowDetails(record.request_id)}
     >
       <div className="flex items-start gap-4">
-        <div className="relative rounded-full ring-2 ring-gray-100 group-hover:ring-blue-200 transition-all duration-300 h-10 w-10 flex items-center justify-center">
+        <div className="relative rounded-full ring-2 ring-gray-100 group-hover:ring-primary/40 transition-all duration-300 h-10 w-10 flex items-center justify-center">
           <Avatar
             name={"User"}
             src={defaultProfile}
@@ -90,14 +90,14 @@ const RecordItem = ({ record, handleShowDetails }: { record: FlowRequestItem, ha
         <div className="flex flex-col gap-1.5">
           <Typography
             variant="bodyMedium"
-            className="font-semibold text-gray-900 leading-tight group-hover:text-blue-600 transition-colors duration-200"
+            className="font-semibold text-text-title leading-tight group-hover:text-primary transition-colors duration-200"
           >
             {record.activity_statement}
           </Typography>
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs text-gray-500">
             <StatusBadge size="sm" status={customStatus} />
             {record.activity_timestamp && (
-              <div className="flex items-center gap-1.5 text-gray-600 font-medium">
+              <div className="flex items-center gap-1.5 text-text-body2 font-medium">
                 <Clock className="w-3.5 h-3.5" />
                 <span>{formatToIndianDate(record.activity_timestamp)}</span>
               </div>

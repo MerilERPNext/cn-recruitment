@@ -200,7 +200,11 @@ const ReportingDetailsFormV2 = ({
                 }),
                 isEdit ? `Updating ${category}...` : `Adding ${category}...`,
             );
-            onSuccess ? onSuccess() : onCancel?.();
+            if (onSuccess) {
+                onSuccess();
+            } else {
+                onCancel?.();
+            }
         } catch (err) {
             const formatedError = errorResponseFormater(
                 err,
@@ -266,9 +270,9 @@ const ReportingDetailsFormV2 = ({
                             clearOnSubmit: false,
                             formClass: "space-y-6",
                             rowClass: "flex flex-col md:flex-row md:space-x-4",
-                            labelClass: "mb-1 font-medium text-gray-700",
+                            labelClass: "mb-1 font-medium text-text-title text-sm",
                             inputClass:
-                                "border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-200 px-2 py-1",
+                                "border border-border rounded-lg bg-card text-text-title focus:outline-none focus:ring-2 focus:ring-primary/20 px-3 py-2 text-sm transition-all",
                             validateOnInit: true,
                             validateOnBlur: true,
                             validateOnChange: false,
