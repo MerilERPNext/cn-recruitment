@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useRef, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useScreenSize } from "../hooks/useScreenSize";
@@ -309,7 +308,7 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
                         </Typography>
                         <Typography
                           variant="bodySmall"
-                          color="secondary"
+                          color="body2"
                           className="break-words block"
                         >
                           {currentEmployee?.company_email ||

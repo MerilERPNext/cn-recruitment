@@ -2,7 +2,7 @@ import React from "react";
 
 interface CircularLoaderProps {
   size?: "sm" | "md" | "lg";
-  color?: "gray-700" | "red-700" | "blue-500" | "white" | "black"; // add as needed
+  color?: "gray-700" | "red-700" | "blue-500" | "white" | "black" | "primary"; // add as needed
   className?: string;
 }
 
@@ -16,6 +16,7 @@ const colorMap: Record<NonNullable<CircularLoaderProps["color"]>, string> = {
   "gray-700": "border-gray-700",
   "red-700": "border-red-700",
   "blue-500": "border-blue-500",
+  primary: "border-primary",
   white: "border-white",
   black: "border-black",
 };

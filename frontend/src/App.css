@@ -193,12 +193,227 @@
 }
 
 .profile-form .form-control,
+.profile-form input,
+.profile-form select,
+.profile-form textarea,
 .profile-form .choices__inner,
 .address-form-container .form-control,
+.address-form-container input,
+.address-form-container select,
+.address-form-container textarea,
 .address-form-container .choices__inner {
   color: rgb(var(--text-title)) !important;
   background-color: rgb(var(--surface)) !important;
+  border: 1px solid rgb(var(--border)) !important;
+  box-shadow: none !important;
+}
+
+/* FormIO DataGrid Tables & Containers within Profile Form */
+fieldset,
+.formio-component fieldset,
+.profile-form fieldset,
+.formio-form fieldset,
+.formio-component-datagrid,
+.formio-component-datagrid > .card,
+.formio-component-datagrid .card,
+.formio-component-datagrid .card-body,
+.formio-component-datagrid fieldset,
+.formio-component-datagrid .table-responsive,
+.profile-form .formio-component-datagrid,
+.profile-form .formio-component-datagrid > .card,
+.profile-form .formio-component-datagrid .card,
+.profile-form .formio-component-datagrid .card-body,
+.profile-form .formio-component-datagrid fieldset,
+.profile-form .formio-component-datagrid .table-responsive {
+  border: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  outline: none !important;
+}
+
+legend,
+fieldset > legend,
+.profile-form legend,
+.formio-form legend {
+  border: none !important;
+  border-bottom: 1px solid rgb(var(--border)) !important;
+  color: rgb(var(--text-title)) !important;
+  width: 100% !important;
+  font-weight: 600 !important;
+  margin-bottom: 0.75rem !important;
+  padding-bottom: 0.25rem !important;
+}
+
+.profile-form table,
+.profile-form .datagrid-table,
+.profile-form .table,
+.profile-form .table-bordered,
+.formio-form table,
+.formio-component-datagrid table,
+table.datagrid-table,
+table.table-bordered,
+table.table {
+  background-color: rgb(var(--surface)) !important;
+  background: rgb(var(--surface)) !important;
+  border: 1px solid rgb(var(--border)) !important;
   border-color: rgb(var(--border)) !important;
+  border-collapse: separate !important;
+  border-spacing: 0 !important;
+  border-radius: 0.5rem !important;
+  overflow: hidden !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+.profile-form table thead,
+.profile-form table thead th,
+.profile-form .datagrid-table thead th,
+.profile-form .table-bordered thead th,
+.profile-form th,
+.formio-form thead th,
+.formio-component-datagrid thead th,
+table.datagrid-table thead th,
+table.table-bordered thead th {
+  background-color: rgb(var(--surface-raised)) !important;
+  background: rgb(var(--surface-raised)) !important;
+  color: rgb(var(--text-title)) !important;
+  border: none !important;
+  border-bottom: 1px solid rgb(var(--border)) !important;
+  border-right: 1px solid rgb(var(--border)) !important;
+  border-color: rgb(var(--border)) !important;
+  font-weight: 600 !important;
+  font-size: 0.8125rem !important;
+  padding: 0.625rem 0.75rem !important;
+}
+
+.profile-form table thead th:last-child,
+.profile-form .datagrid-table thead th:last-child,
+.profile-form .table-bordered thead th:last-child,
+.profile-form th:last-child {
+  border-right: none !important;
+}
+
+.profile-form table tbody td,
+.profile-form .datagrid-table tbody td,
+.profile-form .table-bordered tbody td,
+.profile-form td,
+.formio-form tbody td,
+.formio-component-datagrid tbody td,
+table.datagrid-table tbody td,
+table.table-bordered tbody td {
+  background-color: rgb(var(--surface)) !important;
+  background: rgb(var(--surface)) !important;
+  color: rgb(var(--text-body1)) !important;
+  border: none !important;
+  border-bottom: 1px solid rgb(var(--border)) !important;
+  border-right: 1px solid rgb(var(--border)) !important;
+  border-color: rgb(var(--border)) !important;
+  padding: 0.5rem 0.75rem !important;
+  vertical-align: middle !important;
+}
+
+.profile-form table tbody td:last-child,
+.profile-form .datagrid-table tbody td:last-child,
+.profile-form .table-bordered tbody td:last-child,
+.profile-form td:last-child {
+  border-right: none !important;
+}
+
+/* Clean footer row for the Add Row container */
+.profile-form table tfoot,
+.profile-form table tfoot tr,
+.profile-form table tfoot td,
+.profile-form .datagrid-table tfoot,
+.profile-form .datagrid-table tfoot tr,
+.profile-form .datagrid-table tfoot td,
+.formio-form tfoot td,
+.formio-component-datagrid tfoot td,
+table.datagrid-table tfoot td,
+table.table-bordered tfoot td {
+  background-color: rgb(var(--surface)) !important;
+  background: rgb(var(--surface)) !important;
+  border: none !important;
+  padding: 0.75rem !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+.profile-form .formio-button-add-row,
+.profile-form button[ref*="addRow"],
+.profile-form button[ref*="addAnother"],
+.profile-form .datagrid-add .btn,
+.profile-form .btn-primary {
+  background-color: rgb(var(--surface-raised)) !important;
+  background: rgb(var(--surface-raised)) !important;
+  color: rgb(var(--text-title)) !important;
+  border: 1px solid rgb(var(--border)) !important;
+  border-color: rgb(var(--border)) !important;
+  border-radius: 0.375rem !important;
+  padding: 0.375rem 0.875rem !important;
+  font-size: 0.8125rem !important;
+  font-weight: 600 !important;
+  box-shadow: none !important;
+  outline: none !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 0.375rem !important;
+  cursor: pointer !important;
+  transition: all 150ms ease !important;
+}
+
+.profile-form .formio-button-add-row:hover,
+.profile-form button[ref*="addRow"]:hover,
+.profile-form button[ref*="addAnother"]:hover,
+.profile-form .datagrid-add .btn:hover,
+.profile-form .btn-primary:hover {
+  background-color: rgb(var(--primary) / 0.15) !important;
+  background: rgb(var(--primary) / 0.15) !important;
+  color: rgb(var(--text-title)) !important;
+  border-color: rgb(var(--primary) / 0.5) !important;
+}
+
+/* Rich Text / WYSIWYG / CKEditor in Profile Forms */
+.profile-form .ck.ck-editor,
+.profile-form .ck.ck-toolbar,
+.profile-form .ck.ck-toolbar__items,
+.profile-form .ck.ck-editor__top,
+.profile-form .formio-wysiwyg-toolbar {
+  background-color: rgb(var(--surface-raised)) !important;
+  background: rgb(var(--surface-raised)) !important;
+  border-color: rgb(var(--border)) !important;
+  color: rgb(var(--text-title)) !important;
+}
+
+.profile-form .ck.ck-button,
+.profile-form .ck.ck-dropdown .ck-button,
+.profile-form .ck.ck-button.ck-off {
+  color: rgb(var(--text-title)) !important;
+  background: transparent !important;
+}
+
+.profile-form .ck.ck-button:hover,
+.profile-form .ck.ck-button.ck-on {
+  background: rgb(var(--primary) / 0.15) !important;
+  color: rgb(var(--text-title)) !important;
+}
+
+.profile-form .ck.ck-button .ck-button__label,
+.profile-form .ck.ck-button .ck-icon,
+.profile-form .ck .ck-icon {
+  color: rgb(var(--text-title)) !important;
+  fill: rgb(var(--text-title)) !important;
+}
+
+.profile-form .ck.ck-editor__main > .ck-editor__editable,
+.profile-form .ck.ck-editor__editable_inline,
+.profile-form .ck-content,
+.profile-form .formio-wysiwyg-editor,
+.profile-form div[contenteditable="true"].form-control {
+  background-color: rgb(var(--surface)) !important;
+  background: rgb(var(--surface)) !important;
+  color: rgb(var(--text-title)) !important;
+  border: 1px solid rgb(var(--border)) !important;
 }
 
 .profile-form .choices__list--dropdown,

@@ -315,9 +315,9 @@ const EmployeeSidebarForm = ({
                                 alerts: false,
                                 disableOnSubmit: true,
                                 rowClass: "flex flex-col md:flex-row md:space-x-4",
-                                labelClass: "mb-1 font-medium text-gray-700",
+                                labelClass: "mb-1 font-medium text-text-title text-sm",
                                 inputClass:
-                                    "border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-200 px-2 py-1",
+                                    "border border-border rounded-lg bg-card text-text-title focus:outline-none focus:ring-2 focus:ring-primary/20 px-3 py-2 text-sm transition-all",
                                 validateOnInit: true,
                                 validateOnBlur: true,
                                 validateOnChange: false,
@@ -329,8 +329,9 @@ const EmployeeSidebarForm = ({
                                 onClick={handleSubmit}
                                 disabled={mutation?.isPending || !isDirty}
                                 size="md"
+                                bgColor="primary"
                                 fullWidth
-                                className="bg-primary-600 hover:bg-primary-700 text-white font-bold"
+                                className="font-bold shadow-sm"
                             >
                                 {mutation?.isPending || employeeIsLoading ? (
                                     <CircularLoader size="sm" color="white" />
@@ -343,7 +344,7 @@ const EmployeeSidebarForm = ({
                         </div>
                     </div>
                 ) : (
-                    <CircularLoader size="sm" color="gray-700" />
+                    <CircularLoader size="sm" color="primary" />
                 )}
             </SideDrawer>
         </div>

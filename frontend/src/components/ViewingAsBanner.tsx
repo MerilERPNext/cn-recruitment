@@ -14,41 +14,41 @@ const ViewingAsBanner: React.FC = () => {
     return null;
   }
   return (
-    <div className="bg-blue-50 border-b border-blue-200 px-4 py-2 flex items-center justify-between">
+    <div className="bg-primary/10 border-b border-primary/20 px-4 py-2 flex items-center justify-between transition-colors">
       <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
 
         {/* Top Row (Name + link) */}
         <div className="flex items-center gap-2 min-w-0">
-          <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse shrink-0" />
+          <div className="w-2 h-2 bg-primary rounded-full animate-pulse shrink-0" />
 
           <Link
             to={`/webapp/employee-profile?target_user=${targetEmployeeId}`}
-            className="text-sm font-semibold text-blue-900 truncate hover:underline"
+            className="text-sm font-semibold text-text-title truncate hover:underline hover:text-primary transition-colors"
           >
             {targetEmployee?.employee_name + ` (${targetEmployee?.name})` || targetEmployee?.name}
           </Link>
 
           <Link
             to={`/webapp/employee-profile?target_user=${targetEmployeeId}`}
-            className="shrink-0 inline-flex items-center justify-center text-blue-600 hover:text-blue-800"
+            className="shrink-0 inline-flex items-center justify-center text-primary hover:text-primary-hover transition-colors"
           >
             <ExternalLink className="size-4" />
           </Link>
         </div>
 
         {/* Bottom Row (Meta info) */}
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-blue-900">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-text-body2">
 
           <Tooltip content="Department">
-            <span className="flex items-center gap-1">
-              <Boxes className="size-4 shrink-0" />
+            <span className="flex items-center gap-1 hover:text-text-title transition-colors">
+              <Boxes className="size-4 shrink-0 text-primary" />
               <span className="truncate">{targetEmployee?.department_name}</span>
             </span>
           </Tooltip>
 
           {targetEmployee?.branch_name && <Tooltip content="Location">
-            <span className="flex items-center gap-1">
-              <MdLocationPin className="size-4 shrink-0" />
+            <span className="flex items-center gap-1 hover:text-text-title transition-colors">
+              <MdLocationPin className="size-4 shrink-0 text-primary" />
               <span className="truncate">{targetEmployee?.branch_name}</span>
             </span>
           </Tooltip>}
@@ -57,10 +57,10 @@ const ViewingAsBanner: React.FC = () => {
       </div>
       <button
         onClick={clearTargetEmployee}
-        className="flex items-center gap-1 text-sm text-blue-700 hover:text-blue-900 hover:bg-blue-100 px-3 py-1 rounded transition-colors"
+        className="flex items-center gap-1.5 text-sm font-medium text-text-title hover:text-primary bg-card/70 hover:bg-card border border-border px-3 py-1 rounded-lg transition-all shadow-sm"
         aria-label="Exit viewing mode"
       >
-        <X className="w-4 h-4" />
+        <X className="w-4 h-4 text-primary" />
         <span>Exit View</span>
       </button>
     </div>

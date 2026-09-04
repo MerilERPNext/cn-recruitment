@@ -59,14 +59,14 @@ const ProfileCard = ({ header }: ProfileCardProps) => (
 
       <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 sm:gap-6 pt-2">
         <div className="flex items-center gap-2 text-slate-600">
-          <Phone size={15} className="text-blue-500" />
+          <Phone size={15} className="text-primary" />
           <Typography variant="bodySmall" className="font-medium text-slate-600">
             {header?.phone || "-"}
           </Typography>
         </div>
 
         <div className="flex items-center gap-2 text-slate-600">
-          <Mail size={15} className="text-blue-500" />
+          <Mail size={15} className="text-primary" />
           <Typography
             variant="bodySmall"
             className="font-medium text-slate-600 break-all"

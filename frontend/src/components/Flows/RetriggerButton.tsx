@@ -27,7 +27,7 @@ const RetriggerButton: React.FC<RetriggerButtonProps> = ({
   className = "",
   fullWidth = false,
   size = "md",
-  bgColor = "blue-600",
+  bgColor = "primary",
   variant = "contain",
   flowName = "Flow",
 }) => {
@@ -67,7 +67,7 @@ const RetriggerButton: React.FC<RetriggerButtonProps> = ({
         bgColor={bgColor}
         size={size}
         fullWidth={fullWidth}
-        className={`hover:bg-blue-700 text-white flex items-center justify-center gap-2 ${className}`}
+        className={`flex items-center justify-center gap-2 ${className}`}
         onClick={handleRetrigger}
         disabled={reinitiateFlowMutation.isPending}
       >
@@ -93,11 +93,11 @@ const RetriggerButton: React.FC<RetriggerButtonProps> = ({
             <X size={18} />
           </button>
           
-          <div className="w-12 h-12 bg-blue-50 border-[6px] border-blue-50/50 rounded-full flex items-center justify-center mb-4 shadow-sm">
-            <RotateCcw className="w-5 h-5 text-blue-600" />
+          <div className="w-12 h-12 bg-primary/10 border-[6px] border-primary/20 rounded-full flex items-center justify-center mb-4 shadow-sm">
+            <RotateCcw className="w-5 h-5 text-primary" />
           </div>
           
-          <Typography variant="h4" className="mb-2 text-gray-900 font-semibold">
+          <Typography variant="h4" className="mb-2 text-text-title font-semibold">
             Retrigger {flowName}
           </Typography>
           
@@ -105,7 +105,7 @@ const RetriggerButton: React.FC<RetriggerButtonProps> = ({
             Are you sure you want to retrigger the {flowName.toLowerCase()}
             {employeeName && isViewingOtherUser && (
               <>
-                {" "}for <span className="font-medium text-gray-800">{employeeName}</span>
+                {" "}for <span className="font-medium text-text-title">{employeeName}</span>
               </>
             )}
             ? This will discard the current progress and start over.
@@ -114,7 +114,7 @@ const RetriggerButton: React.FC<RetriggerButtonProps> = ({
           <div className="flex w-full gap-3 mt-2 sm:justify-end sm:w-auto sm:self-end">
             <Button
               variant="outline"
-              className="flex-1 sm:flex-none border-gray-200 text-gray-700 hover:bg-gray-50 hover:text-gray-900"
+              className="flex-1 sm:flex-none border-border text-text-body1 hover:bg-gray-50 hover:text-text-title"
               onClick={() => setShowConfirm(false)}
               disabled={reinitiateFlowMutation.isPending}
             >
@@ -122,8 +122,8 @@ const RetriggerButton: React.FC<RetriggerButtonProps> = ({
             </Button>
             <Button
               variant="contain"
-              bgColor="blue-600"
-              className="flex-1 sm:flex-none text-white hover:bg-blue-700 shadow-sm"
+              bgColor="primary"
+              className="flex-1 sm:flex-none shadow-sm"
               onClick={handleConfirmRetrigger}
               loading={reinitiateFlowMutation.isPending}
               disabled={reinitiateFlowMutation.isPending}

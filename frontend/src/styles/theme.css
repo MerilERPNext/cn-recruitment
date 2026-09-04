@@ -446,6 +446,16 @@ body {
  *   Semantic hues DO carry meaning (a red-edged error card, an amber warning),
  *   so those keep their hue and only lose luminance.
  * ========================================================================== */
+[data-theme="dark"] [class~="border-gray-50"],
+[data-theme="dark"] [class~="border-gray-100"],
+[data-theme="dark"] [class~="border-gray-200"],
+[data-theme="dark"] [class~="border-gray-300"],
+[data-theme="dark"] [class~="border-gray-400"],
+[data-theme="dark"] [class~="border-slate-50"],
+[data-theme="dark"] [class~="border-slate-100"],
+[data-theme="dark"] [class~="border-slate-200"],
+[data-theme="dark"] [class~="border-slate-300"],
+[data-theme="dark"] [class~="border-slate-400"],
 [data-theme="dark"] [class~="border-blue-50"],
 [data-theme="dark"] [class~="border-blue-100"],
 [data-theme="dark"] [class~="border-blue-200"],
@@ -477,7 +487,32 @@ body {
 [data-theme="dark"] [class~="border-pink-50"],
 [data-theme="dark"] [class~="border-pink-100"],
 [data-theme="dark"] [class~="border-pink-200"],
-[data-theme="dark"] [class~="border-pink-300"] {
+[data-theme="dark"] [class~="border-pink-300"],
+[data-theme="dark"] fieldset,
+[data-theme="dark"] legend,
+[data-theme="dark"] .table-responsive,
+[data-theme="dark"] .fileSelector,
+[data-theme="dark"] .formio-component-file .fileSelector,
+[data-theme="dark"] table,
+[data-theme="dark"] thead,
+[data-theme="dark"] tbody,
+[data-theme="dark"] tfoot,
+[data-theme="dark"] th,
+[data-theme="dark"] td,
+[data-theme="dark"] .table-bordered,
+[data-theme="dark"] .table-bordered th,
+[data-theme="dark"] .table-bordered td,
+[data-theme="dark"] .table-bordered thead th,
+[data-theme="dark"] .table-bordered tbody td,
+[data-theme="dark"] .datagrid-table,
+[data-theme="dark"] .datagrid-table th,
+[data-theme="dark"] .datagrid-table td,
+[data-theme="dark"] .formio-component-datagrid,
+[data-theme="dark"] .formio-component-datagrid .card,
+[data-theme="dark"] .formio-component-panel .card,
+[data-theme="dark"] .card,
+[data-theme="dark"] .card-header,
+[data-theme="dark"] .card-footer {
   border-color: rgb(var(--border)) !important;
 }
 
@@ -1059,11 +1094,469 @@ select option {
   color: rgb(var(--text-title)) !important;
 }
 
-/* FormIO inputs */
-.formio-component .form-control {
+/* FormIO inputs, selects, textareas, and form controls */
+.formio-component input,
+.formio-component select,
+.formio-component textarea,
+.formio-component .form-control,
+.form-control,
+input.form-control,
+select.form-control,
+textarea.form-control,
+.profile-form input,
+.profile-form select,
+.profile-form textarea,
+.profile-form .form-control {
   background-color: rgb(var(--surface)) !important;
   color: rgb(var(--text-title)) !important;
+  border: 1px solid rgb(var(--border)) !important;
+  border-radius: 0.5rem !important;
+  box-shadow: none !important;
+}
+
+.formio-component input:focus,
+.formio-component select:focus,
+.formio-component textarea:focus,
+.formio-component .form-control:focus,
+.form-control:focus,
+.profile-form input:focus,
+.profile-form select:focus,
+.profile-form textarea:focus {
+  border-color: rgb(var(--primary)) !important;
+  box-shadow: 0 0 0 2px rgb(var(--primary) / 0.2) !important;
+  outline: none !important;
+}
+
+.formio-component input::placeholder,
+.formio-component textarea::placeholder,
+.formio-component .form-control::placeholder,
+.profile-form input::placeholder,
+.profile-form textarea::placeholder {
+  color: rgb(var(--text-disabled)) !important;
+  opacity: 1 !important;
+}
+
+/* FormIO Cards & Panels */
+.formio-component .card,
+.formio-component-panel .card,
+.profile-form .card,
+.card-body,
+.formio-component-panel {
+  background-color: rgb(var(--surface)) !important;
+  background: rgb(var(--surface)) !important;
+  border: 1px solid rgb(var(--border)) !important;
+  color: rgb(var(--text-title)) !important;
+}
+
+/* FormIO Fieldsets, Legends, Cards & Datagrids */
+fieldset,
+.formio-component fieldset,
+.profile-form fieldset,
+.formio-form fieldset,
+[data-testid="formioContainer"] fieldset,
+fieldset.formio-component-datagrid,
+.formio-component-datagrid,
+.formio-component-datagrid .card,
+.formio-component-datagrid > .card,
+.formio-component-datagrid .card-body,
+.formio-component-datagrid fieldset,
+.formio-component-datagrid .table-responsive,
+.profile-form .formio-component-datagrid,
+.profile-form .formio-component-datagrid > .card,
+.profile-form .formio-component-datagrid .card,
+.profile-form .formio-component-datagrid .card-body,
+.profile-form .formio-component-datagrid fieldset,
+.profile-form .formio-component-datagrid .table-responsive,
+[data-testid="formioContainer"] .formio-component-datagrid,
+[data-testid="formioContainer"] .formio-component-datagrid .table-responsive {
+  border: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  outline: none !important;
+}
+
+legend,
+fieldset > legend,
+.formio-component-fieldset > legend,
+.formio-component legend,
+.profile-form legend,
+.formio-form legend,
+[data-testid="formioContainer"] legend {
+  border: none !important;
+  border-bottom: 1px solid rgb(var(--border)) !important;
+  color: rgb(var(--text-title)) !important;
+  width: 100% !important;
+  font-weight: 600 !important;
+  margin-bottom: 0.75rem !important;
+  padding-bottom: 0.25rem !important;
+}
+
+/* File Upload & Drop Zones */
+.formio-component-file .fileSelector,
+.fileSelector,
+div[ref="fileDrop"],
+.profile-form .formio-component-file .fileSelector,
+.profile-form .fileSelector,
+[data-testid="formioContainer"] .formio-component-file .fileSelector {
+  border: 1.5px dashed rgb(var(--border)) !important;
   border-color: rgb(var(--border)) !important;
+  background-color: rgb(var(--surface)) !important;
+  border-radius: 0.5rem !important;
+  color: rgb(var(--text-body1)) !important;
+}
+
+.formio-component-file .fileSelector .browse,
+.fileSelector .browse,
+[data-testid="formioContainer"] .fileSelector .browse,
+.profile-form .fileSelector .browse {
+  color: rgb(var(--primary)) !important;
+}
+
+.formio-component .card-header,
+.formio-component-datagrid .card-header,
+.formio-component-panel .card-header,
+.profile-form .card-header,
+.datagrid-group-header,
+.datagrid-group-label {
+  background-color: rgb(var(--surface-raised)) !important;
+  background: rgb(var(--surface-raised)) !important;
+  color: rgb(var(--text-title)) !important;
+  border-bottom: 1px solid rgb(var(--border)) !important;
+  border-color: rgb(var(--border)) !important;
+  font-weight: 600 !important;
+}
+
+/* FormIO DataGrid Tables & Data Grid components */
+.formio-component table,
+.formio-component-datagrid table,
+.profile-form table,
+.formio-form table,
+[data-testid="formioContainer"] table,
+table.datagrid-table,
+table.table,
+table.table-bordered,
+.table-bordered,
+.datagrid-table,
+.table {
+  background-color: rgb(var(--surface)) !important;
+  background: rgb(var(--surface)) !important;
+  border: 1px solid rgb(var(--border)) !important;
+  border-color: rgb(var(--border)) !important;
+  border-collapse: separate !important;
+  border-spacing: 0 !important;
+  border-radius: 0.5rem !important;
+  overflow: hidden !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+.formio-component thead,
+.formio-component-datagrid thead,
+.profile-form thead,
+.formio-form thead,
+[data-testid="formioContainer"] thead,
+table.datagrid-table thead,
+table.table thead,
+.table thead,
+.table-bordered thead {
+  background-color: rgb(var(--surface-raised)) !important;
+  background: rgb(var(--surface-raised)) !important;
+  border: none !important;
+}
+
+.formio-component th,
+.formio-component thead th,
+.formio-component-datagrid th,
+.formio-component-datagrid thead th,
+.profile-form th,
+.profile-form thead th,
+.formio-form th,
+.formio-form thead th,
+[data-testid="formioContainer"] th,
+[data-testid="formioContainer"] thead th,
+table.datagrid-table th,
+table.datagrid-table thead th,
+table.table th,
+table.table thead th,
+.table-bordered th,
+.table-bordered thead th,
+.table th,
+.table thead th {
+  background-color: rgb(var(--surface-raised)) !important;
+  background: rgb(var(--surface-raised)) !important;
+  color: rgb(var(--text-title)) !important;
+  border: none !important;
+  border-bottom: 1px solid rgb(var(--border)) !important;
+  border-right: 1px solid rgb(var(--border)) !important;
+  border-color: rgb(var(--border)) !important;
+  font-weight: 600 !important;
+  font-size: 0.8125rem !important;
+  padding: 0.625rem 0.75rem !important;
+}
+
+.formio-component th:last-child,
+.formio-component thead th:last-child,
+.formio-component-datagrid th:last-child,
+.profile-form th:last-child,
+table.datagrid-table th:last-child,
+table.table th:last-child,
+.table-bordered th:last-child {
+  border-right: none !important;
+}
+
+.formio-component tbody td,
+.formio-component-datagrid tbody td,
+.profile-form tbody td,
+.formio-form tbody td,
+[data-testid="formioContainer"] tbody td,
+table.datagrid-table tbody td,
+table.table tbody td,
+.table-bordered tbody td,
+.table-bordered td,
+.table tbody td,
+.table td,
+.formio-component td,
+.formio-component-datagrid td,
+.profile-form td,
+.formio-form td,
+[data-testid="formioContainer"] td,
+table.datagrid-table td,
+table.table td {
+  background-color: rgb(var(--surface)) !important;
+  background: rgb(var(--surface)) !important;
+  color: rgb(var(--text-body1)) !important;
+  border: none !important;
+  border-bottom: 1px solid rgb(var(--border)) !important;
+  border-right: 1px solid rgb(var(--border)) !important;
+  border-color: rgb(var(--border)) !important;
+  padding: 0.5rem 0.75rem !important;
+  vertical-align: middle !important;
+}
+
+.formio-component tbody td:last-child,
+.formio-component-datagrid tbody td:last-child,
+.profile-form tbody td:last-child,
+table.datagrid-table tbody td:last-child,
+table.table tbody td:last-child,
+.table-bordered tbody td:last-child {
+  border-right: none !important;
+}
+
+/* Clean footer row for the Add Row container */
+tfoot,
+tfoot tr,
+tfoot td,
+.formio-component tfoot,
+.formio-component tfoot tr,
+.formio-component tfoot td,
+.formio-component-datagrid tfoot,
+.formio-component-datagrid tfoot tr,
+.formio-component-datagrid tfoot td,
+.profile-form tfoot,
+.profile-form tfoot tr,
+.profile-form tfoot td,
+.formio-form tfoot,
+.formio-form tfoot tr,
+.formio-form tfoot td,
+[data-testid="formioContainer"] tfoot,
+[data-testid="formioContainer"] tfoot tr,
+[data-testid="formioContainer"] tfoot td,
+table.datagrid-table tfoot,
+table.datagrid-table tfoot tr,
+table.datagrid-table tfoot td,
+table.table tfoot,
+table.table tfoot tr,
+table.table tfoot td,
+.table-bordered tfoot,
+.table-bordered tfoot tr,
+.table-bordered tfoot td {
+  background-color: rgb(var(--surface)) !important;
+  background: rgb(var(--surface)) !important;
+  border: none !important;
+  padding: 0.75rem !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+/* FormIO DataGrid Add Row Button */
+.formio-button-add-row,
+button[ref*="addRow"],
+button[ref*="addAnother"],
+button[ref*="AddAnother"],
+.datagrid-add .btn,
+.formio-component-datagrid .btn,
+.formio-component-datagrid .btn-primary,
+.profile-form .formio-button-add-row,
+.profile-form button[ref*="addRow"],
+.profile-form button[ref*="addAnother"],
+.profile-form .btn-primary {
+  background-color: rgb(var(--surface-raised)) !important;
+  background: rgb(var(--surface-raised)) !important;
+  color: rgb(var(--text-title)) !important;
+  border: 1px solid rgb(var(--border)) !important;
+  border-color: rgb(var(--border)) !important;
+  border-radius: 0.375rem !important;
+  padding: 0.375rem 0.875rem !important;
+  font-size: 0.8125rem !important;
+  font-weight: 600 !important;
+  box-shadow: none !important;
+  outline: none !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 0.375rem !important;
+  cursor: pointer !important;
+  transition: all 150ms ease !important;
+}
+
+.formio-button-add-row:hover,
+button[ref*="addRow"]:hover,
+button[ref*="addAnother"]:hover,
+button[ref*="AddAnother"]:hover,
+.datagrid-add .btn:hover,
+.formio-component-datagrid .btn:hover,
+.formio-component-datagrid .btn-primary:hover,
+.profile-form .formio-button-add-row:hover,
+.profile-form button[ref*="addRow"]:hover,
+.profile-form button[ref*="addAnother"]:hover,
+.profile-form .btn-primary:hover {
+  background-color: rgb(var(--primary) / 0.15) !important;
+  background: rgb(var(--primary) / 0.15) !important;
+  color: rgb(var(--text-title)) !important;
+  border-color: rgb(var(--primary) / 0.5) !important;
+}
+
+/* FormIO DataGrid Remove Row Button */
+.formio-component-datagrid .formio-button-remove-row,
+.formio-component-datagrid button[ref="removeRow"],
+.profile-form .formio-button-remove-row,
+.profile-form button[ref="removeRow"] {
+  color: rgb(var(--error)) !important;
+  background-color: transparent !important;
+  border: none !important;
+  opacity: 0.8 !important;
+  transition: opacity 150ms ease !important;
+}
+
+.formio-component-datagrid .formio-button-remove-row:hover,
+.formio-component-datagrid button[ref="removeRow"]:hover,
+.profile-form .formio-button-remove-row:hover,
+.profile-form button[ref="removeRow"]:hover {
+  opacity: 1 !important;
+}
+
+/* =============================================================================
+ * FormIO WYSIWYG, CKEditor 5 & Rich Text Editor (Theme Aware)
+ * ========================================================================== */
+
+/* CKEditor 5 Container, Toolbar & Editable Area */
+.ck.ck-editor,
+.ck.ck-toolbar,
+.ck.ck-toolbar__items,
+.ck.ck-editor__top,
+.ck.ck-reset_all,
+.ck.ck-reset,
+.formio-wysiwyg-toolbar {
+  background-color: rgb(var(--surface-raised)) !important;
+  background: rgb(var(--surface-raised)) !important;
+  border-color: rgb(var(--border)) !important;
+  color: rgb(var(--text-title)) !important;
+}
+
+.ck.ck-toolbar {
+  border: 1px solid rgb(var(--border)) !important;
+  border-bottom: 1px solid rgb(var(--border)) !important;
+  border-top-left-radius: 0.5rem !important;
+  border-top-right-radius: 0.5rem !important;
+}
+
+.ck.ck-button,
+.ck.ck-dropdown .ck-button,
+.ck.ck-button.ck-off {
+  color: rgb(var(--text-title)) !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  cursor: pointer !important;
+}
+
+.ck.ck-button:hover,
+.ck.ck-button.ck-on,
+.ck.ck-button:active,
+.ck.ck-button:focus,
+.ck.ck-button.ck-button_with-value:hover {
+  background: rgb(var(--primary) / 0.15) !important;
+  background-color: rgb(var(--primary) / 0.15) !important;
+  color: rgb(var(--text-title)) !important;
+}
+
+.ck.ck-button .ck-button__label,
+.ck.ck-button .ck-icon,
+.ck .ck-icon {
+  color: rgb(var(--text-title)) !important;
+  fill: rgb(var(--text-title)) !important;
+}
+
+.ck.ck-dropdown__panel {
+  background-color: rgb(var(--surface-raised)) !important;
+  background: rgb(var(--surface-raised)) !important;
+  border: 1px solid rgb(var(--border-strong)) !important;
+  box-shadow: var(--shadow-elevated) !important;
+}
+
+.ck.ck-editor__main > .ck-editor__editable,
+.ck.ck-editor__editable_inline,
+.ck-content,
+.formio-wysiwyg-editor,
+.formio-editor-read-only-content,
+div[contenteditable="true"].form-control,
+.formio-component-textarea .ck-editor__editable {
+  background-color: rgb(var(--surface)) !important;
+  background: rgb(var(--surface)) !important;
+  color: rgb(var(--text-title)) !important;
+  border: 1px solid rgb(var(--border)) !important;
+  border-bottom-left-radius: 0.5rem !important;
+  border-bottom-right-radius: 0.5rem !important;
+  min-height: 120px !important;
+}
+
+.ck.ck-editor__editable:not(.ck-editor__nested-editable).ck-focused {
+  border-color: rgb(var(--primary)) !important;
+  box-shadow: 0 0 0 2px rgb(var(--primary) / 0.2) !important;
+  outline: none !important;
+}
+
+/* Quill & other fallback editors */
+.ql-toolbar,
+.ql-snow.ql-toolbar {
+  background-color: rgb(var(--surface-raised)) !important;
+  background: rgb(var(--surface-raised)) !important;
+  border: 1px solid rgb(var(--border)) !important;
+  border-bottom: none !important;
+  border-top-left-radius: 0.5rem !important;
+  border-top-right-radius: 0.5rem !important;
+}
+
+.ql-toolbar .ql-stroke {
+  stroke: rgb(var(--text-title)) !important;
+}
+
+.ql-toolbar .ql-fill {
+  fill: rgb(var(--text-title)) !important;
+}
+
+.ql-toolbar .ql-picker-label {
+  color: rgb(var(--text-title)) !important;
+}
+
+.ql-container,
+.ql-snow.ql-container,
+.ql-editor {
+  background-color: rgb(var(--surface)) !important;
+  background: rgb(var(--surface)) !important;
+  color: rgb(var(--text-title)) !important;
+  border: 1px solid rgb(var(--border)) !important;
+  border-bottom-left-radius: 0.5rem !important;
+  border-bottom-right-radius: 0.5rem !important;
 }
 
 /* =============================================================================

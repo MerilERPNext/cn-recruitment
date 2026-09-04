@@ -1,29 +1,81 @@
 /* Target only your formio container */
-[data-testid="formioContainer"] .table {
-  border: none !important;
-  border-collapse: collapse !important;
+[data-testid="formioContainer"] .table,
+[data-testid="formioContainer"] table.datagrid-table,
+[data-testid="formioContainer"] table.table-bordered {
+  background-color: rgb(var(--surface)) !important;
+  background: rgb(var(--surface)) !important;
+  border: 1px solid rgb(var(--border)) !important;
+  border-color: rgb(var(--border)) !important;
+  border-collapse: separate !important;
+  border-spacing: 0 !important;
+  border-radius: 0.5rem !important;
+  overflow: hidden !important;
+  box-shadow: none !important;
+  outline: none !important;
 }
 
 [data-testid="formioContainer"] .table th,
-[data-testid="formioContainer"] .table td {
-  border: 1px solid #e5e7eb !important;
-  /* light gray */
+[data-testid="formioContainer"] .table td,
+[data-testid="formioContainer"] .datagrid-table th,
+[data-testid="formioContainer"] .datagrid-table td {
+  border: none !important;
+  border-bottom: 1px solid rgb(var(--border)) !important;
+  border-right: 1px solid rgb(var(--border)) !important;
+  border-color: rgb(var(--border)) !important;
   padding: 6px 10px !important;
   font-size: 14px !important;
   vertical-align: middle !important;
 }
 
+[data-testid="formioContainer"] .table th:last-child,
+[data-testid="formioContainer"] .table td:last-child,
+[data-testid="formioContainer"] .datagrid-table th:last-child,
+[data-testid="formioContainer"] .datagrid-table td:last-child {
+  border-right: none !important;
+}
+
 /* Header row */
-[data-testid="formioContainer"] .table thead th {
-  background: #f9fafb !important;
+[data-testid="formioContainer"] .table thead th,
+[data-testid="formioContainer"] .table th,
+[data-testid="formioContainer"] .datagrid-table thead th,
+[data-testid="formioContainer"] thead th {
+  background: rgb(var(--surface-raised)) !important;
+  background-color: rgb(var(--surface-raised)) !important;
   font-weight: 600 !important;
-  color: #374151 !important;
-  border-bottom: 1px solid #e5e7eb !important;
+  color: rgb(var(--text-title)) !important;
+  border: none !important;
+  border-bottom: 1px solid rgb(var(--border)) !important;
+  border-right: 1px solid rgb(var(--border)) !important;
+  border-color: rgb(var(--border)) !important;
+}
+
+[data-testid="formioContainer"] .table tbody td,
+[data-testid="formioContainer"] .table td,
+[data-testid="formioContainer"] .datagrid-table tbody td,
+[data-testid="formioContainer"] tbody td {
+  background: rgb(var(--surface)) !important;
+  background-color: rgb(var(--surface)) !important;
+  color: rgb(var(--text-body1)) !important;
+  border: none !important;
+  border-bottom: 1px solid rgb(var(--border)) !important;
+  border-right: 1px solid rgb(var(--border)) !important;
+  border-color: rgb(var(--border)) !important;
+}
+
+[data-testid="formioContainer"] tfoot,
+[data-testid="formioContainer"] tfoot tr,
+[data-testid="formioContainer"] tfoot td {
+  background: rgb(var(--surface)) !important;
+  background-color: rgb(var(--surface)) !important;
+  border: none !important;
+  padding: 8px 10px !important;
 }
 
 /* Input fields */
 [data-testid="formioContainer"] .form-control {
-  border: 1px solid #d1d5db !important;
+  background-color: rgb(var(--surface)) !important;
+  color: rgb(var(--text-title)) !important;
+  border: 1px solid rgb(var(--border)) !important;
   border-radius: 6px !important;
   font-size: 14px !important;
   padding: 6px 8px !important;
@@ -31,16 +83,60 @@
 }
 
 [data-testid="formioContainer"] .form-control:focus {
-  border-color: #6366f1 !important;
+  border-color: rgb(var(--primary)) !important;
   outline: none !important;
-  box-shadow: 0 0 0 1px #6366f1 !important;
+  box-shadow: 0 0 0 2px rgb(var(--primary) / 0.2) !important;
+}
+
+/* WYSIWYG & CKEditor 5 Theme Styling */
+[data-testid="formioContainer"] .ck.ck-editor,
+[data-testid="formioContainer"] .ck.ck-toolbar,
+[data-testid="formioContainer"] .ck.ck-toolbar__items,
+[data-testid="formioContainer"] .ck.ck-editor__top,
+[data-testid="formioContainer"] .formio-wysiwyg-toolbar {
+  background-color: rgb(var(--surface-raised)) !important;
+  background: rgb(var(--surface-raised)) !important;
+  border-color: rgb(var(--border)) !important;
+  color: rgb(var(--text-title)) !important;
+}
+
+[data-testid="formioContainer"] .ck.ck-button,
+[data-testid="formioContainer"] .ck.ck-dropdown .ck-button,
+[data-testid="formioContainer"] .ck.ck-button.ck-off {
+  color: rgb(var(--text-title)) !important;
+  background: transparent !important;
+}
+
+[data-testid="formioContainer"] .ck.ck-button:hover,
+[data-testid="formioContainer"] .ck.ck-button.ck-on {
+  background: rgb(var(--primary) / 0.15) !important;
+  color: rgb(var(--text-title)) !important;
+}
+
+[data-testid="formioContainer"] .ck.ck-button .ck-button__label,
+[data-testid="formioContainer"] .ck.ck-button .ck-icon,
+[data-testid="formioContainer"] .ck .ck-icon {
+  color: rgb(var(--text-title)) !important;
+  fill: rgb(var(--text-title)) !important;
+}
+
+[data-testid="formioContainer"] .ck.ck-editor__main > .ck-editor__editable,
+[data-testid="formioContainer"] .ck.ck-editor__editable_inline,
+[data-testid="formioContainer"] .ck-content,
+[data-testid="formioContainer"] .formio-wysiwyg-editor,
+[data-testid="formioContainer"] div[contenteditable="true"].form-control {
+  background-color: rgb(var(--surface)) !important;
+  background: rgb(var(--surface)) !important;
+  color: rgb(var(--text-title)) !important;
+  border: 1px solid rgb(var(--border)) !important;
 }
 
 /* Buttons */
 [data-testid="formioContainer"] .formio-button-add-row {
-  background: white !important;
-  border: 1px solid #d1d5db !important;
-  color: #374151 !important;
+  background: rgb(var(--surface-raised)) !important;
+  background-color: rgb(var(--surface-raised)) !important;
+  border: 1px solid rgb(var(--border)) !important;
+  color: rgb(var(--text-title)) !important;
   font-size: 13px !important;
   padding: 6px 12px !important;
   border-radius: 6px !important;
@@ -49,26 +145,31 @@
   gap: 4px;
   justify-content: center;
   align-items: center;
-  font-weight: 400 !important;
+  transition: all 150ms ease !important;
 }
 
 [data-testid="formioContainer"] .formio-button-add-row:hover {
-  background: #f3f4f6 !important;
+  background: rgb(var(--primary) / 0.15) !important;
+  background-color: rgb(var(--primary) / 0.15) !important;
+  border-color: rgb(var(--primary) / 0.4) !important;
+  color: rgb(var(--text-title)) !important;
 }
 
 [data-testid="formioContainer"] .formio-button-remove-row {
   background: transparent !important;
   border: none !important;
-  color: #ef4444 !important;
+  color: rgb(var(--error)) !important;
   padding: 8px !important;
   border-radius: 6px !important;
   font-size: 18px !important;
   font-family: "Font Awesome 5 Free";
   font-weight: 400 !important;
+  opacity: 0.8 !important;
 }
 
 [data-testid="formioContainer"] .formio-button-remove-row:hover {
-  background: #fee2e2 !important;
+  background: rgb(var(--error) / 0.15) !important;
+  opacity: 1 !important;
 }
 
 [data-testid="formioContainer"].profile-form .choices__item {

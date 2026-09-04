@@ -169,9 +169,8 @@ const FlowApp: React.FC = () => {
 
   const actionButton = showInitiateButton ? (
     <Button
-      bgColor="blue-600"
+      bgColor="primary"
       size="lg"
-      className="hover:bg-blue-700 text-white"
       onClick={handleInitiateModel}
     >
       + Initiate Flow

@@ -81,7 +81,7 @@ const ActivityLog: React.FC<ActivityLogProps> = ({
                                         {log.timestamp ? formatToIndianDateWithTime(log.timestamp) : "-"}
                                     </Typography>
                                     {log.category && (
-                                        <Typography variant="caption" className="text-blue-500">
+                                        <Typography variant="caption" className="text-primary">
                                             {log.category}
                                         </Typography>
                                     )}

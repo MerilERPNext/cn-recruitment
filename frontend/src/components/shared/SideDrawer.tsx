@@ -94,7 +94,7 @@ const SideDrawer: React.FC<SideDrawerProps> = ({
         `}
             >
                 {showBackButton ? <HeaderBar title={title} onBack={onClose} /> :
-                    <div className="flex items-center justify-between px-4 py-3 border-b">
+                    <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-card">
                         <div className="flex items-center justify-center gap-2">
                             <h2 className="text-sm font-semibold text-text-title">{title}</h2>
                         </div>
@@ -102,10 +102,10 @@ const SideDrawer: React.FC<SideDrawerProps> = ({
                             <Button
                                 variant="subtle"
                                 onClick={onClose}
-                                className="rounded-md hover:bg-gray-100"
+                                className="rounded-md hover:bg-card-hover text-text-body2 hover:text-text-title p-1.5"
                                 aria-label="Close"
                             >
-                                <X className="h-5 w-5 text-gray-600" />
+                                <X className="h-5 w-5" />
 
                             </Button>}
                     </div>

@@ -308,7 +308,7 @@ const Separation = () => {
             <Button
               variant="outline"
               onClick={() => setIsActivityLogOpen(true)}
-              className="flex items-center gap-2 py-1.5 bg-card border-border text-text-body1 hover:bg-gray-50 hover:border-border-strong transition-all rounded-md shadow-sm"
+              className="flex items-center gap-2 py-1.5 bg-card border-border text-text-body1 hover:bg-primary/10 hover:text-primary hover:border-primary/40 transition-all rounded-md shadow-sm"
               disabled={!item?.request_id}
             >
               Activity Log
@@ -326,7 +326,6 @@ const Separation = () => {
                 onClick={handleShowWorkflow}
                 size="sm"
                 bgColor="primary"
-                className="hover:bg-primary text-white"
               >
                 View Workflow
               </Button>
@@ -480,8 +479,7 @@ const Separation = () => {
               <Button
                 onClick={() => handleTriggerChat("Separation")}
                 size="md"
-                bgColor="blue-500"
-                className="hover:bg-blue-600 text-white"
+                bgColor="primary"
                 loading={isTriggeringChat}
                 disabled={isTriggeringChat}
               >
@@ -497,8 +495,8 @@ const Separation = () => {
           <Button
             onClick={() => handleTriggerChat("Termination")}
             size="md"
-            bgColor="black"
-            className="hover:bg-gray-900 text-white mx-auto"
+            bgColor="primary"
+            className="mx-auto"
             loading={isTriggeringChat}
             disabled={isTriggeringChat || isCompleted}
           >

@@ -123,7 +123,7 @@ export default function SeparationApprovalStages({ stages }: ApprovalStagesProps
         <div key={index} className="relative">
           {index < stages.length - 1 && <div className="absolute left-3 top-12  w-0.5 h-8 bg-slate-200" />}
 
-          <div className="bg-white border border-slate-200 rounded-lg p-4 hover:border-blue-300 hover:shadow-sm transition-all">
+          <div className="bg-card border border-border rounded-lg p-4 hover:border-primary/40 hover:shadow-sm transition-all">
             <div className="flex items-start gap-4">
               {/* Status Icon */}
               <div className="flex-shrink-0 mt-1">{getStatusIcon(stage.status)}</div>
@@ -132,13 +132,13 @@ export default function SeparationApprovalStages({ stages }: ApprovalStagesProps
               <div className="flex-grow">
                 <div className="flex items-center justify-between gap-4">
                   <div>
-                    <p className="font-medium text-slate-900">Stage {index + 1}</p>
+                    <p className="font-medium text-text-title">Stage {index + 1}</p>
                     <p className={`text-sm font-semibold ${getStatusColor(stage.status)}`}>
                       {getStatusLabel(stage.status)}
                     </p>
                   </div>
                   {stage?.form_json?.components && stage.status !== "Pending" &&
-                    <button className="rounded-lg text-white bg-blue-500 px-2 py-1 text-sm"
+                    <button className="rounded-lg text-white bg-primary hover:bg-primary-600 transition-colors px-2.5 py-1 text-sm font-medium"
                       onClick={() => handleShowForm(stage?.form_json?.components)}> show form </button>}
                 </div>
                 {/* Details */}
