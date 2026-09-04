@@ -9,13 +9,14 @@ record.
 
 Naming
 ------
-A pending Employee is inserted with an explicit ``PEND-#####`` name
-(``insert(set_name=...)``), which bypasses autoname — so a candidate who never
-joins does not burn a real employee code. ``activate_employee`` renames it into
-the site's real series (the one ``cn_hrms_core``'s ``before_insert`` already
-stamped onto ``naming_series``) and flips the status to Active. Employee is
-``allow_rename: 1`` with an ``after_rename`` handler, and Frappe's rename updates
-every inbound link.
+A new hire is named by Employee's own ``naming_series:`` autoname, exactly like
+any other employee — ``cn_hrms_core``'s ``before_insert`` stamps the company
+series onto ``naming_series`` and Frappe names the record from it. The employee
+code is therefore issued at intake, not at activation, and never changes;
+``activate_employee`` only flips the status.
+
+Records raised before this (named out of a ``PEND-#####`` series) are still
+renamed into the real series on activation — see :func:`activate_employee`.
 
 Lifecycle
 ---------
@@ -49,7 +50,7 @@ EMPLOYEE_ONBOARDING = "Employee Onboarding"
 PENDING_STATUS = "Pending"
 ACTIVE_STATUS = "Active"
 
-PENDING_SERIES = "PEND-.#####"
+# Only for the legacy records raised before intake used the standard series.
 PENDING_PREFIX = "PEND-"
 
 STAGE_FIELD = "custom_new_hire_stage"
@@ -673,11 +674,11 @@ def _validate_mandatory(doc, form_doc, employment_type=None, config=None):
 def create_new_hire(payload=None, form=None, submit=1):
     """Create the new hire as a pending Employee.
 
-    Named out of the `PEND-` series via `insert(set_name=...)`, which bypasses
-    autoname — so no real employee code is consumed until activation. `status` is
-    Pending, which keeps the record out of payroll and attendance (both filter
-    `status == "Active"`) and out of the role grants in `cn_hrms_core`, which
-    fire on the transition TO Active.
+    Named by Employee's own autoname, so the code matches every other employee
+    from the moment the intake is raised. `status` is Pending, which is what keeps
+    the record out of payroll and attendance (both filter `status == "Active"`)
+    and out of the role grants in `cn_hrms_core`, which fire on the transition TO
+    Active — the status carries the whole separation, not the name.
 
     `submit=1` (default) sets the stage to Pending Approval, which is what the
     approval matrix's Flow Config fires on. Nothing here starts it.
@@ -707,7 +708,7 @@ def create_new_hire(payload=None, form=None, submit=1):
                     form_doc, employment_type=doc.get("employment_type")),
             )
 
-        doc.insert(set_name=make_autoname(PENDING_SERIES))
+        doc.insert()
 
         return _ok(_("New hire {0} created.").format(doc.name), {
             "name": doc.name,
@@ -790,7 +791,7 @@ _DEFAULT_LIST_COLUMNS = (
     "name", "employee_name", "designation", "department", "company",
     "employment_type", "date_of_joining", STAGE_FIELD,
 )
-_LIST_COLUMN_LABEL_OVERRIDES = {"name": "Pending ID"}
+_LIST_COLUMN_LABEL_OVERRIDES = {"name": "Employee ID"}
 _SORTABLE = frozenset({
     "creation", "modified", "name", "employee_name", "date_of_joining",
     "company", "designation", "department", STAGE_FIELD,
@@ -1193,19 +1194,14 @@ def initiate_onboarding(name=None):
 def activate_employee(name=None):
     """Turn a completed pending Employee into a real one.
 
-    Two steps, in this order:
+    `status = "Active"` is the whole of it: that transition releases the
+    hierarchy role grants in `cn_hrms_core` and lets payroll and attendance see
+    the person. The employee code was issued at intake and does not change.
 
-      1. rename out of `PEND-` into the site's real series — the one
-         `cn_hrms_core`'s `before_insert` already stamped onto `naming_series`,
-         so the code matches every other employee. Frappe's rename updates every
-         inbound link, and Employee's `after_rename` re-stamps its own
-         `employee` field.
-      2. `status = "Active"`, which is what releases the hierarchy role grants in
-         `cn_hrms_core` (they are gated on the transition TO Active) and lets
-         payroll and attendance see the person.
-
-    Renaming first means the role grants and every downstream hook fire against
-    the final name, so nothing is left pointing at a `PEND-` id.
+    The one exception is a record raised before intake used the standard series:
+    it still carries a `PEND-` name, so it is renamed into the real series first,
+    and only then activated — that way the role grants and every downstream hook
+    fire against the final name, leaving nothing pointing at a `PEND-` id.
     """
     try:
         if not name:
@@ -1224,6 +1220,8 @@ def activate_employee(name=None):
 
         final = doc.name
         renamed = False
+        # Legacy only: intake names new hires out of the real series now, so
+        # this is a no-op for anything raised since that change.
         if doc.name.startswith(PENDING_PREFIX):
             series = (doc.get("naming_series") or "").strip()
             if not series:

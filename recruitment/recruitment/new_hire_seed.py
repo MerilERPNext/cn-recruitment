@@ -179,7 +179,7 @@ def report():
     for row in rows:
         onboarding = frappe.db.get_value(
             "Employee Onboarding", {"employee": row.name, "docstatus": ("<", 2)}, "name")
-        print(f"  {row.name:14s} {row.employee_name:16s} {row.status:8s} "
+        print(f"  {row.name:18s} {row.employee_name:16s} {row.status:8s} "
               f"{(row.get(nh.STAGE_FIELD) or '-'):22s} {onboarding or ''}")
     if not rows:
         print("  (none — run `run` first)")
