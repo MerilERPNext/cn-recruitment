@@ -177,7 +177,7 @@ def _live_session(appl):
 
 def _auth_header(settings):
     user = cstr(settings.partner_username).strip()
-    password = cstr(settings.get_password("partner_password", raise_exception=False) or "")
+    password = cstr(settings.get_password("partner_password", raise_exception=False) or "").strip()
     if not user or not password:
         frappe.throw(_("Partner credentials are not configured in DPDP Act Settings."))
     raw = f"{user}:{password}".encode()
@@ -216,6 +216,36 @@ def _throttle_session_starts(appl):
         )
 
 
+def _partner_message(body):
+    """The human-readable reason out of a partner response body, if it carries one."""
+    if not isinstance(body, dict):
+        return None
+    return cstr(body.get("message") or body.get("error") or body.get("errorMessage")).strip() or None
+
+
+def _fail_session(session, reason):
+    """Persist the failed attempt, then stop with the partner's own reason.
+
+    The commit is the point: ``frappe.throw`` rolls the request back, which would
+    discard the very record — request body, response body, HTTP status — that makes
+    a partner-side failure diagnosable. Committing first means a failed handover
+    always leaves evidence behind in DPDP Consent Session.
+
+    The reason is passed through rather than hidden behind a generic message: it is
+    the partner's own validation text ("Mobile is required"), which tells whoever is
+    looking exactly what to correct.
+    """
+    session.status = "Failed"
+    session.error_message = cstr(reason)[:500]
+    session.insert(ignore_permissions=True)
+    frappe.db.commit()
+    frappe.throw(
+        _("Could not start the consent session with the consent portal: {0}").format(
+            session.error_message
+        )
+    )
+
+
 def _create_session(appl):
     """POST to the partner's consent-start API and record the session."""
     import requests
@@ -230,11 +260,18 @@ def _create_session(appl):
     if not contacts["name"]:
         frappe.throw(_("This candidate has no name on record; consent cannot be started."))
 
+    # The portal validates mobile on every channel, not just SMS — an EMAIL session
+    # with a blank mobile comes back "Mobile is required". Checking here names the
+    # candidate and the field to fix, instead of surfacing the partner's generic error.
     channel = cstr(settings.consent_channel).strip().upper() or "EMAIL"
-    if channel in ("EMAIL", "BOTH") and not contacts["email"]:
-        frappe.throw(_("This candidate has no email address; the consent link cannot be sent."))
-    if channel in ("SMS", "BOTH") and not contacts["mobile"]:
-        frappe.throw(_("This candidate has no mobile number; the consent link cannot be sent."))
+    if not contacts["email"] and channel in ("EMAIL", "BOTH"):
+        frappe.throw(
+            _("{0} has no email address on their Job Applicant record, so the consent link cannot be sent.").format(contacts["name"])
+        )
+    if not contacts["mobile"]:
+        frappe.throw(
+            _("{0} has no mobile number on their Job Applicant record. The consent portal requires one for every consent session — add it to the Job Applicant and try again.").format(contacts["name"])
+        )
 
     payload = _start_payload(settings, appl, contacts)
     headers = {
@@ -251,6 +288,7 @@ def _create_session(appl):
     session.configuration_code = payload["configurationCode"]
     session.request_payload = frappe.as_json(payload)
 
+    body = None
     try:
         response = requests.post(
             endpoint,
@@ -260,24 +298,20 @@ def _create_session(appl):
         )
         body = _safe_json(response.text)
         session.response_payload = frappe.as_json(body if body is not None else response.text)
+        session.http_status = response.status_code
         response.raise_for_status()
     except Exception as exc:
-        session.status = "Failed"
-        session.error_message = cstr(exc)[:500]
-        session.insert(ignore_permissions=True)
         frappe.log_error(frappe.get_traceback(), "DPDP: consent session start failed")
-        frappe.throw(
-            _("Could not start the consent session with the consent portal. Please try again or contact HR.")
-        )
+        _fail_session(session, _partner_message(body) or cstr(exc))
 
     data = (body or {}).get("data") or {}
     session_id = cstr(data.get("sessionId")).strip()
     short_url = cstr(data.get("shortUrl") or data.get("url") or data.get("consentUrl")).strip()
     if not session_id or not short_url:
-        session.status = "Failed"
-        session.error_message = cstr((body or {}).get("message") or "No sessionId/shortUrl in response")[:500]
-        session.insert(ignore_permissions=True)
-        frappe.throw(_("The consent portal did not return a consent link. Please contact HR."))
+        _fail_session(
+            session,
+            _partner_message(body) or "No sessionId/shortUrl in the consent portal response",
+        )
 
     session.session_id = session_id
     session.short_url = short_url
