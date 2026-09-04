@@ -298,3 +298,68 @@ def interview_query(user):
               AND id.interviewer = {frappe.db.escape(user)}
         )
     """
+
+
+# ---------------------------------------------------------------------------
+# Group Discussion — a panel sees their own GDs, and nothing else
+# ---------------------------------------------------------------------------
+# The whole point of the doctype: an interviewer conducting one group used to need
+# the entire Campus Drive to mark it — every college, every role, every other panel's
+# candidates, and write access to the schedule. Now they get one document per group
+# they are on, and these two functions are what keep it to that.
+#
+# Both are needed, and they do different jobs:
+#   * the query condition scopes the LIST (and any report / count / link search);
+#   * has_permission scopes a SINGLE document, which the query never sees — without
+#     it, an interviewer who guessed a name could open somebody else's GD by URL.
+GROUP_DISCUSSION_FULL_ROLES = (
+    "HR User",
+    "HR Manager",
+    "Recruiter Admin",
+    "System Manager",
+    "Management",
+    "Hiring Lead",
+)
+
+
+def _runs_recruitment(user):
+    return bool(set(frappe.get_roles(user)) & set(GROUP_DISCUSSION_FULL_ROLES))
+
+
+def group_discussion_query(user):
+    if not user:
+        user = frappe.session.user
+    if user == "Administrator" or _runs_recruitment(user):
+        return "1=1"
+
+    return f"""
+        `tabGroup Discussion`.owner = {frappe.db.escape(user)}
+        OR EXISTS (
+            SELECT 1
+            FROM `tabGroup Discussion Interviewer` AS gdi
+            WHERE gdi.parent = `tabGroup Discussion`.name
+              AND gdi.parenttype = 'Group Discussion'
+              AND gdi.interviewer = {frappe.db.escape(user)}
+        )
+    """
+
+
+def group_discussion_has_permission(doc, ptype, user=None):
+    """None = defer to the standard checks (role perms, then the share the panel is
+    given); False = this user is not on the panel and never sees it."""
+    if not user:
+        user = frappe.session.user
+    if user == "Administrator" or _runs_recruitment(user):
+        return None
+    if (doc.get("owner") or "") == user:
+        return None
+    # Queried rather than read off doc.interviewers: a permission check must not pull
+    # every child table of the document in to answer one question.
+    return (
+        None
+        if frappe.db.exists(
+            "Group Discussion Interviewer",
+            {"parent": doc.name, "parenttype": "Group Discussion", "interviewer": user},
+        )
+        else False
+    )

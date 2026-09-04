@@ -188,15 +188,22 @@ class TestCampusAdditionalRound(FrappeTestCase):
 		"""Give the candidate a CLEARED interview on the round — an additional round is
 		only offered to someone who has finished it. Idempotent, so a test that adds two
 		additional rounds doesn't try to sit the same interview type twice."""
-		from recruitment.api.hiring_stage import _ensure_interview_round
-
 		round_code = round_code or self.round_1
 		existing = frappe.db.exists("Interview", {
 			"custom_campus_drive": self.drive, "custom_campus_round_code": round_code,
 			"job_applicant": candidate, "status": "Cleared"})
 		if existing:
 			return existing
+		iv = self._scheduled(candidate, round_code)
+		frappe.db.set_value("Interview", iv, "status", "Cleared", update_modified=False)
+		return iv
 
+	def _scheduled(self, candidate, round_code=None):
+		"""Put the candidate on a round — a plain pending interview. Moving them into
+		the next round is what closes the previous one for additional rounds."""
+		from recruitment.api.hiring_stage import _ensure_interview_round
+
+		round_code = round_code or self.round_1
 		iv = frappe.get_doc({
 			"doctype": "Interview", "job_applicant": candidate, "job_opening": self.opening,
 			"scheduled_on": nowdate(), "from_time": "09:00:00", "to_time": "18:00:00",
@@ -208,7 +215,6 @@ class TestCampusAdditionalRound(FrappeTestCase):
 		cd._set_interview_round(iv, _ensure_interview_round(f"{PREFIX} {round_code}"))
 		iv.flags.ignore_mandatory = True
 		iv.insert(ignore_permissions=True)
-		frappe.db.set_value("Interview", iv.name, "status", "Cleared", update_modified=False)
 		return iv.name
 
 	def _add(self, candidate, panel="Panel A", reason="Borderline — second look",
@@ -251,12 +257,15 @@ class TestCampusAdditionalRound(FrappeTestCase):
 
 	def test_a_repeat_gets_its_own_type(self):
 		"""HRMS forbids sitting the same interview type twice — HR still only ever sees
-		"Additional Round"; the variant is allocated for them."""
+		"Additional Round"; the variant is allocated for them.
+
+		The second one goes to a different panel because it has to: the same panel
+		twice is refused (see the panel tests below)."""
 		candidate = self.candidates[0]
 		self.assertEqual(cd._extra_round_type_for(candidate), cd.EXTRA_ROUND_TYPE)
-		self._add(candidate)
+		self._add(candidate, panel="Panel A")
 		self.assertEqual(cd._extra_round_type_for(candidate), f"{cd.EXTRA_ROUND_TYPE} 2")
-		second = self._add(candidate)
+		second = self._add(candidate, panel="Panel B")
 		self.assertEqual(second["stage"], f"{cd.EXTRA_ROUND_TYPE} 2")
 		self.assertEqual(cd._extra_round_type_for(candidate), f"{cd.EXTRA_ROUND_TYPE} 3")
 
@@ -444,6 +453,149 @@ class TestCampusAdditionalRound(FrappeTestCase):
 		staffed deliberately."""
 		with self.assertRaises(frappe.ValidationError):
 			self._add(self.candidates[0], panel="Round Panel")
+
+	# ── a fresh panel every time ──
+
+	def test_the_same_panel_cannot_take_a_second_one_for_the_same_candidate(self):
+		"""Several additional rounds per candidate are fine; the same interviewers twice
+		are not. A second look from the panel that already looked is the first look
+		again, and there is nothing to weigh the two verdicts against."""
+		candidate = self.candidates[0]
+		self._add(candidate, panel="Panel A")
+		with self.assertRaises(frappe.ValidationError) as caught:
+			self._add(candidate, panel="Panel A")
+		self.assertIn("Panel A", str(caught.exception))
+
+	def test_another_panel_can(self):
+		candidate = self.candidates[0]
+		first = self._add(candidate, panel="Panel A")
+		second = self._add(candidate, panel="Panel B")
+		self.assertNotEqual(first["interview"], second["interview"])
+		self.assertEqual(
+			frappe.db.get_value("Interview", second["interview"], "custom_interview_panel"),
+			"Panel B")
+
+	def test_a_panel_staffed_by_the_same_people_is_the_same_panel(self):
+		"""Panel names are per-roster, so a rename is not a new panel. What must not
+		repeat is who sits in front of the candidate."""
+		self._panelists(rows=["Panel A", "Panel A Again"])
+		try:
+			doc = frappe.get_doc("Campus Drive", self.drive)
+			# both panels now name the SAME employee
+			for row in doc.round_panelists:
+				if row.panel_name in ("Panel A", "Panel A Again"):
+					row.panelist = self.employees[0]
+			doc.save(ignore_permissions=True)
+			frappe.db.commit()
+
+			candidate = self.candidates[0]
+			self._add(candidate, panel="Panel A")
+			with self.assertRaises(frappe.ValidationError):
+				self._add(candidate, panel="Panel A Again")
+		finally:
+			self._panelists()
+
+	def test_the_block_is_per_candidate(self):
+		"""A panel that has judged one candidate is free to judge another — the rule is
+		about repeating a panel for the SAME person."""
+		self._add(self.candidates[0], panel="Panel A")
+		res = self._add(self.candidates[1], panel="Panel A")
+		self.assertTrue(res["interview"])
+
+	def test_the_dialog_is_told_which_panels_are_spent(self):
+		candidate = self.candidates[0]
+		self._add(candidate, panel="Panel A")
+		options = cd.get_extra_round_options(self.drive, self.round_1)
+		self.assertEqual(options["blocked_panels"].get(candidate), ["Panel A"])
+		# and nobody else is narrowed
+		self.assertNotIn(self.candidates[1], options["blocked_panels"])
+
+	def test_an_unnamed_panel_skips_the_one_already_used(self):
+		"""An API caller that names no panel is held to the same rule: the fallback picks
+		a panel this candidate has not faced instead of the first one every time."""
+		candidate = self.candidates[0]
+		first = self._add(candidate, panel="Panel A")
+		second = cd.add_candidate_interview(
+			self.drive, candidate, scheduled_on=nowdate(), round_code=self.round_1,
+			reason="Second look")
+		self.assertNotEqual(first["interview"], second["interview"])
+		self.assertEqual(
+			frappe.db.get_value("Interview", second["interview"], "custom_interview_panel"),
+			"Panel B")
+
+	# ── only on the round the candidate is sitting at ──
+
+	def test_a_round_the_candidate_has_moved_past_is_refused(self):
+		"""Once Technical Round 2 exists for this candidate, Technical Round 1 is behind
+		them — an additional round on it would sit before where they actually are."""
+		candidate = self.candidates[0]
+		self._cleared(candidate)
+		self._scheduled(candidate, self.round_2)
+		with self.assertRaises(frappe.ValidationError) as caught:
+			self._add(candidate)
+		self.assertIn(NEXT_ROUND_STAGE, str(caught.exception))
+
+	def test_the_round_they_are_on_stays_open(self):
+		"""The window is the point: clearing Technical Round 1 opens an additional round
+		on it, and it stays open right up until they are put into Technical Round 2."""
+		candidate = self.candidates[0]
+		self._cleared(candidate)
+		self.assertTrue(self._add(candidate, cleared=False)["interview"])
+
+	def test_the_next_round_opens_once_they_clear_it(self):
+		"""...and the same window then applies to Technical Round 2."""
+		candidate = self.candidates[0]
+		self._cleared(candidate)
+		self._cleared(candidate, self.round_2)
+		doc = frappe.get_doc("Campus Drive", self.drive)
+		doc.append("round_panelists", {
+			"round_code": cd.extra_panel_round_code(self.round_2), "panel_name": "Panel R2X",
+			"panelist": self.employees[0]})
+		doc.save(ignore_permissions=True)
+		frappe.db.commit()
+		try:
+			res = cd.add_candidate_interview(
+				self.drive, candidate, scheduled_on=nowdate(), round_code=self.round_2,
+				panel="Panel R2X", reason="Second look on R2")
+			self.assertEqual(
+				frappe.db.get_value("Interview", res["interview"], "custom_campus_round_code"),
+				self.round_2)
+		finally:
+			self._panelists()
+
+	def test_a_candidate_two_stages_past_the_round_is_refused(self):
+		"""HR can move a stage by hand, with no interview to show for it. Being two
+		stages on means the round after this one is behind them as well."""
+		candidate = self.candidates[0]
+		self._cleared(candidate)
+		frappe.db.set_value("Job Applicant", candidate, "custom_current_stage", "HR Round",
+		                    update_modified=False)
+		with self.assertRaises(frappe.ValidationError):
+			self._add(candidate, cleared=False)
+
+	def test_they_drop_out_of_the_picker_once_they_move_on(self):
+		moved, still_here = self.candidates[0], self.candidates[1]
+		for c in (moved, still_here):
+			self._cleared(c)
+		self._scheduled(moved, self.round_2)
+		options = cd.get_extra_round_options(self.drive, self.round_1)
+		offered = [c["name"] for c in options["candidates"]]
+		self.assertIn(still_here, offered)
+		self.assertNotIn(moved, offered)
+		# and the dialog can say why a round everyone cleared offers fewer people
+		self.assertEqual(options["moved_on"], 1)
+
+	def test_the_board_stops_offering_the_action(self):
+		"""The card's button is driven by this count, so a round nobody is sitting at
+		disables it instead of opening an empty picker."""
+		candidate = self.candidates[0]
+		self._cleared(candidate)
+		rounds = {r["round_code"]: r for r in cd.get_rounds_overview(self.drive)["rounds"]}
+		self.assertEqual(rounds[self.round_1]["extra_eligible"], 1)
+
+		self._scheduled(candidate, self.round_2)
+		rounds = {r["round_code"]: r for r in cd.get_rounds_overview(self.drive)["rounds"]}
+		self.assertEqual(rounds[self.round_1]["extra_eligible"], 0)
 
 	def test_a_missing_extra_roster_names_the_code_to_add(self):
 		""""Add a panel" is useless on its own: Round Code is free text on Round

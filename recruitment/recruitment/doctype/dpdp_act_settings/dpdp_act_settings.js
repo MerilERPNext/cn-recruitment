@@ -3,16 +3,56 @@
 
 frappe.ui.form.on("DPDP Act Settings", {
 	refresh(frm) {
-		frm.add_custom_button(__("Load Default DPDP Template"), () => {
-			frappe.confirm(
-				__(
-					"This will fill the page content, information clauses and consent statements with the standard DPDP template. Existing rows will be replaced. Continue?"
-				),
-				() => load_default_template(frm)
-			);
-		});
+		// The content template only shapes the in-system form; in External Portal
+		// mode the notices are owned by the partner, so the button would be misleading.
+		if (frm.doc.consent_mode !== "External Portal") {
+			frm.add_custom_button(__("Load Default DPDP Template"), () => {
+				frappe.confirm(
+					__(
+						"This will fill the page content, information clauses and consent statements with the standard DPDP template. Existing rows will be replaced. Continue?"
+					),
+					() => load_default_template(frm)
+				);
+			});
+		}
+
+		if (frm.doc.consent_mode === "External Portal") {
+			frm.add_custom_button(__("Generate Callback Secret"), () => {
+				frappe.confirm(
+					__(
+						"This replaces the current callback secret. The consent portal will reject callbacks until the new secret is shared with them. Continue?"
+					),
+					() => generate_callback_secret(frm)
+				);
+			});
+		}
+	},
+
+	consent_mode(frm) {
+		frm.refresh();
 	},
 });
+
+function generate_callback_secret(frm) {
+	// Generated in the browser so the secret is never derived from anything
+	// guessable server-side; 32 random bytes as hex.
+	const bytes = new Uint8Array(32);
+	window.crypto.getRandomValues(bytes);
+	const secret = Array.from(bytes)
+		.map((b) => b.toString(16).padStart(2, "0"))
+		.join("");
+
+	frm.set_value("callback_secret", secret);
+	frappe.msgprint({
+		title: __("Callback Secret Generated"),
+		indicator: "orange",
+		message:
+			__("Save this record, then share the secret below with the consent portal team. It is stored encrypted and cannot be read back afterwards.") +
+			`<br><br><b>${__("Header")}:</b> <code>${frappe.utils.escape_html(
+				frm.doc.callback_header_name || "X-Consent-Token"
+			)}</code><br><b>${__("Secret")}:</b> <code>${secret}</code>`,
+	});
+}
 
 function load_default_template(frm) {
 	frm.set_value("form_title", "Digital Personal Data Protection Act, 2023 (DPDP Act)");

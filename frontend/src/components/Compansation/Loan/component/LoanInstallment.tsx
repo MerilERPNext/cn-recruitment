@@ -1,20 +1,62 @@
+import { useState } from "react";
 import { CiLock } from "react-icons/ci";
+import { Pause, SquarePen } from "lucide-react";
 import { formatCurrency } from "../../../../utils/currency";
 import { formatDateDDMonthYYYY } from "../../../../utils/formatToIndianDate";
 import { Typography } from "../../../shared/atoms/Typography";
 import { NoDataFound } from "../../../shared/atoms/NoDataFound";
 import CardTable from "../../../shared/CardTable";
 import { Installment } from "../Type/loan";
+import useCurrentUser from "../../../../hooks/useCurrentUser";
+import { useCurrentEmployeeDetails } from "../../../../hooks/useEmployee";
+import { useLoanAdminPermission } from "../../../../hooks/useLoan";
+import Tooltip from "../../../shared/Tooltip";
+import LoanInstallmentModal from "./LoanInstallmentModal";
 
 interface LoanInstallmentsProps {
   installments: Installment[];
   standardInterest?: number;
+  docId?: string;
 }
 
 export default function LoanInstallments({
   installments,
   standardInterest = 0,
+  docId,
 }: LoanInstallmentsProps) {
+  const { data: user } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
+  const { data: currentUser } = useCurrentUser();
+  const { data: adminRoles = [] } = useLoanAdminPermission(user?.employee);
+
+  // Check admin permission strictly based on Payroll Admin and API-returned roles as done in isPayrollAdmin
+  const hasAdminPermission =
+    currentUser?.roles?.some((r) =>
+      ["Payroll Admin", ...adminRoles].includes(r.role)
+    ) ?? false;
+
+
+  const [modalState, setModalState] = useState<{
+    isOpen: boolean;
+    mode: "hold" | "edit";
+    installment: Installment | null;
+  }>({
+    isOpen: false,
+    mode: "hold",
+    installment: null,
+  });
+
+  const handleOpenModal = (mode: "hold" | "edit", installment: Installment) => {
+    setModalState({
+      isOpen: true,
+      mode,
+      installment,
+    });
+  };
+
+  const handleCloseModal = () => {
+    setModalState((prev) => ({ ...prev, isOpen: false }));
+  };
+
   const titles = [
     "Installment",
     "Installment Month",
@@ -36,7 +78,7 @@ export default function LoanInstallments({
     "1.5fr",
     "1.2fr",
     "1fr",
-    "1fr",
+    "1.2fr",
   ];
 
   return (
@@ -52,7 +94,10 @@ export default function LoanInstallments({
             const monthYear = formattedDate ? formattedDate.split(" ").slice(1).join(" ") : "-";
 
             // Recompute opening balance if not provided directly
-            const openingBalance = installment.balance_loan_amount + installment.principal_amount;
+            const openingBalance =
+              (installment.balance_loan_amount || 0) +
+              (installment.principal_amount || 0);
+
 
             return (
               <div
@@ -101,9 +146,45 @@ export default function LoanInstallments({
                 </Typography>
 
                 {/* ACTIONS */}
-                <div className="flex items-center justify-center text-gray-500 text-lg">
-                  <CiLock />
+                <div className="flex items-center justify-center">
+                  {hasAdminPermission ? (
+                    <div className="h-8 flex items-center gap-1.5 px-3 py-1 rounded-xl bg-gray-10 w-fit">
+                      <Tooltip content="Hold" position="top">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleOpenModal("hold", installment);
+                          }}
+                          className="p-1 text-amber-600 hover:text-amber-700 transition-colors flex items-center justify-center"
+                          aria-label="Hold installment"
+                        >
+                          <Pause className="w-4 h-4" />
+                        </button>
+                      </Tooltip>
+                      <span className="w-px h-4 bg-gray-300" />
+                      <Tooltip content="Edit" position="top">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleOpenModal("edit", installment);
+                          }}
+                          className="p-1 text-primary hover:text-primary-600 transition-colors flex items-center justify-center"
+                          aria-label="Edit installment"
+                        >
+                          <SquarePen className="w-4 h-4" />
+                        </button>
+                      </Tooltip>
+                    </div>
+                  ) : (
+                    <div className="text-gray-500 text-lg">
+                      <CiLock />
+                    </div>
+                  )}
                 </div>
+
+
               </div>
             );
           })
@@ -114,6 +195,15 @@ export default function LoanInstallments({
           />
         )}
       </CardTable>
+
+      <LoanInstallmentModal
+        isOpen={modalState.isOpen}
+        onClose={handleCloseModal}
+        mode={modalState.mode}
+        installment={modalState.installment}
+        docId={docId}
+      />
     </div>
   );
 }
+

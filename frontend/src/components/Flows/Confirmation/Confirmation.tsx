@@ -39,6 +39,7 @@ import { useApprovalAction } from "../../../hooks/userApprovalList";
 import FormPreview from "../../shared/molecules/FormPreview";
 import ActivityLogDrawer from "../../shared/ActivityLogDrawer";
 import type { FlowRequestItem } from "../../../types/flows";
+import ActionConfirmationModal from "../../shared/ActionConfirmationModal";
 
 const ConfirmationWorkflow = () => {
   const { isDesktop } = useScreenSize();
@@ -139,6 +140,8 @@ const ConfirmationWorkflow = () => {
 
   const [showSelfInitForm, setShowSelfInitForm] = useState<boolean>(false);
   const [isActivityLogOpen, setIsActivityLogOpen] = useState(false);
+  const [isInitiateConfirmOpen, setIsInitiateConfirmOpen] = useState(false);
+  const [isSeparationConfirmOpen, setIsSeparationConfirmOpen] = useState(false);
   const selfInitFormAndAns = useMemo(
     () => {
       const raw = item?.initiator_forms?.[0]?.form_data;
@@ -332,7 +335,7 @@ const ConfirmationWorkflow = () => {
           {separationData?.show_button && (
             <Button
               variant="contain"
-              onClick={handleSeparationClick}
+              onClick={() => setIsSeparationConfirmOpen(true)}
             >
               Separation
             </Button>
@@ -420,7 +423,7 @@ const ConfirmationWorkflow = () => {
                     <Button
                       variant="contain"
                       size="md"
-                      onClick={handleInitiateConfirmation}
+                      onClick={() => setIsInitiateConfirmOpen(true)}
                       loading={isTriggeringChat}
                       disabled={isTriggeringChat}
                     >
@@ -461,6 +464,36 @@ const ConfirmationWorkflow = () => {
           </ReviewForm>,
           document.body,
         )}
+
+      <ActionConfirmationModal
+        isOpen={isInitiateConfirmOpen}
+        title="Initiate Confirmation"
+        message="Are you sure you want to initiate the confirmation process? This will start your employee confirmation workflow."
+        confirmLabel="Yes, Initiate"
+        cancelLabel="Cancel"
+        confirmBgColor="primary"
+        isPending={isTriggeringChat}
+        onConfirm={() => {
+          setIsInitiateConfirmOpen(false);
+          handleInitiateConfirmation();
+        }}
+        onCancel={() => setIsInitiateConfirmOpen(false)}
+      />
+
+      <ActionConfirmationModal
+        isOpen={isSeparationConfirmOpen}
+        title="Recommend for Separation"
+        message="Are you sure you want to recommend this employee for separation? This action will start the separation recommendation workflow."
+        confirmLabel="Yes, Proceed"
+        cancelLabel="Cancel"
+        confirmBgColor="warning"
+        isPending={isTriggeringChat}
+        onConfirm={() => {
+          setIsSeparationConfirmOpen(false);
+          handleSeparationClick();
+        }}
+        onCancel={() => setIsSeparationConfirmOpen(false)}
+      />
     </div>
   );
 };

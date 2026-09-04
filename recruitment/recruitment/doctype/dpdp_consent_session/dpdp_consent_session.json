@@ -1,0 +1,231 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "autoname": "naming_series:",
+ "creation": "2026-09-04 10:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 0,
+ "engine": "InnoDB",
+ "field_order": [
+  "applicant_section",
+  "naming_series",
+  "job_applicant",
+  "applicant_name",
+  "email_id",
+  "phone_number",
+  "applicant_col_break",
+  "status",
+  "channel",
+  "configuration_code",
+  "consent_log",
+  "session_section",
+  "session_id",
+  "short_url",
+  "session_col_break",
+  "expires_at",
+  "completed_at",
+  "http_status",
+  "error_message",
+  "payload_section",
+  "request_payload",
+  "response_payload",
+  "callback_payload"
+ ],
+ "fields": [
+  {
+   "fieldname": "applicant_section",
+   "fieldtype": "Section Break",
+   "label": "Candidate"
+  },
+  {
+   "default": "DPDP-SESS-.YYYY.-",
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "label": "Series",
+   "options": "DPDP-SESS-.YYYY.-",
+   "reqd": 1
+  },
+  {
+   "fieldname": "job_applicant",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Job Applicant",
+   "options": "Job Applicant",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "job_applicant.custom_full_name",
+   "fieldname": "applicant_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Applicant Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "email_id",
+   "fieldtype": "Data",
+   "label": "Email",
+   "read_only": 1
+  },
+  {
+   "fieldname": "phone_number",
+   "fieldtype": "Data",
+   "label": "Mobile",
+   "read_only": 1
+  },
+  {
+   "fieldname": "applicant_col_break",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Pending",
+   "description": "Lifecycle of the handover to the external consent portal. Only Completed produces a submitted consent log.",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Status",
+   "options": "Pending\nCompleted\nDeclined\nExpired\nFailed",
+   "read_only": 1
+  },
+  {
+   "fieldname": "channel",
+   "fieldtype": "Data",
+   "label": "Channel",
+   "read_only": 1
+  },
+  {
+   "fieldname": "configuration_code",
+   "fieldtype": "Data",
+   "label": "Configuration Code",
+   "read_only": 1
+  },
+  {
+   "fieldname": "consent_log",
+   "fieldtype": "Link",
+   "label": "Consent Log",
+   "options": "Job Applicant DPDP Consent Log",
+   "read_only": 1
+  },
+  {
+   "fieldname": "session_section",
+   "fieldtype": "Section Break",
+   "label": "Portal Session"
+  },
+  {
+   "description": "Identifier returned by the consent portal. The callback carries it, and it is how a callback is mapped back to this candidate.",
+   "fieldname": "session_id",
+   "fieldtype": "Data",
+   "label": "Session ID",
+   "read_only": 1,
+   "unique": 1
+  },
+  {
+   "description": "The link the candidate is redirected to.",
+   "fieldname": "short_url",
+   "fieldtype": "Small Text",
+   "label": "Short URL",
+   "read_only": 1
+  },
+  {
+   "fieldname": "session_col_break",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "expires_at",
+   "fieldtype": "Datetime",
+   "label": "Expires At",
+   "read_only": 1
+  },
+  {
+   "fieldname": "completed_at",
+   "fieldtype": "Datetime",
+   "label": "Completed At",
+   "read_only": 1
+  },
+  {
+   "fieldname": "error_message",
+   "fieldtype": "Small Text",
+   "label": "Error Message",
+   "read_only": 1
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "payload_section",
+   "fieldtype": "Section Break",
+   "label": "Exchange (for support)"
+  },
+  {
+   "fieldname": "request_payload",
+   "fieldtype": "Code",
+   "label": "Start Request",
+   "options": "JSON",
+   "read_only": 1
+  },
+  {
+   "fieldname": "response_payload",
+   "fieldtype": "Code",
+   "label": "Start Response",
+   "options": "JSON",
+   "read_only": 1
+  },
+  {
+   "fieldname": "callback_payload",
+   "fieldtype": "Code",
+   "label": "Callback Payload",
+   "options": "JSON",
+   "read_only": 1
+  },
+  {
+   "description": "HTTP status the consent portal answered the start call with. Blank when the call never reached them (timeout, DNS).",
+   "fieldname": "http_status",
+   "fieldtype": "Int",
+   "label": "HTTP Status",
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "links": [],
+ "modified": "2026-09-04 12:55:00.000000",
+ "modified_by": "Administrator",
+ "module": "Recruitment",
+ "name": "DPDP Consent Session",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "HR Manager",
+   "share": 1
+  },
+  {
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "HR User"
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "applicant_name",
+ "track_changes": 1
+}

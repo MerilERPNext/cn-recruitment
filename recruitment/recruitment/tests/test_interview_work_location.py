@@ -264,11 +264,12 @@ class TestInterviewWorkLocation(FrappeTestCase):
 		applicant = iwl._applicant(self.campus_applicant)
 		self.assertEqual(iwl.resolve_region(applicant), self.region_b)
 
-	def test_a_recommendation_on_the_feedback_wins(self):
-		"""Recommending another region re-points the location list at that region —
-		picking a location of the region they are leaving would contradict itself."""
+	def test_a_recommendation_does_not_move_the_region(self):
+		"""A recommendation is a request to HR, not a move. It used to re-point the
+		location list at the recommended region; now it defers the choice entirely
+		(see the deferral tests), so the region here stays the candidate's own."""
 		applicant = iwl._applicant(self.campus_applicant)
-		self.assertEqual(iwl.resolve_region(applicant, self.region_b), self.region_b)
+		self.assertEqual(iwl.resolve_region(applicant), self.region_a)
 
 	def test_no_region_for_a_lateral_candidate(self):
 		applicant = iwl._applicant(self.lateral_applicant)
@@ -402,6 +403,146 @@ class TestInterviewWorkLocation(FrappeTestCase):
 		with patch.object(frappe, "has_permission", return_value=True):
 			ctx = iwl.get_work_location_context(self.campus_applicant)
 		self.assertTrue(ctx["is_campus"])
+
+	# ── recommending another region defers the location ──
+	#
+	# The panel that ticks "Recommend for a different Region" is saying this candidate
+	# belongs to someone else's region. Picking a branch as well would be posting them
+	# into a region that is not yet theirs — and may never be, since a recommendation
+	# only raises a flag for HR. So the field goes empty and read-only on that
+	# feedback, and the panel of the region the candidate is moved to fills it in.
+
+	def test_the_tick_alone_defers_it(self):
+		"""Before a region has even been named — the moment the box is ticked, the
+		branch stops being this panel's to pick."""
+		ctx = iwl.get_work_location_context(self.campus_applicant,
+		                                    recommends_other_region=1)
+		self.assertTrue(ctx["is_campus"])
+		self.assertTrue(ctx["deferred"])
+		self.assertEqual(ctx["branches"], [])
+		self.assertIsNone(ctx["region"])
+		self.assertIsNone(ctx["deferred_to"])
+
+	def test_the_deferral_names_where_it_is_going(self):
+		ctx = iwl.get_work_location_context(self.campus_applicant,
+		                                    recommends_other_region=1,
+		                                    recommended_region=self.region_b)
+		self.assertTrue(ctx["deferred"])
+		self.assertEqual(ctx["deferred_to"], f"{PREFIX} Region B")
+
+	def test_a_string_flag_from_the_form_still_defers(self):
+		"""Whitelisted methods receive everything as text: a JS `true` arrives as the
+		string "true", which cint() would read as 0 and quietly re-enable the field."""
+		for flag in ("true", "1", 1, True):
+			with self.subTest(flag=flag):
+				self.assertTrue(iwl.get_work_location_context(
+					self.campus_applicant, recommends_other_region=flag)["deferred"])
+		for flag in ("false", "0", 0, None, ""):
+			with self.subTest(flag=flag):
+				self.assertFalse(iwl.get_work_location_context(
+					self.campus_applicant, recommends_other_region=flag)["deferred"])
+
+	def test_an_untucked_form_is_unaffected(self):
+		ctx = iwl.get_work_location_context(self.campus_applicant)
+		self.assertFalse(ctx["deferred"])
+		self.assertEqual(ctx["region"], self.region_a)
+		self.assertTrue(ctx["branches"])
+
+	def test_a_recommending_feedback_saves_with_no_location(self):
+		"""The form locks the field, so a value here came from an API caller, an amend
+		or a stale tab. Dropped rather than rejected — refusing the whole feedback over
+		a field the panel was not supposed to fill in helps nobody."""
+		doc = self._feedback(self.campus_interview, self.campus_applicant,
+		                     self.branch_via_field,
+		                     custom_recommend_other_region=1,
+		                     custom_recommended_region=self.region_b,
+		                     custom_region_recommendation_reason="Home town")
+		doc.insert()
+		self.assertIsNone(doc.custom_work_location)
+		# ...and no region stamp either: a region with no location on it says nothing.
+		self.assertIsNone(doc.custom_work_location_region)
+
+	def test_a_recommending_feedback_leaves_the_candidate_alone_on_submit(self):
+		"""Nothing was picked, so nothing is written — the candidate keeps whatever
+		location they had until the next region's panel decides."""
+		frappe.db.set_value("Job Applicant", self.campus_applicant, "custom_location",
+		                    self.branch_via_table)
+		doc = self._feedback(self.campus_interview, self.campus_applicant,
+		                     self.branch_via_field,
+		                     custom_recommend_other_region=1,
+		                     custom_recommended_region=self.region_b,
+		                     custom_region_recommendation_reason="Home town")
+		doc.insert()
+		doc.submit()
+		self.assertEqual(
+			frappe.db.get_value("Job Applicant", self.campus_applicant, "custom_location"),
+			self.branch_via_table)
+
+	def test_a_recommending_feedback_settles_nothing_for_later_rounds(self):
+		"""It carries no location, so it cannot be the round that decided one."""
+		doc = self._feedback(self.campus_interview, self.campus_applicant,
+		                     self.branch_via_field,
+		                     custom_recommend_other_region=1,
+		                     custom_recommended_region=self.region_b,
+		                     custom_region_recommendation_reason="Home town")
+		doc.insert()
+		doc.submit()
+		self.assertIsNone(iwl.locked_location(self.campus_applicant))
+
+	def test_the_next_panel_sets_it_once_the_candidate_is_moved(self):
+		"""The whole point of deferring: HR accepts the recommendation, and the panel
+		of the region the candidate lands in picks a location of THAT region."""
+		recommending = self._feedback(self.campus_interview, self.campus_applicant,
+		                              self.branch_via_field,
+		                              custom_recommend_other_region=1,
+		                              custom_recommended_region=self.region_b,
+		                              custom_region_recommendation_reason="Home town")
+		recommending.insert()
+		recommending.submit()
+
+		# HR accepts: the candidate is now interviewed by region B.
+		frappe.db.set_value("Job Applicant", self.campus_applicant,
+		                    "custom_interview_region", self.region_b)
+
+		ctx = iwl.get_work_location_context(self.campus_applicant)
+		self.assertFalse(ctx["deferred"])
+		self.assertEqual(ctx["region"], self.region_b)
+		self.assertEqual(ctx["branches"], [self.branch_other_region])
+
+		nxt = self._feedback(self._interview(self.campus_applicant),
+		                     self.campus_applicant, self.branch_other_region)
+		nxt.insert()
+		nxt.submit()
+		self.assertEqual(
+			frappe.db.get_value("Job Applicant", self.campus_applicant, "custom_location"),
+			self.branch_other_region)
+
+	def test_a_recommendation_does_not_repeat_an_earlier_posting(self):
+		"""An earlier round settled the location and later rounds normally carry it
+		read-only. A round that recommends moving the candidate shows an empty field
+		instead — repeating a branch in the region they are being recommended out of is
+		the record this avoids. The earlier decision itself stands, on the candidate."""
+		first = self._feedback(self.campus_interview, self.campus_applicant,
+		                       self.branch_via_field)
+		first.insert()
+		first.submit()
+
+		ctx = iwl.get_work_location_context(self.campus_applicant,
+		                                    recommends_other_region=1,
+		                                    recommended_region=self.region_b)
+		self.assertTrue(ctx["deferred"])
+		self.assertIsNone(ctx["locked_to"])
+
+		second = self._feedback(self._interview(self.campus_applicant),
+		                        self.campus_applicant, self.branch_via_field,
+		                        custom_recommend_other_region=1,
+		                        custom_recommended_region=self.region_b,
+		                        custom_region_recommendation_reason="Home town")
+		second.insert()
+		self.assertIsNone(second.custom_work_location)
+		self.assertEqual(
+			frappe.db.get_value("Job Applicant", self.campus_applicant, "custom_location"),
+			self.branch_via_field)
 
 	# ── validation on the feedback ──
 

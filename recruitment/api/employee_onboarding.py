@@ -112,15 +112,37 @@ def _lock_filled_portal_fields(doc, updated_fields):
         prow.approval_status = "Filled"
 
 
+def _portal_row_has_value(prow, live_val):
+    """Whether this portal field actually holds something.
+
+    For a Table that means at least one row with at least one non-empty cell —
+    the same test `_lock_filled_portal_fields` applies before it locks a field.
+    """
+    if (prow.get("fieldtype") or "Data") == "Table":
+        return any(
+            any(v not in (None, "", [], {}) for v in
+                (r.as_dict() if hasattr(r, "as_dict") else r).values())
+            for r in (live_val or [])
+        )
+    return live_val not in (None, "", [])
+
+
 def _snapshot_portal_values(doc, updated_fields):
-    """Refresh ONLY the `current_value` snapshot of the given portal rows from the
-    live doc values, leaving `approval_status` untouched (stays Pending/Rejected,
-    i.e. editable).
+    """Refresh the `current_value` snapshot of the given portal rows from the live
+    doc values, and clear a rejection the candidate has now answered.
 
     The approval read endpoint (`get_onboarding_fields_for_approval`) shows each
     field's stored `current_value`, which is otherwise refreshed only on submit
     (via `_lock_filled_portal_fields`). Calling this on the "save" path makes a
-    plain save visible to that endpoint immediately, without locking the field.
+    plain save visible to that endpoint immediately.
+
+    `approval_status` is left alone with ONE exception: a field HR sent back
+    ("Rejected") that now carries a value becomes "Filled", i.e. back under
+    review. Leaving it Rejected made a re-answered field look un-actioned to HR
+    for ever, and kept the candidate's rejection item alive. A blank re-save does
+    NOT clear the rejection, and "Pending" is never touched — that is the
+    still-being-worked-on state and must stay editable.
+
     Mutates `doc` in place — the caller saves.
     """
     import json as _json
@@ -140,6 +162,9 @@ def _snapshot_portal_values(doc, updated_fields):
             )
         else:
             prow.current_value = str(live_val) if live_val is not None else ""
+
+        if prow.approval_status == "Rejected" and _portal_row_has_value(prow, live_val):
+            prow.approval_status = "Filled"
 
 
 def _is_concurrent_edit_error(err):
@@ -234,9 +259,24 @@ def update_onboarding_details(email, data, action="submit"):
                     and (r.get("approval_status") or "Pending") in _EDITABLE
                 }
 
+                # Every portal field this form has, editable or not. Used only to
+                # tell "you sent fields that are already done" (a no-op) apart from
+                # "you sent fields this form does not have" (a real error).
+                known_fields = {
+                    r.fieldname for r in portal_rows
+                    if (r.fieldname if hasattr(r, "fieldname") else r.get("fieldname"))
+                }
+
+                # Nothing editable at all — every field is already Filled/Approved.
+                # A section-by-section save legitimately hits this, so it is a
+                # no-op, not a failure: fall through with nothing updated and let
+                # the normal success response report the current counts.
                 if not allowed_map:
-                    frappe.local.response["http_status_code"] = 400
-                    return {"status": "error", "code": 400, "message": "No editable portal fields available. All fields are under review or already approved."}
+                    if not (set(data.keys()) & known_fields):
+                        frappe.local.response["http_status_code"] = 400
+                        return {"status": "error", "code": 400, "message": "None of the submitted fields belong to this onboarding form."}
+                    updated = []
+                    break
 
                 # Only validate mandatory constraint for fields actually being submitted.
                 # A candidate may update one rejected field at a time without needing to
@@ -255,9 +295,15 @@ def update_onboarding_details(email, data, action="submit"):
                         "missing_fields": missing,
                     }
 
+                # Same reasoning as above: fields that are real but no longer
+                # editable are a no-op; fields this form has never heard of are an
+                # error worth surfacing.
                 if not submitted_keys:
-                    frappe.local.response["http_status_code"] = 400
-                    return {"status": "error", "code": 400, "message": "None of the submitted fields are editable. They may be approved, read-only, or hidden."}
+                    if not (set(data.keys()) & known_fields):
+                        frappe.local.response["http_status_code"] = 400
+                        return {"status": "error", "code": 400, "message": "None of the submitted fields belong to this onboarding form."}
+                    updated = []
+                    break
 
                 meta_lookup = {f["fieldname"]: f for f in _read_onboarding_meta()}
                 updated = []
@@ -290,9 +336,10 @@ def update_onboarding_details(email, data, action="submit"):
                 # Persist the portal `current_value` snapshot in the SAME save so the
                 # approval read endpoint (which shows current_value, not the live
                 # field) reflects this write immediately. On submit the fields also
-                # lock (mark Filled); on save the snapshot is refreshed but the field
-                # stays editable. Without the save branch a saved value sat in the
-                # doc while readers kept returning the previous snapshot.
+                # lock (mark Filled); on save the snapshot is refreshed and a
+                # re-answered rejection is cleared, but a Pending field stays
+                # editable. Without the save branch a saved value sat in the doc
+                # while readers kept returning the previous snapshot.
                 if updated:
                     if is_submit:
                         _lock_filled_portal_fields(doc, updated)
@@ -446,9 +493,24 @@ def update_onboarding_details_ess(email, data, action="submit"):
                     and (r.get("approval_status") or "Pending") in _EDITABLE
                 }
 
+                # Every portal field this form has, editable or not. Used only to
+                # tell "you sent fields that are already done" (a no-op) apart from
+                # "you sent fields this form does not have" (a real error).
+                known_fields = {
+                    r.fieldname for r in portal_rows
+                    if (r.fieldname if hasattr(r, "fieldname") else r.get("fieldname"))
+                }
+
+                # Nothing editable at all — every field is already Filled/Approved.
+                # A section-by-section save legitimately hits this, so it is a
+                # no-op, not a failure: fall through with nothing updated and let
+                # the normal success response report the current counts.
                 if not allowed_map:
-                    frappe.local.response["http_status_code"] = 400
-                    return {"status": "error", "code": 400, "message": "No editable portal fields available. All fields are under review or already approved."}
+                    if not (set(data.keys()) & known_fields):
+                        frappe.local.response["http_status_code"] = 400
+                        return {"status": "error", "code": 400, "message": "None of the submitted fields belong to this onboarding form."}
+                    updated = []
+                    break
 
                 # Only validate mandatory constraint for fields actually being submitted.
                 # A candidate may update one rejected field at a time without needing to
@@ -467,9 +529,15 @@ def update_onboarding_details_ess(email, data, action="submit"):
                         "missing_fields": missing,
                     }
 
+                # Same reasoning as above: fields that are real but no longer
+                # editable are a no-op; fields this form has never heard of are an
+                # error worth surfacing.
                 if not submitted_keys:
-                    frappe.local.response["http_status_code"] = 400
-                    return {"status": "error", "code": 400, "message": "None of the submitted fields are editable. They may be approved, read-only, or hidden."}
+                    if not (set(data.keys()) & known_fields):
+                        frappe.local.response["http_status_code"] = 400
+                        return {"status": "error", "code": 400, "message": "None of the submitted fields belong to this onboarding form."}
+                    updated = []
+                    break
 
                 meta_lookup = {f["fieldname"]: f for f in _read_onboarding_meta()}
                 updated = []

@@ -187,8 +187,20 @@ def create_interview_feedback(data, interview_name, interviewer, job_applicant):
     # against the region by the validate hook
     # (recruitment.api.interview_work_location); on submit it becomes the
     # candidate's final location.
+    #
+    # Not taken while this feedback recommends another region: the branch is then that
+    # region's panel's to pick, and the validate hook clears it either way. Said out
+    # loud rather than dropped in silence, because this caller's form still shows the
+    # field next to the tick.
     if data.get("work_location"):
-        interview_feedback.custom_work_location = data.get("work_location")
+        if interview_feedback.custom_recommend_other_region:
+            frappe.msgprint(
+                _("Work location was not recorded: you are recommending this candidate "
+                  "for another region, so the panel of the region they are moved to "
+                  "sets it."),
+                indicator="orange", alert=True)
+        else:
+            interview_feedback.custom_work_location = data.get("work_location")
 
     # Save and submit the document
     interview_feedback.save()

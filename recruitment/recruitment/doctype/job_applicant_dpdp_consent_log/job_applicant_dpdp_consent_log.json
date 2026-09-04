@@ -24,6 +24,14 @@
   "status_col_break",
   "ip_address",
   "user_agent",
+  "source_section",
+  "consent_source",
+  "consent_session",
+  "external_session_id",
+  "source_col_break",
+  "external_status",
+  "otp_verified",
+  "verified_at",
   "snapshot_section",
   "form_title",
   "form_subtitle",
@@ -168,7 +176,8 @@
    "collapsible": 1,
    "fieldname": "snapshot_section",
    "fieldtype": "Section Break",
-   "label": "Presented Declaration (Snapshot)"
+   "label": "Presented Declaration (Snapshot)",
+   "depends_on": "eval:doc.consent_source!=\"External Portal\""
   },
   {
    "description": "Exact content presented to the candidate at the time of consent, captured for audit even if the settings change later.",
@@ -226,7 +235,8 @@
    "fieldname": "declaration_heading",
    "fieldtype": "Data",
    "label": "Declaration Heading",
-   "read_only": 1
+   "read_only": 1,
+   "depends_on": "eval:doc.consent_source!=\"External Portal\""
   },
   {
    "description": "Each consent statement presented, with whether the candidate ticked it.",
@@ -239,7 +249,8 @@
   {
    "fieldname": "acknowledgement_section",
    "fieldtype": "Section Break",
-   "label": "Acknowledgement"
+   "label": "Acknowledgement",
+   "depends_on": "eval:doc.consent_source!=\"External Portal\""
   },
   {
    "description": "Name entered/confirmed by the candidate at the time of acceptance.",
@@ -263,12 +274,71 @@
    "fieldtype": "Signature",
    "label": "Signature",
    "read_only": 1
+  },
+  {
+   "fieldname": "source_section",
+   "fieldtype": "Section Break",
+   "label": "Consent Source"
+  },
+  {
+   "default": "Internal Form",
+   "description": "Where this consent was actually collected. <b>External Portal</b> rows were recorded from the partner portal's callback \u2014 the portal enforced its own mandatory rules and OTP verification, so acceptance follows its reported status.",
+   "fieldname": "consent_source",
+   "fieldtype": "Select",
+   "label": "Source",
+   "options": "Internal Form\nExternal Portal",
+   "read_only": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "depends_on": "eval:doc.consent_source==\"External Portal\"",
+   "fieldname": "consent_session",
+   "fieldtype": "Link",
+   "label": "Consent Session",
+   "options": "DPDP Consent Session",
+   "read_only": 1
+  },
+  {
+   "depends_on": "eval:doc.consent_source==\"External Portal\"",
+   "description": "Session id reported by the external portal.",
+   "fieldname": "external_session_id",
+   "fieldtype": "Data",
+   "label": "External Session ID",
+   "read_only": 1
+  },
+  {
+   "fieldname": "source_col_break",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "eval:doc.consent_source==\"External Portal\"",
+   "description": "Terminal status the portal reported (COMPLETED / DECLINED / EXPIRED ...).",
+   "fieldname": "external_status",
+   "fieldtype": "Data",
+   "label": "External Status",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "depends_on": "eval:doc.consent_source==\"External Portal\"",
+   "description": "The portal confirmed the candidate passed OTP verification before completing.",
+   "fieldname": "otp_verified",
+   "fieldtype": "Check",
+   "label": "OTP Verified",
+   "read_only": 1
+  },
+  {
+   "depends_on": "eval:doc.consent_source==\"External Portal\"",
+   "fieldname": "verified_at",
+   "fieldtype": "Datetime",
+   "label": "Verified At",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 0,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-07-09 10:00:00.000000",
+ "modified": "2026-09-04 10:00:00.000000",
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "Job Applicant DPDP Consent Log",

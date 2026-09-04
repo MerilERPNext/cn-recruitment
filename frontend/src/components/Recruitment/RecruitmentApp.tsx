@@ -101,7 +101,7 @@ const RecruitmentApp: React.FC = () => {
 
   const getActionButtonText = () => {
     if (location.pathname === "/webapp/recruitment/requisition") {
-      return "+ Raise Requisition Request";
+      return "+ Raise Requisition";
     }
     if (location.pathname === "/webapp/recruitment/referrals") {
       return "+ Refer Candidate";

@@ -2,19 +2,38 @@
 
 The record a New Hire form creates IS the Employee, held at ``status = "Pending"``
 until onboarding completes. There is no intake doctype in between, and nothing is
-mirrored or mapped: the form renders from the Employee DocType's own meta, so all
-~405 of its fields are available to place, in Employee's own tabs and sections,
-and a value captured at intake is already on the person's record.
+mirrored or mapped: the form renders from the Employee DocType's own meta, so
+every one of its several hundred fields is available to place, in Employee's own
+tabs and sections, and a value captured at intake is already on the person's
+record.
 
 Naming
 ------
-A pending Employee is inserted with an explicit ``PEND-#####`` name
-(``insert(set_name=...)``), which bypasses autoname — so a candidate who never
-joins does not burn a real employee code. ``activate_employee`` renames it into
-the site's real series (the one ``cn_hrms_core``'s ``before_insert`` already
-stamped onto ``naming_series``) and flips the status to Active. Employee is
-``allow_rename: 1`` with an ``after_rename`` handler, and Frappe's rename updates
-every inbound link.
+A new hire is named by Employee's own ``naming_series:`` autoname, exactly like
+any other employee — ``cn_hrms_core``'s ``before_insert`` stamps the company
+series onto ``naming_series`` and Frappe names the record from it. The employee
+code is therefore issued at intake, not at activation, and never changes;
+``activate_employee`` only flips the status.
+
+Records raised before this (named out of a ``PEND-#####`` series) are still
+renamed into the real series on activation — see :func:`activate_employee`.
+
+Response envelope
+-----------------
+Every endpoint here answers in the same shape, on success and on failure alike,
+so a caller branches on one field::
+
+    {"success": bool, "message": str, "data": ..., "warnings": [str]}
+
+`message` is written to be shown as-is. `data` is the endpoint's payload (None
+on failure); the write endpoints all carry at least ``name``, ``status`` and
+``stage``. `warnings` is Frappe's own msgprint queue, drained out of
+`_server_messages` so it cannot raise popups of its own — usually empty.
+
+The HTTP status carries the category: 400 bad input, 403 not permitted, 404 no
+such record, 409 wrong state for the action, 412 nothing configured to act on,
+500 unexpected — and only a 500 hides its cause, returning ``data.error_log``
+to quote instead.
 
 Lifecycle
 ---------
@@ -31,6 +50,7 @@ config row follows the Employee meta exactly.
 """
 
 import json
+from contextlib import contextmanager
 
 import frappe
 from frappe import _
@@ -43,17 +63,14 @@ FORM_DOCTYPE = "New Hire Form"
 JOB_APPLICANT = "Job Applicant"
 EMPLOYEE_ONBOARDING = "Employee Onboarding"
 
-# A new hire sits here until onboarding finishes. The option already exists on
-# this site (Property Setter: "Pending\nActive\nInactive").
+# "Pending" is not a stock Employee status — a Property Setter on this site
+# widens the options to "Pending\nActive\nInactive".
 PENDING_STATUS = "Pending"
 ACTIVE_STATUS = "Active"
 
-# Pending records are named out of their own series.
-PENDING_SERIES = "PEND-.#####"
+# Only for the legacy records raised before intake used the standard series.
 PENDING_PREFIX = "PEND-"
 
-# The intake lifecycle, kept off `status` so the approval matrix can drive it
-# without touching the person's employment status.
 STAGE_FIELD = "custom_new_hire_stage"
 FORM_FIELD = "custom_new_hire_form"
 STAGES = (
@@ -102,14 +119,182 @@ _CORE_FORM_FIELDS = (
 # ---------------------------------------------------------------------------
 
 
+@contextmanager
+def _internal_call():
+    """Mark an endpoint call that is servicing someone else's save.
+
+    `auto_initiate_on_approval` calls `initiate_onboarding` from inside
+    `Employee.on_update`, so the message queue at that moment belongs to whoever
+    is saving the Employee — draining it there would discard their messages into
+    a response nobody reads.
+    """
+    previous = frappe.flags.get("new_hire_internal_call")
+    frappe.flags.new_hire_internal_call = True
+    try:
+        yield
+    finally:
+        frappe.flags.new_hire_internal_call = previous
+
+
+def _drain_messages():
+    """Empty Frappe's msgprint queue into a plain list of strings.
+
+    Whatever is left in that queue rides out as `_server_messages`, and a
+    Frappe-aware client renders every entry as its own popup. Employee's hooks
+    msgprint freely ("Removed Employee role as there is no mapped employee"),
+    so a clean create raised dialogs nobody asked for; and on the error path the
+    `frappe.throw` that got us here carries `raise_exception: 1`, giving a
+    second, rawer dialog for the failure this envelope already describes.
+
+    Draining makes the envelope the only thing a caller has to read, and
+    returning the text means nothing is lost — it moves from a popup channel
+    into `warnings`, where the client can decide.
+    """
+    if frappe.flags.get("new_hire_internal_call"):
+        return []
+
+    # Read and clear `frappe.local.message_log` directly rather than through
+    # `get_message_log`/`clear_messages`: those helpers, and the shape of an
+    # entry (a dict now, a JSON string in older Frappe), both vary by version,
+    # and this module runs on more than one.
+    queue = getattr(frappe.local, "message_log", None) or []
+    drained = []
+    for entry in queue:
+        if isinstance(entry, str):
+            try:
+                entry = json.loads(entry)
+            except (TypeError, ValueError):
+                pass
+        text = entry.get("message") if isinstance(entry, dict) else entry
+        if text:
+            drained.append(frappe.utils.strip_html(str(text)).strip())
+    frappe.local.message_log = []
+    return drained
+
+
 def _ok(message, data, http=200):
     frappe.local.response["http_status_code"] = http
-    return {"success": True, "message": message, "data": data}
+    return {"success": True, "message": message, "data": data,
+            "warnings": _drain_messages()}
 
 
 def _err(message, http=400, data=None):
     frappe.local.response["http_status_code"] = http
-    return {"success": False, "message": message, "data": data}
+    return {"success": False, "message": message, "data": data,
+            "warnings": _drain_messages()}
+
+
+def _fail(message, title):
+    """The 500 branch: a stable message plus the Error Log id to quote.
+
+    The exception text is deliberately not returned. By the time it reaches
+    here it is a raw SQL error or an internal traceback line — it tells the
+    person at the screen nothing and tells anyone else too much. The traceback
+    goes to the Error Log; `data.error_log` is how support finds it.
+
+    `frappe.throw`/`ValidationError` messages are written FOR the caller, so
+    those branches still return their text verbatim.
+    """
+    log = frappe.log_error(frappe.get_traceback(), title)
+    return _err(message, http=500, data={"error_log": getattr(log, "name", None)})
+
+
+def _has_native_commit_guard():
+    """Whether this Frappe carries its own commit guard on the connection.
+
+    Split out so it can be forced off in a test — v16 has the counter, older
+    versions raise `AttributeError: 'MariaDBDatabase' object has no attribute
+    '_disable_transaction_control'`, and both paths have to work.
+    """
+    return hasattr(frappe.db, "_disable_transaction_control")
+
+
+@contextmanager
+def _no_commit():
+    """Stop anything inside the block from committing the transaction.
+
+    A COMMIT destroys every open savepoint. The rollback that follows then fails
+    with "SAVEPOINT ... does not exist", which leaves the half-written record
+    committed AND replaces the real error with an OperationalError — so the
+    caller is told "could not be created" while the record sits there.
+
+    Frappe holds a counter for exactly this around every doc-event hook
+    (`Document.hook`), which is why a hook cannot commit. Two problems: the
+    attribute is not in every Frappe version, and a Server Script and the
+    outgoing-mail path run OUTSIDE that cover anyway — and those are precisely
+    what an Employee insert triggers. So use the counter where it exists and
+    shadow the connection's own methods where it does not, matching its
+    semantics either way: full commits and rollbacks are ignored, rollbacks to a
+    savepoint still go through.
+    """
+    if _has_native_commit_guard():
+        frappe.db._disable_transaction_control += 1
+        try:
+            yield
+        finally:
+            frappe.db._disable_transaction_control -= 1
+        return
+
+    # Resolve the connection once. `frappe.db` is a LocalProxy, and shadowing on
+    # the proxy but restoring against a re-resolved one would leave the shadow
+    # behind if the connection is replaced mid-block.
+    connection = getattr(frappe.db, "_get_current_object", lambda: frappe.db)()
+    own = connection.__dict__
+    previous = {field: own[field] for field in ("commit", "rollback") if field in own}
+    real_rollback = connection.rollback
+
+    def blocked_commit(*args, **kwargs):
+        return None
+
+    def savepoint_only_rollback(*args, save_point=None, **kwargs):
+        if save_point:
+            return real_rollback(save_point=save_point, **kwargs)
+        return None
+
+    connection.commit = blocked_commit
+    connection.rollback = savepoint_only_rollback
+    try:
+        yield
+    finally:
+        for field in ("commit", "rollback"):
+            if field in previous:
+                setattr(connection, field, previous[field])
+            else:
+                own.pop(field, None)
+
+
+@contextmanager
+def _atomic(name):
+    """Undo a half-finished write before it is reported as failed.
+
+    Every endpoint here catches its own exceptions and *returns* the failure
+    rather than raising it. Frappe only rolls a request back when the exception
+    reaches `frappe.app.application`; a handled one takes the `else` branch,
+    which calls `sync_database()` — and that COMMITS on any unsafe HTTP method.
+    So a write that fell over halfway (an Employee inserted, then a hook throwing
+    on the way out) was answered `success: false` and committed anyway, and the
+    caller's retry made a second record with the same data.
+
+    Frappe ships `frappe.database.savepoint`, but it swallows the exception it
+    catches; the handlers here have to see it to build the error response.
+
+    Holding `_no_commit` is not optional — see there for why.
+    """
+    frappe.db.savepoint(name)
+    try:
+        with _no_commit():
+            yield
+    except Exception:
+        try:
+            frappe.db.rollback(save_point=name)
+        except Exception:
+            # Cleanup must never replace what actually went wrong: the caller
+            # needs the original error, not this one.
+            frappe.log_error(frappe.get_traceback(),
+                             f"new_hire: could not roll back to savepoint {name}")
+        raise
+    else:
+        frappe.db.release_savepoint(name)
 
 
 def _coerce_payload(payload):
@@ -148,8 +333,8 @@ def setup_new_hire_support():
     matrix and this module, and `custom_new_hire_form` records which profile the
     person was raised on so the edit screen renders the same field set.
     """
-    frappe.only_for("System Manager")
     try:
+        frappe.only_for("System Manager")
         meta = frappe.get_meta(DOCTYPE)
         created = []
 
@@ -183,9 +368,8 @@ def setup_new_hire_support():
         return _ok(_("New Hire support is in place."), {"created_fields": created})
     except frappe.PermissionError as exc:
         return _err(str(exc) or _("Not permitted."), http=403)
-    except Exception as exc:
-        frappe.log_error(frappe.get_traceback(), "setup_new_hire_support failed")
-        return _err(_("Setup failed: {0}").format(str(exc)), http=500)
+    except Exception:
+        return _fail(_("New Hire support could not be set up."), "setup_new_hire_support failed")
 
 
 # ---------------------------------------------------------------------------
@@ -310,9 +494,10 @@ def _build_form_config(form_doc, doc=None, employment_type=None):
     DocType with the form's overrides applied.
 
     With `Show Only Configured Fields` on (the default) a field renders only when
-    it has a config row — the strict allowlist that keeps a 405-field doctype
-    from becoming a 405-field form. A field Employee itself marks `reqd` always
-    renders regardless, because the record cannot be saved without it.
+    it has a config row — the strict allowlist that keeps a several-hundred-field
+    doctype from becoming a several-hundred-field form. A field Employee itself
+    marks `reqd` always renders regardless, because the record cannot be saved
+    without it.
     """
     overrides = _load_form_overrides(form_doc)
     restrict = bool(form_doc and form_doc.get("restrict_to_configured"))
@@ -448,9 +633,8 @@ def get_new_hire_form_config(form=None, name=None, company=None, employment_type
         return _err(str(exc) or _("Not permitted."), http=403)
     except frappe.ValidationError as exc:
         return _err(str(exc), http=400)
-    except Exception as exc:
-        frappe.log_error(frappe.get_traceback(), "get_new_hire_form_config failed")
-        return _err(_("Failed to build form configuration: {0}").format(str(exc)), http=500)
+    except Exception:
+        return _fail(_("The form configuration could not be built."), "get_new_hire_form_config failed")
 
 
 # ---------------------------------------------------------------------------
@@ -528,9 +712,8 @@ def get_employee_field_catalog(form=None, search=None, include_tables=0):
         })
     except frappe.PermissionError as exc:
         return _err(str(exc) or _("Not permitted."), http=403)
-    except Exception as exc:
-        frappe.log_error(frappe.get_traceback(), "get_employee_field_catalog failed")
-        return _err(_("Failed to read the field catalogue: {0}").format(str(exc)), http=500)
+    except Exception:
+        return _fail(_("The field catalogue could not be read."), "get_employee_field_catalog failed")
 
 
 @frappe.whitelist()
@@ -541,11 +724,11 @@ def seed_default_fields(form=None):
     required — this only puts them ON the form. Idempotent: a field already
     configured is left exactly as it is.
     """
-    frappe.has_permission(FORM_DOCTYPE, "write", throw=True)
     try:
+        frappe.has_permission(FORM_DOCTYPE, "write", throw=True)
         form_doc = resolve_form(form=form)
         if not form_doc:
-            return _err(_("No New Hire Form is configured."), http=412)
+            return _err(_("No New Hire Form is configured. Create one and mark it default."), http=412)
         form_doc = frappe.get_doc(FORM_DOCTYPE, form_doc.name)
 
         meta = frappe.get_meta(DOCTYPE)
@@ -568,13 +751,13 @@ def seed_default_fields(form=None):
             added.append(fieldname)
 
         if added:
-            form_doc.save(ignore_permissions=True)
+            with _atomic("new_hire_seed_fields"):
+                form_doc.save(ignore_permissions=True)
         return _ok(_("Added {0} field(s).").format(len(added)), {"form": form_doc.name, "added": added})
     except frappe.PermissionError as exc:
         return _err(str(exc) or _("Not permitted."), http=403)
-    except Exception as exc:
-        frappe.log_error(frappe.get_traceback(), "seed_default_fields failed")
-        return _err(_("Could not seed the form: {0}").format(str(exc)), http=500)
+    except Exception:
+        return _fail(_("The form could not be seeded."), "seed_default_fields failed")
 
 
 # ---------------------------------------------------------------------------
@@ -651,9 +834,9 @@ def _validate_mandatory(doc, form_doc, employment_type=None, config=None):
     contract, so a field the config forces Required is validated here too —
     Employee's own `reqd` only covers a handful.
 
-    `config` lets the caller pass a tree it has already built. Employee carries
-    ~405 fields and this walks all of them; building it twice in one request is
-    pure waste.
+    `config` lets the caller pass a tree it has already built. This walks every
+    Employee field, and there are several hundred; building it twice in one
+    request is pure waste.
     """
     if config is None:
         config = _build_form_config(form_doc, doc=None, employment_type=employment_type)
@@ -674,11 +857,11 @@ def _validate_mandatory(doc, form_doc, employment_type=None, config=None):
 def create_new_hire(payload=None, form=None, submit=1):
     """Create the new hire as a pending Employee.
 
-    Named out of the `PEND-` series via `insert(set_name=...)`, which bypasses
-    autoname — so no real employee code is consumed until activation. `status` is
-    Pending, which keeps the record out of payroll and attendance (both filter
-    `status == "Active"`) and out of the role grants in `cn_hrms_core`, which
-    fire on the transition TO Active.
+    Named by Employee's own autoname, so the code matches every other employee
+    from the moment the intake is raised. `status` is Pending, which is what keeps
+    the record out of payroll and attendance (both filter `status == "Active"`)
+    and out of the role grants in `cn_hrms_core`, which fire on the transition TO
+    Active — the status carries the whole separation, not the name.
 
     `submit=1` (default) sets the stage to Pending Approval, which is what the
     approval matrix's Flow Config fires on. Nothing here starts it.
@@ -708,7 +891,8 @@ def create_new_hire(payload=None, form=None, submit=1):
                     form_doc, employment_type=doc.get("employment_type")),
             )
 
-        doc.insert(set_name=make_autoname(PENDING_SERIES))
+        with _atomic("new_hire_create"):
+            doc.insert()
 
         return _ok(_("New hire {0} created.").format(doc.name), {
             "name": doc.name,
@@ -721,9 +905,8 @@ def create_new_hire(payload=None, form=None, submit=1):
         return _err(str(exc) or _("Not permitted."), http=403)
     except frappe.ValidationError as exc:
         return _err(str(exc), http=400)
-    except Exception as exc:
-        frappe.log_error(frappe.get_traceback(), "create_new_hire failed")
-        return _err(_("Failed to create the new hire: {0}").format(str(exc)), http=500)
+    except Exception:
+        return _fail(_("The new hire could not be created."), "create_new_hire failed")
 
 
 @frappe.whitelist()
@@ -743,10 +926,15 @@ def update_new_hire(name=None, payload=None, submit=0):
         doc = frappe.get_doc(DOCTYPE, name)
         doc.check_permission("write")
 
-        stage = doc.get(STAGE_FIELD)
+        # A blank stage is an intake that never got one — raised before the field
+        # existed, or saved through a path that dropped it. That is the
+        # not-yet-submitted case, so read it as Draft: left blank it fell through
+        # to `doc.status` ("Pending") and the record became permanently
+        # uneditable, because no endpoint can set the stage back.
+        stage = doc.get(STAGE_FIELD) or "Draft"
         if stage not in EDITABLE_STAGES:
             return _err(
-                _("{0} is {1} and can no longer be edited here.").format(name, stage or doc.status),
+                _("{0} is {1} and can no longer be edited here.").format(name, stage),
                 http=409,
             )
 
@@ -756,6 +944,7 @@ def update_new_hire(name=None, payload=None, submit=0):
             return _err(_("The form this new hire was raised on no longer exists."), http=412)
 
         applied = _apply_payload(doc, payload, form_doc)
+        doc.set(STAGE_FIELD, stage)
         if frappe.utils.sbool(submit):
             _validate_mandatory(
                 doc, form_doc,
@@ -763,18 +952,22 @@ def update_new_hire(name=None, payload=None, submit=0):
                     form_doc, employment_type=doc.get("employment_type")),
             )
             doc.set(STAGE_FIELD, "Pending Approval")
-        doc.save()
+        with _atomic("new_hire_update"):
+            doc.save()
 
         return _ok(_("New hire {0} updated.").format(doc.name), {
-            "name": doc.name, "status": doc.status, "stage": doc.get(STAGE_FIELD), **applied,
+            "name": doc.name,
+            "status": doc.status,
+            "stage": doc.get(STAGE_FIELD),
+            "form": form_doc.name,
+            **applied,
         })
     except frappe.PermissionError as exc:
         return _err(str(exc) or _("Not permitted."), http=403)
     except frappe.ValidationError as exc:
         return _err(str(exc), http=400)
-    except Exception as exc:
-        frappe.log_error(frappe.get_traceback(), "update_new_hire failed")
-        return _err(_("Failed to update the new hire: {0}").format(str(exc)), http=500)
+    except Exception:
+        return _fail(_("The new hire could not be updated."), "update_new_hire failed")
 
 
 # ---------------------------------------------------------------------------
@@ -785,7 +978,7 @@ _DEFAULT_LIST_COLUMNS = (
     "name", "employee_name", "designation", "department", "company",
     "employment_type", "date_of_joining", STAGE_FIELD,
 )
-_LIST_COLUMN_LABEL_OVERRIDES = {"name": "Pending ID"}
+_LIST_COLUMN_LABEL_OVERRIDES = {"name": "Employee ID"}
 _SORTABLE = frozenset({
     "creation", "modified", "name", "employee_name", "date_of_joining",
     "company", "designation", "department", STAGE_FIELD,
@@ -839,6 +1032,10 @@ def get_new_hire(name=None, filters=None, stage=None, search=None,
                 return _err(_("Employee not found: {0}").format(name), http=404)
             doc = frappe.get_doc(DOCTYPE, name)
             doc.check_permission("read")
+            # Employee carries several hundred fields, a few permlevel-guarded.
+            # `as_dict` does not honour field-level read permissions on its own,
+            # so without this the whole record goes out to anyone who can read it.
+            doc.apply_fieldlevel_read_permissions()
             data = doc.as_dict()
             data["can_initiate_onboarding"] = _can_initiate(data)
             return _ok(_("New hire fetched."), data)
@@ -902,9 +1099,8 @@ def get_new_hire(name=None, filters=None, stage=None, search=None,
         })
     except frappe.PermissionError as exc:
         return _err(str(exc) or _("Not permitted."), http=403)
-    except Exception as exc:
-        frappe.log_error(frappe.get_traceback(), "get_new_hire failed")
-        return _err(_("Failed to fetch new hires: {0}").format(str(exc)), http=500)
+    except Exception:
+        return _fail(_("The new hires could not be fetched."), "get_new_hire failed")
 
 
 @frappe.whitelist()
@@ -1026,9 +1222,8 @@ def get_new_hire_approval_flow(name=None):
         })
     except frappe.PermissionError as exc:
         return _err(str(exc) or _("Not permitted."), http=403)
-    except Exception as exc:
-        frappe.log_error(frappe.get_traceback(), "get_new_hire_approval_flow failed")
-        return _err(_("Failed to fetch the approval flow: {0}").format(str(exc)), http=500)
+    except Exception:
+        return _fail(_("The approval flow could not be fetched."), "get_new_hire_approval_flow failed")
 
 
 def _matrix_ladder():
@@ -1053,16 +1248,6 @@ def _matrix_ladder():
 # ---------------------------------------------------------------------------
 # Handoff and activation
 # ---------------------------------------------------------------------------
-
-_HANDOFF_SAVEPOINT = "new_hire_handoff"
-
-
-def _rollback_handoff():
-    try:
-        frappe.db.rollback(save_point=_HANDOFF_SAVEPOINT)
-    except Exception:
-        pass
-
 
 def _create_job_applicant(doc, form_doc):
     """The Job Applicant the onboarding hangs off.
@@ -1109,11 +1294,16 @@ def initiate_onboarding(name=None):
         doc.check_permission("write")
 
         existing = frappe.db.get_value(
-            EMPLOYEE_ONBOARDING, {"employee": name, "docstatus": ("<", 2)}, "name")
+            EMPLOYEE_ONBOARDING, {"employee": name, "docstatus": ("<", 2)},
+            ["name", "job_applicant"], as_dict=True)
         if existing:
-            return _ok(_("Onboarding already initiated."), {
-                "name": name, "stage": doc.get(STAGE_FIELD),
-                "employee_onboarding": existing, "already_initiated": True,
+            return _ok(_("Onboarding for {0} was already initiated.").format(name), {
+                "name": name,
+                "status": doc.status,
+                "stage": doc.get(STAGE_FIELD),
+                "job_applicant": existing.job_applicant,
+                "employee_onboarding": existing.name,
+                "already_initiated": True,
             })
 
         if doc.get(STAGE_FIELD) != "Approved":
@@ -1126,77 +1316,69 @@ def initiate_onboarding(name=None):
         if not form_doc:
             return _err(_("The form this new hire was raised on no longer exists."), http=412)
 
-        frappe.db.savepoint(_HANDOFF_SAVEPOINT)
-        applicant = _create_job_applicant(doc, form_doc)
+        with _atomic("new_hire_handoff"):
+            applicant = _create_job_applicant(doc, form_doc)
 
-        onboarding = frappe.new_doc(EMPLOYEE_ONBOARDING)
-        onboarding.job_applicant = applicant.name
-        onboarding.employee = doc.name
-        onboarding.employee_name = doc.employee_name
-        onboarding.company = doc.company
-        onboarding.date_of_joining = doc.date_of_joining
-        onboarding.boarding_begins_on = frappe.utils.today()
-        for fieldname in ("department", "designation"):
-            if onboarding.meta.has_field(fieldname) and doc.get(fieldname):
-                onboarding.set(fieldname, doc.get(fieldname))
-        if onboarding.meta.has_field("custom_direct_hire"):
-            onboarding.custom_direct_hire = 1
-        if onboarding.meta.has_field("custom_onboarding_portal_form"):
-            onboarding.custom_onboarding_portal_form = (
-                applicant.get("custom_onboarding_portal_form"))
+            onboarding = frappe.new_doc(EMPLOYEE_ONBOARDING)
+            onboarding.job_applicant = applicant.name
+            onboarding.employee = doc.name
+            onboarding.employee_name = doc.employee_name
+            onboarding.company = doc.company
+            onboarding.date_of_joining = doc.date_of_joining
+            onboarding.boarding_begins_on = frappe.utils.today()
+            for fieldname in ("department", "designation"):
+                if onboarding.meta.has_field(fieldname) and doc.get(fieldname):
+                    onboarding.set(fieldname, doc.get(fieldname))
+            if onboarding.meta.has_field("custom_direct_hire"):
+                onboarding.custom_direct_hire = 1
+            if onboarding.meta.has_field("custom_onboarding_portal_form"):
+                onboarding.custom_onboarding_portal_form = (
+                    applicant.get("custom_onboarding_portal_form"))
 
-        # The two things a hand-built onboarding would otherwise be missing.
-        # `materialize_onboarding_from_applicant` is not reusable here — it is
-        # written around an applicant-first flow and re-derives the Employee — but
-        # these are the parts that matter, and skipping them is not survivable:
-        # an onboarding with no template carries NO activities, so the candidate
-        # and HR get a task list that is silently empty.
-        from recruitment.api.candidate_portal import (
-            _apply_default_onboarding_template, _apply_onboarding_automation_fields,
-        )
-        _apply_onboarding_automation_fields(onboarding, applicant, None)
-        _apply_default_onboarding_template(onboarding)
+            # The two things a hand-built onboarding would otherwise be missing.
+            # `materialize_onboarding_from_applicant` is not reusable here — it is
+            # written around an applicant-first flow and re-derives the Employee — but
+            # these are the parts that matter, and skipping them is not survivable:
+            # an onboarding with no template carries NO activities, so the candidate
+            # and HR get a task list that is silently empty.
+            from recruitment.api.candidate_portal import (
+                _apply_default_onboarding_template, _apply_onboarding_automation_fields,
+            )
+            _apply_onboarding_automation_fields(onboarding, applicant, None)
+            _apply_default_onboarding_template(onboarding)
 
-        onboarding.insert(ignore_permissions=True)
+            onboarding.insert(ignore_permissions=True)
 
-        doc.db_set(STAGE_FIELD, "Onboarding Initiated", update_modified=False)
+            doc.db_set(STAGE_FIELD, "Onboarding Initiated", update_modified=False)
 
         return _ok(_("Onboarding {0} initiated.").format(onboarding.name), {
             "name": doc.name,
+            "status": doc.status,
             "stage": "Onboarding Initiated",
             "job_applicant": applicant.name,
             "employee_onboarding": onboarding.name,
             "already_initiated": False,
         }, http=201)
     except frappe.PermissionError as exc:
-        _rollback_handoff()
         return _err(str(exc) or _("Not permitted."), http=403)
     except frappe.ValidationError as exc:
-        _rollback_handoff()
         return _err(str(exc), http=400)
-    except Exception as exc:
-        _rollback_handoff()
-        frappe.log_error(frappe.get_traceback(), "initiate_onboarding failed")
-        return _err(_("Failed to initiate onboarding: {0}").format(str(exc)), http=500)
+    except Exception:
+        return _fail(_("Onboarding could not be initiated."), "initiate_onboarding failed")
 
 
 @frappe.whitelist()
 def activate_employee(name=None):
     """Turn a completed pending Employee into a real one.
 
-    Two steps, in this order:
+    `status = "Active"` is the whole of it: that transition releases the
+    hierarchy role grants in `cn_hrms_core` and lets payroll and attendance see
+    the person. The employee code was issued at intake and does not change.
 
-      1. rename out of `PEND-` into the site's real series — the one
-         `cn_hrms_core`'s `before_insert` already stamped onto `naming_series`,
-         so the code matches every other employee. Frappe's rename updates every
-         inbound link, and Employee's `after_rename` re-stamps its own
-         `employee` field.
-      2. `status = "Active"`, which is what releases the hierarchy role grants in
-         `cn_hrms_core` (they are gated on the transition TO Active) and lets
-         payroll and attendance see the person.
-
-    Renaming first means the role grants and every downstream hook fire against
-    the final name, so nothing is left pointing at a `PEND-` id.
+    The one exception is a record raised before intake used the standard series:
+    it still carries a `PEND-` name, so it is renamed into the real series first,
+    and only then activated — that way the role grants and every downstream hook
+    fire against the final name, leaving nothing pointing at a `PEND-` id.
     """
     try:
         if not name:
@@ -1208,13 +1390,23 @@ def activate_employee(name=None):
         doc.check_permission("write")
 
         if doc.status == ACTIVE_STATUS:
-            return _ok(_("Already active."), {"name": doc.name, "status": doc.status,
-                                              "renamed": False})
+            return _ok(_("Employee {0} is already active.").format(doc.name), {
+                "name": doc.name,
+                "previous_name": None,
+                "status": doc.status,
+                "stage": doc.get(STAGE_FIELD),
+                "renamed": False,
+            })
         if doc.status != PENDING_STATUS:
-            return _err(_("{0} is {1}, not Pending.").format(name, doc.status), http=409)
+            return _err(
+                _("{0} is {1}, not Pending, so it cannot be activated.").format(name, doc.status),
+                http=409)
 
         final = doc.name
         renamed = False
+        # Legacy only: intake names new hires out of the real series now, so
+        # there is nothing to rename for anything raised since that change.
+        pattern = None
         if doc.name.startswith(PENDING_PREFIX):
             series = (doc.get("naming_series") or "").strip()
             if not series:
@@ -1224,24 +1416,35 @@ def activate_employee(name=None):
             # The series is stored as a prefix ("HomeFirst-"); make_autoname wants
             # the hash placeholders that decide the number width.
             pattern = series if "#" in series else series + ".#####"
-            final = rename_doc(DOCTYPE, doc.name, make_autoname(pattern),
-                               force=True, ignore_permissions=True, show_alert=False)
-            renamed = True
 
-        frappe.db.set_value(DOCTYPE, final, {
+        # Rename and activation are one unit: a rename that lands and an
+        # activation that then fails would leave a renamed record still Pending.
+        with _atomic("new_hire_activate"):
+            if pattern:
+                final = rename_doc(DOCTYPE, doc.name, make_autoname(pattern),
+                                   force=True, ignore_permissions=True, show_alert=False)
+                renamed = True
+
+            # Saved through the document, not `db.set_value`: the hierarchy role
+            # grants in `cn_hrms_core` hang off `Employee.on_update`, and set_value
+            # writes straight to SQL without firing a single document event — so
+            # activating that way granted the new employee nothing.
+            active = frappe.get_doc(DOCTYPE, final)
+            active.status = ACTIVE_STATUS
+            active.set(STAGE_FIELD, "Completed")
+            active.save(ignore_permissions=True)
+
+        return _ok(_("Employee {0} is now active.").format(final), {
+            "name": final,
+            "previous_name": name if renamed else None,
             "status": ACTIVE_STATUS,
-            STAGE_FIELD: "Completed",
-        })
-
-        return _ok(_("{0} is now active.").format(final), {
-            "name": final, "previous_name": name if renamed else None,
-            "status": ACTIVE_STATUS, "renamed": renamed,
+            "stage": "Completed",
+            "renamed": renamed,
         })
     except frappe.PermissionError as exc:
         return _err(str(exc) or _("Not permitted."), http=403)
-    except Exception as exc:
-        frappe.log_error(frappe.get_traceback(), "activate_employee failed")
-        return _err(_("Failed to activate: {0}").format(str(exc)), http=500)
+    except Exception:
+        return _fail(_("The employee could not be activated."), "activate_employee failed")
 
 
 @frappe.whitelist()
@@ -1263,18 +1466,29 @@ def cancel_new_hire(name=None, reason=None):
                 _("Onboarding {0} has already been initiated. Cancel it there instead.").format(onboarding),
                 http=409)
         if doc.status != PENDING_STATUS:
-            return _err(_("{0} is {1}, not Pending.").format(name, doc.status), http=409)
+            return _err(
+                _("{0} is {1}, not Pending, so it cannot be cancelled.").format(name, doc.status),
+                http=409)
 
-        frappe.db.set_value(DOCTYPE, name, {STAGE_FIELD: "Cancelled", "status": "Inactive"})
-        if reason:
-            doc.add_comment("Comment", _("Cancelled: {0}").format(reason))
+        # Through the document for the same reason as activation: Inactive is what
+        # `cn_hrms_core`'s `disable_user_on_employee_inactive` hangs off, and a
+        # set_value would leave a withdrawn hire's login enabled.
+        with _atomic("new_hire_cancel"):
+            doc.set(STAGE_FIELD, "Cancelled")
+            doc.status = "Inactive"
+            doc.save(ignore_permissions=True)
+            if reason:
+                doc.add_comment("Comment", _("Cancelled: {0}").format(reason))
 
-        return _ok(_("{0} cancelled.").format(name), {"name": name, "stage": "Cancelled"})
+        return _ok(_("New hire {0} cancelled.").format(name), {
+            "name": name,
+            "status": doc.status,
+            "stage": "Cancelled",
+        })
     except frappe.PermissionError as exc:
         return _err(str(exc) or _("Not permitted."), http=403)
-    except Exception as exc:
-        frappe.log_error(frappe.get_traceback(), "cancel_new_hire failed")
-        return _err(_("Failed to cancel: {0}").format(str(exc)), http=500)
+    except Exception:
+        return _fail(_("The new hire could not be cancelled."), "cancel_new_hire failed")
 
 
 # ---------------------------------------------------------------------------
@@ -1296,7 +1510,8 @@ def auto_initiate_on_approval(doc, method=None):
     if frappe.db.exists(EMPLOYEE_ONBOARDING, {"employee": doc.name, "docstatus": ("<", 2)}):
         return
     try:
-        initiate_onboarding(doc.name)
+        with _internal_call():
+            initiate_onboarding(doc.name)
     except Exception:
         frappe.log_error(frappe.get_traceback(), f"auto_initiate_on_approval failed for {doc.name}")
 
@@ -1354,8 +1569,8 @@ def setup_direct_hire_support():
     `mandatory_depends_on`. The second half only changes the desk form — the real
     enforcement is :func:`require_job_offer_unless_direct_hire`.
     """
-    frappe.only_for("System Manager")
     try:
+        frappe.only_for("System Manager")
         created = []
         if not frappe.get_meta(EMPLOYEE_ONBOARDING).has_field(DIRECT_HIRE_FLAG):
             create_custom_field(EMPLOYEE_ONBOARDING, {
@@ -1391,6 +1606,5 @@ def setup_direct_hire_support():
         })
     except frappe.PermissionError as exc:
         return _err(str(exc) or _("Not permitted."), http=403)
-    except Exception as exc:
-        frappe.log_error(frappe.get_traceback(), "setup_direct_hire_support failed")
-        return _err(_("Setup failed: {0}").format(str(exc)), http=500)
+    except Exception:
+        return _fail(_("Direct-hire support could not be set up."), "setup_direct_hire_support failed")

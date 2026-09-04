@@ -399,6 +399,28 @@ const OverviewTab = ({ requisition, isDesktop }: OverviewTabProps) => {
 
 // ─── Position Details Tab ────────────────────────────────────────────────
 
+// Per-position approval state (`approval_status` on the Position Details row) —
+// tracked separately from the requisition's own status, since an approver can
+// clear some positions and hold others.
+const POSITION_STATUS_STYLES: Record<string, string> = {
+  Approved: "bg-green-100 text-green-700",
+  Rejected: "bg-red-100 text-red-700",
+  Pending: "bg-yellow-100 text-yellow-700",
+};
+
+const positionStatusOf = (pos: any): string => pos?.approval_status || "Pending";
+
+const positionStatusStyle = (status: string): string =>
+  POSITION_STATUS_STYLES[status] || "bg-gray-100 text-gray-600";
+
+/** "Approved by X on <date>" — only once the row has actually been actioned. */
+const positionStatusDetail = (pos: any): string | null => {
+  const by = pos?.approved_by_title || pos?.approved_by;
+  const on = pos?.approved_on ? formatToIndianDateWithTime(pos.approved_on) : null;
+  if (!by && !on) return null;
+  return [by, on].filter(Boolean).join(" · ");
+};
+
 interface PositionDetailsTabProps {
   positionDetails: any[];
   isDesktop: boolean;
@@ -447,6 +469,11 @@ const PositionDetailsTab = ({
                       ? "bg-orange-100 text-orange-700"
                       : "bg-green-100 text-green-700"
                   }
+                />
+                <Badge
+                  label={positionStatusOf(pos)}
+                  size="sm"
+                  backgroundColor={positionStatusStyle(positionStatusOf(pos))}
                 />
               </div>
               <div className="grid grid-cols-2 gap-3 text-xs">
@@ -500,6 +527,14 @@ const PositionDetailsTab = ({
                     {pos.employee_type_title || pos.employee_type || "—"}
                   </p>
                 </div>
+                {positionStatusDetail(pos) && (
+                  <div className="col-span-2">
+                    <span className="text-gray-500">Actioned by</span>
+                    <p className="font-medium text-gray-900 mt-0.5">
+                      {positionStatusDetail(pos)}
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           );
@@ -531,6 +566,9 @@ const PositionDetailsTab = ({
             </th>
             <th className="px-5 py-3.5 text-left text-sm font-bold text-gray-800">
               Employee Type <span className="text-red-500">*</span>
+            </th>
+            <th className="px-5 py-3.5 text-left text-sm font-bold text-gray-800">
+              Status
             </th>
           </tr>
         </thead>
@@ -601,6 +639,20 @@ const PositionDetailsTab = ({
                 {/* Employee Type */}
                 <td className="px-5 py-4 text-sm text-gray-700">
                   {pos.employee_type_title || pos.employee_type || "—"}
+                </td>
+
+                {/* Approval status of this position */}
+                <td className="px-5 py-4 text-sm text-gray-700">
+                  <Badge
+                    label={positionStatusOf(pos)}
+                    size="sm"
+                    backgroundColor={positionStatusStyle(positionStatusOf(pos))}
+                  />
+                  {positionStatusDetail(pos) && (
+                    <p className="mt-1 text-xs text-gray-500">
+                      {positionStatusDetail(pos)}
+                    </p>
+                  )}
                 </td>
               </tr>
             );

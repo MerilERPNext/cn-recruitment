@@ -314,12 +314,39 @@ def _step_url(step, applicant_name):
 
 
 def _dpdp_consent_url(applicant_name):
-    """Consent-page URL for the candidate, token-gated like the offer page.
+    """Where to send a candidate whose DPDP consent is still pending.
 
-    /job_offer/consent?appl=<applicant>&token=<offer_token>. Only used when DPDP
-    consent is enforced and still pending (see get_post_login_route)."""
+    Internal Form mode -> our own consent page, token-gated like the offer page:
+    /job_offer/consent?appl=<applicant>&token=<offer_token>.
+
+    External Portal mode -> the partner portal link from the candidate's live
+    consent session. Only an *existing* session is used here: this helper is called
+    on every action-center / onboarding-dashboard load, and starting a session makes
+    an outbound HTTP call, so a dashboard render must never trigger one. When there
+    is no live session the candidate is sent to our own consent route, whose page
+    calls ``start_consent_session`` and forwards them.
+
+    Only ever used when DPDP consent is enforced and still pending (see
+    get_post_login_route)."""
     from recruitment.recruitment.link_token import offer_token
-    return DPDP_CONSENT_URL_TEMPLATE.format(applicant=applicant_name) + "&token=" + offer_token(applicant_name)
+
+    internal_url = (
+        DPDP_CONSENT_URL_TEMPLATE.format(applicant=applicant_name)
+        + "&token=" + offer_token(applicant_name)
+    )
+
+    try:
+        from recruitment.dpdp_external_consent import _live_session, is_external_consent_mode
+
+        if is_external_consent_mode():
+            session = _live_session(applicant_name)
+            return session.short_url if session else internal_url
+    except Exception:
+        # Never let the consent integration break the router — fall back to the
+        # in-system route, which can always re-issue a link.
+        frappe.log_error(frappe.get_traceback(), "DPDP: external consent URL lookup failed")
+
+    return internal_url
 
 
 # ---------------------------------------------------------------------------

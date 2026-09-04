@@ -3,10 +3,17 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { getLoan } from "../services/loan";
 import { Loan } from "../components/Compansation/Loan/Type/loan";
 import {
+  checkLoanAdminPermission,
   createLoanApplication,
+  editLoanInstallment,
   getAllLoanProducts,
+  holdLoanInstallment,
   updateLoanApplication,
 } from "../services/loanService";
+import {
+  EditInstallmentPayload,
+  HoldInstallmentPayload,
+} from "../types/loan";
 import FrappeAPI from "../utils/frappeAPI";
 
 export const useLoan = (employeeId?: string) => {
@@ -70,6 +77,43 @@ export const useGetLoanApplicationDoc = (
     queryKey: ["loan-application-doc-data", docname],
     queryFn: () => FrappeAPI.getDocument("Loan Application", docname!),
     enabled: !!docname,
+  });
+};
+
+/** Roles allowed to perform loan actions — fetched via check_admin_permission */
+export const useLoanAdminPermission = (employee?: string) => {
+  return useQuery({
+    queryKey: ["loan-admin-permission", employee],
+    queryFn: () => checkLoanAdminPermission(employee),
+    placeholderData: [],
+  });
+};
+
+/** Mutation to hold loan installment(s) */
+export const useHoldLoanInstallment = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: HoldInstallmentPayload) =>
+      holdLoanInstallment(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["loan"] });
+      queryClient.invalidateQueries({ queryKey: ["loan-application-doc-data"] });
+      queryClient.invalidateQueries({ queryKey: ["loan-application-list"] });
+    },
+  });
+};
+
+/** Mutation to edit loan installment repayment amount */
+export const useEditLoanInstallment = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: EditInstallmentPayload) =>
+      editLoanInstallment(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["loan"] });
+      queryClient.invalidateQueries({ queryKey: ["loan-application-doc-data"] });
+      queryClient.invalidateQueries({ queryKey: ["loan-application-list"] });
+    },
   });
 };
 

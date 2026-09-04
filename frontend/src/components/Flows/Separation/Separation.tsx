@@ -32,6 +32,7 @@ import ActivityLogDrawer from "../../shared/ActivityLogDrawer";
 import Tooltip from "../../shared/Tooltip";
 import DropdownMenu from "../../shared/DropDownMenu";
 import ActionReasonModal from "../../shared/ActionReasonModal";
+import ActionConfirmationModal from "../../shared/ActionConfirmationModal";
 import { errorResponseFormater } from "../../../utils/errorResponseFormater";
 import toast from "react-hot-toast";
 
@@ -113,6 +114,8 @@ const Separation = () => {
 
   const [isActivityLogOpen, setIsActivityLogOpen] = useState(false);
   const [isRevokeModalOpen, setIsRevokeModalOpen] = useState(false);
+  const [isSeparationConfirmOpen, setIsSeparationConfirmOpen] = useState(false);
+  const [isTerminateConfirmOpen, setIsTerminateConfirmOpen] = useState(false);
 
   const showRevokeButton =
     !!separation_name &&
@@ -478,7 +481,7 @@ const Separation = () => {
           <div className="flex items-center py-6 gap-2 flex-col">
             {showSeparationButton && (
               <Button
-                onClick={() => handleTriggerChat("Separation")}
+                onClick={() => setIsSeparationConfirmOpen(true)}
                 size="md"
                 bgColor="blue-500"
                 className="hover:bg-blue-600 text-white"
@@ -495,7 +498,7 @@ const Separation = () => {
       <div className="w-full flex items-center justify-center">
         {showTerminationButton && (
           <Button
-            onClick={() => handleTriggerChat("Termination")}
+            onClick={() => setIsTerminateConfirmOpen(true)}
             size="md"
             bgColor="black"
             className="hover:bg-gray-900 text-white mx-auto"
@@ -517,6 +520,36 @@ const Separation = () => {
         placeholder="Enter reason for revoking..."
         onCancel={() => setIsRevokeModalOpen(false)}
         onSave={handleRevokeSubmit}
+      />
+
+      <ActionConfirmationModal
+        isOpen={isSeparationConfirmOpen}
+        title="Initiate Separation"
+        message="Are you sure you want to initiate the separation process? This action will start your separation workflow."
+        confirmLabel="Yes, Initiate"
+        cancelLabel="Cancel"
+        confirmBgColor="primary"
+        isPending={isTriggeringChat}
+        onConfirm={() => {
+          setIsSeparationConfirmOpen(false);
+          handleTriggerChat("Separation");
+        }}
+        onCancel={() => setIsSeparationConfirmOpen(false)}
+      />
+
+      <ActionConfirmationModal
+        isOpen={isTerminateConfirmOpen}
+        title="Terminate Employee"
+        message="Are you sure you want to initiate the termination process? This action cannot be undone and will start the employee termination workflow."
+        confirmLabel="Yes, Terminate"
+        cancelLabel="Cancel"
+        confirmBgColor="error"
+        isPending={isTriggeringChat}
+        onConfirm={() => {
+          setIsTerminateConfirmOpen(false);
+          handleTriggerChat("Termination");
+        }}
+        onCancel={() => setIsTerminateConfirmOpen(false)}
       />
 
       {!showRequestPage && enabledActions.show_separation_activity_log && (

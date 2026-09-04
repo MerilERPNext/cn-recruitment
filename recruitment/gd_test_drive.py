@@ -15,6 +15,12 @@ Built for testing the GD / panel / assignment behaviour end to end:
         R2-EXTRA       Review Panel 1       — the Additional Round's OWN roster
   * A spare pool of 4 more candidates (``add_late_candidates``) so you can prove that
     grouping again picks up ONLY the new ones and leaves finished groups frozen.
+  * THREE DEDICATED PANEL LOGINS for the GD round (gdtest.panel1..3@example.com,
+    password below). They hold the Employee role and nothing else — no HR User, no
+    Recruiter Admin — because the whole point of the Group Discussion doctype is that
+    a panel member needs no permission on the Campus Drive, and every real Employee on
+    this site carries HR roles that would let them see everything anyway. Log in as one
+    and you should find their own group and no other.
 
 NO REAL EMAIL: frappe.sendmail is patched off for the whole run and every address is
 an @example.com address (RFC 2606 reserved — undeliverable to any real person).
@@ -35,7 +41,11 @@ DOMAIN = "@example.com"
 GD_STAGE = "Group Discussion"
 TECH_STAGE = "Technical Round 1"
 HR_STAGE = "HR Round"
-OFFER_STAGE = "Pre Job Offer"
+# The terminal offer stage every opening gets for free (hiring_stage._append_offer_stages).
+# NOT "Pre Job Offer": that one is only appended when the opening has
+# custom_enable_pre_job_offer ticked, so pointing a round at it on an opening without
+# the flag gives you a round no candidate can ever reach — and the drive says so.
+OFFER_STAGE = "Job Offer"
 
 # The opening's hiring workflow. The drive's rounds map onto these by name.
 STAGES = [
@@ -60,6 +70,19 @@ PANEL_PLAN = [
     ("R3", "HR Panel 1"),
     ("R2-EXTRA", "Review Panel 1"),
 ]
+
+# The GD round's panels get their own logins, one each. See the docstring: a real
+# Employee here holds HR roles, and an HR user sees every Group Discussion, so testing
+# the scoping with one would prove nothing. Dev-site fixtures on an @example.com
+# address (RFC 2606, undeliverable) — `reset` deletes them.
+PANEL_USERS = [
+    ("GD Panel", "One", "gdtest.panel1" + DOMAIN),
+    ("GD Panel", "Two", "gdtest.panel2" + DOMAIN),
+    ("GD Panel", "Three", "gdtest.panel3" + DOMAIN),
+]
+# Long enough to clear Frappe's password-strength check (a short one is rejected as
+# "commonly used"). Dev-site fixture accounts on an undeliverable domain.
+PANEL_PASSWORD = "Gd-Panel-Test-2026!"
 
 NAMES = [
     ("Aarav", "Sharma"), ("Diya", "Iyer"), ("Rohan", "Verma"), ("Ananya", "Nair"),
@@ -207,17 +230,38 @@ def run(candidates=10):
     _log(f"Candidates  : {len(made)} Shortlisted, all sitting at '{GD_STAGE}'")
     _log(f"Panelists   : {panelists} rows, one interviewer per panel")
     _log("-" * 74)
-    _log("Try, in order:")
-    _log("  1. Open the drive -> Group Discussion round -> Create Groups (size 3)")
+    _log("GD panel logins (Employee role ONLY — no access to the drive itself):")
+    for first, last, email in PANEL_USERS:
+        _log(f"    {email}   password: {PANEL_PASSWORD}")
+    _log("-" * 74)
+    _log("AS HR (Administrator), on the drive:")
+    _log("  1. Group Discussion round -> Create Groups (size 3)")
     _log("     => 3-4 groups, each with its OWN panel (never two interviewers on one)")
-    _log("  2. Untick 'Auto-assign panels' first to test assigning them by hand")
-    _log("  3. Mark one group all Pass -> 'Push GD Results' on that group")
-    _log("     => the group turns Completed and locks; its marks can no longer change")
-    _log("  4. bench execute recruitment.gd_test_drive.add_late_candidates")
-    _log("     then 'Group New Candidates' => ONLY the 4 new ones are grouped")
-    _log("  5. 'Regroup' => rebuilds the un-run groups, leaves the Completed one alone")
-    _log("  6. Technical Round 1 -> Assign to Panels => one interviewer per candidate")
-    _log("  7. Additional Round after Technical Round 1 -> panel is Review Panel 1")
+    _log("     => and one Group Discussion record per group: /app/group-discussion")
+    _log("  2. Untick 'Auto-assign panels' first to test the manual route:")
+    _log("     => NO Group Discussion is created until you set a panel on a group;")
+    _log("        set one and it appears, clear it and it goes away again")
+    _log("  3. Mark a candidate Pass on the drive, then open that group's Group")
+    _log("     Discussion => the mark is already there (and the other way round)")
+    _log("")
+    _log("AS A PANEL MEMBER (log in as one of the three above):")
+    _log("  4. /app/group-discussion => ONLY the group(s) they are on. Open another")
+    _log("     one by URL and you get a permission error; the Campus Drive is closed")
+    _log("     to them entirely")
+    _log("  5. Same card as HR sees: mark everyone Present, then Pass/Fail, then")
+    _log("     'Finish & send results' => passers move to Technical Round 1, fails are")
+    _log("     Rejected, and the group locks on BOTH the GD and the drive")
+    _log("")
+    _log("BACK AS HR:")
+    _log("  6. The drive's GD card now shows that group Completed with its verdicts")
+    _log("  7. bench execute recruitment.gd_test_drive.add_late_candidates")
+    _log("     then 'Group New Candidates' => ONLY the 4 new ones are grouped, and")
+    _log("     only the new group gets a new Group Discussion")
+    _log("  8. 'Regroup' => rebuilds the un-run groups, leaves the Completed one alone")
+    _log("  9. Technical Round 1 -> Assign to Panels => one interviewer per candidate")
+    _log(" 10. Additional Round after Technical Round 1 -> panel is Review Panel 1")
+    _log("")
+    _log("  bench --site homefirst-dev.localhost execute recruitment.gd_test_drive.status")
     _log("=" * 74)
     return {"drive": drive.name, "opening": op.name, "invite": inv.name,
             "candidates": made, "panelists": panelists}
@@ -247,6 +291,49 @@ def _make_candidates(opening, invite, institute, drive, start, count):
     return made
 
 
+def _panel_employees():
+    """User + Employee for each GD panel login, returned in PANEL_USERS order.
+
+    The Employee is what the roster links to (Campus Drive Round Panelist is an
+    Employee link); the User is what the Group Discussion is scoped and shared by.
+    Employee.user_id is the join between them.
+    """
+    company = _pick("Company")
+    department = _pick("Department")
+    designation = _pick("Designation")
+    out = []
+    for first, last, email in PANEL_USERS:
+        if not frappe.db.exists("User", email):
+            user = frappe.new_doc("User")
+            user.email = email
+            user.first_name = first
+            user.last_name = last
+            user.send_welcome_email = 0
+            user.new_password = PANEL_PASSWORD
+            user.append("roles", {"role": "Employee"})
+            user.flags.ignore_permissions = True
+            user.insert(ignore_permissions=True)
+
+        emp = frappe.db.get_value("Employee", {"user_id": email}, "name")
+        if not emp:
+            doc = frappe.new_doc("Employee")
+            doc.first_name = first
+            doc.last_name = last
+            doc.employee_name = f"{first} {last}"
+            doc.user_id = email
+            doc.status = "Active"
+            doc.company = company
+            doc.department = department
+            doc.designation = designation
+            doc.gender = "Other"
+            doc.date_of_birth = add_days(today(), -9000)
+            doc.date_of_joining = add_days(today(), -365)
+            doc.flags.ignore_mandatory = True
+            emp = doc.insert(ignore_permissions=True).name
+        out.append(emp)
+    return out
+
+
 def _roster(drive_name):
     """One panelist per panel — the point being that no panel ever holds two, so a
     group / interview can only ever get a single interviewer."""
@@ -260,8 +347,12 @@ def _roster(drive_name):
     if not emps:
         _log("WARNING: no Employee has a linked User — panels cannot take interviews.")
         return 0
+    # The GD panels take the dedicated non-HR logins; the later rounds keep the site's
+    # real Employees, so the contrast between the two is visible on one drive.
+    gd_emps = _panel_employees()
 
     doc.set("round_panelists", [])
+    gd_i = 0
     for i, (slot, panel) in enumerate(PANEL_PLAN):
         if slot.endswith("-EXTRA"):
             base = by_index.get(slot.split("-")[0])
@@ -270,8 +361,13 @@ def _roster(drive_name):
             code = by_index.get(slot)
         if not code:
             continue
+        if slot == "R1" and gd_emps:
+            panelist = gd_emps[gd_i % len(gd_emps)]
+            gd_i += 1
+        else:
+            panelist = emps[i % len(emps)]
         doc.append("round_panelists", {"round_code": code, "panel_name": panel,
-                                       "panelist": emps[i % len(emps)]})
+                                       "panelist": panelist})
     doc.save(ignore_permissions=True)
     return len(doc.round_panelists)
 
@@ -328,6 +424,21 @@ def status():
         _log(f"    {g.group_name:10s} [{g.group_status:10s}] panel={g.panel_name or '-':16s} "
              f"n={g.candidate_count}")
 
+    gds = frappe.get_all("Group Discussion", filters={"campus_drive": drive},
+                         fields=["name", "round_code", "group_name", "panel_name", "status",
+                                 "results_pushed", "candidate_count"],
+                         order_by="group_name asc")
+    _log(f"  Group Discussions ({len(gds)}) — one per group WITH a panel:")
+    for g in gds:
+        who = frappe.get_all("Group Discussion Interviewer",
+                             filters={"parent": g.name}, pluck="interviewer")
+        _log(f"    {g.name} {g.group_name:10s} [{g.status:11s}] "
+             f"panel={g.panel_name or '-':16s} n={g.candidate_count} "
+             f"pushed={bool(g.results_pushed)} -> {who}")
+    unpanelled = [g.group_name for g in groups if not g.panel_name]
+    if unpanelled:
+        _log(f"    (no Group Discussion for {unpanelled} — they have no panel yet)")
+
     by_stage = {}
     for a in frappe.get_all("Job Applicant", filters={"name": ["in", _applicants() or [""]]},
                             fields=["name", "status", "custom_current_stage"]):
@@ -379,6 +490,10 @@ def reset(quiet=False):
     for dt in ("Campus Drive", "Candidate Registration", "Campus Invite",
                "Job Opening", "Institute"):
         wipe(dt, fixtures.get(dt) or [])
+    # Employee before User: Employee.user_id points at it, and Frappe's link check
+    # refuses to delete a User that is still somebody's login.
+    wipe("Employee", frappe.get_all(
+        "Employee", filters={"user_id": ["like", f"gdtest.%{DOMAIN}"]}, pluck="name"))
     wipe("User", frappe.get_all("User", filters={"name": ["like", f"gdtest.%{DOMAIN}"]},
                                 pluck="name"))
 

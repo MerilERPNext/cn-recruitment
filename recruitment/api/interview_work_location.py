@@ -16,6 +16,12 @@ Two rules make it safe to let an interviewer write a candidate-level field:
   is the candidate's region, so a panel cannot post someone to a branch their region
   does not run.
 
+* **Not while recommending another region.** A panel that ticks "Recommend for a
+  different Region" is saying this candidate belongs to someone else's region, so the
+  branch is not theirs to choose: the field goes empty and read-only on their
+  feedback, and the panel of the region HR moves the candidate to fills it in on
+  theirs. See ``defers_work_location``.
+
 The region itself is never typed in: it is derived from the candidate (see
 ``resolve_region``) and shown read-only next to the location.
 """
@@ -77,23 +83,23 @@ def _drive_region(campus_drive):
 	return regions.pop() if len(regions) == 1 else None
 
 
-def resolve_region(applicant, recommended_region=None):
+def resolve_region(applicant):
 	"""Which region's locations this candidate may be posted to.
 
-	A recommendation on the feedback wins: if this same panel is arguing the
-	candidate belongs to another region, the location they pick has to be a location
-	of *that* region — offering the old region's branches alongside a
-	"recommended for elsewhere" tick would produce a contradictory record.
+	The region that actually owns the candidate: the one HR routed them to, else the
+	one they applied under.
 
-	Otherwise it is the region that actually owns the candidate: the one HR routed
-	them to, else the one they applied under.
+	A recommendation on the feedback does NOT re-point this. It used to — a panel
+	recommending Region B picked a Region B branch — but a recommendation is only a
+	request to HR, who may dismiss it, and the panel making it has no standing to post
+	the candidate into a region that is not yet theirs and whose branches they do not
+	run. A ticked recommendation defers the choice instead of moving it
+	(``defers_work_location``), so nothing here has to guess.
 
 	``custom_region`` is a fetch_from of the Campus Invite and only fills in on a
 	save, so plenty of campus candidates carry the invite with the region still
 	blank — hence reading the invite directly before falling back to the drive.
 	"""
-	if recommended_region:
-		return recommended_region
 	if not applicant:
 		return None
 	return (applicant.get("custom_interview_region")
@@ -164,6 +170,26 @@ def locked_location(job_applicant, exclude=None):
 	return rows[0]
 
 
+def _truthy(value):
+	"""Whether a flag arriving from the client is on.
+
+	A whitelisted method receives everything as text, so a JS ``true`` shows up as
+	the string "true" and ``cint`` would read it as 0 — which would quietly re-enable
+	the field the tick is meant to switch off.
+	"""
+	return str(value).strip().lower() not in ("", "0", "false", "none", "null")
+
+
+def defers_work_location(doc):
+	"""True when this feedback hands the work location to another region's panel.
+
+	The tick alone is what defers it, not the region chosen alongside: the moment an
+	interviewer says "this candidate belongs to another region", the branch stops
+	being theirs to pick — before they have got as far as naming which region.
+	"""
+	return bool(doc.get("custom_recommend_other_region"))
+
+
 def _may_see(job_applicant):
 	"""Who is allowed to ask which locations a candidate can be posted to.
 
@@ -189,7 +215,8 @@ def _may_see(job_applicant):
 
 
 @frappe.whitelist()
-def get_work_location_context(job_applicant=None, recommended_region=None):
+def get_work_location_context(job_applicant=None, recommends_other_region=None,
+                              recommended_region=None):
 	"""Everything the Interview Feedback form needs to draw the Work Location field.
 
 	``restricted`` is False when the region has no locations mapped to it yet. The
@@ -198,6 +225,12 @@ def get_work_location_context(job_applicant=None, recommended_region=None):
 
 	``reason`` says WHY when ``is_campus`` is False, so the form can tell a panel
 	"this is not a campus candidate" apart from "this candidate's record is missing".
+
+	``deferred`` is True while this panel is recommending the candidate for another
+	region: no branches, no region, and the form empties the field and locks it. Both
+	recommendation arguments mean the same thing here — the flag is what the form
+	sends (the tick defers on its own, before a region is named), and the region is
+	accepted alongside it so the answer names where it is being deferred to.
 	"""
 	def blank(reason):
 		# `reason` is what stops the form hiding both sections without a word. The
@@ -208,7 +241,8 @@ def get_work_location_context(job_applicant=None, recommended_region=None):
 		# server to say which one it is.
 		return {"is_campus": False, "reason": reason, "region": None, "region_label": None,
 		        "branches": [], "restricted": False, "current_location": None,
-		        "locked_to": None, "locked_by": None}
+		        "locked_to": None, "locked_by": None, "deferred": False,
+		        "deferred_to": None}
 
 	if not job_applicant:
 		return blank("no_applicant")
@@ -228,7 +262,28 @@ def get_work_location_context(job_applicant=None, recommended_region=None):
 	if not _is_campus(applicant):
 		return blank("not_campus")
 
-	region = resolve_region(applicant, recommended_region)
+	if _truthy(recommends_other_region) or recommended_region:
+		# Recommending another region: the choice is not this panel's to make, so
+		# there is nothing to offer and nothing to stamp. Deliberately reported ahead
+		# of any lock — a later round that recommends a move shows an empty field
+		# rather than repeating a posting the recommendation is arguing against.
+		return {
+			"is_campus": True,
+			"reason": None,
+			"region": None,
+			"region_label": None,
+			"branches": [],
+			"restricted": False,
+			"current_location": applicant.get("custom_location"),
+			"locked_to": None,
+			"locked_by": None,
+			"deferred": True,
+			# Named so the form can say who picks it instead. Empty while the tick is
+			# on but no region has been chosen yet.
+			"deferred_to": _region_label(recommended_region) or None,
+		}
+
+	region = resolve_region(applicant)
 	branches = get_region_branches(region)
 	locked = locked_location(job_applicant)
 	return {
@@ -243,6 +298,8 @@ def get_work_location_context(job_applicant=None, recommended_region=None):
 		# read-only so a later panel cannot move the candidate somewhere else.
 		"locked_to": locked.custom_work_location if locked else None,
 		"locked_by": locked.interviewer if locked else None,
+		"deferred": False,
+		"deferred_to": None,
 	}
 
 
@@ -261,6 +318,22 @@ def validate_work_location(doc, method=None):
 		doc.custom_work_location_region = None
 		return
 
+	if defers_work_location(doc):
+		# This panel is recommending the candidate for another region, so where they
+		# sit is that region's call — and the candidate may not even move, since a
+		# recommendation only raises a flag for HR. Both fields go back to empty:
+		# a branch here would be one this panel does not run, and a region stamp with
+		# no location on it says nothing. The panel that takes the next round fills
+		# them in.
+		#
+		# Cleared rather than rejected for the same reason the non-campus case is: the
+		# form locks the field, so a value arriving here came from an API caller, an
+		# amend or a stale tab, and dropping it is right where refusing the whole
+		# feedback is not.
+		doc.custom_work_location = None
+		doc.custom_work_location_region = None
+		return
+
 	# An earlier round already settled this. The form shows the field read-only, so a
 	# different value here came from an API caller or a stale tab — take the settled
 	# one rather than reject the feedback, which is the part that actually matters.
@@ -268,9 +341,7 @@ def validate_work_location(doc, method=None):
 	if locked:
 		doc.custom_work_location = locked.custom_work_location
 
-	recommended = (doc.get("custom_recommended_region")
-	               if doc.get("custom_recommend_other_region") else None)
-	region = resolve_region(applicant, recommended)
+	region = resolve_region(applicant)
 	doc.custom_work_location_region = region
 
 	if not doc.custom_work_location:
