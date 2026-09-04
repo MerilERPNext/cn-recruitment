@@ -681,12 +681,19 @@ body {
 [data-theme="dark"] [class~="bg-sky-50"],
 [data-theme="dark"] [class~="bg-sky-100"],
 [data-theme="dark"] [class~="bg-cyan-50"],
-[data-theme="dark"] [class~="bg-cyan-100"],
+[data-theme="dark"] [class~="bg-cyan-100"] {
+  background-color: rgb(14 42 60) !important;
+}
+
+/* Violet/purple kept their own bucket rather than folding into the blue one.
+   Status maps use blue and purple as two DIFFERENT states side by side --
+   Referrals paints "Applied" blue and "Shortlisted" purple -- so collapsing
+   both onto the same dark fill made the two chips identical in dark mode. */
 [data-theme="dark"] [class~="bg-violet-50"],
 [data-theme="dark"] [class~="bg-violet-100"],
 [data-theme="dark"] [class~="bg-purple-50"],
 [data-theme="dark"] [class~="bg-purple-100"] {
-  background-color: rgb(14 42 60) !important;
+  background-color: rgb(42 30 66) !important;
 }
 
 [data-theme="dark"] [class~="bg-green-50"],
@@ -710,10 +717,16 @@ body {
 [data-theme="dark"] [class~="bg-amber-50"],
 [data-theme="dark"] [class~="bg-amber-100"],
 [data-theme="dark"] [class~="bg-yellow-50"],
-[data-theme="dark"] [class~="bg-yellow-100"],
+[data-theme="dark"] [class~="bg-yellow-100"] {
+  background-color: rgb(58 43 12) !important;
+}
+
+/* Orange split out of the amber bucket for the same reason as purple above:
+   Requisition paints "Approval Pending" yellow and "Draft" orange, which the
+   shared amber fill rendered as one identical chip. */
 [data-theme="dark"] [class~="bg-orange-50"],
 [data-theme="dark"] [class~="bg-orange-100"] {
-  background-color: rgb(58 43 12) !important;
+  background-color: rgb(66 34 10) !important;
 }
 
 
@@ -730,12 +743,15 @@ body {
 [data-theme="dark"] [class*="bg-sky-50/"],
 [data-theme="dark"] [class*="bg-sky-100/"],
 [data-theme="dark"] [class*="bg-cyan-50/"],
-[data-theme="dark"] [class*="bg-cyan-100/"],
+[data-theme="dark"] [class*="bg-cyan-100/"] {
+  background-color: rgb(14 42 60) !important;
+}
+
 [data-theme="dark"] [class*="bg-violet-50/"],
 [data-theme="dark"] [class*="bg-violet-100/"],
 [data-theme="dark"] [class*="bg-purple-50/"],
 [data-theme="dark"] [class*="bg-purple-100/"] {
-  background-color: rgb(14 42 60) !important;
+  background-color: rgb(42 30 66) !important;
 }
 
 [data-theme="dark"] [class*="bg-green-50/"],
@@ -759,10 +775,13 @@ body {
 [data-theme="dark"] [class*="bg-amber-50/"],
 [data-theme="dark"] [class*="bg-amber-100/"],
 [data-theme="dark"] [class*="bg-yellow-50/"],
-[data-theme="dark"] [class*="bg-yellow-100/"],
+[data-theme="dark"] [class*="bg-yellow-100/"] {
+  background-color: rgb(58 43 12) !important;
+}
+
 [data-theme="dark"] [class*="bg-orange-50/"],
 [data-theme="dark"] [class*="bg-orange-100/"] {
-  background-color: rgb(58 43 12) !important;
+  background-color: rgb(66 34 10) !important;
 }
 
 /* Text sitting on the darkened tints. */
@@ -821,11 +840,15 @@ body {
 [data-theme="dark"] [class~="text-yellow-800"],
 [data-theme="dark"] [class~="text-amber-600"],
 [data-theme="dark"] [class~="text-amber-700"],
-[data-theme="dark"] [class~="text-amber-800"],
+[data-theme="dark"] [class~="text-amber-800"] {
+  color: rgb(252 211 77) !important;
+}
+
+/* Orange ink to match the orange fill split out above. */
 [data-theme="dark"] [class~="text-orange-600"],
 [data-theme="dark"] [class~="text-orange-700"],
 [data-theme="dark"] [class~="text-orange-800"] {
-  color: rgb(252 211 77) !important;
+  color: rgb(253 186 116) !important;
 }
 
 /* The app's OWN success/error/warning ramps have the identical gap: their
@@ -885,14 +908,18 @@ body {
 [data-theme="dark"] [class~="text-sky-800"],
 [data-theme="dark"] [class~="text-cyan-600"],
 [data-theme="dark"] [class~="text-cyan-700"],
-[data-theme="dark"] [class~="text-cyan-800"],
+[data-theme="dark"] [class~="text-cyan-800"] {
+  color: rgb(147 197 253) !important;
+}
+
+/* Violet/purple ink to match the purple fill split out above. */
 [data-theme="dark"] [class~="text-violet-600"],
 [data-theme="dark"] [class~="text-violet-700"],
 [data-theme="dark"] [class~="text-violet-800"],
 [data-theme="dark"] [class~="text-purple-600"],
 [data-theme="dark"] [class~="text-purple-700"],
 [data-theme="dark"] [class~="text-purple-800"] {
-  color: rgb(147 197 253) !important;
+  color: rgb(216 180 254) !important;
 }
 
 

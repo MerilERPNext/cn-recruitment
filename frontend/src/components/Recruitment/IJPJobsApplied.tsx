@@ -151,7 +151,7 @@ export default function IJPJobsApplied() {
         if (isDesktop) {
           return (
             <div
-              className="grid gap-4 px-6 py-4 border-t border-gray-100 hover:bg-blue-50/50 transition-colors items-center min-w-max bg-white text-sm"
+              className="grid gap-4 px-6 py-4 border-t border-gray-100 hover:bg-gray-50 transition-colors items-center min-w-max bg-white text-sm"
               style={{ gridTemplateColumns: COLUMN_WIDTHS.join(" ") }}
             >
               <div className="text-slate-800 font-medium truncate text-center">

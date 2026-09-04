@@ -27,6 +27,21 @@ const VARIANT_STYLES: Record<BadgeVariant, { bg: string; text: string; pulse?: s
   default: { bg: "bg-gray-200", text: "text-black" },
 };
 
+/* Most status maps in the app return a single "bg-x text-y" pair and pass the
+   whole thing as `backgroundColor` (see getStatusColor in Requisition,
+   ReferralList, HelpDesk...). The text half has to be pulled back out, or the
+   label falls through to `text-black` — which dark mode remaps to the title
+   ink, so every badge's label renders in the same near-white and the status
+   colour stops carrying any meaning. */
+const splitColorClasses = (value?: string) => {
+  const tokens = value?.split(/\s+/).filter(Boolean) ?? [];
+  const isTextClass = (token: string) => /(^|:)text-/.test(token);
+  return {
+    bg: tokens.filter((token) => !isTextClass(token)).join(" "),
+    text: tokens.filter(isTextClass).join(" "),
+  };
+};
+
 const Badge = ({
   label,
   variant,
@@ -42,9 +57,11 @@ const Badge = ({
     lg: "py-2 px-4 text-base",
   };
 
+  const custom = splitColorClasses(backgroundColor);
+
   const styles = variant ? VARIANT_STYLES[variant] : {
-    bg: backgroundColor || "bg-gray-200",
-    text: textColor || "text-black",
+    bg: custom.bg || "bg-gray-200",
+    text: textColor || custom.text || "text-black",
     pulse: pulse?.color
   };
 

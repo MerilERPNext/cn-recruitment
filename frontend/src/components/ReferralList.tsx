@@ -288,7 +288,7 @@ const ReferralList = () => {
     if (isDesktop) {
       return (
         <div
-          className="grid gap-4 px-6 py-4 border-t border-gray-100 hover:bg-blue-50/50 transition-colors cursor-pointer items-center bg-white"
+          className="grid gap-4 px-6 py-4 border-t border-gray-100 hover:bg-gray-50 transition-colors cursor-pointer items-center bg-white"
           style={{ gridTemplateColumns: columnWidths.join(" ") }}
           onClick={() => onView(item)}
         >
