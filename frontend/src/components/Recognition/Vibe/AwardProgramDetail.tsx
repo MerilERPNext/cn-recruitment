@@ -323,7 +323,7 @@ const AwardProgramDetail: React.FC = () => {
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[1100px] text-left">
                   <thead>
-                    <tr className="bg-blue-100 border text-sm text-gray-600">
+                    <tr className="bg-blue-100 border border-gray-100 text-sm text-gray-600">
                       <th className="px-5 py-3 font-semibold">Nomination ID</th>
                       <th className="px-5 py-3 font-semibold">Nominee</th>
                       <th className="px-5 py-3 font-semibold">Nomination Date</th>

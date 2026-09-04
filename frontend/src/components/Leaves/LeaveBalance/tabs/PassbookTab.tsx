@@ -191,9 +191,9 @@ const PassbookTab: React.FC<PassbookTabProps> = ({ leaveData }) => {
         </div>
       </div>
 
-      <div className="overflow-auto max-h-[calc(100vh-250px)] border border-gray-200 rounded-lg relative">
+      <div className="overflow-auto max-h-[calc(100vh-250px)] border border-gray-100 rounded-lg relative">
         <table className="w-full text-sm">
-          <thead className="bg-gray-100 border-b border-gray-200 sticky top-0 z-10 shadow-sm">
+          <thead className="bg-gray-100 border-b border-gray-100 sticky top-0 z-10 shadow-sm">
             <tr>
               <th className="px-4 py-3 text-left font-semibold text-gray-700">
                 Time
@@ -212,7 +212,7 @@ const PassbookTab: React.FC<PassbookTabProps> = ({ leaveData }) => {
               </th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-200">
+          <tbody className="divide-y divide-gray-100">
             {!selectedCycle ? (
               <tr>
                 <td colSpan={5} className="px-4 py-12 text-center">

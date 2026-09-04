@@ -858,8 +858,8 @@ const Requisition = () => {
       </div>
     )}
                 {selectedRequisition.custom_position_details?.length > 0 ? (
-                  <div className="border border-gray-200 rounded-lg overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-200 text-xs">
+                  <div className="border border-gray-100 rounded-lg overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-100 text-xs">
                       <thead className="bg-gray-50 text-gray-700 font-bold uppercase tracking-wider">
                         <tr>
                           <th className="px-4 py-2 text-left">No</th>
@@ -869,7 +869,7 @@ const Requisition = () => {
                           <th className="px-4 py-2 text-left">Cost Center Allocation</th>
                         </tr>
                       </thead>
-                      <tbody className="bg-white divide-y divide-gray-150 text-gray-900">
+                      <tbody className="bg-white divide-y divide-gray-100 text-gray-900">
                         {selectedRequisition.custom_position_details.map((pos: any, idx: number) => (
                           <tr key={idx} className="hover:bg-gray-50/50">
                             <td className="px-4 py-2 font-medium">{idx+1}</td>
@@ -889,13 +889,13 @@ const Requisition = () => {
                             <td className="px-4 py-2 align-top">
                               {Array.isArray(pos.cost_center_allocations) &&
                               pos.cost_center_allocations.length > 0 ? (
-                                <table className="min-w-[180px] border border-gray-200 rounded-md overflow-hidden text-xs">
+                                <table className="min-w-[180px] border border-gray-100 rounded-md overflow-hidden text-xs">
                                   <thead className="bg-gray-50 text-gray-600 font-semibold">
                                     <tr>
-                                      <th className="px-2 py-1 text-left border-b border-gray-200">
+                                      <th className="px-2 py-1 text-left border-b border-gray-100">
                                         Cost Center
                                       </th>
-                                      <th className="px-2 py-1 text-left border-b border-gray-200">
+                                      <th className="px-2 py-1 text-left border-b border-gray-100">
                                         Percentage (%)
                                       </th>
                                     </tr>
@@ -985,8 +985,8 @@ const Requisition = () => {
                   Pre-Screened Candidates
                 </Typography>
                 {selectedRequisition.custom_pre_screened_candidates?.length > 0 ? (
-                  <div className="border border-gray-200 rounded-lg overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-200 text-xs">
+                  <div className="border border-gray-100 rounded-lg overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-100 text-xs">
                       <thead className="bg-gray-50 text-gray-700 font-bold uppercase tracking-wider">
                         <tr>
                           <th className="px-4 py-2 text-left">Name</th>
@@ -995,7 +995,7 @@ const Requisition = () => {
                           <th className="px-4 py-2 text-left">Attachment</th>
                         </tr>
                       </thead>
-                      <tbody className="bg-white divide-y divide-gray-150 text-gray-900">
+                      <tbody className="bg-white divide-y divide-gray-100 text-gray-900">
                         {selectedRequisition.custom_pre_screened_candidates.map((cand: any, idx: number) => (
                           <tr key={idx} className="hover:bg-gray-50/50">
                             <td className="px-4 py-2 font-medium">{cand.candidate_name}</td>

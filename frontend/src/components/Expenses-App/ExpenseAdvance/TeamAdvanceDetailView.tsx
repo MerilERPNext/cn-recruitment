@@ -263,10 +263,10 @@ export default function TeamAdvanceDetailView({
   };
 
   const DesktopBreakup = (
-    <div className="mt-2 rounded-xl border border-gray-200 overflow-x-auto bg-white shadow-sm">
+    <div className="mt-2 rounded-xl border border-gray-100 overflow-x-auto bg-white shadow-sm">
       <table className="min-w-full text-sm text-center">
         <thead>
-          <tr className="bg-gray-50 border-b border-gray-200">
+          <tr className="bg-gray-50 border-b border-gray-100">
             <th className="px-4 py-3 font-semibold text-gray-600 uppercase tracking-wider text-xs">
               Advance Type
             </th>

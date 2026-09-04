@@ -39,8 +39,8 @@ const OvertimeLog = () => {
                         <NoDataFound title="No Overtime Log Found" subtitle="You haven't logged any overtime yet." />
                     </div>
                     :
-                    <div className="overflow-x-auto rounded-lg border border-gray-200">
-                        <table className="min-w-full table-auto border-collapse divide-y divide-gray-200">
+                    <div className="overflow-x-auto rounded-lg border border-gray-100">
+                        <table className="min-w-full table-auto border-collapse divide-y divide-gray-100">
                             <thead className="bg-gray-50/50">
                                 <tr>
 

@@ -513,7 +513,7 @@ const PositionDetailsTab = ({
     <div className="overflow-x-auto">
       <table className="min-w-full">
         <thead>
-          <tr className="bg-gray-50 border-b border-gray-200">
+          <tr className="bg-gray-50 border-b border-gray-100">
             <th className="px-5 py-3.5 text-left text-sm font-bold text-gray-800">
               Position Number
             </th>
@@ -719,7 +719,7 @@ const CustomApprovalTab = ({
                         <thead className="text-left text-xs text-gray-500">
                           <tr><th className="pb-2 font-medium">Position</th><th className="pb-2 font-medium">Approver(s)</th><th className="pb-2 font-medium">Status</th><th className="pb-2 font-medium">Action Taken By</th><th className="pb-2 font-medium">Completed</th></tr>
                         </thead>
-                        <tbody className="divide-y divide-gray-200 bg-white">
+                        <tbody className="divide-y divide-gray-100 bg-white">
                           {rowApprovals.map((row) => <tr key={row.row_docnames?.join("-") || row.label}><td className="px-3 py-3 font-medium text-gray-900">{row.label}</td><td className="px-3 py-3 text-gray-700">{row.approvers?.join(", ") || "—"}</td><td className="px-3 py-3"><Badge label={row.status || "Not started"} size="sm" backgroundColor={getStatusColor(row.status || "")} /></td><td className="px-3 py-3 text-gray-700">{row.action_taken_by?.join(", ") || "—"}</td><td className="px-3 py-3 text-gray-700">{row.completed_date ? formatToIndianDateWithTime(row.completed_date) : "—"}</td></tr>)}
                         </tbody>
                       </table>

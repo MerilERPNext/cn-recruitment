@@ -198,10 +198,10 @@ export default function LoanSummary() {
               </Typography>
 
               {selectedLoan.repayment_schedule?.length > 0 ? (
-                <div className="overflow-x-auto border border-gray-200 rounded-lg">
+                <div className="overflow-x-auto border border-gray-100 rounded-lg">
                   <table className="min-w-[640px] w-full text-sm">
                     <thead>
-                      <tr className="bg-gray-50 border-b border-gray-200">
+                      <tr className="bg-gray-50 border-b border-gray-100">
                         <th className="px-3 py-2 text-center font-bold whitespace-nowrap w-12">
                           #
                         </th>
@@ -227,7 +227,7 @@ export default function LoanSummary() {
                         (item: RepaymentItem, index: number) => (
                           <tr
                             key={index}
-                            className="border-b border-gray-50 hover:bg-primary/10"
+                            className="border-b border-gray-100 hover:bg-primary/10"
                           >
                             <td className="px-3 py-2 text-center whitespace-nowrap">
                               {index + 1}

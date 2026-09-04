@@ -505,7 +505,7 @@ const ReferralList = () => {
           <Typography variant="bodySmall" className="text-gray-500 text-xs mb-1 font-semibold">
             {display_name}
           </Typography>
-          <table className="min-w-full text-xs border border-gray-200 rounded-lg">
+          <table className="min-w-full text-xs border border-gray-100 rounded-lg">
             <thead className="bg-gray-50 text-gray-700">
               <tr>
                 {colsToUse.map((col: any) => (

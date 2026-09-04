@@ -289,7 +289,7 @@ export function ExcelPreview({ fileUrl, fileName }: { fileUrl: string; fileName:
     <div className="w-full h-full flex flex-col overflow-hidden bg-white">
       <ZoomToolbar scale={scale} onZoomIn={zoomIn} onZoomOut={zoomOut} />
       {sheets.length > 1 && (
-        <div className="flex gap-1 px-3 pt-2 border-b border-gray-200 bg-gray-50 flex-shrink-0 overflow-x-auto scrollbar-hide">
+        <div className="flex gap-1 px-3 pt-2 border-b border-gray-100 bg-gray-50 flex-shrink-0 overflow-x-auto scrollbar-hide">
           {sheets.map((name) => (
             <button
               key={name}
@@ -390,7 +390,7 @@ export function CsvPreview({ fileUrl, fileName }: { fileUrl: string; fileName: s
       <ZoomToolbar scale={scale} onZoomIn={zoomIn} onZoomOut={zoomOut} />
       <div className="flex-1 overflow-auto p-4 bg-gray-50/30">
         <div
-          className="origin-top-left transition-transform duration-200 ease-out shadow-sm bg-white border border-gray-200 rounded inline-block min-w-full"
+          className="origin-top-left transition-transform duration-200 ease-out shadow-sm bg-white border border-gray-100 rounded inline-block min-w-full"
           style={{ transform: `scale(${scale})` }}
         >
           <table className="border-collapse text-xs font-mono w-full">
@@ -399,7 +399,7 @@ export function CsvPreview({ fileUrl, fileName }: { fileUrl: string; fileName: s
                 {headers.map((h, i) => (
                   <th
                     key={i}
-                    className="border border-gray-300 px-3 py-2 text-left font-semibold text-gray-700 whitespace-nowrap"
+                    className="border border-gray-100 px-3 py-2 text-left font-semibold text-gray-700 whitespace-nowrap"
                   >
                     {String(h ?? "")}
                   </th>
@@ -410,7 +410,7 @@ export function CsvPreview({ fileUrl, fileName }: { fileUrl: string; fileName: s
               {dataRows.map((row, ri) => (
                 <tr key={ri} className="hover:bg-blue-50 transition-colors">
                   {headers.map((_, ci) => (
-                    <td key={ci} className="border border-gray-200 px-3 py-1.5 text-gray-700 whitespace-nowrap">
+                    <td key={ci} className="border border-gray-100 px-3 py-1.5 text-gray-700 whitespace-nowrap">
                       {String(row[ci] ?? "")}
                     </td>
                   ))}

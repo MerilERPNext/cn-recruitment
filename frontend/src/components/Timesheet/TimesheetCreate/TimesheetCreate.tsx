@@ -1209,9 +1209,9 @@ const TimesheetCreate: React.FC = () => {
                       <td className="border-l border-border"></td>
                     </tr>
                   ) : (
-                    <tr className="block border-t border-gray-200 px-2 py-4 sm:p-4 bg-gray-50/50">
+                    <tr className="block border-t border-gray-100 px-2 py-4 sm:p-4 bg-gray-50/50">
                       <td className="block w-full">
-                        <div className="space-y-4 bg-white p-3 rounded-xl border border-gray-200 shadow-sm">
+                        <div className="space-y-4 bg-white p-3 rounded-xl border border-gray-100 shadow-sm">
                           <div className="flex justify-between items-center font-bold text-gray-900">
                             <span className="text-sm">Total Weekly Hours</span>
                             <span className="text-primary text-lg">{formatCellOnBlur(totals.totalWeeklyHours) || "0:00"}</span>

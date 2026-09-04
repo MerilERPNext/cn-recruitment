@@ -4,7 +4,7 @@ import { useScreenSize } from "../../../../hooks/useScreenSize";
 function TableSkeleton({ columns = 4, rows = 5 }) {
   return (
     <div className="overflow-x-auto animate-pulse">
-      <table className="min-w-full border border-gray-200 rounded-lg">
+      <table className="min-w-full border border-gray-100 rounded-lg">
         <thead>
           <tr>
             {Array.from({ length: columns }).map((_, i) => (
