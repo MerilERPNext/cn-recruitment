@@ -1777,4 +1777,82 @@ div[class*="go188"],
   padding: 0 !important;
 }
 
+/* =============================================================================
+ * REACT FLOW CONTROLS (Organization Chart & Flow diagrams)
+ * ========================================================================== */
+.react-flow__controls {
+  background-color: rgb(var(--surface)) !important;
+  border: 1px solid rgb(var(--border)) !important;
+  border-radius: 8px !important;
+  overflow: hidden !important;
+  box-shadow: 0 4px 12px var(--shadow-color) !important;
+}
+
+.react-flow__controls-button {
+  background-color: rgb(var(--surface)) !important;
+  border-bottom: 1px solid rgb(var(--border)) !important;
+  color: rgb(var(--text-title)) !important;
+  fill: rgb(var(--text-title)) !important;
+  transition: background-color 0.15s ease, fill 0.15s ease, color 0.15s ease !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.react-flow__controls-button:last-child {
+  border-bottom: none !important;
+}
+
+.react-flow__controls-button:hover {
+  background-color: rgb(var(--gray-10)) !important;
+}
+
+.react-flow__controls-button svg {
+  fill: rgb(var(--text-title)) !important;
+  color: rgb(var(--text-title)) !important;
+  transition: fill 0.15s ease, color 0.15s ease !important;
+}
+
+.react-flow__controls-button svg path {
+  fill: rgb(var(--text-title)) !important;
+  transition: fill 0.15s ease !important;
+}
+
+.react-flow__controls-button:hover svg,
+.react-flow__controls-button:hover svg path {
+  fill: rgb(var(--primary)) !important;
+  color: rgb(var(--primary)) !important;
+}
+
+.react-flow__controls-button:disabled {
+  opacity: 0.4 !important;
+  cursor: not-allowed !important;
+}
+
+[data-theme="dark"] .react-flow__controls {
+  background-color: rgb(var(--surface-raised)) !important;
+  border-color: rgb(var(--border)) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4) !important;
+}
+
+[data-theme="dark"] .react-flow__controls-button {
+  background-color: rgb(var(--surface-raised)) !important;
+  border-bottom-color: rgb(var(--border)) !important;
+}
+
+[data-theme="dark"] .react-flow__controls-button:hover {
+  background-color: rgb(var(--gray-100)) !important;
+}
+
+[data-theme="dark"] .react-flow__controls-button svg,
+[data-theme="dark"] .react-flow__controls-button svg path {
+  fill: rgb(var(--text-title)) !important;
+}
+
+[data-theme="dark"] .react-flow__controls-button:hover svg,
+[data-theme="dark"] .react-flow__controls-button:hover svg path {
+  fill: rgb(var(--primary)) !important;
+}
+
+
 
