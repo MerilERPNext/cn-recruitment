@@ -55,7 +55,7 @@ function ChildTable({ fields, rows }: { fields?: ChildField[]; rows: any[] }) {
 
   if (!Array.isArray(rows) || rows.length === 0 || cols.length === 0) {
     return (
-      <div className="mt-1 text-xs text-gray-500 border rounded-lg p-2">
+      <div className="mt-1 text-xs text-gray-500 border border-gray-100 rounded-lg p-2">
         Empty table
       </div>
     );
@@ -80,7 +80,7 @@ function ChildTable({ fields, rows }: { fields?: ChildField[]; rows: any[] }) {
   };
 
   return (
-    <div className="mt-1 border rounded-lg overflow-x-auto">
+    <div className="mt-1 border rounded-lg  border-gray-100 overflow-x-auto">
       <table className="min-w-full text-xs">
         <thead className="bg-gray-50 text-gray-600">
           <tr>
@@ -96,7 +96,7 @@ function ChildTable({ fields, rows }: { fields?: ChildField[]; rows: any[] }) {
         </thead>
         <tbody>
           {rows.map((row, i) => (
-            <tr key={i} className="border-b border-gray-50 last:border-0">
+            <tr key={i} className="border-b border-gray-100 last:border-0">
               {cols.map((c) => (
                 <td
                   key={c.fieldname}
@@ -293,19 +293,19 @@ function FieldRow({
         href={val}
         target="_blank"
         rel="noopener noreferrer"
-        className="text-primary-500 underline rounded-lg break-words text-xs border p-2 block"
+        className="text-primary-500 underline border-gray-100 rounded-lg break-words text-xs border p-2 block"
       >
         View Attachment
       </a>
     ) : (
       <div
-        className="text-xs text-gray-800 border rounded-lg p-2 break-words leading-relaxed w-full"
+        className="text-xs text-gray-800 border border-gray-100 rounded-lg p-2 break-words leading-relaxed w-full"
         dangerouslySetInnerHTML={{ __html: val }}
       />
     )}
   </div>
 ) : (
-  <div className="text-xs text-gray-500 border rounded-lg p-2 break-words leading-relaxed w-full">
+  <div className="text-xs text-gray-500 border border-gray-100 rounded-lg p-2 break-words leading-relaxed w-full">
     Empty value
   </div>
 )}
@@ -324,7 +324,7 @@ function FieldRow({
               onChange={(e) => handleCommentChange(e.target.value)}
               placeholder="Add a mandatory comment before rejecting..."
               autoFocus
-              className={`w-full text-xs px-2.5 py-1.5 border rounded-lg bg-white text-gray-700 resize-none outline-none focus:ring-1 placeholder-gray-400 ${
+              className={`w-full text-xs px-2.5 py-1.5 border border-gray-100 rounded-lg bg-white text-gray-700 resize-none outline-none focus:ring-1 placeholder-gray-400 ${
                 canSubmitReject
                   ? "border-gray-200 focus:border-primary-400 focus:ring-primary-100"
                   : "border-yellow-300 focus:border-yellow-400 focus:ring-yellow-100"

@@ -353,41 +353,41 @@ export default function OfferLetterPage() {
                 </div>
 
                 {/* Annexure A: Compensation Table */}
-                <div className="pt-6 border-t border-slate-100 space-y-3">
+                <div className="pt-6 border-t border-gray-100 space-y-3">
                   <h3 className="font-bold text-slate-900 uppercase text-xs tracking-wider">
                     Annexure A: Compensation structure
                   </h3>
                   
                   <table className="w-full text-left border-collapse text-xs">
                     <thead>
-                      <tr className="bg-slate-100/80 text-slate-700 font-bold border-b border-slate-200">
+                      <tr className="bg-slate-100/80 text-slate-700 font-bold border-b border-gray-100">
                         <th className="p-2">Salary Component</th>
                         <th className="p-2 text-right">Monthly (₹)</th>
                         <th className="p-2 text-right">Annual (₹)</th>
                       </tr>
                     </thead>
                     <tbody className="font-light">
-                      <tr className="border-b border-slate-100">
+                      <tr className="border-b border-gray-100">
                         <td className="p-2">Basic Salary</td>
                         <td className="p-2 text-right">₹1,00,000</td>
                         <td className="p-2 text-right">₹12,00,000</td>
                       </tr>
-                      <tr className="border-b border-slate-100">
+                      <tr className="border-b border-gray-100">
                         <td className="p-2">House Rent Allowance (HRA)</td>
                         <td className="p-2 text-right">₹40,000</td>
                         <td className="p-2 text-right">₹4,80,000</td>
                       </tr>
-                      <tr className="border-b border-slate-100">
+                      <tr className="border-b border-gray-100">
                         <td className="p-2">Special Allowance</td>
                         <td className="p-2 text-right">₹45,000</td>
                         <td className="p-2 text-right">₹5,40,000</td>
                       </tr>
-                      <tr className="border-b border-slate-100">
+                      <tr className="border-b border-gray-100">
                         <td className="p-2">Provident Fund (Employer Share)</td>
                         <td className="p-2 text-right">₹12,000</td>
                         <td className="p-2 text-right">₹1,44,000</td>
                       </tr>
-                      <tr className="border-b border-slate-100 font-semibold bg-blue-50/30">
+                      <tr className="border-b border-gray-100 font-semibold bg-blue-50/30">
                         <td className="p-2 text-slate-900 font-bold">Gross CTC</td>
                         <td className="p-2 text-right text-slate-900">₹2,00,000</td>
                         <td className="p-2 text-right text-slate-900">{activeOffer.salary}</td>

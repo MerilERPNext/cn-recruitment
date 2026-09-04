@@ -98,9 +98,9 @@ const TimesheetDetailModal = ({ timesheetId, listItem, onClose }: TimesheetDetai
               <div>
                 <Typography variant="h4" className="mb-4">Time Logs</Typography>
                 {data.time_logs && data.time_logs.length > 0 ? (
-                  <div className="overflow-x-auto border border-gray-200 rounded-xl">
+                  <div className="overflow-x-auto border border-gray-100 rounded-xl">
                     <table className="w-full text-sm text-left">
-                      <thead className="bg-gray-50 text-gray-700 font-medium border-b border-gray-200">
+                      <thead className="bg-gray-50 text-gray-700 font-medium border-b border-gray-100">
                         <tr>
                           <th className="px-4 py-3">Activity</th>
                           <th className="px-4 py-3">From</th>

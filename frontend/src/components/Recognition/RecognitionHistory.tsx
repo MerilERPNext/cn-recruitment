@@ -420,7 +420,7 @@ const RecognitionHistory: React.FC = () => {
                       : rows.map((row) => (
                           <tr
                             key={`${row.history_type}-${row.name}`}
-                            className="border-t border-gray-200 hover:bg-gray-50/60"
+                            className="border-t border-gray-100 hover:bg-gray-50/60"
                           >
                             <td className="px-5 py-4">
                               <HistoryTypeBadge type={row.history_type} />

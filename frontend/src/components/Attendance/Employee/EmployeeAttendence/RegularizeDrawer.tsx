@@ -148,7 +148,7 @@ const RegularizeDrawer = () => {
             allEmployeeRegularize &&
             allEmployeeRegularize?.length > 0 && (
               <div className="overflow-x-auto rounded-lg border border-gray-100 mb-20">
-                <table className="min-w-full divide-y divide-gray-200">
+                <table className="min-w-full divide-y divide-gray-100">
                   <thead className="bg-gray-50/50">
                     <tr>
                       <td className="border-r px-4 py-3">

@@ -143,12 +143,12 @@ const EmployeeTable = ({
   return (
     <>
       {isDesktop ? (
-        <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-[#1E3A4C] bg-white dark:bg-[#0B1724] shadow-sm scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-slate-700 scrollbar-track-transparent">
+        <div className="overflow-x-auto rounded-xl border border-gray-100 dark:border-[#1E3A4C] bg-white dark:bg-[#0B1724] shadow-sm scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-slate-700 scrollbar-track-transparent">
           <table className="min-w-full border-separate border-spacing-0">
             <thead className="bg-slate-50 dark:bg-[#102030]">
               <tr className="sticky top-0 z-10 shadow-sm">
                 {hasCheckboxesOrChevrons && (
-                  <th className="whitespace-nowrap sticky top-0 bg-slate-50 dark:bg-[#102030] border-b border-r border-slate-200 dark:border-[#1E3A4C] px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 group first:rounded-tl-xl transition-colors hover:bg-slate-100 dark:hover:bg-[#162A3E] w-[48px]">
+                  <th className="whitespace-nowrap sticky top-0 bg-slate-50 dark:bg-[#102030] border-b border-r border-gray-100 dark:border-[#1E3A4C] px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 group first:rounded-tl-xl transition-colors hover:bg-slate-100 dark:hover:bg-[#162A3E] w-[48px]">
                     {showCheckboxColumn ? (
                       <div className="flex items-center gap-2">
                         <input
@@ -166,22 +166,22 @@ const EmployeeTable = ({
                     )}
                   </th>
                 )}
-                <th className="whitespace-nowrap sticky top-0 bg-slate-50 dark:bg-[#102030] border-b border-r border-slate-200 dark:border-[#1E3A4C] px-5 py-3 text-left text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 transition-colors hover:bg-slate-100 dark:hover:bg-[#162A3E]">
+                <th className="whitespace-nowrap sticky top-0 bg-slate-50 dark:bg-[#102030] border-b border-r border-gray-100 dark:border-[#1E3A4C] px-5 py-3 text-left text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 transition-colors hover:bg-slate-100 dark:hover:bg-[#162A3E]">
                   Employee
                 </th>
-                <th className="whitespace-nowrap sticky top-0 bg-slate-50 dark:bg-[#102030] border-b border-r border-slate-200 dark:border-[#1E3A4C] px-5 py-3 text-left text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 transition-colors hover:bg-slate-100 dark:hover:bg-[#162A3E]">
+                <th className="whitespace-nowrap sticky top-0 bg-slate-50 dark:bg-[#102030] border-b border-r border-gray-100 dark:border-[#1E3A4C] px-5 py-3 text-left text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 transition-colors hover:bg-slate-100 dark:hover:bg-[#162A3E]">
                   Employee ID
                 </th>
-                <th className="whitespace-nowrap sticky top-0 bg-slate-50 dark:bg-[#102030] border-b border-r border-slate-200 dark:border-[#1E3A4C] px-5 py-3 text-left text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 transition-colors hover:bg-slate-100 dark:hover:bg-[#162A3E]">
+                <th className="whitespace-nowrap sticky top-0 bg-slate-50 dark:bg-[#102030] border-b border-r border-gray-100 dark:border-[#1E3A4C] px-5 py-3 text-left text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 transition-colors hover:bg-slate-100 dark:hover:bg-[#162A3E]">
                   Designation
                 </th>
-                <th className="whitespace-nowrap sticky top-0 bg-slate-50 dark:bg-[#102030] border-b border-r border-slate-200 dark:border-[#1E3A4C] px-5 py-3 text-left text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 transition-colors hover:bg-slate-100 dark:hover:bg-[#162A3E]">
+                <th className="whitespace-nowrap sticky top-0 bg-slate-50 dark:bg-[#102030] border-b border-r border-gray-100 dark:border-[#1E3A4C] px-5 py-3 text-left text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 transition-colors hover:bg-slate-100 dark:hover:bg-[#162A3E]">
                   Department
                 </th>
-                <th className="whitespace-nowrap sticky top-0 bg-slate-50 dark:bg-[#102030] border-b border-r border-slate-200 dark:border-[#1E3A4C] px-5 py-3 text-left text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 transition-colors hover:bg-slate-100 dark:hover:bg-[#162A3E]">
+                <th className="whitespace-nowrap sticky top-0 bg-slate-50 dark:bg-[#102030] border-b border-r border-gray-100 dark:border-[#1E3A4C] px-5 py-3 text-left text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 transition-colors hover:bg-slate-100 dark:hover:bg-[#162A3E]">
                   Email
                 </th>
-                <th className="whitespace-nowrap sticky top-0 bg-slate-50 dark:bg-[#102030] border-b border-slate-200 dark:border-[#1E3A4C] px-5 py-3 text-left text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 transition-colors hover:bg-slate-100 dark:hover:bg-[#162A3E]">
+                <th className="whitespace-nowrap sticky top-0 bg-slate-50 dark:bg-[#102030] border-b border-gray-100 dark:border-[#1E3A4C] px-5 py-3 text-left text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 transition-colors hover:bg-slate-100 dark:hover:bg-[#162A3E]">
                   Office Location
                 </th>
               </tr>
@@ -202,7 +202,7 @@ const EmployeeTable = ({
                       }`}
                     >
                       {hasCheckboxesOrChevrons && (
-                        <td className="whitespace-nowrap border-r border-b border-slate-200 dark:border-[#1E3A4C] px-4 py-4 text-sm font-medium">
+                        <td className="whitespace-nowrap border-r border-b border-gray-100 dark:border-[#1E3A4C] px-4 py-4 text-sm font-medium">
                           <div className="flex items-center gap-2">
                             {isSelectableStatus(item.status) && (
                               <input
@@ -238,7 +238,7 @@ const EmployeeTable = ({
                           </div>
                         </td>
                       )}
-                      <td className="whitespace-nowrap border-r border-b border-slate-200 dark:border-[#1E3A4C] px-5 py-2.5 text-sm">
+                      <td className="whitespace-nowrap border-r border-b border-gray-100 dark:border-[#1E3A4C] px-5 py-2.5 text-sm">
                         <div className="flex items-center gap-3 justify-between w-full">
                           <Link
                             to={`/webapp/employee-profile?target_user=${item?.employee}`}
@@ -408,22 +408,22 @@ const EmployeeTable = ({
                           </div>
                         </div>
                       </td>
-                      <td className="whitespace-nowrap border-r border-b border-slate-200 dark:border-[#1E3A4C] px-5 py-2.5 text-sm text-slate-700 dark:text-slate-300 font-medium">
+                      <td className="whitespace-nowrap border-r border-b border-gray-100 dark:border-[#1E3A4C] px-5 py-2.5 text-sm text-slate-700 dark:text-slate-300 font-medium">
                         {item.employee}
                       </td>
-                      <td className="whitespace-nowrap border-r border-b border-slate-200 dark:border-[#1E3A4C] px-5 py-2.5 text-sm">
+                      <td className="whitespace-nowrap border-r border-b border-gray-100 dark:border-[#1E3A4C] px-5 py-2.5 text-sm">
                         <div className="flex flex-col">
                           <span className="font-semibold text-slate-800 dark:text-slate-100">
                             {item.designation_name || "-"}
                           </span>
                         </div>
                       </td>
-                      <td className="whitespace-nowrap border-r border-b border-slate-200 dark:border-[#1E3A4C] px-5 py-2.5 text-sm">
-                        <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-slate-100 dark:bg-[#162A3E] text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-[#1E3A4C]">
+                      <td className="whitespace-nowrap border-r border-b border-gray-100 dark:border-[#1E3A4C] px-5 py-2.5 text-sm">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-slate-100 dark:bg-[#162A3E] text-slate-700 dark:text-slate-300 border border-gray-100 dark:border-[#1E3A4C]">
                           {item.department_name || "-"}
                         </span>
                       </td>
-                      <td className="whitespace-nowrap border-r border-b border-slate-200 dark:border-[#1E3A4C] px-5 py-2.5 text-sm text-slate-700 dark:text-slate-300 font-brand">
+                      <td className="whitespace-nowrap border-r border-b border-gray-100 dark:border-[#1E3A4C] px-5 py-2.5 text-sm text-slate-700 dark:text-slate-300 font-brand">
                         <div className="flex items-center gap-2 group/copy">
                           <span className="truncate max-w-[150px] font-medium">
                             {item.user_id || "-"}
@@ -448,7 +448,7 @@ const EmployeeTable = ({
                           )}
                         </div>
                       </td>
-                      <td className="whitespace-nowrap border-b border-slate-200 dark:border-[#1E3A4C] px-5 py-2.5 text-sm text-slate-700 dark:text-slate-300 font-medium">
+                      <td className="whitespace-nowrap border-b border-gray-100 dark:border-[#1E3A4C] px-5 py-2.5 text-sm text-slate-700 dark:text-slate-300 font-medium">
                         {item.branch_name || "-"}
                       </td>
                     </tr>

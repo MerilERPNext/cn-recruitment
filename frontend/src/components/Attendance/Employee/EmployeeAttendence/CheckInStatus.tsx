@@ -90,23 +90,23 @@ const CheckInStatus = () => {
                     <NoDataFound title="No Check-ins Found" subtitle="No check-ins found for the selected month." />
                 </div>
             ) : (
-                <div className="overflow-x-auto rounded-lg border border-gray-200">
-                    <table className="min-w-full border-collapse divide-y divide-gray-200">
+                <div className="overflow-x-auto rounded-lg border border-gray-100">
+                    <table className="min-w-full border-collapse divide-y divide-gray-100">
                         <thead className="bg-gray-50/50">
                             <tr>
-                                <th className="whitespace-nowrap border-r border-gray-200 px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                                <th className="whitespace-nowrap border-r border-gray-100 px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                                     Employee
                                 </th>
-                                <th className="whitespace-nowrap border-r border-gray-200 px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                                <th className="whitespace-nowrap border-r border-gray-100 px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                                     Log Type
                                 </th>
-                                <th className="whitespace-nowrap border-r border-gray-200 px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                                <th className="whitespace-nowrap border-r border-gray-100 px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                                     Check-in Time
                                 </th>
-                                <th className="whitespace-nowrap border-r border-gray-200 px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                                <th className="whitespace-nowrap border-r border-gray-100 px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                                     Shift
                                 </th>
-                                <th className="whitespace-nowrap border-r border-gray-200 px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                                <th className="whitespace-nowrap border-r border-gray-100 px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                                     Shift Timing
                                 </th>
                                 <th className="whitespace-nowrap px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">

@@ -2577,11 +2577,11 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                   </div>
                 </div>
 
-                <div className="overflow-x-auto border border-gray-200 rounded-xl shadow-sm">
+                <div className="overflow-x-auto border border-gray-100 rounded-xl shadow-sm">
                   <table className="min-w-full bg-white">
                     <thead>
-                      <tr className="bg-[#f9fafb] border-b border-gray-200">
-                        <th className="w-14 px-4 py-4 text-center border-r border-gray-200">
+                      <tr className="bg-[#f9fafb] border-b border-gray-100">
+                        <th className="w-14 px-4 py-4 text-center border-r border-gray-100">
                           <div className="flex justify-center">
                             <input
                               type="checkbox"
@@ -2603,16 +2603,16 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                             />
                           </div>
                         </th>
-                        <th className="px-5 py-4 text-left text-[11px] font-bold text-[#64748b] uppercase tracking-wider border-r border-gray-200 whitespace-nowrap">Expense Category</th>
-                        <th className="px-5 py-4 text-left text-[11px] font-bold text-[#64748b] uppercase tracking-wider border-r border-gray-200 whitespace-nowrap">Expense Type</th>
-                        <th className="px-5 py-4 text-left text-[11px] font-bold text-[#64748b] uppercase tracking-wider border-r border-gray-200 whitespace-nowrap">Expense Date</th>
-                        <th className="px-5 py-4 text-left text-[11px] font-bold text-[#64748b] uppercase tracking-wider border-r border-gray-200 whitespace-nowrap">Merchant</th>
-                        <th className="px-5 py-4 text-left text-[11px] font-bold text-[#64748b] uppercase tracking-wider border-r border-gray-200 whitespace-nowrap">Invoice Number</th>
-                        <th className="px-5 py-4 text-left text-[11px] font-bold text-[#64748b] uppercase tracking-wider border-r border-gray-200 whitespace-nowrap">Amount</th>
+                        <th className="px-5 py-4 text-left text-[11px] font-bold text-[#64748b] uppercase tracking-wider border-r border-gray-100 whitespace-nowrap">Expense Category</th>
+                        <th className="px-5 py-4 text-left text-[11px] font-bold text-[#64748b] uppercase tracking-wider border-r border-gray-100 whitespace-nowrap">Expense Type</th>
+                        <th className="px-5 py-4 text-left text-[11px] font-bold text-[#64748b] uppercase tracking-wider border-r border-gray-100 whitespace-nowrap">Expense Date</th>
+                        <th className="px-5 py-4 text-left text-[11px] font-bold text-[#64748b] uppercase tracking-wider border-r border-gray-100 whitespace-nowrap">Merchant</th>
+                        <th className="px-5 py-4 text-left text-[11px] font-bold text-[#64748b] uppercase tracking-wider border-r border-gray-100 whitespace-nowrap">Invoice Number</th>
+                        <th className="px-5 py-4 text-left text-[11px] font-bold text-[#64748b] uppercase tracking-wider border-r border-gray-100 whitespace-nowrap">Amount</th>
                         <th className="px-5 py-4 text-left text-[11px] font-bold text-[#64748b] uppercase tracking-wider whitespace-nowrap">Actions</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-200">
+                    <tbody className="divide-y divide-gray-100">
                       {expenses
                         .filter(e => e.categoryType === "Relocation")
                         .map((expense) => {
@@ -2623,7 +2623,7 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                               className={`hover:bg-gray-50 transition-colors ${isFailed ? "bg-red-50" : ""
                                 }`}
                             >
-                              <td className="px-4 py-4 text-center border-r border-gray-200">
+                              <td className="px-4 py-4 text-center border-r border-gray-100">
                                 <div className="flex justify-center">
                                   <input
                                     type="checkbox"
@@ -2633,7 +2633,7 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                                   />
                                 </div>
                               </td>
-                              <td className="px-5 py-4 text-sm text-gray-700 border-r border-gray-200">
+                              <td className="px-5 py-4 text-sm text-gray-700 border-r border-gray-100">
                                 <div className="flex items-center gap-2">
                                   {expense.custom_expense_category_name
                                     ? `${expense.custom_expense_category_name} (${expense.expenseCategory})`
@@ -2645,19 +2645,19 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                                   )}
                                 </div>
                               </td>
-                              <td className="px-5 py-4 text-sm text-gray-700 border-r border-gray-200">
+                              <td className="px-5 py-4 text-sm text-gray-700 border-r border-gray-100">
                                 {expense.custom_expense_type
                                   ? `${expense.custom_expense_type} (${expense.expenseType})`
                                   : expense.expenseType}
                               </td>
-                              <td className="px-5 py-4 text-sm text-gray-600 border-r border-gray-200 whitespace-nowrap">
+                              <td className="px-5 py-4 text-sm text-gray-600 border-r border-gray-100 whitespace-nowrap">
                                 {expense.expense_date
                                   ? formatToIndianDate(expense.expense_date)
                                   : "-"}
                               </td>
-                              <td className="px-5 py-4 text-sm text-gray-600 border-r border-gray-200">{expense.merchant || "-"}</td>
-                              <td className="px-5 py-4 text-sm text-gray-600 border-r border-gray-200">{expense.invoice_number || "-"}</td>
-                              <td className="px-5 py-4 text-sm font-bold text-gray-900 border-r border-gray-200">{expense.amount ?? "-"}</td>
+                              <td className="px-5 py-4 text-sm text-gray-600 border-r border-gray-100">{expense.merchant || "-"}</td>
+                              <td className="px-5 py-4 text-sm text-gray-600 border-r border-gray-100">{expense.invoice_number || "-"}</td>
+                              <td className="px-5 py-4 text-sm font-bold text-gray-900 border-r border-gray-100">{expense.amount ?? "-"}</td>
                               <td className="px-5 py-4 text-sm whitespace-nowrap">
                                 <div className="flex items-center gap-3">
                                   <button
@@ -2744,11 +2744,11 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                   <h2 className="text-lg font-bold">General Expense List</h2>
                 </div>
 
-                <div className="overflow-x-auto border border-gray-200 rounded-xl shadow-sm">
+                <div className="overflow-x-auto border border-gray-100 rounded-xl shadow-sm">
                   <table className="min-w-full bg-white">
                     <thead>
-                      <tr className="bg-[#f9fafb] border-b border-gray-200">
-                        <th className="w-14 px-4 py-4 text-center border-r border-gray-200">
+                      <tr className="bg-[#f9fafb] border-b border-gray-100">
+                        <th className="w-14 px-4 py-4 text-center border-r border-gray-100">
                           <div className="flex justify-center">
                             <input
                               type="checkbox"
@@ -2770,16 +2770,16 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                             />
                           </div>
                         </th>
-                        <th className="px-5 py-4 text-left text-[11px] font-bold text-[#64748b] uppercase tracking-wider border-r border-gray-200 whitespace-nowrap">Expense Category</th>
-                        <th className="px-5 py-4 text-left text-[11px] font-bold text-[#64748b] uppercase tracking-wider border-r border-gray-200 whitespace-nowrap">Expense Type</th>
-                        <th className="px-5 py-4 text-left text-[11px] font-bold text-[#64748b] uppercase tracking-wider border-r border-gray-200 whitespace-nowrap">Expense Date</th>
-                        <th className="px-5 py-4 text-left text-[11px] font-bold text-[#64748b] uppercase tracking-wider border-r border-gray-200 whitespace-nowrap">Merchant</th>
-                        <th className="px-5 py-4 text-left text-[11px] font-bold text-[#64748b] uppercase tracking-wider border-r border-gray-200 whitespace-nowrap">Invoice Number</th>
-                        <th className="px-5 py-4 text-left text-[11px] font-bold text-[#64748b] uppercase tracking-wider border-r border-gray-200 whitespace-nowrap">Amount</th>
+                        <th className="px-5 py-4 text-left text-[11px] font-bold text-[#64748b] uppercase tracking-wider border-r border-gray-100 whitespace-nowrap">Expense Category</th>
+                        <th className="px-5 py-4 text-left text-[11px] font-bold text-[#64748b] uppercase tracking-wider border-r border-gray-100 whitespace-nowrap">Expense Type</th>
+                        <th className="px-5 py-4 text-left text-[11px] font-bold text-[#64748b] uppercase tracking-wider border-r border-gray-100 whitespace-nowrap">Expense Date</th>
+                        <th className="px-5 py-4 text-left text-[11px] font-bold text-[#64748b] uppercase tracking-wider border-r border-gray-100 whitespace-nowrap">Merchant</th>
+                        <th className="px-5 py-4 text-left text-[11px] font-bold text-[#64748b] uppercase tracking-wider border-r border-gray-100 whitespace-nowrap">Invoice Number</th>
+                        <th className="px-5 py-4 text-left text-[11px] font-bold text-[#64748b] uppercase tracking-wider border-r border-gray-100 whitespace-nowrap">Amount</th>
                         <th className="px-5 py-4 text-left text-[11px] font-bold text-[#64748b] uppercase tracking-wider whitespace-nowrap">Actions</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-200">
+                    <tbody className="divide-y divide-gray-100">
                       {expenses
                         .filter(e => (e.categoryType || "General") === "General")
                         .map((expense) => {
@@ -2790,7 +2790,7 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                               className={`hover:bg-gray-50 transition-colors ${isFailed ? "bg-red-50" : ""
                                 }`}
                             >
-                              <td className="px-4 py-4 text-center border-r border-gray-200">
+                              <td className="px-4 py-4 text-center border-r border-gray-100">
                                 <div className="flex justify-center">
                                   <input
                                     type="checkbox"
@@ -2800,7 +2800,7 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                                   />
                                 </div>
                               </td>
-                              <td className="px-5 py-4 text-sm text-gray-700 border-r border-gray-200">
+                              <td className="px-5 py-4 text-sm text-gray-700 border-r border-gray-100">
                                 <div className="flex items-center gap-2">
                                   {expense.custom_expense_category_name
                                     ? `${expense.custom_expense_category_name} (${expense.expenseCategory})`
@@ -2812,19 +2812,19 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                                   )}
                                 </div>
                               </td>
-                              <td className="px-5 py-4 text-sm text-gray-700 border-r border-gray-200">
+                              <td className="px-5 py-4 text-sm text-gray-700 border-r border-gray-100">
                                 {expense.custom_expense_type
                                   ? `${expense.custom_expense_type} (${expense.expenseType})`
                                   : expense.expenseType}
                               </td>
-                              <td className="px-5 py-4 text-sm text-gray-600 border-r border-gray-200 whitespace-nowrap">
+                              <td className="px-5 py-4 text-sm text-gray-600 border-r border-gray-100 whitespace-nowrap">
                                 {expense.expense_date
                                   ? formatToIndianDate(expense.expense_date)
                                   : "-"}
                               </td>
-                              <td className="px-5 py-4 text-sm text-gray-600 border-r border-gray-200">{expense.merchant || "-"}</td>
-                              <td className="px-5 py-4 text-sm text-gray-600 border-r border-gray-200">{expense.invoice_number || "-"}</td>
-                              <td className="px-5 py-4 text-sm font-bold text-gray-900 border-r border-gray-200">{expense.amount ?? "-"}</td>
+                              <td className="px-5 py-4 text-sm text-gray-600 border-r border-gray-100">{expense.merchant || "-"}</td>
+                              <td className="px-5 py-4 text-sm text-gray-600 border-r border-gray-100">{expense.invoice_number || "-"}</td>
+                              <td className="px-5 py-4 text-sm font-bold text-gray-900 border-r border-gray-100">{expense.amount ?? "-"}</td>
                               <td className="px-5 py-4 text-sm whitespace-nowrap">
                                 <div className="flex items-center gap-3">
                                   <button

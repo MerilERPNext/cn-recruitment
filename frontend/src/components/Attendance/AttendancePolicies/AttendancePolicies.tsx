@@ -14,11 +14,11 @@ const AttendancePolicies = ({ doctype_name }: { doctype_name: string }) => {
 
   const renderSkeletonRows = (count = 5) => {
     return [...Array(count)].map((_, index) => (
-      <tr key={index} className="border-b border-gray-200 animate-pulse">
-        <td className="px-4 py-3 border-r border-gray-200 whitespace-nowrap">
+      <tr key={index} className="border-b border-gray-100 animate-pulse">
+        <td className="px-4 py-3 border-r border-gray-100 whitespace-nowrap">
           <div className="h-4 w-3/4 bg-gray-300 rounded"></div>
         </td>
-        <td className="px-2 py-3 border-r border-gray-200 text-center">
+        <td className="px-2 py-3 border-r border-gray-100 text-center">
           <div className="h-4 w-10 bg-gray-300 rounded mx-auto"></div>
         </td>
         <td className="px-4 py-3">
@@ -40,11 +40,11 @@ const AttendancePolicies = ({ doctype_name }: { doctype_name: string }) => {
     }
 
     return data.questions.map((q) => (
-      <tr key={q?.idx} className="border-b border-gray-200">
-        <td className="px-4 py-3 border-r border-gray-200 whitespace-wrap">
+      <tr key={q?.idx} className="border-b border-gray-100">
+        <td className="px-4 py-3 border-r border-gray-100 whitespace-wrap">
           {q.question_name}
         </td>
-        <td className="px-2 py-3 border-r border-gray-300 text-center">
+        <td className="px-2 py-3 border-r border-gray-100 text-center">
           <div
             className={`px-2 py-1 text-xs font-semibold rounded w-fit inline-block
               ${q.status === "----"
@@ -72,12 +72,12 @@ const AttendancePolicies = ({ doctype_name }: { doctype_name: string }) => {
         {/* Responsive scroll wrapper */}
         <div className="w-full overflow-x-auto">
           <table className="table-auto w-full text-sm text-left text-gray-800 border-collapse">
-            <thead className="bg-gray-100 text-gray-700 text-xs uppercase border-b border-gray-300">
+            <thead className="bg-gray-100 text-gray-700 text-xs uppercase border-b border-gray-100">
               <tr>
-                <th className="px-4 py-3 border-r border-gray-300 whitespace-nowrap ">
+                <th className="px-4 py-3 border-r border-gray-100 whitespace-nowrap ">
                   Question Name
                 </th>
-                <th className="px-2 py-3 border-r border-gray-300 text-center whitespace-wrap">
+                <th className="px-2 py-3 border-r border-gray-100 text-center whitespace-wrap">
                   Status
                 </th>
                 <th className="px-4 py-3 whitespace-nowrap">Description</th>

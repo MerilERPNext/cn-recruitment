@@ -1567,7 +1567,7 @@ loading: false, title: "", source: "", html: ""
       )}
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-100">
-        <div ref={tabBarRef} className="flex overflow-x-auto border-b border-gray-200 scrollbar-hide">
+        <div ref={tabBarRef} className="flex overflow-x-auto border-b border-gray-100 scrollbar-hide">
           {steps.map((step, idx) => {
             const isActive = idx === currentTab;
             const isPast = idx < currentTab;

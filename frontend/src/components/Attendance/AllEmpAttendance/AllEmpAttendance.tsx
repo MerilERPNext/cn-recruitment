@@ -679,8 +679,8 @@ const AllEmpAttendance = () => {
         </div>}
 
         {/* ── Desktop table ── */}
-        {isDesktop && <div className="overflow-x-auto rounded-lg border border-gray-200">
-          <table className="min-w-full divide-y divide-gray-200">
+        {isDesktop && <div className="overflow-x-auto rounded-lg border border-gray-100">
+          <table className="min-w-full divide-y divide-gray-100">
             <thead className="bg-gray-50">
               <tr>
                 <th
@@ -739,7 +739,7 @@ const AllEmpAttendance = () => {
                 )}
               </tr>
             </thead>
-            <tbody className="bg-white border border-gray-200 divide-y divide-gray-200">
+            <tbody className="bg-white border border-gray-100 divide-y divide-gray-100">
               {completeMonthData.map((item, index) => {
                 const { date, statusInfo } = item;
                 const record = statusInfo.record;

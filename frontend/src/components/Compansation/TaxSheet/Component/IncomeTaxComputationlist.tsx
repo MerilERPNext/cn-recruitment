@@ -30,7 +30,7 @@ const IncomeTaxComputationlist = ({ data }: any) => {
   }
 
   return (
-    <div className="bg-white border rounded-md overflow-hidden">
+    <div className="bg-white border border-gray-100 rounded-md overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-full text-sm min-w-[600px]">
           <thead className="bg-gray-100 border-b">

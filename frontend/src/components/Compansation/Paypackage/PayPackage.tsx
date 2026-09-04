@@ -495,9 +495,9 @@ export default function SalaryAssignmentList() {
             </div>
 
             <div className="flex-1 overflow-y-auto p-6 pt-2">
-              <div className="border border-gray-200 rounded-lg overflow-x-auto">
+              <div className="border border-gray-100 rounded-lg overflow-x-auto">
                 <table className="w-full min-w-[500px] text-left text-sm">
-                  <thead className="bg-primary-400 border-b border-gray-200">
+                  <thead className="bg-primary-400 border-b border-gray-100">
                     <tr>
                       <th className="px-4 py-3 font-semibold text-gray-700 w-[50%]">Earnings</th>
                       <th className="px-4 py-3 font-semibold text-gray-700 text-center w-[25%]">Monthly</th>
@@ -516,7 +516,7 @@ export default function SalaryAssignmentList() {
 
                     {/* Fixed Gross */}
                     {selected.fixed_gross?.map((item: any, idx: number) => (
-                      <tr key={`gross-${idx}`} className="bg-slate-50/70 font-semibold border-y border-gray-200">
+                      <tr key={`gross-${idx}`} className="bg-slate-50/70 font-semibold border-y border-gray-100">
                         <td className="px-4 py-3">{item.component}</td>
                         <td className="px-4 py-3 text-center">{renderAmount(item.monthly_amount, showAmount)}</td>
                         <td className="px-4 py-3 text-right">{renderAmount(item.annual_amount, showAmount)}</td>
@@ -543,7 +543,7 @@ export default function SalaryAssignmentList() {
 
                     {/* Fixed CTC */}
                     {selected.fixed_ctc?.map((item: any, idx: number) => (
-                      <tr key={`fctc-${idx}`} className="bg-slate-50/70 font-semibold border-y border-gray-200">
+                      <tr key={`fctc-${idx}`} className="bg-slate-50/70 font-semibold border-y border-gray-100">
                         <td className="px-4 py-3">{item.component}</td>
                         <td className="px-4 py-3 text-center">{renderAmount(item.monthly_amount, showAmount)}</td>
                         <td className="px-4 py-3 text-right">{renderAmount(item.annual_amount, showAmount)}</td>
@@ -569,7 +569,7 @@ export default function SalaryAssignmentList() {
 
                     {/* Total Final CTC */}
                     {selected.total_final_ctc?.map((item: any, idx: number) => (
-                      <tr key={`total-${idx}`} className="bg-slate-50/70 font-semibold border-y border-gray-200">
+                      <tr key={`total-${idx}`} className="bg-slate-50/70 font-semibold border-y border-gray-100">
                         <td className="px-4 py-3">{item.component}</td>
                         <td className="px-4 py-3 text-center">{item.monthly_amount ? renderAmount(item.monthly_amount, showAmount) : "—"}</td>
                         <td className="px-4 py-3 text-right">{renderAmount(item.annual_amount, showAmount)}</td>

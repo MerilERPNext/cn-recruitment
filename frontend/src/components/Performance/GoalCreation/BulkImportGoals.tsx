@@ -986,11 +986,11 @@ const BulkImportGoals: React.FC = () => {
             </Typography>
           </div>
 
-          <div className="rounded-xl border border-gray-200 bg-white shadow-sm" style={{ position: "relative" }}>
+          <div className="rounded-xl border border-gray-100 bg-white shadow-sm" style={{ position: "relative" }}>
             <div className="overflow-x-auto" style={{ maxHeight: "460px", overflowY: "auto" }}>
               <table className="w-full text-sm">
                 <thead className="sticky top-0 z-10">
-                  <tr className="bg-gray-50 border-b border-gray-200">
+                  <tr className="bg-gray-50 border-b border-gray-100">
                     {/* Row number */}
                     <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap w-12">
                       #

@@ -122,21 +122,21 @@ export default function TaxSheet({ selectedPeriod, setSelectedPeriod }: any) {
 
     return (
       <>
-        <div className="col-span-full bg-gray-100 border-b px-4 py-2 text-sm font-semibold">
+        <div className="col-span-full bg-gray-100 border-b border-gray-100 px-4 py-2 text-sm font-semibold">
           {title}
         </div>
 
         {data?.map((row, idx) => (
           <React.Fragment key={idx}>
-            <div className="border-b px-4 py-3 text-sm">{row.name}</div>
+            <div className="border-b border-gray-100 px-4 py-3 text-sm">{row.name}</div>
 
             {row.values?.map((value, i) => (
-              <div key={i} className="border-b px-4 py-3 text-sm text-center">
+              <div key={i} className="border-b border-gray-100 px-4 py-3 text-sm text-center">
                 {value}
               </div>
             ))}
 
-            <div className="border-b px-4 py-3 text-sm text-center font-semibold">
+            <div className="border-b px-4 py-3 border-gray-100 text-sm text-center font-semibold">
               {row.total}
             </div>
           </React.Fragment>
@@ -157,7 +157,7 @@ export default function TaxSheet({ selectedPeriod, setSelectedPeriod }: any) {
 
   return (
     <div className="space-y-1">
-      <div className="overflow-x-auto border rounded-lg">
+      <div className="overflow-x-auto border border-gray-100 rounded-lg">
         <div
           className="min-w-max"
           style={{
@@ -165,20 +165,20 @@ export default function TaxSheet({ selectedPeriod, setSelectedPeriod }: any) {
             gridTemplateColumns: `repeat(${(taxsheetData.months?.length || 0) + 2}, minmax(120px, 1fr))`,
           }}
         >
-          <div className="bg-gray-50 border-b px-4 py-2 text-sm font-semibold">
+          <div className="bg-gray-50 border-b border-gray-100 px-4 py-2 text-sm font-semibold">
             Particulars
           </div>
 
           {taxsheetData.months?.map((month) => (
             <div
               key={month}
-              className="bg-gray-50 border-b px-4 py-2 text-center text-sm font-semibold"
+              className="bg-gray-50 border-b px-4 py-2 border-gray-100 text-center text-sm font-semibold"
             >
               {month}
             </div>
           ))}
 
-          <div className="bg-gray-50 border-b px-4 py-2 text-center text-sm font-semibold">
+          <div className="bg-gray-50 border-b px-4 py-2 border-gray-100 text-center text-sm font-semibold">
             Total
           </div>
 

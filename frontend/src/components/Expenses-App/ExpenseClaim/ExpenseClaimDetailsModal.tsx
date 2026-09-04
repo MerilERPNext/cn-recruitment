@@ -264,10 +264,10 @@ const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
 
   // Desktop table for participants
   const DesktopParticipants = (
-    <div className="overflow-x-auto rounded-xl border border-gray-200 shadow-sm">
+    <div className="overflow-x-auto rounded-xl border border-gray-100 shadow-sm">
       <table className="min-w-full text-sm text-center">
         <thead>
-          <tr className="bg-gray-50 border-b border-gray-200">
+          <tr className="bg-gray-50 border-b border-gray-100">
             <th className="px-4 py-3 font-semibold text-gray-600 uppercase tracking-wider text-xs">
               Employee ID
             </th>
@@ -381,10 +381,10 @@ const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
   // Desktop table for expense items
   const DesktopExpenseItems = (
     <div className="space-y-4">
-      <div className="overflow-x-auto rounded-xl border border-gray-200 shadow-sm bg-white">
+      <div className="overflow-x-auto rounded-xl border border-gray-100 shadow-sm bg-white">
         <table className="min-w-full text-sm text-center">
           <thead>
-            <tr className="bg-gray-50 border-b border-gray-200">
+            <tr className="bg-gray-50 border-b border-gray-100">
               <th className="px-4 py-3 font-semibold text-gray-600 uppercase tracking-wider text-xs">Expense Category</th>
               <th className="px-4 py-3 font-semibold text-gray-600 uppercase tracking-wider text-xs">Expense Type</th>
               <th className="px-4 py-3 font-semibold text-gray-600 uppercase tracking-wider text-xs">Expense Date</th>

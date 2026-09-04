@@ -282,8 +282,8 @@ const ComponentTable = ({
     );
   }
   return (
-    <div className="border border-gray-200 rounded-lg overflow-x-auto">
-      <table className="min-w-full divide-y divide-gray-200 text-xs">
+    <div className="border border-gray-100 rounded-lg overflow-x-auto">
+      <table className="min-w-full divide-y divide-gray-100 text-xs">
         <thead className="bg-gray-50 text-gray-700 font-bold uppercase tracking-wider">
           <tr>
             <th className="px-4 py-2 text-left">Component</th>
@@ -291,7 +291,7 @@ const ComponentTable = ({
             <th className="px-4 py-2 text-right">Annual</th>
           </tr>
         </thead>
-        <tbody className="bg-white divide-y divide-gray-150 text-gray-900">
+        <tbody className="bg-white divide-y divide-gray-100 text-gray-900">
           {rows.map((c, idx) => (
             <tr key={`${c.component}-${idx}`} className="hover:bg-gray-50/50">
               <td className="px-4 py-2 font-medium">{c.component}</td>

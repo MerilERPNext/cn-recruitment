@@ -677,7 +677,7 @@ const TicketTable: React.FC<TicketTableProps> = ({
               <table className="helpdesk-table w-full border-collapse">
                 <tbody>
                   {[1, 2, 3, 4, 5].map((i) => (
-                    <tr key={i} className="border-t border-gray-200">
+                    <tr key={i} className="border-t border-gray-100">
                       {columns.map((col) => (
                         <td key={col.key} className="px-4 py-3">
                           <div className="w-full h-4 bg-gray-100 rounded animate-pulse" />
