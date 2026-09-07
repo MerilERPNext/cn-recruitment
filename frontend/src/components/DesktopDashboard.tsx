@@ -77,7 +77,7 @@ import Badge from "./shared/Badge";
 import CollapsibleSidebar from "./shared/CollapsibleSidebar";
 import Carousel, { CarouselSlide } from "./shared/molecules/Carousel";
 import { NoticeSlide } from "./shared/molecules/NoticeSlide";
-import SearchMembers from "./shared/SearchMembers";
+import CommandSearchBar from "./shared/CommandSearchBar";
 import ShiftRequestFormModal from "./ShiftRequest/ShiftRequestFormModal";
 import ViewingAsBanner from "./ViewingAsBanner";
 import formatToIndianDate from "../utils/formatToIndianDate";
@@ -564,7 +564,7 @@ export default function DesktopDashboard() {
         className={`flex-1 ${contentMarginLeft} flex flex-col min-h-screen transition-all duration-300 ease-in-out min-w-0`}
       >
         {/* Header */}
-        <div className="bg-gradient-to-r from-primary-500 via-primary-400 to-primary-500 border-b border-gray-200 px-6 py-[0.3rem] flex items-center sticky top-0 z-10 gap-4">
+        <div className="bg-gradient-to-r from-primary-500 via-primary-400 to-primary-500 border-b border-gray-200 px-6 py-[0.3rem] flex items-center sticky top-0 z-[40] gap-4">
           <div className="flex flex-col min-w-0">
             {currentEmployee?.employee_name || currentUserIsAdmin ? (
               <>
@@ -593,7 +593,7 @@ export default function DesktopDashboard() {
             )}
           </div>
           <div className="flex-1 min-w-0 flex justify-center">
-            <SearchMembers />
+            <CommandSearchBar />
           </div>
 
           <div className="flex items-center gap-4 flex-shrink-0">
