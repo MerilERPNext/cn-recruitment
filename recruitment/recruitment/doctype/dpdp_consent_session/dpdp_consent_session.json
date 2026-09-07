@@ -1,14 +1,13 @@
 {
  "actions": [],
  "allow_rename": 0,
- "autoname": "naming_series:",
+ "autoname": "",
  "creation": "2026-09-04 10:00:00.000000",
  "doctype": "DocType",
  "editable_grid": 0,
  "engine": "InnoDB",
  "field_order": [
   "applicant_section",
-  "naming_series",
   "job_applicant",
   "applicant_name",
   "email_id",
@@ -36,14 +35,6 @@
    "fieldname": "applicant_section",
    "fieldtype": "Section Break",
    "label": "Candidate"
-  },
-  {
-   "default": "DPDP-SESS-.YYYY.-",
-   "fieldname": "naming_series",
-   "fieldtype": "Select",
-   "label": "Series",
-   "options": "DPDP-SESS-.YYYY.-",
-   "reqd": 1
   },
   {
    "fieldname": "job_applicant",
@@ -187,7 +178,7 @@
  ],
  "index_web_pages_for_search": 0,
  "links": [],
- "modified": "2026-09-04 12:55:00.000000",
+ "modified": "2026-09-07 10:00:00.000000",
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "DPDP Consent Session",
