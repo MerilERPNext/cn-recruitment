@@ -294,9 +294,11 @@ def _group_positions_by_location(positions):
 def _group_openings_by_region(regions):
     """Fresher flow: total openings per region, preserving first-seen order.
 
-    Mirrors _group_positions_by_location but for the `custom_regions` table —
-    multiple rows for the same region are summed so one Job Requisition is
-    created per unique region carrying that region's total openings."""
+    Mirrors _group_positions_by_location but for the `custom_regions` table.
+    This is a DE-DUPLICATION, not a split: a Fresher submission produces ONE
+    requisition carrying one row per unique region, so two rows naming the same
+    region are summed into that region's single row rather than fighting over it.
+    """
     totals, order = {}, []
     for r in regions:
         region = r["region"]
@@ -305,6 +307,35 @@ def _group_openings_by_region(regions):
             order.append(region)
         totals[region] += int(r.get("no_of_openings") or 0)
     return [(region, totals[region]) for region in order]
+
+
+# The per-region fields the Hiring Lead fills in during approval. Listed once
+# because three places have to agree on them: the update endpoint that accepts
+# them, the readiness gate that requires them, and the Job Opening that is built
+# from them.
+REGION_HIRING_LEAD_FIELDS = ("fixed_pay", "variable_pay", "recruiter")
+
+
+def _region_row(r):
+    """One `custom_regions` row from a payload dict.
+
+    Carries the requester's ask (region + openings) AND the Hiring Lead's
+    additions (fixed pay, variable pay, recruiter) — the latter only when the
+    payload actually names them, so an update that touches openings alone cannot
+    silently wipe pay that was already agreed.
+
+    `job_opening` is never taken from a payload: it is written by
+    `recruitment.customizations.fresher_openings` and is the record of what the
+    system created, not an input.
+    """
+    row = {"region": r["region"], "no_of_openings": frappe.utils.cint(r.get("no_of_openings"))}
+    for fieldname in REGION_HIRING_LEAD_FIELDS:
+        if fieldname in r:
+            value = r.get(fieldname)
+            row[fieldname] = (
+                frappe.utils.flt(value) if fieldname != "recruiter" else (value or None)
+            )
+    return row
 
 
 def _bypass_hrms_duplicate_check(doc):
@@ -757,6 +788,67 @@ def _sync_positions_from_regions(doc):
     )
 
 
+def enforce_fresher_region_readiness(doc, method=None):
+    """`validate` hook — a Fresher requisition may not be approved half-filled.
+
+    The requester states only WHERE and HOW MANY. Fixed pay, variable pay and the
+    recruiter are the Hiring Lead's to add while the requisition is still
+    Approval Pending, and every one of them is needed the moment it is approved:
+    each region's Job Opening is built from that row (see
+    `recruitment.customizations.fresher_openings`), and an opening with no
+    recruiter belongs to nobody while one with no pay cannot be posted.
+
+    Enforced on the TRANSITION into an approved status only — not on every later
+    save. Once past the gate the requisition keeps being saved (the opening names
+    are stamped back onto these very rows), and re-running the check there would
+    make an already-approved requisition unable to record its own openings.
+    Documents created directly in an approved state — seeds, fixtures, imports —
+    never crossed the gate and are likewise left alone.
+
+    Fresher only: Lateral requisitions hold no region rows and are untouched.
+    """
+    if (doc.get("custom_hiring_type") or "").strip() != HIRING_TYPE_FRESHER:
+        return
+    if doc.get("status") not in _REQUISITION_APPROVED_STATUSES:
+        return
+    if doc.is_new():
+        return
+
+    before = doc.get_doc_before_save()
+    if not before or before.get("status") in _REQUISITION_APPROVED_STATUSES:
+        return
+
+    rows = doc.get("custom_regions") or []
+    if not rows:
+        return
+
+    region_meta = frappe.get_meta("Job Requisition Region")
+    labels = {
+        fieldname: region_meta.get_label(fieldname) or fieldname
+        for fieldname in REGION_HIRING_LEAD_FIELDS
+    }
+
+    # A zero pay reads as "not filled in": Currency defaults to 0, so there is no
+    # way to tell a deliberate zero from an untouched field, and letting 0 through
+    # would post an opening with no compensation on it.
+    incomplete = []
+    for row in rows:
+        missing = [
+            labels[fieldname]
+            for fieldname in REGION_HIRING_LEAD_FIELDS
+            if not row.get(fieldname)
+        ]
+        if missing:
+            incomplete.append("{0}: {1}".format(row.region or _("(no region)"), ", ".join(missing)))
+
+    if incomplete:
+        frappe.throw(
+            _("This requisition cannot be approved until every region has its "
+              "recruiter and pay filled in. Still missing — {0}.").format("; ".join(incomplete)),
+            title=_("Region details incomplete"),
+        )
+
+
 def _default_jd_name():
     """The configured default Job Description, Active versions only.
 
@@ -864,15 +956,24 @@ def _build_requisition_doc(payload, positions_for_location):
     return doc
 
 
-def _build_region_requisition_doc(payload, region, openings):
-    """Construct an unsaved Job Requisition for one region (Fresher flow).
+def _build_fresher_requisition_doc(payload, groups):
+    """Construct the single unsaved Job Requisition for a Fresher submission.
 
-    Parallels _build_requisition_doc but for the region grouping:
-      - carries a single `custom_regions` row (this region + its openings),
-      - leaves `custom_position_details` empty (Fresher requisitions don't use
-        the position/location table),
-      - `no_of_positions` = openings for this region,
+    A Fresher requisition hires across several regions at once and is ONE
+    document: `groups` (region, openings pairs from `_group_openings_by_region`)
+    becomes one `custom_regions` row each. It used to be one requisition per
+    region, which scattered a single ask across N documents that then had to be
+    approved, tracked and reported on N times over.
+
+    Parallels _build_requisition_doc but for the region shape:
+      - fills `custom_regions`, leaves `custom_position_details` empty (Fresher
+        requisitions don't use the position/location table),
+      - `no_of_positions` = total openings across every region,
       - `custom_type_of_position` = "New" — every Fresher requisition is New.
+
+    Per-region pay and recruiter are deliberately NOT set here: the requester
+    only states where and how many, and the Hiring Lead fills the rest during
+    approval (see `enforce_fresher_region_readiness`).
 
     sync_no_of_positions / validate_requisition_settings both no-op when
     `custom_position_details` is empty, so these values are preserved on save."""
@@ -882,7 +983,7 @@ def _build_region_requisition_doc(payload, region, openings):
     _apply_parent_fields(doc, payload)
     _ensure_description(doc, payload)
 
-    doc.no_of_positions = openings
+    doc.no_of_positions = sum(openings for _region, openings in groups)
     doc.custom_type_of_position = "New"
     if not doc.get("custom_hiring_type"):
         doc.custom_hiring_type = HIRING_TYPE_FRESHER
@@ -893,7 +994,8 @@ def _build_region_requisition_doc(payload, region, openings):
     _apply_skills(doc, payload)
     _apply_pre_screened(doc, payload)
 
-    doc.append("custom_regions", {"region": region, "no_of_openings": openings})
+    for region, openings in groups:
+        doc.append("custom_regions", {"region": region, "no_of_openings": openings})
 
     return doc
 
@@ -1773,10 +1875,12 @@ def create_job_requisition(payload=None):
     """
     Submit a Job Requisition.
 
-    Groups `custom_position_details` rows by `location` and creates one fresh
-    JR per unique location, each holding only that location's positions. Each
-    submission is independent — positions are never merged into requisitions
-    created by an earlier submission.
+    Lateral groups `custom_position_details` rows by `location` and creates one
+    fresh JR per unique location, each holding only that location's positions.
+
+    Fresher creates exactly ONE requisition holding every region it hires in, as
+    one `custom_regions` row per unique region. Each submission is independent —
+    nothing is merged into requisitions created by an earlier submission.
 
     Returns:
         {
@@ -1785,6 +1889,7 @@ def create_job_requisition(payload=None):
           "data": {
             "requisitions": [
               {"name": "HR-HIREQ-...", "location": "Pune", "positions_count": 2, "action": "created"},
+              {"name": "HR-HIREQ-...", "regions": ["North", "West"], "positions_count": 8, "action": "created"},
               ...
             ]
           }
@@ -1802,8 +1907,8 @@ def create_job_requisition(payload=None):
 
         fresher = _is_fresher(payload)
         if fresher:
-            # Fresher flow: group the `custom_regions` rows by region and create
-            # one requisition per unique region.
+            # Fresher flow: de-duplicate the `custom_regions` rows to one row per
+            # region — all of which live on a single requisition.
             groups = _group_openings_by_region(_list_field(payload, "custom_regions"))
         else:
             # Lateral (default) flow — unchanged.
@@ -1814,22 +1919,22 @@ def create_job_requisition(payload=None):
         savepoint = "create_job_requisition"
         frappe.db.savepoint(savepoint)
         try:
-            # One fresh Job Requisition per group in THIS submission — by location
-            # for Lateral, by region for Fresher. Each carries only its own group's
-            # data. We deliberately do NOT merge into requisitions from earlier
-            # submissions — every submit stands on its own.
+            # Lateral: one fresh Job Requisition per location group in THIS
+            # submission, each carrying only its own group's positions.
+            # Fresher: a single requisition carrying every region.
+            # Either way we deliberately do NOT merge into requisitions from
+            # earlier submissions — every submit stands on its own.
             if fresher:
-                for region, openings in groups:
-                    doc = _build_region_requisition_doc(payload, region, openings)
-                    doc.insert(ignore_permissions=False)
-                    results.append(
-                        {
-                            "name": doc.name,
-                            "region": region,
-                            "positions_count": openings,
-                            "action": "created",
-                        }
-                    )
+                doc = _build_fresher_requisition_doc(payload, groups)
+                doc.insert(ignore_permissions=False)
+                results.append(
+                    {
+                        "name": doc.name,
+                        "regions": [region for region, _openings in groups],
+                        "positions_count": doc.no_of_positions,
+                        "action": "created",
+                    }
+                )
             else:
                 for location, group_positions in groups:
                     doc = _build_requisition_doc(payload, group_positions)
@@ -2185,11 +2290,22 @@ def _serialise_requisition(doc):
         {
             "region": row.get("region"),
             "no_of_openings": row.get("no_of_openings"),
+            # What the Hiring Lead fills in during approval, and what each
+            # region's Job Opening is then built from.
+            "fixed_pay": row.get("fixed_pay") or 0,
+            "variable_pay": row.get("variable_pay") or 0,
+            "recruiter": row.get("recruiter"),
+            # The opening this region produced, once the requisition went
+            # Approved Active. Read-only: written by the system.
+            "job_opening": row.get("job_opening"),
             # Per-region existing strength / live demand, so the UI can show each
             # region's "asking for N, already have M" line next to its ask.
             "active_employees": row.get("active_employees") or 0,
             "active_requisitions": row.get("active_requisitions") or 0,
             "active_openings": row.get("active_openings") or 0,
+            # Child row name, so a caller updating one region's pay/recruiter can
+            # address the row it means rather than matching on region alone.
+            "row_name": row.get("name"),
         }
         for row in doc.get("custom_regions") or []
     ]
@@ -2459,16 +2575,30 @@ def update_job_requisition(name=None, payload=None):
         # create, update targets one existing requisition, so rows are replaced
         # in place (no re-grouping/splitting). `no_of_positions` becomes the sum
         # of the openings and the type stays "New".
+        #
+        # This is also the endpoint the Hiring Lead's ToDo uses to set each
+        # region's fixed pay, variable pay and recruiter — so the rewrite carries
+        # forward whatever the payload does NOT mention, keyed by region. Without
+        # that, a caller sending only openings would wipe agreed pay, and (worse)
+        # clear `job_opening`, letting a second opening be raised for a region
+        # that already has one.
         if "custom_regions" in payload:
             regions = _list_field(payload, "custom_regions")
+            existing = {
+                row.region: row for row in (doc.get("custom_regions") or []) if row.region
+            }
             doc.set("custom_regions", [])
             total_openings = 0
             for r in regions:
                 if not isinstance(r, dict) or not r.get("region"):
                     continue
-                openings = int(r.get("no_of_openings") or 0)
-                total_openings += openings
-                doc.append("custom_regions", {"region": r["region"], "no_of_openings": openings})
+                row = _region_row(r)
+                previous = existing.get(row["region"])
+                if previous:
+                    for fieldname in REGION_HIRING_LEAD_FIELDS + ("job_opening",):
+                        row.setdefault(fieldname, previous.get(fieldname))
+                total_openings += row["no_of_openings"]
+                doc.append("custom_regions", row)
             if doc.get("custom_regions"):
                 doc.no_of_positions = total_openings
                 doc.custom_type_of_position = "New"
@@ -3506,8 +3636,13 @@ _ROW_META_KEYS = {
     "parent", "parentfield", "parenttype", "docstatus", "doctype",
 }
 # Child-row columns that are derived, not entered — same reasoning as the parent
-# entries above, for the per-region breakdown on custom_regions.
-_ROW_DERIVED_KEYS = {"active_employees", "active_requisitions", "active_openings"}
+# entries above, for the per-region breakdown on custom_regions. `job_opening` is
+# stamped by recruitment.customizations.fresher_openings when the requisition goes
+# Approved Active, which is precisely a save OF an approved requisition — counting
+# it as a business edit would make the requisition refuse its own bookkeeping.
+_ROW_DERIVED_KEYS = {
+    "active_employees", "active_requisitions", "active_openings", "job_opening",
+}
 
 
 def _row_snapshot(d, fieldname):

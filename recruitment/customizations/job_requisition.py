@@ -31,10 +31,12 @@ _TIMEFRAME_TO_SALARY_PER = {"Annual": "Year", "Monthly": "Month"}
 # their linked User (a hiring-team row needs a User); "User" fields are used
 # as-is. Priority order also breaks ties: if the same user fills two of these
 # fields, the first (highest) role wins and the person is listed once.
+RECRUITER_ROLE = "Recruiter"
+
 _JR_HIRING_TEAM_SOURCES = (
     ("requested_by", "Employee", "Hiring Manager"),
     ("custom_hiring_lead", "Employee", "Hiring Lead"),
-    ("custom_assign_to_recruiter", "User", "Recruiter"),
+    ("custom_assign_to_recruiter", "User", RECRUITER_ROLE),
 )
 
 
@@ -51,12 +53,18 @@ def _resolve_team_user(value, fieldtype):
     return value
 
 
-def _fill_hiring_team_from_requisition(source, target):
+def _fill_hiring_team_from_requisition(source, target, recruiter=None):
     """Seed the Job Opening's Hiring Team from the requisition's people.
 
     Only runs when creating an opening *from* a requisition (the mapper path),
     and only when the target has no hiring team yet — so a manually-built team
     on an opening that later gets a requisition linked is never overridden.
+
+    `recruiter` overrides the requisition's `custom_assign_to_recruiter` for the
+    Recruiter row. A Fresher requisition has no single recruiter — it names one
+    per region — so the opening raised for a region is staffed with that region's
+    recruiter rather than a parent field that is empty on every Fresher
+    requisition.
     """
     if not target.meta.has_field("custom_hiring_team"):
         return
@@ -65,7 +73,10 @@ def _fill_hiring_team_from_requisition(source, target):
 
     seen_users = set()
     for fieldname, fieldtype, role in _JR_HIRING_TEAM_SOURCES:
-        user = _resolve_team_user(source.get(fieldname), fieldtype)
+        if role == RECRUITER_ROLE and recruiter:
+            user = recruiter
+        else:
+            user = _resolve_team_user(source.get(fieldname), fieldtype)
         if not user or user in seen_users:
             continue
         seen_users.add(user)
@@ -84,6 +95,8 @@ def _to_number(value):
 
 
 RECRUITER_FIELD = "custom_assign_to_recruiter"
+OPENING_RECRUITER_FIELD = "custom_recruiter"
+HIRING_TYPE_FRESHER = "Fresher"
 
 
 def _requisition_recruiter(job_requisition):
@@ -91,20 +104,63 @@ def _requisition_recruiter(job_requisition):
 		if job_requisition else None
 
 
-def assert_recruiter_assigned(job_requisition):
+def _has_region_recruiters(job_requisition):
+	"""True when a Fresher requisition names a recruiter on its Regions table.
+
+	Fresher hiring has no single recruiter to assign: the requisition covers
+	several regions and each one gets its own recruiter, its own Job Opening and
+	its own headcount. So "who owns this?" is answered per region, and the parent
+	`custom_assign_to_recruiter` stays empty on every Fresher requisition.
+	"""
+	if not job_requisition:
+		return False
+	return bool(frappe.get_all(
+		"Job Requisition Region",
+		filters={
+			"parent": job_requisition,
+			"parenttype": "Job Requisition",
+			"recruiter": ["is", "set"],
+		},
+		limit=1,
+	))
+
+
+def assert_recruiter_assigned(job_requisition, opening=None, recruiter=None):
 	"""A requisition without a recruiter cannot become a job opening.
 
 	The recruiter is who owns the opening once it is live — they seed its hiring
 	team, and every candidate that arrives is theirs to work. An opening created
 	without one belongs to nobody, which is only noticed when applications start
 	piling up unattended.
+
+	Three ways to satisfy it, in the order they are cheapest to check:
+	  * `recruiter` — named explicitly by the caller building the opening;
+	  * the opening's own `custom_recruiter` — how a per-region Fresher opening
+	    carries its owner;
+	  * the requisition's `custom_assign_to_recruiter` (Lateral), or any recruiter
+	    on its Regions table (Fresher).
 	"""
-	if not job_requisition or _requisition_recruiter(job_requisition):
+	if not job_requisition:
 		return
+	if recruiter:
+		return
+	if opening is not None and opening.get(OPENING_RECRUITER_FIELD):
+		return
+	if _requisition_recruiter(job_requisition) or _has_region_recruiters(job_requisition):
+		return
+
+	is_fresher = frappe.db.get_value(
+		"Job Requisition", job_requisition, "custom_hiring_type"
+	) == HIRING_TYPE_FRESHER
+	where = (
+		_("Set a <b>Recruiter</b> on each row of the <b>Regions</b> table")
+		if is_fresher
+		else _("Set <b>Assign to Recruiter</b> on the requisition")
+	)
 	frappe.throw(
 		_("{0} has no recruiter assigned, so its job opening would belong to nobody. "
-		  "Set <b>Assign to Recruiter</b> on the requisition and try again.").format(
-			get_link_to_form("Job Requisition", job_requisition)),
+		  "{1} and try again.").format(
+			get_link_to_form("Job Requisition", job_requisition), where),
 		title=_("Assign a recruiter first"),
 	)
 
@@ -118,13 +174,20 @@ def require_recruiter_on_new_opening(doc, method=None):
 	losing its recruiter later must not block edits to an opening already running.
 	"""
 	if doc.is_new():
-		assert_recruiter_assigned(doc.get("job_requisition"))
+		assert_recruiter_assigned(doc.get("job_requisition"), opening=doc)
 
 
 @frappe.whitelist()
-def make_job_opening(source_name, target_doc=None):
+def make_job_opening(source_name, target_doc=None, recruiter=None):
     """Create a Job Opening from a Job Requisition, carrying across every field
     whose meaning is shared between the two doctypes.
+
+    `recruiter` names the User who will own the opening, for callers that know it
+    better than the requisition does — a Fresher requisition keeps a recruiter per
+    region rather than one on the parent, so
+    `recruitment.customizations.fresher_openings` passes that region's recruiter
+    in. Omitted, the requisition's own `custom_assign_to_recruiter` is used, which
+    is the Lateral behaviour and is unchanged.
 
     Replaces HRMS's ``make_job_opening`` (wired via ``override_whitelisted_methods``
     in hooks.py) for two reasons:
@@ -145,7 +208,7 @@ def make_job_opening(source_name, target_doc=None):
 
     # Checked before anything is mapped, so the Desk button says it straight away
     # rather than after the form has been filled in.
-    assert_recruiter_assigned(source_name)
+    assert_recruiter_assigned(source_name, recruiter=recruiter)
 
     def set_missing_values(source, target):
         target.job_title = source.designation
@@ -153,12 +216,14 @@ def make_job_opening(source_name, target_doc=None):
         # "Open & Approved" aren't valid on Job Opening).
         target.status = "Open"
         target.description = source.description
+        if recruiter and target.meta.has_field(OPENING_RECRUITER_FIELD):
+            target.set(OPENING_RECRUITER_FIELD, recruiter)
 
         # Seed the Hiring Team from the requisition's people (hiring manager,
         # hiring lead, recruiter). Guarded so it never overrides a team that was
         # built manually before a requisition was linked.
         try:
-            _fill_hiring_team_from_requisition(source, target)
+            _fill_hiring_team_from_requisition(source, target, recruiter=recruiter)
         except Exception:
             frappe.log_error(frappe.get_traceback(), "make_job_opening hiring-team seed failed")
 
