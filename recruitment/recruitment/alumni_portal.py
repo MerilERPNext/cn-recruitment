@@ -4342,3 +4342,113 @@ def get_alumni_celebrations(days: int = 30, days_in_advance: int = None) -> dict
 
     result["data"] = data
     return result
+
+
+# ── Alumni feed permission model ──────────────────────────────────────────────
+# The portal's feed actions are switchable per site (e.g. commenting, saving).
+# The switches live on the "Alumni Portal Settings" single doctype, following
+# chatnext_work_connect's "Work Connect Settings" precedent -- the client is
+# never trusted, the server decides.
+#
+# Why wrappers rather than guarding the Work Connect methods directly: those
+# live in chatnext_work_connect, which ESS shares and which must not be edited.
+# So the direct methods come OFF the alumni allowlist and the portal calls these
+# wrappers instead, which check the setting and then delegate to the very same
+# functions. Response envelopes are passed through untouched.
+#
+# Note these wrappers need no allowlist entry: `alumni_guard.ALUMNI_NAMESPACES`
+# already admits everything under `recruitment.recruitment.alumni_portal.`.
+
+_ALUMNI_ACTION_SETTINGS = {
+    "comment": ("allow_alumni_comment", "Commenting is currently disabled for alumni users."),
+    "reaction": ("allow_alumni_reaction", "Reactions are currently disabled for alumni users."),
+    "save": ("allow_alumni_save", "Saving posts is currently disabled for alumni users."),
+}
+
+
+def alumni_action_allowed(action: str) -> tuple[bool, str]:
+    """(allowed, denial message) for one feed action.
+
+    Non-alumni are always allowed: this gate exists only to restrain the Alumni
+    Portal and must never change ESS behaviour, so it returns early before
+    reading any setting.
+
+    Fails OPEN on an unreadable setting -- a missing doctype or a transient DB
+    error must not silently strip permissions that default to on.
+    """
+    from recruitment.recruitment.alumni_guard import is_alumni_user
+
+    if not is_alumni_user():
+        return True, ""
+
+    field, message = _ALUMNI_ACTION_SETTINGS.get(action, (None, ""))
+    if not field:
+        return False, _("Unknown action.")
+
+    try:
+        from frappe.utils import cint
+
+        # Read tabSingles with raw SQL, deliberately, on two counts:
+        #   * db.get_single_value casts through cast_fieldtype, which turns a
+        #     missing row into 0 for a Check field -- making "never configured"
+        #     look identical to "switched off". Every flag defaults to 1, so a
+        #     freshly migrated site would then deny the entire feed.
+        #   * db.get_value("Singles", ...) appends ORDER BY `modified`, a column
+        #     tabSingles does not have, and raises OperationalError 1054.
+        row = frappe.db.sql(
+            "select value from tabSingles where doctype=%s and field=%s limit 1",
+            ("Alumni Portal Settings", field),
+        )
+        stored = row[0][0] if row else None
+    except Exception:
+        frappe.log_error(frappe.get_traceback(), "Alumni Portal Settings unreadable")
+        return True, ""
+
+    if stored is None:
+        return True, ""
+
+    return (True, "") if cint(stored) else (False, _(message))
+
+
+def _require_alumni_action(action: str) -> None:
+    """Throw 403 with the configured message when `action` is switched off."""
+    allowed, message = alumni_action_allowed(action)
+    if not allowed:
+        frappe.local.response["http_status_code"] = 403
+        frappe.throw(message, frappe.PermissionError)
+
+
+# ── Comment wrappers ──────────────────────────────────────────────────────────
+@frappe.whitelist(methods=["POST"])
+def add_alumni_comment(post: str, content: str, parent_comment: str | None = None) -> dict:
+    """Comment on a feed post, subject to `allow_alumni_comment`."""
+    _require_alumni_session()
+    _require_alumni_action("comment")
+
+    from chatnext_work_connect.chatnext_work_connect.api import comment as comment_api
+
+    return comment_api.add_comment(post=post, content=content, parent_comment=parent_comment)
+
+
+# ── Reaction wrappers ─────────────────────────────────────────────────────────
+@frappe.whitelist(methods=["POST"])
+def add_alumni_reaction(post: str, reaction_type: str) -> dict:
+    """React to a feed post, subject to `allow_alumni_reaction`."""
+    _require_alumni_session()
+    _require_alumni_action("reaction")
+
+    from chatnext_work_connect.chatnext_work_connect.api import reaction as reaction_api
+
+    return reaction_api.add_reaction(post=post, reaction_type=reaction_type)
+
+
+# ── Saved post wrappers ───────────────────────────────────────────────────────
+@frappe.whitelist(methods=["POST"])
+def save_alumni_post(post_id: str) -> dict:
+    """Bookmark a feed post, subject to `allow_alumni_save`."""
+    _require_alumni_session()
+    _require_alumni_action("save")
+
+    from chatnext_work_connect.chatnext_work_connect.api import saved_post as saved_post_api
+
+    return saved_post_api.save_post(post_id=post_id)
