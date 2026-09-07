@@ -3782,3 +3782,147 @@ def delete_alumni_post(post_id=None, **kwargs) -> dict:
     result = post_api.delete_post(post.name) or {}
     frappe.db.commit()
     return result
+
+
+@frappe.whitelist(methods=["POST"])
+def get_alumni_follow_suggestions(limit: int = 10) -> dict:
+    """Follow suggestions restricted to other alumni.
+
+    Work Connect suggests by department with no alumni filter, which would put
+    serving employees in front of an alumnus. This delegates to it and then
+    keeps only alumni who are still enabled, preserving the
+    ``{data: {suggestions: [...]}}`` shape.
+
+    Over-fetches because the filter runs after the delegate has already applied
+    its own limit; asking for `limit` alone would usually return far fewer.
+    """
+    from frappe.utils import cint
+
+    from chatnext_work_connect.chatnext_work_connect.api import follow as follow_api
+    from recruitment.recruitment.alumni_guard import is_alumni_user
+
+    user = _require_alumni_session()
+    want = max(cint(limit) or 10, 1)
+
+    result = follow_api.get_follow_suggestions(limit=want * _FOLLOW_OVERFETCH) or {}
+    data = result.get("data") or {}
+    suggestions = data.get("suggestions") or []
+
+    kept, seen = [], set()
+    for person in suggestions:
+        # Each suggestion is {"user": {...}, "reason": ...} -- the id lives on
+        # the nested user object, NOT at the top level.
+        who = person.get("user") or person
+        user_id = who.get("id") or who.get("user_id") or who.get("email")
+        if not user_id or user_id in seen or not is_alumni_user(user_id):
+            continue
+        seen.add(user_id)
+        kept.append(person)
+        if len(kept) >= want:
+            break
+
+    # Top up directly from the alumni population when the delegate cannot fill
+    # the list. It suggests by shared department and mutual follows, neither of
+    # which describes alumni: an alumnus is usually the last person left in
+    # their department, so that strategy returns nothing to filter. Without this
+    # the panel is empty for almost everyone.
+    if len(kept) < want:
+        kept.extend(_alumni_suggestion_fallback(user, want - len(kept), seen))
+
+    data["suggestions"] = kept
+    result["data"] = data
+    return result
+
+
+def _alumni_suggestion_fallback(user: str, need: int, seen: set) -> list[dict]:
+    """Other alumni to follow, in the delegate's payload shape.
+
+    Excludes the viewer, anyone already suggested, and anyone they already
+    follow. Emits the same ``{"user": {...}, "reason": ...}`` structure the
+    delegate produces so the portal renders both sources identically.
+    """
+    if need <= 0:
+        return []
+
+    already = set(
+        frappe.get_all("User Follow", filters={"follower": user}, pluck="following") or []
+    )
+    exclude = seen | already | {user}
+
+    candidates = frappe.get_all(
+        "User",
+        filters={"custom_is_alumni_employee": 1, "enabled": 1, "name": ["not in", list(exclude)]},
+        fields=["name", "full_name", "user_image"],
+        order_by="full_name asc",
+        limit_page_length=need,
+    ) or []
+
+    out = []
+    for row in candidates:
+        employee = frappe.db.get_value(
+            "Employee", {"user_id": row.name}, ["designation", "department"], as_dict=True
+        ) or frappe._dict()
+        out.append(
+            {
+                "user": {
+                    "id": row.name,
+                    "name": row.full_name or row.name,
+                    "full_name": row.full_name or row.name,
+                    "image": row.user_image,
+                    "email": row.name,
+                    "job_title": _resolve_link_title("Employee", "designation", employee.designation or ""),
+                    "designation": _resolve_link_title("Employee", "designation", employee.designation or ""),
+                    "department": _resolve_link_title("Employee", "department", employee.department or ""),
+                },
+                "reason": _("Alumni"),
+            }
+        )
+    return out
+
+
+#: Follow suggestions are filtered after the delegate applies its own limit, so
+#: ask it for more than we need. 5x keeps one round-trip enough in practice.
+_FOLLOW_OVERFETCH = 5
+
+
+@frappe.whitelist(methods=["POST"])
+def get_alumni_celebrations(days: int = 30, days_in_advance: int = None) -> dict:
+    """Birthdays and work anniversaries, restricted to fellow alumni.
+
+    Work Connect's `celebrations.get_upcoming_celebrations` covers the whole
+    workforce; an alumnus should see other alumni, not serving staff. This
+    delegates to it and keeps only rows whose user is an alumnus, preserving the
+    ``{data: {celebrations, birthdays, work_anniversaries, total}}`` envelope and
+    the ascending `days_until` order the delegate already applied.
+
+    Both arguments are passed through unchanged, including the legacy
+    ``days_in_advance`` alias, which wins over ``days`` in the delegate.
+    """
+    from chatnext_work_connect.chatnext_work_connect.api import celebrations as celebrations_api
+    from recruitment.recruitment.alumni_guard import is_alumni_user
+
+    _require_alumni_session()
+
+    result = celebrations_api.get_upcoming_celebrations(
+        days=days, days_in_advance=days_in_advance
+    ) or {}
+    data = result.get("data") or {}
+
+    def _mine(rows):
+        kept = []
+        for row in rows or []:
+            user_id = row.get("user_id")
+            if user_id and is_alumni_user(user_id):
+                kept.append(row)
+        return kept
+
+    # The delegate caps `celebrations` at 30 but leaves the split arrays
+    # uncapped, so filter each independently rather than deriving one from
+    # another -- a merged row dropped by that cap would otherwise vanish twice.
+    data["celebrations"] = _mine(data.get("celebrations"))
+    data["birthdays"] = _mine(data.get("birthdays"))
+    data["work_anniversaries"] = _mine(data.get("work_anniversaries"))
+    data["total"] = len(data["celebrations"])
+
+    result["data"] = data
+    return result
