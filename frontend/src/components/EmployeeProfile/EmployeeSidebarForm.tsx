@@ -243,8 +243,20 @@ const EmployeeSidebarForm = ({
 
                         const comp = findComponentByKey(components, key);
 
-                        // Handle Table MultiSelect wrapping
-                        if (comp?.isTableMultiSelect && comp.linkFieldName && Array.isArray(value)) {
+                        // Handle Dependent relation
+                        if (
+                            comp?.isDependentRelation ||
+                            (key === "relation" && comp?.data?.url?.includes("get_relationship_types"))
+                        ) {
+                            if (typeof value === "object" && value !== null && (value as any).code) {
+                                cleansed[key] = (value as any).code;
+                            } else if (typeof value === "string") {
+                                const match = value.match(/^.+?\s\((.+?)\)$/);
+                                cleansed[key] = match ? match[1] : value;
+                            } else {
+                                cleansed[key] = value ?? "";
+                            }
+                        } else if (comp?.isTableMultiSelect && comp.linkFieldName && Array.isArray(value)) {
                             cleansed[key] = value.map(v => ({ [comp.linkFieldName]: v }));
                         } else if (comp?.type === 'datagrid' && Array.isArray(value)) {
                             cleansed[key] = value.map(row => sanitizeData(row, comp.components));

@@ -11,9 +11,21 @@ import {
 } from "../types/employee";
 import FrappeAPI from "../utils/frappeAPI";
 import { FutureTransaction } from "../components/EmployeeProfile/FutureTransactionRowItem";
-import { GenderResponse, IField } from "../types/profile";
+import { GenderResponse, IField, RelationshipType } from "../types/profile";
 
 export const profileService = {
+  getRelationshipTypes: async (): Promise<RelationshipType[]> => {
+    try {
+      const response = await FrappeAPI.callMethod(
+        "cn_hrms_core.cn_hrms_core.apis.dependent.get_relationship_types"
+      );
+      return (response as RelationshipType[]) || [];
+    } catch (error) {
+      console.error("Failed to fetch relationship types:", error);
+      return [];
+    }
+  },
+
   getGenders: async (): Promise<GenderResponse> => {
     try {
       const result = (await FrappeAPI.getDocumentList("Gender", {
