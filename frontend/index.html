@@ -17,16 +17,13 @@
   <script>
     // Runs before first paint so the page never flashes light then swaps to
     // dark. Mirrors ThemeProvider's resolution: stored preference wins, else
-    // the OS. Kept inline and dependency-free on purpose — a deferred module
-    // would already be too late.
+    // light by default (no OS auto-detection). Kept inline and
+    // dependency-free on purpose — a deferred module would already be too
+    // late.
     (function () {
       try {
         var stored = localStorage.getItem("theme");
-        var dark =
-          stored === "dark" ||
-          ((!stored || stored === "system") &&
-            window.matchMedia("(prefers-color-scheme: dark)").matches);
-        document.documentElement.dataset.theme = dark ? "dark" : "light";
+        document.documentElement.dataset.theme = stored === "dark" ? "dark" : "light";
       } catch (e) {
         document.documentElement.dataset.theme = "light";
       }
