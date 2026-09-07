@@ -93,6 +93,15 @@ frappe.ui.form.on("Job Offer", {
 		// server-side link query, not a filters dict, because the match depends on
 		// attribute configuration only the server can evaluate; the form's current
 		// (possibly unsaved) values go along so the list narrows as HR types.
+		//
+		// The field must carry NO `link_filters` (Customize Form → "Filters"), or
+		// this query is silently thrown away: Frappe's link control merges the two
+		// by *replacing* get_query with one that returns only `{filters}` — the
+		// `query` below never reaches the server, and the context keys here (which
+		// are Job Offer fieldnames, not Document Template ones) then hit the plain
+		// search as real columns and the picker 500s with an OperationalError. The
+		// "doctype_name = Job Offer" restriction a link filter would add is already
+		// applied server-side by _candidate_templates(), so nothing is lost.
 		frm.set_query("custom_offer_letter_template", () => ({
 			query: "recruitment.recruitment.offer_document_template.offer_document_template_query",
 			filters: recruitment_offer_template_context(frm),

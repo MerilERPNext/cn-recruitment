@@ -499,8 +499,10 @@ def offer_document_template_query(doctype, txt, searchfield, start, page_len, fi
 		except ValueError:
 			filters = {}
 	if not isinstance(filters, dict):
-		# The field's own ``link_filters`` arrive in Frappe's list form. They only
-		# ever restate "doctype_name = Job Offer", which this query already does.
+		# A link field's own ``link_filters`` arrive in Frappe's list form. The
+		# picker's field deliberately carries none — Frappe merges them by
+		# discarding this ``query`` altogether (see job_offer.js) — but Customize
+		# Form can put them back on any site, so read the shape rather than trust it.
 		filters = {}
 
 	if not is_document_template_offer_enabled():
