@@ -494,6 +494,15 @@ export const useGenderTypes = () => {
   });
 };
 
+export const useRelationshipTypes = () => {
+  return useQuery({
+    queryKey: ["relationship-types"],
+    queryFn: () => profileService.getRelationshipTypes(),
+    staleTime: 1000 * 60 * 10,
+  });
+};
+
+
 export const useGetEmployeeFieldPermissions = ({
   docname,
   doctype,
