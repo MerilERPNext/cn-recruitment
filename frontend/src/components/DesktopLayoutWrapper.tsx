@@ -14,7 +14,7 @@ import useLogout from "../hooks/useLogout";
 import ChangePassword from "./ChangePassword/ChangePassword";
 import ViewingAsBanner from "./ViewingAsBanner";
 import { useTargetUser } from "../context/ViewedUserContext";
-import CommandSearchBar from "./shared/CommandSearchBar";
+import SearchMembers from "./shared/SearchMembers";
 import Button from "./shared/atoms/Button";
 import { Typography } from "./shared/atoms/Typography";
 import { useGetUiPermission } from "../hooks/userUiPermission";
@@ -177,7 +177,7 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
       >
         {/* Header */}
         <div
-          className="bg-gradient-to-r from-primary-500 via-primary-400 to-primary-500 border-b border-gray-200 px-8 py-[0.3rem] flex items-center justify-between sticky top-0 z-[40] flex-shrink-0"
+          className="bg-gradient-to-r from-primary-500 via-primary-400 to-primary-500 border-b border-gray-200 px-8 py-[0.3rem] flex items-center justify-between sticky top-0 z-[11] flex-shrink-0"
           style={{ height: "73px", maxHeight: "73px" }}
         >
           <div>
@@ -194,7 +194,7 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
           </div>
           {location.pathname !== ROUTES.SEARCH_MEMBERS && (
             <div className="flex-1 min-w-0 flex justify-center">
-              <CommandSearchBar />
+              <SearchMembers />
             </div>
           )}
           <div className="flex items-center gap-4 flex-shrink-0">
