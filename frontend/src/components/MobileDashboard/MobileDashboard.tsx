@@ -42,7 +42,7 @@ import Badge from "../../components/shared/Badge";
 import Carousel, { CarouselSlide } from "../../components/shared/molecules/Carousel";
 import { NoticeSlide } from "../../components/shared/molecules/NoticeSlide";
 import MobileDashboardSkeleton from "../../components/shared/molecules/Skeletons/MobileDashboardSkeletom";
-import SearchMembers from "../../components/shared/SearchMembers";
+import CommandSearchBar from "../../components/shared/CommandSearchBar";
 import SideDrawer from "../../components/shared/SideDrawer";
 import ViewingAsBanner from "../../components/ViewingAsBanner";
 import MicroAppInDashboard from "../../components/DashboardComponent/MicroAppInDashboard";
@@ -733,8 +733,8 @@ const MobileDashboard: React.FC = () => {
         showBackButton
         className="px-0"
       >
-        <div className="py-4">
-          <SearchMembers />
+        <div className="py-4 px-3 w-full flex justify-center">
+          <CommandSearchBar />
         </div>
       </SideDrawer>
       <GeoLocationModal
