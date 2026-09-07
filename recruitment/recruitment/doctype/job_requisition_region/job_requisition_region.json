@@ -8,9 +8,13 @@
  "field_order": [
   "region",
   "no_of_openings",
+  "fixed_pay",
+  "variable_pay",
+  "recruiter",
   "active_employees",
   "active_requisitions",
-  "active_openings"
+  "active_openings",
+  "job_opening"
  ],
  "fields": [
   {
@@ -29,6 +33,33 @@
    "label": "No. of Openings",
    "non_negative": 1,
    "reqd": 1
+  },
+  {
+   "columns": 1,
+   "description": "Fixed pay budgeted for this region. Filled by the Hiring Lead before approval; copied onto the region's Job Opening.",
+   "fieldname": "fixed_pay",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Fixed Pay",
+   "non_negative": 1
+  },
+  {
+   "columns": 1,
+   "description": "Variable pay budgeted for this region. Filled by the Hiring Lead before approval; copied onto the region's Job Opening.",
+   "fieldname": "variable_pay",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Variable Pay",
+   "non_negative": 1
+  },
+  {
+   "description": "Recruiter who owns this region's Job Opening. Filled by the Hiring Lead before approval.",
+   "fieldname": "recruiter",
+   "fieldtype": "Link",
+   "ignore_user_permissions": 1,
+   "in_list_view": 1,
+   "label": "Recruiter",
+   "options": "User"
   },
   {
    "columns": 1,
@@ -61,6 +92,15 @@
    "label": "Hiring in Progress",
    "no_copy": 1,
    "non_negative": 1,
+   "read_only": 1
+  },
+  {
+   "description": "The Job Opening raised for this region when the requisition went Approved Active. Written by the system; its presence is what stops a second opening being raised for the same region.",
+   "fieldname": "job_opening",
+   "fieldtype": "Link",
+   "label": "Job Opening",
+   "no_copy": 1,
+   "options": "Job Opening",
    "read_only": 1
   }
  ],

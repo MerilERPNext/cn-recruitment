@@ -447,8 +447,19 @@ doc_events = {
             # The Lateral counterpart: the Position Details table's location on
             # `custom_position_location`, and onto the empty `custom_location`.
             "recruitment.customizations.job_requisition_region.set_location_from_position_details",
+            # A Fresher requisition may not be approved until every region row
+            # names its recruiter and its pay — each region's Job Opening is built
+            # from that row, and an opening with no recruiter belongs to nobody.
+            # Fires on the transition into an approved status only.
+            "recruitment.api.job_requisition.enforce_fresher_region_readiness",
         ],
         "on_update": [
+            # A Fresher requisition hires across several regions at once. Reaching
+            # "Approved Active" is what turns each region row into its own fully
+            # populated Job Opening (headcount, recruiter, pay, Campus posting,
+            # campus hiring workflow). Idempotent — a region already carrying an
+            # opening is skipped. Lateral requisitions are untouched.
+            "recruitment.customizations.fresher_openings.create_openings_for_regions",
             # Once a requisition is approved its positions "start appearing in the
             # position master": materialise the per-position tracking rows
             # (custom_position_summary) from the headcount rows
@@ -479,6 +490,10 @@ doc_events = {
             # Capture the Regions child table's region on the parent `custom_region`
             # so it is searchable/filterable from the Job Opening (search_fields).
             "recruitment.customizations.job_opening_region.set_region_from_regions_table",
+            # A Fresher opening advertises ITS region's headcount. `vacancies` is
+            # fetched from the requisition's total, which is the sum across every
+            # region — right for Lateral, wrong here, and re-applied on every save.
+            "recruitment.customizations.fresher_openings.sync_vacancies_from_region",
             # Guarantee a collision-free web route — sibling requisitions (same
             # company + designation) would otherwise generate an identical route
             # and fail with "Route must be unique". Runs last so it de-duplicates

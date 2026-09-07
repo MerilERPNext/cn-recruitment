@@ -54,9 +54,13 @@ def validate_job_posting_settings(doc, method=None):
 
     # 2) "Restrict Job posting without linked open positions".
     #    A Job Opening is considered *posted* once its status is "Open"; it must
-    #    then carry at least one linked position (custom_position_details row).
+    #    then carry linked headcount. Which table that lives in follows the hiring
+    #    type: a Lateral opening lists positions in `custom_position_details`, a
+    #    Fresher one budgets a region's openings in `custom_regions` and holds no
+    #    position rows at all. Reading only the former would refuse to post every
+    #    campus opening ever raised, which is not what the setting is asking for.
     if settings.get("restrict_job_posting_without_open_positions") and doc.get("status") == "Open":
-        if not (doc.get("custom_position_details") or []):
+        if not (doc.get("custom_position_details") or []) and not (doc.get("custom_regions") or []):
             frappe.throw(
                 _("This Job Opening has no linked positions. Add at least one position "
                   "before posting it (status 'Open').")
