@@ -59,7 +59,9 @@ function buildStaticItems(modules: UiPermissionModule[]): StaticSearchItem[] {
       if (!page.enabled) continue;
       if (!page.url && !page.modal_key) continue;
 
-      const label = page.page_name;
+      // `label` is the admin-set display name on Modular Ui Apps; page_name is the
+      // internal key. Keep the key searchable so old habits still find the page.
+      const label = page.label || page.page_name;
       const desc = mod.app_name;
 
       items.push({
@@ -69,7 +71,7 @@ function buildStaticItems(modules: UiPermissionModule[]): StaticSearchItem[] {
         category: page.modal_key ? "action-modal" : "page",
         url: page.url,
         modal_key: page.modal_key,
-        searchTerms: `${label} ${desc} ${mod.app_name}`.toLowerCase(),
+        searchTerms: `${label} ${desc} ${page.page_name}`.toLowerCase(),
       });
     }
 
@@ -80,7 +82,7 @@ function buildStaticItems(modules: UiPermissionModule[]): StaticSearchItem[] {
         if (!action.url && !action.modal_key) continue;
 
         const label = action.label || action.action_name.replace(/_/g, " ");
-        const desc = `${mod.app_name} › ${page.page_name}`;
+        const desc = `${mod.app_name} › ${page.label || page.page_name}`;
 
         items.push({
           id: `action::${page.page_name}::${action.action_name}`,

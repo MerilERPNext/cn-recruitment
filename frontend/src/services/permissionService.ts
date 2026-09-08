@@ -13,6 +13,8 @@ export interface UiPermissionAction {
 export interface UiPermissionPage {
   page_name: string;
   enabled: boolean;
+  /** User-facing display name (falls back to page_name if absent). */
+  label?: string;
   /** Frontend route path for this page, e.g. /webapp/expenses-app/expenses-list */
   url?: string;
   /** Modal identifier if this page opens a popup modal, e.g. "request-leave" */
