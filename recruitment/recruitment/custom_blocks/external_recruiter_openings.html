@@ -1,0 +1,24 @@
+<!--
+  Body of the "External Recruiter Openings" Custom HTML Block, placed on the
+  External Recruiter workspace under the existing shortcuts. One card per Job
+  Opening assigned to the logged-in recruiter, each with a "Submit Candidate"
+  button. Filled in by external_recruiter_openings.js.
+
+  Note: the block renders inside a shadow root and Frappe strips <script> and
+  <style> out of this field, so the JS and CSS live in their sibling files.
+-->
+<div class="er-openings">
+	<div class="er-head">
+		<div>
+			<div class="er-title">My Openings</div>
+			<div class="er-subtitle">
+				The roles you can submit candidates for, and how your candidates are doing.
+			</div>
+		</div>
+		<button class="btn btn-default btn-sm" data-action="refresh">Refresh</button>
+	</div>
+
+	<div class="er-list" data-region="list">
+		<div class="text-muted">Loading your openings…</div>
+	</div>
+</div>

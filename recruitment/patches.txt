@@ -64,3 +64,4 @@ recruitment.patches.duplicity_check_employee_pool
 recruitment.patches.migrate_strategy_template_scope_to_attributes
 recruitment.patches.create_group_discussions
 recruitment.patches.seed_dpdp_external_consent_defaults
+recruitment.patches.create_external_recruiter_openings_block
