@@ -262,7 +262,7 @@ export function validateSalaryRange(
     const belowFloor = limit.min !== null && limit.min !== undefined && value < limit.min;
     const aboveCeiling = limit.max !== null && limit.max !== undefined && value > limit.max;
     if (belowFloor || aboveCeiling) {
-      errors.push(`${label} must be ${allowed} for a ${timeframe} salary.`);
+      errors.push(`${timeframe} ${label} must be ${allowed}.`);
     }
   });
 

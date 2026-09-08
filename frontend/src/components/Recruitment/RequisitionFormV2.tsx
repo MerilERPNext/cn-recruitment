@@ -1266,7 +1266,9 @@ const RequisitionFormV2 = () => {
               formInstanceRef.current
                 ?.getComponent(changedKey)
                 ?.setValue(formatted);
-          } catch {}
+          } catch {
+            /* the field went away mid-edit — the stored value is already formatted */
+          }
         }, 0);
       }
     }
@@ -2232,13 +2234,13 @@ const RequisitionFormV2 = () => {
                 {steps[currentTab]}
               </h2>
               {currentTab === salaryTabIndex && activeSalaryLimit && (
-                <div className="mb-4 flex items-start gap-2 rounded-md border border-blue-200 bg-blue-50 px-3 py-2.5 text-sm text-blue-800">
-                  <i className="fa fa-info-circle mt-0.5 text-blue-500" />
-                  <span>
-                    A <strong>{String(formData.salary_timeframe)}</strong> salary
-                    must be {describeSalaryLimit(activeSalaryLimit)}
-                    {formData.salary_currency ? ` ${formData.salary_currency}` : ""}.
-                  </span>
+                // Same treatment as the "Fill below sections..." note the
+                // schema injects, so the two read as one kind of guidance.
+                <div className="alert alert-info mt-4 mb-2 rounded-md">
+                  <i className="fa fa-info-circle mr-2" />
+                  <strong>{String(formData.salary_timeframe)}</strong> salary
+                  must be {describeSalaryLimit(activeSalaryLimit)}
+                  {formData.salary_currency ? ` ${formData.salary_currency}` : ""}.
                 </div>
               )}
               {/position/i.test(steps[currentTab] || "") &&
