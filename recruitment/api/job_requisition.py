@@ -1523,6 +1523,12 @@ def _build_form_config(doc=None, hiring_type=None):
         "allow_hiring_manager_override": frappe.utils.cint(
             frappe.db.get_single_value("Recruitment Settings", "allow_hiring_manager_override")
         ),
+        # Recruitment Settings -> "Max number of positions per requisition", so
+        # the form can cap the position rows client-side instead of letting the
+        # save fail on `_enforce_max_positions`. 0 means no limit, same as there.
+        "max_positions_per_requisition": frappe.utils.cint(
+            frappe.db.get_single_value("Recruitment Settings", "max_positions_per_requisition")
+        ),
         "tabs": tabs,
         "child_groups": child_groups,
     }
@@ -1546,6 +1552,7 @@ def get_job_requisition_form_config(name=None, hiring_type=None):
 
     Returns the project response envelope with
     `{settings, restrict_to_configured, basis_hiring_type, hiring_type,
+    allow_hiring_manager_override, max_positions_per_requisition,
     tabs:[{tab, sections:[{section, fields:[...]}]}], child_groups}`.
     """
     try:
