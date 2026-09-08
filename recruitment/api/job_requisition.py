@@ -455,13 +455,14 @@ def _drop_invalid_link_values(doc, payload):
     existing record, so a stray value never fails the whole save with a
     LinkValidationError.
 
-    This guards two common frontend mistakes:
-      - `custom_job_description_template` (Link → Job Description) receiving the
-        rendered JD *HTML* instead of a JD name.
-      - `custom_preferred_company` (Link → Preferred Target Company) receiving a
-        free-text company name that isn't in that master yet.
-    The offending field is simply not written (and logged); everything else on
-    the requisition still saves.
+    The classic case it guards is `custom_job_description_template`
+    (Link → Job Description) receiving the rendered JD *HTML* instead of a JD
+    name. The offending field is simply not written (and logged); everything
+    else on the requisition still saves.
+
+    Only Link fields pass through here. `custom_preferred_company` used to be
+    one and is now a Table MultiSelect — the same "drop the unknown value, keep
+    the save" rule lives in `_apply_preferred_companies` for it.
     """
     meta = doc.meta
     for field in _get_writable_parent_fields(doc):
@@ -670,6 +671,54 @@ def _apply_skills(doc, payload):
         skill_name = skill["skill"] if isinstance(skill, dict) else skill
         if skill_name:
             doc.append("custom_skills", {"skill": skill_name})
+
+
+PREFERRED_COMPANY_FIELD = "custom_preferred_company"
+PREFERRED_COMPANY_MASTER = "Preferred Target Company"
+
+
+def _apply_preferred_companies(doc, payload):
+    """Fill `custom_preferred_company` (Table MultiSelect → Job Requisition
+    Preferred Company) — the multi-select twin of _apply_skills.
+
+    Accepts every shape a client might send: a list of IDs (["Infosys"]), a
+    list of child-row dicts ([{"preferred_company": "Infosys"}]), or the bare
+    string this field carried while it was still a single Link. Duplicates are
+    collapsed, and an ID that isn't in the Preferred Target Company master is
+    dropped (and logged) rather than failing the whole save — exactly what
+    _drop_invalid_link_values did for it as a Link field.
+
+    Unlike _apply_skills this does NOT clear the table when the payload omits
+    the field: while it was a Link, an update that didn't mention it left the
+    value alone, and callers that partially update a requisition still rely on
+    that. Send an explicit `[]` to clear it.
+    """
+    if not _has_table_field(doc, PREFERRED_COMPANY_FIELD):
+        return
+
+    value = payload.get(PREFERRED_COMPANY_FIELD)
+    if value in (None, ""):
+        return
+    rows = [value] if isinstance(value, str) else _list_field(payload, PREFERRED_COMPANY_FIELD)
+
+    doc.set(PREFERRED_COMPANY_FIELD, [])
+    seen = set()
+    for row in rows:
+        company = (row.get("preferred_company") or row.get("name")) if isinstance(row, dict) else row
+        if not isinstance(company, str):
+            continue
+        company = company.strip()
+        if not company or company in seen:
+            continue
+        if not frappe.db.exists(PREFERRED_COMPANY_MASTER, company):
+            frappe.logger().info(
+                "create/update Job Requisition: dropping unknown preferred company {0!r}".format(
+                    company[:80]
+                )
+            )
+            continue
+        seen.add(company)
+        doc.append(PREFERRED_COMPANY_FIELD, {"preferred_company": company})
 
 
 def _sanitize_cv(value):
@@ -942,6 +991,7 @@ def _build_requisition_doc(payload, positions_for_location):
 
     _apply_qualifications(doc, payload)
     _apply_skills(doc, payload)
+    _apply_preferred_companies(doc, payload)
     _apply_pre_screened(doc, payload)
 
     parent_vacancy = payload.get("custom_type_of_position")
@@ -992,6 +1042,7 @@ def _build_fresher_requisition_doc(payload, groups):
 
     _apply_qualifications(doc, payload)
     _apply_skills(doc, payload)
+    _apply_preferred_companies(doc, payload)
     _apply_pre_screened(doc, payload)
 
     for region, openings in groups:
@@ -1341,6 +1392,54 @@ def _is_hiring_manager_locked(fieldname):
 	return True
 
 
+SALARY_TIMEFRAME_FIELD = "custom_salary_timeframe"
+SALARY_MIN_FIELD = "custom_salary_range_min"
+SALARY_MAX_FIELD = "custom_salary_range_max"
+
+
+def _to_amount(value):
+    """Salary min/max are free-text `Data` fields — parse one to a number, or
+    None when it is blank / not a number (never raises)."""
+    if value in (None, ""):
+        return None
+    try:
+        return float(str(value).replace(",", "").strip())
+    except (TypeError, ValueError):
+        return None
+
+
+def _limits_from_rows(rows):
+    """Recruitment Settings -> Salary Range Limits rows as
+    `{timeframe: {"min": x|None, "max": y|None}}`.
+
+    A blank (or zero) end means that end is unrestricted, and a timeframe with
+    no row is simply absent from the map — so an unconfigured site gets `{}` and
+    neither the form config nor the save-time check changes anything."""
+    limits = {}
+    for row in rows or []:
+        timeframe = (row.get("salary_timeframe") or "").strip()
+        if not timeframe:
+            continue
+        low = frappe.utils.flt(row.get("min_amount"))
+        high = frappe.utils.flt(row.get("max_amount"))
+        limits[timeframe] = {
+            "min": low if low > 0 else None,
+            "max": high if high > 0 else None,
+        }
+    return limits
+
+
+@frappe.request_cache
+def _salary_range_limits():
+    """`_limits_from_rows` over the live Recruitment Settings doc. Guarded so a
+    site that hasn't migrated the new child table yet just gets `{}`."""
+    try:
+        settings = frappe.get_cached_doc("Recruitment Settings")
+    except Exception:
+        return {}
+    return _limits_from_rows(settings.get("salary_range_limits"))
+
+
 def _build_form_config(doc=None, hiring_type=None):
     """Meta-first tabs → sections → fields tree for the Job Requisition form,
     with the single settings doc's overrides applied. Parent fields come from
@@ -1372,6 +1471,13 @@ def _build_form_config(doc=None, hiring_type=None):
     # None = don't filter by hiring type (feature off, or caller didn't name one).
     selected = _resolve_selected_hiring_type(settings, hiring_type)
     meta = frappe.get_meta(JOB_REQUISITION)
+
+    # Recruitment Settings -> Salary Range Limits. The active timeframe is the
+    # requisition's own on an edit; on a blank form there is none yet, so the
+    # field's min/max start empty and the UI re-reads them from
+    # `limits_by_timeframe` when the user picks a timeframe (no refetch needed).
+    salary_limits = _salary_range_limits()
+    active_timeframe = (doc.get(SALARY_TIMEFRAME_FIELD) if doc is not None else "") or ""
 
     tab_order, tab_map = [], {}
     current_tab, current_section = "", ""
@@ -1427,6 +1533,14 @@ def _build_form_config(doc=None, hiring_type=None):
             # switch, not a per-field presentation choice, so a settings-doc
             # "Editable" override must not be able to unlock it.
             entry["read_only"] = 1
+
+        if df.fieldname in (SALARY_MIN_FIELD, SALARY_MAX_FIELD):
+            # Bounds for the timeframe already on the requisition. On a create
+            # call there is none yet, so both stay null and the form reads the
+            # top-level `salary_limits` map once the user picks a timeframe.
+            bounds = salary_limits.get(active_timeframe) or {}
+            entry["min"] = bounds.get("min")
+            entry["max"] = bounds.get("max")
 
         if doc is not None:
             entry["value"] = doc.get(df.fieldname)
@@ -1529,6 +1643,10 @@ def _build_form_config(doc=None, hiring_type=None):
         "max_positions_per_requisition": frappe.utils.cint(
             frappe.db.get_single_value("Recruitment Settings", "max_positions_per_requisition")
         ),
+        # Recruitment Settings -> Salary Range Limits, keyed by Salary Timeframe.
+        # Same numbers the save-time check uses, so the form can show the error
+        # before the request instead of after it. `{}` = nothing configured.
+        "salary_limits": salary_limits,
         "tabs": tabs,
         "child_groups": child_groups,
     }
@@ -2615,6 +2733,8 @@ def update_job_requisition(name=None, payload=None):
             _apply_qualifications(doc, payload)
         if "custom_skills" in payload:
             _apply_skills(doc, payload)
+        if "custom_preferred_company" in payload:
+            _apply_preferred_companies(doc, payload)
         if "custom_pre_screened_candidates" in payload:
             _apply_pre_screened(doc, payload)
 
@@ -3480,11 +3600,15 @@ def validate_requisition_settings(doc, method=None):
     Only acts on requisitions that use our `custom_position_details` flow (rows
     present); legacy / HRMS-standard requisitions (which use the `vacancies`
     table) are left untouched, matching sync_no_of_positions' guard."""
+    settings = frappe.get_cached_doc("Recruitment Settings")
+    # Salary limits are a plain field-value rule, not tied to our position rows,
+    # so they run before the flow guard below and apply to every requisition.
+    _enforce_salary_range(doc, settings)
+
     rows = doc.get("custom_position_details") or []
     if not rows:
         return
 
-    settings = frappe.get_cached_doc("Recruitment Settings")
     _enforce_max_positions(doc, rows, settings)
     _enforce_unique_replacement(doc, rows, settings)
     _enforce_future_dated(doc, settings)
@@ -3492,6 +3616,42 @@ def validate_requisition_settings(doc, method=None):
     _enforce_edit_after_approval(doc, settings)
     _enforce_initiation_lock(doc, settings)
     _enforce_requested_by_lock(doc, settings)
+
+
+def _enforce_salary_range(doc, settings):
+    """Block a salary outside the range configured for the requisition's Salary
+    Timeframe (Recruitment Settings -> Salary Range Limits).
+
+    No row for the timeframe, a blank end, or a blank/non-numeric salary means
+    nothing is checked — so this is a no-op on every site until HR configures
+    the table."""
+    timeframe = (doc.get(SALARY_TIMEFRAME_FIELD) or "").strip()
+    if not timeframe:
+        return
+
+    bounds = _limits_from_rows(settings.get("salary_range_limits")).get(timeframe)
+    if not bounds:
+        return
+
+    low, high = bounds.get("min"), bounds.get("max")
+    for fieldname in (SALARY_MIN_FIELD, SALARY_MAX_FIELD):
+        amount = _to_amount(doc.get(fieldname))
+        if amount is None:
+            continue
+        df = doc.meta.get_field(fieldname)
+        label = _(df.label) if df and df.label else fieldname
+        if low is not None and amount < low:
+            frappe.throw(
+                _("{0} ({1}) is below the minimum of {2} allowed for {3} salaries. "
+                  "Change the amount or update the limit in Recruitment Settings.")
+                .format(label, frappe.utils.fmt_money(amount), frappe.utils.fmt_money(low), timeframe)
+            )
+        if high is not None and amount > high:
+            frappe.throw(
+                _("{0} ({1}) exceeds the maximum of {2} allowed for {3} salaries. "
+                  "Change the amount or update the limit in Recruitment Settings.")
+                .format(label, frappe.utils.fmt_money(amount), frappe.utils.fmt_money(high), timeframe)
+            )
 
 
 def _enforce_max_positions(doc, rows, settings):

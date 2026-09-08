@@ -1,7 +1,7 @@
 import frappe
 from frappe import _
 from frappe.model.mapper import get_mapped_doc
-from frappe.utils import format_duration, get_link_to_form, time_diff_in_seconds
+from frappe.utils import date_diff, format_duration, get_link_to_form, time_diff_in_seconds
 
 from hrms.hr.doctype.job_requisition.job_requisition import JobRequisition
 
@@ -163,6 +163,21 @@ def assert_recruiter_assigned(job_requisition, opening=None, recruiter=None):
 			get_link_to_form("Job Requisition", job_requisition), where),
 		title=_("Assign a recruiter first"),
 	)
+
+
+def set_days_to_expected_by(doc, method=None):
+	"""Job Requisition `validate` — store the days between the requisition's
+	posting date and the date it is expected by, so the wait a hiring manager
+	asked for is visible and reportable without recomputing it per row.
+
+	Cleared when either date is missing. A negative value (expected_by before
+	posting_date) is stored as-is rather than clamped — that's a data-entry
+	problem worth seeing, not one to hide behind a 0.
+	"""
+	if not doc.get("posting_date") or not doc.get("expected_by"):
+		doc.custom_days_to_expected_by = None
+		return
+	doc.custom_days_to_expected_by = date_diff(doc.expected_by, doc.posting_date)
 
 
 def require_recruiter_on_new_opening(doc, method=None):
