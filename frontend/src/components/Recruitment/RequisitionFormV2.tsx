@@ -5,14 +5,23 @@ import { Form } from "@tsed/react-formio";
 import FrappeAPI from "../../utils/frappeAPI";
 import Button from "../shared/atoms/Button";
 import { useCreateJobRequisition } from "../../hooks/useRecruitment";
-import { useCurrentEmployeeDetails, useFileUpload } from "../../hooks/useEmployee";
+import {
+  useCurrentEmployeeDetails,
+  useFileUpload,
+} from "../../hooks/useEmployee";
 import { useDeleteDocument } from "../../hooks/payroll/UseDeleteDocuemt";
 import toast from "react-hot-toast";
 import { Loader2, X, Check, AlertCircle } from "lucide-react";
 import { IoMdCloudUpload } from "react-icons/io";
 import RequisitionReviewV2 from "./RequisitionReviewV2";
 import PositionColumnCopyButtons from "./PositionColumnCopyButtons";
-import BulkResumeUploadModal, { type UploadedResume } from "./BulkResumeUploadModal";
+import BulkResumeUploadModal, {
+  type UploadedResume,
+} from "./BulkResumeUploadModal";
+import type {
+  CreateJobRequisitionResponse,
+  CreatedRequisitionSummary,
+} from "../../types/recruitment";
 import FormEmployeeHoverLayer from "./FormEmployeeHoverLayer";
 import "../../formio.custom.css";
 import {
@@ -23,29 +32,63 @@ import {
   evalDependsOn,
   mandatoryMatchesVisibility,
   isBlankValue,
+  isPercentageField,
+  findAllocationTables,
+  clampAllocationPercentages,
+  clampPercentage,
+  validateAllocationTotals,
+  getSalaryLimit,
+  describeSalaryLimit,
+  validateSalaryRange,
+  formatSalaryInput,
+  parseSalaryInput,
+  ALLOCATION_PERCENTAGE_MIN,
+  ALLOCATION_PERCENTAGE_MAX,
 } from "./requisitionV2Config";
 
-const LINK_FIELD_DEPENDENCIES: Record<string, { filter: string; on: string; doctype?: string; customConditional?: string }> = {
-  custom_employment_type_link: { filter: "&company={{ data.company }}", on: "company" },
-  custom_location: { filter: "&custom_company={{ data.company }}", on: "company" },
+const LINK_FIELD_DEPENDENCIES: Record<
+  string,
+  { filter: string; on: string; doctype?: string; customConditional?: string }
+> = {
+  custom_employment_type_link: {
+    filter: "&company={{ data.company }}",
+    on: "company",
+  },
+  custom_location: {
+    filter: "&custom_company={{ data.company }}",
+    on: "company",
+  },
   location: { filter: "&custom_company={{ data.company }}", on: "company" },
   employee_type: { filter: "&company={{ data.company }}", on: "company" },
-  department: { filter: "&company={{ data.company }}&disabled=0", on: "company" },
-  designation: { filter: "&custom_department={{ data.department }}&custom_status=Active", on: "department" },
+  department: {
+    filter: "&company={{ data.company }}&disabled=0",
+    on: "company",
+  },
+  designation: {
+    filter: "&custom_department={{ data.department }}&custom_status=Active",
+    on: "department",
+  },
   sub_location: {
     filter: "&branch={{ row.location }}",
     on: "location",
     doctype: "Sub Location",
     customConditional: "show = !!row.location",
   },
-  custom_functional_area: { filter: "&designation={{ data.designation }}&disabled=0", on: "designation" },
-  functional_area: { filter: "&designation={{ data.designation }}&disabled=0", on: "designation" },
+  custom_functional_area: {
+    filter: "&designation={{ data.designation }}&disabled=0",
+    on: "designation",
+  },
+  functional_area: {
+    filter: "&designation={{ data.designation }}&disabled=0",
+    on: "designation",
+  },
 };
 
 const REQUISITION_SCOPE_FILTERED: Record<string, string> = {
   company: "&requisition_scope=1",
   department: "&requisition_scope=1&req_company={{ data.company }}",
-  designation: "&requisition_scope=1&req_company={{ data.company }}&req_department={{ data.department }}",
+  designation:
+    "&requisition_scope=1&req_company={{ data.company }}&req_department={{ data.department }}",
 };
 
 // Link pickers that render the record's id next to its label (e.g.
@@ -65,16 +108,80 @@ const toBackendDate = (v: unknown): string => {
   return isNaN(d.getTime()) ? today() : d.toISOString().split("T")[0];
 };
 
+/**
+ * "HR-HIREQ-00065 · Jodhpur II · 1 position" — one created requisition on one
+ * line. Lateral creates a requisition per location, Fresher a single one
+ * carrying several regions, so the line reads whichever the row carries.
+ */
+const describeCreatedRequisition = (requisition: CreatedRequisitionSummary) => {
+  const scope =
+    requisition.location || (requisition.regions || []).filter(Boolean).join(", ");
+  const count = Number(requisition.positions_count) || 0;
+  return [
+    requisition.name,
+    scope,
+    count ? `${count} position${count === 1 ? "" : "s"}` : "",
+  ]
+    .filter(Boolean)
+    .join(" · ");
+};
+
+/**
+ * Report what the server actually created — its own summary line, then a row
+ * per requisition — rather than a generic "created successfully". One submit
+ * can produce several requisitions, and which ones went where is exactly what
+ * the user needs to see before leaving the form.
+ */
+const createdRequisitionsToast = (response: CreateJobRequisitionResponse) => {
+  const created = response?.data?.requisitions ?? [];
+  const headline =
+    response?.message || `Created ${created.length} requisition(s).`;
+
+  return (
+    <div className="min-w-0">
+      <p className="font-semibold text-gray-900">{headline}</p>
+      {created.length > 0 && (
+        <ul className="mt-1.5 space-y-1">
+          {created.map((requisition) => (
+            <li
+              key={requisition.name}
+              className="flex items-start gap-1.5 text-xs text-gray-600"
+            >
+              <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-gray-400" />
+              <span className="break-words">
+                {describeCreatedRequisition(requisition)}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+};
+
+// One re-used toast id, so holding a key down replaces the same message
+// instead of stacking a new toast per keystroke.
+const MAX_POSITIONS_TOAST_ID = "max-positions-per-requisition";
+
 type PositionCountKey =
   | "number_of_positions"
   | "number_of_new_positions"
   | "number_of_replacement_positions";
 
 /** Keep the count fields and the position-detail rows as one consistent set. */
-function applyPositionCounts(data: Record<string, any>, changedKey: PositionCountKey) {
+function applyPositionCounts(
+  data: Record<string, any>,
+  changedKey: PositionCountKey,
+) {
   const total = Math.max(0, Number.parseInt(data.number_of_positions, 10) || 0);
-  let newPositions = Math.max(0, Number.parseInt(data.number_of_new_positions, 10) || 0);
-  let replacementPositions = Math.max(0, Number.parseInt(data.number_of_replacement_positions, 10) || 0);
+  let newPositions = Math.max(
+    0,
+    Number.parseInt(data.number_of_new_positions, 10) || 0,
+  );
+  let replacementPositions = Math.max(
+    0,
+    Number.parseInt(data.number_of_replacement_positions, 10) || 0,
+  );
 
   if (changedKey === "number_of_positions") {
     // A newly-entered total starts as entirely new positions.
@@ -100,7 +207,8 @@ function applyPositionCounts(data: Record<string, any>, changedKey: PositionCoun
       ...(data.functional_area
         ? {
             functional_area: data.functional_area,
-            functional_area_title: data.functional_area_title || data.functional_area,
+            functional_area_title:
+              data.functional_area_title || data.functional_area,
           }
         : {}),
     };
@@ -170,6 +278,72 @@ function buildSelectData(data: Record<string, any>): Record<string, any> {
 }
 
 // ---------------------------------------------------------------------------
+// Percentage column inside a nested allocation table (Cost Center Allocation):
+// each row is bounded to 0-100 and the position's rows may never add up past
+// 100%. The bounds are enforced on the input itself (so the spinner/typing
+// can't leave the range) and repeated as Form.io validators, with the exact
+// "must total 100%" gate applied when the step is left (validateCurrentTab).
+// ---------------------------------------------------------------------------
+function allocationSumValidator(
+  tableKey: string,
+  percentageKey: string,
+): string {
+  return `
+    var allocations = [];
+    if (instance && instance.parent && Array.isArray(instance.parent.dataValue)) {
+      allocations = instance.parent.dataValue;
+    } else {
+      // Fallback for a redraw where the cell has lost its grid parent: find the
+      // position row that owns this allocation row.
+      var positions = (data && data.positions) || [];
+      for (var p = 0; p < positions.length; p++) {
+        var rows = positions[p] && positions[p].${tableKey};
+        if (Array.isArray(rows) && rows.indexOf(row) !== -1) { allocations = rows; break; }
+      }
+    }
+    var total = Number(input) || 0;
+    for (var i = 0; i < allocations.length; i++) {
+      if (allocations[i] === row) continue;
+      total += Number(allocations[i] && allocations[i].${percentageKey}) || 0;
+    }
+    total = Math.round(total * 100) / 100;
+    valid = total > ${ALLOCATION_PERCENTAGE_MAX}
+      ? ('Allocations for this position add up to ' + total + '% \u2014 the total cannot exceed ${ALLOCATION_PERCENTAGE_MAX}%')
+      : true;
+  `;
+}
+
+function applyPercentageBounds(
+  component: any,
+  tableKey: string,
+  percentageKey: string,
+): any {
+  const sumValidator = allocationSumValidator(tableKey, percentageKey);
+  const existingCustom = component.validate?.custom;
+  return {
+    ...component,
+    type: "number",
+    decimalLimit: 2,
+    validate: {
+      ...(component.validate || {}),
+      min: ALLOCATION_PERCENTAGE_MIN,
+      max: ALLOCATION_PERCENTAGE_MAX,
+      // Keep any condition the field already carried; the sum check only runs
+      // once that one passes, so a single message shows at a time.
+      custom: existingCustom
+        ? `${existingCustom}\nif (valid === true) { ${sumValidator} }`
+        : sumValidator,
+    },
+    attributes: {
+      ...(component.attributes || {}),
+      min: String(ALLOCATION_PERCENTAGE_MIN),
+      max: String(ALLOCATION_PERCENTAGE_MAX),
+      step: "any",
+    },
+  };
+}
+
+// ---------------------------------------------------------------------------
 // Generate Form.io Component Schema
 // ---------------------------------------------------------------------------
 function generateFormioComponent(field: BackendField, inGrid = false): any {
@@ -181,7 +355,8 @@ function generateFormioComponent(field: BackendField, inGrid = false): any {
   // column header inside the Vacancy Details grid).
   const requiredWhenVisible = mandatoryMatchesVisibility(field);
   const required = Boolean(field.is_mandatory) || requiredWhenVisible;
-  const isPositionFunctionalArea = inGrid && field.fieldname === "functional_area";
+  const isPositionFunctionalArea =
+    inGrid && field.fieldname === "functional_area";
   const base: any = {
     key: formKey(field.fieldname),
     label: field.label || field.fieldname,
@@ -192,7 +367,9 @@ function generateFormioComponent(field: BackendField, inGrid = false): any {
     disabled: field.read_only || isPositionFunctionalArea ? true : undefined,
     validate: { required: isPositionFunctionalArea ? false : required },
     validateOn: "blur",
-    ...(field.default !== undefined && field.default !== "" ? { defaultValue: field.default } : {}),
+    ...(field.default !== undefined && field.default !== ""
+      ? { defaultValue: field.default }
+      : {}),
   };
 
   if (field.depends_on) {
@@ -205,7 +382,7 @@ function generateFormioComponent(field: BackendField, inGrid = false): any {
   if (!required && field.mandatory_depends_on && !isPositionFunctionalArea) {
     const condition = translateDependsOn(field.mandatory_depends_on, inGrid);
     const message = JSON.stringify(
-      `${field.label || field.fieldname} is required.`
+      `${field.label || field.fieldname} is required.`,
     );
     base.validate = {
       ...base.validate,
@@ -220,16 +397,19 @@ function generateFormioComponent(field: BackendField, inGrid = false): any {
     base.logic = [
       {
         name: "Disable if no department",
-        trigger: { type: "javascript", javascript: "result = !data.department;" },
+        trigger: {
+          type: "javascript",
+          javascript: "result = !data.department;",
+        },
         actions: [
           {
             name: "Disable",
             type: "property",
             property: { label: "Disabled", value: "disabled", type: "boolean" },
-            state: true
-          }
-        ]
-      }
+            state: true,
+          },
+        ],
+      },
     ];
   }
 
@@ -247,8 +427,8 @@ function generateFormioComponent(field: BackendField, inGrid = false): any {
               key: "number_of_positions",
               label: field.label || "Total Position",
               validate: { required: true, min: 1 },
-            }
-          ]
+            },
+          ],
         },
         {
           width: 3,
@@ -260,8 +440,8 @@ function generateFormioComponent(field: BackendField, inGrid = false): any {
               input: true,
               validate: { required: true, min: 0 },
               customConditional: "show = !!data.number_of_positions;",
-            }
-          ]
+            },
+          ],
         },
         {
           width: 3,
@@ -273,10 +453,10 @@ function generateFormioComponent(field: BackendField, inGrid = false): any {
               input: true,
               validate: { required: true, min: 0 },
               customConditional: "show = !!data.number_of_positions;",
-            }
-          ]
-        }
-      ]
+            },
+          ],
+        },
+      ],
     };
   }
 
@@ -285,7 +465,7 @@ function generateFormioComponent(field: BackendField, inGrid = false): any {
       {
         key: "functional_area",
         type: "hidden",
-        input: true
+        input: true,
       },
       {
         key: "functional_area_title",
@@ -293,8 +473,8 @@ function generateFormioComponent(field: BackendField, inGrid = false): any {
         label: field.label || "Functional Area",
         input: true,
         disabled: true,
-        validate: { required: false }
-      }
+        validate: { required: false },
+      },
     ];
   }
 
@@ -302,7 +482,10 @@ function generateFormioComponent(field: BackendField, inGrid = false): any {
     base.defaultValue = "years";
   }
 
-  if (field.fieldname === "custom_salary_range_currency" && !base.defaultValue) {
+  if (
+    field.fieldname === "custom_salary_range_currency" &&
+    !base.defaultValue
+  ) {
     base.defaultValue = "INR";
   }
 
@@ -348,13 +531,16 @@ function generateFormioComponent(field: BackendField, inGrid = false): any {
 
       const dependency = LINK_FIELD_DEPENDENCIES[field.fieldname];
       const linkDoctype = dependency?.doctype || field.options || "";
-      const activeEmployeeFilter = linkDoctype === "Employee" ? "&status=Active" : "";
+      const activeEmployeeFilter =
+        linkDoctype === "Employee" ? "&status=Active" : "";
       const scopeFilter = REQUISITION_SCOPE_FILTERED[field.fieldname] || "";
 
       return {
         ...base,
         type: "select",
-        placeholder: isPositionFunctionalArea ? "Auto-filled from Designation" : `Select ${field.label}`,
+        placeholder: isPositionFunctionalArea
+          ? "Auto-filled from Designation"
+          : `Select ${field.label}`,
         dataSrc: "url",
         data: {
           url: `/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=${linkDoctype}${dependency?.filter || ""}${activeEmployeeFilter}${scopeFilter}`,
@@ -362,18 +548,24 @@ function generateFormioComponent(field: BackendField, inGrid = false): any {
         },
         selectValues: "message.results",
         valueProperty: "id",
-        template: (LINK_FIELDS_SHOWING_ID.has(field.fieldname) || field.options === "Employee")
-          ? `<span>{{ item.label || ${inGrid ? `row.${formKey(field.fieldname)}_title` : `data.${formKey(field.fieldname)}_title`} || item.id || item }} <span style='color:#7f8c8d'>({{ item.id || item }})</span></span>`
-          : `<span>{{ item.label || ${inGrid ? `row.${formKey(field.fieldname)}_title` : `data.${formKey(field.fieldname)}_title`} || item.id || item }}</span>`,
+        template:
+          LINK_FIELDS_SHOWING_ID.has(field.fieldname) ||
+          field.options === "Employee"
+            ? `<span>{{ item.label || ${inGrid ? `row.${formKey(field.fieldname)}_title` : `data.${formKey(field.fieldname)}_title`} || item.id || item }} <span style='color:#7f8c8d'>({{ item.id || item }})</span></span>`
+            : `<span>{{ item.label || ${inGrid ? `row.${formKey(field.fieldname)}_title` : `data.${formKey(field.fieldname)}_title`} || item.id || item }}</span>`,
         limit: 20,
         lazyLoad: false,
         searchField: "search_text",
-        ...(dependency ? {
-            refreshOn: dependency.on,
-            clearOnRefresh: true,
-            clearOnHide: true,
-            ...(dependency.customConditional ? { customConditional: dependency.customConditional } : {}),
-        } : {}),
+        ...(dependency
+          ? {
+              refreshOn: dependency.on,
+              clearOnRefresh: true,
+              clearOnHide: true,
+              ...(dependency.customConditional
+                ? { customConditional: dependency.customConditional }
+                : {}),
+            }
+          : {}),
       };
     }
 
@@ -392,17 +584,28 @@ function generateFormioComponent(field: BackendField, inGrid = false): any {
       };
 
     case "Date":
-      return { 
-        ...base, 
-        type: "datetime", 
-        format: "dd-MM-yyyy", 
-        enableDate: true, 
+      return {
+        ...base,
+        type: "datetime",
+        format: "dd-MM-yyyy",
+        enableDate: true,
         enableTime: false,
-        ...(field.fieldname === "posting_date" ? { customDefaultValue: "value = data.recruitment_start_date ? data.recruitment_start_date : moment().format('YYYY-MM-DD');" } : {})
+        ...(field.fieldname === "posting_date"
+          ? {
+              customDefaultValue:
+                "value = data.recruitment_start_date ? data.recruitment_start_date : moment().format('YYYY-MM-DD');",
+            }
+          : {}),
       };
 
     case "Datetime":
-      return { ...base, type: "datetime", format: "yyyy-MM-dd HH:mm", enableDate: true, enableTime: true };
+      return {
+        ...base,
+        type: "datetime",
+        format: "yyyy-MM-dd HH:mm",
+        enableDate: true,
+        enableTime: true,
+      };
 
     case "Int":
     case "Float":
@@ -441,10 +644,13 @@ function generateFormioComponent(field: BackendField, inGrid = false): any {
     }
 
     case "Table": {
-      const isPositionDetails = field.fieldname === "custom_position_details" || field.fieldname === "positions";
-      const sortedChildFields = [...(field.child_fields || [])]
-        .sort((a, b) => (a.order || 0) - (b.order || 0))
-      let childComponents = sortedChildFields.map(childField => {
+      const isPositionDetails =
+        field.fieldname === "custom_position_details" ||
+        field.fieldname === "positions";
+      const sortedChildFields = [...(field.child_fields || [])].sort(
+        (a, b) => (a.order || 0) - (b.order || 0),
+      );
+      let childComponents = sortedChildFields.map((childField) => {
         if (!childField.is_nested_table) {
           // Every column lives inside a datagrid row, so treat it as in-grid:
           // the required marker belongs on the column header (rendered from
@@ -462,36 +668,60 @@ function generateFormioComponent(field: BackendField, inGrid = false): any {
           validate: { required: Boolean(childField.is_mandatory) },
           components: (childField.nested_fields || [])
             .sort((a, b) => (a.order || 0) - (b.order || 0))
-            .map(nestedField => generateFormioComponent(nestedField, true)),
+            .map((nestedField) => {
+              const nestedComponent = generateFormioComponent(
+                nestedField,
+                true,
+              );
+              // A percentage column is bounded 0-100 and capped at a 100% total
+              // per position.
+              return isPercentageField(nestedField)
+                ? applyPercentageBounds(
+                    nestedComponent,
+                    childField.fieldname,
+                    nestedField.fieldname,
+                  )
+                : nestedComponent;
+            }),
         };
       });
 
       if (isPositionDetails) {
-        const existingPos = childComponents.findIndex(c => c.key === "position_number");
-        const posComp = existingPos > -1 ? childComponents.splice(existingPos, 1)[0] : {
-          type: "number",
-          key: "position_number",
-          label: "Position Number",
-          disabled: true,
-          input: true
-        };
+        const existingPos = childComponents.findIndex(
+          (c) => c.key === "position_number",
+        );
+        const posComp =
+          existingPos > -1
+            ? childComponents.splice(existingPos, 1)[0]
+            : {
+                type: "number",
+                key: "position_number",
+                label: "Position Number",
+                disabled: true,
+                input: true,
+              };
         posComp.disabled = true;
 
-        const existingVac = childComponents.findIndex(c => c.key === "vacancy_type");
-        const vacComp = existingVac > -1 ? childComponents.splice(existingVac, 1)[0] : {
-          type: "select",
-          key: "vacancy_type",
-          label: "Vacancy Type",
-          data: {
-            values: [
-              { label: "New", value: "New" },
-              { label: "Replacement", value: "Replacement" },
-            ],
-          },
-          defaultValue: "New",
-          validate: { required: true },
-          input: true
-        };
+        const existingVac = childComponents.findIndex(
+          (c) => c.key === "vacancy_type",
+        );
+        const vacComp =
+          existingVac > -1
+            ? childComponents.splice(existingVac, 1)[0]
+            : {
+                type: "select",
+                key: "vacancy_type",
+                label: "Vacancy Type",
+                data: {
+                  values: [
+                    { label: "New", value: "New" },
+                    { label: "Replacement", value: "Replacement" },
+                  ],
+                },
+                defaultValue: "New",
+                validate: { required: true },
+                input: true,
+              };
 
         childComponents = [posComp, vacComp, ...childComponents];
       }
@@ -532,13 +762,17 @@ function buildTabSchemas(config: FormConfig) {
       components.push({
         type: "htmlelement",
         tag: "div",
-        className: "flex items-start gap-2 rounded-md border border-blue-200 bg-blue-50 text-blue-800 px-3 py-2.5 mb-3 text-sm",
-        content: '<i class="fa fa-info-circle mt-0.5 text-blue-500"></i><span><strong>Note:</strong> Create a separate requisition for each different work location. If multiple positions belong to the same location, they should be included within a single requisition.</span>',
+        className:
+          "flex items-start gap-2 rounded-md border border-blue-200 bg-blue-50 text-blue-800 px-3 py-2.5 mb-3 text-sm",
+        content:
+          '<i class="fa fa-info-circle mt-0.5 text-blue-500"></i><span><strong>Note:</strong> System will create a separate requisition for each different work location. If multiple positions belong to the same location, they should be included within a single requisition.</span>',
       });
     }
 
     tab.sections.forEach((section) => {
-      const sortedFields = [...(section.fields || [])].sort((a, b) => (a.order || 0) - (b.order || 0));
+      const sortedFields = [...(section.fields || [])].sort(
+        (a, b) => (a.order || 0) - (b.order || 0),
+      );
       if (sortedFields.length === 0) return;
 
       const sectionComponents: any[] = [];
@@ -547,8 +781,8 @@ function buildTabSchemas(config: FormConfig) {
         type: "columns",
         columns: [
           { components: [] as any[], width: 6 },
-          { components: [] as any[], width: 6 }
-        ]
+          { components: [] as any[], width: 6 },
+        ],
       };
 
       sortedFields.forEach((field) => {
@@ -563,26 +797,44 @@ function buildTabSchemas(config: FormConfig) {
         const generated = generateFormioComponent(field);
         const comps = Array.isArray(generated) ? generated : [generated];
 
-        comps.forEach(comp => {
+        comps.forEach((comp) => {
           if (comp.type === "hidden") {
             sectionComponents.push(comp);
             return;
           }
-          if (comp.isFullWidth || field.fieldtype === "Table" || field.fieldtype === "Table MultiSelect" || field.fieldtype === "Long Text" || field.fieldtype === "Text Editor") {
-            if (columnsComponent.columns[0].components.length > 0 || columnsComponent.columns[1].components.length > 0) {
-              sectionComponents.push(JSON.parse(JSON.stringify(columnsComponent)));
+          if (
+            comp.isFullWidth ||
+            field.fieldtype === "Table" ||
+            field.fieldtype === "Table MultiSelect" ||
+            field.fieldtype === "Long Text" ||
+            field.fieldtype === "Text Editor"
+          ) {
+            if (
+              columnsComponent.columns[0].components.length > 0 ||
+              columnsComponent.columns[1].components.length > 0
+            ) {
+              sectionComponents.push(
+                JSON.parse(JSON.stringify(columnsComponent)),
+              );
               columnsComponent.columns[0].components = [];
               columnsComponent.columns[1].components = [];
             }
             sectionComponents.push(comp);
           } else {
-            const colIndex = (columnsComponent.columns[0].components.length <= columnsComponent.columns[1].components.length) ? 0 : 1;
+            const colIndex =
+              columnsComponent.columns[0].components.length <=
+              columnsComponent.columns[1].components.length
+                ? 0
+                : 1;
             columnsComponent.columns[colIndex].components.push(comp);
           }
         });
       });
 
-      if (columnsComponent.columns[0].components.length > 0 || columnsComponent.columns[1].components.length > 0) {
+      if (
+        columnsComponent.columns[0].components.length > 0 ||
+        columnsComponent.columns[1].components.length > 0
+      ) {
         sectionComponents.push(columnsComponent);
       }
 
@@ -596,7 +848,8 @@ function buildTabSchemas(config: FormConfig) {
             type: "htmlelement",
             tag: "div",
             className: "alert alert-info mt-4 mb-2 rounded-md",
-            content: '<i class="fa fa-info-circle mr-2"></i> Fill below sections if you have any specific instruction for recruiters'
+            content:
+              '<i class="fa fa-info-circle mr-2"></i> Fill below sections if you have any specific instruction for recruiters',
           });
         }
 
@@ -604,8 +857,9 @@ function buildTabSchemas(config: FormConfig) {
           type: "panel",
           title: section.section,
           theme: "default",
-          customClass: "bg-gray-50 border border-gray-200 rounded-lg shadow-sm mb-6",
-          components: sectionComponents
+          customClass:
+            "bg-gray-50 border border-gray-200 rounded-lg shadow-sm mb-6",
+          components: sectionComponents,
         });
       } else {
         components.push(...sectionComponents);
@@ -625,7 +879,9 @@ function buildTabSchemas(config: FormConfig) {
 const RequisitionFormV2 = () => {
   const navigate = useNavigate();
   const createJobRequisition = useCreateJobRequisition();
-  const { data: currentEmployee } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
+  const { data: currentEmployee } = useCurrentEmployeeDetails({
+    logged_in_employee_details: true,
+  });
 
   const [config, setConfig] = useState<FormConfig | null>(null);
   const [configLoading, setConfigLoading] = useState(true);
@@ -637,25 +893,36 @@ const RequisitionFormV2 = () => {
   // Track whether the initial config has been loaded.  Subsequent re-fetches
   // (triggered by hiring-type change) should NOT unmount the form.
   const [initialConfigLoaded, setInitialConfigLoaded] = useState(false);
-  
+
   const [schemas, setSchemas] = useState<any[]>([]);
   const [steps, setSteps] = useState<string[]>([]);
   const [currentTab, setCurrentTab] = useState(0);
-  
+
   const [formData, setFormData] = useState<Record<string, any>>({});
   const formDataRef = useRef(formData);
   formDataRef.current = formData;
-  
+
   const [formSyncTick, setFormSyncTick] = useState(0);
-  const [positionCountDrafts, setPositionCountDrafts] = useState<Partial<Record<PositionCountKey, string>>>({});
+  const [positionCountDrafts, setPositionCountDrafts] = useState<
+    Partial<Record<PositionCountKey, string>>
+  >({});
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const [isBusy, setIsBusy] = useState(false);
   const [jobDetailsPreviewOpen, setJobDetailsPreviewOpen] = useState(false);
-  const [jobDetailsPreview, setJobDetailsPreview] = useState<{ loading: boolean; title: string; source: string; html: string; payload?: any }>({
-loading: false, title: "", source: "", html: ""
+  const [jobDetailsPreview, setJobDetailsPreview] = useState<{
+    loading: boolean;
+    title: string;
+    source: string;
+    html: string;
+    payload?: any;
+  }>({
+    loading: false,
+    title: "",
+    source: "",
+    html: "",
   });
   const [jdSource, setJdSource] = useState<string>("");
-  
+
   const formInstanceRef = useRef<any>(null);
   const formContainerRef = useRef<HTMLDivElement>(null);
   const tabBarRef = useRef<HTMLDivElement>(null);
@@ -668,7 +935,7 @@ loading: false, title: "", source: "", html: ""
       }
       return data?.[fieldKey];
     },
-    []
+    [],
   );
 
   const prefilledJdKeyRef = useRef<string>("");
@@ -681,7 +948,7 @@ loading: false, title: "", source: "", html: ""
       metadata: { selectData: buildSelectData(formDataRef.current) },
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [formSyncTick, currentTab]
+    [formSyncTick, currentTab],
   );
   const isLastStep = currentTab === steps.length - 1;
   const isReviewStep = steps[currentTab] === "Review";
@@ -696,20 +963,24 @@ loading: false, title: "", source: "", html: ""
       try {
         const res: any = await FrappeAPI.callMethod(
           "recruitment.api.job_requisition.get_job_requisition_form_config",
-          { hiring_type: hiringType }
+          { hiring_type: hiringType },
         );
         if (!cancelled) {
           const data = res?.data || res;
           if (data && Array.isArray(data.tabs)) {
             setConfig(data);
-            const { schemas: newSchemas, steps: newSteps } = buildTabSchemas(data);
+            const { schemas: newSchemas, steps: newSteps } =
+              buildTabSchemas(data);
             setSchemas(newSchemas);
             setSteps(newSteps);
             // Sync formData so the form.io submission reflects the current
             // hiring type (prevents the dropdown from resetting to the
             // field's default value during re-initialisation).
-            setFormData(prev => ({ ...prev, custom_hiring_type: hiringType }));
-            setFormSyncTick(t => t + 1);
+            setFormData((prev) => ({
+              ...prev,
+              custom_hiring_type: hiringType,
+            }));
+            setFormSyncTick((t) => t + 1);
           } else {
             setConfigError("Invalid form configuration received.");
           }
@@ -726,8 +997,10 @@ loading: false, title: "", source: "", html: ""
         }
       }
     })();
-    return () => { cancelled = true; };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hiringType]);
 
   useEffect(() => {
@@ -743,18 +1016,21 @@ loading: false, title: "", source: "", html: ""
 
   const autoFillFunctionalArea = useCallback(async (designation: string) => {
     try {
-      const desigRes: any = await FrappeAPI.callMethod("frappe.client.get_value", {
-        doctype: "Designation",
-        filters: designation,
-        fieldname: "custom_functional_area",
-      });
+      const desigRes: any = await FrappeAPI.callMethod(
+        "frappe.client.get_value",
+        {
+          doctype: "Designation",
+          filters: designation,
+          fieldname: "custom_functional_area",
+        },
+      );
       const faId: string = desigRes?.custom_functional_area || "";
       let faTitle = faId;
       if (faId) {
         try {
           const opts: any = await FrappeAPI.callMethod(
             "recruitment.api.job_requisition.get_link_field_options",
-            { doctype: "Functional Area", include: faId, limit: 1 }
+            { doctype: "Functional Area", include: faId, limit: 1 },
           );
           const match = (opts?.results || []).find((r: any) => r.id === faId);
           if (match?.label) faTitle = match.label;
@@ -775,7 +1051,7 @@ loading: false, title: "", source: "", html: ""
         else delete next.functional_area_title;
         return next;
       });
-      setFormSyncTick(t => t + 1);
+      setFormSyncTick((t) => t + 1);
     } catch (e) {
       console.error(e);
     }
@@ -784,7 +1060,7 @@ loading: false, title: "", source: "", html: ""
   useEffect(() => {
     const activeTabName = steps[currentTab];
     if (activeTabName !== "Job Details") return;
-    
+
     const currentData = formDataRef.current as any;
     const designationId = currentData.designation;
     const departmentId = currentData.department;
@@ -797,19 +1073,29 @@ loading: false, title: "", source: "", html: ""
     const fetchAndPrefill = async () => {
       const designationTitle = currentData.designation_title || designationId;
       const departmentTitle = currentData.department_title || departmentId;
-      const functional_area = currentData.functional_area_title || currentData.functional_area;
+      const functional_area =
+        currentData.functional_area_title || currentData.functional_area;
 
       const payload: Record<string, any> = {};
-      config?.tabs.forEach(tab => tab.sections.forEach(section => section.fields.forEach(f => {
-        if (currentData[formKey(f.fieldname)] !== undefined) {
-          payload[f.fieldname] = currentData[formKey(f.fieldname)];
-        }
-      })));
+      config?.tabs.forEach((tab) =>
+        tab.sections.forEach((section) =>
+          section.fields.forEach((f) => {
+            if (currentData[formKey(f.fieldname)] !== undefined) {
+              payload[f.fieldname] = currentData[formKey(f.fieldname)];
+            }
+          }),
+        ),
+      );
 
       try {
         const res: any = await FrappeAPI.callMethod(
           "recruitment.api.job_requisition.preview_job_description",
-          { designation: designationTitle, department: departmentTitle, functional_area, data: payload }
+          {
+            designation: designationTitle,
+            department: departmentTitle,
+            functional_area,
+            data: payload,
+          },
         );
         const jd = res?.data ?? res ?? {};
         const html = jd?.description_html || jd?.description || "";
@@ -828,11 +1114,15 @@ loading: false, title: "", source: "", html: ""
             if (jd?.skills && !prev.custom_skills) {
               updates.custom_skills = jd.skills;
             }
-            
+
             Object.entries(prefill).forEach(([k, v]) => {
               const fk = formKey(k);
               const prevVal = prev[fk];
-              const isEmpty = prevVal === undefined || prevVal === null || prevVal === "" || (Array.isArray(prevVal) && prevVal.length === 0);
+              const isEmpty =
+                prevVal === undefined ||
+                prevVal === null ||
+                prevVal === "" ||
+                (Array.isArray(prevVal) && prevVal.length === 0);
               if (isEmpty) {
                 updates[fk] = v;
               }
@@ -840,7 +1130,7 @@ loading: false, title: "", source: "", html: ""
             if (Object.keys(updates).length > 0) return { ...prev, ...updates };
             return prev;
           });
-          setFormSyncTick(t => t + 1);
+          setFormSyncTick((t) => t + 1);
         }
       } catch (e) {
         console.error("Failed to auto-fetch JD", e);
@@ -862,12 +1152,27 @@ loading: false, title: "", source: "", html: ""
         const positionsComp = instance.getComponent("positions");
         if (positionsComp) {
           positionsComp.setValue(
-            (positionsComp.getValue() || []).map((row: any) => ({ ...row, functional_area: "" }))
+            (positionsComp.getValue() || []).map((row: any) => ({
+              ...row,
+              functional_area: "",
+            })),
           );
         }
       } catch {}
     }, 0);
   }, []);
+
+  // Nested allocation tables (Cost Center Allocation) as configured by the
+  // backend, with the percentage column they carry — drives the 0-100 clamp and
+  // the "must total 100% per position" gate below.
+  const allocationTables = useMemo(
+    () => findAllocationTables(config),
+    [config],
+  );
+  const allocationPercentageKeys = useMemo(
+    () => new Set(allocationTables.map((table) => table.percentageFieldname)),
+    [allocationTables],
+  );
 
   const handleChange = (changed: any) => {
     const prevData: any = formDataRef.current;
@@ -878,21 +1183,29 @@ loading: false, title: "", source: "", html: ""
     // clears Designation itself via clearOnRefresh, but that clear arrives as a
     // "department" change, so the Functional Area it fed would otherwise keep
     // the value of a designation that is no longer selected.
-    if (changedKey === "department" && newData.department !== prevData.department) {
+    if (
+      changedKey === "department" &&
+      newData.department !== prevData.department
+    ) {
       newData.designation = "";
       delete newData.designation_title;
     }
     // `changedKey` is only set for a real field change; form.io also emits
     // change events while initialising/prefilling, and those must not wipe the
     // functional area that was loaded with the record.
-    const designationChanged = !!changedKey && newData.designation !== prevData.designation;
+    const designationChanged =
+      !!changedKey && newData.designation !== prevData.designation;
 
     // Update the dedicated hiringType state when the user explicitly changes
     // the hiring type dropdown.  This triggers a config re-fetch via the
     // useEffect that depends on hiringType.  The guard !== hiringType prevents
     // a re-fetch when the value hasn't actually changed (e.g. form.io echoing
     // the same default value during initialisation).
-    if (changedKey === "custom_hiring_type" && newData.custom_hiring_type && newData.custom_hiring_type !== hiringType) {
+    if (
+      changedKey === "custom_hiring_type" &&
+      newData.custom_hiring_type &&
+      newData.custom_hiring_type !== hiringType
+    ) {
       setHiringType(newData.custom_hiring_type);
     } else if (changedKey !== "custom_hiring_type") {
       // When the change is NOT a direct user interaction with the hiring type
@@ -913,41 +1226,112 @@ loading: false, title: "", source: "", html: ""
       if (formInstanceRef.current) {
         setTimeout(() => {
           try {
-             if (changedKey !== "number_of_new_positions") {
-               const newComp = formInstanceRef.current.getComponent("number_of_new_positions");
-               if (newComp) newComp.setValue(normalized.number_of_new_positions);
-             }
-             if (changedKey !== "number_of_replacement_positions") {
-               const repComp = formInstanceRef.current.getComponent("number_of_replacement_positions");
-               if (repComp) repComp.setValue(normalized.number_of_replacement_positions);
-             }
-             const positionsComp = formInstanceRef.current.getComponent("positions");
-             if (positionsComp) positionsComp.setValue(normalized.positions);
+            if (changedKey !== "number_of_new_positions") {
+              const newComp = formInstanceRef.current.getComponent(
+                "number_of_new_positions",
+              );
+              if (newComp) newComp.setValue(normalized.number_of_new_positions);
+            }
+            if (changedKey !== "number_of_replacement_positions") {
+              const repComp = formInstanceRef.current.getComponent(
+                "number_of_replacement_positions",
+              );
+              if (repComp)
+                repComp.setValue(normalized.number_of_replacement_positions);
+            }
+            const positionsComp =
+              formInstanceRef.current.getComponent("positions");
+            if (positionsComp) positionsComp.setValue(normalized.positions);
 
-             // Force UI redraw for the grid and numbers if needed
-             formInstanceRef.current.redraw();
-          } catch(e) {}
+            // Force UI redraw for the grid and numbers if needed
+            formInstanceRef.current.redraw();
+          } catch (e) {}
         }, 100);
       }
     }
 
-    if (changedKey === "positions") {
-      const positions = Array.isArray(newData.positions) ? newData.positions : [];
-      newData.number_of_positions = positions.length;
-      newData.number_of_new_positions = positions.filter((position: any) => position?.vacancy_type === "New").length;
-      newData.number_of_replacement_positions = positions.filter((position: any) => position?.vacancy_type === "Replacement").length;
+    // Salary amounts read as money, not as a digit run: regroup what was typed
+    // ("500000" → "5,00,000") and push it back through the field's own instance
+    // so the rest of the form isn't redrawn mid-edit. The separators are
+    // stripped again on submit and wherever the value is read as a number.
+    if (changedKey === "salary_min" || changedKey === "salary_max") {
+      const formatted = formatSalaryInput(newData[changedKey]);
+      if (formatted !== newData[changedKey]) {
+        newData[changedKey] = formatted;
+        const changedInstance = changed.changed?.instance;
+        setTimeout(() => {
+          try {
+            if (changedInstance) changedInstance.setValue(formatted);
+            else
+              formInstanceRef.current
+                ?.getComponent(changedKey)
+                ?.setValue(formatted);
+          } catch {}
+        }, 0);
+      }
     }
-    
+
+    // Percentages are hard-bounded: a value typed (or pasted) outside 0-100 is
+    // pulled back into range instead of being left to fail validation later.
+    // The focused cell is corrected through its own instance so the datagrid
+    // isn't redrawn out from under the user mid-edit.
+    const clampedPositions = clampAllocationPercentages(
+      newData.positions,
+      allocationTables,
+    );
+    if (clampedPositions.changed) {
+      newData.positions = clampedPositions.positions;
+      const changedInstance = changed.changed?.instance;
+      if (changedInstance && allocationPercentageKeys.has(changedKey)) {
+        const clampedValue = clampPercentage(changed.changed?.value);
+        if (clampedValue !== changed.changed?.value) {
+          setTimeout(() => {
+            try {
+              changedInstance.setValue(clampedValue);
+            } catch {}
+          }, 0);
+        }
+      } else {
+        setTimeout(() => {
+          try {
+            formInstanceRef.current
+              ?.getComponent("positions")
+              ?.setValue(clampedPositions.positions);
+          } catch {}
+        }, 0);
+      }
+    }
+
+    if (changedKey === "positions") {
+      const positions = Array.isArray(newData.positions)
+        ? newData.positions
+        : [];
+      newData.number_of_positions = positions.length;
+      newData.number_of_new_positions = positions.filter(
+        (position: any) => position?.vacancy_type === "New",
+      ).length;
+      newData.number_of_replacement_positions = positions.filter(
+        (position: any) => position?.vacancy_type === "Replacement",
+      ).length;
+    }
+
     const selectData = changed.metadata?.selectData;
     if (selectData && typeof selectData === "object") {
       const labelOf = (v: any) =>
-        v && typeof v === "object" ? (v.employee_name ?? v.label ?? v.name ?? v.title) : undefined;
+        v && typeof v === "object"
+          ? (v.employee_name ?? v.label ?? v.name ?? v.title)
+          : undefined;
       Object.keys(selectData).forEach((key) => {
         const sd = selectData[key];
         if (key === "positions" && Array.isArray(sd)) {
           const rows = [...(newData.positions || [])];
           sd.forEach((rowSelectData: any, index: number) => {
-            if (!rows[index] || !rowSelectData || typeof rowSelectData !== "object") return;
+            if (
+              !rows[index] ||
+              !rowSelectData ||
+              typeof rowSelectData !== "object"
+            )
+              return;
             const row = { ...rows[index] };
             Object.entries(rowSelectData).forEach(([fieldKey, selected]) => {
               const label = labelOf(selected);
@@ -961,14 +1345,20 @@ loading: false, title: "", source: "", html: ""
           const labels = sd.map((v: any) => labelOf(v)).filter(Boolean);
           if (labels.length) newData[`${key}_title`] = labels;
           else delete newData[`${key}_title`];
-        } else if (sd && typeof sd === "object" && !("label" in sd || "name" in sd || "title" in sd)) {
-           const labels = Object.values(sd).map((v: any) => labelOf(v)).filter(Boolean);
-           if (labels.length) newData[`${key}_title`] = labels;
-           else delete newData[`${key}_title`];
+        } else if (
+          sd &&
+          typeof sd === "object" &&
+          !("label" in sd || "name" in sd || "title" in sd)
+        ) {
+          const labels = Object.values(sd)
+            .map((v: any) => labelOf(v))
+            .filter(Boolean);
+          if (labels.length) newData[`${key}_title`] = labels;
+          else delete newData[`${key}_title`];
         } else {
-           const lbl = labelOf(sd);
-           if (lbl) newData[`${key}_title`] = lbl;
-           else delete newData[`${key}_title`];
+          const lbl = labelOf(sd);
+          if (lbl) newData[`${key}_title`] = lbl;
+          else delete newData[`${key}_title`];
         }
       });
     }
@@ -992,17 +1382,68 @@ loading: false, title: "", source: "", html: ""
     setFormData(newData);
     // The count controls are programmatically updated, so re-feed their
     // normalized values to Form.io once the state change has been committed.
-    if (positionCountsChanged || designationChanged) setFormSyncTick((tick) => tick + 1);
+    if (positionCountsChanged || designationChanged)
+      setFormSyncTick((tick) => tick + 1);
     setValidationErrors([]);
   };
 
-  const handlePositionCountChange = (changedKey: PositionCountKey, value: string) => {
+  // The tab carrying the salary fields, and the band configured for the
+  // timeframe currently selected — both null when the config has neither.
+  const salaryTabIndex = useMemo(() => {
+    if (!config) return -1;
+    return config.tabs.findIndex((tab) =>
+      tab.sections.some((section) =>
+        section.fields.some(
+          (field) =>
+            field.fieldname === "custom_salary_range_min" ||
+            field.fieldname === "custom_salary_range_max"
+        )
+      )
+    );
+  }, [config]);
+
+  const activeSalaryLimit = useMemo(
+    () => getSalaryLimit(config, formData.salary_timeframe),
+    [config, formData.salary_timeframe]
+  );
+
+  // "Max number of positions per requisition" (Recruitment Settings). The
+  // backend sends 0 — and older configs send nothing — when there is no limit,
+  // so anything non-positive becomes null and every check below is skipped.
+  const maxPositions = useMemo(() => {
+    const configured = Number(config?.max_positions_per_requisition) || 0;
+    return configured > 0 ? configured : null;
+  }, [config]);
+
+  const handlePositionCountChange = (
+    changedKey: PositionCountKey,
+    value: string,
+  ) => {
+    let nextValue = value;
+
+    // Never open more vacancy rows than the configured maximum. Clamp the entry
+    // and say why — the server rejects an over-limit requisition on save, so
+    // letting the rows appear only to fail later wastes the whole form.
+    if (changedKey === "number_of_positions" && maxPositions) {
+      const requested = Number.parseInt(value, 10);
+      if (Number.isFinite(requested) && requested > maxPositions) {
+        nextValue = String(maxPositions);
+        toast.error(
+          `You can request at most ${maxPositions} position${maxPositions === 1 ? "" : "s"} per requisition.`,
+          { id: MAX_POSITIONS_TOAST_ID },
+        );
+      }
+    }
+
     // Preserve an empty field while the user is editing; the normalized state
     // still keeps the table and companion count in sync underneath.
-    setPositionCountDrafts((drafts) => ({ ...drafts, [changedKey]: value }));
+    setPositionCountDrafts((drafts) => ({
+      ...drafts,
+      [changedKey]: nextValue,
+    }));
     const normalized = applyPositionCounts(
-      { ...formDataRef.current, [changedKey]: value },
-      changedKey
+      { ...formDataRef.current, [changedKey]: nextValue },
+      changedKey,
     );
     setFormData(normalized);
     setFormSyncTick((tick) => tick + 1);
@@ -1055,8 +1496,12 @@ loading: false, title: "", source: "", html: ""
       return {
         ...current,
         positions: newPositions,
-        number_of_new_positions: newPositions.filter((p: any) => p.vacancy_type === "New").length,
-        number_of_replacement_positions: newPositions.filter((p: any) => p.vacancy_type === "Replacement").length,
+        number_of_new_positions: newPositions.filter(
+          (p: any) => p.vacancy_type === "New",
+        ).length,
+        number_of_replacement_positions: newPositions.filter(
+          (p: any) => p.vacancy_type === "Replacement",
+        ).length,
       };
     });
     setFormSyncTick((tick) => tick + 1);
@@ -1065,8 +1510,12 @@ loading: false, title: "", source: "", html: ""
   // ── Pre-Screened Candidates (custom table, same as RequisitionForm) ──────
   const uploadMutation = useFileUpload();
   const { mutateAsync: deleteDoc } = useDeleteDocument();
-  const [candidateFileNames, setCandidateFileNames] = useState<Record<number, string>>({});
-  const [candidateFileIds, setCandidateFileIds] = useState<Record<number, string>>({});
+  const [candidateFileNames, setCandidateFileNames] = useState<
+    Record<number, string>
+  >({});
+  const [candidateFileIds, setCandidateFileIds] = useState<
+    Record<number, string>
+  >({});
   const [bulkUploadOpen, setBulkUploadOpen] = useState(false);
 
   const handleCandidateFileUpload = (index: number, file: File | null) => {
@@ -1094,7 +1543,8 @@ loading: false, title: "", source: "", html: ""
 
   const handleBulkResumesUploaded = (results: UploadedResume[]) => {
     if (!results.length) return;
-    const base = (formDataRef.current?.custom_pre_screened_candidates || []).length;
+    const base = (formDataRef.current?.custom_pre_screened_candidates || [])
+      .length;
     const newRows = results.map((r) => ({
       candidate_name: r.fileName.replace(/\.[^.]+$/, ""),
       email: "",
@@ -1124,7 +1574,7 @@ loading: false, title: "", source: "", html: ""
       return n;
     });
     toast.success(
-      `${results.length} resume${results.length > 1 ? "s" : ""} uploaded — ${results.length} candidate row${results.length > 1 ? "s" : ""} created`
+      `${results.length} resume${results.length > 1 ? "s" : ""} uploaded — ${results.length} candidate row${results.length > 1 ? "s" : ""} created`,
     );
   };
 
@@ -1217,16 +1667,16 @@ loading: false, title: "", source: "", html: ""
   // ── Position counts (only when the config includes no_of_positions) ─────
   const hasPositionCounts = useMemo(() => {
     if (!config) return false;
-    return config.tabs.some(tab =>
-      tab.sections.some(section =>
-        section.fields.some(f => f.fieldname === "no_of_positions")
-      )
+    return config.tabs.some((tab) =>
+      tab.sections.some((section) =>
+        section.fields.some((f) => f.fieldname === "no_of_positions"),
+      ),
     );
   }, [config]);
 
   const addQualification = () => {
     const mandatoryField = qualificationFields.find(
-      (f: any) => f.fieldname === "mandatory"
+      (f: any) => f.fieldname === "mandatory",
     );
     const firstOption = ((mandatoryField?.options as string) || "")
       .split("\n")
@@ -1251,7 +1701,11 @@ loading: false, title: "", source: "", html: ""
     });
   };
 
-  const updateQualificationField = (index: number, field: string, value: any) => {
+  const updateQualificationField = (
+    index: number,
+    field: string,
+    value: any,
+  ) => {
     setFormData((prev: any) => {
       const quals = [...(prev.custom_qualifications || [])];
       if (!quals[index]) return prev;
@@ -1265,10 +1719,11 @@ loading: false, title: "", source: "", html: ""
     const errors: string[] = [];
     const currentTabConfig = config.tabs[currentTab];
     const data = formDataRef.current as any;
-    
-    currentTabConfig.sections.forEach(section => {
-      section.fields.forEach(field => {
-        if (field.depends_on && !evalDependsOn(field.depends_on, false, data)) return;
+
+    currentTabConfig.sections.forEach((section) => {
+      section.fields.forEach((field) => {
+        if (field.depends_on && !evalDependsOn(field.depends_on, false, data))
+          return;
 
         const isRequired =
           Boolean(field.is_mandatory) ||
@@ -1283,15 +1738,27 @@ loading: false, title: "", source: "", html: ""
       });
     });
 
+    if (currentTab === salaryTabIndex) {
+      errors.push(...validateSalaryRange(config, data));
+    }
+
     if (/position/i.test(currentTabConfig.tab) && hasPositionCounts) {
       const total = Number(data.number_of_positions) || 0;
       const newPositions = Number(data.number_of_new_positions) || 0;
-      const replacementPositions = Number(data.number_of_replacement_positions) || 0;
+      const replacementPositions =
+        Number(data.number_of_replacement_positions) || 0;
       const positions = Array.isArray(data.positions) ? data.positions : [];
 
       if (total < 1) errors.push("No of. Positions must be at least 1.");
+      if (maxPositions && total > maxPositions) {
+        errors.push(
+          `No of. Positions cannot exceed ${maxPositions} — the maximum allowed per requisition.`,
+        );
+      }
       if (newPositions + replacementPositions !== total) {
-        errors.push("New and Replacement positions must equal No of. Positions.");
+        errors.push(
+          "New and Replacement positions must equal No of. Positions.",
+        );
       }
       if (positions.length !== total) {
         errors.push("Vacancy Details must contain one row for every position.");
@@ -1306,7 +1773,7 @@ loading: false, title: "", source: "", html: ""
           // filled — at least one allocation row with content, and every filled
           // row must complete each mandatory nested column.
           const mandatoryNested = (field.nested_fields || []).filter(
-            (nestedField) => Boolean(nestedField.is_mandatory)
+            (nestedField) => Boolean(nestedField.is_mandatory),
           );
           if (mandatoryNested.length === 0) return;
           const isFilled = (v: any) =>
@@ -1319,11 +1786,11 @@ loading: false, title: "", source: "", html: ""
               (allocation: any) =>
                 allocation &&
                 typeof allocation === "object" &&
-                Object.values(allocation).some((v) => isFilled(v))
+                Object.values(allocation).some((v) => isFilled(v)),
             );
             if (filledAllocations.length === 0) {
               errors.push(
-                `Position ${index + 1}: ${field.label || field.fieldname} is required.`
+                `Position ${index + 1}: ${field.label || field.fieldname} is required.`,
               );
               return;
             }
@@ -1332,7 +1799,7 @@ loading: false, title: "", source: "", html: ""
                 const value = allocation[nestedField.fieldname];
                 if (!isFilled(value)) {
                   errors.push(
-                    `Position ${index + 1} (Allocation ${allocIndex + 1}): ${nestedField.label || nestedField.fieldname} is required.`
+                    `Position ${index + 1} (Allocation ${allocIndex + 1}): ${nestedField.label || nestedField.fieldname} is required.`,
                   );
                 }
               });
@@ -1347,16 +1814,27 @@ loading: false, title: "", source: "", html: ""
         positions.forEach((position: any, index: number) => {
           // Hidden on this row (e.g. a Replacement-only column on a New row)
           // is never required.
-          if (field.depends_on && !evalDependsOn(field.depends_on, true, data, position)) return;
+          if (
+            field.depends_on &&
+            !evalDependsOn(field.depends_on, true, data, position)
+          )
+            return;
           const isRequired =
             Boolean(field.is_mandatory) ||
             evalDependsOn(field.mandatory_depends_on, true, data, position);
           if (!isRequired) return;
           if (isBlankValue(position[field.fieldname])) {
-            errors.push(`Position ${index + 1}: ${field.label || field.fieldname} is required.`);
+            errors.push(
+              `Position ${index + 1}: ${field.label || field.fieldname} is required.`,
+            );
           }
         });
       });
+
+      // Each position's allocation percentages must add up to exactly 100%
+      // (and never name the same cost center twice). Reported per position row
+      // so the toast points at the row that needs fixing.
+      errors.push(...validateAllocationTotals(positions, allocationTables));
     }
 
     // Other Details: validate Qualifications rows — config-gated on the child
@@ -1369,7 +1847,7 @@ loading: false, title: "", source: "", html: ""
           const value = q?.[field.fieldname];
           if (value === undefined || value === null || value === "") {
             errors.push(
-              `Qualification ${i + 1}: ${field.label || field.fieldname} is required.`
+              `Qualification ${i + 1}: ${field.label || field.fieldname} is required.`,
             );
           }
         });
@@ -1386,7 +1864,11 @@ loading: false, title: "", source: "", html: ""
   const reportValidationErrors = (errors: string[]) => {
     setValidationErrors(errors);
     if (formInstanceRef.current) {
-      formInstanceRef.current.checkValidity(formSubmission.data, true, formSubmission.data);
+      formInstanceRef.current.checkValidity(
+        formSubmission.data,
+        true,
+        formSubmission.data,
+      );
     }
 
     const shown = errors.slice(0, MAX_TOASTED_ERRORS);
@@ -1397,11 +1879,13 @@ loading: false, title: "", source: "", html: ""
         ...shown.map((message) => `• ${message}`),
         ...(hidden > 0 ? [`• +${hidden} more`] : []),
       ].join("\n"),
-      { style: { whiteSpace: "pre-line", maxWidth: "420px" }, duration: 6000 }
+      { style: { whiteSpace: "pre-line", maxWidth: "420px" }, duration: 6000 },
     );
 
     setTimeout(() => {
-      const firstError = document.querySelector('.formio-error-wrapper, .has-error, .required-field');
+      const firstError = document.querySelector(
+        ".formio-error-wrapper, .has-error, .required-field",
+      );
       if (firstError) {
         firstError.scrollIntoView({ behavior: "smooth", block: "center" });
       } else {
@@ -1419,14 +1903,14 @@ loading: false, title: "", source: "", html: ""
 
     setValidationErrors([]);
     setCurrentTab((prev) => Math.min(prev + 1, steps.length - 1));
-    setFormSyncTick(t => t + 1);
+    setFormSyncTick((t) => t + 1);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handlePrevious = () => {
     setValidationErrors([]);
     setCurrentTab((prev) => Math.max(prev - 1, 0));
-    setFormSyncTick(t => t + 1);
+    setFormSyncTick((t) => t + 1);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -1439,71 +1923,112 @@ loading: false, title: "", source: "", html: ""
         return;
       }
     }
-    
+
     setValidationErrors([]);
     setCurrentTab(idx);
-    setFormSyncTick(t => t + 1);
+    setFormSyncTick((t) => t + 1);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handlePreviewJobDetails = async () => {
     const currentData = formDataRef.current;
-    const designation = currentData.designation_title || currentData.designation;
+    const designation =
+      currentData.designation_title || currentData.designation;
     const department = currentData.department_title || currentData.department;
-    const functional_area = currentData.functional_area_title || currentData.functional_area;
+    const functional_area =
+      currentData.functional_area_title || currentData.functional_area;
 
     if (!designation || !department) {
       toast.error("Please select Designation and Department first.");
       return;
     }
 
-    const escapeHtml = (s: any) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c] as string));
+    const escapeHtml = (s: any) =>
+      String(s).replace(
+        /[&<>"']/g,
+        (c) =>
+          ({
+            "&": "&amp;",
+            "<": "&lt;",
+            ">": "&gt;",
+            '"': "&quot;",
+            "'": "&#39;",
+          })[c] as string,
+      );
 
     setJobDetailsPreview({ loading: true, title: "", source: "", html: "" });
     setJobDetailsPreviewOpen(true);
 
     try {
       const payload: Record<string, any> = {};
-      config?.tabs.forEach(tab => tab.sections.forEach(section => section.fields.forEach(f => {
-        if (currentData[formKey(f.fieldname)] !== undefined) {
-          payload[f.fieldname] = currentData[formKey(f.fieldname)];
-        }
-      })));
-      
-      const res: any = await FrappeAPI.callMethod("recruitment.api.job_requisition.preview_job_description", {
-        designation, department, functional_area, data: payload
-      });
+      config?.tabs.forEach((tab) =>
+        tab.sections.forEach((section) =>
+          section.fields.forEach((f) => {
+            if (currentData[formKey(f.fieldname)] !== undefined) {
+              payload[f.fieldname] = currentData[formKey(f.fieldname)];
+            }
+          }),
+        ),
+      );
+
+      const res: any = await FrappeAPI.callMethod(
+        "recruitment.api.job_requisition.preview_job_description",
+        {
+          designation,
+          department,
+          functional_area,
+          data: payload,
+        },
+      );
 
       const jd = res?.data ?? res ?? {};
       const html = jd?.description_html || jd?.description || "";
       const noJd = jd?.source === "none" || !html;
 
-      setJobDetailsPreview(prev => ({
+      setJobDetailsPreview((prev) => ({
         ...prev,
         loading: false,
         title: jd?.title || jd?.name || "",
         source: jd?.source || "",
-        html: noJd ? `<p style="color:#6b7280;text-align:center;padding:32px 0;">No job description found for <strong>${escapeHtml(designation)}</strong> in <strong>${escapeHtml(department)}</strong>.</p>` : html,
+        html: noJd
+          ? `<p style="color:#6b7280;text-align:center;padding:32px 0;">No job description found for <strong>${escapeHtml(designation)}</strong> in <strong>${escapeHtml(department)}</strong>.</p>`
+          : html,
       }));
     } catch (err) {
       console.error(err);
-      setJobDetailsPreview(prev => ({
+      setJobDetailsPreview((prev) => ({
         ...prev,
         loading: false,
-        html: `<p style="color:#ef4444;text-align:center;padding:32px 0;">Failed to load job description.</p>`
+        html: `<p style="color:#ef4444;text-align:center;padding:32px 0;">Failed to load job description.</p>`,
       }));
     }
   };
 
   const handleSubmit = async () => {
+    // The position step gates this on the way through, but a row can still be
+    // edited after the fact — never submit allocations that don't total 100%.
+    // Same for the salary band: the timeframe can be changed after the salary
+    // figures were entered against a different one.
+    const submitErrors = [
+      ...validateAllocationTotals(
+        (formDataRef.current as any).positions,
+        allocationTables,
+      ),
+      ...validateSalaryRange(config, formDataRef.current as any),
+    ];
+    if (submitErrors.length > 0) {
+      reportValidationErrors(submitErrors);
+      return;
+    }
+
     setIsBusy(true);
     try {
       const payload: Record<string, any> = {};
-      
+
       // Collect all configured fields
-      config?.tabs.forEach(tab => {
-        tab.sections.forEach(section => {
-          section.fields.forEach(field => {
+      config?.tabs.forEach((tab) => {
+        tab.sections.forEach((section) => {
+          section.fields.forEach((field) => {
             const k = formKey(field.fieldname);
             if (formData[k] !== undefined) {
               payload[field.fieldname] = formData[k];
@@ -1511,7 +2036,7 @@ loading: false, title: "", source: "", html: ""
           });
         });
       });
-      
+
       // Standard mappings for API
       payload.requested_by = formData.hiring_manager;
       payload.company = formData.company;
@@ -1531,25 +2056,35 @@ loading: false, title: "", source: "", html: ""
         }));
 
       payload.custom_salary_range_currency = formData.salary_currency;
-      payload.custom_salary_range_min = formData.salary_min;
-      payload.custom_salary_range_max = formData.salary_max;
+      payload.custom_salary_range_min = parseSalaryInput(formData.salary_min);
+      payload.custom_salary_range_max = parseSalaryInput(formData.salary_max);
       payload.custom_salary_timeframe = formData.salary_timeframe;
       payload.custom_position_details = (formData.positions || []).map(
-        ({ position_number: _positionNumber, cost_center_allocations, ...position }: Record<string, any>) => ({
-          ...Object.fromEntries(Object.entries(position).filter(([key]) => !key.endsWith("_title"))),
+        ({
+          position_number: _positionNumber,
+          cost_center_allocations,
+          ...position
+        }: Record<string, any>) => ({
+          ...Object.fromEntries(
+            Object.entries(position).filter(([key]) => !key.endsWith("_title")),
+          ),
           ...(Array.isArray(cost_center_allocations)
             ? {
-                cost_center_allocations: cost_center_allocations.map((allocation: any) => ({
-                  cost_center: allocation.cost_center,
-                  percentage: allocation.percentage,
-                })),
+                cost_center_allocations: cost_center_allocations.map(
+                  (allocation: any) => ({
+                    cost_center: allocation.cost_center,
+                    percentage: allocation.percentage,
+                  }),
+                ),
               }
             : {}),
-        })
+        }),
       );
 
-      await createJobRequisition.mutateAsync(payload as any);
-      toast.success("Job Requisition created successfully!");
+      const response = await createJobRequisition.mutateAsync(payload as any);
+      // Longer than the default: the toast now carries a row per requisition,
+      // and it has to survive the navigation to the list.
+      toast.success(createdRequisitionsToast(response), { duration: 8000 });
       navigate("/webapp/recruitment/requisition");
     } catch (err: any) {
       console.error("Submit failed:", err);
@@ -1562,14 +2097,21 @@ loading: false, title: "", source: "", html: ""
   useEffect(() => {
     if (!tabBarRef.current) return;
     const activeBtn = tabBarRef.current.querySelector('[data-active="true"]');
-    if (activeBtn) activeBtn.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+    if (activeBtn)
+      activeBtn.scrollIntoView({
+        behavior: "smooth",
+        block: "nearest",
+        inline: "center",
+      });
   }, [currentTab]);
 
   if (configLoading) {
     return (
       <div className="min-h-[60vh] flex flex-col items-center justify-center gap-3">
         <Loader2 size={32} className="animate-spin text-primary-500" />
-        <span className="text-sm text-gray-500">Loading form configuration...</span>
+        <span className="text-sm text-gray-500">
+          Loading form configuration...
+        </span>
       </div>
     );
   }
@@ -1578,18 +2120,33 @@ loading: false, title: "", source: "", html: ""
     return (
       <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4 p-6">
         <AlertCircle size={40} className="text-red-400" />
-        <p className="text-gray-600 text-center">{configError || "Unable to load form."}</p>
-        <Button variant="outline" onClick={() => window.location.reload()} size="md">Retry</Button>
+        <p className="text-gray-600 text-center">
+          {configError || "Unable to load form."}
+        </p>
+        <Button
+          variant="outline"
+          onClick={() => window.location.reload()}
+          size="md"
+        >
+          Retry
+        </Button>
       </div>
     );
   }
 
   return (
-    <div className="w-full max-w-5xl mx-auto px-4 py-6 md:py-8" data-testid="formioContainer">
+    <div
+      className="w-full max-w-5xl mx-auto px-4 py-6 md:py-8"
+      data-testid="formioContainer"
+    >
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-xl md:text-2xl font-semibold text-gray-900">Raise Job Requisition</h1>
-          <p className="text-sm text-gray-500 mt-1">Fill in the details using dynamic Form.io renderer</p>
+          <h1 className="text-xl md:text-2xl font-semibold text-gray-900">
+            Raise Job Requisition
+          </h1>
+          <p className="text-sm text-gray-500 mt-1">
+            Fill in the details using dynamic Form.io renderer
+          </p>
         </div>
         <button
           onClick={() => navigate("/webapp/recruitment/requisition")}
@@ -1604,7 +2161,9 @@ loading: false, title: "", source: "", html: ""
           <div className="flex items-start gap-2">
             <AlertCircle size={18} className="text-red-500 mt-0.5 shrink-0" />
             <div>
-              <p className="text-sm font-medium text-red-800 mb-1">Please fix the following errors:</p>
+              <p className="text-sm font-medium text-red-800 mb-1">
+                Please fix the following errors:
+              </p>
               <ul className="list-disc list-inside text-sm text-red-700 space-y-0.5">
                 {validationErrors.map((err, i) => (
                   <li key={i}>{err}</li>
@@ -1616,7 +2175,10 @@ loading: false, title: "", source: "", html: ""
       )}
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-100">
-        <div ref={tabBarRef} className="flex overflow-x-auto border-b border-gray-200 scrollbar-hide">
+        <div
+          ref={tabBarRef}
+          className="flex overflow-x-auto border-b border-gray-200 scrollbar-hide"
+        >
           {steps.map((step, idx) => {
             const isActive = idx === currentTab;
             const isPast = idx < currentTab;
@@ -1630,14 +2192,18 @@ loading: false, title: "", source: "", html: ""
                   isActive
                     ? "text-primary-500 border-b-2 border-primary-500"
                     : isPast
-                    ? "text-gray-700 hover:text-primary-500"
-                    : "text-gray-400 hover:text-gray-600"
+                      ? "text-gray-700 hover:text-primary-500"
+                      : "text-gray-400 hover:text-gray-600"
                 }`}
               >
                 <span className="inline-flex items-center gap-1.5">
                   <span
                     className={`w-5 h-5 rounded-full text-xs flex items-center justify-center font-semibold ${
-                      isActive ? "bg-primary-500 text-white" : isPast ? "bg-green-100 text-green-600" : "bg-gray-100 text-gray-400"
+                      isActive
+                        ? "bg-primary-500 text-white"
+                        : isPast
+                          ? "bg-green-100 text-green-600"
+                          : "bg-gray-100 text-gray-400"
                     }`}
                   >
                     {isPast ? <Check size={12} /> : idx + 1}
@@ -1665,68 +2231,115 @@ loading: false, title: "", source: "", html: ""
               <h2 className="text-lg font-semibold text-gray-800 mb-6">
                 {steps[currentTab]}
               </h2>
-              {/position/i.test(steps[currentTab] || "") && hasPositionCounts && (
-                <div className="mb-6 rounded-lg border border-gray-200 bg-gray-50 p-4">
-                  <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                    <div>
-                      <label className="mb-1 block text-sm font-medium text-gray-700">
-                        No of. Positions <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="number"
-                        min={1}
-                        value={positionCountValue("number_of_positions")}
-                        onChange={(event) =>
-                          handlePositionCountChange("number_of_positions", event.target.value)
-                        }
-                        onBlur={() => commitPositionCount("number_of_positions")}
-                        className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
-                      />
-                    </div>
-                    {Number(formData.number_of_positions) > 0 && (
-                      <>
-                        <div>
-                          <label className="mb-1 block text-sm font-medium text-gray-700">New</label>
-                          <input
-                            type="number"
-                            min={0}
-                            max={formData.number_of_positions}
-                            value={positionCountValue("number_of_new_positions")}
-                            onChange={(event) =>
-                              handlePositionCountChange("number_of_new_positions", event.target.value)
-                            }
-                            onBlur={() => commitPositionCount("number_of_new_positions")}
-                            className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
-                          />
-                        </div>
-                        <div>
-                          <label className="mb-1 block text-sm font-medium text-gray-700">Replacement</label>
-                          <input
-                            type="number"
-                            min={0}
-                            max={formData.number_of_positions}
-                            value={positionCountValue("number_of_replacement_positions")}
-                            onChange={(event) =>
-                              handlePositionCountChange("number_of_replacement_positions", event.target.value)
-                            }
-                            onBlur={() => commitPositionCount("number_of_replacement_positions")}
-                            className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
-                          />
-                        </div>
-                      </>
-                    )}
-                  </div>
+              {currentTab === salaryTabIndex && activeSalaryLimit && (
+                <div className="mb-4 flex items-start gap-2 rounded-md border border-blue-200 bg-blue-50 px-3 py-2.5 text-sm text-blue-800">
+                  <i className="fa fa-info-circle mt-0.5 text-blue-500" />
+                  <span>
+                    A <strong>{String(formData.salary_timeframe)}</strong> salary
+                    must be {describeSalaryLimit(activeSalaryLimit)}
+                    {formData.salary_currency ? ` ${formData.salary_currency}` : ""}.
+                  </span>
                 </div>
               )}
-              <div ref={formContainerRef} className="relative">
-                {/job details/i.test(steps[currentTab] || "") && jdSource === "none" && (
-                  <div className="mb-4 flex items-center gap-2 p-3 bg-yellow-50 border border-yellow-400 rounded-lg text-yellow-800 text-sm">
-                    <i className="fa fa-exclamation-triangle text-yellow-600 text-base flex-shrink-0" />
-                    <span>
-                      There is no Job Description tagged to this designation. Please contact your HR Admin to configure the Job Description.
-                    </span>
+              {/position/i.test(steps[currentTab] || "") &&
+                hasPositionCounts && (
+                  <div className="mb-6 rounded-lg border border-gray-200 bg-gray-50 p-4">
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                      <div>
+                        <label className="mb-1 block text-sm font-medium text-gray-700">
+                          No of. Positions{" "}
+                          <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          type="number"
+                          min={1}
+                          max={maxPositions ?? undefined}
+                          value={positionCountValue("number_of_positions")}
+                          onChange={(event) =>
+                            handlePositionCountChange(
+                              "number_of_positions",
+                              event.target.value,
+                            )
+                          }
+                          onBlur={() =>
+                            commitPositionCount("number_of_positions")
+                          }
+                          className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+                        />
+                        {maxPositions && (
+                          <p className="mt-1 text-xs text-gray-500">
+                            Maximum {maxPositions} position
+                            {maxPositions === 1 ? "" : "s"} per requisition.
+                          </p>
+                        )}
+                      </div>
+                      {Number(formData.number_of_positions) > 0 && (
+                        <>
+                          <div>
+                            <label className="mb-1 block text-sm font-medium text-gray-700">
+                              New
+                            </label>
+                            <input
+                              type="number"
+                              min={0}
+                              max={formData.number_of_positions}
+                              value={positionCountValue(
+                                "number_of_new_positions",
+                              )}
+                              onChange={(event) =>
+                                handlePositionCountChange(
+                                  "number_of_new_positions",
+                                  event.target.value,
+                                )
+                              }
+                              onBlur={() =>
+                                commitPositionCount("number_of_new_positions")
+                              }
+                              className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+                            />
+                          </div>
+                          <div>
+                            <label className="mb-1 block text-sm font-medium text-gray-700">
+                              Replacement
+                            </label>
+                            <input
+                              type="number"
+                              min={0}
+                              max={formData.number_of_positions}
+                              value={positionCountValue(
+                                "number_of_replacement_positions",
+                              )}
+                              onChange={(event) =>
+                                handlePositionCountChange(
+                                  "number_of_replacement_positions",
+                                  event.target.value,
+                                )
+                              }
+                              onBlur={() =>
+                                commitPositionCount(
+                                  "number_of_replacement_positions",
+                                )
+                              }
+                              className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+                            />
+                          </div>
+                        </>
+                      )}
+                    </div>
                   </div>
                 )}
+              <div ref={formContainerRef} className="relative">
+                {/job details/i.test(steps[currentTab] || "") &&
+                  jdSource === "none" && (
+                    <div className="mb-4 flex items-center gap-2 p-3 bg-yellow-50 border border-yellow-400 rounded-lg text-yellow-800 text-sm">
+                      <i className="fa fa-exclamation-triangle text-yellow-600 text-base flex-shrink-0" />
+                      <span>
+                        There is no Job Description tagged to this designation.
+                        Please contact your HR Admin to configure the Job
+                        Description.
+                      </span>
+                    </div>
+                  )}
                 <Form
                   form={schemas[currentTab]}
                   submission={formSubmission}
@@ -1740,104 +2353,137 @@ loading: false, title: "", source: "", html: ""
                   containerRef={formContainerRef}
                   resolveEmployeeId={resolveEmployeeId}
                 />
-                {/position/i.test(steps[currentTab] || "") && hasPositionCounts && (
-                  <>
-                    <PositionColumnCopyButtons
-                      containerRef={formContainerRef}
-                      onCopyColumn={copyColumnToAllPositions}
-                      getPositions={() => formDataRef.current.positions || []}
-                    />
-                    {(() => {
-                      const positions: any[] = formDataRef.current.positions || [];
-                      const total = positions.length;
-                      const newCount = positions.filter((p) => p?.vacancy_type === "New").length;
-                      const replacementCount = positions.filter(
-                        (p) => p?.vacancy_type === "Replacement"
-                      ).length;
-                      return (
-                        <div className="mt-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3 px-4 py-2 border rounded-md bg-gray-50 text-sm">
-                          <div className="flex items-center gap-4 flex-wrap">
-                            <span className="font-semibold text-gray-800">
-                              {total} Total positions
-                            </span>
-                            <span className="flex items-center gap-1 text-gray-700">
-                              <span className="w-2 h-2 rounded-full bg-green-500"></span>
-                              <span className="font-semibold">{newCount}</span>
-                              <span className="text-gray-500">New</span>
-                            </span>
-                            <span className="flex items-center gap-1 text-gray-700">
-                              <span className="w-2 h-2 rounded-full bg-orange-500"></span>
-                              <span className="font-semibold">{replacementCount}</span>
-                              <span className="text-gray-500">Replacement</span>
-                            </span>
+                {/position/i.test(steps[currentTab] || "") &&
+                  hasPositionCounts && (
+                    <>
+                      <PositionColumnCopyButtons
+                        containerRef={formContainerRef}
+                        onCopyColumn={copyColumnToAllPositions}
+                        getPositions={() => formDataRef.current.positions || []}
+                      />
+                      {(() => {
+                        const positions: any[] =
+                          formDataRef.current.positions || [];
+                        const total = positions.length;
+                        const newCount = positions.filter(
+                          (p) => p?.vacancy_type === "New",
+                        ).length;
+                        const replacementCount = positions.filter(
+                          (p) => p?.vacancy_type === "Replacement",
+                        ).length;
+                        return (
+                          <div className="mt-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3 px-4 py-2 border rounded-md bg-gray-50 text-sm">
+                            <div className="flex items-center gap-4 flex-wrap">
+                              <span className="font-semibold text-gray-800">
+                                {total} Total positions
+                              </span>
+                              <span className="flex items-center gap-1 text-gray-700">
+                                <span className="w-2 h-2 rounded-full bg-green-500"></span>
+                                <span className="font-semibold">
+                                  {newCount}
+                                </span>
+                                <span className="text-gray-500">New</span>
+                              </span>
+                              <span className="flex items-center gap-1 text-gray-700">
+                                <span className="w-2 h-2 rounded-full bg-orange-500"></span>
+                                <span className="font-semibold">
+                                  {replacementCount}
+                                </span>
+                                <span className="text-gray-500">
+                                  Replacement
+                                </span>
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="text-gray-500 text-xs uppercase tracking-wide">
+                                Set all to
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => setAllVacancyType("New")}
+                                disabled={total === 0}
+                                className="flex items-center gap-1 px-3 py-1 border border-green-500 text-green-700 rounded-lg text-xs hover:bg-green-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                              >
+                                <span className="w-2 h-2 rounded-full bg-green-500"></span>
+                                New
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setAllVacancyType("Replacement")}
+                                disabled={total === 0}
+                                className="flex items-center gap-1 px-3 py-1 border border-orange-500 text-orange-700 rounded-lg text-xs hover:bg-orange-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                              >
+                                <span className="w-2 h-2 rounded-full bg-orange-500"></span>
+                                Replacement
+                              </button>
+                            </div>
                           </div>
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <span className="text-gray-500 text-xs uppercase tracking-wide">
-                              Set all to
-                            </span>
-                            <button
-                              type="button"
-                              onClick={() => setAllVacancyType("New")}
-                              disabled={total === 0}
-                              className="flex items-center gap-1 px-3 py-1 border border-green-500 text-green-700 rounded-lg text-xs hover:bg-green-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                              <span className="w-2 h-2 rounded-full bg-green-500"></span>
-                              New
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setAllVacancyType("Replacement")}
-                              disabled={total === 0}
-                              className="flex items-center gap-1 px-3 py-1 border border-orange-500 text-orange-700 rounded-lg text-xs hover:bg-orange-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                              <span className="w-2 h-2 rounded-full bg-orange-500"></span>
-                              Replacement
-                            </button>
-                          </div>
-                        </div>
-                      );
-                    })()}
-                  </>
-                )}
+                        );
+                      })()}
+                    </>
+                  )}
 
-                {/other details/i.test(steps[currentTab] || "") && hasQualifications && (
-                  <div className="mt-6">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Qualifications
-                    </label>
-                    <div className="overflow-x-auto border rounded-md">
-                      <table className="min-w-full text-sm">
-                        <thead className="bg-gray-50 text-gray-700">
-                          <tr>
-                            {qualificationFields.map((field: any) => (
-                              <th key={field.fieldname} className="text-left font-medium px-3 py-2 border-b">
-                                {field.label}
-                                {Boolean(field.is_mandatory) && (
-                                  <span className="text-red-500 ml-0.5">*</span>
-                                )}
-                              </th>
-                            ))}
-                            <th className="px-3 py-2 border-b w-10"></th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {((formData as any).custom_qualifications || []).length === 0 && (
+                {/other details/i.test(steps[currentTab] || "") &&
+                  hasQualifications && (
+                    <div className="mt-6">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Qualifications
+                      </label>
+                      <div className="overflow-x-auto border rounded-md">
+                        <table className="min-w-full text-sm">
+                          <thead className="bg-gray-50 text-gray-700">
                             <tr>
-                              <td colSpan={qualificationFields.length + 1} className="text-center text-gray-400 px-3 py-4">
-                                No qualifications added yet.
-                              </td>
+                              {qualificationFields.map((field: any) => (
+                                <th
+                                  key={field.fieldname}
+                                  className="text-left font-medium px-3 py-2 border-b"
+                                >
+                                  {field.label}
+                                  {Boolean(field.is_mandatory) && (
+                                    <span className="text-red-500 ml-0.5">
+                                      *
+                                    </span>
+                                  )}
+                                </th>
+                              ))}
+                              <th className="px-3 py-2 border-b w-10"></th>
                             </tr>
-                          )}
-                          {((formData as any).custom_qualifications || []).map(
-                            (qualification: any, index: number) => (
-                              <tr key={index} className="border-b last:border-b-0 align-top">
+                          </thead>
+                          <tbody>
+                            {((formData as any).custom_qualifications || [])
+                              .length === 0 && (
+                              <tr>
+                                <td
+                                  colSpan={qualificationFields.length + 1}
+                                  className="text-center text-gray-400 px-3 py-4"
+                                >
+                                  No qualifications added yet.
+                                </td>
+                              </tr>
+                            )}
+                            {(
+                              (formData as any).custom_qualifications || []
+                            ).map((qualification: any, index: number) => (
+                              <tr
+                                key={index}
+                                className="border-b last:border-b-0 align-top"
+                              >
                                 {qualificationFields.map((field: any) => (
-                                  <td key={field.fieldname} className="px-3 py-2">
+                                  <td
+                                    key={field.fieldname}
+                                    className="px-3 py-2"
+                                  >
                                     {field.fieldtype === "Select" ? (
                                       <select
-                                        value={qualification?.[field.fieldname] || ""}
+                                        value={
+                                          qualification?.[field.fieldname] || ""
+                                        }
                                         onChange={(e) =>
-                                          updateQualificationField(index, field.fieldname, e.target.value)
+                                          updateQualificationField(
+                                            index,
+                                            field.fieldname,
+                                            e.target.value,
+                                          )
                                         }
                                         className="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-primary-500"
                                       >
@@ -1854,9 +2500,15 @@ loading: false, title: "", source: "", html: ""
                                     ) : (
                                       <input
                                         type="text"
-                                        value={qualification?.[field.fieldname] || ""}
+                                        value={
+                                          qualification?.[field.fieldname] || ""
+                                        }
                                         onChange={(e) =>
-                                          updateQualificationField(index, field.fieldname, e.target.value)
+                                          updateQualificationField(
+                                            index,
+                                            field.fieldname,
+                                            e.target.value,
+                                          )
                                         }
                                         placeholder={`Enter ${(field.label || field.fieldname).toLowerCase()}`}
                                         className="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-primary-500"
@@ -1875,22 +2527,21 @@ loading: false, title: "", source: "", html: ""
                                   </button>
                                 </td>
                               </tr>
-                            )
-                          )}
-                        </tbody>
-                      </table>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                      <div className="mt-2">
+                        <button
+                          type="button"
+                          onClick={addQualification}
+                          className="px-3 py-1.5 border border-gray-300 rounded text-sm text-gray-700 hover:bg-gray-50 transition"
+                        >
+                          + Add Qualification
+                        </button>
+                      </div>
                     </div>
-                    <div className="mt-2">
-                      <button
-                        type="button"
-                        onClick={addQualification}
-                        className="px-3 py-1.5 border border-gray-300 rounded text-sm text-gray-700 hover:bg-gray-50 transition"
-                      >
-                        + Add Qualification
-                      </button>
-                    </div>
-                  </div>
-                )}
+                  )}
 
                 {/other details/i.test(steps[currentTab] || "") && (
                   <div className="mt-6">
@@ -1901,118 +2552,161 @@ loading: false, title: "", source: "", html: ""
                       <table className="min-w-full text-sm">
                         <thead className="bg-gray-50 text-gray-700">
                           <tr>
-                            <th className="text-left font-medium px-3 py-2 border-b">Candidate Name</th>
-                            <th className="text-left font-medium px-3 py-2 border-b">Email</th>
-                            <th className="text-left font-medium px-3 py-2 border-b">Phone</th>
-                            <th className="text-left font-medium px-3 py-2 border-b">Attachment</th>
-                            <th className="text-left font-medium px-3 py-2 border-b">Offer Directly?</th>
+                            <th className="text-left font-medium px-3 py-2 border-b">
+                              Candidate Name
+                            </th>
+                            <th className="text-left font-medium px-3 py-2 border-b">
+                              Email
+                            </th>
+                            <th className="text-left font-medium px-3 py-2 border-b">
+                              Phone
+                            </th>
+                            <th className="text-left font-medium px-3 py-2 border-b">
+                              Attachment
+                            </th>
+                            <th className="text-left font-medium px-3 py-2 border-b">
+                              Offer Directly?
+                            </th>
                             <th className="px-3 py-2 border-b w-10"></th>
                           </tr>
                         </thead>
                         <tbody>
-                          {((formData as any).custom_pre_screened_candidates || []).length === 0 && (
+                          {(
+                            (formData as any).custom_pre_screened_candidates ||
+                            []
+                          ).length === 0 && (
                             <tr>
-                              <td colSpan={6} className="text-center text-gray-400 px-3 py-4">
+                              <td
+                                colSpan={6}
+                                className="text-center text-gray-400 px-3 py-4"
+                              >
                                 No candidates added yet.
                               </td>
                             </tr>
                           )}
-                          {((formData as any).custom_pre_screened_candidates || []).map(
-                            (candidate: any, index: number) => (
-                              <tr key={index} className="border-b last:border-b-0 align-top">
-                                <td className="px-3 py-2">
-                                  <input
-                                    type="text"
-                                    value={candidate?.candidate_name || ""}
-                                    onChange={(e) =>
-                                      updateCandidateField(index, "candidate_name", e.target.value)
-                                    }
-                                    placeholder="e.g., Maya Krishnan"
-                                    className="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-primary-500"
-                                  />
-                                </td>
-                                <td className="px-3 py-2">
-                                  <input
-                                    type="email"
-                                    value={candidate?.email || ""}
-                                    onChange={(e) =>
-                                      updateCandidateField(index, "email", e.target.value)
-                                    }
-                                    placeholder="e.g., candidate@email.com"
-                                    className="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-primary-500"
-                                  />
-                                </td>
-                                <td className="px-3 py-2">
-                                  <input
-                                    type="text"
-                                    value={candidate?.phone || ""}
-                                    onChange={(e) =>
-                                      updateCandidateField(index, "phone", e.target.value)
-                                    }
-                                    placeholder="e.g., +91..."
-                                    className="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-primary-500"
-                                  />
-                                </td>
-                                <td className="px-3 py-2">
-                                  <div className="flex flex-col gap-1">
-                                    <label className="flex items-center gap-2 border-2 border-dashed border-gray-300 px-2 py-1 cursor-pointer hover:border-gray-500 transition rounded">
-                                      <span className="text-gray-500 text-lg shrink-0">
-                                        <IoMdCloudUpload />
-                                      </span>
-                                      <span
-                                        title={candidateFileNames[index] || candidate?.cv}
-                                        className="flex-1 min-w-0 overflow-hidden whitespace-nowrap text-ellipsis text-xs text-gray-700"
-                                      >
-                                        {candidateFileNames[index] ||
-                                          candidate?.cv ||
-                                          "Upload file"}
-                                      </span>
-                                      <input
-                                        type="file"
-                                        accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-                                        onChange={(e) => {
-                                          const file = e.target.files?.[0] || null;
-                                          if (!file) return;
-                                          handleCandidateFileUpload(index, file);
-                                          e.target.value = "";
-                                        }}
-                                        className="hidden"
-                                      />
-                                    </label>
-                                    {(candidateFileNames[index] || candidate?.cv) && (
-                                      <button
-                                        type="button"
-                                        onClick={() => handleCandidateRemoveFile(index)}
-                                        className="text-xs text-gray-500 hover:text-red-600 self-start"
-                                      >
-                                        Remove file
-                                      </button>
-                                    )}
-                                  </div>
-                                </td>
-                                <td className="px-3 py-2">
-                                  <input
-                                    type="checkbox"
-                                    checked={!!candidate?.offer_directly}
-                                    onChange={(e) =>
-                                      updateCandidateField(index, "offer_directly", e.target.checked)
-                                    }
-                                    className="w-4 h-4"
-                                  />
-                                </td>
-                                <td className="px-3 py-2 text-center">
-                                  <button
-                                    type="button"
-                                    onClick={() => removeCandidate(index)}
-                                    title="Remove candidate"
-                                    className="text-red-500 hover:text-red-700"
-                                  >
-                                    <X size={16} />
-                                  </button>
-                                </td>
-                              </tr>
-                            )
-                          )}
+                          {(
+                            (formData as any).custom_pre_screened_candidates ||
+                            []
+                          ).map((candidate: any, index: number) => (
+                            <tr
+                              key={index}
+                              className="border-b last:border-b-0 align-top"
+                            >
+                              <td className="px-3 py-2">
+                                <input
+                                  type="text"
+                                  value={candidate?.candidate_name || ""}
+                                  onChange={(e) =>
+                                    updateCandidateField(
+                                      index,
+                                      "candidate_name",
+                                      e.target.value,
+                                    )
+                                  }
+                                  placeholder="e.g., Maya Krishnan"
+                                  className="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-primary-500"
+                                />
+                              </td>
+                              <td className="px-3 py-2">
+                                <input
+                                  type="email"
+                                  value={candidate?.email || ""}
+                                  onChange={(e) =>
+                                    updateCandidateField(
+                                      index,
+                                      "email",
+                                      e.target.value,
+                                    )
+                                  }
+                                  placeholder="e.g., candidate@email.com"
+                                  className="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-primary-500"
+                                />
+                              </td>
+                              <td className="px-3 py-2">
+                                <input
+                                  type="text"
+                                  value={candidate?.phone || ""}
+                                  onChange={(e) =>
+                                    updateCandidateField(
+                                      index,
+                                      "phone",
+                                      e.target.value,
+                                    )
+                                  }
+                                  placeholder="e.g., +91..."
+                                  className="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-primary-500"
+                                />
+                              </td>
+                              <td className="px-3 py-2">
+                                <div className="flex flex-col gap-1">
+                                  <label className="flex items-center gap-2 border-2 border-dashed border-gray-300 px-2 py-1 cursor-pointer hover:border-gray-500 transition rounded">
+                                    <span className="text-gray-500 text-lg shrink-0">
+                                      <IoMdCloudUpload />
+                                    </span>
+                                    <span
+                                      title={
+                                        candidateFileNames[index] ||
+                                        candidate?.cv
+                                      }
+                                      className="flex-1 min-w-0 overflow-hidden whitespace-nowrap text-ellipsis text-xs text-gray-700"
+                                    >
+                                      {candidateFileNames[index] ||
+                                        candidate?.cv ||
+                                        "Upload file"}
+                                    </span>
+                                    <input
+                                      type="file"
+                                      accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                                      onChange={(e) => {
+                                        const file =
+                                          e.target.files?.[0] || null;
+                                        if (!file) return;
+                                        handleCandidateFileUpload(index, file);
+                                        e.target.value = "";
+                                      }}
+                                      className="hidden"
+                                    />
+                                  </label>
+                                  {(candidateFileNames[index] ||
+                                    candidate?.cv) && (
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        handleCandidateRemoveFile(index)
+                                      }
+                                      className="text-xs text-gray-500 hover:text-red-600 self-start"
+                                    >
+                                      Remove file
+                                    </button>
+                                  )}
+                                </div>
+                              </td>
+                              <td className="px-3 py-2">
+                                <input
+                                  type="checkbox"
+                                  checked={!!candidate?.offer_directly}
+                                  onChange={(e) =>
+                                    updateCandidateField(
+                                      index,
+                                      "offer_directly",
+                                      e.target.checked,
+                                    )
+                                  }
+                                  className="w-4 h-4"
+                                />
+                              </td>
+                              <td className="px-3 py-2 text-center">
+                                <button
+                                  type="button"
+                                  onClick={() => removeCandidate(index)}
+                                  title="Remove candidate"
+                                  className="text-red-500 hover:text-red-700"
+                                >
+                                  <X size={16} />
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
                         </tbody>
                       </table>
                     </div>
@@ -2041,18 +2735,24 @@ loading: false, title: "", source: "", html: ""
                       onUploaded={handleBulkResumesUploaded}
                       existingFileNames={[
                         ...Object.values(candidateFileNames),
-                        ...(((formData as any).custom_pre_screened_candidates || [])
+                        ...(
+                          (formData as any).custom_pre_screened_candidates || []
+                        )
                           .map((c: any) => c?.cv)
                           .filter(Boolean)
                           .map((url: string) => {
                             const base =
-                              url.split("?")[0].split("#")[0].split("/").pop() || "";
+                              url
+                                .split("?")[0]
+                                .split("#")[0]
+                                .split("/")
+                                .pop() || "";
                             try {
                               return decodeURIComponent(base);
                             } catch (e) {
                               return base;
                             }
-                          })),
+                          }),
                       ]}
                     />
                   </div>
@@ -2061,56 +2761,102 @@ loading: false, title: "", source: "", html: ""
             </>
           )}
 
-          {!isReviewStep && (<div className="flex justify-between mt-8 pt-6 border-t border-gray-100">
-            <Button variant="outline" onClick={handlePrevious} disabled={currentTab === 0} size="md">
-              Previous
-            </Button>
-            {isLastStep ? (
-              <Button size="md" onClick={handleSubmit} loading={isBusy} disabled={isBusy} className="px-6">
-                Submit Requisition
+          {!isReviewStep && (
+            <div className="flex justify-between mt-8 pt-6 border-t border-gray-100">
+              <Button
+                variant="outline"
+                onClick={handlePrevious}
+                disabled={currentTab === 0}
+                size="md"
+              >
+                Previous
               </Button>
-            ) : (
-              <div className="flex items-center gap-3">
-                <Button variant="outline" size="md" onClick={handlePreviewJobDetails} className="px-4 md:px-6">
-                  Preview
+              {isLastStep ? (
+                <Button
+                  size="md"
+                  onClick={handleSubmit}
+                  loading={isBusy}
+                  disabled={isBusy}
+                  className="px-6"
+                >
+                  Submit Requisition
                 </Button>
-                <Button size="md" onClick={handleNext} className="px-6">
-                  Next
-                </Button>
-              </div>
-            )}
-          </div>
+              ) : (
+                <div className="flex items-center gap-3">
+                  <Button
+                    variant="outline"
+                    size="md"
+                    onClick={handlePreviewJobDetails}
+                    className="px-4 md:px-6"
+                  >
+                    Preview
+                  </Button>
+                  <Button size="md" onClick={handleNext} className="px-6">
+                    Next
+                  </Button>
+                </div>
+              )}
+            </div>
           )}
-
         </div>
       </div>
 
       {jobDetailsPreviewOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onClick={() => setJobDetailsPreviewOpen(false)}>
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[85vh] flex flex-col" onClick={e => e.stopPropagation()}>
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
+          onClick={() => setJobDetailsPreviewOpen(false)}
+        >
+          <div
+            className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[85vh] flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex items-center justify-between px-6 py-4 border-b">
               <div>
-                <h3 className="text-lg font-semibold text-gray-800">{jobDetailsPreview.title || "Job Description Preview"}</h3>
+                <h3 className="text-lg font-semibold text-gray-800">
+                  {jobDetailsPreview.title || "Job Description Preview"}
+                </h3>
                 <p className="text-sm text-gray-500 mt-0.5">
-                  {formDataRef.current.designation_title || formDataRef.current.designation}
-                  {formDataRef.current.department || formDataRef.current.department_title ? ` · ${formDataRef.current.department_title || formDataRef.current.department}` : ""}
-                  {jobDetailsPreview.source ? ` · ${jobDetailsPreview.source}` : ""}
+                  {formDataRef.current.designation_title ||
+                    formDataRef.current.designation}
+                  {formDataRef.current.department ||
+                  formDataRef.current.department_title
+                    ? ` · ${formDataRef.current.department_title || formDataRef.current.department}`
+                    : ""}
+                  {jobDetailsPreview.source
+                    ? ` · ${jobDetailsPreview.source}`
+                    : ""}
                 </p>
               </div>
-              <button onClick={() => setJobDetailsPreviewOpen(false)} className="p-2 rounded-md hover:bg-gray-100 text-gray-500 transition"><X size={20} /></button>
+              <button
+                onClick={() => setJobDetailsPreviewOpen(false)}
+                className="p-2 rounded-md hover:bg-gray-100 text-gray-500 transition"
+              >
+                <X size={20} />
+              </button>
             </div>
             <div className="flex-1 overflow-y-auto px-6 py-5">
               {jobDetailsPreview.loading ? (
                 <div className="flex items-center justify-center py-16">
-                  <Loader2 className="animate-spin text-primary-500" size={32} />
-                  <span className="ml-3 text-gray-500 text-sm">Loading job description…</span>
+                  <Loader2
+                    className="animate-spin text-primary-500"
+                    size={32}
+                  />
+                  <span className="ml-3 text-gray-500 text-sm">
+                    Loading job description…
+                  </span>
                 </div>
               ) : (
-                <div className="prose prose-sm max-w-none text-gray-700" dangerouslySetInnerHTML={{ __html: jobDetailsPreview.html }} />
+                <div
+                  className="prose prose-sm max-w-none text-gray-700"
+                  dangerouslySetInnerHTML={{ __html: jobDetailsPreview.html }}
+                />
               )}
             </div>
             <div className="flex justify-end px-6 py-4 border-t">
-              <button onClick={() => setJobDetailsPreviewOpen(false)} className="px-4 py-2 rounded-md bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium transition">
+              <button
+                onClick={() => setJobDetailsPreviewOpen(false)}
+                className="px-4 py-2 rounded-md bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium transition"
+              >
                 Close
               </button>
             </div>

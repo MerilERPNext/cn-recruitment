@@ -190,8 +190,22 @@ export interface JobRequisitionListResponse {
   };
 }
 
+// One row per requisition the create call actually produced — the Lateral flow
+// creates one requisition per location group, so this is a list, not a single doc.
+export interface CreatedRequisitionSummary {
+  name: string;
+  location?: string;
+  regions?: string[];
+  positions_count?: number;
+  action?: string;
+}
+
 export interface CreateJobRequisitionResponse {
-  message: JobRequisition;
+  success?: boolean;
+  message?: string;
+  data?: {
+    requisitions?: CreatedRequisitionSummary[];
+  };
 }
 
 export interface RequisitionPosition {
