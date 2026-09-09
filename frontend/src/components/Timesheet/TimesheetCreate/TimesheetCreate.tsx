@@ -298,7 +298,17 @@ const TimesheetCreate: React.FC = () => {
   const hasSubmitPermission = isActionEnabled(uiPermission, "submit", "Timesheet");
   const hasCancelPermission = isActionEnabled(uiPermission, "cancel", "Timesheet");
 
-  const isGridEditable = timesheetStatus !== "Approved" && (hasSavePermission || hasSubmitPermission);
+  // Read-only only when ALL days are disabled (all approved/submitted/week-off/holiday) or timesheet is Cancelled
+  const isReadOnly = useMemo(() => {
+    if (timesheetStatus === "Cancelled") return true;
+    const allDaysDisabled = daysOfWeek.every(day => {
+      const dateKey = format(day, "yyyy-MM-dd");
+      return allDisabledDays.includes(dateKey);
+    });
+    return allDaysDisabled;
+  }, [timesheetStatus, daysOfWeek, allDisabledDays]);
+
+  const isGridEditable = !isReadOnly && (hasSavePermission || hasSubmitPermission);
 
   // Single Day Selection handlers
   const handleToggleDateSelection = (dateKey: string) => {
@@ -440,8 +450,21 @@ const TimesheetCreate: React.FC = () => {
 
     // Derive overall status from custom_timesheet_status values
     // Priority: Rejected > Pending for Approval > Approved > Draft
+    // Only set to Approved / Pending for Approval if all active/non-disabled days are approved/submitted or if there are no editable days left
+    const allDaysLockedOrDisabled = daysOfWeek.every(day => {
+      const dateKey = format(day, "yyyy-MM-dd");
+      const disabledWeekOffs = allowWeekoffTimesheet ? [] : weekOffDates;
+      const disabledHolidays = hideHolidayTimesheet ? holidayDates : [];
+      return (
+        disabledWeekOffs.includes(dateKey) ||
+        disabledHolidays.includes(dateKey) ||
+        submittedDays.includes(dateKey) ||
+        lockedDays.includes(dateKey)
+      );
+    });
+
     let derivedStatus = "Draft";
-    if (allStatuses.size > 0) {
+    if (allDaysLockedOrDisabled && allStatuses.size > 0) {
       if (allStatuses.has("Rejected")) {
         derivedStatus = "Rejected";
       } else if (allStatuses.has("Pending for Approval")) {
@@ -451,7 +474,9 @@ const TimesheetCreate: React.FC = () => {
       } else {
         derivedStatus = "Draft";
       }
-    } else if (!foundName) {
+    } else if (allStatuses.has("Rejected")) {
+      derivedStatus = "Rejected";
+    } else {
       derivedStatus = "Draft";
     }
 
@@ -940,6 +965,19 @@ const TimesheetCreate: React.FC = () => {
     const newErrors: Record<string, string> = {};
     let hasValidationError = false;
 
+    if (isSelective) {
+      // Validate that every selected day has logged hours on at least one row
+      targetDates.forEach(dateKey => {
+        const dayTotal = projectsData.reduce((sum, row) => sum + (row.days[dateKey]?.hours || 0), 0);
+        if (dayTotal <= 0) {
+          hasValidationError = true;
+          const dayDate = parseISO(dateKey);
+          const dayLabel = format(dayDate, "EEE, dd MMM");
+          newErrors[`day_${dateKey}_empty`] = `${dayLabel}: Please log hours for this selected day.`;
+        }
+      });
+    }
+
     projectsData.forEach((row, index) => {
       const rowIndex = index + 1;
       const isTaskMissing = showSubtask ? (!row.task || !row.parentTask) : !row.parentTask;
@@ -1146,15 +1184,6 @@ const TimesheetCreate: React.FC = () => {
     });
   };
 
-  // Read-only only when ALL days are disabled (all approved/submitted/week-off/holiday)
-  const isReadOnly = useMemo(() => {
-    if (timesheetStatus === "Cancelled") return true;
-    const allDaysDisabled = daysOfWeek.every(day => {
-      const dateKey = format(day, "yyyy-MM-dd");
-      return allDisabledDays.includes(dateKey);
-    });
-    return allDaysDisabled;
-  }, [timesheetStatus, daysOfWeek, allDisabledDays]);
 
   // Attachment upload simulation
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
