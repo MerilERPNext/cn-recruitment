@@ -202,6 +202,62 @@ def _switch_to_company(doc) -> None:
     _log("switch_to_company_complete", doc.name, user=company_user)
 
 
+# ── Validation ────────────────────────────────────────────────────────────────
+def _is_conversion_to_alumni(doc) -> bool:
+    """True only on the *transition* Active -> Left/Inactive (a fresh alumni
+    conversion), not on ordinary saves of an already-exited employee."""
+    new_status = doc.status or ""
+    if new_status not in EXITED_STATUSES:
+        return False
+    before = doc.get_doc_before_save()
+    old_status = (before.status if before else None) or ""
+    return old_status not in EXITED_STATUSES
+
+
+def validate_alumni_personal_email(doc, method: str | None = None) -> None:
+    """Employee ``validate`` hook: block conversion to alumni without a usable
+    personal email.
+
+    Runs *before* the save commits (and before ERPNext disables the company-email
+    User on the status change), so a failure aborts the whole transition — the
+    employee is never left with a disabled company account and no alumni login.
+
+    Only fires on the real transition into ``Left``/``Inactive``; edits to an
+    already-exited record, and non-``save`` status changes (e.g. the relieving
+    scheduler's ``db.set_value``), are not affected.
+    """
+    if not _is_conversion_to_alumni(doc):
+        return
+
+    personal = (doc.get("personal_email") or "").strip()
+    if not personal:
+        frappe.throw(
+            _("Personal Email is required before converting this employee to Alumni."),
+            title=_("Personal Email Required"),
+        )
+
+    try:
+        validate_email_address(personal, throw=True)
+    except frappe.PermissionError:
+        raise
+    except Exception:
+        frappe.throw(
+            _("Personal Email '{0}' is not a valid email address.").format(personal),
+            title=_("Invalid Personal Email"),
+        )
+
+    # A personal email identical to the company login gives no separate alumni
+    # account: ERPNext would disable that very User, leaving no way to sign in.
+    company_login = (doc.get("user_id") or "").strip()
+    company_email = (doc.get("company_email") or "").strip()
+    if personal in {company_login, company_email} and personal:
+        frappe.throw(
+            _("Personal Email must be different from the company email so the "
+              "alumnus has a separate login after the company account is disabled."),
+            title=_("Personal Email Conflict"),
+        )
+
+
 # ── Hook ──────────────────────────────────────────────────────────────────────
 def handle_employee_status_change(doc, method: str | None = None) -> None:
     """Employee ``on_update``: switch accounts when `status` actually changes.
