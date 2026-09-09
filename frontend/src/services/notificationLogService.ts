@@ -12,16 +12,10 @@ export const NotificationService = {
     });
   },
 
-  markAllAsRead: async (notificationIds: string[]): Promise<void> => {
-    await Promise.all(
-      notificationIds.map((id) =>
-        FrappeAPI.callMethod("frappe.client.set_value", {
-          doctype: "Notification Log",
-          name: id,
-          fieldname: "read",
-          value: 1,
-        })
-      )
+  markAllAsRead: async (forUser?: string): Promise<any> => {
+    return await FrappeAPI.callMethod(
+      "cn_hrms_core.cn_hrms_core.apis.notifications.mark_all_unread_notifications_as_read",
+      forUser ? { for_user: forUser } : {}
     );
   },
 };
