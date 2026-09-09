@@ -9,16 +9,17 @@ import Button from "../shared/atoms/Button";
 import { useGetUiPermission } from "../../hooks/userUiPermission";
 import { isActionEnabled } from "../../utils/uiPermission";
 
-type TabName = "Flow Requests" | "Onboarding" | "Confirmation" | "Separation";
+type TabName = "Flow Requests" | "Onboarding" | "Confirmation" | "Separation" | "Separation Dashboard";
 
 const tabRoutes: Record<TabName, string> = {
   "Flow Requests": "/webapp/flow-app/flow-requests",
   Onboarding: "/webapp/flow-app/onboarding",
   Confirmation: "/webapp/flow-app/confirmation",
+  "Separation Dashboard": "/webapp/flow-app/separation-dashboard",
   Separation: "/webapp/flow-app/separation",
 };
 
-type SeparateRouteName = "Initiate Flow" | "Flow Request" | "SeparationWorkflow" | "SeparationRecord";
+type SeparateRouteName = "Initiate Flow" | "Flow Request" | "SeparationWorkflow" | "SeparationRecord" | "PerformanceImprovement" | "Separation Dashboard";
 const NoDesktopLayoutRoute: string[] = [];
 
 const FlowApp: React.FC = () => {
@@ -51,7 +52,11 @@ const FlowApp: React.FC = () => {
         key: "Separation",
         label: "Separation",
         permissionKey: "Separation",
-      },
+      }, {
+        key: "Separation Dashboard",
+        label: "Separation Dashboard",
+        permissionKey: "Separation Dashboard",
+      }
     ];
 
     if (!userUiPermission || userUiPermission.length === 0) {
@@ -117,6 +122,8 @@ const FlowApp: React.FC = () => {
       setSeprateRoute("SeparationWorkflow");
     } else if (location.pathname.startsWith("/webapp/flow-app/separation-record")) {
       setSeprateRoute("SeparationRecord");
+    } else if (location.pathname.startsWith("/webapp/flow-app/performance-improvement")) {
+      setSeprateRoute("PerformanceImprovement");
     } else {
       setSeprateRoute(null);
     }

@@ -121,6 +121,7 @@ const formatToIndianDate = (dateInput: string | number | Date): string => {
   }
 };
 
+export { formatToIndianDate };
 export default formatToIndianDate;
 
 /**
@@ -194,12 +195,11 @@ export const formatEndDate = (endDate: string | null | undefined): string => {
   return formatToIndianDate(endDate);
 };
 
-export function formatDateDDMonthYYYY(dateString: string): string {
-  const date = new Date(dateString);
-  const day = date.getDate();
-  const month = date.toLocaleString("en-US", { month: "short" });
-  const year = date.getFullYear();
-  return `${day} ${month} ${year}`;
+export function formatDateDDMonthYYYY(
+  dateString?: string | number | Date | null
+): string {
+  if (!dateString) return "—";
+  return formatToIndianDate(dateString) || "—";
 }
 
 export function getDays(from_date: string, to_date: string): number {

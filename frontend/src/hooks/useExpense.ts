@@ -654,3 +654,14 @@ export const useReimbursementSummary = (employeeId?: string) => {
   });
 };
 
+/** Hook to fetch pending expense claims count for an employee */
+export const usePendingExpenseClaimsCount = (employeeId?: string) => {
+  return useQuery<number>({
+    queryKey: ["pending-expense-claims-count", employeeId],
+    queryFn: () => expenseService.getPendingExpenseClaimsCount(employeeId || ""),
+    enabled: !!employeeId,
+    staleTime: 5 * 60 * 1000,
+  });
+};
+
+

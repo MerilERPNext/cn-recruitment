@@ -1,6 +1,21 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { getEmployeeSeparationType, getSeparationFunnelDetails, SeparationEmployeeService, getNoticePeriodAndSeparationPolicy, getEmployeeSeparationDetails, revokeEmployeeSeparation } from "../services/SeparationService";
+import {
+  getEmployeeSeparationType,
+  getSeparationFunnelDetails,
+  SeparationEmployeeService,
+  getNoticePeriodAndSeparationPolicy,
+  getEmployeeSeparationDetails,
+  revokeEmployeeSeparation,
+  getEmployeeSupportContacts,
+  getSeparationOpenItems,
+  getSeparationWorkflowStages,
+} from "../services/SeparationService";
 import { SeparationFunnelDetails, NoticePeriodAndSeparationPolicyResponse, EmployeeSeparationDetails } from "../types/flows";
+import {
+  EmployeeSupportContacts,
+  SeparationOpenItemsData,
+  SeparationWorkflowStagesResponse,
+} from "../types/separation";
 
 export const useSeparationEmployee = () => {
   return useQuery({
@@ -49,5 +64,29 @@ export const useRevokeEmployeeSeparation = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["separation-workflow"] });
     },
+  });
+};
+
+export const useEmployeeSupportContacts = (employeeId?: string | null) => {
+  return useQuery<EmployeeSupportContacts>({
+    queryKey: ["employee-support-contacts", employeeId],
+    queryFn: () => getEmployeeSupportContacts(employeeId || ""),
+    enabled: Boolean(employeeId),
+  });
+};
+
+export const useGetSeparationOpenItems = (employee?: string | null) => {
+  return useQuery<SeparationOpenItemsData>({
+    queryKey: ["separation-open-items", employee],
+    queryFn: () => getSeparationOpenItems(employee || ""),
+    enabled: Boolean(employee),
+  });
+};
+
+export const useGetSeparationWorkflowStages = (employee?: string | null) => {
+  return useQuery<SeparationWorkflowStagesResponse>({
+    queryKey: ["separation-workflow-stages", employee],
+    queryFn: () => getSeparationWorkflowStages(employee || ""),
+    enabled: Boolean(employee),
   });
 };

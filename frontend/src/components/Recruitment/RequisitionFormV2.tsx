@@ -1034,7 +1034,9 @@ const RequisitionFormV2 = () => {
           );
           const match = (opts?.results || []).find((r: any) => r.id === faId);
           if (match?.label) faTitle = match.label;
-        } catch {}
+        } catch {
+          // ignore lookup error
+        }
       }
       setFormData((prev: any) => {
         if (prev.designation !== designation) return prev;
@@ -1158,7 +1160,9 @@ const RequisitionFormV2 = () => {
             })),
           );
         }
-      } catch {}
+      } catch {
+        // ignore clearing error
+      }
     }, 0);
   }, []);
 
@@ -2751,7 +2755,7 @@ const RequisitionFormV2 = () => {
                                 .pop() || "";
                             try {
                               return decodeURIComponent(base);
-                            } catch (e) {
+                            } catch {
                               return base;
                             }
                           }),

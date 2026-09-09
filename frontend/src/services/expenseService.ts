@@ -497,6 +497,7 @@ export const expenseService = {
   },
 
   /** Fetch reimbursement summary for a given employee */
+  /** Fetch reimbursement summary for a given employee */
   getReimbursementSummary: async (
     employeeId: string,
   ): Promise<ReimbursementSummary> => {
@@ -506,4 +507,38 @@ export const expenseService = {
     );
     return response as ReimbursementSummary;
   },
+
+  /** Get count of pending expense claims for an employee using get_open_approval_todos */
+  getPendingExpenseClaimsCount: async (
+    employeeId: string,
+  ): Promise<number> => {
+    if (!employeeId) return 0;
+    const response: any = await FrappeAPI.callMethod(
+      "cn_leave_shift_managment.api.get_open_approval_todos",
+      {
+        doctype: "Expense Claim",
+        employee: employeeId,
+        approval_status: "Pending",
+        filters: JSON.stringify({ approval_status: "Pending" }),
+        order_by: "creation desc",
+        page_length: 10,
+        start: 0,
+        todo_status: "Open",
+      },
+    );
+
+    const totalCount =
+      response?.message?.total_count ??
+      response?.total_count ??
+      response?.data?.total_count ??
+      (Array.isArray(response?.message?.data)
+        ? response.message.data.length
+        : undefined) ??
+      (Array.isArray(response?.data) ? response.data.length : undefined) ??
+      0;
+
+    return typeof totalCount === "number" ? totalCount : Number(totalCount) || 0;
+  },
 };
+
+
