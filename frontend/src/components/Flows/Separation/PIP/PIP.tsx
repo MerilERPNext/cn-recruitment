@@ -38,7 +38,7 @@ import ActionConfirmationModal from "../../../shared/ActionConfirmationModal";
 import CardStages from "../components/StageCard";
 import WrapperHoverCard from "../../../shared/WrapperHoverCard";
 
-import { formatDateDDMonthYYYY } from "../../../../utils/formatToIndianDate";
+import formatToIndianDate from "../../../../utils/formatToIndianDate";
 import { errorResponseFormater } from "../../../../utils/errorResponseFormater";
 
 /**
@@ -644,11 +644,11 @@ const PerformanceImprovementPlan: React.FC = () => {
                               Creation Date
                             </Typography>
                             <Typography variant="bodySmall" className="font-semibold text-gray-800 mt-1 block">
-                              {formatDateDDMonthYYYY(
+                              {formatToIndianDate(
                                 activePipFlow?.initiated_on ||
                                 activePipFlow?.activity_timestamp ||
                                 ((activePipFlow as Record<string, unknown> | undefined)?.creation as string)
-                              )}
+                              ) || "—"}
                             </Typography>
                           </div>
                           <div className="bg-gray-50/80 rounded-xl p-3 border border-gray-100">

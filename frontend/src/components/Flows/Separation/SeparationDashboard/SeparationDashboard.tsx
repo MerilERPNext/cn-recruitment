@@ -25,7 +25,7 @@ import NoDataFound from "../../../shared/atoms/NoDataFound";
 import TableSkeleton from "../../../shared/molecules/Skeletons/TableSkeleton";
 import WrapperHoverCard from "../../../shared/WrapperHoverCard";
 import { formatCurrency } from "../../../../utils/currency";
-import { formatDateDDMonthYYYY } from "../../../../utils/formatToIndianDate";
+import formatToIndianDate from "../../../../utils/formatToIndianDate";
 import { differenceInCalendarDays } from "date-fns";
 import { useTargetUser } from "../../../../context/ViewedUserContext";
 import {
@@ -447,7 +447,7 @@ const SeparationDashboard: React.FC = () => {
               <Typography variant="caption" className="text-gray-600 font-medium mt-1">
                 Last working day is{" "}
                 <strong className="text-gray-900 font-bold">
-                  {relievingDate ? formatDateDDMonthYYYY(relievingDate) : "Not specified"}
+                  {relievingDate ? formatToIndianDate(relievingDate) : "Not specified"}
                 </strong>
               </Typography>
             </div>
