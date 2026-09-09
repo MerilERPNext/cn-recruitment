@@ -99,6 +99,41 @@ function buildStaticItems(modules: UiPermissionModule[]): StaticSearchItem[] {
   return items;
 }
 
+/**
+ * The destination an item actually opens. Mirrors handleSelectStatic: a modal_key wins
+ * over a url, because that is what the click handler dispatches on.
+ */
+function destinationKey(item: StaticSearchItem): string | null {
+  if (item.modal_key) return `modal:${item.modal_key}`;
+  if (item.url) return `url:${item.url.replace(/\/+$/, "").toLowerCase() || "/"}`;
+  return null;
+}
+
+/**
+ * Collapse items that open the same place into one result, keeping the best-ranked one.
+ *
+ * The same destination is deliberately reachable from several permission entries — "Apply
+ * Leave" is an action on the dashboard, on Leave Summary and on My Requests, and there is a
+ * "Request Leave" page on top, all opening the request-leave modal. Those distinctions matter
+ * for permissions but are noise in search, where they render as identical-looking rows that
+ * all do the same thing.
+ *
+ * This runs on the already-ranked match list rather than on the full catalogue, so the row
+ * that survives is the alias the query actually matched: typing "nominate" keeps "Nominate
+ * for Award", typing "awards" keeps the "Awards Live" page, and both open the same place.
+ */
+function dedupeByDestination(items: StaticSearchItem[]): StaticSearchItem[] {
+  const seen = new Set<string>();
+
+  return items.filter((item) => {
+    const key = destinationKey(item);
+    if (!key || seen.has(key)) return false;
+
+    seen.add(key);
+    return true;
+  });
+}
+
 function filterItems(
   query: string,
   items: StaticSearchItem[],
@@ -127,7 +162,7 @@ function filterItems(
     }
   }
 
-  return [...exact, ...partial];
+  return dedupeByDestination([...exact, ...partial]);
 }
 
 // ─── Skeleton ────────────────────────────────────────────────────────────────
