@@ -1440,3 +1440,47 @@ export const useAwardEmployeePoints = (params: AwardEmployeePointsParams = {}) =
     },
   });
 };
+
+// ── Vibe Feed (real Work Connect feed, embedded in the Recognition > Vibe tab) ─
+
+export type WorkConnectPostAuthor = {
+  id: string;
+  name: string;
+  image?: string | null;
+};
+
+export type WorkConnectPost = {
+  id: string;
+  post_type: string;
+  content: string;
+  author: WorkConnectPostAuthor;
+  published_at?: string | null;
+  created: string;
+  is_award?: boolean;
+  banner_html?: string | null;
+  reaction_count: number;
+  comment_count: number;
+};
+
+export type VibeFeedResponse = {
+  posts: WorkConnectPost[];
+  has_more: boolean;
+  total: number;
+};
+
+// Wraps chatnext_work_connect's real feed listing endpoint so the Vibe tab's
+// Feed can show real posts (including Award announcements) instead of mock
+// data. Same direct-call convention as every other hook in this file.
+export const useVibeFeed = (page = 1, limit = 20) => {
+  return useQuery<VibeFeedResponse>({
+    queryKey: ["recognition", "vibe-feed", page, limit],
+    queryFn: async () => {
+      const response = await FrappeAPI.callMethod(
+        "chatnext_work_connect.chatnext_work_connect.api.post.get_feed",
+        { feed_type: "home", page, limit },
+      );
+      const data = (response as { data?: VibeFeedResponse } | null)?.data;
+      return data ?? { posts: [], has_more: false, total: 0 };
+    },
+  });
+};
