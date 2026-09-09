@@ -21,7 +21,7 @@ export const requisitionFormSchemas = {
         placeholder: "Select Hiring Manager",
         dataSrc: "url",
         data: {
-          url: '/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=Employee&status=Active',
+          url: "/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=Employee&status=Active",
           headers: [{ key: "Accept", value: "application/json" }],
         },
         selectValues: "message.results",
@@ -31,7 +31,6 @@ export const requisitionFormSchemas = {
         validate: {
           required: true,
           limit: 20,
-
         },
       },
 
@@ -44,7 +43,7 @@ export const requisitionFormSchemas = {
         input: true,
         dataSrc: "url",
         data: {
-          url: '/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=Company&requisition_scope=1',
+          url: "/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=Company&requisition_scope=1",
           headers: [{ key: "Accept", value: "application/json" }],
         },
         selectValues: "message.results",
@@ -53,7 +52,6 @@ export const requisitionFormSchemas = {
         validateOn: "blur",
         validate: { required: true },
         limit: 20,
-
       },
 
       {
@@ -65,7 +63,7 @@ export const requisitionFormSchemas = {
         input: true,
         dataSrc: "url",
         data: {
-          url: '/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=Department&company={{ data.company }}&disabled=0&requisition_scope=1&req_company={{ data.company }}',
+          url: "/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=Department&company={{ data.company }}&disabled=0&requisition_scope=1&req_company={{ data.company }}",
           headers: [{ key: "Accept", value: "application/json" }],
         },
         selectValues: "message.results",
@@ -77,7 +75,6 @@ export const requisitionFormSchemas = {
         clearOnHide: true,
         customConditional: "show = !!data.company",
         limit: 20,
-
       },
 
       {
@@ -89,19 +86,19 @@ export const requisitionFormSchemas = {
         input: true,
         dataSrc: "url",
         data: {
-          url: '/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=Designation&custom_department={{ data.department }}&custom_status=Active&requisition_scope=1&req_company={{ data.company }}&req_department={{ data.department }}',
+          url: "/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=Designation&custom_department={{ data.department }}&custom_status=Active&requisition_scope=1&req_company={{ data.company }}&req_department={{ data.department }}",
           headers: [{ key: "Accept", value: "application/json" }],
         },
         selectValues: "message.results",
         valueProperty: "id",
-        template: "<span>{{ item.label }} <span style='color:#7f8c8d'>({{ item.id }})</span></span>",
+        template:
+          "<span>{{ item.label }} <span style='color:#7f8c8d'>({{ item.id }})</span></span>",
         validate: { required: true },
         refreshOn: "department",
         clearOnRefresh: true,
         clearOnHide: true,
         customConditional: "show = !!data.department",
         limit: 20,
-
       },
 
       {
@@ -116,7 +113,7 @@ export const requisitionFormSchemas = {
         disabled: true,
         dataSrc: "url",
         data: {
-          url: '/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=Functional Area&designation={{ data.designation }}&disabled=0',
+          url: "/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=Functional Area&designation={{ data.designation }}&disabled=0",
           headers: [{ key: "Accept", value: "application/json" }],
         },
         selectValues: "message.results",
@@ -127,7 +124,6 @@ export const requisitionFormSchemas = {
         customConditional: "show = !!data.designation",
         validate: { required: false },
         limit: 20,
-
       },
     ],
   },
@@ -217,7 +213,7 @@ export const requisitionFormSchemas = {
                 customClass: "required-field",
                 dataSrc: "url",
                 data: {
-                  url: '/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=Currency',
+                  url: "/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=Currency",
                   headers: [{ key: "Accept", value: "application/json" }],
                 },
                 selectValues: "message.results",
@@ -226,7 +222,6 @@ export const requisitionFormSchemas = {
                 defaultValue: "INR",
                 validate: { required: true },
                 limit: 20,
-
               },
             ],
             width: 3,
@@ -255,7 +250,7 @@ export const requisitionFormSchemas = {
                     }
                   `,
                 },
-              }
+              },
             ],
             width: 3,
             offset: 0,
@@ -281,7 +276,7 @@ export const requisitionFormSchemas = {
                       : 'Max Salary must be greater than Min Salary';
                   `,
                 },
-              }
+              },
             ],
             width: 3,
             offset: 0,
@@ -354,7 +349,7 @@ export const requisitionFormSchemas = {
                 data: {
                   // company -> Company Wise config match; hiring_manager (the
                   // requisition's Employee) -> Assignment Framework config match.
-                  url: '/api/method/recruitment.api.job_requisition.get_hiring_lead_employees?company={{ data.company }}&employee={{ data.hiring_manager }}',
+                  url: "/api/method/recruitment.api.job_requisition.get_hiring_lead_employees?company={{ data.company }}&employee={{ data.hiring_manager }}",
                   headers: [{ key: "Accept", value: "application/json" }],
                 },
                 refreshOn: ["company", "hiring_manager"],
@@ -364,7 +359,6 @@ export const requisitionFormSchemas = {
                 template:
                   "<span>{{ item.employee_name }} <span style='color:#7f8c8d'>({{item.employee}})</span></span>",
               },
-              
             ],
             width: 6,
             offset: 0,
@@ -422,7 +416,6 @@ export const requisitionFormSchemas = {
                 refreshOn: "company",
                 clearOnRefresh: true,
                 limit: 20,
-
               },
             ],
             width: 6,
@@ -456,7 +449,6 @@ export const requisitionFormSchemas = {
                 refreshOn: "company",
                 clearOnRefresh: true,
                 limit: 20,
-
               },
             ],
             width: 6,
@@ -547,7 +539,7 @@ export const requisitionFormSchemas = {
                 input: true,
                 dataSrc: "url",
                 data: {
-                  url: '/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=Skill',
+                  url: "/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=Skill",
                   headers: [{ key: "Accept", value: "application/json" }],
                 },
                 limit: 20,
@@ -589,7 +581,7 @@ export const requisitionFormSchemas = {
         className:
           "flex items-start gap-2 rounded-md border border-blue-200 bg-blue-50 text-blue-800 px-3 py-2.5 mb-3 text-sm",
         content:
-          '<i class="fa fa-info-circle mt-0.5 text-blue-500"></i><span><strong>Note:</strong> Create a separate requisition for each different work location. If multiple positions belong to the same location, they should be included within a single requisition.</span>',
+          '<i class="fa fa-info-circle mt-0.5 text-blue-500"></i><span><strong>Note:</strong>System will create a separate requisition for each different work location. If multiple positions belong to the same location, they should be included within a single requisition.</span>',
       },
       // NOTE: The Total / New / Replacement count inputs are rendered as plain
       // React inputs in RequisitionForm.tsx (currentStep === 2) to avoid the
@@ -665,7 +657,7 @@ export const requisitionFormSchemas = {
                 disabled: true,
                 dataSrc: "url",
                 data: {
-                  url: '/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=Functional Area&designation={{ data.designation }}&disabled=0',
+                  url: "/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=Functional Area&designation={{ data.designation }}&disabled=0",
                   headers: [{ key: "Accept", value: "application/json" }],
                 },
                 selectValues: "message.results",
@@ -683,7 +675,7 @@ export const requisitionFormSchemas = {
                 validateOn: "blur",
                 dataSrc: "url",
                 data: {
-                  url: '/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=Employee&status=Active',
+                  url: "/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=Employee&status=Active",
                   headers: [{ key: "Accept", value: "application/json" }],
                 },
                 limit: 20,
@@ -705,7 +697,7 @@ export const requisitionFormSchemas = {
                   // Pass the requisition's own designation/company so the backend
                   // can apply the 'Restriction for Replacement Employee Selection'
                   // setting (Same Designation / Same Group Company / None).
-                  url: '/api/method/recruitment.api.job_requisition.get_replacement_employee_options?designation={{ data.designation }}&company={{ data.company }}',
+                  url: "/api/method/recruitment.api.job_requisition.get_replacement_employee_options?designation={{ data.designation }}&company={{ data.company }}",
                   headers: [{ key: "Accept", value: "application/json" }],
                 },
                 selectValues: "message.results",
@@ -920,23 +912,91 @@ export interface JobDetailsPreviewField {
 }
 
 export const jobDetailsPreviewFields: JobDetailsPreviewField[] = [
-  { key: "experience_from", label: "Experience Range - From", backendKey: "custom_experience_range_from" },
-  { key: "experience_to", label: "Experience Range - To", backendKey: "custom_experience_range_to" },
-  { key: "experience_unit", label: "Experience Unit", backendKey: "custom_experience_unit" },
-  { key: "salary_currency", label: "Salary Range (Currency)", backendKey: "custom_salary_range_currency" },
-  { key: "salary_min", label: "Salary Range (Min)", backendKey: "custom_salary_range_min" },
-  { key: "salary_max", label: "Salary Range (Max)", backendKey: "custom_salary_range_max" },
-  { key: "salary_timeframe", label: "Salary Timeframe", backendKey: "custom_salary_timeframe" },
-  { key: "recruitment_start_date", label: "Recruitment Start Date", backendKey: "posting_date" },
-  { key: "expected_compensation", label: "Expected Compensation", backendKey: "expected_compensation" },
+  {
+    key: "experience_from",
+    label: "Experience Range - From",
+    backendKey: "custom_experience_range_from",
+  },
+  {
+    key: "experience_to",
+    label: "Experience Range - To",
+    backendKey: "custom_experience_range_to",
+  },
+  {
+    key: "experience_unit",
+    label: "Experience Unit",
+    backendKey: "custom_experience_unit",
+  },
+  {
+    key: "salary_currency",
+    label: "Salary Range (Currency)",
+    backendKey: "custom_salary_range_currency",
+  },
+  {
+    key: "salary_min",
+    label: "Salary Range (Min)",
+    backendKey: "custom_salary_range_min",
+  },
+  {
+    key: "salary_max",
+    label: "Salary Range (Max)",
+    backendKey: "custom_salary_range_max",
+  },
+  {
+    key: "salary_timeframe",
+    label: "Salary Timeframe",
+    backendKey: "custom_salary_timeframe",
+  },
+  {
+    key: "recruitment_start_date",
+    label: "Recruitment Start Date",
+    backendKey: "posting_date",
+  },
+  {
+    key: "expected_compensation",
+    label: "Expected Compensation",
+    backendKey: "expected_compensation",
+  },
   { key: "expected_by", label: "Expected By Date", backendKey: "expected_by" },
-  { key: "employment_type", label: "Employment Type", backendKey: "custom_employment_type_link" },
+  {
+    key: "employment_type",
+    label: "Employment Type",
+    backendKey: "custom_employment_type_link",
+  },
   { key: "location", label: "Work Location", backendKey: "custom_location" },
-  { key: "vacancy_type", label: "Vacancy Type", backendKey: "custom_vacancy_type" },
-  { key: "functional_area", label: "Functional Area", backendKey: "custom_functional_area" },
-  { key: "custom_work_experience_range", label: "Work Experience Range", backendKey: "custom_work_experience_range" },
-  { key: "custom_preferred_notice_period", label: "Preferred Notice Period", backendKey: "custom_preferred_notice_period" },
-  { key: "preferred_company", label: "Preferred Target Company", backendKey: "custom_preferred_company" },
-  { key: "custom_other_preferred_companies", label: "Other Preferred Companies", backendKey: "custom_other_preferred_companies" },
-  { key: "custom_skills", label: "Required Skills", backendKey: "custom_skills" },
-]; 
+  {
+    key: "vacancy_type",
+    label: "Vacancy Type",
+    backendKey: "custom_vacancy_type",
+  },
+  {
+    key: "functional_area",
+    label: "Functional Area",
+    backendKey: "custom_functional_area",
+  },
+  {
+    key: "custom_work_experience_range",
+    label: "Work Experience Range",
+    backendKey: "custom_work_experience_range",
+  },
+  {
+    key: "custom_preferred_notice_period",
+    label: "Preferred Notice Period",
+    backendKey: "custom_preferred_notice_period",
+  },
+  {
+    key: "preferred_company",
+    label: "Preferred Target Company",
+    backendKey: "custom_preferred_company",
+  },
+  {
+    key: "custom_other_preferred_companies",
+    label: "Other Preferred Companies",
+    backendKey: "custom_other_preferred_companies",
+  },
+  {
+    key: "custom_skills",
+    label: "Required Skills",
+    backendKey: "custom_skills",
+  },
+];
