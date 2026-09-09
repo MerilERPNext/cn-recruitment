@@ -136,6 +136,7 @@ const CompensatoryRequestCard = ({
           isPendingStatus={isPendingStatus}
           onPay={handlePay}
           payLoading={isPending}
+          requestItem={item}
         />
       </div>
     </div>
@@ -213,6 +214,7 @@ const CompensatoryRequestCard = ({
           isPendingStatus={isPendingStatus}
           onPay={handlePay}
           payLoading={isPending}
+          requestItem={item}
         />
       </div>
     </div>

@@ -158,6 +158,7 @@ export const LoantItem: React.FC<{
             handleEdit(item.name);
           }}
           isResubmit={canEdit}
+          requestItem={item}
         />
       </div>
     </div>
