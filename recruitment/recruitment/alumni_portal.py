@@ -1631,14 +1631,6 @@ def _alumni_referrer_employee(user: str) -> "frappe._dict":
     return emp
 
 
-def _ensure_referral_source() -> None:
-    """Idempotently create the 'Employee Referral' Job Applicant Source master."""
-    if not frappe.db.exists("Job Applicant Source", _REFERRAL_SOURCE):
-        frappe.get_doc(
-            {"doctype": "Job Applicant Source", "source_name": _REFERRAL_SOURCE}
-        ).insert(ignore_permissions=True, ignore_if_duplicate=True)
-
-
 # ── Refer & Earn banner stats ─────────────────────────────────────────────────
 _DEFAULT_REFERRAL_BONUS = 25000.0
 
@@ -1763,43 +1755,6 @@ def get_alumni_referral_stats() -> dict:
     }
 
 
-def _attach_referral_resume(resume_file, applicant_name: str) -> str | None:
-    """Attach an optional {"filename", "content"} resume to the Job Applicant.
-
-    Mirrors the existing employee-referral upload contract (base64 ``content``).
-    Any failure is logged and swallowed so it never blocks the referral itself.
-    """
-    if not resume_file:
-        return None
-    if isinstance(resume_file, str):
-        try:
-            resume_file = frappe.parse_json(resume_file)
-        except Exception:
-            return None
-    if not isinstance(resume_file, dict):
-        return None
-    filename = resume_file.get("filename")
-    content = resume_file.get("content")
-    if not filename or not content:
-        return None
-    try:
-        file_doc = frappe.get_doc(
-            {
-                "doctype": "File",
-                "file_name": filename,
-                "attached_to_doctype": "Job Applicant",
-                "attached_to_name": applicant_name,
-                "is_private": 1,
-                "content": content,
-            }
-        )
-        file_doc.insert(ignore_permissions=True)
-        return file_doc.file_url
-    except Exception:
-        frappe.log_error(frappe.get_traceback(), "Alumni referral resume upload failed")
-        return None
-
-
 # Supported resume/document types + max size for the pre-upload endpoint.
 _REFERRAL_ALLOWED_EXTS = {"pdf", "jpg", "jpeg", "png", "doc", "docx"}
 _REFERRAL_MAX_BYTES = 5 * 1024 * 1024  # 5 MB
@@ -1868,39 +1823,6 @@ def upload_alumni_referral_document() -> dict:
     }
 
 
-def _link_referral_resume_url(file_url: str, applicant_name: str) -> str | None:
-    """Link a previously-uploaded File (by ``file_url``) to the Job Applicant.
-
-    Only links a File owned by the current alumnus (so a URL can't be used to
-    attach someone else's private file). Returns the ``file_url`` on success, else
-    ``None``. Never raises.
-    """
-    file_url = (file_url or "").strip()
-    if not file_url:
-        return None
-    try:
-        f = frappe.db.get_value(
-            "File", {"file_url": file_url},
-            ["name", "owner", "attached_to_name"], as_dict=True,
-        )
-        if not f:
-            return None
-        if f.owner != frappe.session.user:
-            return None  # not this alumnus's upload — refuse to attach
-        # Link via db.set_value (no File hooks) — avoids triggering resume parsing
-        # and never blocks the referral. Only attach an as-yet-unattached file.
-        if not f.attached_to_name:
-            frappe.db.set_value(
-                "File", f.name,
-                {"attached_to_doctype": "Job Applicant", "attached_to_name": applicant_name},
-                update_modified=False,
-            )
-        return file_url
-    except Exception:
-        frappe.log_error(frappe.get_traceback(), "Alumni referral resume link failed")
-        return None
-
-
 @frappe.whitelist(methods=["GET"])
 def get_alumni_referral_jobs(search: str = None, limit=200, start=0) -> dict:
     """Open jobs an alumnus can refer a friend to (the 'Department / role area'
@@ -1964,53 +1886,121 @@ def get_alumni_referral_jobs(search: str = None, limit=200, start=0) -> dict:
     return {"success": True, "jobs": jobs, "count": len(jobs)}
 
 
-@frappe.whitelist(methods=["POST"])
-def submit_alumni_referral(
-    job_opening: str,
-    full_name: str,
-    email: str,
-    phone: str = None,
-    linkedin: str = None,
-    note: str = None,
-    resume_file=None,
-    resume: str = None,
+def _require_open_referral_opening(opening: str) -> None:
+    """Throw 404/400 unless `opening` is an existing, 'Open' Job Opening."""
+    status = frappe.db.get_value("Job Opening", opening, "status")
+    if not status:
+        frappe.local.response["http_status_code"] = 404
+        frappe.throw(_("The selected job opening was not found."))
+    if status.lower() != "open":
+        frappe.local.response["http_status_code"] = 400
+        frappe.throw(_("This opening is no longer accepting referrals."))
+
+
+@frappe.whitelist(methods=["GET"])
+def get_alumni_referral_fields(opening: str) -> list:
+    """The dynamic application field set for `opening` — identical to the ESS
+    Refer channel's (`recruitment.api.channels.refer.get_application_fields`):
+    whatever fields/sections/child tables an admin configured as `view_refer`
+    on the opening's `custom_application_fields` (or the Job Applicant Profile
+    Settings default). Alumni sessions can't reach that endpoint directly
+    (locked to the alumni_portal namespace — see `alumni_guard.ALUMNI_NAMESPACES`),
+    so this wraps the same shared engine.
+
+    Unlike the ESS endpoint, this does NOT require `opening` to have an active
+    "Refer" Posting Option — alumni are intentionally allowed to refer into any
+    'Open' role, published or not (see `get_alumni_referral_jobs`).
+    """
+    if not opening:
+        frappe.throw(_("opening is required"))
+
+    user = _require_alumni_session()
+    _alumni_referrer_employee(user)
+    _require_open_referral_opening(opening)
+
+    from recruitment.api.channels import _common
+
+    return _common.get_application_fields_for_channel(opening, "refer")
+
+
+@frappe.whitelist(methods=["GET"])
+def get_alumni_link_options(
+    opening: str, doctype: str, search_text: str = None, limit=20, skip=0, include=None
 ) -> dict:
+    """Master-data lookup for the referral form's Link-field dropdowns
+    (Company, Department, Designation, Country, ...).
+
+    `job_requisition.get_link_field_options` — what the ESS referral form
+    uses for these — is unreachable from an alumni session (locked to the
+    alumni_portal namespace) and, more importantly, applies NO permission
+    check of its own: it will query whatever `doctype` it's given for any
+    authenticated user. Allowlisting it directly would let an alumnus
+    enumerate Employee, User, Salary Structure, etc. — exactly the employee
+    directory `alumni_guard` otherwise keeps closed.
+
+    So `doctype` is validated here first, against the Link-field `options`
+    actually configured (`view_refer=1`) on `opening`'s own referral field
+    set — the same set `get_alumni_referral_fields` advertises, including
+    Link columns nested inside child tables. Anything not on that set is a
+    403 and no query ever runs. Only then does this delegate to the ESS
+    implementation for the actual search/pagination, returning its result
+    UNCHANGED — the Form.io schema reads `message.results` / `id` directly.
+    """
+    if not opening:
+        frappe.throw(_("opening is required"))
+    if not doctype:
+        frappe.throw(_("doctype is required"))
+
+    user = _require_alumni_session()
+    _alumni_referrer_employee(user)
+    _require_open_referral_opening(opening)
+
+    from recruitment.api.channels import _common
+
+    fields = _common.get_application_fields_for_channel(opening, "refer")
+    allowed_doctypes = set()
+    for f in fields:
+        if f.get("fieldtype") == "Link" and f.get("options"):
+            allowed_doctypes.add(f["options"])
+        for sub in f.get("table_fields") or []:
+            if sub.get("fieldtype") == "Link" and sub.get("options"):
+                allowed_doctypes.add(sub["options"])
+
+    if doctype not in allowed_doctypes:
+        frappe.local.response["http_status_code"] = 403
+        frappe.throw(
+            _("'{0}' is not a lookup available on this referral form.").format(doctype),
+            frappe.PermissionError,
+        )
+
+    from recruitment.api.job_requisition import get_link_field_options
+
+    return get_link_field_options(
+        doctype=doctype, search_text=search_text, limit=limit, skip=skip, include=include,
+    )
+
+
+@frappe.whitelist(methods=["POST"])
+def submit_alumni_referral(job_opening: str, data) -> dict:
     """Refer a friend against a specific open job.
 
-    Creates a Job Applicant (source = "Employee Referral") linked to
-    ``job_opening`` and attributed to the logged-in alumnus. Returns the created
-    applicant's name.
-
-    Resume (optional) — two supported ways:
-    * ``resume`` — a ``file_url`` from :func:`upload_alumni_referral_document`
-      (the recommended pre-upload flow), or
-    * ``resume_file`` — a legacy ``{"filename", "content"}`` base64 blob.
+    Validates `data` against the same dynamic field set `get_alumni_referral_fields`
+    advertised — same engine, same rules as the ESS Refer channel
+    (`recruitment.api.channels.refer.submit_referral`) — then creates a Job
+    Applicant (source = "Employee Referral") attributed to the logged-in
+    alumnus. `data` is a JSON object keyed by each field's `reference_name`,
+    built from `get_alumni_referral_fields` exactly like the ESS referral form.
     """
+    import json as _json
+
+    if isinstance(data, str):
+        data = _json.loads(data or "{}")
+
     user = _require_alumni_session()
     referrer = _alumni_referrer_employee(user)
 
-    full_name = (full_name or "").strip()
-    email = (email or "").strip()
-    if not full_name:
-        frappe.local.response["http_status_code"] = 400
-        return {"success": False, "message": _("Candidate name is required.")}
-    if not email:
-        frappe.local.response["http_status_code"] = 400
-        return {"success": False, "message": _("Candidate email is required.")}
-
-    from frappe.utils import validate_email_address
-
-    if not validate_email_address(email):  # "" when invalid
-        frappe.local.response["http_status_code"] = 400
-        return {
-            "success": False,
-            "message": _("{0} is not a valid email address.").format(email),
-        }
-
     opening = frappe.db.get_value(
-        "Job Opening", job_opening,
-        ["name", "status", "designation", "department", "job_title"],
-        as_dict=True,
+        "Job Opening", job_opening, ["name", "status"], as_dict=True
     )
     if not opening:
         frappe.local.response["http_status_code"] = 404
@@ -2019,39 +2009,48 @@ def submit_alumni_referral(
         frappe.local.response["http_status_code"] = 400
         return {"success": False, "message": _("This opening is no longer accepting referrals.")}
 
-    # Don't let the same candidate be referred to the same opening twice.
-    existing = frappe.db.exists(
-        "Job Applicant", {"email_id": email, "job_title": opening.name}
-    )
-    if existing:
-        frappe.local.response["http_status_code"] = 409
-        return {
-            "success": False,
-            "name": existing,
-            "message": _("You have already referred this candidate for this role."),
-        }
+    from recruitment.api.channels import _common
 
-    _ensure_referral_source()
+    try:
+        cleaned = _common.assert_field_set_for_channel(opening.name, "refer", data)
+    except frappe.ValidationError as e:
+        frappe.local.response["http_status_code"] = 400
+        return {"success": False, "message": str(e)}
 
-    has = {df.fieldname for df in frappe.get_meta("Job Applicant").fields}
+    # Best-effort duplicate guard when the configured field set includes the
+    # candidate's email — same candidate can't be referred to the same opening twice.
+    email = cleaned.get("email_id")
+    email = email.strip() if isinstance(email, str) else ""
+    if email:
+        existing = frappe.db.exists(
+            "Job Applicant", {"email_id": email, "job_title": opening.name}
+        )
+        if existing:
+            frappe.local.response["http_status_code"] = 409
+            return {
+                "success": False,
+                "name": existing,
+                "message": _("You have already referred this candidate for this role."),
+            }
+
+    source = _common.source_value_for("refer") or _REFERRAL_SOURCE
 
     applicant = frappe.new_doc("Job Applicant")
-    applicant.applicant_name = full_name
-    applicant.email_id = email
     applicant.job_title = opening.name
-    applicant.source = _REFERRAL_SOURCE
-    if opening.get("designation") and "designation" in has:
-        applicant.designation = opening.get("designation")
-    if phone and "phone_number" in has:
-        applicant.phone_number = phone
-    if linkedin and "custom_linkedin_url" in has:
-        applicant.custom_linkedin_url = linkedin
-    if note and "cover_letter" in has:
-        applicant.cover_letter = note
-    if "custom_referred_by" in has:
+    applicant.source = source
+
+    meta = frappe.get_meta("Job Applicant")
+    field_map = {df.fieldname: df for df in meta.fields}
+    emp_ref = field_map.get("employee_referral")
+    if emp_ref and emp_ref.fieldtype == "Link" and emp_ref.options == "Employee":
+        applicant.employee_referral = referrer.name
+    if "custom_referred_by" in field_map:
         applicant.custom_referred_by = referrer.name
-    if "custom_referred_employee_name" in has:
+    if "custom_referred_employee_name" in field_map:
         applicant.custom_referred_employee_name = referrer.employee_name
+
+    for k, v in cleaned.items():
+        applicant.set(k, v)
 
     try:
         applicant.insert(ignore_permissions=True)
@@ -2060,22 +2059,13 @@ def submit_alumni_referral(
         frappe.local.response["http_status_code"] = 409
         return {"success": False, "message": _("This candidate has already been submitted.")}
 
-    # Prefer a pre-uploaded file (`resume` = file_url); fall back to a legacy
-    # base64 blob (`resume_file`).
-    resume_url = _link_referral_resume_url(resume, applicant.name)
-    if not resume_url:
-        resume_url = _attach_referral_resume(resume_file, applicant.name)
-    if resume_url and "resume_attachment" in has:
-        applicant.db_set("resume_attachment", resume_url, update_modified=False)
-
     frappe.db.commit()
 
     return {
         "success": True,
         "name": applicant.name,
         "job_opening": opening.name,
-        "job_title": opening.get("job_title") or opening.name,
-        "resume_url": resume_url or "",
+        "source": source,
         "message": _("Referral submitted. Recruiting will reach out within 5 days."),
     }
 
