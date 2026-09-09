@@ -53,10 +53,18 @@ def employee_is_alumni(employee: str | None) -> int:
     """
     if not employee:
         return 0
-    user_id = frappe.db.get_value("Employee", employee, "user_id", cache=True)
-    if not user_id:
-        return 0
-    return 1 if frappe.db.get_value("User", user_id, ALUMNI_FLAG, cache=True) else 0
+    # Check the flag on either linked User: the company `user_id` (still-active
+    # employees) or the personal-email `custom_alumni_user` (after the alumni
+    # switch, when the company account is disabled and the flag lives on the
+    # personal one). Either being set means the person has alumni access.
+    fields = ["user_id"]
+    if frappe.get_meta("Employee").get_field("custom_alumni_user"):
+        fields.append("custom_alumni_user")
+    row = frappe.db.get_value("Employee", employee, fields, as_dict=True) or {}
+    for linked_user in (row.get("user_id"), row.get("custom_alumni_user")):
+        if linked_user and frappe.db.get_value("User", linked_user, ALUMNI_FLAG, cache=True):
+            return 1
+    return 0
 
 
 @frappe.whitelist(allow_guest=True, methods=["POST"])
@@ -3383,11 +3391,27 @@ def get_alumni_todo_filter_options(type: str = "My Todo") -> dict:
                                fields=["name", "full_name"])
     users = [{"value": row.name, "label": row.full_name or row.name} for row in user_rows if row.name in involved]
 
+    involved_list = sorted(involved)
+    _emp_fields = ["name", "user_id", "company", "branch", "employment_type", "employee_name"]
+    _has_alumni_link = bool(frappe.get_meta("Employee").get_field("custom_alumni_user"))
+    if _has_alumni_link:
+        _emp_fields.append("custom_alumni_user")
     employees = frappe.get_all(
-        "Employee",
-        filters={"user_id": ["in", sorted(involved)]},
-        fields=["name", "user_id", "company", "branch", "employment_type", "employee_name"],
+        "Employee", filters={"user_id": ["in", involved_list]}, fields=_emp_fields
     )
+    # Alumni sign in with their personal email (Employee.custom_alumni_user), not
+    # Employee.user_id, so also pull employees linked to an involved alumni User
+    # and merge them in (deduped) — otherwise alumni are missing from the options.
+    if _has_alumni_link:
+        seen_emp = {e.name for e in employees}
+        for e in frappe.get_all(
+            "Employee",
+            filters={"custom_alumni_user": ["in", involved_list]},
+            fields=_emp_fields,
+        ):
+            if e.name not in seen_emp:
+                employees.append(e)
+                seen_emp.add(e.name)
 
     company_names = sorted({row.company for row in employees if row.company})
     company_rows = (
@@ -3423,8 +3447,11 @@ def get_alumni_todo_filter_options(type: str = "My Todo") -> dict:
     for row in employees:
         label = row.employee_name and f"{row.employee_name.strip()} ({row.name})" or row.name
         option = {"value": row.name, "label": label}
-        if row.user_id:
-            option["secondary"] = row.user_id
+        # Show the address the person actually signs in with: for an alumnus that
+        # is the personal-email (custom_alumni_user), not the company user_id.
+        login = row.get("custom_alumni_user") or row.user_id
+        if login:
+            option["secondary"] = login
         employee_options.append(option)
 
     return {
@@ -3445,7 +3472,9 @@ def get_alumni_todo_filter_options(type: str = "My Todo") -> dict:
             for employment_type_name in employment_type_names
         ],
         "employees": employee_options,
-        "current_employee": next((row.name for row in employees if row.user_id == user), None),
+        # Alumni resolve to their Employee via custom_alumni_user, not user_id.
+        "current_employee": alumni_employee_name(user)
+        or next((row.name for row in employees if row.user_id == user), None),
     }
 
 
@@ -4265,8 +4294,17 @@ def _alumni_suggestion_fallback(user: str, need: int, seen: set) -> list[dict]:
 
     out = []
     for row in candidates:
-        employee = frappe.db.get_value(
-            "Employee", {"user_id": row.name}, ["designation", "department"], as_dict=True
+        # Alumni sign in with their personal email, so Employee.user_id (the
+        # company address) never matches. Resolve via the alumni-aware mapping
+        # (custom_alumni_user -> user_id -> personal_email) so designation and
+        # department are populated for alumni suggestions.
+        emp_name = alumni_employee_name(row.name)
+        employee = (
+            frappe.db.get_value(
+                "Employee", emp_name, ["designation", "department"], as_dict=True
+            )
+            if emp_name
+            else None
         ) or frappe._dict()
         out.append(
             {
@@ -4309,9 +4347,19 @@ def get_alumni_celebrations(days: int = 30, days_in_advance: int = None) -> dict
 
     _require_alumni_session()
 
-    result = celebrations_api.get_upcoming_celebrations(
-        days=days, days_in_advance=days_in_advance
-    ) or {}
+    # The delegate is guarded by Work Connect's role gate, which an alumnus (a
+    # role-less Website User) does not pass. This wrapper is itself an authorised,
+    # alumni-only entry point and re-filters the (read-only, workforce-wide)
+    # result to fellow alumni below, so run the delegate in a privileged context
+    # and always restore the original session user.
+    original_user = frappe.session.user
+    try:
+        frappe.set_user("Administrator")
+        result = celebrations_api.get_upcoming_celebrations(
+            days=days, days_in_advance=days_in_advance
+        ) or {}
+    finally:
+        frappe.set_user(original_user)
     data = result.get("data") or {}
 
     def _mine(rows):
