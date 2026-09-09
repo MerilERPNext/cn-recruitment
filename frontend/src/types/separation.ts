@@ -124,3 +124,77 @@ export interface SeparationFunnelDataResponse {
     custom_auto_action_type: string;
     options_data: string;
 }
+
+export interface SupportContact {
+  id: string;
+  name: string;
+  email: string;
+}
+
+export interface EmployeeSupportContacts {
+  relieving_date?: string | null;
+  manager: SupportContact;
+  hrbp: SupportContact;
+  hdTeam: SupportContact;
+}
+
+export interface SeparationOpenItemTasks {
+  user?: string;
+  open_tasks: number;
+}
+
+export interface SeparationOpenItemAttendanceFlags {
+  from_date?: string;
+  to_date?: string;
+  total_flags: number;
+  absent_days?: number;
+  lwp_days?: number;
+}
+
+export interface SeparationOpenItemExpenses {
+  total_claims: number;
+  total_amount: number;
+}
+
+export interface SeparationOpenItemsData {
+  employee?: string;
+  open_tasks?: SeparationOpenItemTasks;
+  attendance_flags?: SeparationOpenItemAttendanceFlags;
+  expenses?: SeparationOpenItemExpenses;
+}
+
+export interface AssignedUser {
+  user_id: string;
+  name: string;
+  employee?: string;
+}
+
+export interface SeparationWorkflowStage {
+  stage_name: string;
+  status: string;
+  is_cleared: boolean;
+  is_cancelled: boolean;
+  selected_action?: string | null;
+  todo?: string;
+  funnel_task?: string;
+  todo_status?: string;
+  description?: string;
+  due_date?: string | null;
+  completed_on?: string | null;
+  assigned_users?: AssignedUser[];
+  assigned_roles?: string[];
+  order: number;
+}
+
+export interface SeparationWorkflowStagesResponse {
+  employee?: string;
+  separation?: string;
+  flow_status?: string;
+  total_stages?: number;
+  cleared_stages?: number;
+  pending_stages?: number;
+  workflow_stages?: SeparationWorkflowStage[];
+}
+
+
+

@@ -758,7 +758,9 @@ loading: false, title: "", source: "", html: ""
           );
           const match = (opts?.results || []).find((r: any) => r.id === faId);
           if (match?.label) faTitle = match.label;
-        } catch {}
+        } catch {
+          // ignore lookup error
+        }
       }
       setFormData((prev: any) => {
         if (prev.designation !== designation) return prev;
@@ -865,7 +867,9 @@ loading: false, title: "", source: "", html: ""
             (positionsComp.getValue() || []).map((row: any) => ({ ...row, functional_area: "" }))
           );
         }
-      } catch {}
+      } catch {
+        // ignore clearing error
+      }
     }, 0);
   }, []);
 
@@ -926,7 +930,9 @@ loading: false, title: "", source: "", html: ""
 
              // Force UI redraw for the grid and numbers if needed
              formInstanceRef.current.redraw();
-          } catch(e) {}
+          } catch {
+             // ignore redraw error
+          }
         }, 100);
       }
     }
@@ -1535,6 +1541,7 @@ loading: false, title: "", source: "", html: ""
       payload.custom_salary_range_max = formData.salary_max;
       payload.custom_salary_timeframe = formData.salary_timeframe;
       payload.custom_position_details = (formData.positions || []).map(
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         ({ position_number: _positionNumber, cost_center_allocations, ...position }: Record<string, any>) => ({
           ...Object.fromEntries(Object.entries(position).filter(([key]) => !key.endsWith("_title"))),
           ...(Array.isArray(cost_center_allocations)
@@ -2049,7 +2056,7 @@ loading: false, title: "", source: "", html: ""
                               url.split("?")[0].split("#")[0].split("/").pop() || "";
                             try {
                               return decodeURIComponent(base);
-                            } catch (e) {
+                            } catch {
                               return base;
                             }
                           })),
