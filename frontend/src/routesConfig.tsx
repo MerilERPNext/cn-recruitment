@@ -1525,7 +1525,7 @@ export const routesConfig: AppRoute[] = [
       {
         path: "performance-improvement",
         element: <PerformanceImprovement />,
-        permissionKey: "Separation",
+        permissionKey: "Performance Improvement",
       },
       {
         path: "confirmation",

@@ -5,7 +5,7 @@ import { useScreenSize } from "../../hooks/useScreenSize";
 import { useTodoCategories, useTodoList } from "../../hooks/useTodo";
 import { useOptionalTargetEmployeeId } from "../../context/ViewedUserContext";
 import type { ToDo } from "../../services/todoService";
-import { formatDateDDMonthYYYY } from "../../utils/formatToIndianDate";
+import formatToIndianDate from "../../utils/formatToIndianDate";
 import { sanitizeToPlainText } from "../../utils/sanitizeToPlainText";
 import { Card } from "../shared/atoms/Card";
 import { Typography } from "../shared/atoms/Typography";
@@ -58,9 +58,9 @@ const MyToDoItem: React.FC<{ item: ToDo; index?: number }> = ({ item }) => {
 
           <Typography variant="label" color="body2">
             {item.custom_due_datetime
-              ? `Due on ${formatDateDDMonthYYYY(item.custom_due_datetime)}`
+              ? `Due on ${formatToIndianDate(item.custom_due_datetime)}`
               : item.date
-                ? `Due on ${formatDateDDMonthYYYY(item.date)}`
+                ? `Due on ${formatToIndianDate(item.date)}`
                 : "No due date"}
           </Typography>
         </div>

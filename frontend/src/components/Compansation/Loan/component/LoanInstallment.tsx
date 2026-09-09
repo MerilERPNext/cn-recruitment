@@ -2,7 +2,7 @@ import { useState } from "react";
 import { CiLock } from "react-icons/ci";
 import { Pause, SquarePen } from "lucide-react";
 import { formatCurrency } from "../../../../utils/currency";
-import { formatDateDDMonthYYYY } from "../../../../utils/formatToIndianDate";
+import formatToIndianDate from "../../../../utils/formatToIndianDate";
 import { Typography } from "../../../shared/atoms/Typography";
 import { NoDataFound } from "../../../shared/atoms/NoDataFound";
 import CardTable from "../../../shared/CardTable";
@@ -90,8 +90,7 @@ export default function LoanInstallments({
       <CardTable titles={titles} columnWidths={columnWidths}>
         {installments.length > 0 ? (
           installments.map((installment, index) => {
-            const formattedDate = installment.payment_date ? formatDateDDMonthYYYY(installment.payment_date) : "";
-            const monthYear = formattedDate ? formattedDate.split(" ").slice(1).join(" ") : "-";
+            const formattedDate = installment.payment_date ? formatToIndianDate(installment.payment_date) : "-";
 
             // Recompute opening balance if not provided directly
             const openingBalance =
@@ -112,7 +111,7 @@ export default function LoanInstallments({
 
                 {/* Installment Month */}
                 <Typography variant="bodySmall" className="text-center">
-                  {monthYear}
+                  {formattedDate}
                 </Typography>
 
                 {/* Opening Balance */}
