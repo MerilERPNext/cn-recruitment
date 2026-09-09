@@ -168,7 +168,7 @@ export const FrappeAPI = {
       params.append("filters", JSON.stringify(options.filters));
     if (options.orFilters)
       params.append("or_filters", JSON.stringify(options.orFilters));
-    if (options.limit)
+    if (options.limit !== undefined)
       params.append("limit_page_length", options.limit.toString());
     if (options.limitStart)
       params.append("limit_start", options.limitStart.toString());

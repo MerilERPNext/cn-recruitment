@@ -1,0 +1,278 @@
+/* Styles for the "External Recruiter Openings" Custom HTML Block.
+ *
+ * The block renders inside a shadow root, so these rules cannot leak out and
+ * nothing leaks in — except desk.bundle.css, which Frappe links into every
+ * block, which is why the Frappe utility classes and CSS variables below
+ * resolve. The "View Candidates" dialog is NOT in the shadow root
+ * (frappe.ui.Dialog attaches to document.body), so it carries its own styles
+ * inline in the JS.
+ *
+ * Deliberately the same visual language as the TPO Campus Drives block: a
+ * five-colour accent rotated by position, a coloured headline count, and a
+ * warning note in the card rather than an error on save. A recruiter and a TPO
+ * are doing the same shape of job, so the two boards should not look like they
+ * came from different products.
+ *
+ * Every colour is a Frappe palette variable, so light and dark themes stay
+ * legible without a second set of rules.
+ */
+
+.er-head {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: 12px;
+	margin-bottom: 16px;
+}
+
+.er-title {
+	font-size: var(--text-xl);
+	font-weight: 600;
+	color: var(--heading-color, var(--text-color));
+}
+
+.er-subtitle {
+	color: var(--text-muted);
+	font-size: var(--text-md);
+	margin-top: 2px;
+}
+
+.er-list {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+	gap: 14px;
+}
+
+/* --- card ---------------------------------------------------------------- */
+
+.er-card {
+	--accent: var(--blue-500);
+	--accent-soft: var(--blue-100);
+	--accent-text: var(--blue-600);
+
+	position: relative;
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	padding: 16px;
+	padding-top: 18px;
+	overflow: hidden;
+	background: var(--card-bg, var(--fg-color));
+	border: 1px solid var(--border-color);
+	border-radius: var(--border-radius-lg, 10px);
+	transition: box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.er-card::before {
+	content: "";
+	position: absolute;
+	inset: 0 0 auto 0;
+	height: 4px;
+	background: var(--accent);
+}
+
+.er-card:hover {
+	box-shadow: var(--shadow-md, 0 2px 8px rgba(0, 0, 0, 0.08));
+	transform: translateY(-1px);
+}
+
+.er-card[data-accent="1"] {
+	--accent: var(--purple-500);
+	--accent-soft: var(--purple-100);
+	--accent-text: var(--purple-600);
+}
+.er-card[data-accent="2"] {
+	--accent: var(--green-500);
+	--accent-soft: var(--green-100);
+	--accent-text: var(--green-600);
+}
+.er-card[data-accent="3"] {
+	--accent: var(--orange-500);
+	--accent-soft: var(--orange-100);
+	--accent-text: var(--orange-600);
+}
+.er-card[data-accent="4"] {
+	--accent: var(--pink-500);
+	--accent-soft: var(--pink-100);
+	--accent-text: var(--pink-600);
+}
+
+.er-card-head {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: 8px;
+}
+
+.er-role {
+	font-weight: 600;
+	font-size: var(--text-lg);
+	line-height: 1.3;
+}
+
+.er-sub {
+	color: var(--text-muted);
+	font-size: var(--text-sm);
+	margin-top: 2px;
+}
+
+/* --- status pill --------------------------------------------------------- */
+
+.er-status {
+	flex-shrink: 0;
+	padding: 2px 10px;
+	border-radius: var(--border-radius-full, 999px);
+	font-size: var(--text-xs);
+	font-weight: 600;
+	white-space: nowrap;
+	background: var(--bg-light-gray, var(--control-bg));
+	color: var(--text-muted);
+}
+
+.er-status-open {
+	background: var(--green-100);
+	color: var(--green-600);
+}
+.er-status-in-progress {
+	background: var(--blue-100);
+	color: var(--blue-600);
+}
+.er-status-closed {
+	background: var(--bg-light-gray, var(--control-bg));
+	color: var(--text-muted);
+}
+
+/* --- facts --------------------------------------------------------------- */
+
+.er-meta-label {
+	font-size: var(--text-xs);
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+	color: var(--text-muted);
+	margin-bottom: 4px;
+}
+
+/* The opening's own attributes — department, location, employment type,
+   experience. Muted, because they identify the role rather than report on it. */
+.er-facts {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px;
+}
+
+.er-fact {
+	padding: 2px 9px;
+	border-radius: var(--border-radius-full, 999px);
+	background: var(--bg-light-gray, var(--control-bg));
+	color: var(--text-muted);
+	font-size: var(--text-sm);
+}
+
+/* --- candidate counts ---------------------------------------------------- */
+
+.er-count {
+	display: inline-flex;
+	align-items: baseline;
+	gap: 5px;
+	padding: 3px 10px;
+	border-radius: var(--border-radius-full, 999px);
+	background: var(--accent-soft);
+	color: var(--accent-text);
+	font-weight: 600;
+	font-size: var(--text-md);
+}
+
+.er-count small {
+	font-weight: 500;
+	font-size: var(--text-sm);
+}
+
+/* How many of the candidates on this opening this recruiter put there. The
+   number they are actually judged on, so it is coloured rather than muted. */
+.er-mine-note {
+	margin-left: 8px;
+	padding: 1px 8px;
+	border-radius: 999px;
+	background: var(--green-100, #e3f5e9);
+	color: var(--green-700, #1a7f43);
+	font-size: var(--text-sm);
+}
+
+/* --- pipeline ------------------------------------------------------------ */
+
+.er-pipe {
+	display: inline-block;
+	margin: 3px 4px 0 0;
+	padding: 2px 9px;
+	border-radius: var(--border-radius-full, 999px);
+	background: var(--bg-light-gray, var(--control-bg));
+	color: var(--text-color);
+	font-size: var(--text-sm);
+}
+
+.er-pipe b {
+	font-weight: 600;
+}
+
+.er-pipe-interview {
+	background: var(--blue-100, #e5eefc);
+	color: var(--blue-700, #1257ad);
+}
+.er-pipe-shortlisted {
+	background: var(--purple-100, #ece7fb);
+	color: var(--purple-600, #6d4bd8);
+}
+.er-pipe-hired,
+.er-pipe-accepted {
+	background: var(--green-100, #e3f5e9);
+	color: var(--green-700, #1a7f43);
+}
+.er-pipe-rejected {
+	background: var(--red-100, #fce8e8);
+	color: var(--red-600, #c0392b);
+}
+.er-pipe-hold,
+.er-pipe-draft {
+	background: var(--orange-100, #fdf0dd);
+	color: var(--orange-700, #9a5b00);
+}
+
+/* --- closing-soon note ---------------------------------------------------
+
+   Shown on the card rather than left for the recruiter to discover when the
+   opening quietly disappears from their list: the posting window is theirs
+   alone and ends on a date the opening itself does not carry. */
+
+.er-note {
+	padding: 8px 10px;
+	border-radius: var(--border-radius);
+	border-left: 3px solid var(--orange-400, #f59e0b);
+	background: var(--bg-orange, rgba(245, 158, 11, 0.08));
+	color: var(--text-color);
+	font-size: var(--text-sm);
+	line-height: 1.5;
+}
+
+.er-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	margin-top: auto;
+	padding-top: 2px;
+}
+
+.er-empty {
+	grid-column: 1 / -1;
+	padding: 32px 16px;
+	text-align: center;
+	color: var(--text-muted);
+	border: 1px dashed var(--border-color);
+	border-radius: var(--border-radius-lg, 10px);
+}
+
+.er-empty-title {
+	font-size: var(--text-lg);
+	font-weight: 600;
+	color: var(--text-color);
+	margin-bottom: 4px;
+}

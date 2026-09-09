@@ -2,7 +2,7 @@ import { useState } from "react";
 import { CiLock } from "react-icons/ci";
 import { Pause, SquarePen } from "lucide-react";
 import { formatCurrency } from "../../../../utils/currency";
-import { formatDateDDMonthYYYY } from "../../../../utils/formatToIndianDate";
+import formatToIndianDate from "../../../../utils/formatToIndianDate";
 import { Typography } from "../../../shared/atoms/Typography";
 import { NoDataFound } from "../../../shared/atoms/NoDataFound";
 import { Installment } from "../Type/loan";
@@ -96,7 +96,7 @@ export default function LoanInstallmentsMobileCards({
                   </span>
                   <div className="text-sm font-semibold text-gray-900 pt-0.5">
                     {installment.payment_date
-                      ? formatDateDDMonthYYYY(installment.payment_date)
+                      ? formatToIndianDate(installment.payment_date)
                       : "-"}
                   </div>
                 </div>

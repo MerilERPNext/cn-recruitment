@@ -45,6 +45,8 @@
   "enable_moving_requisition_back_to_draft",
   "allow_future_dated_positions",
   "allow_hiring_manager_override",
+  "salary_range_limits_section",
+  "salary_range_limits",
   "job_posting_settings_section",
   "send_external_recruiter_assignment_email",
   "external_recruiter_assignment_email_template",
@@ -339,6 +341,19 @@
    "fieldname": "allow_hiring_manager_override",
    "fieldtype": "Check",
    "label": "Allow Hiring Manager Override in Requisition"
+  },
+  {
+   "description": "Allowed salary range per Salary Timeframe on a Job Requisition. Leave the table empty for no limit.",
+   "fieldname": "salary_range_limits_section",
+   "fieldtype": "Section Break",
+   "label": "Salary Range Limits"
+  },
+  {
+   "description": "One row per Salary Timeframe. A blank Minimum or Maximum means that end is unrestricted; a timeframe with no row is unrestricted.",
+   "fieldname": "salary_range_limits",
+   "fieldtype": "Table",
+   "label": "Salary Range Limits",
+   "options": "Salary Range Limit"
   },
   {
    "fieldname": "job_posting_settings_section",

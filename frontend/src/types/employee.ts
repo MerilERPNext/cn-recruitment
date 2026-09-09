@@ -54,6 +54,8 @@ export interface EmployeeFromAPI {
   custom_functional_area?: string;
   custom_hod?: string;
   custom_hrbp?: string;
+  custom_hd_team?: string | null;
+  custom_hd_team_name?: string | null;
   custom_dotted_line_manager?: string;
   dotted_manager_member_id?: string;
   custom_cxo?: string;

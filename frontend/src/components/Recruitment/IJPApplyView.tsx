@@ -15,7 +15,23 @@ import {
 import { Form } from "@tsed/react-formio";
 import "formiojs/dist/formio.form.css";
 import Button from "../shared/atoms/Button";
+import { FilePreviewModal } from "../shared/molecules/FilePreviewModal";
+import { getFileName } from "../../utils/fileUtils";
 import { Loader2 } from "lucide-react";
+
+// Form.io's file component renders an uploaded file as a bare link that
+// navigates away from the half-filled form. Every other module previews an
+// attachment in place (AttachmentCard → FilePreviewModal), so we decorate each
+// rendered file link with the same affordance: an inline Preview button, and a
+// click on the file name that opens the preview instead of leaving the page.
+const FILE_LINK_SELECTOR = ".formio-component-file a[href]";
+const PREVIEW_DECORATED_ATTR = "data-ijp-preview";
+const PREVIEW_BUTTON_CLASS = "ijp-file-preview-btn";
+const EYE_ICON_SVG =
+  '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" ' +
+  'fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" ' +
+  'stroke-linejoin="round" aria-hidden="true">' +
+  '<path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>';
 
 interface FormioInstance {
   submit: () => void;
@@ -65,7 +81,9 @@ export default function ApplyView({
   const [submitted, setSubmitted] = useState(false);
   const [acknowledged, setAcknowledged] = useState(false);
   const formRef = useRef<FormioInstance | null>(null);
+  const formContainerRef = useRef<HTMLDivElement | null>(null);
   const initializedRef = useRef(false);
+  const [previewFile, setPreviewFile] = useState<{ url: string; name: string } | null>(null);
   const [stepValidationErrors, setStepValidationErrors] = useState<string[]>(
     [],
   );
@@ -79,6 +97,65 @@ export default function ApplyView({
 
   useEffect(() => {
     setStepValidationErrors([]);
+  }, [currentStep]);
+
+  // Give every uploaded file rendered by Form.io the preview affordance the
+  // rest of the app has. Form.io re-renders its file list on upload/remove, so
+  // a MutationObserver re-decorates whatever it puts back.
+  useEffect(() => {
+    const container = formContainerRef.current;
+    if (!container) return;
+
+    const openPreview = (link: HTMLAnchorElement) => {
+      const url = link.getAttribute("href");
+      if (!url || url === "#") return;
+      setPreviewFile({ url, name: link.textContent?.trim() || getFileName(url) });
+    };
+
+    const decorate = () => {
+      container.querySelectorAll<HTMLAnchorElement>(FILE_LINK_SELECTOR).forEach((link) => {
+        if (link.hasAttribute(PREVIEW_DECORATED_ATTR)) return;
+        const url = link.getAttribute("href");
+        if (!url || url === "#") return;
+        link.setAttribute(PREVIEW_DECORATED_ATTR, "");
+        link.title = "Click to preview";
+
+        const button = document.createElement("button");
+        // type="button" matters: this lives inside the Form.io <form>.
+        button.type = "button";
+        button.title = "Preview";
+        button.className =
+          `${PREVIEW_BUTTON_CLASS} ml-2 inline-flex items-center gap-1 align-middle rounded ` +
+          "border border-gray-200 px-1.5 py-0.5 text-[11px] text-gray-600 " +
+          "hover:border-blue-400 hover:text-blue-600";
+        button.innerHTML = `${EYE_ICON_SVG}<span>Preview</span>`;
+        button.addEventListener("click", (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          openPreview(link);
+        });
+        link.insertAdjacentElement("afterend", button);
+      });
+    };
+
+    // A click on the file name itself previews rather than navigating away.
+    const handleClick = (event: MouseEvent) => {
+      const target = event.target as HTMLElement | null;
+      const link = target?.closest?.(FILE_LINK_SELECTOR) as HTMLAnchorElement | null;
+      if (!link || !container.contains(link)) return;
+      event.preventDefault();
+      openPreview(link);
+    };
+
+    decorate();
+    container.addEventListener("click", handleClick);
+    const observer = new MutationObserver(decorate);
+    observer.observe(container, { childList: true, subtree: true });
+
+    return () => {
+      observer.disconnect();
+      container.removeEventListener("click", handleClick);
+    };
   }, [currentStep]);
 
   useEffect(() => {
@@ -928,29 +1005,31 @@ export default function ApplyView({
                     </div>
                   )}
 
-                  <Form
-                    key={`${activeSection}-${currentStep}-${JSON.stringify(rowCounts)}`}
-                    form={dynamicSchema}
-                    submission={{ data: formData }}
-                    onChange={handleFormChange}
-                    onSubmit={handleFormSubmit}
-                    onFormReady={(instance: FormioInstance) => {
-                      formRef.current = instance;
-                    }}
-                    options={{
-                      builder: { styles: false },
-                      submitButton: false,
-                      alerts: false,
-                      validateOnInit: false,
-                      validateOnBlur: true,
-                      validateOnChange: false,
-                      formClass: "space-y-4",
-                      rowClass: "grid grid-cols-2 gap-4",
-                      labelClass: "mb-1 text-xs text-slate-500 font-medium",
-                      inputClass:
-                        "w-full border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs bg-white text-slate-900 font-semibold outline-none focus:border-blue-400",
-                    }}
-                  />
+                  <div ref={formContainerRef}>
+                    <Form
+                      key={`${activeSection}-${currentStep}-${JSON.stringify(rowCounts)}`}
+                      form={dynamicSchema}
+                      submission={{ data: formData }}
+                      onChange={handleFormChange}
+                      onSubmit={handleFormSubmit}
+                      onFormReady={(instance: FormioInstance) => {
+                        formRef.current = instance;
+                      }}
+                      options={{
+                        builder: { styles: false },
+                        submitButton: false,
+                        alerts: false,
+                        validateOnInit: false,
+                        validateOnBlur: true,
+                        validateOnChange: false,
+                        formClass: "space-y-4",
+                        rowClass: "grid grid-cols-2 gap-4",
+                        labelClass: "mb-1 text-xs text-slate-500 font-medium",
+                        inputClass:
+                          "w-full border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs bg-white text-slate-900 font-semibold outline-none focus:border-blue-400",
+                      }}
+                    />
+                  </div>
 
                   {/* Add More button for Table fields */}
                   {fieldsInActiveSection.map((field) => {
@@ -1021,6 +1100,14 @@ export default function ApplyView({
           )}
         </div>
       </div>
+
+      {previewFile && (
+        <FilePreviewModal
+          fileUrl={previewFile.url}
+          fileName={previewFile.name}
+          onClose={() => setPreviewFile(null)}
+        />
+      )}
     </div>
   );
 }

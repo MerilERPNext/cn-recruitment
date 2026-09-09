@@ -18,6 +18,9 @@ MANAGED_BLOCKS = {
 	# Drive cards + "Add Candidates" dialog, placed on the TPO Space workspace.
 	# Backed by recruitment.recruitment.tpo_portal.
 	"TPO Campus Drives": "tpo_campus_drives",
+	# Opening cards + "View Candidates" dialog, placed on the External Recruiter
+	# workspace. Backed by recruitment.recruitment.external_recruiter_portal.
+	"External Recruiter Openings": "external_recruiter_openings",
 }
 
 

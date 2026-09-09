@@ -130,6 +130,9 @@ export const DEFAULT_EMPLOYEE_FIELDS = [
   "blood_group",
   "custom_emergency_blood_group",
   "company_name",
+  "custom_hrbp",
+  "custom_hd_team",
+  "relieving_date",
 ] as const;
 
 export interface EmployeeDetilsType {
@@ -156,6 +159,7 @@ export interface EmployeeDetilsType {
 
   status: string;
   date_of_joining: string;
+  relieving_date?: string | null;
 
   default_shift: string | null;
 
@@ -172,6 +176,11 @@ export interface EmployeeDetilsType {
 
   custom_dotted_line_manager: string | null;
   dotted_manager_member_id: string | null;
+
+  custom_hrbp?: string | null;
+  custom_hrbp_name?: string | null;
+  custom_hd_team?: string | null;
+  custom_hd_team_name?: string | null;
 
   employee: string;
 

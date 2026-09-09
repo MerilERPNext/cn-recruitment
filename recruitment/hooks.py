@@ -452,6 +452,9 @@ doc_events = {
             # from that row, and an opening with no recruiter belongs to nobody.
             # Fires on the transition into an approved status only.
             "recruitment.api.job_requisition.enforce_fresher_region_readiness",
+            # Days between posting_date and expected_by, kept on the requisition
+            # so the requested wait is visible and reportable.
+            "recruitment.customizations.job_requisition.set_days_to_expected_by",
         ],
         "on_update": [
             # A Fresher requisition hires across several regions at once. Reaching

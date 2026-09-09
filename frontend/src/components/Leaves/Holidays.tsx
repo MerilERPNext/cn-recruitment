@@ -149,7 +149,7 @@ const Holidays: React.FC = () => {
     data: leaveRequests,
     isLoading: isLeaveReqLoading,
     refetch,
-  } = useMyLeaveRequests(employee?.name);
+  } = useMyLeaveRequests(employee?.name, year);
   const {
     data: allowPastOptionalHolidayRequests,
     isLoading: isPastOptionalHolidayRuleLoading,
@@ -209,13 +209,17 @@ const Holidays: React.FC = () => {
   );
 
   const getHolidayStatus = (date: string) => {
-    const req = leaveRequests?.find(
-      (r) => r.from_date === date && r.to_date === date,
-    );
-    if (!req) return null;
-    if (req.status === "Approved") return "Approved";
-    if (req.status === "Rejected") return "Rejected";
-    if (req.status === "Open") return "Pending";
+    const matchingRequests = leaveRequests?.filter((r) => {
+      if (r.status === "Cancelled" || r.docstatus === 2) return false;
+      return r.from_date <= date && date <= r.to_date;
+    });
+
+    if (!matchingRequests || matchingRequests.length === 0) return null;
+
+    if (matchingRequests.some((r) => r.status === "Approved")) return "Approved";
+    if (matchingRequests.some((r) => r.status === "Open")) return "Pending";
+    if (matchingRequests.some((r) => r.status === "Rejected")) return "Rejected";
+
     return null;
   };
 
