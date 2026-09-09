@@ -372,6 +372,14 @@ const EmployeesDirectory = lazyWithRetry(
   () => import("./components/EmployeesDirectory/EmployeeDirectoryLayout"),
   "EmployeesDirectory",
 );
+const AddEmployee = lazyWithRetry(
+  () => import("./components/EmployeesDirectory/AddEmployee/AddEmployee"),
+  "AddEmployee",
+);
+const NewHiresList = lazyWithRetry(
+  () => import("./components/EmployeesDirectory/NewHires/NewHiresList"),
+  "NewHiresList",
+);
 const AllShiftsDashboardRoute = lazyWithRetry(
   () =>
     import("./components/ShiftRequest/ShiftDynamicRoute").then((module) => ({
@@ -474,6 +482,16 @@ const SeparationWorkflow = lazyWithRetry(
 const SeparationRecord = lazyWithRetry(
   () => import("./components/Flows/SparationRecord/SeparationRecord"),
   "SeparationRecord",
+);
+
+const SeparationDashboard = lazyWithRetry(
+  () => import("./components/Flows/Separation/SeparationDashboard/SeparationDashboard"),
+  "SeparationDashboard",
+);
+
+const PerformanceImprovement = lazyWithRetry(
+  () => import("./components/Flows/Separation/PIP/PIP"),
+  "PerformanceImprovement",
 );
 
 const Confirmation = lazyWithRetry(
@@ -1272,6 +1290,16 @@ export const routesConfig: AppRoute[] = [
     element: <EmployeesDirectory />,
     permissionKey: "Employee Directory",
   },
+  {
+    path: "/webapp/employees-directory/add-employee",
+    element: <AddEmployee />,
+    permissionKey: "Employee Directory",
+  },
+  {
+    path: "/webapp/employees-directory/new-hires",
+    element: <NewHiresList />,
+    permissionKey: "Employee Directory",
+  },
   //Leaves routes
   {
     path: "/webapp/leave-app",
@@ -1490,6 +1518,16 @@ export const routesConfig: AppRoute[] = [
         permissionKey: "Separation",
       },
       {
+        path: "separation-dashboard",
+        element: <SeparationDashboard />,
+        permissionKey: "Separation Dashboard",
+      },
+      {
+        path: "performance-improvement",
+        element: <PerformanceImprovement />,
+        permissionKey: "Separation",
+      },
+      {
         path: "confirmation",
         element: <Confirmation />,
         permissionKey: "Confirmation",
@@ -1553,7 +1591,7 @@ export const routesConfig: AppRoute[] = [
             element: <Feedback />,
             permissionKey: "Feedback",
           },
-         
+
           {
             path: "skills",
             element: <SkillsAndProficiency />,

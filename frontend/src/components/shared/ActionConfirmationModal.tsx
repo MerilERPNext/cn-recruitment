@@ -1,4 +1,5 @@
 import React from "react";
+import { createPortal } from "react-dom";
 import { AlertTriangle, CheckCircle2, Info } from "lucide-react";
 import Button, { ButtonColor } from "./atoms/Button";
 
@@ -62,18 +63,21 @@ const ActionConfirmationModal: React.FC<ActionConfirmationModalProps> = ({
 
   const iconConfig = getIconConfig(confirmBgColor);
 
-  return (
+  const modalContent = (
     <div
-      className="fixed inset-0 z-[60] flex items-center justify-center"
+      className="fixed inset-0 top-0 left-0 right-0 bottom-0 z-[9999] w-screen h-screen flex items-center justify-center p-4 m-0"
       onMouseDown={(e) => e.stopPropagation()}
       onClick={(e) => e.stopPropagation()}
     >
-      {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]" />
-
-      {/* Modal */}
+      {/* Fullscreen Backdrop */}
       <div
-        className="relative bg-white rounded-2xl shadow-2xl max-w-sm w-full mx-4 overflow-hidden"
+        className="fixed inset-0 top-0 left-0 right-0 bottom-0 bg-black/50 backdrop-blur-[2px] transition-opacity"
+        onClick={onCancel}
+      />
+
+      {/* Modal Card */}
+      <div
+        className="relative z-10 bg-white rounded-2xl shadow-2xl max-w-sm w-full mx-auto overflow-hidden border border-gray-100"
         onMouseDown={(e) => e.stopPropagation()}
         onClick={(e) => e.stopPropagation()}
       >
@@ -84,7 +88,7 @@ const ActionConfirmationModal: React.FC<ActionConfirmationModalProps> = ({
           {/* Icon + Title row */}
           <div className="flex items-start gap-4 mb-4">
             <div
-              className={`shrink-0 w-11 h-11 rounded-full flex items-center justify-center ${iconConfig.bg} ring-4 ${iconConfig.ring} border ${iconConfig.border}`}
+              className={`shrink-0 w-11 h-11 rounded-xl flex items-center justify-center ${iconConfig.bg} ring-4 ${iconConfig.ring} border ${iconConfig.border}`}
             >
               {iconConfig.icon}
             </div>
@@ -126,6 +130,12 @@ const ActionConfirmationModal: React.FC<ActionConfirmationModalProps> = ({
       </div>
     </div>
   );
+
+  if (typeof document !== "undefined") {
+    return createPortal(modalContent, document.body);
+  }
+
+  return modalContent;
 };
 
 export default ActionConfirmationModal;

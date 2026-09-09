@@ -7,4 +7,9 @@ export const ROUTES = {
   HELP_DESK_ADMIN: "/helpdesk",
   HELP_DESK_INTERNAL: "/webapp/helpdesk",
   EMPLOYEE_DOCUMENTS: "/webapp/employee-documents",
+  EMPLOYEES_DIRECTORY_ADD: "/webapp/employees-directory/add-employee",
+  EMPLOYEES_DIRECTORY_NEW_HIRES: "/webapp/employees-directory/new-hires",
+  SEPARATION: "/webapp/flow-app/separation",
+  SEPARATION_DASHBOARD: "/webapp/flow-app/separation-dashboard",
+  PERFORMANCE_IMPROVEMENT: "/webapp/flow-app/performance-improvement",
 };

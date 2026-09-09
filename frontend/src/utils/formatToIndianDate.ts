@@ -194,12 +194,26 @@ export const formatEndDate = (endDate: string | null | undefined): string => {
   return formatToIndianDate(endDate);
 };
 
-export function formatDateDDMonthYYYY(dateString: string): string {
-  const date = new Date(dateString);
-  const day = date.getDate();
-  const month = date.toLocaleString("en-US", { month: "short" });
-  const year = date.getFullYear();
-  return `${day} ${month} ${year}`;
+export function formatDateDDMonthYYYY(
+  dateString?: string | number | Date | null
+): string {
+  if (!dateString) return "—";
+  try {
+    const parsed =
+      typeof dateString === "string"
+        ? parseDate(dateString) || new Date(dateString)
+        : dateString instanceof Date
+          ? dateString
+          : new Date(dateString);
+
+    if (!parsed || isNaN(parsed.getTime())) return "—";
+    const day = parsed.getDate();
+    const month = parsed.toLocaleString("en-US", { month: "short" });
+    const year = parsed.getFullYear();
+    return `${day} ${month} ${year}`;
+  } catch {
+    return "—";
+  }
 }
 
 export function getDays(from_date: string, to_date: string): number {
