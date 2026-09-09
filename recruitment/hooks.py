@@ -419,6 +419,10 @@ doc_events = {
             "recruitment.customizations.job_offer.stamp_offer_accepted_on",
         ],
         "on_cancel": "recruitment.api.offer_position.sync_offer_position",
+        # Deleting an offer has to hand the position back too. sync_offer_position
+        # cannot cover this one: it decides claim-vs-release from the offer's
+        # status, and a deleted offer has none.
+        "on_trash": "recruitment.api.offer_position.release_offer_position",
     },
     "Job Requisition": {
         "before_insert": [

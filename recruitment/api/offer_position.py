@@ -322,7 +322,8 @@ def sync_offer_position(doc, method=None):
     """Claim the position while the offer is live, release it when it is not.
 
     Wired to after_insert / on_submit / on_update / on_update_after_submit /
-    on_cancel so no path can leave offer and position disagreeing. Cheap exits
+    on_cancel so no path can leave offer and position disagreeing; deletion is
+    handled by its sibling `release_offer_position` on on_trash. Cheap exits
     first: an offer with neither a requisition nor a position does no queries at
     all, and an already-correct position is not rewritten. Never raises.
     """
@@ -390,6 +391,43 @@ def sync_offer_position(doc, method=None):
         _rollup_requisition(requisition, statuses=statuses, current=req_status)
     except Exception:
         frappe.log_error(frappe.get_traceback(), "Job Offer: position sync failed")
+
+
+def release_offer_position(doc, method=None):
+    """`on_trash`: a deleted offer must not keep holding its position.
+
+    Deletion is the one lifecycle event `sync_offer_position` cannot cover — it
+    reads the offer's status to decide claim-vs-release, and a deleted offer has
+    no status left to mean anything. Without this the row stays Filled against a
+    candidate whose offer no longer exists, so the position never reappears in
+    the picker and a single-position requisition stays stuck in Auto Archived.
+
+    Deliberately not `_release`: that also blanks the position fields on the
+    offer, which is pointless on a row that is about to be deleted. Never raises
+    — a failed release must not block the delete.
+    """
+    try:
+        row_name = doc.get(POSITION_FIELD)
+        if not row_name:
+            return
+        frappe.db.set_value(
+            JOB_REQUISITION_POSITION,
+            row_name,
+            {"status": POSITION_OPEN, "candidate": None, "candidate_status": None},
+            update_modified=False,
+        )
+        # Prefer the row's own parent over the offer's link field: the field is
+        # editable, and an offer whose requisition was cleared by hand would
+        # otherwise release the position but leave the requisition stuck in
+        # Auto Archived with nothing left to free it.
+        requisition = _requisition_of(doc) or frappe.db.get_value(
+            JOB_REQUISITION_POSITION, row_name, "parent"
+        )
+        # Frees a Filled requisition back to Approved Active; narrow enough that
+        # it cannot resurrect something HR closed deliberately.
+        _rollup_requisition(requisition)
+    except Exception:
+        frappe.log_error(frappe.get_traceback(), "Job Offer: position release on delete failed")
 
 
 @frappe.whitelist()
