@@ -165,6 +165,7 @@ const EmpShiftRequestCard = ({ data }: EmpShiftRequestCardProps) => {
               revokeLoading={revokeEventMutation.isPending}
               onEdit={handleEditClick}
               onRevoke={handleRevokeClick}
+              requestItem={data}
             />
           </div>
         </div>
@@ -254,6 +255,7 @@ const EmpShiftRequestCard = ({ data }: EmpShiftRequestCardProps) => {
                 revokeLoading={revokeEventMutation.isPending}
                 onEdit={handleEditClick}
                 onRevoke={handleRevokeClick}
+                requestItem={data}
               />
             </div>
           </div>

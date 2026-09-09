@@ -216,6 +216,7 @@ const MyAdvanceExpenseList = () => {
             canRevoke={canRevoke && !isActed}
             revokeLoading={revokeEventMutation.isPending}
             onRevoke={() => handleRevokeClick(item)}
+            requestItem={item}
           />
         </div>
       </div>
@@ -330,33 +331,32 @@ const MyAdvanceExpenseList = () => {
 
 
           {/* Action Buttons — stop propagation to prevent opening detail modal */}
-          {(canEdit || canRevoke) && (
-            <div
-              onClick={(e) => e.stopPropagation()}
-              className={isActed ? "pointer-events-none opacity-50" : ""}
-            >
-              <MyApprovalActionPill
-                uiPermission={{
-                  app: "Expenses",
-                  page: "My Advances",
-                  actionKeysMap: {
-                    edit: "edit",
-                    revoke: "revoke",
-                    nudge: "nudge"
-                  },
-                }}
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className={isActed ? "pointer-events-none opacity-50" : ""}
+          >
+            <MyApprovalActionPill
+              uiPermission={{
+                app: "Expenses",
+                page: "My Advances",
+                actionKeysMap: {
+                  edit: "edit",
+                  revoke: "revoke",
+                  nudge: "nudge"
+                },
+              }}
 
-                isPendingStatus={isPendingStatus}
-                todoId={item?.todo_id}
-                variant="buttons"
-                canEdit={canEdit && !isActed}
-                onEdit={() => handleEditClick(item)}
-                canRevoke={canRevoke && !isActed}
-                revokeLoading={revokeEventMutation.isPending}
-                onRevoke={() => handleRevokeClick(item)}
-              />
-            </div>
-          )}
+              isPendingStatus={isPendingStatus}
+              todoId={item?.todo_id}
+              variant="buttons"
+              canEdit={canEdit && !isActed}
+              onEdit={() => handleEditClick(item)}
+              canRevoke={canRevoke && !isActed}
+              revokeLoading={revokeEventMutation.isPending}
+              onRevoke={() => handleRevokeClick(item)}
+              requestItem={item}
+            />
+          </div>
         </div>
       </div>
     );
