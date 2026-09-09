@@ -24,12 +24,29 @@ export type AttendancePolicyResponse = {
   message: string;
 };
 
+import type { FilterCondition } from "../types/frappe";
+
 export const leaveService = {
-  getMyLeaveRequests: async (employeeId: string): Promise<LeaveRequest[]> => {
+  getMyLeaveRequests: async (
+    employeeId: string,
+    year?: string,
+  ): Promise<LeaveRequest[]> => {
     const targetEmployeeId = getTargetEmployeeId();
     const filterEmployeeId = targetEmployeeId ? targetEmployeeId : employeeId;
+
+    const filters: FilterCondition[] = [
+      ["employee", "=", filterEmployeeId],
+      ["docstatus", "<", 2],
+      ["status", "!=", "Cancelled"],
+    ];
+
+    if (year) {
+      filters.push(["from_date", "<=", `${year}-12-31`]);
+      filters.push(["to_date", ">=", `${year}-01-01`]);
+    }
+
     const result = await FrappeAPI.getDocumentList("Leave Application", {
-      filters: [["employee", "=", filterEmployeeId]],
+      filters,
       fields: [
         "name",
         "leave_type",
@@ -41,7 +58,7 @@ export const leaveService = {
         "docstatus",
       ],
       orderBy: "creation desc",
-      limit: 50,
+      limit: 0,
     });
     return result.data as LeaveRequest[];
   },

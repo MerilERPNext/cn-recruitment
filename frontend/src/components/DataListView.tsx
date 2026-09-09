@@ -1065,6 +1065,16 @@ const DataListView = <T extends BaseItem>({
   };
 
   const isListLoading = queryResult.isLoading || isLoading;
+
+  // True only while a FURTHER page is on its way — never for a background
+  // refetch of what's already on screen. A refetch that reuses the same key
+  // (a cache invalidation, say) leaves the rows in place, so announcing
+  // "Loading more..." for it only shifts the page under the reader.
+  const isFetchingMore = infiniteScroll
+    ? infiniteQueryResult.isFetchingNextPage
+    : loadMorePagination
+      ? loadMoreQueryResult.isFetching && loadMoreQueryResult.isLoading
+      : false;
   const error = queryResult.error;
 
   const isPermissionError = (error: Error): boolean => {
@@ -1251,7 +1261,7 @@ const DataListView = <T extends BaseItem>({
               );
             })}
             {/* Loading indicator for fetching more data */}
-            {queryResult.isFetching && processedData.length > 0 && (
+            {isFetchingMore && processedData.length > 0 && (
               <div className="flex items-center justify-center py-4 border-b border-gray-200">
                 <div className="flex items-center space-x-2 text-gray-500">
                   <Loader2 className="h-4 w-4 animate-spin" />

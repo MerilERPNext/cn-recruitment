@@ -39,10 +39,13 @@ export type LeaveProgressProps = {
   leaveData: LeaveData;
 };
 
-export const useMyLeaveRequests = (employeeId: string | undefined) => {
+export const useMyLeaveRequests = (
+  employeeId: string | undefined,
+  year?: string,
+) => {
   return useQuery({
-    queryKey: ["my-leave-requests", employeeId],
-    queryFn: () => leaveService.getMyLeaveRequests(employeeId!),
+    queryKey: ["my-leave-requests", employeeId, year],
+    queryFn: () => leaveService.getMyLeaveRequests(employeeId!, year),
     enabled: !!employeeId,
     staleTime: 5 * 60 * 1000,
   });
