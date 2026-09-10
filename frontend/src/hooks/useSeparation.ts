@@ -9,12 +9,14 @@ import {
   getEmployeeSupportContacts,
   getSeparationOpenItems,
   getSeparationWorkflowStages,
+  getFullAndFinalEstimate,
 } from "../services/SeparationService";
 import { SeparationFunnelDetails, NoticePeriodAndSeparationPolicyResponse, EmployeeSeparationDetails } from "../types/flows";
 import {
   EmployeeSupportContacts,
   SeparationOpenItemsData,
   SeparationWorkflowStagesResponse,
+  FullAndFinalEstimateResponse,
 } from "../types/separation";
 
 export const useSeparationEmployee = () => {
@@ -87,6 +89,14 @@ export const useGetSeparationWorkflowStages = (employee?: string | null) => {
   return useQuery<SeparationWorkflowStagesResponse>({
     queryKey: ["separation-workflow-stages", employee],
     queryFn: () => getSeparationWorkflowStages(employee || ""),
+    enabled: Boolean(employee),
+  });
+};
+
+export const useGetFullAndFinalEstimate = (employee?: string | null) => {
+  return useQuery<FullAndFinalEstimateResponse | null>({
+    queryKey: ["full-and-final-estimate", employee],
+    queryFn: () => getFullAndFinalEstimate(employee || ""),
     enabled: Boolean(employee),
   });
 };
