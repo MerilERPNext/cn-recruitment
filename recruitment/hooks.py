@@ -41,6 +41,10 @@ app_include_js = [
 	# and a doctype's own JS is evaluated before any doctype_js hook. Bump ?v= when it
 	# changes.
 	"/assets/recruitment/js/campus_gd_board.js?v=1",
+	# Makes the "Webapp" desktop icon (desktop_icon/webapp.json) open /webapp in the
+	# same tab — Frappe's desktop opens every External icon in a new one. Global
+	# because the desktop page has no doctype to hang it on. Bump ?v= when it changes.
+	"/assets/recruitment/js/desktop_webapp_icon.js?v=1",
 ]
 
 add_to_apps_screen = [
