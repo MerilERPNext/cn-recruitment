@@ -337,6 +337,20 @@ const OverviewTab = ({ requisition, isDesktop }: OverviewTabProps) => {
   const skills = Array.isArray(requisition.custom_skills)
     ? requisition.custom_skills.join(", ")
     : requisition.custom_skills || requisition.custom_additional_skills;
+  // Preferred Company is a Table MultiSelect (like Skills), so it arrives as a
+  // list. Depending on the endpoint that is either the flattened ids or the raw
+  // child rows; a plain string is the shape it carried while it was still a
+  // single Link, kept so older records still render.
+  const preferredCompanies = Array.isArray(requisition.custom_preferred_company)
+    ? (requisition.custom_preferred_company as any[])
+        .map((item: any) =>
+          item && typeof item === "object"
+            ? item.preferred_company_title || item.preferred_company || item.name
+            : item,
+        )
+        .filter(Boolean)
+        .join(", ")
+    : requisition.custom_preferred_company;
   const qualifications = Array.isArray(requisition.custom_qualifications)
     ? requisition.custom_qualifications.map((item: any) => item.qualification_title || item.qualification || item.degree_title || item.degree).filter(Boolean).join(", ")
     : requisition.custom_qualifications;
@@ -374,7 +388,7 @@ const OverviewTab = ({ requisition, isDesktop }: OverviewTabProps) => {
           { label: "Experience", value: experienceLabel },
           { label: "Salary Range", value: salaryRange },
           { label: "Preferred Notice Period", value: requisition.custom_preferred_notice_period },
-          { label: "Preferred Company", value: requisition.custom_preferred_company },
+          { label: "Preferred Company", value: preferredCompanies },
           { label: "Posting Date", value: requisition.posting_date ? formatToIndianDateWithTime(requisition.posting_date) : null },
           { label: "Expected By", value: requisition.expected_by ? formatToIndianDateWithTime(requisition.expected_by) : null },
           { label: "Created On", value: requisition.creation ? formatToIndianDateWithTime(requisition.creation) : null },
@@ -805,9 +819,7 @@ const getStatusColor = (status: string) => {
     case "approved active":
     case "completed":
     case "open":
-    case "approved draft":
       return "bg-green-100 text-green-700";
-    case "approval pending":
     case "approval pending":
       return "bg-yellow-100 text-yellow-700";
     case "draft":

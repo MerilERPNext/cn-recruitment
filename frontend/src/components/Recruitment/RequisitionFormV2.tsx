@@ -1327,6 +1327,18 @@ const RequisitionFormV2 = () => {
         v && typeof v === "object"
           ? (v.employee_name ?? v.label ?? v.name ?? v.title)
           : undefined;
+      // A multi-value select stores its picks as a map of id -> option object.
+      // A single pick stores the option object itself, which for Hiring Lead is
+      // a raw employee row ({employee, employee_name, designation, ...}) with
+      // none of the label keys — so key presence alone can't tell the two
+      // apart. Only a map has objects all the way down.
+      const isSelectionMap = (v: Record<string, any>) => {
+        const values = Object.values(v);
+        return (
+          values.length > 0 &&
+          values.every((entry: any) => entry && typeof entry === "object")
+        );
+      };
       Object.keys(selectData).forEach((key) => {
         const sd = selectData[key];
         if (key === "positions" && Array.isArray(sd)) {
@@ -1351,11 +1363,7 @@ const RequisitionFormV2 = () => {
           const labels = sd.map((v: any) => labelOf(v)).filter(Boolean);
           if (labels.length) newData[`${key}_title`] = labels;
           else delete newData[`${key}_title`];
-        } else if (
-          sd &&
-          typeof sd === "object" &&
-          !("label" in sd || "name" in sd || "title" in sd)
-        ) {
+        } else if (sd && typeof sd === "object" && isSelectionMap(sd)) {
           const labels = Object.values(sd)
             .map((v: any) => labelOf(v))
             .filter(Boolean);
