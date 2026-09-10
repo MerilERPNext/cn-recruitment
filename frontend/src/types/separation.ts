@@ -196,5 +196,113 @@ export interface SeparationWorkflowStagesResponse {
   workflow_stages?: SeparationWorkflowStage[];
 }
 
+export interface FullAndFinalEmployeeInfo {
+  employee: string;
+  employee_name: string;
+  company: string;
+  department: string;
+  designation: string;
+  date_of_joining?: string;
+  relieving_date?: string;
+}
 
+export interface FullAndFinalPeriod {
+  start_date: string;
+  end_date: string;
+}
 
+export interface FullAndFinalDays {
+  working_days: number;
+  absent_days: number;
+  lwp_days: number;
+  payment_days: number;
+  arrear_days: number;
+  pay_days: number;
+  recovery_days: number;
+}
+
+export interface FullAndFinalSalaryComponent {
+  salary_component: string;
+  amount: number;
+}
+
+export interface FullAndFinalLeaveEncashment {
+  total_days: number;
+  rate_per_day: number;
+  total_amount: number;
+  rows?: unknown[];
+}
+
+export interface FullAndFinalTotals {
+  total_earnings: number;
+  total_deductions: number;
+  total_payables: number;
+  total_recovery: number;
+  extra_recovery_earning: number;
+  extra_recovery_deduction: number;
+  extra_payment_earning: number;
+  extra_payment_deduction: number;
+  pay_days_arrear: number;
+  leave_encashment: number;
+  asset_recovery: number;
+  total_payable: number;
+  total_deduction: number;
+  net_settlement: number;
+  gross_pay: number;
+  salary_total_deduction: number;
+  net_pay: number;
+  total_payable_amount: number;
+  total_receivable_amount: number;
+  total_asset_recovery_cost: number;
+}
+
+export interface FullAndFinalSummary {
+  payable_breakup: {
+    salary_earnings: number;
+    payables: number;
+    pay_days_arrear: number;
+    recovery_days: number;
+  };
+  total_payable: number;
+  receivable_breakup: {
+    salary_deductions: number;
+    receivables: number;
+    asset_recovery: number;
+    extra_recovery_deduction: number;
+    extra_payment_deduction: number;
+  };
+  total_receivable: number;
+  net_pay: number;
+  direction: string;
+  is_recoverable: boolean;
+  amount_in_words?: string;
+  currency: string;
+}
+
+export interface FullAndFinalEstimateResponse {
+  employee: FullAndFinalEmployeeInfo;
+  period: FullAndFinalPeriod;
+  days: FullAndFinalDays;
+  attendance?: Record<string, number>;
+  earnings: FullAndFinalSalaryComponent[];
+  deductions: FullAndFinalSalaryComponent[];
+  payables?: unknown[];
+  receivables?: unknown[];
+  asset_recovery?: unknown[];
+  assets_allocated?: unknown[];
+  extra_recovery?: {
+    earning_breakup: unknown[];
+    deduction_breakup: unknown[];
+  };
+  extra_payment?: {
+    earning_breakup: unknown[];
+    deduction_breakup: unknown[];
+  };
+  leave_encashment?: FullAndFinalLeaveEncashment;
+  accrued_benefit?: unknown[];
+  accrued_component_summary?: unknown[];
+  totals: FullAndFinalTotals;
+  final: FullAndFinalSummary;
+  currency: string;
+  warnings?: string[];
+}

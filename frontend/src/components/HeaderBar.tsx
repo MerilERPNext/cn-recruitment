@@ -33,7 +33,7 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
 
   return (
     <div
-      className={`relative flex w-full min-h-[60px] md:rounded-lg items-center sticky top-0 z-50 justify-center px-4 py-3 md:z-1 bg-${bgColor} ${className}`}
+      className={`sticky top-0 flex w-full min-h-[60px] md:rounded-lg items-center z-50 justify-center px-4 py-3 md:z-1 bg-${bgColor} ${className}`}
     >
       {showBackButton && (
         <button
