@@ -118,10 +118,21 @@ export default function RequisitionReviewV2({
     </div>
   );
 
-  const EmployeeValue = ({ id, label }: { id: any; label: ReactNode }) => (
+  const EmployeeValue = ({
+    id,
+    label,
+    showId = false,
+  }: {
+    id: any;
+    label: ReactNode;
+    showId?: boolean;
+  }) => (
     <WrapperHoverCard employeeId={String(id)}>
       <span className="cursor-help underline decoration-dotted decoration-slate-300 underline-offset-2">
         {label}
+        {showId && !isBlankValue(id) && String(label) !== String(id) && (
+          <span className="ml-1 font-normal text-slate-400">({String(id)})</span>
+        )}
       </span>
     </WrapperHoverCard>
   );
@@ -170,6 +181,10 @@ export default function RequisitionReviewV2({
           <EmployeeValue
             id={formData[formKey(field.fieldname)]}
             label={formatScalar(field, value)}
+            // Hiring Manager is read-only and filled from the session, so the
+            // reviewer never saw it in a picker — spell out which employee
+            // record it resolved to, the same "Name (id)" the form shows.
+            showId={field.fieldname === "requested_by"}
           />
         ) : field.fieldtype === "Attach" || field.fieldtype === "Attach Image" ? (
           <AttachValue value={value} />
