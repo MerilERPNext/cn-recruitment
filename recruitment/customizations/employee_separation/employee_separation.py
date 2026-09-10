@@ -8,6 +8,7 @@ from recruitment.customizations.employee_separation.override_class import submit
 
 PROBATION_STATUSES = ("On Probation", "Probation Extended")
 CONFIRMED_STATUS = "Confirmed"
+HANDLED_STATUSES = (*PROBATION_STATUSES, CONFIRMED_STATUS)
 ATTENDANCE_REGULARIZE_TODO_TYPE = "Regularize Separation Attendance"
 
 
@@ -191,27 +192,51 @@ def _get_attendance_cycle_window(anchor):
     return cycle_start, cycle_end
 
 
+def _last_working_day_from_notice_period(doc):
+    if not doc.employee:
+        return None
+
+    notice_period_name = (
+        doc.custom_notice_period
+        or frappe.db.get_value("Employee", doc.employee, "custom_notice_period")
+    )
+    if not notice_period_name or not frappe.db.exists("Notice Period", notice_period_name):
+        return None
+
+    resignation_date = (
+        getdate(doc.custom_resignation_date) if doc.custom_resignation_date else getdate(today())
+    )
+
+    lwd, _ = _compute_last_working_date(notice_period_name, resignation_date, doc.employee)
+    return lwd
+
+
 def update_employee_relieving_date(doc, method=None):
     if not submit_effects_allowed(doc):
         return
 
-    if not doc.custom_final_last_working_day or not doc.employee_name:
+    if not doc.employee_name:
+        return
+
+    last_working_day = doc.custom_final_last_working_day
+    from_notice_period = False
+    if not last_working_day:
+        last_working_day = _last_working_day_from_notice_period(doc)
+        from_notice_period = True
+
+    if not last_working_day:
         return
 
     employee_doc = frappe.get_doc("Employee", {"employee_name": doc.employee_name})
     if employee_doc:
-        frappe.db.set_value(
-            "Employee",
-            employee_doc.name,
-            {
-                "relieving_date": frappe.utils.getdate(doc.custom_final_last_working_day),
-                "custom_recovery_days": cint(doc.custom_final_recovery_days or 0),
-                "custom_pay_days": cint(doc.get("custom_pay_days") or 0),
-            },
-        )
+        values = {"relieving_date": frappe.utils.getdate(last_working_day)}
+        if not from_notice_period:
+            values["custom_recovery_days"] = cint(doc.custom_final_recovery_days or 0)
+            values["custom_pay_days"] = cint(doc.get("custom_pay_days") or 0)
+        frappe.db.set_value("Employee", employee_doc.name, values)
 
     if doc.custom_resignaion_type == "Termination" and doc.employee:
-        relieving = getdate(doc.custom_final_last_working_day)
+        relieving = getdate(last_working_day)
         if relieving and relieving <= getdate(today()):
             frappe.db.set_value("Employee", doc.employee, {
                 "status": "Left",
@@ -285,11 +310,23 @@ def calculate_lwd_api(employee, resignation_date=None, notice_days=None, notice_
     return lwd
 
 
-def _compute_last_working_date(notice_period_name, resignation_date, employee):
-    np = frappe.get_doc("Notice Period", notice_period_name)
-    employment_status = frappe.db.get_value(
+def _resolve_employment_status(employee):
+    raw_status = frappe.db.get_value(
         "Employee", employee, "custom_employment_status"
     ) or CONFIRMED_STATUS
+    if raw_status in HANDLED_STATUSES:
+        return raw_status
+    final_confirmation_date = frappe.db.get_value(
+        "Employee", employee, "final_confirmation_date"
+    )
+    if final_confirmation_date and getdate(final_confirmation_date) < getdate(today()):
+        return CONFIRMED_STATUS
+    return PROBATION_STATUSES[0]
+
+
+def _compute_last_working_date(notice_period_name, resignation_date, employee):
+    np = frappe.get_doc("Notice Period", notice_period_name)
+    employment_status = _resolve_employment_status(employee)
 
     anchor = getdate(resignation_date) if np.from_resignation_date else getdate(today())
     duration, unit = _get_notice_duration_and_unit(np, employment_status, employee, anchor)
