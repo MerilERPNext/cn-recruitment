@@ -617,7 +617,7 @@
 				}
 				const row = selected[0];
 				const req = row.name;
-				frappe.prompt(
+				const dialog = frappe.prompt(
 					[{
 						fieldname: "job_opening", label: __("Job Opening"),
 						fieldtype: "Link", options: "Job Opening", reqd: 1,
@@ -651,6 +651,24 @@
 					__("Activate Job Requisition"),
 					__("Activate"),
 				);
+
+				// The picker's built-in "+ Create a new Job Opening" opens a blank
+				// opening. Point it at the same mapper "Actions → Create Job Opening"
+				// uses on the form, so the opening arrives pre-filled from the
+				// requisition either way. Overrides this dialog's control instance
+				// only — Frappe reads `this.new_doc` when it renders the dropdown, so
+				// no other link field or doctype is touched.
+				const opening_field = dialog && dialog.fields_dict && dialog.fields_dict.job_opening;
+				if (opening_field) {
+					opening_field.new_doc = () => {
+						dialog.hide();
+						// hooks.py redirects this HRMS method to our own make_job_opening.
+						frappe.model.open_mapped_doc({
+							method: "hrms.hr.doctype.job_requisition.job_requisition.make_job_opening",
+							source_name: req,
+						});
+					};
+				}
 			});
 
 			// "Move to Draft" — pull the selected requisitions back out of a running

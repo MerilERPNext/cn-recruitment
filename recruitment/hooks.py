@@ -324,7 +324,15 @@ doc_events = {
         "validate": "recruitment.customizations.job_applicant.validation_blacklist_on_doctypes",
         # Mirror the candidate's resume onto the interview, so the panel can open it
         # without permission on the Job Applicant it is attached to.
-        "on_update": "recruitment.api.interview_resume.pull_resume_from_applicant",
+        "on_update": [
+            "recruitment.api.interview_resume.pull_resume_from_applicant",
+            # Roll "Interview Scheduled / Done" up to the requisition behind this
+            # candidate's opening. Never raises — see requisition_pipeline.
+            "recruitment.api.requisition_pipeline.refresh_from_interview",
+        ],
+        "on_submit": "recruitment.api.requisition_pipeline.refresh_from_interview",
+        "on_cancel": "recruitment.api.requisition_pipeline.refresh_from_interview",
+        "on_trash": "recruitment.api.requisition_pipeline.refresh_from_interview",
     },
     "Interview Feedback": {
         "validate": [
@@ -393,6 +401,7 @@ doc_events = {
         "before_save": "recruitment.customizations.job_offer.calculate_salary_structure",
         "after_insert": [
             "recruitment.api.action_center.sync_job_offer_action_item",
+            "recruitment.api.requisition_pipeline.refresh_from_job_offer",
             # Claim the position (Filled + candidate) while the offer is live,
             # release it the moment it is withdrawn / rejected / cancelled, then
             # roll the result up to the requisition. Wired to every lifecycle
@@ -402,6 +411,8 @@ doc_events = {
         "on_submit": [
             "recruitment.api.action_center.sync_job_offer_action_item",
             "recruitment.api.offer_position.sync_offer_position",
+            # "Offer Generated" on the requisition's TAT block.
+            "recruitment.api.requisition_pipeline.refresh_from_job_offer",
         ],
         # Reflect Accepted/Rejected offer outcome on the candidate's hiring stage.
         "on_update": [
@@ -418,7 +429,14 @@ doc_events = {
             "recruitment.api.offer_position.sync_offer_position",
             "recruitment.customizations.job_offer.stamp_offer_accepted_on",
         ],
-        "on_cancel": "recruitment.api.offer_position.sync_offer_position",
+        "on_cancel": [
+            "recruitment.api.offer_position.sync_offer_position",
+            "recruitment.api.requisition_pipeline.refresh_from_job_offer",
+        ],
+        # Deleting an offer has to hand the position back too. sync_offer_position
+        # cannot cover this one: it decides claim-vs-release from the offer's
+        # status, and a deleted offer has none.
+        "on_trash": "recruitment.api.offer_position.release_offer_position",
     },
     "Job Requisition": {
         "before_insert": [
@@ -474,6 +492,10 @@ doc_events = {
             # they would look like a business edit to the edit-after-approval guard
             # and every save of an approved requisition would be refused.
             "recruitment.api.requisition_headcount.store_headcount",
+            # The "TAT Information" block: how many candidates the requisition's
+            # openings collected and how far they got, plus its own position
+            # approvals. Same on_update reasoning as store_headcount above.
+            "recruitment.api.requisition_pipeline.store_pipeline",
         ],
     },
     "Job Opening": {
@@ -533,6 +555,12 @@ doc_events = {
             "recruitment.recruitment.referral_reward_engine.generate_referral_reward_on_employee",
         ],
         "before_save": "recruitment.recruitment.employee_confirmation_hooks.calculate_final_confirmation_date",
+        "validate": [
+            # Block converting an employee to alumni (status -> Left/Inactive)
+            # without a usable personal_email, BEFORE the company-email User is
+            # disabled — so the alumnus is never left with no working login.
+            "recruitment.recruitment.alumni_user_switch.validate_alumni_personal_email",
+        ],
         "on_update": [
             # Keep the User's "Is Alumni Employee" flag in sync with status == "Left"
             # (only sets that checkbox; never touches Employee.status or User.enabled).
@@ -582,10 +610,21 @@ doc_events = {
         ],
         # Place a new applicant on the linked opening's first hiring stage
         # (no-op unless the Hiring Workflow feature is enabled).
-        "after_insert": "recruitment.api.hiring_stage.seed_first_stage",
+        "after_insert": [
+            "recruitment.api.hiring_stage.seed_first_stage",
+            # A new candidate changes "Candidates Applied" on the requisition
+            # behind their opening.
+            "recruitment.api.requisition_pipeline.refresh_from_applicant",
+        ],
         # A resume uploaded after the interviews were scheduled still has to reach
         # the panel — see recruitment.api.interview_resume.
-        "on_update": "recruitment.api.interview_resume.push_resume_to_interviews",
+        "on_update": [
+            "recruitment.api.interview_resume.push_resume_to_interviews",
+            # Stage moves change Screened / Shortlisted on the requisition's TAT
+            # block. Never raises — see requisition_pipeline.
+            "recruitment.api.requisition_pipeline.refresh_from_applicant",
+        ],
+        "on_trash": "recruitment.api.requisition_pipeline.refresh_from_applicant",
     },
     "Appointment Letter": {
         "validate": "recruitment.customizations.job_applicant.validation_blacklist_on_doctypes"

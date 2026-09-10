@@ -275,6 +275,7 @@ export const LoanRow = ({
             onRevoke={handleRevokeClick}
             onEdit={() => handleEdit(loan.name)}
             isResubmit={canEdit}
+            requestItem={loan}
           />
         </div>
       </div>

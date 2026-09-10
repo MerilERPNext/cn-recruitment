@@ -9,7 +9,8 @@
   "job_opening",
   "job_title",
   "region",
-  "opening_status"
+  "opening_status",
+  "job_description_file"
  ],
  "fields": [
   {
@@ -48,12 +49,22 @@
    "in_list_view": 1,
    "label": "Status",
    "read_only": 1
+  },
+  {
+   "columns": 2,
+   "description": "Auto-fetched from the Job Opening. Sent to the TPOs as an attachment on the invite email.",
+   "fetch_from": "job_opening.custom_job_description_file",
+   "fieldname": "job_description_file",
+   "fieldtype": "Attach",
+   "in_list_view": 1,
+   "label": "JD File",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2026-07-06 00:00:00.000000",
+ "modified": "2026-09-09 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "Campus Invite Job Opening",

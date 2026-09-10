@@ -532,6 +532,7 @@ const BenefitSlipItem = ({
           onEdit={() => handleEdit(item.name)}
           todoId={item?.todo_list[0]?.todo_id}
           isPendingStatus={isPendingStatus}
+          requestItem={item}
         />
       </div>
     </div>
@@ -655,6 +656,7 @@ const BenefitSlipItem = ({
               variant="buttons"
               todoId={item?.todo_list[0]?.todo_id}
               isPendingStatus={isPendingStatus}
+              requestItem={item}
             />
           </div>
         </div>

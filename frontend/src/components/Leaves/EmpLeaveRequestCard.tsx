@@ -283,6 +283,7 @@ const EmpLeaveRequestCard = ({
               onRevoke={executeRevoke}
               onEdit={handleEditClick}
               onReplace={handleReplaceClick}
+              requestItem={data}
             />
           </div>
         </div>
@@ -419,6 +420,7 @@ const EmpLeaveRequestCard = ({
                 onRevoke={executeRevoke}
                 onEdit={handleEditClick}
                 onReplace={handleReplaceClick}
+                requestItem={data}
               />
             </div>
           </div>
