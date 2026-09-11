@@ -707,6 +707,12 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
       permissionKey: "Help Desk",
     },
     {
+      icon: FileText,
+      label: "PDF Form Template",
+      path: "/webapp/pdf-form-template",
+      permissionKey: "PDF Form Template",
+    },
+    {
       icon: Share2,
       label: "Work Connect",
       path: "/work-connect",

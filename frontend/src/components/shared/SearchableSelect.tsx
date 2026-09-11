@@ -14,6 +14,8 @@ interface Props {
   disabled?: boolean;
   onSearch?: (q: string) => Promise<Option[]>;
   debounceMs?: number;
+  portal?: boolean;
+  id?: string;
 }
 
 const SearchableSelect: React.FC<Props> = ({
@@ -24,6 +26,8 @@ const SearchableSelect: React.FC<Props> = ({
   disabled = false,
   onSearch,
   debounceMs = 300,
+  portal = true,
+  id,
 }) => {
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
@@ -34,6 +38,7 @@ const SearchableSelect: React.FC<Props> = ({
   const [term, setTerm] = useState("");
   const [internalOptions, setInternalOptions] = useState<Option[]>(options);
   const [loading, setLoading] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(0);
   const [selectedLabel, setSelectedLabel] = useState<string | null>(null);
   const [dropdownPosition, setDropdownPosition] = useState({
     top: 0,
@@ -160,9 +165,9 @@ const SearchableSelect: React.FC<Props> = ({
       ref={dropdownRef}
       style={{
         position: "absolute",
-        top: `${dropdownPosition.top}px`,
-        left: `${dropdownPosition.left}px`,
-        width: `${dropdownPosition.width}px`,
+        top: portal ? `${dropdownPosition.top}px` : "100%",
+        left: portal ? `${dropdownPosition.left}px` : 0,
+        width: portal ? `${dropdownPosition.width}px` : "100%",
         zIndex: 9999,
       }}
       className="mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto"
@@ -193,20 +198,30 @@ const SearchableSelect: React.FC<Props> = ({
   return (
     <div ref={wrapperRef} className="relative w-full">
       <input
+        id={id}
         ref={inputRef}
         type="text"
         value={displayedValue}
         onChange={(e) => {
           setTerm(e.target.value);
+          setActiveIndex(0);
           if (!isOpen) setIsOpen(true);
         }}
         onFocus={() => setIsOpen(true)}
+        onKeyDown={(e) => {
+          if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); setIsOpen(false); setTerm(""); }
+          if (["ArrowDown", "ArrowUp"].includes(e.key)) {
+            e.preventDefault(); setIsOpen(true);
+            setActiveIndex(old => Math.max(0, Math.min(internalOptions.length - 1, old + (e.key === "ArrowDown" ? 1 : -1))));
+          }
+          if (e.key === "Enter" && isOpen && internalOptions.length) { e.preventDefault(); handleSelect(internalOptions[Math.min(activeIndex, internalOptions.length - 1)]); }
+        }}
         placeholder={placeholder}
         disabled={disabled}
         className="w-full p-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all text-sm"
       />
 
-      {typeof document !== "undefined" && createPortal(dropdown, document.body)}
+      {portal ? typeof document !== "undefined" && createPortal(dropdown, document.body) : dropdown}
     </div>
   );
 };
