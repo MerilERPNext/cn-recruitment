@@ -3,7 +3,12 @@ import FlowTableCard from "./FlowTableCard";
 import CardTable from "../../../shared/CardTable";
 import { useScreenSize } from "../../../../hooks/useScreenSize";
 
-import { FlowRequestItem } from "../../../../types/flows";
+import {
+  FlowInitiatorForm,
+  FlowRequestItem,
+  FlowRequestStage,
+  FlowRevokeForm,
+} from "../../../../types/flows";
 
 import { StaticListView } from "../../../ListView";
 import { CardSkeleton } from "../../../shared/molecules/Skeletons/TableSkeleton";
@@ -22,16 +27,24 @@ const titles = [
   "Actions",
 ];
 
+export interface FlowTableData {
+  approval_status?: string;
+  approval_stages?: FlowRequestStage[];
+  initiator_forms?: FlowInitiatorForm[] | FlowRevokeForm[];
+  [key: string]: unknown;
+}
+
 interface FlowTableProps {
-  data: FlowRequestItem;
+  data: FlowRequestItem | FlowTableData;
   noPadding?: boolean;
 }
 
 const FlowTable: React.FC<FlowTableProps> = ({ data, noPadding = false }) => {
   const { isDesktop } = useScreenSize();
+  const stages = data.approval_stages || [];
   const activeStageIndex =
     data.approval_status === "Pending"
-      ? data.approval_stages.findIndex((stage) => stage.status === "Pending")
+      ? stages.findIndex((stage) => stage.status === "Pending")
       : -1;
 
   const queryClient = useQueryClient();
@@ -51,29 +64,29 @@ const FlowTable: React.FC<FlowTableProps> = ({ data, noPadding = false }) => {
         noRound={noPadding || !isDesktop}
       >
         <StaticListView
-          data={data.approval_stages}
+          data={stages}
           ItemComponent={(index, item) =>
             isDesktop ? (
               <FlowTableRow
                 stage={item}
                 isActive={index === activeStageIndex}
-                stages={data.approval_stages}
+                stages={stages}
                 stageIndex={index}
-                initiatorForms={data.initiator_forms}
+                initiatorForms={data.initiator_forms as FlowInitiatorForm[]}
                 handleAction={handleAction}
               />
             ) : (
               <FlowTableCard
                 stage={item}
                 index={index}
-                stages={data?.approval_stages}
+                stages={stages}
                 isActive={index === activeStageIndex}
-                initiatorForms={data.initiator_forms}
+                initiatorForms={data.initiator_forms as FlowInitiatorForm[]}
                 handleAction={handleAction}
               />
             )
           }
-          getItemKey={(stage, index) => stage?.stage_name + index}
+          getItemKey={(stage, index) => (stage?.stage_name ?? "") + index}
           pageSize={20}
           SkeletonComponent={CardSkeleton}
           loadMorePagination={true}
@@ -82,6 +95,5 @@ const FlowTable: React.FC<FlowTableProps> = ({ data, noPadding = false }) => {
     </div>
   );
 };
-
 
 export default FlowTable;

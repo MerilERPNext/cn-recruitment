@@ -168,30 +168,68 @@ export type RoleSelect = {
   doctype: string;
 };
 
+export type FlowInitiatorForm = {
+  conversation_doc: string;
+  form_data: string;
+  form_data_display?: string;
+  status: string;
+  target: string;
+  target_name: string;
+};
+
 export type FlowRequestItem = {
-  activity_statement?: string;
-  activity_timestamp?: string;
+  name: string;
+  creation: string;
+  modified: string;
+  modified_by: string;
+  docstatus: number;
+  idx: number;
   request_id: string;
-  flow_name: string;
   category: string;
+  funnel?: string;
+  effective_date: string | null;
+  retrigger_definition_name?: string;
+  flow_name: string;
   initiated_on: string;
   initiated_by: string;
   initiated_for: string;
+  can_reinitiate_flow: boolean;
+  can_edit_initiator_form: boolean;
   initiated_by_emp_id: string;
   initiated_for_emp_id: string;
+  can_revoke?: boolean;
+  can_request_revoke?: boolean;
   approval_status: string;
   workflow_status: string;
   overall_flow_status: string;
   approval_stages: FlowRequestStage[];
-  initiator_forms: {
-    conversation_doc: string;
-    form_data: string;
-    form_data_display?: string;
-    status: string;
-    target: string;
-    target_name: string;
-  }[];
+  initiator_forms: FlowInitiatorForm[];
   workflow_stages: WorkflowStage[];
+  revoke?: FlowRevokeDetail | null;
+};
+
+export type FlowRevokeForm = {
+  target: string;
+  target_name: string;
+  status: string;
+  conversation_doc: string;
+  form_data: string;
+  form_data_display?: string;
+};
+
+export type FlowRevokeDetail = {
+  request_id: string;
+  status: string;
+  reason?: string;
+  employee: string;
+  requested_by: string;
+  requested_by_name: string;
+  requested_on: string;
+  source_doctype: string;
+  source_name: string;
+  revoke_activity?: string;
+  revoke_forms: FlowRevokeForm[];
+  approval_stages: FlowRequestStage[];
 };
 
 export type FlowRequestDetailItem = {
@@ -199,6 +237,7 @@ export type FlowRequestDetailItem = {
   funnel?: string;
   can_reinitiate_flow: boolean;
   can_revoke?: boolean;
+  can_request_revoke?: boolean;
   retrigger_definition_name?: string;
   flow_name: string;
   category: string;
@@ -216,14 +255,8 @@ export type FlowRequestDetailItem = {
   overall_flow_status: string;
   approval_stages: FlowRequestStage[];
   workflow_stages: WorkflowStage[];
-  initiator_forms: {
-    conversation_doc: string;
-    form_data: string;
-    form_data_display?: string;
-    status: string;
-    target: string;
-    target_name: string;
-  }[];
+  initiator_forms: FlowInitiatorForm[];
+  revoke?: FlowRevokeDetail | null;
 };
 
 

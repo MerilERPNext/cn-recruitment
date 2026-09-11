@@ -246,3 +246,23 @@ export const revokeFlow = async (
   );
   return response as any;
 };
+
+export interface StartRevokeFlowResponse {
+  ok?: boolean;
+  funnel_activity?: string;
+  session_id?: string;
+  [key: string]: unknown;
+}
+
+export const startRevokeFlow = async (
+  funnel_activity: string
+): Promise<StartRevokeFlowResponse> => {
+  const response = await FrappeAPI.callMethod(
+    "nextai.funnel.doctype.flow_config.revoke_request.start_revoke",
+    {
+      funnel_activity,
+    }
+  );
+  return response as StartRevokeFlowResponse;
+};
+
