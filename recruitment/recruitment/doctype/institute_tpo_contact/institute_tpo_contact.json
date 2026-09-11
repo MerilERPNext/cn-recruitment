@@ -1,11 +1,12 @@
 {
  "actions": [],
  "allow_rename": 1,
- "creation": "2026-07-03 00:00:00.000000",
+ "creation": "2026-09-11 10:26:14.374766",
  "doctype": "DocType",
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
+  "institute_name",
   "contact_name",
   "role",
   "email",
@@ -15,11 +16,20 @@
  ],
  "fields": [
   {
+   "columns": 2,
+   "description": "The Institute(s) this contact belongs to. Filled in on a Campus Invite, where contacts from several institutes are listed together; a TPO shared by more than one invited institute lists them all.",
+   "fieldname": "institute_name",
+   "fieldtype": "Small Text",
+   "in_list_view": 1,
+   "label": "Institute Name",
+   "read_only": 1
+  },
+  {
    "columns": 3,
    "fieldname": "contact_name",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "Name",
+   "label": "TPO Name",
    "reqd": 1
   },
   {
@@ -67,13 +77,12 @@
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2026-07-03 00:00:00.000000",
+ "modified": "2026-09-11 10:59:33.095445",
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "Institute TPO Contact",
  "owner": "Administrator",
  "permissions": [],
- "quick_entry": 0,
  "row_format": "Dynamic",
  "sort_field": "creation",
  "sort_order": "ASC",

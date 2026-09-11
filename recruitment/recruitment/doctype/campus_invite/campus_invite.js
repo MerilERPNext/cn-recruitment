@@ -19,6 +19,7 @@ function refresh_tpo_preview(frm) {
 			frm.clear_table("tpo_contacts");
 			(r.message || []).forEach(function (contact) {
 				const row = frm.add_child("tpo_contacts");
+				row.institute_name = contact.institute_name;
 				row.contact_name = contact.contact_name;
 				row.role = contact.role;
 				row.email = contact.email;
