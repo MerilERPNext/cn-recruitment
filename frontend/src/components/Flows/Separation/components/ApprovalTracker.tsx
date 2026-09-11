@@ -11,7 +11,7 @@ import { createPortal } from "react-dom";
 import ReviewForm from "./ReviewForm";
 import ViewFormButton from "../../ViewFormButton";
 import StatusTimelineRow from "../../Confirmation/components/StatusTimelineRow";
-import { FlowRequestItem } from "../../../../types/flows";
+import { FlowRequestItem, FlowRequestDetailItem } from "../../../../types/flows";
 import { FormIOForm } from "../../../../utils/flowUtils";
 import formatToIndianDate from "../../../../utils/formatToIndianDate";
 import FormPreview from "../../../shared/molecules/FormPreview";
@@ -32,7 +32,7 @@ export interface ApprovalStage {
 }
 
 interface ApprovalTrackerProps {
-  data?: FlowRequestItem | null;
+  data?: FlowRequestItem | FlowRequestDetailItem | null;
   For: "Employee Separation" | "Employee Termination";
   isLoading?: boolean;
 }

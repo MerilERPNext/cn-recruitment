@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useCallback, useMemo } from "react";
 import {
+  FlowRequestDetailItem,
   FlowRequestItem,
   WorkflowStage,
 } from "../../../../types/flows";
@@ -28,7 +29,7 @@ import Tooltip from "../../../shared/Tooltip";
 import WorkflowStageActions from "./WorkflowStageActions";
 
 interface WorkflowTableProps {
-  data: FlowRequestItem;
+  data: FlowRequestItem | FlowRequestDetailItem;
   noPadding?: boolean;
 }
 

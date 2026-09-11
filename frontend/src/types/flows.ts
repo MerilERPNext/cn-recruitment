@@ -199,6 +199,8 @@ export type FlowRequestItem = {
   initiated_for_emp_id: string;
   can_revoke?: boolean;
   can_request_revoke?: boolean;
+  activity_statement?: string;
+  activity_timestamp?: string;
   approval_status: string;
   workflow_status: string;
   overall_flow_status: string;
@@ -257,6 +259,8 @@ export type FlowRequestDetailItem = {
   workflow_stages: WorkflowStage[];
   initiator_forms: FlowInitiatorForm[];
   revoke?: FlowRevokeDetail | null;
+  activity_statement?: string;
+  activity_timestamp?: string;
 };
 
 
