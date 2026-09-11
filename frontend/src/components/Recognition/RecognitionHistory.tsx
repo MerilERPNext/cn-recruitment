@@ -411,12 +411,13 @@ const RecognitionHistory: React.FC = () => {
                           Date <ArrowUp className="size-3.5" />
                         </span>
                       </th>
+                      <th className="px-5 py-3 font-semibold">Points</th>
                       <th className="px-5 py-3 font-semibold">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
                     {isLoading || isError || rows.length === 0
-                      ? stateRow(6)
+                      ? stateRow(7)
                       : rows.map((row) => (
                           <tr
                             key={`${row.history_type}-${row.name}`}
@@ -443,6 +444,9 @@ const RecognitionHistory: React.FC = () => {
                             </td>
                             <td className="px-5 py-4 text-sm text-gray-700">
                               {row.date}
+                            </td>
+                            <td className="px-5 py-4 text-sm font-semibold text-amber-600">
+                              {row.points ?? 0}
                             </td>
                             <td className="px-5 py-4">
                               {rowActionsNode(row, "buttons")}
@@ -508,12 +512,25 @@ const RecognitionHistory: React.FC = () => {
                         </div>
                       </div>
 
-                      <div className="mt-4 rounded-lg bg-gray-50 px-3 py-2">
-                        <Typography variant="mobileCardLabel" className="block">
-                          Values
-                        </Typography>
-                        <div className="mt-1">
-                          <ValueChips values={row.values ?? []} fallback={row.value} />
+                      <div className="mt-4 flex items-start gap-3">
+                        <div className="min-w-0 flex-1 rounded-lg bg-gray-50 px-3 py-2">
+                          <Typography variant="mobileCardLabel" className="block">
+                            Values
+                          </Typography>
+                          <div className="mt-1">
+                            <ValueChips values={row.values ?? []} fallback={row.value} />
+                          </div>
+                        </div>
+                        <div className="shrink-0 rounded-lg bg-amber-50 px-3 py-2 text-center">
+                          <Typography variant="mobileCardLabel" className="block">
+                            Points
+                          </Typography>
+                          <Typography
+                            variant="bodySmall"
+                            className="mt-1 block font-bold text-amber-600"
+                          >
+                            {row.points ?? 0}
+                          </Typography>
                         </div>
                       </div>
 

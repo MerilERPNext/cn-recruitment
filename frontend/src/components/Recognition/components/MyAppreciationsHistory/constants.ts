@@ -27,6 +27,7 @@ export const TABLE_TITLES = [
   "Values",
   "Received From",
   "Received Date",
+  "Points",
   "Actions",
 ];
 
@@ -35,6 +36,7 @@ export const TABLE_WIDTHS = [
   "minmax(210px, 1.05fr)",
   "minmax(190px, 0.9fr)",
   "minmax(150px, 0.7fr)",
+  "minmax(100px, 0.45fr)",
   "minmax(130px, 0.55fr)",
 ];
 
@@ -47,6 +49,7 @@ export const APPRECIATIONS: AppreciationHistoryItem[] = [
     date: "23-04-2025",
     imageUrl: BADGE_IMAGES.bestBuddyGreen,
     tab: "received",
+    points: 10,
   },
   {
     id: "best-buddy-eeshika",
@@ -56,6 +59,7 @@ export const APPRECIATIONS: AppreciationHistoryItem[] = [
     date: "29-12-2023",
     imageUrl: BADGE_IMAGES.bestBuddyWarm,
     tab: "received",
+    points: 10,
   },
   {
     id: "thank-you-sudhakar",
@@ -65,6 +69,7 @@ export const APPRECIATIONS: AppreciationHistoryItem[] = [
     date: "14-12-2023",
     imageUrl: BADGE_IMAGES.thankYou,
     tab: "received",
+    points: 15,
   },
   {
     id: "out-of-box-rajnikant",
@@ -74,6 +79,7 @@ export const APPRECIATIONS: AppreciationHistoryItem[] = [
     date: "25-05-2023",
     imageUrl: BADGE_IMAGES.outOfBox,
     tab: "received",
+    points: 20,
   },
   {
     id: "best-buddy-given",
@@ -83,6 +89,7 @@ export const APPRECIATIONS: AppreciationHistoryItem[] = [
     date: "11-02-2024",
     imageUrl: BADGE_IMAGES.bestBuddyGreen,
     tab: "given",
+    points: 10,
   },
   {
     id: "thank-you-given",
@@ -92,5 +99,6 @@ export const APPRECIATIONS: AppreciationHistoryItem[] = [
     date: "05-01-2024",
     imageUrl: BADGE_IMAGES.thankYou,
     tab: "given",
+    points: 15,
   },
 ];

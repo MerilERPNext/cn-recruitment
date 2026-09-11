@@ -20,7 +20,7 @@ export const AwardBadge: React.FC<{ award: Award }> = ({ award }) => {
     const triggerRef = useRef<HTMLDivElement>(null);
 
     return (
-        <div className="group flex flex-col items-center gap-2 min-w-[48px] relative">
+        <div className="group flex flex-col items-center gap-2 w-20 shrink-0 relative">
             <div
                 ref={triggerRef}
                 onClick={() => setIsOpen(!isOpen)}
@@ -36,7 +36,7 @@ export const AwardBadge: React.FC<{ award: Award }> = ({ award }) => {
                     <span className="relative z-10 text-2xl drop-shadow-sm">🏆</span>
                 )}
             </div>
-            <span className="text-[10px] font-semibold text-gray-700 truncate w-full text-center leading-tight px-1">
+            <span className="text-[10px] font-semibold text-gray-700 line-clamp-2 w-full text-center leading-tight px-1">
                 {award.badge_name}
             </span>
 
@@ -208,12 +208,12 @@ export const AwardsSection: React.FC<AwardsSectionProps> = ({ isDesktop, mobileC
             {remainingCount > 0 && (
                 <div
                     onClick={() => setShowAllModal(true)}
-                    className="flex flex-col items-center gap-2 cursor-pointer group"
+                    className="flex flex-col items-center gap-2 w-20 shrink-0 cursor-pointer group"
                 >
                     <div className="w-14 h-14 rounded-full bg-blue-100 border-2 border-blue-200 flex items-center justify-center shadow-sm transition-all duration-300 group-hover:bg-blue-200 group-hover:border-blue-300">
                         <span className="text-blue-700 font-bold text-sm">+{remainingCount}</span>
                     </div>
-                    <span className="text-[10px] font-semibold text-blue-600">View All</span>
+                    <span className="text-[10px] font-semibold text-blue-600 text-center">View All</span>
                 </div>
             )}
         </div>
