@@ -22,7 +22,7 @@ app_include_js = [
 	# fingerprints *.bundle.js), so browsers hold the old copy indefinitely and a
 	# change here silently doesn't reach anyone. Bump the number whenever this file
 	# changes — the new URL defeats the browser cache and any service worker.
-	"/assets/recruitment/js/applicant_fields_ui.js?v=5",
+	"/assets/recruitment/js/applicant_fields_ui.js?v=14",
 	# Column registry behind the designed Job Applicant / Job Opening / Job
 	# Requisition list views — which columns show, in what order, alignment and
 	# width, plus the "Configure Columns" dialog. Global rather than per-doctype
@@ -305,6 +305,12 @@ doc_events = {
         # Forget the field in synced_field_refs the moment it is deleted, so one
         # created later under the same name reads as new instead of "already seen".
         "on_trash": "recruitment.recruitment.managed_field_profile_sync.forget_deleted_field",
+    },
+    "Job Applicant Profile Settings": {
+        # A field Mandatory for any source (Careers, IJP, Refer, Campus,
+        # Pre-offer) is put on every New Hire Form as Required — a direct hire
+        # skips those forms and must not skip the data.
+        "on_update": "recruitment.recruitment.new_hire_source_fields.sync_all_forms",
     },
     # "Salary Structure Assignment": {
     # 	"on_submit": "recruitment.customizations.salary_structure_assignment.salary_structure_assignment.on_submit",

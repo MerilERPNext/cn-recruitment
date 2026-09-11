@@ -867,6 +867,34 @@ def functional_area_query(doctype, txt, searchfield, start, page_len, filters):
 	)
 
 
+@frappe.whitelist()
+def get_designation_mapping(designations):
+	"""``[{"name", "department", "functional_area"}]`` for the given designations.
+
+	The client uses it to keep the Department → Designation → Functional Area
+	cascade consistent when a value is removed. Unknown names are left out.
+	"""
+	if not frappe.has_permission("Job Description", "read"):
+		frappe.throw(frappe._("Not permitted"), frappe.PermissionError)
+
+	designations = frappe.parse_json(designations) if isinstance(designations, str) else designations
+	if not isinstance(designations, (list, tuple)):
+		return []
+	designations = [d for d in designations if d and isinstance(d, str)]
+	if not designations:
+		return []
+
+	return frappe.get_all(
+		"Designation",
+		filters={"name": ["in", designations]},
+		fields=[
+			"name",
+			"custom_department as department",
+			"custom_functional_area as functional_area",
+		],
+	)
+
+
 # ---------------------------------------------------------------------------
 # Applicability / versioning
 # ---------------------------------------------------------------------------

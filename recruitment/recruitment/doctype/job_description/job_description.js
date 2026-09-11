@@ -45,6 +45,18 @@ frappe.ui.form.on("Job Description", {
         render_description_preview(frm);
     },
 
+    // Table MultiSelects write through the parent field, so adding and removing a
+    // pill both land here (the child-table events never fire for them).
+    department(frm) {
+        render_description_preview(frm);
+        sync_cascade(frm, "department");
+    },
+
+    designation(frm) {
+        render_description_preview(frm);
+        sync_cascade(frm, "designation");
+    },
+
     // Parent-field updates that may be referenced by the template — re-render
     // the preview so the manager sees the new value immediately.
     company:            render_description_preview,
@@ -54,10 +66,9 @@ frappe.ui.form.on("Job Description", {
     max_preferred_work_experience_years: render_description_preview,
 });
 
-// Re-render the preview whenever any child-table row that the template may
-// reference gets added / edited / removed.
+// Re-render the preview whenever a child row the template may reference changes.
+// Department / Designation are handled by the parent-field handlers above.
 const _CHILD_DOCTYPES_TO_WATCH = [
-    "JD Designations", "JD Department",
     "Education Category Table", "Education Degree Table", "Education Specialization Table",
     "Experience Sector Table", "Job Requisition Skill", "Competencies Table",
 ];
@@ -125,19 +136,117 @@ function _paint(wrapper, html) {
 }
 
 // ─────────────────────────────────────────────────────────────
-// Competency Auto-Fill: Listen to Designation child table events
+// Cascade: Department → Designation → Functional Area → Competencies
 // ─────────────────────────────────────────────────────────────
-frappe.ui.form.on("JD Designations", {
-    // Triggered when a designation value is set in a row
-    designation(frm, cdt, cdn) {
-        fetch_competencies(frm);
-    },
+// A Designation names its Department and Functional Area, so removing a
+// department drops its designations, and the functional areas always follow the
+// designations left. clear_table/add_child are used instead of set_value so the
+// rewrite doesn't fire the change event and re-enter the cascade.
 
-    // Triggered when a designation row is removed
-    designation_remove(frm) {
+/** Link values of a Table MultiSelect field, empties dropped. */
+function multiselect_values(frm, fieldname, link_fieldname) {
+    return (frm.doc[fieldname] || [])
+        .map((row) => row[link_fieldname])
+        .filter(Boolean);
+}
+
+/** Rewrite a Table MultiSelect to hold exactly `values`, in order. */
+function set_multiselect(frm, fieldname, link_fieldname, values) {
+    frm.clear_table(fieldname);
+    values.forEach((value) => frm.add_child(fieldname, { [link_fieldname]: value }));
+    frm.refresh_field(fieldname);
+    frm.dirty();
+
+    // The control's cached selection hides values from its dropdown and only
+    // refreshes on typing, so a programmatic rewrite must update it too.
+    const field = frm.get_field(fieldname);
+    if (field) field._rows_list = values.slice();
+}
+
+function same_values(a, b) {
+    return a.length === b.length && a.every((v, i) => v === b[i]);
+}
+
+// `source` is the field the user just edited (only used to word the alert).
+let _cascade_seq = 0;
+
+function sync_cascade(frm, source) {
+    const departments = multiselect_values(frm, "department", "department");
+    const designations = multiselect_values(frm, "designation", "designation");
+
+    // Only the latest lookup's reply is applied.
+    const seq = ++_cascade_seq;
+
+    if (!designations.length) {
+        apply_cascade(frm, [], [], source);
+        return;
+    }
+
+    frappe.call({
+        method: "recruitment.recruitment.doctype.job_description.job_description.get_designation_mapping",
+        args: { designations: JSON.stringify(designations) },
+        callback: (r) => {
+            if (seq !== _cascade_seq) return;
+
+            const mapping = {};
+            ((r && r.message) || []).forEach((row) => {
+                mapping[row.name] = row;
+            });
+
+            // Keep a designation only while its department is still selected.
+            const kept = departments.length
+                ? designations.filter(
+                      (d) => mapping[d] && departments.includes(mapping[d].department)
+                  )
+                : [];
+
+            const areas = [];
+            kept.forEach((d) => {
+                const area = mapping[d] && mapping[d].functional_area;
+                if (area && !areas.includes(area)) areas.push(area);
+            });
+
+            apply_cascade(frm, kept, areas, source);
+        },
+    });
+}
+
+/** Write the derived designation / functional area sets back onto the form. */
+function apply_cascade(frm, designations, functional_areas, source) {
+    const current_designations = multiselect_values(frm, "designation", "designation");
+    const current_areas = multiselect_values(frm, "functional_area", "functional_area");
+
+    const designations_changed = !same_values(current_designations, designations);
+    const areas_changed = !same_values(current_areas, functional_areas);
+
+    if (designations_changed) {
+        set_multiselect(frm, "designation", "designation", designations);
+
+        // Only flagged when a department edit removed them.
+        const dropped = current_designations.length - designations.length;
+        if (source === "department" && dropped > 0) {
+            frappe.show_alert({
+                message: __(
+                    "{0} designation(s) removed — no longer under the selected department(s)",
+                    [dropped]
+                ),
+                indicator: "orange",
+            });
+        }
+    }
+
+    if (areas_changed) {
+        set_multiselect(frm, "functional_area", "functional_area", functional_areas);
+    }
+
+    if (designations_changed || source === "designation") {
         fetch_competencies(frm);
-    },
-});
+    }
+
+    if (designations_changed || areas_changed) {
+        render_description_preview(frm);
+    }
+}
 
 /**
  * Fetch competencies for all currently selected designations.

@@ -23,6 +23,22 @@ class NewHireForm(Document):
 	def validate(self):
 		self.validate_single_default()
 		self.validate_fields_exist()
+		self.apply_source_mandatory_fields()
+
+	def apply_source_mandatory_fields(self):
+		"""Keep every field made mandatory at a hiring source on the form, Required.
+
+		Here as well as in the settings hook so a new form starts with them, and a
+		row the admin removed or made optional comes straight back on save.
+		"""
+		from recruitment.recruitment.new_hire_source_fields import apply_to_form, describe
+
+		line = describe(apply_to_form(self))
+		if line and not self.flags.source_fields_synced:
+			frappe.msgprint(
+				_("Mandatory in Job Applicant Profile Settings for a hiring source — {0}.").format(line),
+				alert=True,
+			)
 
 	def validate_single_default(self):
 		"""At most one enabled default, so form resolution is never ambiguous."""

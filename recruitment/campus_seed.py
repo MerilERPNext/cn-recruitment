@@ -120,7 +120,7 @@ def _ensure_campus_field():
             "fieldtype": "Float",
             "view_campus": 1, "mandatory_campus": 0,
             "view_careers": 0, "view_ijp": 0, "view_refer": 0, "view_preoffer": 0,
-            "visibility": "All", "editability": "Editable",
+            "visibility": '["All"]', "editability": '["All"]',
         })
         settings.save(ignore_permissions=True)
 
@@ -214,8 +214,8 @@ def _application_field_rows():
             "view_campus": 1,
             "mandatory_campus": 0,
             "view_careers": 1, "view_ijp": 0, "view_refer": 0, "view_preoffer": 0,
-            "visibility": "All",
-            "editability": "Editable",
+            "visibility": '["All"]',
+            "editability": '["All"]',
         })
     return rows
 
