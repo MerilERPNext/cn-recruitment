@@ -12,6 +12,7 @@ import {
   useAppreciationLeaderboard,
   useAppreciationPrograms,
   LeaderboardPersonEntry,
+  LeaderboardSpan,
   AppreciationApiItem,
 } from "../../../services/recognitionService";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
@@ -119,17 +120,30 @@ const AppreciationNoteCard: React.FC<{ item: AppreciationApiItem }> = ({ item })
 
 const SIDEBAR_VISIBLE = 3;
 
+// In the order the dropdown should list them — widest scope first.
+const SPAN_OPTIONS: { value: LeaderboardSpan; label: string }[] = [
+  { value: "organization", label: "Organization" },
+  { value: "hod", label: "HOD" },
+  { value: "cxo", label: "CXO" },
+];
+
 const AppreciationsLeaderboard: React.FC = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<"Receivers" | "Recognizers">("Receivers");
   const [appreciationTab, setAppreciationTab] = useState<"Received" | "Given">("Received");
   const [query, setQuery] = useState("");
+  const [span, setSpan] = useState<LeaderboardSpan>("organization");
 
   // ── Left: leaderboard (Receivers / Recognizers) ──────────────────────────────
   const { data: lbResp, isLoading: lbLoading } = useAppreciationLeaderboard({
     tab: activeTab === "Receivers" ? "receivers" : "recognizers",
     page_length: 100,
+    span,
   });
+  // The backend falls back to "organization" when the viewer has no HOD/CXO
+  // configured (rather than returning an empty leaderboard) — surfaced here
+  // so the list's own label never silently disagrees with what's shown.
+  const appliedSpan = lbResp?.span ?? span;
   const entries = lbResp?.data ?? [];
   const top3 = entries.slice(0, 3);
   const rest = entries.slice(3);
@@ -214,6 +228,18 @@ const AppreciationsLeaderboard: React.FC = () => {
                 ))}
               </div>
               <div className="flex items-center gap-2">
+                <select
+                  value={span}
+                  onChange={(e) => setSpan(e.target.value as LeaderboardSpan)}
+                  aria-label="Leaderboard span"
+                  className="rounded-lg border border-gray-200 py-1.5 pl-3 pr-8 text-xs font-medium text-gray-700 outline-none focus:border-primary focus:ring-1 focus:ring-primary/30"
+                >
+                  {SPAN_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
                 <div className="relative w-44 sm:w-56">
                   <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-gray-400" />
                   <input
@@ -226,6 +252,15 @@ const AppreciationsLeaderboard: React.FC = () => {
                 </div>
               </div>
             </div>
+
+            {/* Only shown when the backend couldn't honor the pick (no HOD/CXO
+                set for the viewer) and silently fell back to organization-wide. */}
+            {!lbLoading && appliedSpan !== span && (
+              <p className="-mt-3 mb-4 text-xs text-amber-600">
+                {span === "hod" ? "No HOD" : "No CXO"} is set for you — showing the
+                whole organization instead.
+              </p>
+            )}
 
             {lbLoading ? (
               <div className="py-16 text-center text-sm text-gray-400">Loading leaderboard…</div>

@@ -714,6 +714,8 @@ export type AwardEmployeePointsResponse = {
 };
 
 // ─── Appreciation Leaderboard (get_appreciation_leaderboard) ──────────────────
+export type LeaderboardSpan = "organization" | "hod" | "cxo";
+
 export type AppreciationLeaderboardParams = {
   tab?: "receivers" | "recognizers";
   program?: string;
@@ -723,6 +725,9 @@ export type AppreciationLeaderboardParams = {
   search?: string;
   start?: number;
   page_length?: number;
+  /** Scope the ranked list to the viewer's own HOD/CXO team instead of the
+   * whole organization. Defaults to "organization" server-side. */
+  span?: LeaderboardSpan;
 };
 
 export type LeaderboardPersonEntry = {
@@ -744,6 +749,9 @@ export type AppreciationLeaderboardResponse = {
   total_count: number;
   /** Whether ranks/scores are driven by total points or appreciation count. */
   ranking_basis?: "points" | "count";
+  /** The span actually applied — falls back to "organization" server-side
+   * when the viewer has no HOD/CXO configured. */
+  span?: LeaderboardSpan;
   filter_options: { programs: { value: string; label: string }[] };
 };
 
