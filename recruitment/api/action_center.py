@@ -667,6 +667,13 @@ def sync_job_offer_action_item(doc, method=None):
             _sync_onboarding_action_for_applicant(candidate_id, candidate_email)
         return
 
+    # Recruitment Settings -> Create Candidate Action Item: on creation (default),
+    # on submit, or only once the offer email has been sent.
+    from recruitment.recruitment.offer_send_rules import action_item_due
+
+    if not action_item_due(doc):
+        return
+
     _upsert_minimal_item(
         candidate_email=candidate_email,
         reference_doctype=doc.doctype,

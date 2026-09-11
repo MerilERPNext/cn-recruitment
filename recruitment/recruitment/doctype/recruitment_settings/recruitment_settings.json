@@ -19,6 +19,9 @@
   "enable_send_job_offer_button",
   "job_offer_rules_section",
   "allow_multiple_job_offers",
+  "offer_action_item_trigger",
+  "disable_send_offer_after_sent",
+  "withdraw_offer_only_after_sent",
   "section_break_xbvj",
   "job_offer_print_format",
   "job_offer_print_format_mapping",
@@ -160,7 +163,7 @@
   },
   {
    "fieldname": "job_offer_rules_section",
-   "fieldtype": "Section Break",
+   "fieldtype": "Column Break",
    "label": "Job Offer Rules"
   },
   {
@@ -169,6 +172,28 @@
    "fieldname": "allow_multiple_job_offers",
    "fieldtype": "Check",
    "label": "Allow Multiple Active Job Offers per Candidate"
+  },
+  {
+   "default": "On Offer Creation",
+   "description": "When the Job Offer appears in the candidate's Action Center. On Offer Creation: as soon as the offer is created, even as a draft. On Offer Submit: once the offer is submitted. On Offer Email Sent: only after the offer email has actually gone out (Send Job Offer).",
+   "fieldname": "offer_action_item_trigger",
+   "fieldtype": "Select",
+   "label": "Create Candidate Action Item",
+   "options": "On Offer Creation\nOn Offer Submit\nOn Offer Email Sent"
+  },
+  {
+   "default": "0",
+   "description": "Once the offer email has been sent (Email Status = Sent), the 'Send Job Offer' button is hidden and the offer is skipped by bulk sending. Use 'Retrigger Welcome Email' to re-send.",
+   "fieldname": "disable_send_offer_after_sent",
+   "fieldtype": "Check",
+   "label": "Hide Send Job Offer Once Sent"
+  },
+  {
+   "default": "0",
+   "description": "Show 'Withdraw Offer' only on a submitted offer whose email has been sent (Email Status = Sent).",
+   "fieldname": "withdraw_offer_only_after_sent",
+   "fieldtype": "Check",
+   "label": "Allow Withdraw Offer Only After It Is Sent"
   },
   {
    "fieldname": "section_break_xbvj",
@@ -556,7 +581,7 @@
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2026-03-10 16:19:04.969944",
+ "modified": "2026-09-11 12:30:00.000000",
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "Recruitment Settings",

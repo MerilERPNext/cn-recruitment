@@ -481,6 +481,11 @@ def withdraw_offer(job_offer, reason=None):
             _("This offer has already been accepted. Cancel the onboarding instead of withdrawing.")
         )
 
+    # Recruitment Settings -> Allow Withdraw Offer Only After It Is Sent.
+    from recruitment.recruitment.offer_send_rules import validate_withdraw
+
+    validate_withdraw(doc)
+
     row_name = doc.get(POSITION_FIELD)
     requisition = _requisition_of(doc)
 

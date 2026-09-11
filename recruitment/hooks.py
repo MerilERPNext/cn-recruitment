@@ -379,6 +379,9 @@ doc_events = {
             # above, never before it.
             "recruitment.recruitment.offer_document_template.validate_offer_document_template",
         ],
+        # An amended offer starts unsent, so the send rules in Recruitment Settings
+        # (Action Center item, Send lock, Withdraw) treat it as the new letter it is.
+        "before_insert": "recruitment.recruitment.offer_send_rules.reset_send_status_on_amend",
         "validate": [
             "recruitment.customizations.job_applicant.validation_blacklist_on_doctypes",
             # Hiring Lead Permission Settings (change designation at offer stage).
