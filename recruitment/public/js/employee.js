@@ -1,19 +1,13 @@
 frappe.ui.form.on('Employee', {
     refresh: function(frm) {
-        if (!frm.doc.docstatus) { // Only apply if document is not submitted
-            // Hide the "Status" column in the table view
-            frm.fields_dict['custom_documents_for_verification'].grid.wrapper
-                .find('.grid-static-col[data-fieldname="status"]').remove();
-
-            
+        // Hide the "Status" field of Documents for Verification, both as a grid
+        // column and inside the row edit form. Set on the per-form docfield copy
+        // instead of removing DOM nodes, since the grid may not be rendered yet
+        // (e.g. when it sits in a tab that isn't open).
+        const df = frappe.meta.get_docfield("Onboarding Document Verification", "status", frm.doc.name);
+        if (df) {
+            df.hidden = 1;
+            frm.refresh_field("custom_documents_for_verification");
         }
-    }
-});
-
-frappe.ui.form.on('custom_documents_for_verification', {
-    form_render: function(frm, cdt, cdn) {
-        // Hide "Status" field inside the row edit popup
-        frappe.meta.get_docfield("custom_documents_for_verification", "status", frm).hidden = 1;
-        frm.refresh_field("custom_documents_for_verification");
     }
 });
