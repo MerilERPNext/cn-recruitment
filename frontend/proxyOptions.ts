@@ -3,7 +3,7 @@ import common_site_config from "../../../sites/common_site_config.json";
 const { webserver_port } = common_site_config;
 
 export default {
-  "^/(app|api|assets|files|private)": {
+  "^/(app|api|assets|files|private|login)": {
     target: `http://127.0.0.1:${webserver_port}`,
     // target: `https://testerp.walnutedu.in`,
     // ws: true,

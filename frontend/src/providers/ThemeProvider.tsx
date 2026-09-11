@@ -5,6 +5,7 @@ import {
   type ResolvedTheme,
   type ThemePreference,
 } from "./themeContext";
+import { useClientTheme } from "../services/themeService";
 
 /**
  * Applies the theme by stamping `data-theme` on <html>, which is what
@@ -13,6 +14,14 @@ import {
  * The initial value is also written by an inline script in index.html, before
  * React mounts, so the first paint is already correct — without it the app
  * flashes light before hydrating into dark.
+ *
+ * COLOR VALUES are then layered on top from the backend (see
+ * services/themeService.ts): src/styles/theme.css's static `:root`/
+ * `[data-theme]` blocks are the fallback, never removed. Once the client's
+ * design tokens arrive, each is applied as an inline `style.setProperty`,
+ * which — being an inline style — overrides the stylesheet rule for that one
+ * variable. Nothing configured yet, or the request fails? Nothing is applied,
+ * and the static defaults keep rendering exactly as before this existed.
  */
 
 const isPreference = (value: unknown): value is ThemePreference =>
@@ -65,6 +74,21 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
     const timer = window.setTimeout(() => root.classList.remove("theme-transition"), 220);
     return () => window.clearTimeout(timer);
   }, [theme]);
+
+  // Backend-driven color override, layered on top of the static defaults
+  // above. `tokens` is always the FULL token set for `theme` (never partial —
+  // the API fills in any un-set field from its own defaults), so every
+  // successful fetch is safe to apply wholesale, including on a light<->dark
+  // switch. Loading or erroring leaves the static theme.css values in place.
+  const { data: clientTheme } = useClientTheme(theme);
+
+  useEffect(() => {
+    if (!clientTheme?.tokens) return;
+    const root = document.documentElement;
+    Object.entries(clientTheme.tokens).forEach(([name, value]) => {
+      root.style.setProperty(`--${name}`, value);
+    });
+  }, [clientTheme]);
 
   const setPreference = useCallback((next: ThemePreference) => {
     setPreferenceState(next);

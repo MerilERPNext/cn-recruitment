@@ -77,7 +77,9 @@
   "restrict_act_as_admin_offer_approval",
   "allow_hiring_lead_change_designation_at_offer",
   "sla_tat_section",
-  "enable_sla_tat"
+  "enable_sla_tat",
+  "theme_settings_section",
+  "active_client"
  ],
  "fields": [
   {
@@ -548,6 +550,17 @@
    "options": "Email Template",
    "depends_on": "send_external_recruiter_assignment_email",
    "description": "Defaults to \"External Recruiter Job Opening Assigned\" when blank."
+  },
+  {
+   "fieldname": "theme_settings_section",
+   "fieldtype": "Section Break",
+   "label": "Theme Settings"
+  },
+  {
+   "description": "Which client's Client Theme Settings to serve site-wide (matched against the \"Client\" field there). Leave blank to serve the platform default theme to everyone.",
+   "fieldname": "active_client",
+   "fieldtype": "Data",
+   "label": "Active Client"
   }
  ],
  "index_web_pages_for_search": 1,

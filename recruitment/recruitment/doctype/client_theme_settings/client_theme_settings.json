@@ -1,0 +1,294 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "autoname": "CTS.#####",
+ "creation": "2026-09-10 00:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "identity_section",
+  "client",
+  "theme_key",
+  "theme_name",
+  "identity_column_break",
+  "mode",
+  "is_default",
+  "is_active",
+  "surfaces_section",
+  "surface",
+  "surface_raised",
+  "surface_sunken",
+  "surfaces_column_break",
+  "app_background",
+  "sidebar",
+  "brand_section",
+  "primary",
+  "primary_hover",
+  "brand_column_break",
+  "brand_deep",
+  "on_primary",
+  "text_section",
+  "text_title",
+  "text_body1",
+  "text_body2",
+  "text_column_break",
+  "text_disabled",
+  "text_link",
+  "text_primary_brand",
+  "border_semantic_section",
+  "border",
+  "border_strong",
+  "border_semantic_column_break",
+  "success",
+  "warning",
+  "error",
+  "info",
+  "ring"
+ ],
+ "fields": [
+  {
+   "fieldname": "identity_section",
+   "fieldtype": "Section Break",
+   "label": "Theme Identity"
+  },
+  {
+   "description": "Free-text client identifier, e.g. \"Acme Corp\". Leave blank for the platform default theme, used whenever no client-specific record matches.",
+   "fieldname": "client",
+   "fieldtype": "Data",
+   "label": "Client"
+  },
+  {
+   "description": "Slug used by the API/frontend, e.g. \"light\", \"dark\", \"diwali-dark\". Unique per Client.",
+   "fieldname": "theme_key",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Theme Key",
+   "reqd": 1
+  },
+  {
+   "description": "Display label, e.g. \"Dark\", \"Diwali Festive\".",
+   "fieldname": "theme_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Theme Name",
+   "reqd": 1
+  },
+  {
+   "fieldname": "identity_column_break",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "Which resolved light/dark mode this theme answers to.",
+   "fieldname": "mode",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Mode",
+   "options": "Light\nDark",
+   "reqd": 1
+  },
+  {
+   "description": "The active theme for this Client + Mode. Ticking this automatically un-ticks any other theme sharing the same Client and Mode.",
+   "fieldname": "is_default",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Is Default"
+  },
+  {
+   "default": "1",
+   "fieldname": "is_active",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Is Active"
+  },
+  {
+   "collapsible": 1,
+   "description": "Blank fields fall back to the platform's built-in default for that token, so a theme can override just one or two colors and inherit the rest.",
+   "fieldname": "surfaces_section",
+   "fieldtype": "Section Break",
+   "label": "Surfaces"
+  },
+  {
+   "fieldname": "surface",
+   "fieldtype": "Color",
+   "label": "Surface (cards)"
+  },
+  {
+   "fieldname": "surface_raised",
+   "fieldtype": "Color",
+   "label": "Surface Raised (modals/popovers)"
+  },
+  {
+   "fieldname": "surface_sunken",
+   "fieldtype": "Color",
+   "label": "Surface Sunken"
+  },
+  {
+   "fieldname": "surfaces_column_break",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "app_background",
+   "fieldtype": "Color",
+   "label": "App Background (page canvas)"
+  },
+  {
+   "fieldname": "sidebar",
+   "fieldtype": "Color",
+   "label": "Sidebar"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "brand_section",
+   "fieldtype": "Section Break",
+   "label": "Brand / Primary"
+  },
+  {
+   "fieldname": "primary",
+   "fieldtype": "Color",
+   "label": "Primary (action color)"
+  },
+  {
+   "fieldname": "primary_hover",
+   "fieldtype": "Color",
+   "label": "Primary Hover"
+  },
+  {
+   "fieldname": "brand_column_break",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "brand_deep",
+   "fieldtype": "Color",
+   "label": "Brand Deep (anchor color)"
+  },
+  {
+   "description": "Text/icon color used ON TOP of the Primary color (must contrast with it).",
+   "fieldname": "on_primary",
+   "fieldtype": "Color",
+   "label": "On Primary"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "text_section",
+   "fieldtype": "Section Break",
+   "label": "Text"
+  },
+  {
+   "fieldname": "text_title",
+   "fieldtype": "Color",
+   "label": "Text Title"
+  },
+  {
+   "fieldname": "text_body1",
+   "fieldtype": "Color",
+   "label": "Text Body"
+  },
+  {
+   "fieldname": "text_body2",
+   "fieldtype": "Color",
+   "label": "Text Body Muted"
+  },
+  {
+   "fieldname": "text_column_break",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "text_disabled",
+   "fieldtype": "Color",
+   "label": "Text Disabled"
+  },
+  {
+   "fieldname": "text_link",
+   "fieldtype": "Color",
+   "label": "Text Link"
+  },
+  {
+   "fieldname": "text_primary_brand",
+   "fieldtype": "Color",
+   "label": "Text Primary Brand"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "border_semantic_section",
+   "fieldtype": "Section Break",
+   "label": "Borders & Semantic Colors"
+  },
+  {
+   "fieldname": "border",
+   "fieldtype": "Color",
+   "label": "Border"
+  },
+  {
+   "fieldname": "border_strong",
+   "fieldtype": "Color",
+   "label": "Border Strong"
+  },
+  {
+   "fieldname": "border_semantic_column_break",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "success",
+   "fieldtype": "Color",
+   "label": "Success"
+  },
+  {
+   "fieldname": "warning",
+   "fieldtype": "Color",
+   "label": "Warning"
+  },
+  {
+   "fieldname": "error",
+   "fieldtype": "Color",
+   "label": "Error"
+  },
+  {
+   "fieldname": "info",
+   "fieldtype": "Color",
+   "label": "Info"
+  },
+  {
+   "fieldname": "ring",
+   "fieldtype": "Color",
+   "label": "Focus Ring"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-09-10 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Recruitment",
+ "name": "Client Theme Settings",
+ "naming_rule": "Expression (old style)",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "HR Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

@@ -16,12 +16,12 @@ link.rel = "stylesheet";
 document.head.append(link);
 createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <ThemeProvider>
-      <QueryProvider>
+    <QueryProvider>
+      <ThemeProvider>
         <BrowserRouter>
           <App />
         </BrowserRouter>
-      </QueryProvider>
-    </ThemeProvider>
+      </ThemeProvider>
+    </QueryProvider>
   </React.StrictMode>
 );

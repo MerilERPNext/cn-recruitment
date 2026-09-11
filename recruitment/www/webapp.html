@@ -12,15 +12,30 @@
       display: none !important;
     }
   </style>
-  <script type="module" crossorigin src="/assets/recruitment/webapp/index.bSaNhsz2.js"></script>
+  <script type="module" crossorigin src="/assets/recruitment/webapp/index.C7ne2cId.js"></script>
   <link rel="modulepreload" crossorigin href="/assets/recruitment/webapp/vendor-react.Bq_Y4AHp.js">
   <link rel="modulepreload" crossorigin href="/assets/recruitment/webapp/vendor-pdf.C430cciU.js">
   <link rel="modulepreload" crossorigin href="/assets/recruitment/webapp/vendor-mui.CA0Zk6Sp.js">
-  <link rel="modulepreload" crossorigin href="/assets/recruitment/webapp/vendor-utils.DuwZ6Cfp.js">
+  <link rel="modulepreload" crossorigin href="/assets/recruitment/webapp/vendor-utils.B-_DGQDp.js">
   <link rel="modulepreload" crossorigin href="/assets/recruitment/webapp/vendor-charts.BGS-ODkJ.js">
-  <link rel="stylesheet" crossorigin href="/assets/recruitment/webapp/index.Dkq_jz8E.css">
+  <link rel="stylesheet" crossorigin href="/assets/recruitment/webapp/index.ChagNYFq.css">
 </head>
 
+  <script>
+    // Runs before first paint so the page never flashes light then swaps to
+    // dark. Mirrors ThemeProvider's resolution: stored preference wins, else
+    // light by default (no OS auto-detection). Kept inline and
+    // dependency-free on purpose — a deferred module would already be too
+    // late.
+    (function () {
+      try {
+        var stored = localStorage.getItem("theme");
+        document.documentElement.dataset.theme = stored === "dark" ? "dark" : "light";
+      } catch (e) {
+        document.documentElement.dataset.theme = "light";
+      }
+    })();
+  </script>
 <body>
   <div id="root"></div>
   <chatnext-app id="chatnext-app-id" />
