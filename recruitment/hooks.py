@@ -45,6 +45,9 @@ app_include_js = [
 	# same tab — Frappe's desktop opens every External icon in a new one. Global
 	# because the desktop page has no doctype to hang it on. Bump ?v= when it changes.
 	"/assets/recruitment/js/desktop_webapp_icon.js?v=1",
+	# Adds "Switch to Webapp" below Help in the Desk sidebar header's dropdown. Global
+	# because that menu is on every Desk page. Bump ?v= when it changes.
+	"/assets/recruitment/js/sidebar_webapp_switch.js?v=1",
 ]
 
 add_to_apps_screen = [
