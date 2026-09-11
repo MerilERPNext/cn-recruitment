@@ -51,7 +51,7 @@ const SeparationRecord: React.FC = () => {
 
     return (
         <div className="flex flex-col h-full bg-white">
-            <div className="max-md:fixed max-md:top-0 w-full">
+            <div className="max-md:fixed max-md:top-0 w-full z-10">
                 <HeaderBar
                     title="Separation Record"
                     showBackButton={true}
@@ -67,7 +67,7 @@ const SeparationRecord: React.FC = () => {
                     }
                 />
             </div>
-            <div className="md:p-4 md:gap-4 flex-1 overflow-y-auto  max-md:mt-14">
+            <div className="md:p-4 md:gap-4 flex-1 overflow-y-auto max-md:mt-14">
                 <div className="flex flex-col items-center justify-center md:mb-4 max-md:px-4 mb-4 text-center">
                     <Typography variant="bodySmall" color="body2">
                         View your separation record
