@@ -8,6 +8,7 @@ from frappe import _
 from frappe.model.document import Document
 from frappe.utils import escape_html
 
+from recruitment.recruitment.communication_log import sendmail_with_log
 from recruitment.recruitment.tpo_access import PRIMARY_TPO_ROLE
 
 # Roles that pick the Institute themselves; everyone else with TPO gets it forced
@@ -449,7 +450,7 @@ class CandidateRegistration(Document):
 		}
 		try:
 			rendered = get_email_template(template_name, context)
-			frappe.sendmail(
+			sendmail_with_log(
 				recipients=[candidate.email_id],
 				subject=rendered.get("subject") or _("Candidate Registration"),
 				message=rendered.get("message"),

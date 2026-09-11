@@ -27,6 +27,8 @@ roll back the opening that triggered it.
 import frappe
 from frappe import _
 
+from recruitment.recruitment.communication_log import sendmail_with_log
+
 ASSIGNMENT_TEMPLATE = "External Recruiter Job Opening Assigned"
 
 ENABLED_FIELD = "send_external_recruiter_assignment_email"
@@ -177,7 +179,7 @@ def _notify_row(opening, row, recruiters, template):
 			return mailed  # template gone: logged once, don't retry per recruiter
 
 		subject, message = rendered
-		frappe.sendmail(
+		sendmail_with_log(
 			recipients=[email],
 			subject=subject,
 			message=message,

@@ -8,6 +8,7 @@ from recruitment.job_offer_utils import (
     get_job_offer_document_template,
     render_job_offer_via_document_template,
 )
+from recruitment.recruitment.communication_log import sendmail_with_log
 
 
 def _get_support_email():
@@ -97,7 +98,7 @@ def resend_welcome_email(job_offer):
     # the re-send carries exactly what the original send did.
     culture_book = get_culture_book_attachment()
 
-    frappe.sendmail(
+    sendmail_with_log(
         recipients=[email],
         subject=subject,
         message=message,
