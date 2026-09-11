@@ -60,20 +60,25 @@ export default function ApprovalTracker({ data, For, isLoading }: ApprovalTracke
     );
   }
 
-  const haveInitiatorForm = data?.initiator_forms && data.initiator_forms.length > 0;
+  const haveInitiatorForm = Boolean(data?.initiator_forms && data.initiator_forms.length > 0);
 
   const handleShowSelfForm = () => {
-    let formData: Record<string, any> = {};
+    let displayData: Record<string, any> = {};
+    let rawData: Record<string, any> = {};
     try {
-      formData = JSON.parse(data?.initiator_forms?.[0]?.form_data_display || "{}");
+      displayData = JSON.parse(data?.initiator_forms?.[0]?.form_data_display || "{}");
+      rawData = JSON.parse(data?.initiator_forms?.[0]?.form_data || "{}");
     } catch (error) {
-      console.error("Invalid initiator_forms form_data_display JSON:", error);
+      console.error("Invalid initiator_forms JSON:", error);
       return;
     }
-    const schema = (formData as any)?.form?.components;
-    const answer = (formData as any)?.submission_data;
+    const rawSchema = displayData?.form?.components ?? rawData?.form?.components ?? [];
+    const schema = rawSchema.filter(
+      (comp: any) => !(comp.type === "button" && comp.action === "submit")
+    );
+    const answer = displayData?.submission_data ?? rawData?.submission_data ?? {};
 
-    if (!schema) return;
+    if (schema.length === 0 && Object.keys(answer).length === 0) return;
     setFormSchema({ display: "form", components: schema });
     setFormAnswer(answer || {});
     setShowSelfForm(true);
