@@ -11,6 +11,7 @@ import {
 } from "../../hooks/useEmployee";
 import { useDeleteDocument } from "../../hooks/payroll/UseDeleteDocuemt";
 import toast from "react-hot-toast";
+import { errorResponseFormater } from "../../utils/errorResponseFormater";
 import { Loader2, X, Check, AlertCircle } from "lucide-react";
 import { IoMdCloudUpload } from "react-icons/io";
 import RequisitionReviewV2 from "./RequisitionReviewV2";
@@ -1008,6 +1009,14 @@ const RequisitionFormV2 = () => {
       setFormData((prev) => ({
         ...prev,
         hiring_manager: currentEmployee.name,
+        // Hiring Manager is read-only and filled from the logged-in employee,
+        // so no user selection ever fires the selectData merge that populates
+        // the other `_title` companions. Without this the picker has only the
+        // id and falls back to rendering it raw whenever the employee isn't on
+        // the first page of the options endpoint — capture the name here, where
+        // the API response already has it, so it always reads "Name (id)".
+        hiring_manager_title:
+          currentEmployee.employee_name || currentEmployee.name,
         company: currentEmployee.company,
       }));
       setFormSyncTick((t) => t + 1);
@@ -1327,6 +1336,28 @@ const RequisitionFormV2 = () => {
         v && typeof v === "object"
           ? (v.employee_name ?? v.label ?? v.name ?? v.title)
           : undefined;
+      // A multi-value select stores its picks as a map of id -> option object.
+      // A single pick stores the option object itself, which for Hiring Lead is
+      // a raw employee row ({employee, employee_name, designation, ...}) with
+      // none of the label keys — so key presence alone can't tell the two
+      // apart. Only a map has objects all the way down.
+      const isSelectionMap = (v: Record<string, any>) => {
+        const values = Object.values(v);
+        return (
+          values.length > 0 &&
+          values.every((entry: any) => entry && typeof entry === "object")
+        );
+      };
+      // A single-value select only loses its resolved label when the value is
+      // gone or has been replaced. form.io re-emits selectData with no label
+      // for a select whose loaded option page never contained the stored id —
+      // Hiring Manager is read-only and filled from the session, so it is never
+      // picked and never resolved — and dropping the title on that echo is what
+      // made the picker fall back to rendering the bare employee id.
+      const clearScalarTitle = (key: string) => {
+        const value = newData[key];
+        if (!value || value !== prevData[key]) delete newData[`${key}_title`];
+      };
       Object.keys(selectData).forEach((key) => {
         const sd = selectData[key];
         if (key === "positions" && Array.isArray(sd)) {
@@ -1351,11 +1382,7 @@ const RequisitionFormV2 = () => {
           const labels = sd.map((v: any) => labelOf(v)).filter(Boolean);
           if (labels.length) newData[`${key}_title`] = labels;
           else delete newData[`${key}_title`];
-        } else if (
-          sd &&
-          typeof sd === "object" &&
-          !("label" in sd || "name" in sd || "title" in sd)
-        ) {
+        } else if (sd && typeof sd === "object" && isSelectionMap(sd)) {
           const labels = Object.values(sd)
             .map((v: any) => labelOf(v))
             .filter(Boolean);
@@ -1364,7 +1391,7 @@ const RequisitionFormV2 = () => {
         } else {
           const lbl = labelOf(sd);
           if (lbl) newData[`${key}_title`] = lbl;
-          else delete newData[`${key}_title`];
+          else clearScalarTitle(key);
         }
       });
     }
@@ -2094,7 +2121,18 @@ const RequisitionFormV2 = () => {
       navigate("/webapp/recruitment/requisition");
     } catch (err: any) {
       console.error("Submit failed:", err);
-      toast.error("Failed to create requisition.");
+      // `create_job_requisition` answers a rejected save with the reason —
+      // "Missing required fields: department, designation",
+      // "custom_position_details[2].reporting_manager is required." — and that
+      // is what the requester needs in order to fix the form. Show it instead
+      // of a generic failure, falling back only when the server said nothing
+      // usable. errorResponseFormater digs the string out of whichever shape it
+      // arrived in (`_server_messages`, `exception`, or the nested `message`)
+      // and sanitises it.
+      toast.error(
+        errorResponseFormater(err, "Failed to create requisition."),
+        { style: { maxWidth: "480px" }, duration: 8000 },
+      );
     } finally {
       setIsBusy(false);
     }

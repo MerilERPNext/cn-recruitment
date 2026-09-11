@@ -3,6 +3,7 @@ import {
   EmployeeSupportContacts,
   SeparationOpenItemsData,
   SeparationWorkflowStagesResponse,
+  FullAndFinalEstimateResponse,
 } from "../types/separation";
 import FrappeAPI from "../utils/frappeAPI";
 
@@ -225,4 +226,19 @@ export const getEmployeeSupportContacts = async (
       email: hdTeamData?.company_email || hdTeamData?.personal_email || "",
     },
   };
+};
+
+export const getFullAndFinalEstimate = async (
+  employee: string
+): Promise<FullAndFinalEstimateResponse | null> => {
+  if (!employee) {
+    return null;
+  }
+
+  const response = await FrappeAPI.getMethod(
+    "cn_indian_payroll.cn_indian_payroll.overrides.full_and_final_estimate.get_full_and_final_estimate",
+    { employee }
+  );
+
+  return response as FullAndFinalEstimateResponse;
 };

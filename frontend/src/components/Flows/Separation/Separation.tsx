@@ -369,7 +369,7 @@ const Separation = () => {
           <div className="max-w-full">
             <ApprovalTracker
               For={separationType?.custom_resignaion_type === "Termination" ? "Employee Termination" : "Employee Separation"}
-              data={item as FlowRequestItem}
+              data={flowRequestData || (item as FlowRequestItem)}
               isLoading={isLoading}
             />
           </div>

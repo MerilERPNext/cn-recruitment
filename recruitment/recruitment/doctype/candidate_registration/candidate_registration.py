@@ -375,8 +375,36 @@ class CandidateRegistration(Document):
 		# One lookup for the whole batch: the date is the drive's, not each
 		# candidate's, and a college submits a hundred rows at a time.
 		deadline = self._registration_deadline()
+		# Same reasoning for the JDs — they belong to the drive, not the student.
+		attachments = self._job_description_attachments()
 		for candidate in recipients:
-			self._send_to_candidate(template_name, candidate, deadline)
+			self._send_to_candidate(template_name, candidate, deadline, attachments)
+
+	def _job_description_attachments(self):
+		"""The JD files of the drive's job openings, for the candidate's email.
+
+		The registration hangs off a Campus Invite, whose job-opening rows already
+		carry each opening's JD (fetched from ``custom_job_description_file``). So
+		a student receives exactly the documents their TPO was sent — reusing the
+		invite mailer's own resolver rather than restating it, which also brings its
+		guards: deduped by URL, and any file with no File row behind it dropped
+		before it can fail the send inside a background worker.
+
+		Resolved once per submit: a college registers a hundred students at a time.
+		"""
+		if not self.campus_invite:
+			return []
+		try:
+			from recruitment.recruitment.tpo_mailers import _invite_attachments
+
+			return _invite_attachments(frappe.get_doc("Campus Invite", self.campus_invite))
+		except Exception:
+			# The registration email matters more than its attachment.
+			frappe.log_error(
+				frappe.get_traceback(),
+				f"Candidate Registration {self.name}: JD attachments unavailable",
+			)
+			return []
 
 	def _registration_deadline(self):
 		"""The drive's Registration Expiry Date, formatted, or None when it has none."""
@@ -387,7 +415,7 @@ class CandidateRegistration(Document):
 		)
 		return frappe.utils.formatdate(expiry) if expiry else None
 
-	def _send_to_candidate(self, template_name, candidate, deadline=None):
+	def _send_to_candidate(self, template_name, candidate, deadline=None, attachments=None):
 		"""Best effort: a bad address / SMTP issue for one candidate is logged and
 		must not block the rest or roll back the submit."""
 		from frappe.email.doctype.email_template.email_template import get_email_template
@@ -427,6 +455,7 @@ class CandidateRegistration(Document):
 				message=rendered.get("message"),
 				reference_doctype=self.doctype,
 				reference_name=self.name,
+				attachments=attachments or None,
 			)
 		except Exception:
 			frappe.log_error(

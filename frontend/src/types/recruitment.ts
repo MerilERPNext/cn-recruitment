@@ -53,7 +53,7 @@ export interface JobRequisitionFormData {
   custom_work_experience?: string;
   custom_work_experience_range?: string;
   custom_preferred_notice_period?: string;
-  custom_preferred_company?: string;
+  custom_preferred_company?: string | string[] | RequisitionPreferredCompany[];
   custom_other_preferred_companies?: string;
   custom_job_description_template?: string;
   custom_salary?: string;
@@ -126,7 +126,7 @@ export interface CreateJobRequisitionPayload {
   custom_work_experience?: string;
   custom_work_experience_range?: string;
   custom_preferred_notice_period?: string;
-  custom_preferred_company?: string;
+  custom_preferred_company?: string | string[] | RequisitionPreferredCompany[];
   custom_other_preferred_companies?: string;
   custom_qualifications?: { qualification: string; mandatory: string }[];
   custom_job_description_template?: string;
@@ -222,6 +222,15 @@ export interface RequisitionPosition {
   functional_area_title?: string;
   reporting_manager_title?: string;
   replacement_for_title?: string;
+}
+
+// One `custom_preferred_company` child row, as the detail API returns it
+// unflattened. The field used to be a single Link, so a bare string still
+// turns up on older records.
+export interface RequisitionPreferredCompany {
+  name?: string;
+  preferred_company?: string;
+  preferred_company_title?: string;
 }
 
 export interface RequisitionQualification {

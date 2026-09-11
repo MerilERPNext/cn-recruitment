@@ -1,8 +1,15 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, type ReactNode } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Info, Eye, EyeOff, ChevronDown, ChevronLeft, Loader2 } from "lucide-react";
+import {
+  Info,
+  Eye,
+  EyeOff,
+  ChevronDown,
+  ChevronLeft,
+  Loader2,
+} from "lucide-react";
 import { Typography } from "../shared/atoms/Typography";
 import Badge from "../shared/Badge";
 import AllocatedToTooltip from "../shared/AllocatedToTooltip";
@@ -13,6 +20,27 @@ import { useRequisitionDetails } from "../../hooks/useRequisition";
 import type { RequisitionApprovalFlow } from "../../types/requisition";
 
 type TabKey = "overview" | "position_details" | "custom_approval";
+
+/** One labelled figure in the Position Selection summary card. */
+const SummaryItem = ({
+  label,
+  value,
+}: {
+  label: ReactNode;
+  value: ReactNode;
+}) => (
+  <div>
+    <Typography
+      variant="bodySmall"
+      className="text-gray-500 text-xs mb-0.5 flex items-center gap-1.5"
+    >
+      {label}
+    </Typography>
+    <Typography variant="bodySmall" className="font-semibold text-gray-500">
+      : {value}
+    </Typography>
+  </div>
+);
 
 const RequisitionDetailPage = () => {
   const navigate = useNavigate();
@@ -44,6 +72,33 @@ const RequisitionDetailPage = () => {
 
   const approvalFlow = requisitionDetails?.approval_flow;
 
+  // The detail endpoint is the fuller record; the row the list handed over in
+  // navigation state is what shows until it lands.
+  const detail = requisitionDetails?.requisition;
+
+  // A Fresher requisition carries its openings per region in `custom_regions`;
+  // a Lateral one fills the per-position `custom_position_details` rows. The
+  // two are alternates — only one is ever populated (see `available_tables`).
+  const regions = useMemo(
+    () => detail?.custom_regions ?? requisition?.custom_regions ?? [],
+    [detail?.custom_regions, requisition?.custom_regions],
+  );
+
+  const isRegionBased = useMemo(() => {
+    const hiringType =
+      detail?.custom_hiring_type ?? requisition?.custom_hiring_type;
+    return hiringType === "Fresher" || regions.length > 0;
+  }, [detail?.custom_hiring_type, requisition?.custom_hiring_type, regions]);
+
+  const regionOpenings = useMemo(
+    () =>
+      regions.reduce(
+        (sum: number, row: any) => sum + (Number(row?.no_of_openings) || 0),
+        0,
+      ),
+    [regions],
+  );
+
   const vacancyBreakdown = useMemo(() => {
     return requisition?.custom_vacancy_breakdown || null;
   }, [requisition?.custom_vacancy_breakdown]);
@@ -61,9 +116,19 @@ const RequisitionDetailPage = () => {
   }, [vacancyBreakdown, positionDetails]);
 
   const totalPositions = useMemo(() => {
+    // `custom_vacancy_breakdown` counts Position Details rows, which a region
+    // requisition has none of — its ask is the sum of the regions' openings.
+    if (isRegionBased)
+      return regionOpenings || requisition?.no_of_positions || 0;
     if (vacancyBreakdown?.total !== undefined) return vacancyBreakdown.total;
     return requisition?.no_of_positions || positionDetails.length || 0;
-  }, [vacancyBreakdown, requisition?.no_of_positions, positionDetails]);
+  }, [
+    isRegionBased,
+    regionOpenings,
+    vacancyBreakdown,
+    requisition?.no_of_positions,
+    positionDetails,
+  ]);
 
   const maxPositionsAllowed = useMemo(() => {
     return (
@@ -146,72 +211,70 @@ const RequisitionDetailPage = () => {
         <div
           className={`grid gap-4 ${isDesktop ? "grid-cols-4" : "grid-cols-2"}`}
         >
-          <div>
-            <Typography
-              variant="bodySmall"
-              className="text-gray-500 text-xs mb-0.5"
-            >
-              Number of New Position(s)
-            </Typography>
-            <Typography
-              variant="bodySmall"
-              className="font-semibold text-gray-500"
-            >
-              : {newCount}
-            </Typography>
-          </div>
-          <div>
-            <Typography
-              variant="bodySmall"
-              className="text-gray-500 text-xs mb-0.5"
-            >
-              Number of Replacement Position(s)
-            </Typography>
-            <Typography
-              variant="bodySmall"
-              className="font-semibold text-gray-500"
-            >
-              : {replacementCount}
-            </Typography>
-          </div>
-          <div>
-            <Typography
-              variant="bodySmall"
-              className="text-gray-500 text-xs mb-0.5"
-            >
-              Number of Position(s)
-            </Typography>
-            <Typography
-              variant="bodySmall"
-              className="font-semibold text-gray-500"
-            >
-              : {totalPositions}
-            </Typography>
-          </div>
-          <div className="flex items-start gap-2">
-            <div>
-              <Typography
-                variant="bodySmall"
-                className="text-gray-500 text-xs mb-0.5 flex items-center gap-1.5"
-              >
+          {isRegionBased ? (
+            // New / Replacement is a Position Details distinction — a region
+            // requisition has no such split, so it reports its regions instead.
+            <SummaryItem label="Number of Region(s)" value={regions.length} />
+          ) : (
+            <>
+              <SummaryItem label="Number of New Position(s)" value={newCount} />
+              <SummaryItem
+                label="Number of Replacement Position(s)"
+                value={replacementCount}
+              />
+            </>
+          )}
+          <SummaryItem label="Number of Position(s)" value={totalPositions} />
+          <SummaryItem
+            label={
+              <>
                 Max Position(s) Allowed
-                <button 
+                <button
                   onClick={() => setShowMaxPositions(!showMaxPositions)}
                   className="text-gray-400 hover:text-gray-600 transition-colors"
-                  title={showMaxPositions ? "Hide max positions" : "Show max positions"}
+                  title={
+                    showMaxPositions
+                      ? "Hide max positions"
+                      : "Show max positions"
+                  }
                 >
-                  {showMaxPositions ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                  {showMaxPositions ? (
+                    <EyeOff className="w-3.5 h-3.5" />
+                  ) : (
+                    <Eye className="w-3.5 h-3.5" />
+                  )}
                 </button>
-              </Typography>
-              <Typography
-                variant="bodySmall"
-                className="font-semibold text-gray-500"
-              >
-                : {showMaxPositions ? maxPositionsAllowed : "***"}
-              </Typography>
-            </div>
-          </div>
+              </>
+            }
+            value={showMaxPositions ? maxPositionsAllowed : "***"}
+          />
         </div>
+
+        {/* Region breakdown — the openings this requisition is asking for, per
+            region. Only a region (Fresher) requisition has these. */}
+        {isRegionBased && regions.length > 0 && (
+          <div className="mt-4 pt-4 border-t border-gray-200 flex flex-wrap gap-2">
+            {regions.map((row: any, idx: number) => (
+              <span
+                key={row?.row_name || idx}
+                className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-1.5"
+              >
+                <Typography
+                  variant="bodySmall"
+                  className="font-semibold text-gray-800"
+                >
+                  {row?.region || "—"}
+                </Typography>
+                <Typography
+                  variant="bodySmall"
+                  className="text-gray-500 text-xs"
+                >
+                  {Number(row?.no_of_openings) || 0} opening(s)
+                </Typography>
+              </span>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Tabs */}
@@ -235,7 +298,7 @@ const RequisitionDetailPage = () => {
             ))}
 
             {/* Legend (only on position details tab) */}
-            {activeTab === "position_details" && (
+            {activeTab === "position_details" && !isRegionBased && (
               <div className="ml-auto flex items-center gap-4 pr-2">
                 <span className="flex items-center gap-1.5 text-xs text-gray-600">
                   <span className="w-2.5 h-2.5 rounded-full bg-green-500 inline-block" />
@@ -252,13 +315,22 @@ const RequisitionDetailPage = () => {
 
         {/* Tab Content */}
         <div className="mt-4">
-          {activeTab === "overview" && <OverviewTab requisition={requisition} isDesktop={isDesktop} />}
-          {activeTab === "position_details" && (
-            <PositionDetailsTab
-              positionDetails={positionDetails}
-              isDesktop={isDesktop}
-            />
+          {activeTab === "overview" && (
+            <OverviewTab requisition={requisition} isDesktop={isDesktop} />
           )}
+          {activeTab === "position_details" &&
+            (isRegionBased ? (
+              <RegionDetailsTab
+                regions={regions}
+                totalOpenings={regionOpenings}
+                isDesktop={isDesktop}
+              />
+            ) : (
+              <PositionDetailsTab
+                positionDetails={positionDetails}
+                isDesktop={isDesktop}
+              />
+            ))}
           {activeTab === "custom_approval" && (
             <CustomApprovalTab
               approvalFlow={approvalFlow}
@@ -292,7 +364,10 @@ const OverviewField = ({ label, value }: { label: string; value: unknown }) => (
     <Typography variant="bodySmall" className="text-xs text-gray-500">
       {label}
     </Typography>
-    <Typography variant="bodySmall" className="mt-1 break-words font-medium text-gray-900">
+    <Typography
+      variant="bodySmall"
+      className="mt-1 break-words font-medium text-gray-900"
+    >
       {String(value)}
     </Typography>
   </div>
@@ -313,11 +388,18 @@ const OverviewSection = ({
 
   return (
     <section className="border-b border-gray-200 pb-2 last:border-b-0">
-      <Typography variant="subheading" className="pt-1 font-semibold text-gray-900">
+      <Typography
+        variant="subheading"
+        className="pt-1 font-semibold text-gray-900"
+      >
         {title}
       </Typography>
-      <div className={`mt-2 grid gap-x-6 divide-y divide-gray-100 ${isDesktop ? "grid-cols-3" : "grid-cols-1"}`}>
-        {visibleFields.map((field) => <OverviewField key={field.label} {...field} />)}
+      <div
+        className={`mt-2 grid gap-x-6 divide-y divide-gray-100 ${isDesktop ? "grid-cols-3" : "grid-cols-1"}`}
+      >
+        {visibleFields.map((field) => (
+          <OverviewField key={field.label} {...field} />
+        ))}
       </div>
     </section>
   );
@@ -327,18 +409,47 @@ const OverviewTab = ({ requisition, isDesktop }: OverviewTabProps) => {
   const experience = [
     requisition.custom_experience_range_from,
     requisition.custom_experience_range_to,
-  ].filter((value) => value !== undefined && value !== null && value !== "").join(" - ");
+  ]
+    .filter((value) => value !== undefined && value !== null && value !== "")
+    .join(" - ");
   const experienceLabel = experience
     ? `${experience} ${requisition.custom_experience_unit || "years"}`
-    : requisition.custom_work_experience || requisition.custom_work_experience_range;
-  const salaryRange = requisition.custom_salary_range_min || requisition.custom_salary_range_max
-    ? `${requisition.custom_salary_range_currency || "INR"} ${requisition.custom_salary_range_min || 0} - ${requisition.custom_salary_range_max || 0}${requisition.custom_salary_timeframe ? ` / ${requisition.custom_salary_timeframe}` : ""}`
-    : requisition.custom_salary_range_display;
+    : requisition.custom_work_experience ||
+      requisition.custom_work_experience_range;
+  const salaryRange =
+    requisition.custom_salary_range_min || requisition.custom_salary_range_max
+      ? `${requisition.custom_salary_range_currency || "INR"} ${requisition.custom_salary_range_min || 0} - ${requisition.custom_salary_range_max || 0}${requisition.custom_salary_timeframe ? ` / ${requisition.custom_salary_timeframe}` : ""}`
+      : requisition.custom_salary_range_display;
   const skills = Array.isArray(requisition.custom_skills)
     ? requisition.custom_skills.join(", ")
     : requisition.custom_skills || requisition.custom_additional_skills;
+  // Preferred Company is a Table MultiSelect (like Skills), so it arrives as a
+  // list. Depending on the endpoint that is either the flattened ids or the raw
+  // child rows; a plain string is the shape it carried while it was still a
+  // single Link, kept so older records still render.
+  const preferredCompanies = Array.isArray(requisition.custom_preferred_company)
+    ? (requisition.custom_preferred_company as any[])
+        .map((item: any) =>
+          item && typeof item === "object"
+            ? item.preferred_company_title ||
+              item.preferred_company ||
+              item.name
+            : item,
+        )
+        .filter(Boolean)
+        .join(", ")
+    : requisition.custom_preferred_company;
   const qualifications = Array.isArray(requisition.custom_qualifications)
-    ? requisition.custom_qualifications.map((item: any) => item.qualification_title || item.qualification || item.degree_title || item.degree).filter(Boolean).join(", ")
+    ? requisition.custom_qualifications
+        .map(
+          (item: any) =>
+            item.qualification_title ||
+            item.qualification ||
+            item.degree_title ||
+            item.degree,
+        )
+        .filter(Boolean)
+        .join(", ")
     : requisition.custom_qualifications;
 
   return (
@@ -349,36 +460,122 @@ const OverviewTab = ({ requisition, isDesktop }: OverviewTabProps) => {
         fields={[
           { label: "Requisition Code", value: requisition.name },
           { label: "Status", value: requisition.status },
-          { label: "Company", value: requisition.company_title || requisition.company },
-          { label: "Designation", value: requisition.designation_title || requisition.designation },
-          { label: "Department", value: requisition.department_title || requisition.department },
-          { label: "Location", value: requisition.custom_location_title || requisition.custom_location },
-          { label: "Employment Type", value: requisition.custom_employment_type_link_title || requisition.custom_employment_type_link },
+          {
+            label: "Company",
+            value: requisition.company_title || requisition.company,
+          },
+          {
+            label: "Designation",
+            value: requisition.designation_title || requisition.designation,
+          },
+          {
+            label: "Department",
+            value: requisition.department_title || requisition.department,
+          },
+          {
+            label: "Location",
+            value:
+              requisition.custom_location_title || requisition.custom_location,
+          },
+          {
+            label: "Employment Type",
+            value:
+              requisition.custom_employment_type_link_title ||
+              requisition.custom_employment_type_link,
+          },
           { label: "Hiring Type", value: requisition.custom_hiring_type },
-          { label: "Functional Area", value: requisition.custom_functional_area_title || requisition.custom_functional_area },
-          { label: "Division", value: requisition.custom_division_title || requisition.custom_division },
+          {
+            label: "Functional Area",
+            value:
+              requisition.custom_functional_area_title ||
+              requisition.custom_functional_area,
+          },
+          {
+            label: "Division",
+            value:
+              requisition.custom_division_title || requisition.custom_division,
+          },
           { label: "Number of Positions", value: requisition.no_of_positions },
-          { label: "Vacancy Type", value: requisition.custom_type_of_position || requisition.custom_vacancy_breakdown?.type },
+          {
+            label: "Vacancy Type",
+            value:
+              requisition.custom_type_of_position ||
+              requisition.custom_vacancy_breakdown?.type,
+          },
         ]}
       />
       <OverviewSection
         title="Request & Assignment"
         isDesktop={isDesktop}
         fields={[
-          { label: "Requested By", value: requisition.requested_by_title || requisition.requested_by_name || requisition.requested_by },
-          { label: "Requester Department", value: requisition.requested_by_dept_title || requisition.requested_by_dept },
-          { label: "Requester Designation", value: requisition.requested_by_designation_title || requisition.requested_by_designation },
-          { label: "Hiring Lead", value: requisition.custom_hiring_lead_title || requisition.custom_hiring_lead },
-          { label: "Assigned Recruiter", value: requisition.custom_assign_to_recruiter_title || requisition.custom_assign_to_recruiter },
-          { label: "Expected Compensation", value: requisition.expected_compensation ? `INR ${Number(requisition.expected_compensation).toLocaleString("en-IN")}` : null },
+          {
+            label: "Requested By",
+            value:
+              requisition.requested_by_title ||
+              requisition.requested_by_name ||
+              requisition.requested_by,
+          },
+          {
+            label: "Requester Department",
+            value:
+              requisition.requested_by_dept_title ||
+              requisition.requested_by_dept,
+          },
+          {
+            label: "Requester Designation",
+            value:
+              requisition.requested_by_designation_title ||
+              requisition.requested_by_designation,
+          },
+          {
+            label: "Hiring Lead",
+            value:
+              requisition.custom_hiring_lead_title ||
+              requisition.custom_hiring_lead,
+          },
+          {
+            label: "Assigned Recruiter",
+            value:
+              requisition.custom_assign_to_recruiter_title ||
+              requisition.custom_assign_to_recruiter,
+          },
+          {
+            label: "Expected Compensation",
+            value: requisition.expected_compensation
+              ? `INR ${Number(requisition.expected_compensation).toLocaleString("en-IN")}`
+              : null,
+          },
           { label: "Experience", value: experienceLabel },
           { label: "Salary Range", value: salaryRange },
-          { label: "Preferred Notice Period", value: requisition.custom_preferred_notice_period },
-          { label: "Preferred Company", value: requisition.custom_preferred_company },
-          { label: "Posting Date", value: requisition.posting_date ? formatToIndianDateWithTime(requisition.posting_date) : null },
-          { label: "Expected By", value: requisition.expected_by ? formatToIndianDateWithTime(requisition.expected_by) : null },
-          { label: "Created On", value: requisition.creation ? formatToIndianDateWithTime(requisition.creation) : null },
-          { label: "Last Updated", value: requisition.modified ? formatToIndianDateWithTime(requisition.modified) : null },
+          {
+            label: "Preferred Notice Period",
+            value: requisition.custom_preferred_notice_period,
+          },
+          { label: "Preferred Company", value: preferredCompanies },
+          {
+            label: "Posting Date",
+            value: requisition.posting_date
+              ? formatToIndianDateWithTime(requisition.posting_date)
+              : null,
+          },
+          {
+            label: "Expected By",
+            value: requisition.expected_by
+              ? formatToIndianDateWithTime(requisition.expected_by)
+              : null,
+          },
+          {
+            label: "Created On",
+            value: requisition.creation
+              ? formatToIndianDateWithTime(requisition.creation)
+              : null,
+          },
+          {
+            label: "Last Updated",
+            value: requisition.modified
+              ? formatToIndianDateWithTime(requisition.modified)
+              : null,
+          },
         ]}
       />
       <OverviewSection
@@ -387,12 +584,131 @@ const OverviewTab = ({ requisition, isDesktop }: OverviewTabProps) => {
         fields={[
           { label: "Qualifications", value: qualifications },
           { label: "Skills", value: skills },
-          { label: "Reason for Request", value: requisition.reason_for_requesting },
-          { label: "Additional Roles & Responsibilities", value: requisition.custom_additional_roles__responsibilities },
-          { label: "Comments / Instructions", value: requisition.custom_comments__instructions },
+          {
+            label: "Reason for Request",
+            value: requisition.reason_for_requesting,
+          },
+          {
+            label: "Additional Roles & Responsibilities",
+            value: requisition.custom_additional_roles__responsibilities,
+          },
+          {
+            label: "Comments / Instructions",
+            value: requisition.custom_comments__instructions,
+          },
           { label: "Cost Centre", value: requisition.custom_cost_centre },
         ]}
       />
+    </div>
+  );
+};
+
+// ─── Region Details Tab ──────────────────────────────────────────────────
+
+// The Fresher counterpart of PositionDetailsTab: a Fresher requisition asks for
+// N openings in each of a set of regions rather than describing each position
+// individually, so `custom_regions` is what there is to show.
+interface RegionDetailsTabProps {
+  regions: any[];
+  totalOpenings: number;
+  isDesktop: boolean;
+}
+
+const RegionDetailsTab = ({
+  regions,
+  totalOpenings,
+  isDesktop,
+}: RegionDetailsTabProps) => {
+  if (!regions || regions.length === 0) {
+    return (
+      <div className="text-center py-12 text-gray-500">
+        <Typography variant="bodySmall">No regions specified.</Typography>
+      </div>
+    );
+  }
+
+  if (!isDesktop) {
+    return (
+      <div className="space-y-3">
+        {regions.map((row: any, idx: number) => (
+          <div
+            key={row?.row_name || idx}
+            className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm flex items-center gap-3"
+          >
+            <span className="w-1 h-8 rounded-full bg-green-500" />
+            <div className="flex-1">
+              <Typography
+                variant="bodySmall"
+                className="font-semibold text-gray-900"
+              >
+                {row?.region || "—"}
+              </Typography>
+              <Typography variant="bodySmall" className="text-gray-500 text-xs">
+                No. of Openings
+              </Typography>
+            </div>
+            <Typography
+              variant="bodySmall"
+              className="font-semibold text-gray-900"
+            >
+              {Number(row?.no_of_openings) || 0}
+            </Typography>
+          </div>
+        ))}
+        <div className="flex items-center justify-between px-4 py-3 rounded-xl bg-gray-50 border border-gray-200">
+          <Typography variant="bodySmall" className="font-bold text-gray-800">
+            Total
+          </Typography>
+          <Typography variant="bodySmall" className="font-bold text-gray-900">
+            {totalOpenings}
+          </Typography>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="overflow-x-auto">
+      <table className="min-w-full">
+        <thead>
+          <tr className="bg-gray-50 border-b border-gray-200">
+            <th className="px-5 py-3.5 text-left text-sm font-bold text-gray-800">
+              Region
+            </th>
+            <th className="px-5 py-3.5 text-left text-sm font-bold text-gray-800">
+              No. of Openings
+            </th>
+          </tr>
+        </thead>
+        <tbody className="bg-white">
+          {regions.map((row: any, idx: number) => (
+            <tr
+              key={row?.row_name || idx}
+              className="border-b border-gray-100 hover:bg-gray-50/40 transition-colors"
+            >
+              <td className="px-5 py-4 text-sm text-gray-900">
+                <div className="flex items-center gap-2.5">
+                  <span className="w-1 h-6 rounded-lg bg-green-500 inline-block" />
+                  {row?.region || "—"}
+                </div>
+              </td>
+              <td className="px-5 py-4 text-sm text-gray-900">
+                {Number(row?.no_of_openings) || 0}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+        <tfoot>
+          <tr className="bg-gray-50 border-t border-gray-200">
+            <td className="px-5 py-3.5 text-sm font-bold text-gray-800">
+              Total
+            </td>
+            <td className="px-5 py-3.5 text-sm font-bold text-gray-900">
+              {totalOpenings}
+            </td>
+          </tr>
+        </tfoot>
+      </table>
     </div>
   );
 };
@@ -408,7 +724,8 @@ const POSITION_STATUS_STYLES: Record<string, string> = {
   Pending: "bg-yellow-100 text-yellow-700",
 };
 
-const positionStatusOf = (pos: any): string => pos?.approval_status || "Pending";
+const positionStatusOf = (pos: any): string =>
+  pos?.approval_status || "Pending";
 
 const positionStatusStyle = (status: string): string =>
   POSITION_STATUS_STYLES[status] || "bg-gray-100 text-gray-600";
@@ -416,7 +733,9 @@ const positionStatusStyle = (status: string): string =>
 /** "Approved by X on <date>" — only once the row has actually been actioned. */
 const positionStatusDetail = (pos: any): string | null => {
   const by = pos?.approved_by_title || pos?.approved_by;
-  const on = pos?.approved_on ? formatToIndianDateWithTime(pos.approved_on) : null;
+  const on = pos?.approved_on
+    ? formatToIndianDateWithTime(pos.approved_on)
+    : null;
   if (!by && !on) return null;
   return [by, on].filter(Boolean).join(" · ");
 };
@@ -494,7 +813,9 @@ const PositionDetailsTab = ({
                     <span className="text-gray-500">Replacement for</span>
                     <p className="font-medium text-gray-900 mt-0.5">
                       {pos.replacement_for ? (
-                        <WrapperHoverCard employeeId={String(pos.replacement_for)}>
+                        <WrapperHoverCard
+                          employeeId={String(pos.replacement_for)}
+                        >
                           <span className="cursor-help underline decoration-dotted decoration-gray-300 underline-offset-2">
                             {pos.replacement_for_title || pos.replacement_for}
                           </span>
@@ -701,7 +1022,9 @@ const CustomApprovalTab = ({
   if (isError) {
     return (
       <div className="text-center py-12 text-red-600">
-        <Typography variant="bodySmall">Unable to load the approval flow.</Typography>
+        <Typography variant="bodySmall">
+          Unable to load the approval flow.
+        </Typography>
       </div>
     );
   }
@@ -719,14 +1042,18 @@ const CustomApprovalTab = ({
   return (
     <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
       <div className="border-b border-gray-100 bg-gray-50 px-4 py-3 text-xs text-gray-600">
-        {approvalFlow.mode} approval flow {approvalFlow.tracker ? `· ${approvalFlow.tracker}` : ""}
+        {approvalFlow.mode} approval flow{" "}
+        {approvalFlow.tracker ? `· ${approvalFlow.tracker}` : ""}
       </div>
       {stages.map((stage) => {
         const isExpanded = expandedStages.includes(stage.stage_index);
         const rowApprovals = stage.row_approvals || [];
 
         return (
-          <div key={stage.stage_index} className="border-b border-gray-100 last:border-b-0">
+          <div
+            key={stage.stage_index}
+            className="border-b border-gray-100 last:border-b-0"
+          >
             <div
               className="grid w-full cursor-pointer grid-cols-[minmax(0,1fr)_auto] gap-x-4 px-4 py-4 hover:bg-primary/10"
               onClick={() => toggleStage(stage.stage_index)}
@@ -742,19 +1069,42 @@ const CustomApprovalTab = ({
             >
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
-                  <Typography variant="bodySmall" className="font-semibold text-gray-900">
+                  <Typography
+                    variant="bodySmall"
+                    className="font-semibold text-gray-900"
+                  >
                     {stage.stage_name}
                   </Typography>
-                  <AllocatedToTooltip users={stage.approvers} title="Approvers" position="bottom">
-                    <Badge label={stage.status || "Not started"} size="sm" backgroundColor={getStatusColor(stage.status || "")} />
+                  <AllocatedToTooltip
+                    users={stage.approvers}
+                    title="Approvers"
+                    position="bottom"
+                  >
+                    <Badge
+                      label={stage.status || "Not started"}
+                      size="sm"
+                      backgroundColor={getStatusColor(stage.status || "")}
+                    />
                   </AllocatedToTooltip>
                 </div>
                 <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-gray-500">
-                  <span>Triggered: {stage.trigger_date ? formatToIndianDateWithTime(stage.trigger_date) : "—"}</span>
-                  {stage.rows && <span>{stage.rows.actioned} of {stage.rows.total} positions actioned</span>}
+                  <span>
+                    Triggered:{" "}
+                    {stage.trigger_date
+                      ? formatToIndianDateWithTime(stage.trigger_date)
+                      : "—"}
+                  </span>
+                  {stage.rows && (
+                    <span>
+                      {stage.rows.actioned} of {stage.rows.total} positions
+                      actioned
+                    </span>
+                  )}
                 </div>
               </div>
-              <ChevronDown className={`mt-1 h-5 w-5 shrink-0 text-gray-400 transition-transform duration-200 ease-out ${isExpanded ? "rotate-180" : ""}`} />
+              <ChevronDown
+                className={`mt-1 h-5 w-5 shrink-0 text-gray-400 transition-transform duration-200 ease-out ${isExpanded ? "rotate-180" : ""}`}
+              />
             </div>
 
             <div
@@ -763,30 +1113,109 @@ const CustomApprovalTab = ({
               }`}
             >
               <div className="min-h-0 overflow-hidden">
-                <div className={`border-t border-gray-100 bg-gray-50/70 px-4 py-4 transition-opacity duration-150 ${isExpanded ? "opacity-100" : "opacity-0"}`}>
-                {rowApprovals.length ? (
-                  <div className={isDesktop ? "overflow-x-auto" : "space-y-3"}>
-                    {isDesktop ? (
-                      <table className="min-w-full text-sm">
-                        <thead className="text-left text-xs text-gray-500">
-                          <tr><th className="pb-2 font-medium">Position</th><th className="pb-2 font-medium">Approver(s)</th><th className="pb-2 font-medium">Status</th><th className="pb-2 font-medium">Action Taken By</th><th className="pb-2 font-medium">Completed</th></tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-200 bg-white">
-                          {rowApprovals.map((row) => <tr key={row.row_docnames?.join("-") || row.label}><td className="px-3 py-3 font-medium text-gray-900">{row.label}</td><td className="px-3 py-3 text-gray-700">{row.approvers?.join(", ") || "—"}</td><td className="px-3 py-3"><Badge label={row.status || "Not started"} size="sm" backgroundColor={getStatusColor(row.status || "")} /></td><td className="px-3 py-3 text-gray-700">{row.action_taken_by?.join(", ") || "—"}</td><td className="px-3 py-3 text-gray-700">{row.completed_date ? formatToIndianDateWithTime(row.completed_date) : "—"}</td></tr>)}
-                        </tbody>
-                      </table>
-                    ) : rowApprovals.map((row) => (
-                      <div key={row.row_docnames?.join("-") || row.label} className="rounded-md border border-gray-200 bg-white p-3 text-xs">
-                        <div className="mb-2 flex items-start justify-between gap-2"><span className="font-semibold text-gray-900">{row.label}</span><Badge label={row.status || "Not started"} size="sm" backgroundColor={getStatusColor(row.status || "")} /></div>
-                        <p className="text-gray-500">Approver(s): <span className="text-gray-800">{row.approvers?.join(", ") || "—"}</span></p>
-                        <p className="mt-1 text-gray-500">Action taken by: <span className="text-gray-800">{row.action_taken_by?.join(", ") || "—"}</span></p>
-                        <p className="mt-1 text-gray-500">Completed: <span className="text-gray-800">{row.completed_date ? formatToIndianDateWithTime(row.completed_date) : "—"}</span></p>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <Typography variant="bodySmall" className="text-gray-500">No position-level approvals for this stage.</Typography>
-                )}
+                <div
+                  className={`border-t border-gray-100 bg-gray-50/70 px-4 py-4 transition-opacity duration-150 ${isExpanded ? "opacity-100" : "opacity-0"}`}
+                >
+                  {rowApprovals.length ? (
+                    <div
+                      className={isDesktop ? "overflow-x-auto" : "space-y-3"}
+                    >
+                      {isDesktop ? (
+                        <table className="min-w-full text-sm">
+                          <thead className="text-left text-xs text-gray-500">
+                            <tr>
+                              <th className="pb-2 font-medium">Position</th>
+                              <th className="pb-2 font-medium">Approver(s)</th>
+                              <th className="pb-2 font-medium">Status</th>
+                              <th className="pb-2 font-medium">
+                                Action Taken By
+                              </th>
+                              <th className="pb-2 font-medium">Completed</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-gray-200 bg-white">
+                            {rowApprovals.map((row) => (
+                              <tr
+                                key={row.row_docnames?.join("-") || row.label}
+                              >
+                                <td className="px-3 py-3 font-medium text-gray-900">
+                                  {row.label}
+                                </td>
+                                <td className="px-3 py-3 text-gray-700">
+                                  {row.approvers?.join(", ") || "—"}
+                                </td>
+                                <td className="px-3 py-3">
+                                  <Badge
+                                    label={row.status || "Not started"}
+                                    size="sm"
+                                    backgroundColor={getStatusColor(
+                                      row.status || "",
+                                    )}
+                                  />
+                                </td>
+                                <td className="px-3 py-3 text-gray-700">
+                                  {row.action_taken_by?.join(", ") || "—"}
+                                </td>
+                                <td className="px-3 py-3 text-gray-700">
+                                  {row.completed_date
+                                    ? formatToIndianDateWithTime(
+                                        row.completed_date,
+                                      )
+                                    : "—"}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      ) : (
+                        rowApprovals.map((row) => (
+                          <div
+                            key={row.row_docnames?.join("-") || row.label}
+                            className="rounded-md border border-gray-200 bg-white p-3 text-xs"
+                          >
+                            <div className="mb-2 flex items-start justify-between gap-2">
+                              <span className="font-semibold text-gray-900">
+                                {row.label}
+                              </span>
+                              <Badge
+                                label={row.status || "Not started"}
+                                size="sm"
+                                backgroundColor={getStatusColor(
+                                  row.status || "",
+                                )}
+                              />
+                            </div>
+                            <p className="text-gray-500">
+                              Approver(s):{" "}
+                              <span className="text-gray-800">
+                                {row.approvers?.join(", ") || "—"}
+                              </span>
+                            </p>
+                            <p className="mt-1 text-gray-500">
+                              Action taken by:{" "}
+                              <span className="text-gray-800">
+                                {row.action_taken_by?.join(", ") || "—"}
+                              </span>
+                            </p>
+                            <p className="mt-1 text-gray-500">
+                              Completed:{" "}
+                              <span className="text-gray-800">
+                                {row.completed_date
+                                  ? formatToIndianDateWithTime(
+                                      row.completed_date,
+                                    )
+                                  : "—"}
+                              </span>
+                            </p>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  ) : (
+                    <Typography variant="bodySmall" className="text-gray-500">
+                      No position-level approvals for this stage.
+                    </Typography>
+                  )}
                 </div>
               </div>
             </div>
@@ -805,9 +1234,7 @@ const getStatusColor = (status: string) => {
     case "approved active":
     case "completed":
     case "open":
-    case "approved draft":
       return "bg-green-100 text-green-700";
-    case "approval pending":
     case "approval pending":
       return "bg-yellow-100 text-yellow-700";
     case "draft":

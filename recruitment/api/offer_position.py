@@ -111,6 +111,38 @@ def requires_position(requisition):
     )
 
 
+def first_available_position(requisition, exclude_offer=None):
+	"""The lowest-numbered position on `requisition` this offer may claim, or None.
+
+	The picker's rule, answered without the picker: same offerability test
+	(`_is_offerable`), same "already claimed by a live offer" guard, so a position
+	handed out here is one `validate_position_choice` will accept. Materialises the
+	tracking rows first when a requisition has never had them built.
+
+	Exists for the paths that cannot ask a human which seat to use — bulk offer
+	creation from the Job Applicant list, most of all, where refusing to choose
+	simply meant every lateral applicant failed.
+	"""
+	if not requisition:
+		return None
+
+	rows = _positions_of(requisition)
+	if not rows:
+		ensure_position_rows(requisition)
+		rows = _positions_of(requisition)
+	if not rows:
+		return None
+
+	active = _requisition_is_active(requisition)
+	taken = _positions_held_by_other_offers(requisition, exclude_offer=exclude_offer)
+	for row in rows:
+		if row.name in taken:
+			continue
+		if _is_offerable(row, active):
+			return row
+	return None
+
+
 @frappe.whitelist()
 def get_available_positions(job_requisition=None, job_offer=None, job_applicant=None):
     """Positions this offer may claim. The one it already holds is always

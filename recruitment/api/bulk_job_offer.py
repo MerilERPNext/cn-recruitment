@@ -175,6 +175,9 @@ def _mark_offer_stage(applicant, sub_status):
 
 @frappe.whitelist()
 def create_bulk_job_offer(applicants):
+    from recruitment.api.offer_position import first_available_position, requires_position
+    from recruitment.customizations.job_offer import _requisition_for_applicant
+
     # Creates Job Offers (was ignore_permissions with no role gate). Require
     # Job Offer create — the desk HR caller already has it.
     frappe.has_permission("Job Offer", "create", throw=True)
@@ -186,6 +189,8 @@ def create_bulk_job_offer(applicants):
     created = 0
     skipped = 0
     failed = 0
+    # Why each applicant was left out, so the caller can say more than a number.
+    reasons = []
 
     for app in applicants:
 
@@ -205,6 +210,7 @@ def create_bulk_job_offer(applicants):
 
             if existing_offer:
                 skipped += 1
+                reasons.append(f"{applicant.name}: already has a job offer")
                 continue
 
             job_offer = frappe.new_doc("Job Offer")
@@ -219,19 +225,40 @@ def create_bulk_job_offer(applicants):
 
             job_offer.offer_date = frappe.utils.today()
 
+            # A lateral requisition itemises its headcount, so an offer against one
+            # must name the seat it consumes — validate_position_choice refuses it
+            # otherwise, which is what made this whole action unusable for lateral
+            # candidates. There is nobody to ask here, so the lowest-numbered free
+            # position is claimed, by exactly the rule the picker uses. Campus /
+            # region requisitions have no position rows and skip all of this.
+            requisition = _requisition_for_applicant(applicant.name)
+            if requisition and requires_position(requisition):
+                position = first_available_position(requisition)
+                if not position:
+                    skipped += 1
+                    reasons.append(
+                        f"{applicant.name}: no free position left on {requisition}"
+                    )
+                    continue
+                job_offer.custom_job_requisition = requisition
+                job_offer.custom_requisition_position = position.name
+
             job_offer.insert(ignore_permissions=True)
             _mark_offer_stage(applicant.name, SUB_STATUS_TO_SEND)
 
             created += 1
 
-        except Exception:
+        except Exception as exc:
             failed += 1
+            reasons.append(f"{app}: {frappe.utils.strip_html(str(exc))[:140]}")
             frappe.log_error(frappe.get_traceback(), "Bulk Job Offer Creation")
 
     return {
         "created": created,
         "skipped": skipped,
-        "failed": failed
+        "failed": failed,
+        # Additive: the existing caller reads the three counters and ignores this.
+        "reasons": reasons,
     }
 
 @frappe.whitelist()
