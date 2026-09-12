@@ -410,6 +410,15 @@ export interface EmployeeSupplementary {
   cost_centers?: EmployeeCostCenter[];
   company_name?: string;
   current_address?: string;
+  /** Fields an admin added to Employee Search Settings; search results only */
+  search_fields?: EmployeeSearchFieldValue[];
+}
+
+/** One extra field returned with a search result, configured in Employee Search Settings */
+export interface EmployeeSearchFieldValue {
+  fieldname: string;
+  label: string;
+  value: string | number | null;
 }
 
 export interface Employee extends EmployeeFromAPI, EmployeeSupplementary { }
