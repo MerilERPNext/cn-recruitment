@@ -121,6 +121,16 @@ function getStatusBadge(rawStatus?: string): StatusBadgeConfig {
         icon: <AlertCircle className="w-3 h-3 md:w-4 md:h-4" />,
       };
 
+    // Some rows applied, some failed — distinct from a clean Processed and
+    // from a Failed run where nothing landed.
+    case "partially successful":
+      return {
+        label: "Partially Successful",
+        bgClass: "bg-amber-100",
+        textClass: "text-amber-800",
+        icon: <AlertTriangle className="w-3 h-3 md:w-4 md:h-4" />,
+      };
+
     case "processed":
       return {
         label: "Processed",

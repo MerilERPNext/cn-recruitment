@@ -37,6 +37,7 @@ const EMPTY_SUMMARY: ImportStatusSummary = {
   pendingScheduled: 0,
   processing: 0,
   processed: 0,
+  partiallySuccessful: 0,
   failedCancelled: 0,
 };
 
@@ -218,6 +219,7 @@ const ScheduledImportsPage: React.FC = () => {
                 "status",
                 "import_log",
                 "failed_records_count",
+                "skipped_records_count",
               ]}
               searchFields={[
                 "name",
@@ -237,6 +239,8 @@ const ScheduledImportsPage: React.FC = () => {
                   filters.status = "Processing";
                 else if (activeFilter === "processed")
                   filters.status = "Processed";
+                else if (activeFilter === "partial")
+                  filters.status = "Partially Successful";
                 else if (activeFilter === "rejected-failed")
                   filters.status = ["in", ["Failed", "Cancelled"]];
 
@@ -281,6 +285,7 @@ const ScheduledImportsPage: React.FC = () => {
               "status",
               "import_log",
               "failed_records_count",
+              "skipped_records_count",
             ]}
             searchFields={[
               "name",
@@ -300,6 +305,8 @@ const ScheduledImportsPage: React.FC = () => {
                 filters.status = "Processing";
               else if (activeFilter === "processed")
                 filters.status = "Processed";
+              else if (activeFilter === "partial")
+                filters.status = "Partially Successful";
               else if (activeFilter === "rejected-failed")
                 filters.status = ["in", ["Failed", "Cancelled"]];
 
