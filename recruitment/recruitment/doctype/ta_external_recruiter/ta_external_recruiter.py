@@ -2,6 +2,8 @@ import frappe
 from frappe import _
 from frappe.model.document import Document
 
+from recruitment.recruitment.communication_log import sendmail_with_log
+
 EXTERNAL_RECRUITER_ROLE = "External Recruiter"
 
 # The only Desk module an external recruiter may see — it holds the External
@@ -244,7 +246,7 @@ def _send_welcome_email(user, display_name=None):
 		if not message:
 			message = _default_welcome_html(context)
 
-		frappe.sendmail(
+		sendmail_with_log(
 			recipients=[user.email],
 			subject=subject,
 			message=message,

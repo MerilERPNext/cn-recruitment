@@ -11,11 +11,12 @@ import { createPortal } from "react-dom";
 import ReviewForm from "./ReviewForm";
 import ViewFormButton from "../../ViewFormButton";
 import StatusTimelineRow from "../../Confirmation/components/StatusTimelineRow";
-import { FlowRequestItem } from "../../../../types/flows";
+import { FlowRequestItem, FlowRequestDetailItem } from "../../../../types/flows";
 import { FormIOForm } from "../../../../utils/flowUtils";
 import formatToIndianDate from "../../../../utils/formatToIndianDate";
 import FormPreview from "../../../shared/molecules/FormPreview";
 import NoDataFound from "../../../shared/atoms/NoDataFound";
+import RevokeDetailsSection from "../../FlowRequests/FlowDetails/RevokeDetailsSection";
 
 export interface ApprovalStage {
   approval_time: string;
@@ -31,7 +32,7 @@ export interface ApprovalStage {
 }
 
 interface ApprovalTrackerProps {
-  data?: FlowRequestItem | null;
+  data?: FlowRequestItem | FlowRequestDetailItem | null;
   For: "Employee Separation" | "Employee Termination";
   isLoading?: boolean;
 }
@@ -40,6 +41,9 @@ export default function ApprovalTracker({ data, For, isLoading }: ApprovalTracke
   const [showSelfForm, setShowSelfForm] = useState(false);
   const [formSchema, setFormSchema] = useState<FormIOForm | null>(null);
   const [formAnswer, setFormAnswer] = useState<Record<string, any>>({});
+  const [showRevokeForm, setShowRevokeForm] = useState(false);
+  const [revokeFormSchema, setRevokeFormSchema] = useState<FormIOForm | null>(null);
+  const [revokeFormAnswer, setRevokeFormAnswer] = useState<Record<string, any>>({});
 
   if (isLoading) {
     return (
@@ -61,6 +65,7 @@ export default function ApprovalTracker({ data, For, isLoading }: ApprovalTracke
   }
 
   const haveInitiatorForm = Boolean(data?.initiator_forms && data.initiator_forms.length > 0);
+  const haveRevokeForm = Boolean(data?.revoke?.revoke_forms && data.revoke.revoke_forms.length > 0);
 
   const handleShowSelfForm = () => {
     let displayData: Record<string, any> = {};
@@ -82,6 +87,30 @@ export default function ApprovalTracker({ data, For, isLoading }: ApprovalTracke
     setFormSchema({ display: "form", components: schema });
     setFormAnswer(answer || {});
     setShowSelfForm(true);
+  };
+
+  const handleShowRevokeForm = () => {
+    if (!data?.revoke?.revoke_forms?.[0]) return;
+    const formObj = data.revoke.revoke_forms[0];
+    let displayData: Record<string, any> = {};
+    let rawData: Record<string, any> = {};
+    try {
+      displayData = JSON.parse(formObj.form_data_display || "{}");
+      rawData = JSON.parse(formObj.form_data || "{}");
+    } catch (error) {
+      console.error("Invalid revoke_forms JSON:", error);
+      return;
+    }
+    const rawSchema = displayData?.form?.components ?? rawData?.form?.components ?? [];
+    const schema = rawSchema.filter(
+      (comp: any) => !(comp.type === "button" && comp.action === "submit")
+    );
+    const answer = displayData?.submission_data ?? rawData?.submission_data ?? {};
+
+    if (schema.length === 0 && Object.keys(answer).length === 0) return;
+    setRevokeFormSchema({ display: "form", components: schema });
+    setRevokeFormAnswer(answer || {});
+    setShowRevokeForm(true);
   };
 
   return (
@@ -182,6 +211,14 @@ export default function ApprovalTracker({ data, For, isLoading }: ApprovalTracke
       </Card>
 
 
+      {data?.revoke && (
+        <RevokeDetailsSection
+          revoke={data.revoke}
+          haveRevokeForm={haveRevokeForm}
+          onViewRevokeForm={handleShowRevokeForm}
+        />
+      )}
+
       {formSchema &&
         showSelfForm &&
         createPortal(
@@ -193,6 +230,23 @@ export default function ApprovalTracker({ data, For, isLoading }: ApprovalTracke
               containerId="separation-initiation-form-preview"
               schema={formSchema}
               submissionData={formAnswer}
+              readOnly={true}
+            />
+          </ReviewForm>,
+          document.body,
+        )}
+
+      {revokeFormSchema &&
+        showRevokeForm &&
+        createPortal(
+          <ReviewForm
+            onClose={() => setShowRevokeForm(false)}
+            title="Revocation Form"
+          >
+            <FormPreview
+              containerId="separation-revoke-form-preview"
+              schema={revokeFormSchema}
+              submissionData={revokeFormAnswer}
               readOnly={true}
             />
           </ReviewForm>,

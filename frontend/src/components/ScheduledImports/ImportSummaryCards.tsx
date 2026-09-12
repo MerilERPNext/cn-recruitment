@@ -1,4 +1,5 @@
 import {
+  AlertTriangle,
   CheckCircle2,
   Clock,
   Database,
@@ -120,6 +121,15 @@ const ImportSummaryCards: React.FC<ImportSummaryCardsProps> = ({
       onClick: () => onFilterChange("processed"),
     },
     {
+      icon: AlertTriangle,
+      value: summary.partiallySuccessful,
+      label: "Partially Successful",
+      iconClass: "text-amber-500",
+      bgClass: "bg-amber-50",
+      isActive: activeFilter === "partial",
+      onClick: () => onFilterChange("partial"),
+    },
+    {
       icon: XCircle,
       value: summary.failedCancelled,
       label: "Failed / Cancelled",
@@ -131,7 +141,7 @@ const ImportSummaryCards: React.FC<ImportSummaryCardsProps> = ({
   ];
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-3">
       {cards.map((card) => (
         <SummaryCard key={card.label} {...card} />
       ))}

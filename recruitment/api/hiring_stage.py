@@ -28,6 +28,8 @@ import frappe
 from frappe import _
 from frappe.utils import flt, get_url, now_datetime, today
 
+from recruitment.recruitment.communication_log import sendmail_with_log
+
 # Custom fields added on Job Applicant (see recruitment/custom/job_applicant.json)
 STAGE_FIELD = "custom_current_stage"
 HISTORY_FIELD = "custom_stage_history"
@@ -394,7 +396,7 @@ def _notify_stage_entry(doc, stage):
 				"stage": stage.get("stage_name") or "",
 			},
 		)
-		frappe.sendmail(
+		sendmail_with_log(
 			recipients=[recipient],
 			subject=subject,
 			message=message,
@@ -1100,7 +1102,7 @@ def send_interview_feedback_form(job_applicant, stage_name=None):
 	)
 	emailed = True
 	try:
-		frappe.sendmail(
+		sendmail_with_log(
 			recipients=interviewers,
 			subject=_("Interview feedback requested — {0}").format(doc.get("applicant_name") or doc.name),
 			message=message,

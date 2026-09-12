@@ -8,6 +8,9 @@ from recruitment.job_offer_utils import (
     get_job_offer_document_template,
     render_job_offer_via_document_template,
 )
+from recruitment.recruitment.communication_log import sendmail_with_log
+from recruitment.recruitment.offer_send_rules import send_locked
+from recruitment.api.action_center import sync_job_offer_action_item
 
 
 def _get_support_email():
@@ -97,7 +100,7 @@ def resend_welcome_email(job_offer):
     # the re-send carries exactly what the original send did.
     culture_book = get_culture_book_attachment()
 
-    frappe.sendmail(
+    sendmail_with_log(
         recipients=[email],
         subject=subject,
         message=message,
@@ -272,6 +275,7 @@ def send_bulk_job_offer(job_offers):
     sent = 0
     skipped = 0
     failed = 0
+    already_sent = 0
 
     settings = frappe.get_doc("Recruitment Settings")
     JOB_OFFER_TEMPLATE = settings.job_offer_template
@@ -288,6 +292,13 @@ def send_bulk_job_offer(job_offers):
             # Only allow submitted job offers
             if job_offer.docstatus != 1:
                 skipped += 1
+                continue
+
+            # Recruitment Settings -> Hide Send Job Offer Once Sent. Checked
+            # before anything is written, so the offer keeps its "Sent" status.
+            if send_locked(job_offer):
+                skipped += 1
+                already_sent += 1
                 continue
 
             if not job_offer.job_applicant:
@@ -429,6 +440,14 @@ def send_bulk_job_offer(job_offers):
             communication_doc.recipients = email + ","
             communication_doc.save(ignore_permissions=True)
 
+            # The offer now counts as sent. db_set fires no hooks, so raise the
+            # candidate's Action Center item here — this is the moment the
+            # "On Offer Email Sent" setting waits for (a harmless re-upsert otherwise).
+            try:
+                sync_job_offer_action_item(job_offer)
+            except Exception:
+                frappe.log_error(frappe.get_traceback(), "Job Offer: Action Center item after send failed")
+
             # ----------------------------
             # Update Applicant
             # ----------------------------
@@ -449,7 +468,8 @@ def send_bulk_job_offer(job_offers):
     return {
         "sent": sent,
         "skipped": skipped,
-        "failed": failed
+        "failed": failed,
+        "already_sent": already_sent,
     }
 
 

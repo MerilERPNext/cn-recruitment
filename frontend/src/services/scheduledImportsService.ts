@@ -13,6 +13,7 @@ const EMPTY_SUMMARY: ImportStatusSummary = {
   pendingScheduled: 0,
   processing: 0,
   processed: 0,
+  partiallySuccessful: 0,
   failedCancelled: 0,
 };
 

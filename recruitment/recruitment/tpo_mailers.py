@@ -27,6 +27,8 @@ outage must never roll back the institute or the invite that triggered it.
 import frappe
 from frappe import _
 
+from recruitment.recruitment.communication_log import sendmail_with_log
+
 WELCOME_TEMPLATE = "TPO Welcome"
 INVITE_TEMPLATE = "Campus Invite"
 PRIMARY_TPO_ROLE = "Primary TPO"
@@ -72,7 +74,7 @@ def _render(template, context, subject_fallback):
 
 def _send(recipients, rendered, reference_doctype, reference_name, attachments=None):
 	subject, message = rendered
-	frappe.sendmail(
+	sendmail_with_log(
 		recipients=recipients,
 		subject=subject,
 		message=message,

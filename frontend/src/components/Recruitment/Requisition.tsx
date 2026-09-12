@@ -17,6 +17,21 @@ import formatToIndianDate from "../../utils/formatToIndianDate";
 import WrapperHoverCard from "../shared/WrapperHoverCard";
 import AllocatedToTooltip from "../shared/AllocatedToTooltip";
 import type { JobRequisitionListResponse, RequisitionListColumn } from "../../types/recruitment";
+import requisitionNotFoundImage from "../../assets/rec_not_found.jpeg";
+
+// Sticky + visible-width keeps the image centred when the CardTable scrolls horizontally
+const RequisitionNotFound = (
+  <div
+    className="sticky left-0 flex justify-center py-8 px-4"
+    style={{ width: "var(--card-table-visible-width, 100%)" }}
+  >
+    <img
+      src={requisitionNotFoundImage}
+      alt="No requisition records available"
+      className="w-full max-w-lg h-auto rounded-xl"
+    />
+  </div>
+);
 
 const isDateColumn = (key: string) =>
   ["creation", "modified", "posting_date", "expected_by", "completed_on"].includes(key) ||
@@ -713,6 +728,7 @@ const Requisition = () => {
             isFilter={true}
             filterFields={filterFields}
             isLoading={isCurrentEmployeeLoading || !currentEmployeeId}
+            noRecordsScreen={RequisitionNotFound}
           />
         </CardTable>
       ) : (
@@ -727,6 +743,7 @@ const Requisition = () => {
             isFilter={true}
             filterFields={filterFields}
             isLoading={isCurrentEmployeeLoading || !currentEmployeeId}
+            noRecordsScreen={RequisitionNotFound}
           />
         </div>
       )}
