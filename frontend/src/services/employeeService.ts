@@ -740,7 +740,7 @@ export class EmployeeService {
     employee?: string,
   ): Promise<Employee[]> {
     const response = FrappeAPI.getMethod(
-      "cn_hrms_core.cn_hrms_core.apis.employee_search.search_employees",
+      "recruitment.api.employee_search.search_employees",
       {
         limit: limit,
         status: "Active",

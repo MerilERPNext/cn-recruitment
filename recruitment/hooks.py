@@ -244,6 +244,9 @@ extend_bootinfo = "recruitment.api.list_columns.extend_bootinfo"
 after_install = "recruitment.recruitment.install.after_install"
 after_migrate = [
     "recruitment.recruitment.install.after_migrate",
+    # Configured employee search fields are cached; a migrate can add, rename or
+    # drop the columns they point at, so drop the cache rather than let it go stale.
+    "recruitment.api.employee_search.clear_cache",
 ]
 
 # Uninstallation

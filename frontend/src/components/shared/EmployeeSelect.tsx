@@ -6,7 +6,7 @@ import { useCurrentEmployee } from "../../hooks/useEmployee";
 
 const SEARCH_LIMIT = 20;
 
-/** Shape returned by cn_hrms_core search_employees API */
+/** Shape returned by the recruitment search_employees API */
 interface SearchEmployeeResult {
     employee_id: string;
     employee_name: string;
@@ -73,7 +73,7 @@ const EmployeeSelect: React.FC<EmployeeSelectProps> = ({
     const { data: currentEmployee } = useCurrentEmployee();
     const currentEmployeeId = currentEmployee?.name ?? "";
 
-    // Fetch employees using cn_hrms_core search_employees API
+    // Fetch employees using the recruitment search_employees API
     const fetchEmployees = useCallback(
         async (search: string) => {
             setIsLoading(true);
