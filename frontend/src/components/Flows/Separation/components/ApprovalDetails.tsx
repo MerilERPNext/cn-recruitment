@@ -5,13 +5,13 @@ import { Typography } from "../../../shared/atoms/Typography";
 import formatToIndianDate from "../../../../utils/formatToIndianDate";
 import { useScreenSize } from "../../../../hooks/useScreenSize";
 import Tooltip from "../../../shared/Tooltip";
-import { FlowRequestItem } from "../../../../types/flows";
+import { FlowRequestItem, FlowRequestDetailItem } from "../../../../types/flows";
 import { AttachmentCard } from "../../../shared/molecules/AttachmentCard";
 import { useEmployeeSeparationDetails } from "../../../../hooks/useSeparation";
 
 interface ApprovalDetailsProps {
   title: "Employee Separation" | "Employee Termination";
-  data: FlowRequestItem;
+  data: FlowRequestItem | FlowRequestDetailItem;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

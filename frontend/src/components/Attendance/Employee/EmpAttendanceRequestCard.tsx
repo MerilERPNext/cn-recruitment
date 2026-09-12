@@ -186,6 +186,7 @@ const EmpAttendanceRequestCard = ({
               revokeLoading={revokeEventMutation.isPending}
               onRevoke={handleRevokeClick}
               onEdit={() => setEdit(true)}
+              requestItem={data}
             />
           </div>
         </div>
@@ -283,6 +284,7 @@ const EmpAttendanceRequestCard = ({
                 revokeLoading={revokeEventMutation.isPending}
                 onRevoke={handleRevokeClick}
                 onEdit={() => setEdit(true)}
+                requestItem={data}
               />
             </div>
           </div>

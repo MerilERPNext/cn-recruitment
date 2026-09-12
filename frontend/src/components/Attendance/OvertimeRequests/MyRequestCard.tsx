@@ -149,6 +149,7 @@ export function MyRequestCard({
               isPendingStatus={isPendingStatus}
               todoId={request?.todo_id}
               onRevoke={handleRevokeClick}
+              requestItem={request}
             />
             {/* {canEditOvertimeRequest && <Button
               size="sm"
@@ -249,6 +250,7 @@ export function MyRequestCard({
                   isPendingStatus={isPendingStatus}
                   todoId={request?.todo_id}
                   onRevoke={handleRevokeClick}
+                  requestItem={request}
                 />
                 {/* {canEditOvertimeRequest && <Button
                     size="sm"

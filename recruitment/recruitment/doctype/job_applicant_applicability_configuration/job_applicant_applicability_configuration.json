@@ -1,0 +1,59 @@
+{
+ "actions": [],
+ "creation": "2026-09-08 12:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "description_block",
+  "excluded_fields_section",
+  "excluded_fields"
+ ],
+ "fields": [
+  {
+   "fieldname": "description_block",
+   "fieldtype": "HTML",
+   "options": "<div style='padding:8px;color:#4B5563;font-size:13px;'>Controls which Job Applicant fields may carry an <b>Applicable To</b> rule in <i>Job Applicant Profile Settings</i>.<br><br>A field is filterable by default. Listing it below <b>removes</b> its Applicable To switch, so its visibility can never be narrowed to a subset of companies or assignments — use this for fields every application must always collect (name, email, mobile).<br><br>Removing a field from this list restores the switch. A field already carrying a rule when it is added here keeps the stored rule but stops enforcing it, so the rule returns intact if the exclusion is lifted.</div>"
+  },
+  {
+   "fieldname": "excluded_fields_section",
+   "fieldtype": "Section Break",
+   "label": "Fields Without Applicability"
+  },
+  {
+   "fieldname": "excluded_fields",
+   "fieldtype": "Table",
+   "label": "Excluded Fields",
+   "options": "Job Applicant Applicability Excluded Field"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "issingle": 1,
+ "links": [],
+ "modified": "2026-09-08 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Recruitment",
+ "name": "Job Applicant Applicability Configuration",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "read": 1,
+   "role": "HR Manager",
+   "write": 1
+  }
+ ],
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}

@@ -28,6 +28,8 @@ import frappe
 from frappe import _
 from frappe.utils import flt, get_url, now_datetime, today
 
+from recruitment.recruitment.communication_log import sendmail_with_log
+
 # Custom fields added on Job Applicant (see recruitment/custom/job_applicant.json)
 STAGE_FIELD = "custom_current_stage"
 HISTORY_FIELD = "custom_stage_history"
@@ -394,7 +396,7 @@ def _notify_stage_entry(doc, stage):
 				"stage": stage.get("stage_name") or "",
 			},
 		)
-		frappe.sendmail(
+		sendmail_with_log(
 			recipients=[recipient],
 			subject=subject,
 			message=message,
@@ -1100,7 +1102,7 @@ def send_interview_feedback_form(job_applicant, stage_name=None):
 	)
 	emailed = True
 	try:
-		frappe.sendmail(
+		sendmail_with_log(
 			recipients=interviewers,
 			subject=_("Interview feedback requested — {0}").format(doc.get("applicant_name") or doc.name),
 			message=message,
@@ -1129,6 +1131,87 @@ def _latest_history_by_stage(doc):
 		if prev is None or (row.get("entered_on") and row.get("entered_on") >= prev["entered_on"]):
 			latest[name] = {"entered_on": row.get("entered_on"), "result": row.get("result")}
 	return latest
+
+
+# An interview is still waiting on its interviewers while it sits in one of
+# these; anything else (Cleared / Rejected) has been decided.
+_OPEN_INTERVIEW_STATUSES = ("Pending", "Under Review")
+
+
+def _user_names(users):
+	"""[{user, full_name}] for the given user ids, in the order given, resolved in
+	one query. An id with no User record still comes back (named after itself)
+	rather than vanishing from the list."""
+	users = [u for u in dict.fromkeys(users) if u]
+	if not users:
+		return []
+	names = dict(frappe.get_all(
+		"User", filters={"name": ["in", users]}, fields=["name", "full_name"], as_list=True
+	))
+	return [{"user": u, "full_name": names.get(u) or u} for u in users]
+
+
+def _annotate_interview_owners(interviews_by_stage):
+	"""Add `interviewers` and `pending_with` to every interview in place.
+
+	`pending_with` answers "whose action is this waiting on?" — the interviewers
+	who have not submitted their Interview Feedback yet, and only while the
+	interview itself is still open. A decided interview reports nobody pending
+	and keeps `interviewers` so the card can say who gave the feedback.
+
+	Three bulk queries for the whole view (rows, feedback, user names) rather
+	than any per-interview lookup, so a long pipeline costs the same as a short
+	one."""
+	rows = [iv for group in interviews_by_stage.values() for iv in group]
+	if not rows:
+		return
+	names = [iv.get("name") for iv in rows]
+
+	panel = {}
+	for d in frappe.get_all(
+		"Interview Detail",
+		filters={"parenttype": "Interview", "parent": ["in", names]},
+		fields=["parent", "interviewer"],
+		order_by="idx asc",
+	):
+		if d.get("interviewer"):
+			panel.setdefault(d["parent"], []).append(d["interviewer"])
+
+	# Only a submitted feedback counts as "done" — a draft is still pending.
+	submitted = {}
+	for f in frappe.get_all(
+		"Interview Feedback",
+		filters={"interview": ["in", names], "docstatus": 1},
+		fields=["interview", "interviewer"],
+	):
+		submitted.setdefault(f["interview"], set()).add(f.get("interviewer"))
+
+	# One lookup for every interviewer across the whole pipeline.
+	lookup = {u["user"]: u for u in _user_names([i for ids in panel.values() for i in ids])}
+
+	for iv in rows:
+		interviewers = panel.get(iv.get("name"), [])
+		done = submitted.get(iv.get("name"), set())
+		iv["interviewers"] = [lookup[u] for u in interviewers if u in lookup]
+		iv["pending_with"] = (
+			[lookup[u] for u in interviewers if u not in done and u in lookup]
+			if (iv.get("status") or "Pending") in _OPEN_INTERVIEW_STATUSES
+			else []
+		)
+
+
+def _stage_pending_owner(doc):
+	"""Who an Interview stage with nothing scheduled is waiting on: the recruiter
+	who owns the linked Job Opening. Empty when the opening names none — better
+	to say nothing than to name the wrong person."""
+	opening = doc.get("job_title")
+	if not opening:
+		return []
+	try:
+		recruiter = frappe.db.get_value("Job Opening", opening, "custom_recruiter")
+	except Exception:
+		return []
+	return _user_names([recruiter]) if recruiter else []
 
 
 @frappe.whitelist()
@@ -1165,6 +1248,10 @@ def get_workflow_view(job_applicant):
 		interviews_by_stage.setdefault(
 			(iv.get(round_field) if round_field else "") or "", []).append(iv)
 
+	_annotate_interview_owners(interviews_by_stage)
+	# Who a stage with no interview yet is waiting on — the opening's recruiter.
+	stage_owner = _stage_pending_owner(doc)
+
 	out_stages = []
 	for i, s in enumerate(stages):
 		if rejected:
@@ -1182,6 +1269,16 @@ def get_workflow_view(job_applicant):
 			"entered_on": info.get("entered_on"),
 			"result": info.get("result"),
 			"interviews": interviews_by_stage.get(s.get("stage_name"), []),
+			# Named only where the answer is "nobody has been asked yet": an
+			# Interview stage still to come/in play with no interview scheduled.
+			# Once interviews exist, each one carries its own `pending_with`.
+			"pending_with": (
+				stage_owner
+				if state != "done"
+				and (s.get("stage_type") or "") == "Interview"
+				and not interviews_by_stage.get(s.get("stage_name"))
+				else []
+			),
 		})
 
 	# Pre-offer round + approval snapshot (fields exist once fixtures are applied).
@@ -1217,4 +1314,43 @@ def get_workflow_view(job_applicant):
 		"stages": out_stages,
 		"pre_offer": pre_offer,
 		"job_offer": offer,
+	}
+
+
+@frappe.whitelist()
+def get_pre_offer_form_preview(job_applicant):
+	"""The pre-offer form as the candidate will receive it, before it is sent.
+
+	Backs the "Preview" button on the Pre Job Offer stage. The stage's existing
+	"View Pre Offer Form" opens the approval panel, which is built from the rows
+	the candidate's *submission* creates — so before sharing there is nothing to
+	look at. This answers the other question: which fields is this opening going
+	to ask for?
+
+	Read-only, and deliberately built by the very same function that renders the
+	real form (`get_application_fields_for_channel(..., "preoffer")`), so the
+	preview cannot drift from what is actually sent. No applicant is passed to
+	it: a preview shows the form, not this candidate's answers.
+	"""
+	if not job_applicant:
+		frappe.throw(_("job_applicant is required"))
+	frappe.has_permission("Job Applicant", "read", doc=job_applicant, throw=True)
+
+	opening = frappe.db.get_value("Job Applicant", job_applicant, "job_title")
+
+	from recruitment.api.channels import _common
+
+	fields = _common.get_application_fields_for_channel(opening, "preoffer") or []
+	return {
+		"job_opening": opening,
+		"fields": [
+			{
+				"section": f.get("section") or _("General"),
+				"display_name": f.get("display_name"),
+				"reference_name": f.get("reference_name"),
+				"fieldtype": f.get("fieldtype"),
+				"reqd": 1 if f.get("reqd") else 0,
+			}
+			for f in fields
+		],
 	}

@@ -692,9 +692,14 @@ function recruitment_offer_letter_styles() {
             // should not also remove a recruiter's ability to send one offer.
             if (frm.doc.docstatus !== 1) return;
 
-            frappe.db.get_single_value("Recruitment Settings", "enable_send_job_offer_button")
-                .then((enabled) => {
+            Promise.all([
+                frappe.db.get_single_value("Recruitment Settings", "enable_send_job_offer_button"),
+                frappe.db.get_single_value("Recruitment Settings", "disable_send_offer_after_sent"),
+            ])
+                .then(([enabled, hide_once_sent]) => {
                     if (!enabled) return;
+                    // Recruitment Settings -> Hide Send Job Offer Once Sent.
+                    if (hide_once_sent && frm.doc.email_status === "Sent") return;
                     frm.add_custom_button(__("Send Job Offer"), () => {
                         frappe.confirm(
                             __("Send the offer email to {0}?", [
@@ -711,6 +716,11 @@ function recruitment_offer_letter_styles() {
                                         if (m.sent) {
                                             frappe.show_alert({
                                                 message: __("Offer email sent."), indicator: "green",
+                                            });
+                                        } else if (m.already_sent) {
+                                            frappe.msgprint({
+                                                title: __("Not sent"), indicator: "orange",
+                                                message: __("This offer has already been sent. Use 'Retrigger Welcome Email' to re-send it."),
                                             });
                                         } else if (m.skipped) {
                                             // Skipped means the candidate has already
@@ -900,39 +910,50 @@ frappe.ui.form.on("Job Offer", {
         if (frm.is_new() || frm.doc.docstatus === 2) return;
         if (["Withdrawn", "Accepted"].includes(frm.doc.status)) return;
 
-        frm.add_custom_button(__("Withdraw Offer"), () => {
-            frappe.prompt(
-                [
-                    {
-                        fieldname: "reason",
-                        label: __("Reason"),
-                        fieldtype: "Small Text",
-                        description: __(
-                            "Recorded on the offer's timeline. The position returns to Open and frees up the requisition's headcount."
-                        ),
-                    },
-                ],
-                (values) => {
-                    frappe.call({
-                        method: "recruitment.api.offer_position.withdraw_offer",
-                        args: { job_offer: frm.doc.name, reason: values.reason },
-                        freeze: true,
-                        freeze_message: __("Withdrawing…"),
-                        callback: () => {
-                            frappe.show_alert({
-                                message: __("Offer withdrawn"),
-                                indicator: "orange",
-                            });
-                            frm.reload_doc();
-                        },
-                    });
-                },
-                __("Withdraw Offer"),
-                __("Withdraw")
-            );
-        });
+        // Recruitment Settings -> Allow Withdraw Offer Only After It Is Sent:
+        // then only a submitted offer whose email went out can be withdrawn.
+        frappe.db.get_single_value("Recruitment Settings", "withdraw_offer_only_after_sent")
+            .then((only_after_sent) => {
+                const sent = frm.doc.docstatus === 1 && frm.doc.email_status === "Sent";
+                if (only_after_sent && !sent) return;
+                add_withdraw_offer_button(frm);
+            });
     },
 });
+
+function add_withdraw_offer_button(frm) {
+    frm.add_custom_button(__("Withdraw Offer"), () => {
+        frappe.prompt(
+            [
+                {
+                    fieldname: "reason",
+                    label: __("Reason"),
+                    fieldtype: "Small Text",
+                    description: __(
+                        "Recorded on the offer's timeline. The position returns to Open and frees up the requisition's headcount."
+                    ),
+                },
+            ],
+            (values) => {
+                frappe.call({
+                    method: "recruitment.api.offer_position.withdraw_offer",
+                    args: { job_offer: frm.doc.name, reason: values.reason },
+                    freeze: true,
+                    freeze_message: __("Withdrawing…"),
+                    callback: () => {
+                        frappe.show_alert({
+                            message: __("Offer withdrawn"),
+                            indicator: "orange",
+                        });
+                        frm.reload_doc();
+                    },
+                });
+            },
+            __("Withdraw Offer"),
+            __("Withdraw")
+        );
+    });
+}
 
 /*
  * Work Location follows Region.

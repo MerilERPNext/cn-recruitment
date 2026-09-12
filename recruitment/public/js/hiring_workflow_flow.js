@@ -175,7 +175,13 @@
         .hwf-banner.bad{background:var(--red-50,#fdeaea);color:var(--red-700,#b02a2a);}
         .hwf-sub{margin-top:10px;font-size:.8rem;color:var(--text-muted);}
         .hwf-ivlist{margin-top:8px;border-top:1px dashed var(--border-color);padding-top:8px;}
-        .hwf-ivrow{display:flex;align-items:center;gap:8px;font-size:.8rem;padding:3px 0;}
+        .hwf-ivrow{display:flex;align-items:center;gap:8px;font-size:.8rem;padding:3px 0;flex-wrap:wrap;}
+        .hwf-ivitem{padding:1px 0;}
+        .hwf-ivitem + .hwf-ivitem{margin-top:4px;}
+        /* People line sits under its interview row, indented to the row's text and
+           free to wrap — a five-person panel must not stretch the card. */
+        .hwf-ivpeople{font-size:.76rem;color:var(--text-muted);padding:0 0 2px 2px;line-height:1.5;}
+        .hwf-owner-label{font-weight:600;color:var(--text-color,#36414c);}
         .hwf-pill{font-size:.68rem;padding:1px 7px;border-radius:10px;font-weight:600;}
         .hwf-pill.Cleared,.hwf-pill.Approved{background:var(--green-100,#d3efd9);color:var(--green-700,#1e7a34);}
         .hwf-pill.Rejected{background:var(--red-100,#fbd8d8);color:var(--red-700,#b02a2a);}
@@ -183,6 +189,16 @@
         .hwf-empty{padding:18px;text-align:center;color:var(--text-muted);font-size:.85rem;}
         .hwf-link{color:var(--blue-500,#2490ef);cursor:pointer;text-decoration:none;}
         .hwf-link:hover{text-decoration:underline;}
+        /* Pre-offer form preview — lives inside its own dialog, so nothing here
+           can reach the stage cards. */
+        .hwf-pv-head{font-size:.82rem;color:var(--text-muted);margin-bottom:12px;}
+        .hwf-pv-sec{margin-bottom:14px;}
+        .hwf-pv-sec-title{font-size:.72rem;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--text-muted);border-bottom:1px solid var(--border-color);padding-bottom:4px;margin-bottom:6px;}
+        .hwf-pv-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:4px 0;border-bottom:1px solid var(--border-color,#ebeef0);}
+        .hwf-pv-row:last-child{border-bottom:none;}
+        .hwf-pv-label{font-size:.85rem;font-weight:500;color:var(--text-color,#36414c);}
+        .hwf-pv-req{font-size:.66rem;font-weight:700;padding:1px 7px;border-radius:10px;background:var(--red-100,#fbd8d8);color:var(--red-700,#b02a2a);}
+        .hwf-pv-type{margin-left:auto;font-size:.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.4px;}
         `;
         const el = document.createElement("style");
         el.id = "hwf-styles";
@@ -239,6 +255,62 @@
         const tab = tabs.find((t) => t.df && t.df.fieldname === "custom_pre_offer_approval_tab");
         if (tab && tab.tab_link) tab.tab_link.find("a, button").first().trigger("click");
         else if (frm.scroll_to_field) frm.scroll_to_field("custom_pre_offer_approval_html");
+    }
+
+    // The pre-offer form as the candidate will receive it — the fields the linked
+    // Job Opening marks "Pre-offer: View", with the mandatory ones tagged. Read
+    // only; it neither sends nor changes anything.
+    function previewPreOfferForm(frm) {
+        frappe.call({
+            method: API + ".get_pre_offer_form_preview",
+            args: { job_applicant: frm.doc.name },
+            freeze: true,
+            freeze_message: __("Loading form…"),
+            callback: (r) => {
+                const res = (r && r.message) || {};
+                const fields = res.fields || [];
+                const d = new frappe.ui.Dialog({
+                    title: __("Pre Offer Form Preview"),
+                    size: "large",
+                    fields: [{ fieldtype: "HTML", fieldname: "body" }],
+                    primary_action_label: __("Close"),
+                    primary_action: () => d.hide(),
+                });
+
+                let html;
+                if (!fields.length) {
+                    html = `<div class="hwf-empty">${res.job_opening
+                        ? __("No pre-offer fields are configured on {0}.", [esc(res.job_opening)])
+                        : __("This candidate has no linked Job Opening.")}</div>`;
+                } else {
+                    // Group by the section the opening's config puts each field in,
+                    // keeping the configured order within each group.
+                    const groups = [];
+                    const byName = {};
+                    fields.forEach((f) => {
+                        const key = f.section || __("General");
+                        if (!byName[key]) { byName[key] = []; groups.push(key); }
+                        byName[key].push(f);
+                    });
+                    const required = fields.filter((f) => f.reqd).length;
+                    html = `<div class="hwf-pv">
+                        <div class="hwf-pv-head">${__("The candidate will be asked for these fields")}${res.job_opening
+                            ? ` — <a href="/app/job-opening/${encodeURIComponent(res.job_opening)}" target="_blank">${esc(res.job_opening)}</a>` : ""}
+                            <span class="text-muted"> · ${__("{0} field(s), {1} mandatory", [fields.length, required])}</span>
+                        </div>` +
+                        groups.map((g) => `<div class="hwf-pv-sec">
+                            <div class="hwf-pv-sec-title">${esc(g)}</div>
+                            ${byName[g].map((f) => `<div class="hwf-pv-row">
+                                <span class="hwf-pv-label">${esc(f.display_name || f.reference_name || "")}</span>
+                                ${f.reqd ? `<span class="hwf-pv-req">${__("Mandatory")}</span>` : ""}
+                                <span class="hwf-pv-type">${esc(f.fieldtype || "")}</span>
+                            </div>`).join("")}
+                        </div>`).join("") + `</div>`;
+                }
+                d.fields_dict.body.$wrapper.html(html);
+                d.show();
+            },
+        });
     }
 
     function sendFeedbackForm(frm, stageName) {
@@ -497,15 +569,41 @@
         return "hwf-sb-upcoming";
     }
 
+    const names = (people) => (people || []).map((p) => p.full_name || p.user).filter(Boolean);
+
+    // "Whose action is this?" — the interviewers still owing feedback while the
+    // interview is open, or who gave it once the round is decided. Its own line
+    // under the interview row so a long panel wraps instead of stretching the row.
+    function ivPeopleHtml(iv) {
+        const pending = names(iv.pending_with);
+        if (pending.length) {
+            return `<div class="hwf-ivpeople"><span class="hwf-owner-label">${__("Pending with")}:</span> ${esc(pending.join(", "))}</div>`;
+        }
+        const panel = names(iv.interviewers);
+        if (panel.length) {
+            return `<div class="hwf-ivpeople"><span class="hwf-owner-label">${__("Interviewers")}:</span> ${esc(panel.join(", "))}</div>`;
+        }
+        return "";
+    }
+
     function interviewsHtml(stage) {
         const list = stage.interviews || [];
-        if (!list.length) return "";
+        if (!list.length) {
+            // Nothing scheduled yet — the round is waiting on whoever books it.
+            const owner = names(stage.pending_with);
+            return owner.length
+                ? `<div class="hwf-sub" style="margin-top:8px;"><span class="hwf-owner-label">${__("Pending with")}:</span> ${esc(owner.join(", "))} — ${__("no interview scheduled yet")}</div>`
+                : "";
+        }
         return `<div class="hwf-ivlist">` + list.map((iv) =>
-            `<div class="hwf-ivrow">
-                <a class="hwf-link" data-open-iv="${esc(iv.name)}">${esc(iv.name)}</a>
-                ${pill(iv.status || "Pending")}
-                <span>${ratingStars(iv.average_rating)}</span>
-                <span class="text-muted">${iv.scheduled_on ? esc(frappe.datetime.str_to_user(iv.scheduled_on)) : ""}</span>
+            `<div class="hwf-ivitem">
+                <div class="hwf-ivrow">
+                    <a class="hwf-link" data-open-iv="${esc(iv.name)}">${esc(iv.name)}</a>
+                    ${pill(iv.status || "Pending")}
+                    <span>${ratingStars(iv.average_rating)}</span>
+                    <span class="text-muted">${iv.scheduled_on ? esc(frappe.datetime.str_to_user(iv.scheduled_on)) : ""}</span>
+                </div>
+                ${ivPeopleHtml(iv)}
             </div>`).join("") + `</div>`;
     }
 
@@ -573,6 +671,10 @@
             const po = view.pre_offer || {};
             const poLabel = po.sent ? __("Resend Pre Offer Form") : __("Send Pre Offer Form");
             actions += `<button class="hwf-btn primary" data-act="preoffer">+ ${poLabel}</button>`;
+            // "View Pre Offer Form" opens the approval panel, which only has rows
+            // once the candidate submits. This one answers the other question —
+            // what is this opening going to ask for — and works before sending.
+            actions += `<button class="hwf-btn" data-act="previewpreoffer">${__("Preview")}</button>`;
             actions += `<button class="hwf-btn" data-act="viewpreoffer">${__("View Pre Offer Form")}</button>`;
             if (!view.is_last) actions += `<button class="hwf-btn" data-act="complete">✓ ${__("Complete stage")}</button>`;
             actions += moreMenu([notRequiredItem(cur)]);
@@ -722,6 +824,7 @@
             else if (act === "review") openReviewDialog(frm, $(this).data("mode"));
             else if (act === "screening") runScreening(frm);
             else if (act === "preoffer") sendPreOffer(frm);
+            else if (act === "previewpreoffer") previewPreOfferForm(frm);
             else if (act === "viewpreoffer") gotoPreOfferApprovalTab(frm);
             else if (act === "createoffer") createJobOffer(frm);
             else if (act === "openoffer") frappe.set_route("Form", "Job Offer", view.job_offer.name);

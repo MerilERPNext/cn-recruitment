@@ -487,6 +487,7 @@ const AdvanceDesktopRow = ({
           onRevoke={handleRevokeClick}
           onEdit={() => handleEdit(advance.docname)}
           isResubmit={canEdit}
+          requestItem={advance}
         />
       </div>
     </div>
@@ -608,6 +609,7 @@ const AdvanceMobileRow = ({
             onRevoke={handleRevokeClick}
             onEdit={() => handleEdit(advance.docname)}
             isResubmit={canEdit}
+            requestItem={advance}
           />
         </div>
       </div>

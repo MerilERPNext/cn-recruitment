@@ -26,6 +26,7 @@ from recruitment.recruitment.campus_workflow import (
 	apply_to_openings as apply_workflow_to_openings,
 )
 from recruitment.recruitment.doctype.campus_invite.campus_invite import get_invite_institutes
+from recruitment.recruitment.tpo_access import PRIMARY_TPO_ROLE
 
 # Round types that need an interview panel / GD grouping in the reference portal.
 PANEL_ROUND_TYPES = {"Group Discussion", "Technical", "HR"}
@@ -89,6 +90,7 @@ class CampusDrive(Document):
 		self._apply_lifecycle_status()
 		self._sync_campus_invites()
 		self._validate_participating_institutes()
+		self._set_institute_tpo_names()
 		validate_unique_job_openings(self, table_fieldname="linked_job_openings")
 		self._set_registration_defaults()
 		# After the invites are in: the rounds are built from the workflow named in
@@ -281,6 +283,17 @@ class CampusDrive(Document):
 				),
 				title=_("Also on Another Draft Drive"), indicator="orange",
 			)
+
+	def _set_institute_tpo_names(self):
+		"""Stamp each participating college with its Primary TPO's name.
+
+		Re-read on every save rather than kept from when the row was added, so a TPO
+		changed on the Institute shows up here the next time the drive is saved.
+		"""
+		rows = [row for row in (self.participating_institutes or []) if row.institute]
+		names = primary_tpo_names([row.institute for row in rows])
+		for row in rows:
+			row.tpo_name = names.get(row.institute)
 
 	def on_update(self):
 		# Point this drive's candidates at it. Runs on every save (after the invite
@@ -508,6 +521,29 @@ def get_campus_invite_details(campus_invite, campus_drive=None):
 		                     for i in institutes if i in taken],
 		"job_openings": openings,
 	}
+
+
+def primary_tpo_names(institutes):
+	"""{institute: Primary TPO's name} — the one TPO each Institute allows (see
+	Institute._validate_single_primary_tpo). Institutes without one are left out."""
+	institutes = [i for i in (institutes or []) if i]
+	if not institutes:
+		return {}
+	return dict(
+		frappe.get_all(
+			"Institute TPO Contact",
+			filters={"parenttype": "Institute", "parent": ["in", institutes], "role": PRIMARY_TPO_ROLE},
+			fields=["parent", "contact_name"],
+			as_list=True,
+		)
+	)
+
+
+@frappe.whitelist()
+def get_primary_tpo_name(institute):
+	"""Primary TPO's name for a Participating Institutes row, as it is picked."""
+	frappe.has_permission("Campus Drive", "read", throw=True)
+	return primary_tpo_names([institute]).get(institute)
 
 
 @frappe.whitelist()

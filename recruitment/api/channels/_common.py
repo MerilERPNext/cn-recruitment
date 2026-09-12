@@ -25,6 +25,8 @@ Configuration sources
 import frappe
 from frappe.utils import cint, getdate, nowdate
 
+from recruitment.recruitment.field_role_permissions import is_everyone as _role_is_everyone
+
 
 # Keys we use in code → labels stored in the Posting Channel `post_to` Select.
 PORTAL_LABEL = {
@@ -480,8 +482,8 @@ def get_application_fields_for_channel(opening_name, channel, job_applicant=None
 	      "options": "",
 	      "reqd": 1,            # 1 if mandatory_<channel> set
 	      "ctq": 0,
-	      "visibility": "All",
-	      "editability": "Editable",
+	      "visibility": "All",           # "Hidden" once a role list narrows it
+	      "editability": "Editable",     # "Read Only" once a role list narrows it
 	      "value": <current value>,
 	    }, ...]
 	"""
@@ -495,8 +497,14 @@ def get_application_fields_for_channel(opening_name, channel, job_applicant=None
 	from recruitment.recruitment.doctype.job_applicant_profile_settings.job_applicant_profile_settings import (
 		get_job_applicant_profile_template,
 	)
+	from recruitment.recruitment.field_applicability import filter_rows_for_opening
+
 	template = get_job_applicant_profile_template(opening=opening_name)
 	rows = template.get("rows") or []
+
+	# Drop fields whose Company / Assignment rule excludes this opening. The submit
+	# check validates against this same list, so a crafted payload can't send them.
+	rows = filter_rows_for_opening(rows, opening_name)
 
 	# Enrich each row with the Job Applicant doctype meta (fieldtype / options)
 	meta = frappe.get_meta("Job Applicant")
@@ -546,16 +554,22 @@ def get_application_fields_for_channel(opening_name, channel, job_applicant=None
 		if not df:
 			continue
 		is_table = df.fieldtype in ("Table", "Table MultiSelect")
+		# GENERAL band role lists. A candidate holds none of these roles, so any
+		# restriction means hidden / read-only on their form — and a field they
+		# can't see or change must not be mandatory, or they could never submit.
+		visible = _role_is_everyone(r.get("visibility"))
+		editable = _role_is_everyone(r.get("editability"))
+		candidate_locked_out = not (visible and editable)
 		entry = {
 			"section": r.get("section") or "General",
 			"reference_name": ref,
 			"display_name": r.get("display_name") or df.label or ref,
 			"fieldtype": df.fieldtype,
 			"options": df.options or managed_options.get(ref) or "",
-			"reqd": cint(r.get(mandatory_col)),
+			"reqd": 0 if candidate_locked_out else cint(r.get(mandatory_col)),
 			"ctq": cint(r.get("ctq_flag")),
-			"visibility": r.get("visibility") or "All",
-			"editability": r.get("editability") or "Editable",
+			"visibility": "All" if visible else "Hidden",
+			"editability": "Editable" if editable else "Read Only",
 			"value": (
 				_serialize_field_value(applicant_doc, ref, df.fieldtype)
 				if applicant_doc is not None

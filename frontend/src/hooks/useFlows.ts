@@ -22,6 +22,7 @@ import {
   reinitiateFlow,
   retriggerApprovalFlowEvent,
   revokeFlow,
+  startRevokeFlow,
 } from "../services/flowsService";
 import { AssistantTriggerResponse } from "../types/chatnextApiResponses";
 import { SeparationFunnelDataResponse, SeparationWorkflowResponse } from "../types/separation";
@@ -416,3 +417,21 @@ export const useRevokeFlow = () => {
     },
   });
 };
+
+export const useStartRevokeFlow = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ funnel_activity }: { funnel_activity: string }) =>
+      startRevokeFlow(funnel_activity),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["employee-flow-requests"] });
+      queryClient.invalidateQueries({ queryKey: ["employee-flow-request-details"] });
+      queryClient.invalidateQueries({ queryKey: ["separation-employee"] });
+      queryClient.invalidateQueries({ queryKey: ["separation-workflow"] });
+      queryClient.invalidateQueries({ queryKey: ["get-separation-workflow"] });
+      queryClient.invalidateQueries({ queryKey: ["get-separation-funnel"] });
+    },
+  });
+};
+

@@ -22,6 +22,11 @@ export interface JobRequisition {
   }
   
 export interface RequisitionDetailsResponse {
+    // The flat requisition record `get_job_requisition_details` returns — the
+    // same shape the list endpoint serialises, so it carries the alternate
+    // detail tables (`custom_position_details` for Lateral, `custom_regions`
+    // for Fresher) and `available_tables` saying which one has rows.
+    requisition?: any;
     job_requisition: JobRequisition;
     interviews: Interview[]; // Replace any[] with Interview[]
     review_count: number;

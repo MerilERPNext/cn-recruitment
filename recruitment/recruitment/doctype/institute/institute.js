@@ -6,6 +6,12 @@
 // clears the downstream selections when State changes so a stale Region/City
 // from a different State can't linger.
 frappe.ui.form.on("Institute", {
+	setup: function (frm) {
+		// Institute Name is for the Campus Invite, which lists several colleges'
+		// contacts together. Here every row is this Institute's own — hide it.
+		frm.fields_dict.tpo_contacts.grid.set_column_disp_in_list_view("institute_name", false);
+	},
+
 	refresh: function (frm) {
 		// Pre-filled Campus Invite straight from the Institute (institute, region,
 		// name); the rest is entered on the new form and saved.

@@ -128,7 +128,7 @@ def _application_field_rows():
             "section": "Basic Details", "reference_name": ref, "display_name": label,
             "fieldtype": ftype, "view_campus": 1, "mandatory_campus": 0,
             "view_careers": 1, "view_ijp": 0, "view_refer": 0, "view_preoffer": 0,
-            "visibility": "All", "editability": "Editable",
+            "visibility": '["All"]', "editability": '["All"]',
         })
     return rows
 

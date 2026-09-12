@@ -10,6 +10,9 @@
   "reference_name",
   "display_name",
   "locked",
+  "profile_view_roles",
+  "applicable_enabled",
+  "applicability_config",
   "fieldtype",
   "child_field_config",
   "view_careers",
@@ -55,10 +58,31 @@
   },
   {
    "default": "0",
-   "description": "Set in Job Applicant Profile Settings. A locked field is read-only on every Job Opening \u2014 its configuration there cannot be changed or removed.",
+   "description": "Set in Job Applicant Profile Settings. A locked field is read-only on every Job Opening — its configuration there cannot be changed or removed.",
    "fieldname": "locked",
    "fieldtype": "Check",
    "label": "Locked"
+  },
+  {
+   "default": "[\"All\"]",
+   "description": "Set in Job Applicant Profile Settings. Roles that may see this field on the applicant profile. JSON list; [\"All\"] means everyone, [] means nobody. This is the only permission the settings page configures — the GENERAL / PRE-OFFER RULES columns are per-opening.",
+   "fieldname": "profile_view_roles",
+   "fieldtype": "Small Text",
+   "label": "Profile View Roles"
+  },
+  {
+   "default": "0",
+   "description": "Set in Job Applicant Profile Settings. When on, this field only renders for Job Openings admitted by applicability_config. Off means the field is offered to every opening.",
+   "fieldname": "applicable_enabled",
+   "fieldtype": "Check",
+   "label": "Applicable To"
+  },
+  {
+   "description": "JSON: [{\"type\": \"Company\"|\"Assignment\", \"value\": \"<name>\"}]. Edited through the Applicability Settings dialog, never by hand.",
+   "fieldname": "applicability_config",
+   "fieldtype": "Small Text",
+   "hidden": 1,
+   "label": "Applicability Config"
   },
   {
    "fieldname": "fieldtype",
@@ -145,32 +169,32 @@
    "label": "CTQ"
   },
   {
-   "default": "All",
+   "default": "[\"All\"]",
+   "description": "Roles that may SEE this field on the Job Opening. JSON list; [\"All\"] means everyone, [] means nobody. Per-opening — set on the Job Opening's Job application tab.",
    "fieldname": "visibility",
-   "fieldtype": "Select",
-   "label": "Visibility",
-   "options": "All\nHiring Team\nRecruiter Only\nHidden"
+   "fieldtype": "Small Text",
+   "label": "Visibility"
   },
   {
-   "default": "Editable",
+   "default": "[\"All\"]",
+   "description": "Roles that may EDIT this field on the Job Opening. JSON list; [\"All\"] means everyone, [] means nobody (read-only for all). Per-opening.",
    "fieldname": "editability",
-   "fieldtype": "Select",
-   "label": "Editability",
-   "options": "Editable\nRead Only"
+   "fieldtype": "Small Text",
+   "label": "Editability"
   },
   {
-   "default": "Same as visibility",
+   "default": "[\"All\"]",
+   "description": "Roles that may SEE this field on the pre-offer form. JSON list; [\"All\"] means everyone, [] means nobody. Per-opening.",
    "fieldname": "preoffer_visibility",
-   "fieldtype": "Select",
-   "label": "Pre-offer Visibility",
-   "options": "Same as visibility\nAll\nHiring Team\nHidden"
+   "fieldtype": "Small Text",
+   "label": "Pre-offer Visibility"
   },
   {
-   "default": "Editable",
+   "default": "[\"All\"]",
+   "description": "Roles that may EDIT or APPROVE this field on the pre-offer form. JSON list; [\"All\"] means everyone, [] means nobody. Per-opening.",
    "fieldname": "preoffer_edit_approve",
-   "fieldtype": "Select",
-   "label": "Pre-offer Edit/Approve",
-   "options": "Editable\nApproval Required\nRead Only"
+   "fieldtype": "Small Text",
+   "label": "Pre-offer Edit/Approve"
   },
   {
    "default": "0",
@@ -184,7 +208,7 @@
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2026-08-24 16:00:00.000000",
+ "modified": "2026-09-08 18:00:00.000000",
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "Job Opening Application Field",

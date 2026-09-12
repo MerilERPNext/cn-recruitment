@@ -47,3 +47,15 @@ def get_time_format_options():
 		"default": frappe.db.get_single_value("System Settings", "time_format"),
 		"options": _select_options("System Settings", "time_format"),
 	}
+
+
+@frappe.whitelist()
+def get_act_button_system_setting():
+	"""Return whether the Act button should be shown on all tasks from System Settings."""
+	val = frappe.db.get_single_value("System Settings", "show_act_button_on_all_tasks")
+	if val is None:
+		val = frappe.db.get_single_value("System Settings", "custom_show_act_button_on_all_tasks")
+	return {
+		"show_act_button_on_all_tasks": bool(frappe.utils.cint(val))
+	}
+

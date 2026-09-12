@@ -88,6 +88,7 @@ frappe.listview_settings['Job Offer'] = {
                                 frappe.msgprint(
                                     "Emails Sent: " + r.message.sent +
                                     "<br>Skipped: " + r.message.skipped +
+                                    (r.message.already_sent ? " (already sent: " + r.message.already_sent + ")" : "") +
                                     "<br>Failed: " + r.message.failed
                                 );
 

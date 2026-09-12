@@ -38,6 +38,9 @@ import { useGetUiPermission } from "../../../hooks/userUiPermission";
 import { isActionEnabled } from "../../../utils/uiPermission";
 import formatToIndianDate, { formatTime, formatToIndianDateWithTime } from "../../../utils/formatToIndianDate";
 import OvertimeJournal from "./OvertimeJournal";
+import { useQuery } from "@tanstack/react-query";
+import FrappeAPI from "../../../utils/frappeAPI";
+import MyApprovalActionPill from "../../shared/atoms/MyApprovalActionPill";
 
 interface EmployeeAttendanceDetailsProps {
   date?: Date;
@@ -133,6 +136,63 @@ const EmployeeAttendanceDetails = ({
   const { data: buttonStatus } = useGetButtonsStatus(
     effectiveEmployeeId || "",
   );
+  // Fetch open approval todos for Leave Application and Attendance Request
+  // to get todo_id and custom_doctype_actions for the Act button.
+  const { data: leaveApprovalTodos } = useQuery<any[]>({
+    queryKey: ["open-approval-todos-leave", effectiveEmployeeId],
+    queryFn: async () => {
+      const res: any = await FrappeAPI.callMethod(
+        "cn_leave_shift_managment.api.get_open_approval_todos",
+        {
+          doctype: "Leave Application",
+          employee: effectiveEmployeeId,
+          filters: JSON.stringify({ employee: effectiveEmployeeId }),
+          page_length: 100,
+        },
+      );
+      if (Array.isArray(res)) return res;
+      if (Array.isArray(res?.data)) return res.data;
+      if (Array.isArray(res?.message?.data)) return res.message.data;
+      return [];
+    },
+    enabled: !!effectiveEmployeeId,
+    staleTime: 2 * 60 * 1000,
+  });
+
+  const { data: attendanceApprovalTodos } = useQuery<any[]>({
+    queryKey: ["open-approval-todos-attendance", effectiveEmployeeId],
+    queryFn: async () => {
+      const res: any = await FrappeAPI.callMethod(
+        "cn_leave_shift_managment.api.get_open_approval_todos",
+        {
+          doctype: "Attendance Request",
+          employee: effectiveEmployeeId,
+          filters: JSON.stringify({ employee: effectiveEmployeeId }),
+          page_length: 100,
+        },
+      );
+      if (Array.isArray(res)) return res;
+      if (Array.isArray(res?.data)) return res.data;
+      if (Array.isArray(res?.message?.data)) return res.message.data;
+      return [];
+    },
+    enabled: !!effectiveEmployeeId,
+    staleTime: 2 * 60 * 1000,
+  });
+
+  const leaveDocName = leaveDetails?.name || leaveApplicationName;
+  const leaveTodoItem = useMemo(() => {
+    if (!leaveApprovalTodos || !leaveDocName) return undefined;
+    return leaveApprovalTodos.find(
+      (t: any) =>
+        t?.reference_name === leaveDocName ||
+        t?.reference_document?.name === leaveDocName ||
+        (leaveApplicationName &&
+          (t?.reference_name === leaveApplicationName ||
+            t?.reference_document?.name === leaveApplicationName))
+    );
+  }, [leaveApprovalTodos, leaveDocName, leaveApplicationName]);
+
   const leaveDetailsFromButtonStatusData = buttonStatus?.leave_applications?.filter(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (item: any) =>
@@ -433,7 +493,7 @@ const EmployeeAttendanceDetails = ({
       <div>
         {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
         {leaveDetailsFromButtonStatusData?.map((item: any) => {
-          return <LeaveDetailsCard data={item} propStatus={propStatus} />
+          return <LeaveDetailsCard key={item?.name || item?.id} data={item} propStatus={propStatus} />
         })}
         {data?.custom_auto_created === 1 ||
           (leaveEvent && status === "on leave")
@@ -442,6 +502,32 @@ const EmployeeAttendanceDetails = ({
         {/* <div className="border-t-1 border-gray-100 mt-6"></div> */}
         {leaveDetails.name && (
           <ApprovalFlow doctype="Leave Application" docname={leaveDetails.name} />
+        )}
+        {/* Act button for System Managers */}
+        {leaveTodoItem && (
+          <div className="mt-4">
+            <MyApprovalActionPill
+              variant="buttons"
+              canNudge={false}
+              isPendingStatus={
+                ["open", "pending"].includes(
+                  (
+                    leaveTodoItem?.todo_status ||
+                    leaveTodoItem?.reference_document?.custom_status ||
+                    leaveDetails?.status ||
+                    ""
+                  ).toLowerCase()
+                )
+              }
+              todoId={leaveTodoItem?.todo_id}
+              requestItem={leaveTodoItem}
+              onActionComplete={() => {
+                queryClient.invalidateQueries({ queryKey: ["open-approval-todos-leave"] });
+                queryClient.invalidateQueries({ queryKey: ["get-All-Events-And-Attendance"] });
+                queryClient.invalidateQueries({ queryKey: ["leave-buttons-status"] });
+              }}
+            />
+          </div>
         )}
       </div>
     );
@@ -575,9 +661,26 @@ const EmployeeAttendanceDetails = ({
         {attendanceRequests && attendanceRequests.length > 0 && (
           <div className="pt-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <div className="flex flex-col gap-6">
-              {attendanceRequests.map((req, idx) => (
-                <AttendanceRequestInfo key={req.name || idx} data={req} propStatus={propStatus} />
-              ))}
+              {attendanceRequests.map((req, idx) => {
+                const attendanceTodoItem = attendanceApprovalTodos?.find(
+                  (t) =>
+                    t?.reference_name === req.name ||
+                    t?.reference_document?.name === req.name,
+                );
+                return (
+                  <AttendanceRequestInfo
+                    key={req.name || idx}
+                    data={req}
+                    propStatus={propStatus}
+                    todoItem={attendanceTodoItem}
+                    onActionComplete={() => {
+                      queryClient.invalidateQueries({ queryKey: ["open-approval-todos-attendance"] });
+                      queryClient.invalidateQueries({ queryKey: ["get-All-Events-And-Attendance"] });
+                      queryClient.invalidateQueries({ queryKey: ["attendance-requests"] });
+                    }}
+                  />
+                );
+              })}
             </div>
           </div>
         )}
@@ -733,10 +836,14 @@ export const AttendanceRequestInfo = ({
   data,
   propStatus,
   doctype = "Attendance Request",
+  todoItem,
+  onActionComplete,
 }: {
   data: AttendanceRequest;
   propStatus?: string;
   doctype?: string;
+  todoItem?: any;
+  onActionComplete?: () => void;
 }) => {
 
 
@@ -945,6 +1052,29 @@ export const AttendanceRequestInfo = ({
 
       {data.name && (
         <ApprovalFlow doctype={doctype} docname={data.name} />
+      )}
+
+      {/* Act button for System Managers */}
+      {todoItem && (
+        <div className="mt-4">
+          <MyApprovalActionPill
+            variant="buttons"
+            canNudge={false}
+            isPendingStatus={
+              ["open", "pending"].includes(
+                (
+                  todoItem?.todo_status ||
+                  todoItem?.reference_document?.custom_status ||
+                  data?.custom_status ||
+                  ""
+                ).toLowerCase()
+              )
+            }
+            todoId={todoItem?.todo_id}
+            requestItem={todoItem}
+            onActionComplete={onActionComplete}
+          />
+        </div>
       )}
     </div>
   );

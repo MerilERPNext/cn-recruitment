@@ -321,7 +321,7 @@ function run_requisition_action(frm, key) {
 // Activate = link a Job Opening and move the requisition to Approved Active.
 // Same shape as the list view's "Activate Job Requisition" action.
 function prompt_activate(frm) {
-    frappe.prompt(
+    const dialog = frappe.prompt(
         [
             {
                 fieldname: "job_opening",
@@ -362,6 +362,31 @@ function prompt_activate(frm) {
         __("Activate Requisition"),
         __("Activate")
     );
+
+    prefill_new_opening_from_requisition(dialog, { frm });
+}
+
+// The picker's built-in "+ Create a new Job Opening" is Frappe's generic new-doc
+// action, so it opens a blank opening — none of the requisition's details come
+// with it. Point it at the same mapper "Actions → Create Job Opening" uses, so
+// whichever way you get there the opening arrives pre-filled.
+//
+// Deliberately an override on THIS dialog's control instance only: Frappe reads
+// `this.new_doc` each time it renders the dropdown (`item.action.apply(me)`), so
+// nothing else — no other link field, doctype or the Activate flow itself —
+// changes behaviour. `source` is {frm} from the form, {source_name} from the list.
+function prefill_new_opening_from_requisition(dialog, source) {
+    const field = dialog && dialog.fields_dict && dialog.fields_dict.job_opening;
+    if (!field) return;
+
+    field.new_doc = () => {
+        dialog.hide();
+        // hooks.py redirects this HRMS method to our own make_job_opening.
+        frappe.model.open_mapped_doc({
+            method: "hrms.hr.doctype.job_requisition.job_requisition.make_job_opening",
+            ...source,
+        });
+    };
 }
 
 function prompt_with_reason(frm, method, title, freeze_message, description) {

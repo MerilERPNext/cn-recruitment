@@ -57,9 +57,7 @@ const NotificationList = () => {
   const { data: currentUser } = useCurrentUser();
 
 
-  const effectiveUser = currentUser?.name;
-
-
+  const effectiveUser = currentUser?.email || currentUser?.name;
 
   // ✅ Pass readFilter to API — server-side filtering
   const readFilter = TAB_FILTER[activeTab];
@@ -151,14 +149,16 @@ const NotificationList = () => {
   };
 
   const handleMarkAllAsRead = async () => {
-    if (!unreadIds.length) return;
     try {
-      await markAllAsRead.mutateAsync(unreadIds);
-      // Optimistically update cache
-      setPageCache((prev) => ({
-        ...prev,
-        [currentPage]: (prev[currentPage] ?? []).map((n) => ({ ...n, read: 1 })),
-      }));
+      await markAllAsRead.mutateAsync(effectiveUser);
+      // Optimistically update cache across all cached pages
+      setPageCache((prev) => {
+        const nextCache: Record<number, NotificationLog[]> = {};
+        for (const page in prev) {
+          nextCache[page] = (prev[page] ?? []).map((n) => ({ ...n, read: 1 }));
+        }
+        return nextCache;
+      });
     } catch (err) {
       console.error(err);
     }
@@ -244,11 +244,13 @@ const NotificationList = () => {
   };
 
   const layout = (
-    <div className="flex flex-col h-screen overflow-hidden">
-      {/* Sticky Header */}
-      <div className="flex-shrink-0">
-        <HeaderBar title="Notification Log" />
-      </div>
+    <div className={`flex flex-col ${isDesktop ? "h-full" : "h-screen"} overflow-hidden`}>
+      {/* Sticky Header - Mobile Only */}
+      {!isDesktop && (
+        <div className="flex-shrink-0">
+          <HeaderBar title="Notification Log" />
+        </div>
+      )}
 
       {/* ✅ Sticky Tabs + Mark All as Read */}
       <div className="flex-shrink-0 flex items-center justify-between border-b bg-white pr-3">
@@ -269,18 +271,20 @@ const NotificationList = () => {
           ))}
         </div>
 
-        {/* ✅ Mark All as Read — right side */}
-        <button
-          onClick={handleMarkAllAsRead}
-          disabled={unreadIds.length === 0 || markAllAsRead.isPending}
-          className={`text-xs  font-medium whitespace-nowrap transition-colors
-            ${unreadIds.length === 0 || markAllAsRead.isPending
-              ? "text-gray-300 border border-gray-400 py-1 px-2 rounded hover:bg-gray-100 cursor-not-allowed"
-              : "text-primary border border-primary-400 py-1 px-2 rounded hover:bg-primary-100 cursor-pointer"
-            }`}
-        >
-          {markAllAsRead.isPending ? "Marking..." : "Mark all as read"}
-        </button>
+        {/* ✅ Mark All as Read — right side (hidden on 'read' tab) */}
+        {activeTab !== "read" && (
+          <button
+            onClick={handleMarkAllAsRead}
+            disabled={unreadIds.length === 0 || markAllAsRead.isPending}
+            className={`text-xs font-medium whitespace-nowrap transition-colors
+              ${unreadIds.length === 0 || markAllAsRead.isPending
+                ? "text-gray-300 border border-gray-400 py-1 px-2 rounded hover:bg-gray-100 cursor-not-allowed"
+                : "text-primary border border-primary-400 py-1 px-2 rounded hover:bg-primary-100 cursor-pointer"
+              }`}
+          >
+            {markAllAsRead.isPending ? "Marking..." : "Mark all as read"}
+          </button>
+        )}
       </div>
 
       {/* Scrollable List */}

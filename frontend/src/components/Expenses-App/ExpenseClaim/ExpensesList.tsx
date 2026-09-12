@@ -283,6 +283,7 @@ const ExpensesItem: React.FC<{ item: any }> = ({ item }) => {
             }
             revokeLoading={revokeEventMutation.isPending}
             onRevoke={handleRevokeClick}
+            requestItem={item}
           />
         </div>
       </div>
@@ -518,6 +519,7 @@ const ExpensesTableRow: React.FC<{ item: any; isPaidFilter?: boolean }> = ({
           }
           revokeLoading={revokeEventMutation.isPending}
           onRevoke={handleRevokeClick}
+          requestItem={item}
         />
       </div>
     </div>

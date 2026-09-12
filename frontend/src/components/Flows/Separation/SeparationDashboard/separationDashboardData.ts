@@ -17,17 +17,6 @@ export interface SeparationDashboardData {
       status: "completed" | "active" | "pending";
     }[];
   };
-  fnfSettlement: {
-    items: {
-      label: string;
-      subtitle?: string;
-      amount?: number;
-      type: "addition" | "deduction" | "info";
-      note?: string;
-    }[];
-    netEstimatedAmount: number;
-    disclaimer: string;
-  };
   clearances: {
     department: string;
     items: string;
@@ -84,35 +73,6 @@ export const DUMMY_SEPARATION_DATA: SeparationDashboardData = {
     statusDescription: "Currently in the notice period, before clearance begins.",
     currentStepIndex: 1,
     steps: STATIC_STEPS_FALLBACK,
-  },
-  fnfSettlement: {
-    items: [
-      {
-        label: "Pro-rated pay, 1–16 October",
-        amount: 42000,
-        type: "addition",
-      },
-      {
-        label: "Leave encashment, 12 days",
-        amount: 28000,
-        type: "addition",
-      },
-      {
-        label: "Notice period",
-        subtitle: "Full notice being served",
-        note: "full notice being served",
-        type: "info",
-      },
-      {
-        label: "Joining bonus clawback",
-        subtitle: "8 of 24 committed months served",
-        amount: -45000,
-        type: "deduction",
-      },
-    ],
-    netEstimatedAmount: 25000,
-    disclaimer:
-      "This is an estimate and will move until clearance is complete. Expected payout is within 45 days of the last working day.",
   },
   clearances: [
     {

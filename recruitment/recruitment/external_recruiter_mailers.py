@@ -27,6 +27,8 @@ roll back the opening that triggered it.
 import frappe
 from frappe import _
 
+from recruitment.recruitment.communication_log import sendmail_with_log
+
 ASSIGNMENT_TEMPLATE = "External Recruiter Job Opening Assigned"
 
 ENABLED_FIELD = "send_external_recruiter_assignment_email"
@@ -153,6 +155,9 @@ def _notify_row(opening, row, recruiters, template):
 	base = _assignment_context(opening, row)
 	fallback = _("Upload candidate profiles — {0}").format(
 		opening.get("job_title") or opening.name)
+	# The opening's JD document, sent with the assignment so the recruiter has the
+	# brief in hand. Resolved once per row rather than per recruiter.
+	attachments = _jd_attachments(opening)
 
 	mailed = []
 	for recruiter in recruiters:
@@ -174,15 +179,38 @@ def _notify_row(opening, row, recruiters, template):
 			return mailed  # template gone: logged once, don't retry per recruiter
 
 		subject, message = rendered
-		frappe.sendmail(
+		sendmail_with_log(
 			recipients=[email],
 			subject=subject,
 			message=message,
 			reference_doctype="Job Opening",
 			reference_name=opening.name,
+			attachments=attachments or None,
 		)
 		mailed.append(recruiter)
 	return mailed
+
+
+def _jd_attachments(opening):
+	"""The opening's JD file as a sendmail attachment, or nothing.
+
+	The URL is checked against the File table first: the email queue resolves an
+	attachment at SEND time with ``frappe.get_doc("File", {"file_url": ...})``, so
+	a URL with no File row behind it would fail the whole assignment mail inside a
+	background worker, silently. Skipping it costs the attachment, never the mail.
+	"""
+	url = (opening.get("custom_job_description_file") or "").strip()
+	if not url:
+		return []
+	if not frappe.db.exists("File", {"file_url": url}):
+		frappe.log_error(
+			"Job Opening {0}: JD file {1} not found, assignment mail sent without it.".format(
+				opening.name, url
+			),
+			"External recruiter JD attachment missing",
+		)
+		return []
+	return [{"file_url": url}]
 
 
 def _render(template, context, subject_fallback):

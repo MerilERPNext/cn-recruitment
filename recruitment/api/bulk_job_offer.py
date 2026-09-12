@@ -8,6 +8,9 @@ from recruitment.job_offer_utils import (
     get_job_offer_document_template,
     render_job_offer_via_document_template,
 )
+from recruitment.recruitment.communication_log import sendmail_with_log
+from recruitment.recruitment.offer_send_rules import send_locked
+from recruitment.api.action_center import sync_job_offer_action_item
 
 
 def _get_support_email():
@@ -97,7 +100,7 @@ def resend_welcome_email(job_offer):
     # the re-send carries exactly what the original send did.
     culture_book = get_culture_book_attachment()
 
-    frappe.sendmail(
+    sendmail_with_log(
         recipients=[email],
         subject=subject,
         message=message,
@@ -175,6 +178,9 @@ def _mark_offer_stage(applicant, sub_status):
 
 @frappe.whitelist()
 def create_bulk_job_offer(applicants):
+    from recruitment.api.offer_position import first_available_position, requires_position
+    from recruitment.customizations.job_offer import _requisition_for_applicant
+
     # Creates Job Offers (was ignore_permissions with no role gate). Require
     # Job Offer create — the desk HR caller already has it.
     frappe.has_permission("Job Offer", "create", throw=True)
@@ -186,6 +192,8 @@ def create_bulk_job_offer(applicants):
     created = 0
     skipped = 0
     failed = 0
+    # Why each applicant was left out, so the caller can say more than a number.
+    reasons = []
 
     for app in applicants:
 
@@ -205,6 +213,7 @@ def create_bulk_job_offer(applicants):
 
             if existing_offer:
                 skipped += 1
+                reasons.append(f"{applicant.name}: already has a job offer")
                 continue
 
             job_offer = frappe.new_doc("Job Offer")
@@ -219,19 +228,40 @@ def create_bulk_job_offer(applicants):
 
             job_offer.offer_date = frappe.utils.today()
 
+            # A lateral requisition itemises its headcount, so an offer against one
+            # must name the seat it consumes — validate_position_choice refuses it
+            # otherwise, which is what made this whole action unusable for lateral
+            # candidates. There is nobody to ask here, so the lowest-numbered free
+            # position is claimed, by exactly the rule the picker uses. Campus /
+            # region requisitions have no position rows and skip all of this.
+            requisition = _requisition_for_applicant(applicant.name)
+            if requisition and requires_position(requisition):
+                position = first_available_position(requisition)
+                if not position:
+                    skipped += 1
+                    reasons.append(
+                        f"{applicant.name}: no free position left on {requisition}"
+                    )
+                    continue
+                job_offer.custom_job_requisition = requisition
+                job_offer.custom_requisition_position = position.name
+
             job_offer.insert(ignore_permissions=True)
             _mark_offer_stage(applicant.name, SUB_STATUS_TO_SEND)
 
             created += 1
 
-        except Exception:
+        except Exception as exc:
             failed += 1
+            reasons.append(f"{app}: {frappe.utils.strip_html(str(exc))[:140]}")
             frappe.log_error(frappe.get_traceback(), "Bulk Job Offer Creation")
 
     return {
         "created": created,
         "skipped": skipped,
-        "failed": failed
+        "failed": failed,
+        # Additive: the existing caller reads the three counters and ignores this.
+        "reasons": reasons,
     }
 
 @frappe.whitelist()
@@ -245,6 +275,7 @@ def send_bulk_job_offer(job_offers):
     sent = 0
     skipped = 0
     failed = 0
+    already_sent = 0
 
     settings = frappe.get_doc("Recruitment Settings")
     JOB_OFFER_TEMPLATE = settings.job_offer_template
@@ -261,6 +292,13 @@ def send_bulk_job_offer(job_offers):
             # Only allow submitted job offers
             if job_offer.docstatus != 1:
                 skipped += 1
+                continue
+
+            # Recruitment Settings -> Hide Send Job Offer Once Sent. Checked
+            # before anything is written, so the offer keeps its "Sent" status.
+            if send_locked(job_offer):
+                skipped += 1
+                already_sent += 1
                 continue
 
             if not job_offer.job_applicant:
@@ -402,6 +440,14 @@ def send_bulk_job_offer(job_offers):
             communication_doc.recipients = email + ","
             communication_doc.save(ignore_permissions=True)
 
+            # The offer now counts as sent. db_set fires no hooks, so raise the
+            # candidate's Action Center item here — this is the moment the
+            # "On Offer Email Sent" setting waits for (a harmless re-upsert otherwise).
+            try:
+                sync_job_offer_action_item(job_offer)
+            except Exception:
+                frappe.log_error(frappe.get_traceback(), "Job Offer: Action Center item after send failed")
+
             # ----------------------------
             # Update Applicant
             # ----------------------------
@@ -422,7 +468,8 @@ def send_bulk_job_offer(job_offers):
     return {
         "sent": sent,
         "skipped": skipped,
-        "failed": failed
+        "failed": failed,
+        "already_sent": already_sent,
     }
 
 

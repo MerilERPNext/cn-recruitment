@@ -753,10 +753,17 @@
 								method: "recruitment.api.bulk_job_offer.create_bulk_job_offer",
 								args: { applicants: JSON.stringify(applicants) },
 								callback: function (r2) {
+									const m = (r2 && r2.message) || {};
+									// Reasons say WHY an applicant was left out (no free
+									// position, offer already exists) — a bare count sends
+									// people hunting through the error log for it.
+									const why = (m.reasons || []).length
+										? "<br><br>" + frappe.utils.escape_html((m.reasons || []).join("\n")).replace(/\n/g, "<br>")
+										: "";
 									frappe.msgprint(
-										"Created: " + r2.message.created +
-										"<br>Skipped: " + r2.message.skipped +
-										"<br>Failed: " + r2.message.failed,
+										"Created: " + m.created +
+										"<br>Skipped: " + m.skipped +
+										"<br>Failed: " + m.failed + why,
 									);
 									listview.refresh();
 								},
