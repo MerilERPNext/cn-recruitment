@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { createPortal } from "react-dom";
-import useCurrentUser from "../../../../hooks/useCurrentUser";
+import useCurrentUser, { isAdminUser } from "../../../../hooks/useCurrentUser";
 import { useApprovalAction } from "../../../../hooks/userApprovalList";
 import { FormIOComponent } from "../../../../types/formio";
 import { useCallback, useMemo, useState } from "react";
@@ -18,6 +18,7 @@ import FormPreview from "../../../shared/molecules/FormPreview";
 import NudgeButton from "../../../shared/atoms/NudgeButton";
 import StageRetriggerButton from "../../StageRetriggerButton";
 import { useGetUiPermission } from "../../../../hooks/userUiPermission";
+import { useActButtonSetting } from "../../../../hooks/useActButtonSetting";
 import { getActionsEnabled } from "../../../../utils/uiPermission";
 
 interface CardStagesProps {
@@ -80,6 +81,9 @@ const CardStages = ({
     ["act_separation"],
     "Separation"
   );
+  // System Manager bypass: when show_act_button_on_all_tasks is enabled,
+  // a System Manager can act on any pending stage regardless of assignment.
+  const { data: showActOnAllTasks = false } = useActButtonSetting();
 
   const actions = stage?.todo?.custom_doctype_actions
     ? JSON.parse(stage?.todo?.custom_doctype_actions)
@@ -114,7 +118,18 @@ const CardStages = ({
 
   const allocatedTo = useMemo(() => extractRolesAndUsers(stage), [stage]);
   const canPerformActions = useMemo(() => {
-    if (!isActive || !stage.can_act || !act_separation) return false;
+    if (!isActive || !stage.can_act) return false;
+    if (!act_separation) return false;
+
+    const isSystemManager = isAdminUser(currentUser || null);
+    const isAssigned = Boolean(
+      (allocatedTo?.users && allocatedTo.users.length > 0) ||
+      (allocatedTo?.roles && allocatedTo.roles.length > 0)
+    );
+
+    // System Manager: can act on ALL tasks if setting is ON, or on UNASSIGNED tasks if OFF
+    if (isSystemManager && (showActOnAllTasks || !isAssigned)) return true;
+
     let actionPermission = false;
 
     if (allocatedTo?.users && currentUser?.name)
@@ -126,7 +141,7 @@ const CardStages = ({
       );
 
     return actionPermission;
-  }, [currentUser, isActive, allocatedTo, stage.can_act, act_separation]);
+  }, [currentUser, isActive, allocatedTo, stage.can_act, act_separation, showActOnAllTasks]);
 
 
   const mapStatusTimeline = (status: string) => {

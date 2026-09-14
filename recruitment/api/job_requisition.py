@@ -4197,7 +4197,8 @@ def get_requisition_approval_flow(requisition_name):
         fields=["name", "stage_index", "stage_name", "status", "user",
                 "custom_allocated_to_users", "custom_assigned_to_roles", "role",
                 "approval_time", "creation", "is_row_log", "row_label", "row_idx",
-                "row_docnames", "approval_label", "rejection_label"],
+                "row_docnames", "approval_label", "rejection_label",
+                "todo_reference"],
         order_by="stage_index asc, row_idx asc, idx asc",
     )
 
@@ -4251,6 +4252,26 @@ def get_requisition_approval_flow(requisition_name):
                 if role and role not in roles:
                     roles.append(role)
 
+        # For Act button: fetch todo details from the pending log so the frontend
+        # can render MyApprovalActionPill with the real todo_id and actions.
+        pending_log = next(
+            (l for l in stage_logs if l.get("status") == "Pending" and l.get("todo_reference")),
+            None,
+        )
+        todo_info = {}
+        if pending_log and pending_log.get("todo_reference"):
+            todo_doc = frappe.db.get_value(
+                "ToDo",
+                pending_log["todo_reference"],
+                ["name", "custom_doctype_actions", "custom_approval_type"],
+                as_dict=True,
+            ) or {}
+            todo_info = {
+                "todo_id": todo_doc.get("name"),
+                "custom_doctype_actions": todo_doc.get("custom_doctype_actions"),
+                "custom_approval_type": todo_doc.get("custom_approval_type"),
+            }
+
         entry = {
             "stage_index": index,
             "stage_name": (
@@ -4266,6 +4287,8 @@ def get_requisition_approval_flow(requisition_name):
             "trigger_date": stage_logs[0].get("creation") if stage_logs else None,
             # A stage is only "completed" once nothing in it is still pending.
             "completed_date": max(completed) if completed and aggregate["status"] != "Pending" else None,
+            # Act button fields: todo_id + actions for the System Manager Act button.
+            **todo_info,
         }
 
         # Per-position detail for a stage that fanned out.

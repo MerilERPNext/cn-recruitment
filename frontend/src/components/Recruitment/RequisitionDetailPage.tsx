@@ -13,6 +13,9 @@ import {
 import { Typography } from "../shared/atoms/Typography";
 import Badge from "../shared/Badge";
 import AllocatedToTooltip from "../shared/AllocatedToTooltip";
+import MyApprovalActionPill from "../shared/atoms/MyApprovalActionPill";
+import { useActButtonSetting } from "../../hooks/useActButtonSetting";
+import useCurrentUser, { isAdminUser } from "../../hooks/useCurrentUser";
 import WrapperHoverCard from "../shared/WrapperHoverCard";
 import { formatToIndianDateWithTime } from "../../utils/formatToIndianDate";
 import { useScreenSize } from "../../hooks/useScreenSize";
@@ -1001,6 +1004,12 @@ const CustomApprovalTab = ({
 }: CustomApprovalTabProps) => {
   const [expandedStages, setExpandedStages] = useState<number[]>([]);
   const stages = approvalFlow?.stages || [];
+  const { data: currentUser } = useCurrentUser();
+  const isSystemManager = isAdminUser(currentUser || null);
+  // System Manager Act button: uses the same show_act_button_on_all_tasks setting
+  // as Phase 1 My Requests — shows Act button on all pending stages when enabled,
+  // or on unassigned pending stages when disabled.
+  const { data: showActOnAllTasks = false } = useActButtonSetting();
 
   const toggleStage = (stageIndex: number) => {
     setExpandedStages((current) =>
@@ -1086,6 +1095,34 @@ const CustomApprovalTab = ({
                       backgroundColor={getStatusColor(stage.status || "")}
                     />
                   </AllocatedToTooltip>
+                  {/* Act button for System Manager — shown when setting is on (all tasks)
+                      or when off for unassigned tasks with a linked ToDo action */}
+                  {isSystemManager &&
+                    (showActOnAllTasks || !(stage.approvers && stage.approvers.length > 0)) &&
+                    stage.status === "Pending" &&
+                    stage.todo_id && (
+                    <div onClick={(e) => e.stopPropagation()}>
+                      <MyApprovalActionPill
+                        todoId={stage.todo_id}
+                        isPendingStatus={true}
+                        requestItem={{
+                          todo_id: stage.todo_id,
+                          custom_doctype_actions: stage.custom_doctype_actions ?? null,
+                          custom_approval_type: stage.custom_approval_type ?? null,
+                          reference_type: "Job Requisition",
+                          reference_name: approvalFlow?.requisition ?? "",
+                          allocated_to: [],
+                          allocated_roles: [],
+                          role_assigned_users: [],
+                          assigned_users_count: 0,
+                          allocated_to_emp_id: null,
+                          role: null,
+                          username: null,
+                        }}
+                        canNudge={false}
+                      />
+                    </div>
+                  )}
                 </div>
                 <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-gray-500">
                   <span>

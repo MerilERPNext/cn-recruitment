@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import useCurrentUser from "../../../../hooks/useCurrentUser";
+import useCurrentUser, { isAdminUser } from "../../../../hooks/useCurrentUser";
 import {
   FlowRequestItem,
   FlowRequestStage,
@@ -9,6 +9,7 @@ import StatusBadge from "../../../shared/atoms/statusBadge";
 import { Typography } from "../../../shared/atoms/Typography";
 
 import { handleActionType } from "../../../../hooks/userApprovalList";
+import { useActButtonSetting } from "../../../../hooks/useActButtonSetting";
 import {
   extractAllocatedToUserArray,
   extractRolesAndUsers,
@@ -35,11 +36,24 @@ const FlowTableRow = ({
   handleAction: handleActionType;
 }) => {
   const { data: currentUser } = useCurrentUser();
+  // System Manager bypass: when show_act_button_on_all_tasks is enabled,
+  // a System Manager can act on any pending HR Flow stage regardless of assignment.
+  const { data: showActOnAllTasks = false } = useActButtonSetting();
 
   const allocatedTo = useMemo(() => extractRolesAndUsers(stage), [stage]);
   const allocatedToUserArray = extractAllocatedToUserArray(allocatedTo.users);
   const canPerformActions = useMemo(() => {
     if (!isActive || !stage.can_act) return false;
+
+    const isSystemManager = isAdminUser(currentUser || null);
+    const isAssigned = Boolean(
+      (allocatedToUserArray && allocatedToUserArray.length > 0) ||
+      (allocatedTo?.roles && allocatedTo.roles.length > 0)
+    );
+
+    // System Manager: can act on ALL tasks if setting is ON, or on UNASSIGNED tasks if OFF
+    if (isSystemManager && (showActOnAllTasks || !isAssigned)) return true;
+
     let actionPermission = false;
 
     if (allocatedToUserArray && currentUser?.name)
@@ -51,7 +65,7 @@ const FlowTableRow = ({
       );
 
     return actionPermission;
-  }, [currentUser, isActive, allocatedTo, stage.can_act, allocatedToUserArray]);
+  }, [currentUser, isActive, allocatedTo, stage.can_act, allocatedToUserArray, showActOnAllTasks]);
 
   const actorDetails = useMemo(() => {
     if (!stage.approval_time) return null;
