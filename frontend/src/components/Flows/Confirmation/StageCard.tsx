@@ -8,7 +8,8 @@ import Button from "../../shared/atoms/Button";
 import { Typography } from "../../shared/atoms/Typography";
 import StatusTimelineItem from "./components/StatusTimelineItem";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
-import useCurrentUser from "../../../hooks/useCurrentUser";
+import useCurrentUser, { isAdminUser } from "../../../hooks/useCurrentUser";
+import { useActButtonSetting } from "../../../hooks/useActButtonSetting";
 import ViewFormButton from "../ViewFormButton";
 import { FormIOForm } from "../../../utils/flowUtils";
 import AttachmentPreview from "../FlowRequests/FlowDetails/AttachmentPreview";
@@ -56,11 +57,21 @@ const StageCard: React.FC<StageCardProps> = ({
   };
   const status = getStageStatus(stage, idx);
 
+  const { data: showActOnAllTasks = false } = useActButtonSetting();
+
   const canPerformAction = useMemo(() => {
     if (!showActButton) return false;
-    let actionPermission = false;
+
+    const isSystemManager = isAdminUser(currentUser || null);
+    const isAssigned = Boolean(stage?.user_id || stage?.role);
+
+    // System Manager: can act on ALL tasks if setting is ON, or on UNASSIGNED tasks if OFF
+    if (isSystemManager && (showActOnAllTasks || !isAssigned)) {
+      return true;
+    }
 
     if (!canActOnThisRequest) return false;
+    let actionPermission = false;
     if (stage?.user_id && currentUser?.name)
       actionPermission = stage.user_id === currentUser.name;
 
@@ -70,7 +81,7 @@ const StageCard: React.FC<StageCardProps> = ({
       );
 
     return actionPermission;
-  }, [stage, currentUser, canActOnThisRequest, showActButton]);
+  }, [stage, currentUser, canActOnThisRequest, showActButton, showActOnAllTasks]);
 
   const [formSchema, setFormSchema] = useState<FormIOForm | null>(null);
   const [show, setShow] = useState(false);
