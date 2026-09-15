@@ -48,6 +48,7 @@
   "enable_moving_requisition_back_to_draft",
   "allow_future_dated_positions",
   "allow_hiring_manager_override",
+  "enable_aop_budget_check",
   "salary_range_limits_section",
   "salary_range_limits",
   "job_posting_settings_section",
@@ -368,6 +369,13 @@
    "label": "Allow Hiring Manager Override in Requisition"
   },
   {
+   "default": "0",
+   "description": "Block a requisition whose Salary Range (Max) × positions is more than the budget left (Budget − Budget Utilization) on its Department or Cost Center, and flag live requisitions that go over budget.",
+   "fieldname": "enable_aop_budget_check",
+   "fieldtype": "Check",
+   "label": "Enable AOP Budget Check (Department & Cost Center)"
+  },
+  {
    "description": "Allowed salary range per Salary Timeframe on a Job Requisition. Leave the table empty for no limit.",
    "fieldname": "salary_range_limits_section",
    "fieldtype": "Section Break",
@@ -581,7 +589,7 @@
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2026-09-11 12:30:00.000000",
+ "modified": "2026-09-15 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "Recruitment Settings",

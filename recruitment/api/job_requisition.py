@@ -111,6 +111,9 @@ PARENT_READONLY_FIELDS = (
     "custom_active_requisitions",
     "custom_active_openings",
     "custom_headcount_last_updated",
+    # Set by recruitment.api.requisition_budget when the Department / Cost Center
+    # budget left no longer covers this live requisition.
+    "custom_over_budget",
 )
 
 # Fields that Frappe / workflow engine controls — never written by this API.
@@ -3794,6 +3797,9 @@ _EDIT_AFTER_APPROVAL_IGNORE = {
     # them here gives nothing away while letting a pre-existing requisition pick
     # the values up on its next save.
     "custom_region", "custom_position_location",
+    # Recomputed from the Department / Cost Center budgets after every save and
+    # nightly (recruitment.api.requisition_budget) — never a user edit.
+    "custom_over_budget",
 }
 _LAYOUT_FIELDTYPES = {
     "Section Break", "Column Break", "Tab Break", "HTML", "Button", "Heading", "Fold",
@@ -4364,8 +4370,12 @@ def get_job_requisition_details(requisition_name=None, name=None):
 
     doc = frappe.get_doc(JOB_REQUISITION, requisition_name)
 
+    from recruitment.api.requisition_budget import budget_status
+
     return {
         "requisition": _serialise_requisition(doc),
         # Permission was checked above; the flow helper re-checks harmlessly.
         "approval_flow": get_requisition_approval_flow(requisition_name),
+        # What the Over Budget banner lists; empty unless the requisition is flagged.
+        "budget_status": budget_status(doc),
     }

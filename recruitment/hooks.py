@@ -470,6 +470,11 @@ doc_events = {
             # Enforce Recruitment Settings -> Job Requisition Settings
             # (max positions, replacement-employee restriction & uniqueness).
             "recruitment.api.job_requisition.validate_requisition_settings",
+            # Recruitment Settings -> "Enable AOP Budget Check": refuse a
+            # requisition whose Salary Range (Max) x positions is more than its
+            # Department / Cost Center budget has left. Runs after
+            # sync_no_of_positions so the position count is current.
+            "recruitment.api.requisition_budget.enforce_budget",
             # Capture the Regions child table's region on the parent
             # `custom_region` so it is filterable/reportable from the
             # requisition itself — same mirror as on the Job Opening.
@@ -508,7 +513,18 @@ doc_events = {
             # openings collected and how far they got, plus its own position
             # approvals. Same on_update reasoning as store_headcount above.
             "recruitment.api.requisition_pipeline.store_pipeline",
+            # Over Budget flag for the form banner — derived, so written here with
+            # db.set_value for the same reason as store_headcount above.
+            "recruitment.api.requisition_budget.store_budget_flag",
         ],
+    },
+    # Accounts edit the AOP budget / utilization by hand on these masters; an edit
+    # re-flags live requisitions right away instead of at the nightly run.
+    "Cost Center": {
+        "on_update": "recruitment.api.requisition_budget.on_budget_master_update",
+    },
+    "Department": {
+        "on_update": "recruitment.api.requisition_budget.on_budget_master_update",
     },
     "Job Opening": {
         "validate": [
@@ -719,6 +735,9 @@ scheduler_events = {
             "recruitment.recruitment.onboarding_extras.refresh_onboarding_task_days_to_join",
             "recruitment.recruitment.scheduled_jobs.mark_relieved_employees_as_left",
             "recruitment.recruitment.scheduled_jobs.auto_separate_employees_on_lwd",
+            # AOP budget: re-flag live requisitions their Department / Cost Center
+            # budget left no longer covers. No-op (clears flags) when disabled.
+            "recruitment.api.requisition_budget.refresh_over_budget_flags",
         ],
         "30 1 * * *": [
             # Pay every referral reward installment that is due and still eligible.
