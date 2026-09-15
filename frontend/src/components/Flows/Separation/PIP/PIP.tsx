@@ -6,9 +6,10 @@ import {
   CheckCircle2,
   XCircle,
   AlertCircle,
-  ChevronDown,
-  ChevronUp,
   Sparkles,
+  ExternalLink,
+  Users,
+  X,
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -16,11 +17,14 @@ import {
   useCurrentEmployeeDetails,
   useEmployee,
 } from "../../../../hooks/useEmployee";
+import { useCurrentUser, isAdminUser } from "../../../../hooks/useCurrentUser";
 import { useTargetUser } from "../../../../context/ViewedUserContext";
 import {
-  useActiveReportees,
-  usePipFlowRequestsByEmployee,
+  useInfiniteAllActiveEmployees,
+  useInfiniteActiveReportees,
+  usePipFlowRequestsForEmployee,
 } from "../../../../hooks/usePip";
+import useDebounce from "../../../../hooks/useDebounce";
 import {
   useFlowConfigOthersTriggerList,
   getDefinitionByFilter,
@@ -31,11 +35,10 @@ import type { ActiveRepotreeTypes } from "../../../../services/pipService";
 
 import { Typography } from "../../../shared/atoms/Typography";
 import Button from "../../../shared/atoms/Button";
-import { Card } from "../../../shared/atoms/Card";
 import Avatar from "../../../shared/Avatar";
 import NoDataFound from "../../../shared/atoms/NoDataFound";
+import CircularLoader from "../../../shared/atoms/CircularLoader";
 import ActionConfirmationModal from "../../../shared/ActionConfirmationModal";
-import CardStages from "../components/StageCard";
 import WrapperHoverCard from "../../../shared/WrapperHoverCard";
 
 import formatToIndianDate from "../../../../utils/formatToIndianDate";
@@ -68,6 +71,21 @@ const getStatusBadge = (status?: string) => {
 };
 
 /**
+ * Helper to format card title for PIP cycles
+ */
+const getPipTitle = (item: FlowRequestItem, idx: number) => {
+  if (item.flow_name === "1_PIP_Init") return "PIP 1 (Cycle 1)";
+  if (item.flow_name) {
+    const match = item.flow_name.match(/^(\d+)[_\s-]*pip/i);
+    if (match) {
+      return `PIP ${match[1]} (Cycle ${match[1]})`;
+    }
+    return item.flow_name;
+  }
+  return `PIP Cycle ${idx + 1}`;
+};
+
+/**
  * Reportees sidebar loading skeleton
  */
 const ReporteesSidebarSkeleton: React.FC = () => (
@@ -91,22 +109,32 @@ const ReporteesSidebarSkeleton: React.FC = () => (
  * PIP details loading skeleton
  */
 const PipCardSkeleton: React.FC = () => (
-  <div className="space-y-6 animate-pulse">
-    <div className="bg-white rounded-2xl border border-gray-200 p-5 space-y-4">
-      <div className="flex items-center justify-between">
-        <div className="h-4 w-20 bg-gray-200 rounded" />
-        <div className="h-6 w-24 bg-gray-200 rounded-md" />
+  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 animate-pulse">
+    {[1, 2].map((i) => (
+      <div key={i} className="bg-white rounded-2xl border border-gray-200 p-5 space-y-4">
+        <div className="flex items-center justify-between pb-3 border-b border-gray-100">
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-lg bg-gray-200" />
+            <div className="h-4 w-28 bg-gray-200 rounded" />
+          </div>
+          <div className="h-6 w-20 bg-gray-200 rounded-md" />
+        </div>
+        <div className="space-y-2">
+          <div className="h-7 bg-gray-100 rounded-xl" />
+          <div className="h-7 bg-gray-100 rounded-xl" />
+          <div className="h-7 bg-gray-100 rounded-xl" />
+        </div>
+        <div className="h-9 w-full bg-gray-200 rounded-xl pt-2" />
       </div>
-      <div className="space-y-2">
-        <div className="h-3 w-48 bg-gray-200 rounded" />
-        <div className="h-3 w-64 bg-gray-200 rounded" />
-      </div>
-      <div className="h-9 w-32 bg-gray-200 rounded-lg" />
-    </div>
+    ))}
   </div>
 );
 
 const PerformanceImprovementPlan: React.FC = () => {
+  // Current user & admin check
+  const { data: currentUser } = useCurrentUser();
+  const isAdmin = isAdminUser(currentUser ?? null);
+
   // Current user & target user context
   const { isViewingOtherUser, targetEmployeeId } = useTargetUser();
   const { data: currentEmployee, isLoading: isEmployeeLoading } =
@@ -122,74 +150,114 @@ const PerformanceImprovementPlan: React.FC = () => {
   const effectiveEmployeeName =
     effectiveEmployee?.employee_name || effectiveEmployee?.name || "You";
 
-  // Active direct reportees
+  // Search state with debounce for backend search
+  const [searchTerm, setSearchTerm] = useState<string>("");
+  const debouncedSearchTerm = useDebounce(searchTerm, 300);
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>("");
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+
+  // Three-case employee list resolution with infinite scrolling & backend search:
+  // 1. Admin & not impersonating -> All active employees
+  // 2. Admin & impersonating -> Impersonated employee's direct reportees
+  // 3. Non-admin -> Logged in employee's direct reportees
+  const isAllEmployeesMode = isAdmin && !isViewingOtherUser;
+  const reporteeManagerId = isViewingOtherUser
+    ? (targetEmployeeId ?? "")
+    : (!isAdmin ? (currentEmployee?.name ?? "") : "");
+
   const {
-    data: reportees = [],
+    data: allActiveEmployeesData,
+    isLoading: isLoadingAllEmployees,
+    isError: isAllEmployeesError,
+    error: allEmployeesError,
+    refetch: refetchAllEmployees,
+    fetchNextPage: fetchNextPageAll,
+    hasNextPage: hasNextPageAll,
+    isFetchingNextPage: isFetchingNextPageAll,
+  } = useInfiniteAllActiveEmployees(debouncedSearchTerm, isAllEmployeesMode);
+
+  const {
+    data: reporteesData,
     isLoading: isLoadingReportees,
     isError: isReporteesError,
     error: reporteesError,
     refetch: refetchReportees,
-  } = useActiveReportees(effectiveEmployeeId || "");
+    fetchNextPage: fetchNextPageReportees,
+    hasNextPage: hasNextPageReportees,
+    isFetchingNextPage: isFetchingNextPageReportees,
+  } = useInfiniteActiveReportees(reporteeManagerId, debouncedSearchTerm, !isAllEmployeesMode);
 
-  // Search & selected state
-  const [searchTerm, setSearchTerm] = useState<string>("");
-  const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>("");
-  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
-  const [showTimelineDetails, setShowTimelineDetails] = useState(false);
-
-  // Filter reportees by search term
-  const filteredReportees = useMemo(() => {
-    if (!Array.isArray(reportees)) return [];
-    if (!searchTerm.trim()) return reportees;
-    const term = searchTerm.toLowerCase();
-    return reportees.filter((emp) => {
-      const name = emp.employee_name?.toLowerCase() || "";
-      const title =
-        emp.custom_designation_title?.toLowerCase() ||
-        emp.designation_name?.toLowerCase() ||
-        emp.designation?.toLowerCase() ||
-        "";
-      const dept =
-        emp.department_name?.toLowerCase() ||
-        emp.department?.toLowerCase() ||
-        "";
-      const empId = emp.name?.toLowerCase() || "";
-      return (
-        name.includes(term) ||
-        title.includes(term) ||
-        dept.includes(term) ||
-        empId.includes(term)
-      );
+  const allActiveEmployees = useMemo(() => {
+    const raw = allActiveEmployeesData?.pages.flatMap((page) => page) ?? [];
+    const seen = new Set<string>();
+    return raw.filter((emp) => {
+      if (!emp?.name || seen.has(emp.name)) return false;
+      seen.add(emp.name);
+      return true;
     });
-  }, [reportees, searchTerm]);
+  }, [allActiveEmployeesData]);
+
+  const reportees = useMemo(() => {
+    const raw = reporteesData?.pages.flatMap((page) => page) ?? [];
+    const seen = new Set<string>();
+    return raw.filter((emp) => {
+      if (!emp?.name || seen.has(emp.name)) return false;
+      seen.add(emp.name);
+      return true;
+    });
+  }, [reporteesData]);
+
+  const employeeList = isAllEmployeesMode ? allActiveEmployees : reportees;
+  const isLoadingEmployees = isAllEmployeesMode
+    ? isLoadingAllEmployees
+    : (isLoadingReportees || isEmployeeLoading);
+  const isEmployeesError = isAllEmployeesMode
+    ? isAllEmployeesError
+    : isReporteesError;
+  const employeesError = isAllEmployeesMode
+    ? allEmployeesError
+    : reporteesError;
+  const refetchEmployees = isAllEmployeesMode
+    ? refetchAllEmployees
+    : refetchReportees;
+
+  const hasNextPage = isAllEmployeesMode ? hasNextPageAll : hasNextPageReportees;
+  const isFetchingNextPage = isAllEmployeesMode
+    ? isFetchingNextPageAll
+    : isFetchingNextPageReportees;
+  const fetchNextPage = isAllEmployeesMode
+    ? fetchNextPageAll
+    : fetchNextPageReportees;
+
+  const handleSidebarScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
+    if (scrollHeight - scrollTop - clientHeight < 60) {
+      if (hasNextPage && !isFetchingNextPage) {
+        fetchNextPage();
+      }
+    }
+  };
 
   // Derive active selected employee
   const selectedEmployee: ActiveRepotreeTypes | undefined = useMemo(() => {
-    if (!reportees || reportees.length === 0) return undefined;
+    if (!employeeList || employeeList.length === 0) return undefined;
     if (selectedEmployeeId) {
-      const found = reportees.find((emp) => emp.name === selectedEmployeeId);
+      const found = employeeList.find((emp) => emp.name === selectedEmployeeId);
       if (found) return found;
     }
-    return reportees[0];
-  }, [reportees, selectedEmployeeId]);
+    return employeeList[0];
+  }, [employeeList, selectedEmployeeId]);
 
   const activeEmployeeId = selectedEmployee?.name;
 
-  // PIP Flow requests for selected employee
+  // PIP Flow requests for selected employee (scoped via X-Target-Employee-Id header)
   const {
     data: pipFlowRequests,
     isLoading: isLoadingPipFlow,
     isError: isPipFlowError,
     error: pipFlowError,
     refetch: refetchPipFlow,
-  } = usePipFlowRequestsByEmployee(activeEmployeeId);
-
-  const activePipFlow: FlowRequestItem | undefined = useMemo(() => {
-    if (!Array.isArray(pipFlowRequests) || pipFlowRequests.length === 0) return undefined;
-    const match = pipFlowRequests.find((item) => item.flow_name === "1_PIP_Init");
-    return match || pipFlowRequests[0];
-  }, [pipFlowRequests]);
-  const hasStartedFlow = Boolean(activePipFlow);
+  } = usePipFlowRequestsForEmployee(activeEmployeeId);
 
   // Trigger definition for initiating PIP
   const { data: triggerDefinitions, isLoading: isTriggerLoading } =
@@ -322,9 +390,15 @@ const PerformanceImprovementPlan: React.FC = () => {
     }
   };
 
-  const statusBadge = getStatusBadge(
-    activePipFlow?.overall_flow_status || activePipFlow?.approval_status
-  );
+  // Open flow request details page with selected employee impersonated
+  const handleViewFlowRequest = (flowItem: FlowRequestItem) => {
+    const requestId = flowItem.name || flowItem.request_id;
+    if (!requestId) return;
+    const targetId = selectedEmployee?.name || activeEmployeeId;
+    const query = targetId ? `?target_user=${encodeURIComponent(targetId)}` : "";
+    const url = `/webapp/flow-app/flow-request/${encodeURIComponent(requestId)}${query}`;
+    window.open(url, "_blank");
+  };
 
   return (
     <div className="w-full p-4 md:p-6 space-y-5">
@@ -333,7 +407,7 @@ const PerformanceImprovementPlan: React.FC = () => {
         <div className="flex flex-col">
           <Typography variant="h4">Performance Improvement (PIP)</Typography>
           <Typography variant="bodySmall" color="body2">
-            Track, initiate, and monitor Performance Improvement Plans for your active reportees.
+            Track, initiate, and monitor Performance Improvement Plans for {isAllEmployeesMode ? "active employees" : "your active reportees"}.
           </Typography>
         </div>
         <div className="flex items-center gap-2">
@@ -342,18 +416,32 @@ const PerformanceImprovementPlan: React.FC = () => {
             className="inline-flex items-center gap-1.5 font-semibold px-3 py-1.5 rounded-xl bg-primary-50 text-primary-700 border border-primary-200 shadow-2xs"
           >
             <Sparkles className="w-3.5 h-3.5 text-primary-600" />
-            Active Reportees Only
+            {isAllEmployeesMode ? "All Active Employees" : "Active Reportees Only"}
           </Typography>
         </div>
       </div>
 
       {/* Main Layout: Left Sidebar + Right Details Panel */}
       <div className="w-full flex flex-col lg:flex-row gap-6 items-start">
-        {/* Left Column: Searchable & Scrollable Reportees Sidebar */}
-        <aside className="w-full lg:w-80 shrink-0 bg-white rounded-2xl border border-gray-200 p-4 shadow-xs space-y-3">
-          <div className="flex items-center justify-between pb-1 border-b border-gray-100">
-            <Typography variant="label" className="font-bold text-gray-700 uppercase tracking-wider block">
-              Reportees ({filteredReportees.length})
+        {/* Left Column: Searchable & Scrollable Employees Sidebar */}
+        <aside className="w-full lg:w-80 shrink-0 bg-white rounded-2xl border border-gray-200 p-4 shadow-xs space-y-3.5">
+          {/* Sidebar Header with Title, Count badge, and explanatory caption */}
+          <div className="space-y-1 pb-2.5 border-b border-gray-100">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Users className="w-4 h-4 text-primary-600" />
+                <Typography variant="label" className="font-bold text-gray-800 uppercase tracking-wider block">
+                  {isAllEmployeesMode ? "All Employees" : "Direct Reportees"}
+                </Typography>
+              </div>
+              <span className="px-2.5 py-0.5 rounded-xl text-[11px] font-semibold bg-gray-100 text-gray-700">
+                {employeeList.length}
+              </span>
+            </div>
+            <Typography variant="caption" className="text-gray-500 text-[11px] leading-relaxed block">
+              {isAllEmployeesMode
+                ? "Select an employee to view history or initiate PIP."
+                : "Select a direct reportee to track performance."}
             </Typography>
           </div>
 
@@ -362,119 +450,148 @@ const PerformanceImprovementPlan: React.FC = () => {
             <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
               type="text"
-              placeholder="Search reportee..."
+              placeholder={isAllEmployeesMode ? "Search by name or ID..." : "Search reportee..."}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-xl text-xs text-gray-900 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-hidden transition-all placeholder:text-gray-400"
+              className="w-full pl-9 pr-8 py-2 bg-gray-50/60 hover:bg-gray-50 focus:bg-white border border-gray-200 rounded-xl text-xs text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all placeholder:text-gray-400"
             />
+            {searchTerm && (
+              <button
+                type="button"
+                onClick={() => setSearchTerm("")}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-0.5 rounded-md hover:bg-gray-200/60 transition-colors"
+                title="Clear search"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
           </div>
 
-          {/* Reportees List */}
-          <div className="flex flex-col gap-1.5 max-h-[580px] overflow-y-auto pr-0.5">
-            {isLoadingReportees || isEmployeeLoading ? (
+          {/* Employees List with infinite scroll */}
+          <div
+            onScroll={handleSidebarScroll}
+            className="flex flex-col gap-1.5 max-h-[580px] overflow-y-auto pr-0.5"
+          >
+            {isLoadingEmployees ? (
               <ReporteesSidebarSkeleton />
-            ) : isReporteesError ? (
+            ) : isEmployeesError ? (
               <div className="p-4 text-center space-y-2">
                 <Typography variant="caption" className="text-red-600 font-medium block">
-                  {errorResponseFormater(reporteesError, "Failed to load reportees.")}
+                  {errorResponseFormater(employeesError, `Failed to load ${isAllEmployeesMode ? "employees" : "reportees"}.`)}
                 </Typography>
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => refetchReportees()}
+                  onClick={() => refetchEmployees()}
                 >
                   Retry
                 </Button>
               </div>
-            ) : filteredReportees.length === 0 ? (
+            ) : employeeList.length === 0 ? (
               <div className="py-8 px-2 text-center">
                 <NoDataFound
-                  title="No Reportees Found"
+                  title={isAllEmployeesMode ? "No Employees Found" : "No Reportees Found"}
                   subtitle={
                     searchTerm
-                      ? "No reportee matches your search query."
-                      : "No active reportees found under your reporting hierarchy."
+                      ? (isAllEmployeesMode ? "No employee matches your search query." : "No reportee matches your search query.")
+                      : (isAllEmployeesMode ? "No active employees found in the organization." : "No active reportees found under your reporting hierarchy.")
                   }
                 />
               </div>
             ) : (
-              filteredReportees.map((emp) => {
-                const isSelected =
-                  (selectedEmployee?.name || selectedEmployeeId) === emp.name;
-                const designationTitle =
-                  emp.designation_name ||
-                  emp.custom_designation_title ||
-                  "—";
-                const departmentDisplay =
-                  emp.department_name || "";
+              <>
+                {employeeList.map((emp) => {
+                  const isSelected =
+                    (selectedEmployee?.name || selectedEmployeeId) === emp.name;
+                  const designationTitle =
+                    emp.custom_designation_title ||
+                    emp.designation_name ||
+                    emp.designation ||
+                    "—";
+                  const departmentDisplay =
+                    emp.department_name || "";
 
-                return (
-                  <div
-                    key={emp.name}
-                    onClick={() => {
-                      setSelectedEmployeeId(emp.name);
-                      setShowTimelineDetails(false);
-                    }}
-                    className={`w-full text-left rounded-xl p-3 transition-all flex items-center justify-between gap-3 border cursor-pointer ${isSelected
-                      ? "bg-primary text-white border-primary shadow-xs"
-                      : "bg-white text-gray-800 hover:bg-gray-50 border-gray-200"
-                      }`}
-                  >
-                    <div className="flex items-center gap-3 min-w-0 flex-1">
-                      <Avatar
-                        src={emp.image || undefined}
-                        name={emp.employee_name || emp.name}
-                        size="h-9 w-9"
-                        fontSize="text-xs"
-                      />
+                  return (
+                    <div
+                      key={emp.name}
+                      onClick={() => {
+                        setSelectedEmployeeId(emp.name);
+                      }}
+                      className={`w-full text-left rounded-xl p-3 transition-all flex items-center justify-between gap-3 border cursor-pointer ${isSelected
+                        ? "bg-primary text-white border-primary shadow-xs"
+                        : "bg-white text-gray-800 hover:bg-gray-50 border-gray-200"
+                        }`}
+                    >
+                      <div className="flex items-center gap-3 min-w-0 flex-1">
+                        <Avatar
+                          src={emp.image || undefined}
+                          name={emp.employee_name || emp.name}
+                          size="h-9 w-9"
+                          fontSize="text-xs"
+                        />
 
-                      <div className="min-w-0 flex-1">
-                        <WrapperHoverCard employeeId={emp.name}>
-                          <span className="inline-block max-w-full truncate hover:underline cursor-pointer">
-                            <Typography
-                              variant="bodySmall"
-                              className={`font-semibold truncate block ${isSelected ? "text-white" : "text-gray-900"
-                                }`}
-                            >
-                              {emp.employee_name || emp.name}
-                            </Typography>
-                          </span>
-                        </WrapperHoverCard>
+                        <div className="min-w-0 flex-1">
+                          <WrapperHoverCard employeeId={emp.name}>
+                            <span className="inline-block max-w-full truncate hover:underline cursor-pointer">
+                              <Typography
+                                variant="bodySmall"
+                                className={`font-semibold truncate block ${isSelected ? "text-white" : "text-gray-900"
+                                  }`}
+                              >
+                                {emp.employee_name || emp.name}
+                              </Typography>
+                            </span>
+                          </WrapperHoverCard>
+                          <Typography
+                            variant="caption"
+                            className={`truncate font-normal mt-0.5 block ${isSelected ? "text-white/85" : "text-gray-500"
+                              }`}
+                          >
+                            {designationTitle}
+                          </Typography>
+                        </div>
+                      </div>
+
+                      {departmentDisplay && (
                         <Typography
                           variant="caption"
-                          className={`truncate font-normal mt-0.5 block ${isSelected ? "text-white/85" : "text-gray-500"
+                          className={`text-[10px] font-medium px-2 py-0.5 rounded-md self-center shrink-0 hidden sm:inline-block max-w-[80px] truncate ${isSelected
+                            ? "bg-white/20 text-white"
+                            : "bg-gray-100 text-gray-600"
                             }`}
                         >
-                          {designationTitle}
+                          {departmentDisplay}
                         </Typography>
-                      </div>
+                      )}
                     </div>
+                  );
+                })}
 
-                    {departmentDisplay && (
-                      <Typography
-                        variant="caption"
-                        className={`text-[10px] font-medium px-2 py-0.5 rounded-md self-center shrink-0 hidden sm:inline-block max-w-[80px] truncate ${isSelected
-                          ? "bg-white/20 text-white"
-                          : "bg-gray-100 text-gray-600"
-                          }`}
-                      >
-                        {departmentDisplay}
-                      </Typography>
-                    )}
+                {/* Loading indicator when scrolling to load more */}
+                {isFetchingNextPage && (
+                  <div className="py-3 flex items-center justify-center gap-2">
+                    <CircularLoader size="sm" color="blue-500" />
+                    <Typography variant="caption" className="text-gray-500 font-medium">
+                      Loading more...
+                    </Typography>
                   </div>
-                );
-              })
+                )}
+              </>
             )}
           </div>
         </aside>
 
-        {/* Right Column: Selected Employee Details & PIP 1 Card / Flow Details */}
+        {/* Right Column: Selected Employee Details & PIP Cards */}
         <main className="flex-1 w-full space-y-6">
           {!selectedEmployee ? (
             <div className="bg-white rounded-2xl border border-gray-200 p-12 shadow-xs flex flex-col items-center justify-center text-center min-h-[350px]">
               <NoDataFound
                 title="No Employee Selected"
-                subtitle="Select an active reportee from the left list to view or initiate their Performance Improvement Plan."
+                subtitle={
+                  isAllEmployeesMode
+                    ? "Select an active employee from the left list to view or initiate their Performance Improvement Plan."
+                    : "Select an active reportee from the left list to view or initiate their Performance Improvement Plan."
+                }
               />
             </div>
           ) : (
@@ -503,8 +620,9 @@ const PerformanceImprovementPlan: React.FC = () => {
                     </div>
                     <Typography variant="caption" className="text-gray-600 mt-1 flex items-center gap-2 flex-wrap">
                       <Typography variant="caption" className="font-semibold text-gray-800">
-                        {selectedEmployee.designation_name ||
-                          selectedEmployee.custom_designation_title ||
+                        {selectedEmployee.custom_designation_title ||
+                          selectedEmployee.designation_name ||
+                          selectedEmployee.designation ||
                           "—"}
                       </Typography>
                       {selectedEmployee.department_name && (
@@ -537,7 +655,19 @@ const PerformanceImprovementPlan: React.FC = () => {
                   <Typography variant="caption" className="font-medium text-gray-600">
                     Reporting To:
                   </Typography>
-                  {effectiveEmployeeId ? (
+                  {isAllEmployeesMode ? (
+                    selectedEmployee.reports_to ? (
+                      <WrapperHoverCard employeeId={selectedEmployee.reports_to}>
+                        <span className="cursor-pointer hover:opacity-80 transition-opacity inline-flex items-center gap-1">
+                          <strong className="text-gray-900 font-bold">
+                            {selectedEmployee.reports_to}
+                          </strong>
+                        </span>
+                      </WrapperHoverCard>
+                    ) : (
+                      <strong className="text-gray-900 font-bold">—</strong>
+                    )
+                  ) : effectiveEmployeeId ? (
                     <WrapperHoverCard employeeId={effectiveEmployeeId}>
                       <span className="cursor-pointer hover:opacity-80 transition-opacity inline-flex items-center gap-1">
                         <strong className="text-gray-900 font-bold">
@@ -554,204 +684,213 @@ const PerformanceImprovementPlan: React.FC = () => {
                 </div>
               </div>
 
-              {/* PIP 1 Card Section */}
-              {isLoadingPipFlow ? (
-                <PipCardSkeleton />
-              ) : isPipFlowError ? (
-                <div className="bg-rose-50 border border-rose-200 rounded-2xl p-6 text-center space-y-3">
-                  <AlertCircle className="w-8 h-8 text-rose-500 mx-auto" />
-                  <Typography variant="bodyMedium" className="text-rose-800 font-semibold">
-                    Failed to load PIP details
-                  </Typography>
-                  <Typography variant="bodySmall" className="text-rose-600">
-                    {errorResponseFormater(pipFlowError, "Could not fetch PIP status for this employee.")}
-                  </Typography>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => refetchPipFlow()}
-                  >
-                    Try Again
-                  </Button>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 gap-6">
-                  {/* PIP 1 Card */}
-                  <div
-                    className={`rounded-2xl border p-6 flex flex-col justify-between gap-5 transition-all shadow-xs ${hasStartedFlow
-                      ? "bg-white border-blue-200 ring-1 ring-blue-50"
-                      : "bg-white border-gray-200"
-                      }`}
-                  >
-                    {/* Header */}
-                    <div className="flex items-center justify-between pb-3 border-b border-gray-100">
-                      <div className="flex items-center gap-2">
-                        <div className="w-7 h-7 rounded-lg bg-primary-50 text-primary flex items-center justify-center font-bold text-xs">
-                          1
-                        </div>
-                        <Typography variant="subheading" className="text-gray-900">
-                          PIP 1 (Cycle 1)
-                        </Typography>
-                      </div>
-                      {hasStartedFlow ? (
-                        <Typography
-                          variant="caption"
-                          className={`inline-flex items-center gap-1.5 font-semibold px-3 py-1 rounded-xl border ${statusBadge.bg}`}
-                        >
-                          {statusBadge.icon}
-                          {statusBadge.label}
-                        </Typography>
-                      ) : (
-                        <Typography
-                          variant="caption"
-                          className="inline-flex items-center gap-1.5 font-semibold px-2.5 py-0.5 rounded-xl bg-gray-100 text-gray-600"
-                        >
-                          Not Started
-                        </Typography>
-                      )}
-                    </div>
-
-                    {/* Body Content */}
-                    {!hasStartedFlow ? (
-                      <div className="space-y-4">
-                        <Typography variant="bodySmall" className="text-gray-600 leading-relaxed block">
-                          No Performance Improvement Plan (PIP) is currently active for{" "}
-                          <strong className="text-gray-800">
-                            {selectedEmployee.employee_name || selectedEmployee.name}
-                          </strong>
-                          . You can initiate a new PIP cycle through the approval workflow below.
-                        </Typography>
-
-                        <div className="pt-2">
-                          <Button
-                            variant="contain"
-                            size="md"
-                            onClick={handleOpenInitiateModal}
-                            disabled={isTriggerLoading || isInitiatingFlow}
-                            className="shadow-xs font-semibold"
-                            icon={<Plus className="w-4 h-4" />}
-                          >
-                            Initiate PIP 1
-                          </Button>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="space-y-4">
-                        {/* Summary Grid */}
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                          <div className="bg-gray-50/80 rounded-xl p-3 border border-gray-100">
-                            <Typography variant="caption" className="text-gray-500 font-medium block">
-                              Creation Date
-                            </Typography>
-                            <Typography variant="bodySmall" className="font-semibold text-gray-800 mt-1 block">
-                              {formatToIndianDate(
-                                activePipFlow?.initiated_on ||
-                                activePipFlow?.activity_timestamp ||
-                                ((activePipFlow as Record<string, unknown> | undefined)?.creation as string)
-                              ) || "—"}
-                            </Typography>
-                          </div>
-                          <div className="bg-gray-50/80 rounded-xl p-3 border border-gray-100">
-                            <Typography variant="caption" className="text-gray-500 font-medium block">
-                              Workflow Status
-                            </Typography>
-                            <Typography
-                              variant="bodySmall"
-                              className={`font-semibold mt-1 block ${activePipFlow?.approval_status === "Approved"
-                                ? "text-emerald-700"
-                                : activePipFlow?.approval_status === "Rejected"
-                                  ? "text-rose-700"
-                                  : "text-amber-700"
-                                }`}
-                            >
-                              {activePipFlow?.approval_status || activePipFlow?.overall_flow_status || activePipFlow?.workflow_status || "Pending"}
-                            </Typography>
-                          </div>
-                          <div className="bg-gray-50/80 rounded-xl p-3 border border-gray-100">
-                            <Typography variant="caption" className="text-gray-500 font-medium block">
-                              Flow Type
-                            </Typography>
-                            <Typography variant="bodySmall" className="font-semibold text-gray-800 mt-1 block">
-                              {activePipFlow?.flow_name || activePipFlow?.category || "PIP Flow"}
-                            </Typography>
-                          </div>
-                        </div>
-
-                        {/* Action buttons */}
-                        <div className="flex items-center gap-3 pt-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setShowTimelineDetails((prev) => !prev)}
-                            className="font-medium text-xs"
-                            icon={
-                              showTimelineDetails ? (
-                                <ChevronUp className="w-4 h-4" />
-                              ) : (
-                                <ChevronDown className="w-4 h-4" />
-                              )
-                            }
-                          >
-                            {showTimelineDetails ? "Hide Approval Stages" : "View Approval Stages"}
-                          </Button>
-                        </div>
-                      </div>
-                    )}
+              {/* PIP Cards Section */}
+              <div className="space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-1 border-b border-gray-100">
+                  <div>
+                    <Typography variant="subheading" className="text-gray-900 font-bold">
+                      Performance Improvement Plans {pipFlowRequests && pipFlowRequests.length > 0 ? `(${pipFlowRequests.length})` : ""}
+                    </Typography>
+                    <Typography variant="bodySmall" color="body2">
+                      View active and historical PIP cycles for this employee.
+                    </Typography>
                   </div>
-
-                  {/* Flow Approval Stages Timeline (Shown when flow is started & details toggled) */}
-                  {hasStartedFlow && showTimelineDetails && activePipFlow && (
-                    <Card className="p-6 bg-white border border-gray-200 rounded-2xl shadow-xs space-y-5 animate-in fade-in duration-200">
-                      <div className="flex items-center justify-between border-b border-gray-100 pb-3">
-                        <div className="space-y-0.5">
-                          <Typography variant="subheading" className="text-gray-900 font-bold">
-                            Flow Approval Stages Timeline
-                          </Typography>
-                          <Typography variant="bodySmall" color="body2">
-                            Track the step-by-step progress and decision history for this PIP flow.
-                          </Typography>
-                        </div>
-                        <Typography
-                          variant="caption"
-                          className={`inline-flex items-center gap-1.5 font-semibold px-2.5 py-1 rounded-xl border ${statusBadge.bg}`}
-                        >
-                          {statusBadge.icon}
-                          {statusBadge.label}
-                        </Typography>
-                      </div>
-
-                      {/* Approval Stages Timeline List */}
-                      <div className="flex flex-col pt-1">
-                        {(!activePipFlow.approval_stages ||
-                          activePipFlow.approval_stages.length === 0) ? (
-                          <div className="py-6 text-center text-gray-500 text-xs">
-                            No approval stages found for this request.
-                          </div>
-                        ) : (
-                          activePipFlow.approval_stages.map((stage, idx) => {
-                            const isActive =
-                              stage.status === "Pending" &&
-                              (idx === 0 ||
-                                activePipFlow.approval_stages[idx - 1].status ===
-                                "Approved");
-                            const isLastStage =
-                              idx === activePipFlow.approval_stages.length - 1;
-
-                            return (
-                              <CardStages
-                                key={stage?.stage_name ?? `stage-${idx}`}
-                                stage={stage}
-                                isActive={isActive}
-                                isLastStage={isLastStage}
-                              />
-                            );
-                          })
-                        )}
-                      </div>
-                    </Card>
+                  {pipFlowRequests && pipFlowRequests.length > 0 && (
+                    <Button
+                      variant="contain"
+                      size="sm"
+                      onClick={handleOpenInitiateModal}
+                      disabled={isTriggerLoading || isInitiatingFlow}
+                      className="shadow-xs font-semibold self-start sm:self-center"
+                      icon={<Plus className="w-4 h-4" />}
+                    >
+                      Initiate PIP
+                    </Button>
                   )}
                 </div>
-              )}
+
+                {isLoadingPipFlow ? (
+                  <PipCardSkeleton />
+                ) : isPipFlowError ? (
+                  <div className="bg-rose-50 border border-rose-200 rounded-2xl p-6 text-center space-y-3">
+                    <AlertCircle className="w-8 h-8 text-rose-500 mx-auto" />
+                    <Typography variant="bodyMedium" className="text-rose-800 font-semibold">
+                      Failed to load PIP details
+                    </Typography>
+                    <Typography variant="bodySmall" className="text-rose-600">
+                      {errorResponseFormater(pipFlowError, "Could not fetch PIP status for this employee.")}
+                    </Typography>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => refetchPipFlow()}
+                    >
+                      Try Again
+                    </Button>
+                  </div>
+                ) : !pipFlowRequests || pipFlowRequests.length === 0 ? (
+                  <div className="bg-gradient-to-b from-primary-50/30 to-white rounded-2xl border border-primary-100/80 p-8 flex flex-col items-center justify-center text-center gap-4 max-w-lg mx-auto shadow-2xs">
+                    <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary-50 to-primary-100 border border-primary-200 text-primary font-bold text-xl flex items-center justify-center shadow-2xs ring-4 ring-primary-50/60">
+                      1
+                    </div>
+                    <div className="space-y-1">
+                      <Typography variant="subheading" className="text-gray-900 font-bold">
+                        No PIP Cycles Active
+                      </Typography>
+                      <Typography variant="bodySmall" className="text-gray-600 max-w-md">
+                        No Performance Improvement Plan is currently active for{" "}
+                        <strong className="text-gray-800">
+                          {selectedEmployee.employee_name || selectedEmployee.name}
+                        </strong>
+                        . You can initiate a new PIP cycle through the approval workflow.
+                      </Typography>
+                    </div>
+                    <Button
+                      variant="contain"
+                      size="md"
+                      onClick={handleOpenInitiateModal}
+                      disabled={isTriggerLoading || isInitiatingFlow}
+                      className="shadow-xs font-semibold mt-2"
+                      icon={<Plus className="w-4 h-4" />}
+                    >
+                      Initiate PIP 1 (Cycle 1)
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+                    {pipFlowRequests.map((flowItem, idx) => {
+                      const badge = getStatusBadge(
+                        flowItem.overall_flow_status || flowItem.approval_status
+                      );
+                      const title = getPipTitle(flowItem, idx);
+                      const cycleNumber = idx + 1;
+                      const workflowNumber = flowItem.name || flowItem.request_id || "—";
+                      const approvalStagesCount =
+                        flowItem.approval_stages?.length ||
+                        flowItem.workflow_stages?.length ||
+                        0;
+                      const approvalStatus =
+                        flowItem.approval_status ||
+                        flowItem.overall_flow_status ||
+                        flowItem.workflow_status ||
+                        "Pending";
+                      const creationDate = formatToIndianDate(
+                        flowItem.initiated_on ||
+                          flowItem.activity_timestamp ||
+                          ((flowItem as Record<string, unknown> | undefined)?.creation as string)
+                      ) || "—";
+
+                      return (
+                        <div
+                          key={flowItem.name || `pip-flow-${idx}`}
+                          className="bg-white rounded-2xl border border-gray-200/90 p-5 flex flex-col justify-between gap-4 transition-all duration-200 shadow-2xs hover:shadow-md hover:border-primary/50 group"
+                        >
+                          {/* Card Top / Header */}
+                          <div className="space-y-3 pb-3.5 border-b border-gray-100">
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="flex items-center gap-3">
+                                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-primary-600 text-white flex items-center justify-center font-bold text-sm shadow-xs shrink-0 ring-2 ring-primary-100">
+                                  {cycleNumber}
+                                </div>
+                                <div>
+                                  <Typography variant="subheading" className="text-gray-900 font-bold block leading-tight">
+                                    {title}
+                                  </Typography>
+                                  <div className="flex items-center gap-1.5 mt-1">
+                                    <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Workflow</span>
+                                    <span className="font-mono text-[11px] font-semibold text-primary-700 bg-primary-50/90 px-2 py-0.5 rounded-lg border border-primary-200/60">
+                                      #{workflowNumber}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                              <Typography
+                                variant="caption"
+                                className={`inline-flex items-center gap-1.5 font-semibold px-2.5 py-1 rounded-xl border shrink-0 text-[11px] shadow-2xs ${badge.bg}`}
+                              >
+                                {badge.icon}
+                                {badge.label}
+                              </Typography>
+                            </div>
+                          </div>
+
+                          {/* Card Info Details */}
+                          <div className="rounded-xl border border-gray-100 bg-gray-50/60 divide-y divide-gray-100/90 overflow-hidden text-xs">
+                            {/* Workflow No. */}
+                            <div className="px-3.5 py-2.5 flex items-center justify-between gap-2">
+                              <Typography variant="caption" className="text-gray-500 font-medium">
+                                Workflow No.
+                              </Typography>
+                              <Typography variant="caption" className="font-mono font-semibold text-gray-800">
+                                {workflowNumber}
+                              </Typography>
+                            </div>
+
+                            {/* Approval Status */}
+                            <div className="px-3.5 py-2.5 flex items-center justify-between gap-2">
+                              <Typography variant="caption" className="text-gray-500 font-medium">
+                                Approval Status
+                              </Typography>
+                              <div className="flex items-center gap-1.5">
+                                <Typography
+                                  variant="caption"
+                                  className={`font-semibold ${
+                                    approvalStatus.toLowerCase().includes("approved")
+                                      ? "text-emerald-700"
+                                      : approvalStatus.toLowerCase().includes("rejected")
+                                        ? "text-rose-700"
+                                        : "text-amber-700"
+                                  }`}
+                                >
+                                  {approvalStatus}
+                                </Typography>
+                                {approvalStagesCount > 0 && (
+                                  <span className="text-[10px] font-medium bg-white text-gray-600 border border-gray-200/80 px-1.5 py-0.5 rounded-md">
+                                    {approvalStagesCount} {approvalStagesCount === 1 ? "Stage" : "Stages"}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Creation Date */}
+                            <div className="px-3.5 py-2.5 flex items-center justify-between gap-2">
+                              <Typography variant="caption" className="text-gray-500 font-medium">
+                                Creation Date
+                              </Typography>
+                              <Typography variant="caption" className="font-semibold text-gray-800">
+                                {creationDate}
+                              </Typography>
+                            </div>
+
+                            {/* Flow Type */}
+                            <div className="px-3.5 py-2.5 flex items-center justify-between gap-2">
+                              <Typography variant="caption" className="text-gray-500 font-medium">
+                                Flow Type
+                              </Typography>
+                              <Typography variant="caption" className="font-semibold text-gray-800 truncate max-w-[140px]">
+                                {flowItem.flow_name || flowItem.category || "PIP Flow"}
+                              </Typography>
+                            </div>
+                          </div>
+
+                          {/* Card Footer / View Button */}
+                          <div className="pt-2 border-t border-gray-100">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleViewFlowRequest(flowItem)}
+                              className="w-full justify-center font-semibold text-xs shadow-2xs group-hover:border-primary group-hover:bg-primary group-hover:text-white transition-all duration-200"
+                              icon={<ExternalLink className="w-3.5 h-3.5" />}
+                            >
+                              View Workflow Request
+                            </Button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             </>
           )}
         </main>
