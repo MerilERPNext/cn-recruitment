@@ -620,6 +620,10 @@ const ConfigureJobBoards = lazyWithRetry(
   () => import("./components/Recruitment/ConfigureJobBoards"),
   "ConfigureJobBoards",
 );
+const IntegrationsApp = lazyWithRetry(
+  () => import("./components/Integrations/IntegrationsApp"),
+  "IntegrationsApp",
+);
 const RecognitionAdminDashboard = lazyWithRetry(
   () => import("./components/Recognition/Vibe/RecognitionAdminDashboard"),
   "RecognitionAdminDashboard",
@@ -1804,6 +1808,11 @@ export const routesConfig: AppRoute[] = [
     path: "/webapp/scheduled-imports",
     element: <ScheduledImportsPage />,
     permissionKey: "Scheduled Imports",
+  },
+  {
+    path: "/webapp/integrations",
+    element: <IntegrationsApp />,
+    permissionKey: "Integrations",
   },
   {
     path: "/webapp/recognition/vibe",
