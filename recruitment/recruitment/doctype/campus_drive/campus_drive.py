@@ -2677,7 +2677,7 @@ def _apply_gd_results(campus_drive, round_code, groups=None):
 	else.
 	"""
 	from recruitment.api.hiring_stage import (
-		_enter_stage, _find_stage, get_opening_stages, _append_history,
+		WORKFLOW_OVERRIDE_FIELD, _enter_stage, _find_stage, get_applicant_stages, _append_history,
 	)
 
 	# The GD round's own stage anchors the hand-off: pass => the stage after it.
@@ -2716,7 +2716,8 @@ def _apply_gd_results(campus_drive, round_code, groups=None):
 	passed = failed = skipped = pending = 0
 	# A GD verdict must not carry someone past an Additional Round that is still open.
 	held = pending_extra_rounds([r.job_applicant for r in rows])
-	stage_cache = {}  # opening -> stages; the pool shares only a handful of openings
+	# (opening, hiring workflow override) -> stages; the pool shares only a handful.
+	stage_cache = {}
 	for r in rows:
 		if not r.job_applicant or r.result not in ("Pass", "Fail"):
 			pending += 1
@@ -2732,10 +2733,10 @@ def _apply_gd_results(campus_drive, round_code, groups=None):
 				failed += 1
 				continue
 
-			opening = ja.get("job_title")
-			if opening not in stage_cache:
-				stage_cache[opening] = get_opening_stages(opening)
-			stages = stage_cache[opening]
+			key = (ja.get("job_title"), ja.get(WORKFLOW_OVERRIDE_FIELD))
+			if key not in stage_cache:
+				stage_cache[key] = get_applicant_stages(ja)
+			stages = stage_cache[key]
 			current = ja.get("custom_current_stage")
 			current_idx = _find_stage(stages, current) if current else -1
 
@@ -2814,7 +2815,9 @@ def reconcile_round(campus_drive, round_code):
 	candidates STILL sitting at this round's stage, so already-advanced ones are left
 	alone (never double-advanced).
 	"""
-	from recruitment.api.hiring_stage import get_opening_stages, _find_stage, _enter_stage
+	from recruitment.api.hiring_stage import (
+		WORKFLOW_OVERRIDE_FIELD, get_applicant_stages, _find_stage, _enter_stage,
+	)
 
 	_gd_guard(campus_drive)
 	row = _round_by_code(frappe.get_doc("Campus Drive", campus_drive), round_code)
@@ -2845,10 +2848,10 @@ def reconcile_round(campus_drive, round_code):
 			if (ja.custom_current_stage or "") != stage:
 				skipped += 1
 				continue
-			opening = ja.job_title
-			if opening not in stage_cache:
-				stage_cache[opening] = get_opening_stages(opening)
-			stages = stage_cache[opening]
+			key = (ja.job_title, ja.get(WORKFLOW_OVERRIDE_FIELD))
+			if key not in stage_cache:
+				stage_cache[key] = get_applicant_stages(ja)
+			stages = stage_cache[key]
 			idx = _find_stage(stages, stage)
 			if idx < 0 or idx + 1 >= len(stages):
 				skipped += 1
@@ -3671,7 +3674,9 @@ def _overtaken_by_stage(doc, round_code, job_applicants):
 	past means the round after this one is behind them as well, whether or not its
 	interview was ever recorded on the drive (HR can move a stage by hand).
 	"""
-	from recruitment.api.hiring_stage import _find_stage, get_opening_stages
+	from recruitment.api.hiring_stage import (
+		WORKFLOW_OVERRIDE_FIELD, _find_stage, get_applicant_stages,
+	)
 
 	stage = _round_stage(doc, round_code)
 	names = [n for n in set(job_applicants or []) if n]
@@ -3680,12 +3685,13 @@ def _overtaken_by_stage(doc, round_code, job_applicants):
 	out, stage_cache = {}, {}
 	for r in frappe.get_all(
 		"Job Applicant", filters={"name": ["in", names]},
-		fields=["name", "job_title", "custom_current_stage as stage"],
+		fields=["name", "job_title", "custom_current_stage as stage", WORKFLOW_OVERRIDE_FIELD],
 		limit_page_length=0,
 	):
-		if r.job_title not in stage_cache:
-			stage_cache[r.job_title] = get_opening_stages(r.job_title)
-		stages = stage_cache[r.job_title]
+		key = (r.job_title, r.get(WORKFLOW_OVERRIDE_FIELD))
+		if key not in stage_cache:
+			stage_cache[key] = get_applicant_stages(r)
+		stages = stage_cache[key]
 		here = _find_stage(stages, stage)
 		now = _find_stage(stages, r.stage or "")
 		if here >= 0 and now > here + 1:
@@ -4038,7 +4044,7 @@ def advance_after_extra_round(doc, method=None):
 	of the two acts first, the other is a no-op.
 	"""
 	from recruitment.api.hiring_stage import (
-		_append_history, _enter_stage, _find_stage, get_opening_stages,
+		_append_history, _enter_stage, _find_stage, get_applicant_stages,
 	)
 
 	try:
@@ -4062,7 +4068,7 @@ def advance_after_extra_round(doc, method=None):
 		stage = frappe.db.get_value("Campus Drive Round",
 		                            {"parent": iv.drive, "parenttype": "Campus Drive",
 		                             "round_code": iv.code}, "hiring_stage") if iv.code else None
-		stages = get_opening_stages(ja.get("job_title"))
+		stages = get_applicant_stages(ja)
 		anchor = _find_stage(stages, stage) if stage else -1
 		current = _find_stage(stages, ja.get("custom_current_stage") or "")
 		if anchor < 0:

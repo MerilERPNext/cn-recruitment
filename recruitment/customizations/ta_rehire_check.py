@@ -296,6 +296,39 @@ def find_matches(applicant, settings=None):
 	return {**empty, "matches": matches}
 
 
+def controlled_pool_matches(applicant, settings):
+	"""Matches whose configured outcome is Block Job Offer or Exceptional Approval.
+
+	These are the matches the settings act on — refused, routed to an approval, or
+	(under Allow Hiring) let through with the candidate flagged. The employee an IJP
+	application was raised from is left out: the flow linked them on purpose. When
+	no outcome is configured to act on, the Employee read is skipped entirely.
+	"""
+	configured = [
+		_setting(settings, f, ALLOW)
+		for f in ("active_employee_non_ijp_action", "do_not_rehire_action")
+	]
+	if not cint(_setting(settings, "days_before_reapplication_post_exit")) and all(
+		a in (ALLOW, None, "") for a in configured
+	):
+		return []
+
+	return [
+		m for m in find_matches(applicant, settings=settings)["matches"]
+		if not m.get("is_linked") and m.get("action") in (BLOCK, EXCEPTIONAL)
+	]
+
+
+def match_reason(match):
+	"""One line naming the employee a candidate matched and why it matters."""
+	return _("{0} ({1} — {2}): {3}").format(
+		match.get("verdict_label"),
+		match.get("name"),
+		match.get("employee_name") or "",
+		match.get("verdict_detail") or "",
+	)
+
+
 def _matched_on(applicant, row, match_fields):
 	"""Which keys actually tied this candidate to this employee — HR's first
 	question is always "how do you know it's the same person?"."""

@@ -11,6 +11,9 @@ at runtime rather than fail loudly:
     company to exactly one setting, so an overlap makes which rules apply depend
     on row order;
   * only one record may claim "All Group Companies", for the same reason.
+
+The Allow Hiring workflows are checked too, but only warned about, so a setting
+can be saved while its approval flow is still being built.
 """
 
 import frappe
@@ -20,6 +23,31 @@ from frappe.model.document import Document
 
 ALL_COMPANIES = "All Group Companies"
 SPECIFIC_COMPANIES = "Specific Companies"
+
+JOB_OFFER = "Job Offer"
+# The Job Offer field an Allow Hiring approval flow triggers on; it is stamped
+# with flow_trigger_value(). See ta_duplicity_job_offer.
+APPROVAL_TRIGGER_FIELD = "custom_duplicity_approval_trigger"
+
+
+def flow_trigger_value(flow):
+	"""The value a Job Offer's approval trigger carries for *flow*: the name of the
+	flow's FIRST version.
+
+	A new Flow Config version is a new record ("Title (v2)") whose ``original_flow``
+	points at the version it was copied from, and the copy keeps the trigger value.
+	The first version's name is therefore the one value every version still matches
+	— and settings records that share a flow share its trigger, while different
+	flows never collide.
+	"""
+	seen = set()
+	while flow and flow not in seen:
+		seen.add(flow)
+		parent = frappe.db.get_value("Flow Config", flow, "original_flow")
+		if not parent:
+			return flow
+		flow = parent
+	return flow
 
 
 class TADuplicityCheckSettings(Document):
@@ -31,6 +59,7 @@ class TADuplicityCheckSettings(Document):
 		self.validate_scope()
 		self.validate_no_overlap()
 		self.validate_override_roles()
+		self.validate_allow_hiring()
 
 	# ------------------------------------------------------------------
 	# Scope
@@ -108,3 +137,60 @@ class TADuplicityCheckSettings(Document):
 				indicator="orange",
 				alert=True,
 			)
+
+	# ------------------------------------------------------------------
+	# Allow Hiring on Duplicity Match
+	# ------------------------------------------------------------------
+
+	def validate_allow_hiring(self):
+		if not self.allow_hiring_on_duplicity_match:
+			return
+
+		if not frappe.db.get_single_value("Recruitment Settings", "enable_hiring_workflow"):
+			frappe.msgprint(
+				_("Hiring Workflow is switched off in Recruitment Settings, so flagged candidates "
+				  "will follow no hiring stages until it is enabled."),
+				indicator="orange",
+				alert=True,
+			)
+
+		problems = self._approval_flow_problems()
+		if problems:
+			frappe.msgprint(
+				_("{0} will not start for flagged Job Offers until it is set up as follows:<br>{1}").format(
+					frappe.bold(self.exceptional_approval_workflow), "<br>".join(problems)
+				),
+				title=_("Exceptional Approval Workflow Not Wired"),
+				indicator="orange",
+			)
+
+	def _approval_flow_problems(self):
+		"""What the linked Flow Config still needs to fire on this record's offers."""
+		if not self.exceptional_approval_workflow:
+			return []
+
+		flow = frappe.db.get_value(
+			"Flow Config",
+			self.exceptional_approval_workflow,
+			["module_transaction", "trigger_type", "doc_event_type", "doc_event_field",
+			 "doc_event_field_value", "is_archived"],
+			as_dict=True,
+		)
+		if not flow:
+			return []
+
+		expected = (
+			("module_transaction", _("Module Transaction"), JOB_OFFER),
+			("trigger_type", _("Trigger Type"), "Document Event"),
+			("doc_event_type", _("Doc Event Type"), "on_update"),
+			("doc_event_field", _("Doc Event Field"), APPROVAL_TRIGGER_FIELD),
+			("doc_event_field_value", _("Value"), flow_trigger_value(self.exceptional_approval_workflow)),
+		)
+		problems = [
+			_("{0} = {1}").format(label, frappe.bold(value))
+			for field, label, value in expected
+			if (flow.get(field) or "").strip() != value
+		]
+		if flow.is_archived:
+			problems.append(_("pick the current version — this one is archived"))
+		return problems
