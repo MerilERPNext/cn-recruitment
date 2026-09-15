@@ -1,0 +1,94 @@
+{
+ "actions": [],
+ "creation": "2026-09-12 10:00:00",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "min_query_length",
+  "column_break_options",
+  "result_limit",
+  "section_break_fields",
+  "fields_help",
+  "select_fields_btn",
+  "load_defaults_btn",
+  "search_fields"
+ ],
+ "fields": [
+  {
+   "default": "2",
+   "description": "Shorter queries return no results",
+   "fieldname": "min_query_length",
+   "fieldtype": "Int",
+   "label": "Minimum Query Length"
+  },
+  {
+   "fieldname": "column_break_options",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "description": "Maximum employees returned per search. 0 = no limit.",
+   "fieldname": "result_limit",
+   "fieldtype": "Int",
+   "label": "Result Limit"
+  },
+  {
+   "fieldname": "section_break_fields",
+   "fieldtype": "Section Break",
+   "label": "Search Fields"
+  },
+  {
+   "fieldname": "fields_help",
+   "fieldtype": "HTML",
+   "options": "<p class=\"text-muted small\">Fields the employee search bar matches the typed query against. Pick any Employee field; for a Link field you can also pick a field on the linked DocType (for example <code>department</code> &rarr; <code>department_name</code>), which is then searched and shown instead of the ID. Leave the table empty to use the built-in defaults.</p>"
+  },
+  {
+   "fieldname": "select_fields_btn",
+   "fieldtype": "Button",
+   "label": "Add / Edit Fields"
+  },
+  {
+   "fieldname": "load_defaults_btn",
+   "fieldtype": "Button",
+   "label": "Load Default Fields"
+  },
+  {
+   "fieldname": "search_fields",
+   "fieldtype": "Table",
+   "label": "Search Fields",
+   "options": "Employee Search Field"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "issingle": 1,
+ "links": [],
+ "modified": "2026-09-12 10:00:00",
+ "modified_by": "Administrator",
+ "module": "Recruitment",
+ "name": "Employee Search Settings",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "print": 1,
+   "read": 1,
+   "role": "HR Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

@@ -4,9 +4,13 @@
  * Universal Cmd+K-style command & navigation search bar for top nav.
  * Fully supports route pages, modal actions, and dynamic employee search
  * with full keyboard navigation across all items.
+ *
+ * A query that names both an employee and a page ("john doe leave balance")
+ * is also read as one instruction: open that page with that employee as the
+ * target user, the same impersonation the profile search already uses.
  */
 
-import { ArrowRight, LayoutGrid, Search, Users, X, Zap } from "lucide-react";
+import { ArrowRight, LayoutGrid, Search, UserCheck, Users, X, Zap } from "lucide-react";
 import React, {
   useCallback,
   useEffect,
@@ -44,9 +48,27 @@ interface StaticSearchItem {
   searchTerms: string;
 }
 
+/** "john doe leave balance" -> open Leave Balance with John Doe as target user. */
+interface EmployeePageCombo {
+  employee: Employee;
+  page: StaticSearchItem;
+}
+
 type FlatKeyboardItem =
+  | { type: "combo"; combo: EmployeePageCombo }
   | { type: "static"; item: StaticSearchItem }
   | { type: "employee"; employee: Employee };
+
+// A name fragment shorter than this isn't worth a lookup - the search API
+// ignores it anyway.
+const MIN_COMBO_NAME_LENGTH = 2;
+// Every employee the name half matches is listed - picking the right person is
+// the whole point of the section, and a truncated list hides the one someone is
+// looking for. The dropdown scrolls; how many the API returns at all is the
+// Result Limit in Employee Search Settings (0 = no limit).
+// Only the pages are capped, and by match quality rather than volume: the two
+// closest page names, listed one full block each.
+const MAX_COMBO_PAGES = 2;
 
 // ─── Pure helpers ────────────────────────────────────────────────────────────
 
@@ -165,6 +187,65 @@ function filterItems(
   return dedupeByDestination([...exact, ...partial]);
 }
 
+/**
+ * Read a query as "<employee> <page>" and hand back both halves.
+ *
+ * Every split point is tried in both orders, because people type "john leave balance"
+ * as readily as "leave balance john". A split only counts when the page half matches a
+ * real destination, so plain name searches ("john doe") are left alone. The winner is
+ * the split with the most page tokens matched - the more of the query a page name
+ * accounts for, the more certain that half is - and the name half goes to the employee
+ * search API.
+ *
+ * Only `page` destinations qualify. Actions are deliberately excluded: "add expense for
+ * John" should stay a deliberate act, not a search result one keystroke from Enter.
+ */
+function findComboSplit(
+  query: string,
+  items: StaticSearchItem[],
+): { employeeQuery: string; pages: StaticSearchItem[] } | null {
+  const tokens = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
+  if (tokens.length < 2) return null;
+
+  // A query the catalogue already explains on its own is a page search, not a
+  // combo - "leave balance" must not be read as an employee called "leave".
+  if (filterItems(query, items).length > 0) return null;
+
+  const pageCandidates = items.filter((i) => i.category === "page" && i.url);
+  if (pageCandidates.length === 0) return null;
+
+  let best: {
+    split: { employeeQuery: string; pages: StaticSearchItem[] };
+    score: number;
+  } | null = null;
+
+  for (let i = 1; i < tokens.length; i++) {
+    const orientations: [string[], string[]][] = [
+      [tokens.slice(0, i), tokens.slice(i)], // name first
+      [tokens.slice(i), tokens.slice(0, i)], // page first
+    ];
+
+    for (const [nameTokens, pageTokens] of orientations) {
+      const employeeQuery = nameTokens.join(" ");
+      if (employeeQuery.length < MIN_COMBO_NAME_LENGTH) continue;
+
+      const pages = filterItems(pageTokens.join(" "), pageCandidates);
+      if (pages.length === 0) continue;
+
+      // A longer page half is a more specific page match; ties go to the longer name.
+      const score = pageTokens.length * 10 + nameTokens.length;
+      if (!best || score > best.score) {
+        best = {
+          split: { employeeQuery, pages: pages.slice(0, MAX_COMBO_PAGES) },
+          score,
+        };
+      }
+    }
+  }
+
+  return best?.split ?? null;
+}
+
 // ─── Skeleton ────────────────────────────────────────────────────────────────
 
 const Skeleton = () => (
@@ -231,6 +312,40 @@ const ResultRow: React.FC<{
   );
 };
 
+// ─── Employee + page row ─────────────────────────────────────────────────────
+
+const ComboRow: React.FC<{
+  combo: EmployeePageCombo;
+  active: boolean;
+  onSelect: () => void;
+}> = ({ combo, active, onSelect }) => (
+  <button
+    className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${
+      active
+        ? "bg-primary-50 text-primary-700 font-medium"
+        : "hover:bg-gray-50 text-gray-800"
+    }`}
+    onMouseDown={(e) => {
+      e.preventDefault();
+      onSelect();
+    }}
+  >
+    <span className="shrink-0 h-7 w-7 flex items-center justify-center rounded-lg bg-violet-100 text-violet-600">
+      <UserCheck className="h-3.5 w-3.5" />
+    </span>
+    <span className="flex-1 min-w-0">
+      <span className="block text-sm font-medium leading-tight truncate">
+        {combo.page.label}
+      </span>
+      <span className="block text-xs text-gray-500 truncate mt-0.5">
+        {combo.employee.employee_name}
+        {combo.employee.employee_id ? ` · ${combo.employee.employee_id}` : ""}
+      </span>
+    </span>
+    <ArrowRight className="shrink-0 text-gray-400 w-3.5 h-3.5" aria-hidden />
+  </button>
+);
+
 // ─── Section header ──────────────────────────────────────────────────────────
 
 const SectionHeader: React.FC<{
@@ -285,10 +400,41 @@ const CommandSearchBar: React.FC = () => {
   const actionItems = filteredStatic.filter((i) => i.category !== "page");
   const hasQuery = debouncedQuery.trim().length > 0;
 
+  // ── Employee + page ("john doe leave balance") ───────────────────────────
+  const comboSplit = useMemo(
+    () => findComboSplit(debouncedQuery, staticItems),
+    [debouncedQuery, staticItems],
+  );
+
+  // Second lookup, on the name half only - the full query never matches an
+  // employee once a page name is mixed into it.
+  const { data: comboEmployees, isLoading: comboLoading } = useSearchEmployees(
+    comboSplit ? comboSplit.employeeQuery.split(" ").join(",") : undefined,
+  );
+
+  const comboItems: EmployeePageCombo[] = useMemo(() => {
+    if (!comboSplit || !comboEmployees?.length) return [];
+
+    const rows: EmployeePageCombo[] = [];
+
+    // Page-major: everyone who matches the name is listed together under a page,
+    // which is the choice actually being made here.
+    for (const page of comboSplit.pages) {
+      for (const employee of comboEmployees) {
+        rows.push({ employee, page });
+      }
+    }
+
+    return rows;
+  }, [comboSplit, comboEmployees]);
+
   // ── All items flattened for unified keyboard navigation ─────────────────
   const allFlatItems: FlatKeyboardItem[] = useMemo(() => {
     if (hasQuery) {
       const items: FlatKeyboardItem[] = [
+        // Combos lead: naming both an employee and a page is the most specific
+        // thing the query can mean.
+        ...comboItems.map((combo) => ({ type: "combo" as const, combo })),
         ...pageItems.map((item) => ({ type: "static" as const, item })),
         ...actionItems.map((item) => ({ type: "static" as const, item })),
       ];
@@ -307,7 +453,7 @@ const CommandSearchBar: React.FC = () => {
         employee,
       }));
     }
-  }, [hasQuery, pageItems, actionItems, employees, recentSearches]);
+  }, [hasQuery, comboItems, pageItems, actionItems, employees, recentSearches]);
 
   const totalKeyboardItems = allFlatItems.length;
 
@@ -379,36 +525,55 @@ const CommandSearchBar: React.FC = () => {
     [navigate, openGlobalModal],
   );
 
-  const handleSelectEmployee = useCallback(
-    (emp: Employee) => {
-      let searches: Employee[] = [];
-      try {
-        searches = JSON.parse(sessionStorage.getItem("recentSearches") || "[]");
-      } catch {
-        /* ignore */
-      }
-      searches = searches.filter(
-        (d) =>
-          d.employee_name?.toLowerCase() !== emp.employee_name?.toLowerCase(),
-      );
-      searches.unshift(emp);
-      const trimmed = searches.slice(0, 7);
-      sessionStorage.setItem("recentSearches", JSON.stringify(trimmed));
-      setRecentSearches(trimmed);
+  const rememberEmployee = useCallback((emp: Employee) => {
+    let searches: Employee[] = [];
+    try {
+      searches = JSON.parse(sessionStorage.getItem("recentSearches") || "[]");
+    } catch {
+      /* ignore */
+    }
+    searches = searches.filter(
+      (d) => d.employee_name?.toLowerCase() !== emp.employee_name?.toLowerCase(),
+    );
+    searches.unshift(emp);
+    const trimmed = searches.slice(0, 7);
+    sessionStorage.setItem("recentSearches", JSON.stringify(trimmed));
+    setRecentSearches(trimmed);
+  }, []);
 
+  // Open a page with someone else as the target user. Picking yourself is just
+  // navigation - impersonating yourself makes the context bar lie.
+  const openPageForEmployee = useCallback(
+    (emp: Employee, url: string) => {
       if (currentEmployee?.name === emp.employee_id) {
-        navigate("/webapp/employee-profile");
-      } else {
-        setTargetEmployee(
-          emp.employee_id ?? emp.employee ?? null,
-          "/webapp/employee-profile",
-          isDesktop,
-        );
+        navigate(url);
+        return;
       }
+      setTargetEmployee(emp.employee_id ?? emp.employee ?? null, url, isDesktop);
+    },
+    [currentEmployee, navigate, setTargetEmployee, isDesktop],
+  );
+
+  const handleSelectCombo = useCallback(
+    (combo: EmployeePageCombo) => {
+      if (!combo.page.url) return;
+
+      rememberEmployee(combo.employee);
+      openPageForEmployee(combo.employee, combo.page.url);
       setIsOpen(false);
       setQuery("");
     },
-    [currentEmployee, navigate, setTargetEmployee, isDesktop],
+    [rememberEmployee, openPageForEmployee],
+  );
+
+  const handleSelectEmployee = useCallback(
+    (emp: Employee) => {
+      rememberEmployee(emp);
+      openPageForEmployee(emp, "/webapp/employee-profile");
+      setIsOpen(false);
+      setQuery("");
+    },
+    [rememberEmployee, openPageForEmployee],
   );
 
   const removeRecentSearch = useCallback((idx: number) => {
@@ -454,7 +619,9 @@ const CommandSearchBar: React.FC = () => {
       const current = allFlatItems[activeIndex];
       if (!current) return;
 
-      if (current.type === "static") {
+      if (current.type === "combo") {
+        handleSelectCombo(current.combo);
+      } else if (current.type === "static") {
         handleSelectStatic(current.item);
       } else if (current.type === "employee") {
         handleSelectEmployee(current.employee);
@@ -463,7 +630,10 @@ const CommandSearchBar: React.FC = () => {
   };
 
   // ── Calculate active index offsets for sections ───────────────────────────
-  const employeeStartIndex = pageItems.length + actionItems.length;
+  // Order must match allFlatItems: combos, pages, actions, employees.
+  const pageStartIndex = comboItems.length;
+  const actionStartIndex = pageStartIndex + pageItems.length;
+  const employeeStartIndex = actionStartIndex + actionItems.length;
   const activeEmployeeIdx =
     hasQuery && activeIndex >= employeeStartIndex
       ? activeIndex - employeeStartIndex
@@ -562,6 +732,32 @@ const CommandSearchBar: React.FC = () => {
             {/* ── Has query: show grouped results ───────────────────────── */}
             {hasQuery && (
               <>
+                {/* Employee + page Group */}
+                {comboSplit && (comboLoading || comboItems.length > 0) && (
+                  <div className="py-1">
+                    <SectionHeader
+                      icon={<UserCheck className="h-3 w-3" />}
+                      label="Open for employee"
+                    />
+                    {comboLoading ? (
+                      <div className="space-y-1">
+                        <Skeleton />
+                      </div>
+                    ) : (
+                      <div className="space-y-0.5">
+                        {comboItems.map((combo, idx) => (
+                          <ComboRow
+                            key={`${combo.employee.employee_id}::${combo.page.id}`}
+                            combo={combo}
+                            active={activeIndex === idx}
+                            onSelect={() => handleSelectCombo(combo)}
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 {/* Pages Group */}
                 {pageItems.length > 0 && (
                   <div className="py-1">
@@ -574,7 +770,7 @@ const CommandSearchBar: React.FC = () => {
                         <ResultRow
                           key={item.id}
                           item={item}
-                          active={activeIndex === idx}
+                          active={activeIndex === pageStartIndex + idx}
                           onSelect={() => handleSelectStatic(item)}
                         />
                       ))}
@@ -594,7 +790,7 @@ const CommandSearchBar: React.FC = () => {
                         <ResultRow
                           key={item.id}
                           item={item}
-                          active={activeIndex === pageItems.length + idx}
+                          active={activeIndex === actionStartIndex + idx}
                           onSelect={() => handleSelectStatic(item)}
                         />
                       ))}
@@ -628,6 +824,8 @@ const CommandSearchBar: React.FC = () => {
 
                 {/* Empty State */}
                 {!empLoading &&
+                  !comboLoading &&
+                  comboItems.length === 0 &&
                   pageItems.length === 0 &&
                   actionItems.length === 0 &&
                   (!employees || employees.length === 0) && (
