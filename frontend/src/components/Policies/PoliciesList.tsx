@@ -4,6 +4,8 @@ import { FaRegEye } from "react-icons/fa";
 import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import { useCurrentEmployeeDetails } from "../../hooks/useEmployee";
 import { useScreenSize } from "../../hooks/useScreenSize";
+import { useGetUiPermission } from "../../hooks/userUiPermission";
+import { isActionEnabled } from "../../utils/uiPermission";
 import HeaderBar from "../HeaderBar";
 import FrappeListView from "../ListView";
 import CustomDropdown from "../shared/CustomDropdown";
@@ -23,8 +25,12 @@ type PolicyState = {
 
 const PolicyItem: React.FC<{ item: PolicyDoc }> = ({ item }) => {
   const navigate = useNavigate();
+  const { data: userUiPermission } = useGetUiPermission("Policies");
+  const canView = isActionEnabled(userUiPermission, "view", "Policies");
+  const canDownload = isActionEnabled(userUiPermission, "download", "Policies");
 
-  const handleView = () =>
+  const handleView = () => {
+    if (!canView) return;
     navigate(
       `/webapp/policies-app/view-policy/${encodeURIComponent(item.name)}`,
       {
@@ -33,12 +39,13 @@ const PolicyItem: React.FC<{ item: PolicyDoc }> = ({ item }) => {
         },
       },
     );
+  };
 
   return (
     <Card
       padding="sm"
-      className="w-full flex justify-between items-center hover:shadow-md my-1"
-      onClick={handleView}
+      className={`w-full flex justify-between items-center hover:shadow-md my-1 ${canView ? "cursor-pointer" : ""}`}
+      onClick={canView ? handleView : undefined}
     >
       <div className="flex-1 min-w-0">
         <h2 className="text-base font-semibold text-gray-900 truncate">
@@ -47,30 +54,38 @@ const PolicyItem: React.FC<{ item: PolicyDoc }> = ({ item }) => {
         <p className="text-sm text-gray-500 truncate">{item.status ?? "—"}</p>
       </div>
       <div className="flex items-center gap-2 ml-3">
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            if (item.policy_document) {
-              const link = document.createElement("a");
-              link.href = `${window.location.origin}${item.policy_document}`;
-              link.download = item.policy || item.name;
-              document.body.appendChild(link);
-              link.click();
-              document.body.removeChild(link);
-            }
-          }}
-          className="flex items-center justify-center p-2 border border-gray-300 rounded-lg text-primary hover:bg-primary/10 transition-colors duration-200 disabled:opacity-50"
-          title="Download Policy Document"
-          disabled={!item.policy_document}
-        >
-          <Download className="w-4 h-4" />
-        </button>
-        <button
-          onClick={handleView}
-          className="flex items-center justify-center p-2 border border-gray-300 rounded-lg text-primary hover:bg-primary/10 transition-colors duration-200 disabled:opacity-50"
-        >
-          <FaRegEye className="w-4 h-4" />
-        </button>
+        {canDownload && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              if (item.policy_document) {
+                const link = document.createElement("a");
+                link.href = `${window.location.origin}${item.policy_document}`;
+                link.download = item.policy || item.name;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+              }
+            }}
+            className="flex items-center justify-center p-2 border border-gray-300 rounded-lg text-primary hover:bg-primary/10 transition-colors duration-200 disabled:opacity-50"
+            title="Download Policy Document"
+            disabled={!item.policy_document}
+          >
+            <Download className="w-4 h-4" />
+          </button>
+        )}
+        {canView && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              handleView();
+            }}
+            className="flex items-center justify-center p-2 border border-gray-300 rounded-lg text-primary hover:bg-primary/10 transition-colors duration-200 disabled:opacity-50"
+            title="View Policy"
+          >
+            <FaRegEye className="w-4 h-4" />
+          </button>
+        )}
       </div>
     </Card>
   );
