@@ -63,7 +63,7 @@ const getDisplayValues = (item: SalaryItem) => {
   return { fixedGrossMonthly, fixedGrossAnnual, monthlyCTC, annualCTC, ctcCategory };
 };
 
-const renderRemark = (remark: string | undefined) => {
+const renderRemark = (remark: string | null | undefined) => {
   if (!remark) return "—";
   
   if (remark.includes("↑") || remark.includes("↓")) {
@@ -91,7 +91,7 @@ const DesktopRow = ({ item, showAmount, onView, onVersions }: RowProps) => {
       style={{ gridTemplateColumns: columnWidths.join(" ") }}
     >
       <Typography variant="bodySmall" className="font-medium text-center">
-        {formatToIndianDate(item.from_date)}
+        {item.from_date ? formatToIndianDate(item.from_date) : "—"}
       </Typography>
 
       <div className="flex items-center justify-center">
@@ -150,7 +150,7 @@ const MobileRow = ({ item, showAmount, onView, onVersions }: RowProps) => {
           <div className="flex flex-col gap-1">
             <Typography variant="mobileCardLabel">Effective Date</Typography>
             <Typography variant="mobileCardValue">
-              {formatToIndianDate(item.from_date)}
+              {item.from_date ? formatToIndianDate(item.from_date) : "—"}
             </Typography>
           </div>
           <div className="flex flex-col gap-1 items-end">

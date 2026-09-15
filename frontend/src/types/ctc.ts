@@ -14,8 +14,8 @@ export interface AmountComponent {
 
 export interface VersionValueChanged {
   property: string;
-  old_value: any;
-  new_value: any;
+  old_value: unknown;
+  new_value: unknown;
   modified: string;
   modified_by: string;
 }
@@ -24,7 +24,7 @@ export interface VersionItem {
   salary_structure_assignment: string;
   version_name: string;
   values_changed: VersionValueChanged[];
-  row_values_changed?: any[];
+  row_values_changed?: unknown[];
 }
 
 export interface SalarySlip {
