@@ -41,6 +41,11 @@ from frappe import _
 ALUMNI_NAMESPACES = (
     "recruitment.recruitment.alumni_portal.",
     "recruitment.recruitment.alumni_helpdesk.",
+    # Separation/Confirmation history (read-only) + the self-contained staged
+    # Alumni Request engine. Deliberately NOT `alumni_request_admin` -- those
+    # are staff-only stage actions and must stay unreachable from an alumni
+    # session; see that module's docstring.
+    "recruitment.recruitment.alumni_separation.",
 )
 
 # Framework commands an alumni session may still hit (kept intentionally tiny).

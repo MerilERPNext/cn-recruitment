@@ -11,4 +11,5 @@ export type AppreciationHistoryItem = {
   date: string;
   imageUrl?: string;
   tab: AppreciationHistoryTab;
+  points: number;
 };

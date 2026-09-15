@@ -141,6 +141,7 @@ const MyAppreciationsHistory: React.FC = () => {
       imageUrl: it.logo || undefined,
       date: it.date,
       tab: it.direction,
+      points: it.points,
     }));
   }, [response]);
 

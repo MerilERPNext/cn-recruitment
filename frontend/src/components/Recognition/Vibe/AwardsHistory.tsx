@@ -283,19 +283,20 @@ const AwardsHistory: React.FC = () => {
                     Received Date <ArrowUp className="size-3.5" />
                   </span>
                 </th>
+                <th className="px-5 py-3 font-semibold">Points</th>
                 <th className="px-5 py-3 font-semibold">Actions</th>
               </tr>
             </thead>
             <tbody>
               {isLoading ? (
                 <tr>
-                  <td colSpan={5} className="px-5 py-12 text-center text-sm text-gray-400">
+                  <td colSpan={6} className="px-5 py-12 text-center text-sm text-gray-400">
                     Loading awards…
                   </td>
                 </tr>
               ) : isError ? (
                 <tr>
-                  <td colSpan={5} className="px-5 py-12 text-center text-sm text-red-500">
+                  <td colSpan={6} className="px-5 py-12 text-center text-sm text-red-500">
                     {(error as Error)?.message || "Failed to load awards."}
                     <button
                       onClick={() => refetch()}
@@ -307,7 +308,7 @@ const AwardsHistory: React.FC = () => {
                 </tr>
               ) : rows.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-5 py-8 text-center text-sm text-gray-400">
+                  <td colSpan={6} className="px-5 py-8 text-center text-sm text-gray-400">
                     No awards found.
                   </td>
                 </tr>
@@ -325,6 +326,9 @@ const AwardsHistory: React.FC = () => {
                     </td>
                     <td className="px-5 py-4 text-sm font-medium text-blue-600">{row.person}</td>
                     <td className="px-5 py-4 text-sm text-gray-700">{row.date}</td>
+                    <td className="px-5 py-4 text-sm font-semibold text-amber-600">
+                      {row.points ?? 0}
+                    </td>
                     <td className="px-5 py-4">
                       <RecognitionRowActions
                         layout="buttons"
