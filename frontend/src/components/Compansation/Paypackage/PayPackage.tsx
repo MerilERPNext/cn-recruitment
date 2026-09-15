@@ -18,8 +18,9 @@ import formatToIndianDate from "../../../utils/formatToIndianDate";
 import DataListView from "../../DataListView";
 import html2pdf from "html2pdf.js";
 import { Download } from "lucide-react";
+import type { SalaryStructureAssignmentItem } from "../../../types/ctc";
 
-type SalaryItem = any;
+type SalaryItem = SalaryStructureAssignmentItem;
 
 type PayrollPeriod = {
   name: string;
@@ -575,6 +576,40 @@ export default function SalaryAssignmentList() {
                         <td className="px-4 py-3 text-right">{renderAmount(item.annual_amount, showAmount)}</td>
                       </tr>
                     ))}
+
+                    {/* Variable Deduction */}
+                    {selected.variable_deduction?.map((item: any, idx: number) => (
+                      <tr key={`varded-${idx}`} className="hover:bg-gray-50">
+                        <td className="px-4 py-3">{item.component}</td>
+                        <td className="px-4 py-3 text-center">{renderAmount(item.amount, showAmount)}</td>
+                        <td className="px-4 py-3 text-right">{renderAmount(item.annual_amount, showAmount)}</td>
+                      </tr>
+                    ))}
+
+                    {/* Net Pay */}
+                    {Array.isArray(selected.net_pay)
+                      ? selected.net_pay.map((item: any, idx: number) => (
+                          <tr key={`netpay-${idx}`} className="bg-slate-50/70 font-semibold border-y border-gray-200">
+                            <td className="px-4 py-3">{item.component || "Net Pay"}</td>
+                            <td className="px-4 py-3 text-center">
+                              {renderAmount(item.monthly_amount ?? item.amount, showAmount)}
+                            </td>
+                            <td className="px-4 py-3 text-right">
+                              {renderAmount(item.annual_amount, showAmount)}
+                            </td>
+                          </tr>
+                        ))
+                      : selected.net_pay != null
+                      ? (
+                          <tr className="bg-slate-50/70 font-semibold border-y border-gray-200">
+                            <td className="px-4 py-3">Net Pay</td>
+                            <td className="px-4 py-3 text-center">—</td>
+                            <td className="px-4 py-3 text-right">
+                              {renderAmount(selected.net_pay, showAmount)}
+                            </td>
+                          </tr>
+                        )
+                      : null}
                   </tbody>
                 </table>
               </div>
