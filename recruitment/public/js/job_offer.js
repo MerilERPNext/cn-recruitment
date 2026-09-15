@@ -649,6 +649,47 @@ function recruitment_offer_letter_styles() {
         });
     }
 
+    // "Notify HR Ops" — hands a saved offer to the HR Ops role for verification.
+    // Shown only while Recruitment Settings -> Require HR Ops Verification Before
+    // Sending Offer is on, and only until the notification has gone out (the
+    // offer carries custom_hr_ops_notified from then on).
+    function notify_hr_ops_button(frm) {
+        frm.add_custom_button(__("Notify HR Ops"), () => {
+            frappe.confirm(
+                __("Notify HR Ops to verify and release this offer for {0}?", [
+                    frappe.utils.escape_html(frm.doc.applicant_name || frm.doc.job_applicant || frm.doc.name),
+                ]),
+                () => {
+                    frappe.call({
+                        method: "recruitment.api.hr_ops_notify.notify_hr_ops",
+                        args: { job_offers: JSON.stringify([frm.doc.name]) },
+                        freeze: true,
+                        freeze_message: __("Notifying HR Ops…"),
+                        callback: (r) => {
+                            const m = (r && r.message) || {};
+                            if (m.notified) {
+                                frappe.show_alert({
+                                    message: __("HR Ops notified."), indicator: "green",
+                                });
+                            } else if (m.already_notified) {
+                                frappe.msgprint({
+                                    title: __("Not sent"), indicator: "orange",
+                                    message: __("HR Ops has already been notified for this offer."),
+                                });
+                            } else {
+                                frappe.msgprint({
+                                    title: __("Not sent"), indicator: "red",
+                                    message: __("Could not notify HR Ops. Check the Error Log for the reason."),
+                                });
+                            }
+                            frm.reload_doc();
+                        },
+                    });
+                }
+            );
+        });
+    }
+
     frappe.ui.form.on("Job Offer", {
         job_applicant(frm) {
             fillFromRequisition(frm);
@@ -690,16 +731,36 @@ function recruitment_offer_letter_styles() {
             // Gated on its own toggle, following enable_offer_letter_button and
             // friends — NOT on allow_bulk_job_offer_email. Turning off mass emailing
             // should not also remove a recruiter's ability to send one offer.
-            if (frm.doc.docstatus !== 1) return;
+            //
+            // "Notify HR Ops" sits in front of it, but only on a site that has
+            // Recruitment Settings -> Require HR Ops Verification Before Sending
+            // Offer ticked. With the setting off (the default) neither the button
+            // nor the gate below exists and this reads exactly as it did before.
+            if (frm.is_new()) return;
 
             Promise.all([
                 frappe.db.get_single_value("Recruitment Settings", "enable_send_job_offer_button"),
                 frappe.db.get_single_value("Recruitment Settings", "disable_send_offer_after_sent"),
+                frappe.db.get_single_value("Recruitment Settings", "enable_hr_ops_offer_verification"),
             ])
-                .then(([enabled, hide_once_sent]) => {
+                .then(([enabled, hide_once_sent, hr_ops_gate]) => {
+                    const hr_ops_notified = !!frm.doc.custom_hr_ops_notified;
+
+                    // The handover: the recruiter raises and saves the offer, HR Ops
+                    // verifies and releases it. Available on a draft too — HR Ops is
+                    // the one who submits.
+                    if (hr_ops_gate && !hr_ops_notified && frm.doc.docstatus !== 2) {
+                        notify_hr_ops_button(frm);
+                    }
+
+                    if (frm.doc.docstatus !== 1) return;
                     if (!enabled) return;
                     // Recruitment Settings -> Hide Send Job Offer Once Sent.
                     if (hide_once_sent && frm.doc.email_status === "Sent") return;
+                    // Nothing goes to the candidate before HR Ops has seen it. The
+                    // server refuses the send as well (bulk_job_offer), so this is
+                    // the courtesy half of the gate, not the whole of it.
+                    if (hr_ops_gate && !hr_ops_notified) return;
                     frm.add_custom_button(__("Send Job Offer"), () => {
                         frappe.confirm(
                             __("Send the offer email to {0}?", [
@@ -721,6 +782,11 @@ function recruitment_offer_letter_styles() {
                                             frappe.msgprint({
                                                 title: __("Not sent"), indicator: "orange",
                                                 message: __("This offer has already been sent. Use 'Retrigger Welcome Email' to re-send it."),
+                                            });
+                                        } else if (m.pending_hr_ops) {
+                                            frappe.msgprint({
+                                                title: __("Not sent"), indicator: "orange",
+                                                message: __("HR Ops has not been notified for this offer yet. Click 'Notify HR Ops' first."),
                                             });
                                         } else if (m.skipped) {
                                             // Skipped means the candidate has already

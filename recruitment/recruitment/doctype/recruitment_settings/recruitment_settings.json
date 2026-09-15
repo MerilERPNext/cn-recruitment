@@ -22,6 +22,7 @@
   "offer_action_item_trigger",
   "disable_send_offer_after_sent",
   "withdraw_offer_only_after_sent",
+  "enable_hr_ops_offer_verification",
   "section_break_xbvj",
   "job_offer_print_format",
   "job_offer_print_format_mapping",
@@ -195,6 +196,13 @@
    "fieldname": "withdraw_offer_only_after_sent",
    "fieldtype": "Check",
    "label": "Allow Withdraw Offer Only After It Is Sent"
+  },
+  {
+   "default": "0",
+   "description": "Adds a 'Notify HR Ops' button on the Job Offer (form and list). 'Send Job Offer' stays hidden until HR Ops has been notified, so the recruiter hands the offer over for verification and HR Ops releases it to the candidate. Off = current flow, no extra step.",
+   "fieldname": "enable_hr_ops_offer_verification",
+   "fieldtype": "Check",
+   "label": "Require HR Ops Verification Before Sending Offer"
   },
   {
    "fieldname": "section_break_xbvj",

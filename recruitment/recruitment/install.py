@@ -56,6 +56,7 @@ def after_migrate():
     ensure_notice_portal_fields()
     ensure_education_presentation()
     ensure_tpo_email_templates()
+    ensure_hr_ops_email_template()
     ensure_hired_status()
 
 
@@ -146,6 +147,20 @@ def ensure_tpo_email_templates():
         ensure_default_email_templates()
     except Exception:
         frappe.log_error(frappe.get_traceback(), "TPO email templates: setup failed")
+
+
+def ensure_hr_ops_email_template():
+    """Ship the "HR Ops Offer Verification" Email Template.
+
+    Created once so 'Notify HR Ops' works the moment the setting is ticked; never
+    rewritten afterwards. See recruitment.recruitment.hr_ops_offer_review.
+    """
+    from recruitment.recruitment.hr_ops_offer_review import ensure_default_email_template
+
+    try:
+        ensure_default_email_template()
+    except Exception:
+        frappe.log_error(frappe.get_traceback(), "HR Ops email template: setup failed")
 
 
 def ensure_education_presentation():
