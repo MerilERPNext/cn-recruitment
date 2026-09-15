@@ -387,25 +387,34 @@ def _apply_default_onboarding_template(doc):
     ``get_onboarding_details``, the same helper that form handler calls, so both
     routes produce identical activities.
 
-    Only ever fills a blank: an onboarding that already names a template, or that
-    already carries activities, is left exactly as it is.
+    The ACTIVITIES are what this is for, so a named template is not a reason to
+    skip: an onboarding that already carries a template but an empty table is
+    exactly the broken state this fixes (a template with no tasks behind it), and
+    it is filled from that template rather than from the default. Only a table
+    that already has rows is left alone — those rows are HR's.
 
     Never raises. A missing or misconfigured template must not stop a candidate's
     onboarding from being created — the field stays empty and HR picks one, which
     is the behaviour this feature replaces.
     """
     try:
-        if doc.get("employee_onboarding_template") or doc.get("activities"):
+        if doc.get("activities"):
             return
 
-        template = _default_onboarding_template()
+        # Whatever the doc already names wins: this fills its missing tasks, it
+        # does not re-point the onboarding at the default template.
+        template = doc.get("employee_onboarding_template") or _default_onboarding_template()
         if not template:
             return
 
         from hrms.controllers.employee_boarding_controller import get_onboarding_details
 
+        # Read BEFORE the link is written, so a failed read cannot leave the
+        # onboarding naming a template with nothing under it.
+        activities = get_onboarding_details(template, ONBOARDING_TEMPLATE) or []
+
         doc.employee_onboarding_template = template
-        for activity in get_onboarding_details(template, ONBOARDING_TEMPLATE) or []:
+        for activity in activities:
             doc.append("activities", activity)
     except Exception:
         frappe.log_error(

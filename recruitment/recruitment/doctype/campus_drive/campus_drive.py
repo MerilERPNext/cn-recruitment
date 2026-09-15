@@ -25,6 +25,7 @@ from recruitment.recruitment.campus_workflow import (
 	apply_to_drive as apply_workflow_to_drive,
 	apply_to_openings as apply_workflow_to_openings,
 )
+from recruitment.recruitment.campus_panel_mailers import notify_panel
 from recruitment.recruitment.doctype.campus_invite.campus_invite import get_invite_institutes
 from recruitment.recruitment.tpo_access import PRIMARY_TPO_ROLE
 
@@ -2320,10 +2321,16 @@ def schedule_round_interviews(campus_drive, round_code, scheduled_on=None,
 			skipped.append({"applicant": cand.name, "reason": f"{type(e).__name__}: {e}"})
 
 	frappe.db.commit()
+
+	# One mail per panelist listing everybody they were just dealt — not one per
+	# interview. After the commit and never raising, so a mail problem cannot undo
+	# interviews that are already scheduled. No-op unless Campus Settings says so.
+	notified = notify_panel(created)
+
 	return {
 		"round_code": round_code, "stage": stage, "scheduled_on": date, "mode": mode,
 		"created": len(created), "skipped": skipped[:10], "skipped_count": len(skipped),
-		"panels": list(panels),
+		"panels": list(panels), "notified": notified,
 	}
 
 
@@ -2515,6 +2522,12 @@ def reassign_round_interview(campus_drive, interview, interviewer=None, mode=Non
 	# exactly the kind of thing someone asks about afterwards.
 	iv.add_comment("Info", _("Reassigned from the campus drive: {0}.").format("; ".join(changed)))
 	frappe.db.commit()
+
+	# Tells the panelist who now holds it. A mode-only change mails nobody: the
+	# existing row is already stamped as notified, and only the replacement row
+	# created above is un-stamped.
+	notify_panel([interview])
+
 	return {
 		"interview": interview, "changed": True, "detail": "; ".join(changed),
 		"interviewer": interviewer or (was_who[0] if was_who else None),
@@ -4026,6 +4039,11 @@ def add_candidate_interview(campus_drive, job_applicant, scheduled_on, round_cod
 	iv.insert(ignore_permissions=True)
 	_record_extra_interview_on_workflow(ja.name, stage_name, iv.name, round_code, reason)
 	frappe.db.commit()
+
+	# An additional round is an assignment like any other — the panel taking the
+	# second look is told the same way.
+	notify_panel([iv.name])
+
 	return {"interview": iv.name, "job_applicant": ja.name, "stage": stage_name,
 	        "interviewers": len(users)}
 

@@ -681,7 +681,20 @@ doc_events = {
         # they're created via the "Create Onboarding Tasks" button, which stamps
         # task metadata itself. This hook only keeps metadata fresh on post-submit
         # edits (e.g. DOJ / Postponed changes).
-        "on_update_after_submit": "recruitment.recruitment.onboarding_extras.populate_onboarding_task_meta",
+        "on_update_after_submit": [
+            "recruitment.recruitment.onboarding_extras.populate_onboarding_task_meta",
+            # The DOJ outcome is decided AFTER the onboarding is submitted — an
+            # Employee cannot be created from a draft (see overide_class), and the
+            # manager answers on their joining-day task, by which time the
+            # onboarding is long submitted. Registered on on_update alone, this
+            # handler could never run for that: a post-submit save fires
+            # on_update_after_submit and nothing else. Joined / Not Joined /
+            # Postponed were therefore all inert in practice.
+            "recruitment.recruitment.onboarding_extras.handle_doj_outcome",
+            # Same reason: the portal-field approvals that decide boarding_status
+            # continue after submit.
+            "recruitment.api.field_level_approval.refresh_boarding_status",
+        ],
         "on_update": [
             "recruitment.auto_fetch_fields.update_employee_fields",
             "recruitment.recruitment.onboarding_extras.handle_doj_outcome",
@@ -689,7 +702,18 @@ doc_events = {
             # approval has cleared every portal field. Activation stays a
             # deliberate act. No-op for a recruitment onboarding.
             "recruitment.api.new_hire.stage_from_onboarding",
+            # Keep boarding_status a function of the candidate portal field
+            # approvals, whatever route changed them. No-op when the onboarding
+            # has no portal fields. See field_level_approval.refresh_boarding_status.
+            "recruitment.api.field_level_approval.refresh_boarding_status",
         ],
+    },
+    "Project": {
+        # HRMS rewrites Employee Onboarding.boarding_status from task completion on
+        # every Project save. Only relevant while Onboarding Settings -> "Complete
+        # Onboarding on Form Approval" is on, where the candidate's form owns that
+        # status instead; this puts the form's answer back. No-op otherwise.
+        "on_update": "recruitment.api.field_level_approval.protect_boarding_status_from_task_sync",
     },
     "Employee Separation": {
         "before_insert": [

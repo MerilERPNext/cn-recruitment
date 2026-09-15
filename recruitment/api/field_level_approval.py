@@ -1,6 +1,7 @@
 import frappe
 import json
 from frappe import _
+from frappe.utils import cint
 from recruitment.api.action_center import sync_onboarding_field_rejection_action
 
 
@@ -221,12 +222,17 @@ def _compute_counts(approval_list):
 def _compute_field_status_counts(doc):
     """Per-doc field status counts derived from custom_candidate_portal_fields.
 
-    Hidden rows are excluded so they don't drag visible-field math off.
+    Only the rows the candidate can actually act on are counted — hidden AND
+    read-only rows are excluded. A read-only row is never filled in and so never
+    leaves "Pending"; counting it made `approved == total` unreachable, which is
+    what stopped an onboarding ever reading "Completed" however many times HR
+    approved it. This is the same set of rows the review status derives from.
+
     Returns: {total, pending, filled, approved, rejected}.
     """
     counts = {"total": 0, "pending": 0, "filled": 0, "approved": 0, "rejected": 0}
     for row in (doc.get("custom_candidate_portal_fields") or []):
-        if row.get("hidden"):
+        if row.get("hidden") or row.get("read_only"):
             continue
         counts["total"] += 1
         status = (row.get("approval_status") or "Pending").strip().lower()
@@ -277,6 +283,82 @@ def _sync_overall_status(doc):
         return new_status
     doc.db_set("boarding_status", new_status, update_modified=False)
     return new_status
+
+
+FORM_DRIVEN_SETTING = "complete_onboarding_on_form_approval"
+
+
+def form_approval_owns_status():
+    """Onboarding Settings -> Complete Onboarding on Form Approval.
+
+    OFF (the default, and every project that has not asked for it): the onboarding
+    TASKS decide `boarding_status`, exactly as HRMS has always done.
+
+    ON: the candidate's form decides it — Completed once every portal field is
+    Approved, In Process again if one is rejected — and task progress no longer
+    overwrites that.
+    """
+    try:
+        return bool(cint(frappe.db.get_single_value("Onboarding Settings", FORM_DRIVEN_SETTING)))
+    except Exception:
+        return False
+
+
+def protect_boarding_status_from_task_sync(project, method=None):
+    """`on_update` hook on Project — put the form's answer back.
+
+    HRMS recomputes `boarding_status` from task completion on every Project save
+    (`hrms...update_employee_boarding_status`, a Project `validate` hook). With
+    the setting above ON that is the wrong owner: it knows nothing about the
+    candidate's form, never writes "Submitted", and drags an approved onboarding
+    back to "In Process" the moment anybody touches a task.
+
+    This runs after that write (on_update follows validate) and restores the
+    value derived from the portal fields. With the setting OFF, or for an
+    onboarding with no portal fields, it does nothing at all.
+
+    Never raises — a Project save must not fail over a status.
+    """
+    try:
+        if not form_approval_owns_status():
+            return
+
+        name = frappe.db.exists("Employee Onboarding", {"project": project.name})
+        if not name:
+            return
+
+        doc = frappe.get_doc("Employee Onboarding", name)
+        if not doc.get("custom_candidate_portal_fields"):
+            return
+
+        _sync_overall_status(doc)
+    except Exception:
+        frappe.log_error(frappe.get_traceback(), "protect_boarding_status_from_task_sync failed")
+
+
+def refresh_boarding_status(doc, method=None):
+    """`on_update` hook on Employee Onboarding — keep `boarding_status` true.
+
+    This used to be recomputed only inside the candidate-submit and field-approval
+    endpoints, so any other route to the same rows — a Desk edit, a bulk action, a
+    script, HR's own Approve button — left the status showing whatever it happened
+    to say last. Onboardings sat at "Pending" with every field approved.
+
+    Recomputing here makes the status a function of the rows rather than of which
+    endpoint was used, so the reject -> refill -> re-approve cycle lands on the
+    right value every time.
+
+    No-op for an onboarding with no candidate portal fields, which is every
+    onboarding on a project that does not use the portal — those keep the stock
+    HRMS behaviour untouched. Never raises: a status is not worth failing a save
+    over.
+    """
+    try:
+        if not doc.get("custom_candidate_portal_fields"):
+            return
+        _sync_overall_status(doc)
+    except Exception:
+        frappe.log_error(frappe.get_traceback(), "refresh_boarding_status failed")
 
 
 def get_field_status_counts(onboarding_doc_or_name):

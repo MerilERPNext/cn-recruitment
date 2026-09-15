@@ -57,6 +57,7 @@ def after_migrate():
     ensure_education_presentation()
     ensure_tpo_email_templates()
     ensure_hr_ops_email_template()
+    ensure_campus_panel_email_template()
     ensure_hired_status()
 
 
@@ -161,6 +162,20 @@ def ensure_hr_ops_email_template():
         ensure_default_email_template()
     except Exception:
         frappe.log_error(frappe.get_traceback(), "HR Ops email template: setup failed")
+
+
+def ensure_campus_panel_email_template():
+    """Ship the "Campus Interview Panel Assignment" Email Template.
+
+    Created once so the panel mail works the moment Campus Settings turns it on;
+    never rewritten. See recruitment.recruitment.campus_panel_mailers.
+    """
+    from recruitment.recruitment.campus_panel_mailers import ensure_default_email_template
+
+    try:
+        ensure_default_email_template()
+    except Exception:
+        frappe.log_error(frappe.get_traceback(), "Campus panel email template: setup failed")
 
 
 def ensure_education_presentation():
