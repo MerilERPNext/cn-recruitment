@@ -112,26 +112,6 @@ const programFiltersFor = (
   }
 };
 
-const ValueChips: React.FC<{ values: string[]; fallback: string }> = ({
-  values,
-  fallback,
-}) => {
-  const chips = values.length > 0 ? values : fallback ? [fallback] : [];
-  if (chips.length === 0) return <span className="text-xs text-gray-400">—</span>;
-  return (
-    <div className="flex flex-wrap gap-1.5">
-      {chips.map((v, i) => (
-        <span
-          key={`${v}-${i}`}
-          className="rounded-md bg-blue-50 px-2.5 py-1 text-[11px] font-medium text-blue-600 whitespace-nowrap"
-        >
-          {v}
-        </span>
-      ))}
-    </div>
-  );
-};
-
 const RowLogo: React.FC<{ logo?: string; type: "Award" | "Appreciation" }> = ({
   logo,
   type,
@@ -401,10 +381,9 @@ const RecognitionHistory: React.FC = () => {
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[1000px] text-left">
                   <thead>
-                    <tr className="bg-blue-50/40 text-sm text-gray-600">
+                    <tr className="bg-gray-100 border border-gray-100 text-sm text-gray-600">
                       <th className="px-5 py-3 font-semibold">Type</th>
                       <th className="px-5 py-3 font-semibold">Program</th>
-                      <th className="px-5 py-3 font-semibold">Values</th>
                       <th className="px-5 py-3 font-semibold">{relationLabel}</th>
                       <th className="px-5 py-3 font-semibold">
                         <span className="flex items-center gap-1">
@@ -417,7 +396,7 @@ const RecognitionHistory: React.FC = () => {
                   </thead>
                   <tbody>
                     {isLoading || isError || rows.length === 0
-                      ? stateRow(7)
+                      ? stateRow(6)
                       : rows.map((row) => (
                           <tr
                             key={`${row.history_type}-${row.name}`}
@@ -433,9 +412,6 @@ const RecognitionHistory: React.FC = () => {
                                   {row.title}
                                 </span>
                               </div>
-                            </td>
-                            <td className="px-5 py-4">
-                              <ValueChips values={row.values ?? []} fallback={row.value} />
                             </td>
                             <td className="px-5 py-4 text-sm font-medium text-blue-600">
                               <WrapperHoverCard employeeId={row.person_id}>
@@ -513,14 +489,6 @@ const RecognitionHistory: React.FC = () => {
                       </div>
 
                       <div className="mt-4 flex items-start gap-3">
-                        <div className="min-w-0 flex-1 rounded-lg bg-gray-50 px-3 py-2">
-                          <Typography variant="mobileCardLabel" className="block">
-                            Values
-                          </Typography>
-                          <div className="mt-1">
-                            <ValueChips values={row.values ?? []} fallback={row.value} />
-                          </div>
-                        </div>
                         <div className="shrink-0 rounded-lg bg-amber-50 px-3 py-2 text-center">
                           <Typography variant="mobileCardLabel" className="block">
                             Points
