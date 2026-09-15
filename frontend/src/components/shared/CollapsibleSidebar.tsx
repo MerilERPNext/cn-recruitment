@@ -2,6 +2,7 @@ import {
   ArrowUpDown,
   Award,
   BadgeIndianRupee,
+  Link2,
   BriefcaseBusiness,
   Calculator,
   Calendar,
@@ -701,6 +702,12 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
       permissionKey: "Scheduled Imports",
     },
     {
+      icon: Link2,
+      label: "Integrations",
+      path: "/webapp/integrations",
+      permissionKey: "Integrations",
+    },
+    {
       icon: HelpCircle,
       label: "Help Desk",
       path: "/webapp/helpdesk",
@@ -724,6 +731,14 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
         const appPermission = uiPermissions.find(
           (perm) => perm.app_name === item.permissionKey,
         );
+
+        // Keep top-level Integrations visible if not explicitly disabled in DB
+        if (item.permissionKey === "Integrations") {
+          if (appPermission && !appPermission.enabled) {
+            return null;
+          }
+          return item;
+        }
 
         if (!appPermission || !appPermission.enabled) {
           return null;

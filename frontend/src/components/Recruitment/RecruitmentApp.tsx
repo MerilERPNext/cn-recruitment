@@ -13,7 +13,7 @@ type TabName =
   | "Refer"
   | "My Referrals"
   | "IJP Openings"
-  | "IJP Jobs Applied"
+  | "IJP Jobs Applied";
 
 
 const tabRoutes: Record<TabName, string> = {
