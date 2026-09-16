@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { createPortal } from "react-dom";
+import { useNavigate } from "react-router-dom";
 import {
   FileText,
   Download,
@@ -33,6 +34,7 @@ import formatToIndianDate from "../../../../utils/formatToIndianDate";
 import { errorResponseFormater } from "../../../../utils/errorResponseFormater";
 import { differenceInCalendarDays } from "date-fns";
 import { useTargetUser } from "../../../../context/ViewedUserContext";
+import { useTodoCategories } from "../../../../hooks/useTodo";
 import {
   useCurrentEmployeeDetails,
   useEmployee,
@@ -81,11 +83,41 @@ const getStageIcon = (stageName: string) => {
 };
 
 const SeparationDashboard: React.FC = () => {
+  const navigate = useNavigate();
   const data = DUMMY_SEPARATION_DATA;
   const [showPolicyModal, setShowPolicyModal] = useState<boolean>(false);
 
+  // Todo Categories & Navigation
+  const { data: todoCategories = [], isLoading: isLoadingTodoCategories } = useTodoCategories();
+
+  const totalPendingTasks = useMemo(
+    () => todoCategories.reduce((sum, cat) => sum + (cat.count || 0), 0),
+    [todoCategories]
+  );
+
+  const sortedTodoCategories = useMemo(() => {
+    return [...todoCategories].sort((a, b) => (b.count || 0) - (a.count || 0));
+  }, [todoCategories]);
+
   // 1. Effective Employee Data
   const { isViewingOtherUser, targetEmployeeId } = useTargetUser();
+
+  const handleCategoryClick = (categoryName: string) => {
+    const params = new URLSearchParams();
+    if (targetEmployeeId) {
+      params.set("target_user", targetEmployeeId);
+    }
+    params.set("category", categoryName);
+    navigate(`/webapp/todo-app?${params.toString()}`);
+  };
+
+  const handleNavigateToTodo = () => {
+    const params = new URLSearchParams();
+    if (targetEmployeeId) {
+      params.set("target_user", targetEmployeeId);
+    }
+    navigate(`/webapp/todo-app${params.toString() ? `?${params.toString()}` : ""}`);
+  };
   const { data: currentEmployee } = useCurrentEmployeeDetails({
     logged_in_employee_details: true,
   });
@@ -1181,7 +1213,10 @@ const SeparationDashboard: React.FC = () => {
                 {openItems.map((item, idx) => (
                   <div
                     key={idx}
-                    className="bg-gray-50/90 p-2.5 sm:p-3 rounded-xl border border-gray-200 flex flex-col items-center justify-center"
+                    onClick={item.type === "tasks" ? handleNavigateToTodo : undefined}
+                    className={`bg-gray-50/90 p-2.5 sm:p-3 rounded-xl border border-gray-200 flex flex-col items-center justify-center ${
+                      item.type === "tasks" ? "cursor-pointer hover:bg-gray-100/80 transition-colors" : ""
+                    }`}
                   >
                     <Typography
                       variant={item.type === "expenses" ? "subheading" : "h3"}
@@ -1203,6 +1238,78 @@ const SeparationDashboard: React.FC = () => {
                 ))}
               </div>
             )}
+          </div>
+
+          {/* Task Box Card */}
+          <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-5 shadow-xs">
+            <div className="flex items-center justify-between pb-3 mb-3 border-b border-gray-100">
+              <div>
+                <Typography variant="subheading" className="text-gray-900 block font-bold">
+                  Task box
+                </Typography>
+                <Typography variant="caption" className="text-gray-500 font-medium block mt-0.5">
+                  Assigned to you &middot; {totalPendingTasks} pending, across {todoCategories.length}{" "}
+                  {todoCategories.length === 1 ? "category" : "categories"}
+                </Typography>
+              </div>
+              <button
+                type="button"
+                onClick={handleNavigateToTodo}
+                className="text-xs font-semibold text-primary-700 hover:text-primary-800 hover:underline flex items-center gap-1 transition-colors shrink-0 ml-2"
+              >
+                View to-do &rarr;
+              </button>
+            </div>
+
+            {isLoadingTodoCategories ? (
+              <div className="space-y-2 py-1 min-h-[140px]">
+                {[1, 2, 3].map((i) => (
+                  <div
+                    key={i}
+                    className="p-2.5 rounded-xl bg-gray-50 animate-pulse flex items-center justify-between"
+                  >
+                    <div className="h-3.5 bg-gray-200 rounded w-1/3" />
+                    <div className="h-5 w-7 bg-gray-200 rounded-full" />
+                  </div>
+                ))}
+              </div>
+            ) : sortedTodoCategories.length === 0 ? (
+              <div className="py-2 min-h-[140px] flex items-center justify-center">
+                <NoDataFound
+                  title="You're all caught up 🎉"
+                  subtitle="No pending tasks assigned to you right now."
+                />
+              </div>
+            ) : (
+              <div className="min-h-[140px] max-h-[320px] overflow-y-auto space-y-1.5 pr-1">
+                {sortedTodoCategories.map((cat) => (
+                  <button
+                    key={cat.name}
+                    type="button"
+                    onClick={() => handleCategoryClick(cat.name)}
+                    className="w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl border border-gray-100 bg-gray-50/70 hover:bg-primary-50/60 hover:border-primary-200/80 transition-all text-left group cursor-pointer"
+                  >
+                    <Typography
+                      variant="bodySmall"
+                      className="font-medium text-gray-800 group-hover:text-primary-700 transition-colors truncate"
+                    >
+                      {cat.name}
+                    </Typography>
+
+                    <span className="min-w-[24px] px-2.5 py-0.5 rounded-full text-xs font-semibold text-gray-600 bg-white border border-gray-200 group-hover:bg-primary-100 group-hover:text-primary-800 group-hover:border-primary-200 transition-colors text-center shrink-0">
+                      {cat.count}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
+
+            <Typography
+              variant="caption"
+              className="text-gray-500 font-medium mt-3 pt-2.5 border-t border-gray-100 block text-[11px] leading-relaxed"
+            >
+              These are tasks waiting on your action. Review and act on each one before your last working day.
+            </Typography>
           </div>
 
           {/* People / Contacts */}
