@@ -484,9 +484,9 @@ const SeparationRecord = lazyWithRetry(
   "SeparationRecord",
 );
 
-const SeparationDashboard = lazyWithRetry(
-  () => import("./components/Flows/Separation/SeparationDashboard/SeparationDashboard"),
-  "SeparationDashboard",
+const ExitPage = lazyWithRetry(
+  () => import("./components/Flows/Separation/ExitPage/ExitPage.tsx"),
+  "ExitPage",
 );
 
 const PerformanceImprovement = lazyWithRetry(
@@ -1523,8 +1523,8 @@ export const routesConfig: AppRoute[] = [
       },
       {
         path: "separation-dashboard",
-        element: <SeparationDashboard />,
-        permissionKey: "Separation Dashboard",
+        element: <ExitPage />,
+        permissionKey: "Exit Page",
       },
       {
         path: "performance-improvement",

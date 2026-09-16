@@ -81,7 +81,7 @@ const getStageIcon = (stageName: string) => {
   return <ShieldCheck className="w-3.5 h-3.5 text-gray-500" />;
 };
 
-const SeparationDashboard: React.FC = () => {
+const ExitPage: React.FC = () => {
   const navigate = useNavigate();
   const [showPolicyModal, setShowPolicyModal] = useState<boolean>(false);
 
@@ -402,7 +402,7 @@ const SeparationDashboard: React.FC = () => {
       {/* Top Header - Matching Other App Pages */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-200 pb-3 mb-1">
         <div className="flex flex-col">
-          <Typography variant="h4">Separation Dashboard</Typography>
+          <Typography variant="h4">Exit Page</Typography>
           <Typography variant="bodySmall" color="body2">
             Track notice period progress, asset clearances, and full &amp; final settlement.
           </Typography>
@@ -1478,6 +1478,6 @@ const SeparationDashboard: React.FC = () => {
   );
 };
 
-export default SeparationDashboard;
+export default ExitPage;
 
 
