@@ -916,15 +916,18 @@ export default function OnboardingFieldApproval() {
                       {sendBackLoading ? "Returning..." : "Return to Candidate"}
                     </button>
 
-                    {/* Approve Form — approves all remaining, validates no rejections, sets status Approved */}
-                    <button
-                      onClick={handleApproveForm}
-                      disabled={approveFormLoading}
-                      className="px-3 py-1.5 text-xs font-medium rounded-lg bg-success-600 text-white border border-success-700 hover:bg-success-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                      title="Approve the whole onboarding form"
-                    >
-                      {approveFormLoading ? "Approving..." : "Notify Approval"}
-                    </button>
+                    {/* Approve Form — approves all remaining, validates no rejections, sets status Approved.
+                        Only available once every field is approved (progress at 100%). */}
+                    {pct === 100 && (
+                      <button
+                        onClick={handleApproveForm}
+                        disabled={approveFormLoading}
+                        className="px-3 py-1.5 text-xs font-medium rounded-lg bg-success-600 text-white border border-success-700 hover:bg-success-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                        title="Approve the whole onboarding form"
+                      >
+                        {approveFormLoading ? "Approving..." : "Notify Approval"}
+                      </button>
+                    )}
                   </>
                 )}
               </div>
