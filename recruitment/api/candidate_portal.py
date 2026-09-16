@@ -383,9 +383,17 @@ def _apply_default_onboarding_template(doc):
     table from a handler on the Desk form only (employee_onboarding.js reacting
     to the field being changed by hand), so an onboarding created in code with
     only the link set would name a template and carry NO tasks — worse than the
-    blank one it replaced, and silently so. The rows are read through
-    ``get_onboarding_details``, the same helper that form handler calls, so both
-    routes produce identical activities.
+    blank one it replaced, and silently so.
+
+    The rows are read with permissions IGNORED, and that is the point of
+    ``_template_activities``: the onboarding is materialised by whoever triggered
+    it, and when the candidate accepts their offer from the public portal link
+    that is **Guest**. Frappe's read then checks Guest's permission on
+    "Employee Boarding Activity", finds none, and raises — so every
+    candidate-accepted onboarding was created with no template and no activities,
+    silently, because this function swallows its own errors. Copying a template
+    onto an onboarding the system is already creating is a system action; it is
+    not the candidate's read.
 
     The ACTIVITIES are what this is for, so a named template is not a reason to
     skip: an onboarding that already carries a template but an empty table is
@@ -407,11 +415,9 @@ def _apply_default_onboarding_template(doc):
         if not template:
             return
 
-        from hrms.controllers.employee_boarding_controller import get_onboarding_details
-
         # Read BEFORE the link is written, so a failed read cannot leave the
         # onboarding naming a template with nothing under it.
-        activities = get_onboarding_details(template, ONBOARDING_TEMPLATE) or []
+        activities = _template_activities(template)
 
         doc.employee_onboarding_template = template
         for activity in activities:
@@ -421,6 +427,33 @@ def _apply_default_onboarding_template(doc):
             frappe.get_traceback(),
             "materialize_onboarding: default onboarding template failed",
         )
+
+
+def _template_activities(template):
+    """The template's activities, read as a system action.
+
+    Same rows, same order and same fields as HRMS's own
+    ``get_onboarding_details`` — which the Desk form handler uses — but with
+    ``ignore_permissions``, so it works whoever the session user happens to be.
+    A candidate accepting an offer from the portal is Guest, and Guest has no
+    permission on this doctype.
+    """
+    return frappe.get_all(
+        "Employee Boarding Activity",
+        fields=[
+            "activity_name",
+            "role",
+            "user",
+            "required_for_employee_creation",
+            "description",
+            "task_weight",
+            "begin_on",
+            "duration",
+        ],
+        filters={"parent": template, "parenttype": ONBOARDING_TEMPLATE},
+        order_by="idx",
+        ignore_permissions=True,
+    )
 
 
 # Employee Onboarding fields that materialize_onboarding_from_applicant manages
