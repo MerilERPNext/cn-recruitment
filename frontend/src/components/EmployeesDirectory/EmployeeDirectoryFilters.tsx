@@ -45,7 +45,7 @@ const MultiSelectSection: React.FC<MultiSelectSectionProps> = ({
   const filteredOptions = useMemo(
     () =>
       options.filter((o) =>
-        o.label.toLowerCase().includes(searchTerm.toLowerCase()),
+        o.label?.toLowerCase()?.includes(searchTerm.toLowerCase()),
       ),
     [options, searchTerm],
   );
@@ -156,22 +156,20 @@ const MultiSelectSection: React.FC<MultiSelectSectionProps> = ({
                   <button
                     type="button"
                     onClick={handleToggleAll}
-                    className={`flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium transition-colors border ${
-                      allSelected
-                        ? "border-primary/30 bg-primary-50 text-primary-700"
-                        : someSelected
-                          ? "border-gray-200 bg-gray-50 text-gray-600"
-                          : "border-gray-200 bg-gray-50 text-gray-500"
-                    }`}
+                    className={`flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium transition-colors border ${allSelected
+                      ? "border-primary/30 bg-primary-50 text-primary-700"
+                      : someSelected
+                        ? "border-gray-200 bg-gray-50 text-gray-600"
+                        : "border-gray-200 bg-gray-50 text-gray-500"
+                      }`}
                   >
                     <span
-                      className={`flex h-3.5 w-3.5 items-center justify-center rounded border ${
-                        allSelected
-                          ? "bg-primary border-primary"
-                          : someSelected
-                            ? "bg-primary/30 border-primary/50"
-                            : "border-gray-300 bg-white"
-                      }`}
+                      className={`flex h-3.5 w-3.5 items-center justify-center rounded border ${allSelected
+                        ? "bg-primary border-primary"
+                        : someSelected
+                          ? "bg-primary/30 border-primary/50"
+                          : "border-gray-300 bg-white"
+                        }`}
                     >
                       {allSelected ? (
                         <Check size={8} className="text-white" strokeWidth={3} />
@@ -203,16 +201,14 @@ const MultiSelectSection: React.FC<MultiSelectSectionProps> = ({
                         <button
                           type="button"
                           onClick={() => handleToggleItem(option.value)}
-                          className={`w-full flex items-center gap-2.5 px-3 py-2 text-left text-xs transition-colors hover:bg-primary-50 ${
-                            isChecked ? "bg-primary-50/60" : "bg-white"
-                          }`}
+                          className={`w-full flex items-center gap-2.5 px-3 py-2 text-left text-xs transition-colors hover:bg-primary-50 ${isChecked ? "bg-primary-50/60" : "bg-white"
+                            }`}
                         >
                           <span
-                            className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border transition-colors ${
-                              isChecked
-                                ? "bg-primary border-primary"
-                                : "border-gray-300 bg-white"
-                            }`}
+                            className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border transition-colors ${isChecked
+                              ? "bg-primary border-primary"
+                              : "border-gray-300 bg-white"
+                              }`}
                           >
                             {isChecked && (
                               <Check
@@ -445,7 +441,7 @@ const EmployeeDirectoryFilters: React.FC<EmployeeDirectoryFiltersProps> = ({
   );
 
   // ── Sync with external data prop changes ─────────────────────────────────────
-  
+
   useEffect(() => {
     setStatus((data.status as string) ?? "Active");
     setCompany(

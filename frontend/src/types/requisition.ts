@@ -33,6 +33,26 @@ export interface RequisitionDetailsResponse {
     job_applicant_count: number;
     interview_count: number;
     approval_flow?: RequisitionApprovalFlow;
+    // Filled only while the requisition is flagged Over Budget — see
+    // recruitment.api.requisition_budget.
+    budget_status?: RequisitionBudgetStatus;
+  }
+
+/** A Department / Cost Center whose budget left can't cover the requisition. */
+export interface RequisitionBudgetShortfall {
+    doctype: "Department" | "Cost Center";
+    name: string;
+    label: string;
+    budget: number;
+    utilized: number;
+    available: number;
+    required: number;
+    summary: string;
+  }
+
+export interface RequisitionBudgetStatus {
+    over_budget: boolean;
+    shortfalls: RequisitionBudgetShortfall[];
   }
 
   export interface RequisitionRowApproval {

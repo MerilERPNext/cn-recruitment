@@ -470,6 +470,11 @@ doc_events = {
             # Enforce Recruitment Settings -> Job Requisition Settings
             # (max positions, replacement-employee restriction & uniqueness).
             "recruitment.api.job_requisition.validate_requisition_settings",
+            # Recruitment Settings -> "Enable AOP Budget Check": refuse a
+            # requisition whose Salary Range (Max) x positions is more than its
+            # Department / Cost Center budget has left. Runs after
+            # sync_no_of_positions so the position count is current.
+            "recruitment.api.requisition_budget.enforce_budget",
             # Capture the Regions child table's region on the parent
             # `custom_region` so it is filterable/reportable from the
             # requisition itself — same mirror as on the Job Opening.
@@ -508,7 +513,18 @@ doc_events = {
             # openings collected and how far they got, plus its own position
             # approvals. Same on_update reasoning as store_headcount above.
             "recruitment.api.requisition_pipeline.store_pipeline",
+            # Over Budget flag for the form banner — derived, so written here with
+            # db.set_value for the same reason as store_headcount above.
+            "recruitment.api.requisition_budget.store_budget_flag",
         ],
+    },
+    # Accounts edit the AOP budget / utilization by hand on these masters; an edit
+    # re-flags live requisitions right away instead of at the nightly run.
+    "Cost Center": {
+        "on_update": "recruitment.api.requisition_budget.on_budget_master_update",
+    },
+    "Department": {
+        "on_update": "recruitment.api.requisition_budget.on_budget_master_update",
     },
     "Job Opening": {
         "validate": [
@@ -665,7 +681,20 @@ doc_events = {
         # they're created via the "Create Onboarding Tasks" button, which stamps
         # task metadata itself. This hook only keeps metadata fresh on post-submit
         # edits (e.g. DOJ / Postponed changes).
-        "on_update_after_submit": "recruitment.recruitment.onboarding_extras.populate_onboarding_task_meta",
+        "on_update_after_submit": [
+            "recruitment.recruitment.onboarding_extras.populate_onboarding_task_meta",
+            # The DOJ outcome is decided AFTER the onboarding is submitted — an
+            # Employee cannot be created from a draft (see overide_class), and the
+            # manager answers on their joining-day task, by which time the
+            # onboarding is long submitted. Registered on on_update alone, this
+            # handler could never run for that: a post-submit save fires
+            # on_update_after_submit and nothing else. Joined / Not Joined /
+            # Postponed were therefore all inert in practice.
+            "recruitment.recruitment.onboarding_extras.handle_doj_outcome",
+            # Same reason: the portal-field approvals that decide boarding_status
+            # continue after submit.
+            "recruitment.api.field_level_approval.refresh_boarding_status",
+        ],
         "on_update": [
             "recruitment.auto_fetch_fields.update_employee_fields",
             "recruitment.recruitment.onboarding_extras.handle_doj_outcome",
@@ -673,7 +702,18 @@ doc_events = {
             # approval has cleared every portal field. Activation stays a
             # deliberate act. No-op for a recruitment onboarding.
             "recruitment.api.new_hire.stage_from_onboarding",
+            # Keep boarding_status a function of the candidate portal field
+            # approvals, whatever route changed them. No-op when the onboarding
+            # has no portal fields. See field_level_approval.refresh_boarding_status.
+            "recruitment.api.field_level_approval.refresh_boarding_status",
         ],
+    },
+    "Project": {
+        # HRMS rewrites Employee Onboarding.boarding_status from task completion on
+        # every Project save. Only relevant while Onboarding Settings -> "Complete
+        # Onboarding on Form Approval" is on, where the candidate's form owns that
+        # status instead; this puts the form's answer back. No-op otherwise.
+        "on_update": "recruitment.api.field_level_approval.protect_boarding_status_from_task_sync",
     },
     "Employee Separation": {
         "before_insert": [
@@ -719,6 +759,9 @@ scheduler_events = {
             "recruitment.recruitment.onboarding_extras.refresh_onboarding_task_days_to_join",
             "recruitment.recruitment.scheduled_jobs.mark_relieved_employees_as_left",
             "recruitment.recruitment.scheduled_jobs.auto_separate_employees_on_lwd",
+            # AOP budget: re-flag live requisitions their Department / Cost Center
+            # budget left no longer covers. No-op (clears flags) when disabled.
+            "recruitment.api.requisition_budget.refresh_over_budget_flags",
         ],
         "30 1 * * *": [
             # Pay every referral reward installment that is due and still eligible.

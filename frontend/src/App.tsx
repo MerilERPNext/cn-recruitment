@@ -41,6 +41,7 @@ import GlobalModalRenderer from "./components/GlobalModalRenderer";
 import { useWebsiteBranding } from "./hooks/useBranding";
 import MandatoryHrProcessHandler from "./components/MandatoryHrProcessHandler";
 import MandatoryDocumentsHandler from "./components/MandatoryDocumentsHandler";
+import PendoHandler from "./components/PendoHandler";
 import { useAttendanceSettings } from "./hooks/useAttendance";
 import { getImpersonationFallbackRoute } from "./utils/impersonationUtils";
 
@@ -295,6 +296,7 @@ const App: React.FC = () => {
                 <MandatoryHrProcessHandler />
                 <MandatoryDocumentsHandler />
                 <ImpersonationDashboardHandler />
+                <PendoHandler />
 
                 <div
                   className="min-h-screen bg-app"

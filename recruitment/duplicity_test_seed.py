@@ -517,6 +517,20 @@ OFFER-TIME rules — create a Job Offer for these applicants
      Repeat any blocked step as an HR Manager.
      EXPECT: goes through.
 
+ALLOW HIRING — on {settings} tick "Allow Hiring Even Though It Matches ...",
+pick a Hiring Workflow and an Exceptional Approval Workflow, and save
+ 10  Application let through
+     Repeat step 2 or 3.
+     EXPECT: saves with an orange message; Employee Record tab shows the
+             Duplicity Match section with the reasons; the Hiring workflow
+             tab shows the chosen workflow's stages, not the opening's.
+
+ 11  Offer routed to approval
+     Repeat step 5 or 7, or offer to the applicant from step 10.
+     EXPECT: saves with the reasons; a few seconds later "Duplicity Approval
+             Trigger" = the Exceptional Approval Workflow's name, which starts
+             that Flow Config (an HR Manager approval ToDo appears).
+
 Clean up
   bench --site {frappe.local.site} execute recruitment.duplicity_test_seed.teardown
 """)
