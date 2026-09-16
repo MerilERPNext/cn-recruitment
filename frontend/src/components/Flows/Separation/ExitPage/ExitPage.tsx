@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { createPortal } from "react-dom";
+import { useNavigate } from "react-router-dom";
 import {
   FileText,
   Download,
@@ -20,7 +21,6 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 
-import { DUMMY_SEPARATION_DATA } from "./separationDashboardData";
 import { Typography } from "../../../shared/atoms/Typography";
 import Button from "../../../shared/atoms/Button";
 import { ViewAll } from "../../../shared/atoms/ViewAll";
@@ -33,6 +33,7 @@ import formatToIndianDate from "../../../../utils/formatToIndianDate";
 import { errorResponseFormater } from "../../../../utils/errorResponseFormater";
 import { differenceInCalendarDays } from "date-fns";
 import { useTargetUser } from "../../../../context/ViewedUserContext";
+import { useTodoCategories } from "../../../../hooks/useTodo";
 import {
   useCurrentEmployeeDetails,
   useEmployee,
@@ -45,6 +46,9 @@ import {
   useGetSeparationWorkflowStages,
   useGetFullAndFinalEstimate,
 } from "../../../../hooks/useSeparation";
+import ActionConfirmationModal from "../../../shared/ActionConfirmationModal";
+import { useChatAssistantFlowInitiateData } from "../../../../hooks/useFlows";
+import { getFlowConfigOthersTriggerList } from "../../../../services/flowsService";
 import { ROUTES } from "../../../../constants/routes";
 
 interface ExtendedEmployeeFields {
@@ -80,12 +84,41 @@ const getStageIcon = (stageName: string) => {
   return <ShieldCheck className="w-3.5 h-3.5 text-gray-500" />;
 };
 
-const SeparationDashboard: React.FC = () => {
-  const data = DUMMY_SEPARATION_DATA;
+const ExitPage: React.FC = () => {
+  const navigate = useNavigate();
   const [showPolicyModal, setShowPolicyModal] = useState<boolean>(false);
+
+  // Todo Categories & Navigation
+  const { data: todoCategories = [], isLoading: isLoadingTodoCategories } = useTodoCategories();
+
+  const totalPendingTasks = useMemo(
+    () => todoCategories.reduce((sum, cat) => sum + (cat.count || 0), 0),
+    [todoCategories]
+  );
+
+  const sortedTodoCategories = useMemo(() => {
+    return [...todoCategories].sort((a, b) => (b.count || 0) - (a.count || 0));
+  }, [todoCategories]);
 
   // 1. Effective Employee Data
   const { isViewingOtherUser, targetEmployeeId } = useTargetUser();
+
+  const handleCategoryClick = (categoryName: string) => {
+    const params = new URLSearchParams();
+    if (targetEmployeeId) {
+      params.set("target_user", targetEmployeeId);
+    }
+    params.set("category", categoryName);
+    navigate(`/webapp/todo-app?${params.toString()}`);
+  };
+
+  const handleNavigateToTodo = () => {
+    const params = new URLSearchParams();
+    if (targetEmployeeId) {
+      params.set("target_user", targetEmployeeId);
+    }
+    navigate(`/webapp/todo-app${params.toString() ? `?${params.toString()}` : ""}`);
+  };
   const { data: currentEmployee } = useCurrentEmployeeDetails({
     logged_in_employee_details: true,
   });
@@ -258,6 +291,118 @@ const SeparationDashboard: React.FC = () => {
     refetch: refetchReportees,
   } = useActiveReportees(effectiveEmployeeId);
 
+  // Manager Change Flow for Reportees
+  const [selectedReporteeForChange, setSelectedReporteeForChange] = useState<{
+    name: string;
+    employee_name?: string;
+    definitionName: string;
+  } | null>(null);
+  const [isManagerChangeModalOpen, setIsManagerChangeModalOpen] = useState(false);
+  const [isLoadingTriggerForEmployee, setIsLoadingTriggerForEmployee] = useState<string | null>(null);
+
+  const { mutateAsync: initiateFlow, isPending: isInitiatingFlow } =
+    useChatAssistantFlowInitiateData();
+
+  const handleOpenManagerChangeModal = async (reportee: {
+    name: string;
+    employee_name?: string;
+  }) => {
+    setIsLoadingTriggerForEmployee(reportee.name);
+    try {
+      const response = await getFlowConfigOthersTriggerList(reportee.name);
+      let triggers: any[] = [];
+      if (Array.isArray(response)) {
+        triggers = response;
+      } else if (typeof response === "string") {
+        try {
+          triggers = JSON.parse(response);
+        } catch {
+          triggers = [];
+        }
+      }
+
+      const match = triggers.find((t: any) => {
+        // Normalize whitespace (e.g. "Manager  Change Flow" → "manager change flow")
+        const normalize = (s: string) => s.replace(/\s+/g, " ").trim().toLowerCase();
+        const actionName = normalize(
+          t?.data_obj?.name_of_action || t?.name_of_action || ""
+        );
+        const btnLabel = normalize(
+          t?.button_label || t?.data_obj?.button_label || ""
+        );
+        const funnel = normalize(t?.funnel_name || "");
+        const name = (t?.name || "").toLowerCase();
+        return (
+          actionName.includes("manager change") ||
+          btnLabel.includes("manager change") ||
+          funnel.includes("manager change") ||
+          name.includes("manager_change")
+        );
+      });
+
+      if (!match?.name) {
+        toast.error("Manager Change flow is not available for this employee.");
+        return;
+      }
+
+      setSelectedReporteeForChange({
+        name: reportee.name,
+        employee_name: reportee.employee_name || reportee.name,
+        definitionName: match.name,
+      });
+      setIsManagerChangeModalOpen(true);
+    } catch (err) {
+      console.error("Could not fetch triggers list for manager change flow.", err);
+      toast.error("Failed to load Manager Change flow. Please try again.");
+    } finally {
+      setIsLoadingTriggerForEmployee(null);
+    }
+  };
+
+  const handleConfirmManagerChange = async () => {
+    if (!selectedReporteeForChange) return;
+
+    const definitionName = selectedReporteeForChange.definitionName;
+    if (!definitionName) {
+      toast.error("Manager Change flow definition is missing. Please try again.");
+      return;
+    }
+
+    try {
+      const result = await initiateFlow({
+        document_name: selectedReporteeForChange.name,
+        definition_name: definitionName,
+      });
+
+      setIsManagerChangeModalOpen(false);
+      const reporteeDisplayName =
+        selectedReporteeForChange.employee_name || selectedReporteeForChange.name;
+      setSelectedReporteeForChange(null);
+
+      if (
+        typeof window !== "undefined" &&
+        typeof window.trigger_chatnext_assistant === "function"
+      ) {
+        window.trigger_chatnext_assistant(true, result?.session);
+      } else {
+        toast.success(
+          `Manager Change Flow initiated for ${reporteeDisplayName}`
+        );
+      }
+    } catch (error) {
+      console.error("Failed to initiate Manager Change Flow:", error);
+      toast.error(
+        errorResponseFormater(error, "Failed to initiate Manager Change Flow.")
+      );
+      setIsManagerChangeModalOpen(false);
+    }
+  };
+
+  const reportingManagerName =
+    supportContacts?.manager?.name && supportContacts.manager.name !== "N/A"
+      ? supportContacts.manager.name
+      : currentEmployee?.reports_to || "Reporting Manager";
+
   // 4. Open Items (Live Open Tasks, Attendance Flags, & Expenses Due)
   const {
     data: openItemsData,
@@ -329,24 +474,36 @@ const SeparationDashboard: React.FC = () => {
   // 7. People & Support (reports_to, custom_hrbp, custom_hd_team for target/current employee)
   const peopleList = useMemo(
     () => [
-      {
-        name: supportContacts?.hrbp?.name || "N/A",
-        role: "HR Business Partner",
-        description: "Separation Buddy & Exit Coordinator",
-        email: supportContacts?.hrbp?.email || "",
-      },
-      {
-        name: supportContacts?.manager?.name || "N/A",
-        role: "Reporting Manager",
-        description: "Handover & Separation Approval",
-        email: supportContacts?.manager?.email || "",
-      },
-      {
+        {
+          name: supportContacts?.hrbp?.name || "N/A",
+          role: "HR Business Partner",
+          description: "Separation Buddy & Exit Coordinator",
+          email: supportContacts?.hrbp?.email || "",
+        },
+        {
+          name: supportContacts?.manager?.name || "N/A",
+          role: "Reporting Manager",
+          description: "Handover & Separation Approval",
+          email: supportContacts?.manager?.email || "",
+        },
+        {
+          name: "Karan Mehta",
+          role: "Offboarding team, IT and assets · ID OPS10221",
+          description: "Asset pickup",
+          email: "dummy@gmail.com",
+        },
+        {
+          name: "Simran Kaur",
+          role: "Offboarding team, finance and FnF · ID FIN10765",
+          description: "Settlement queries",
+          email: "dummy@gmail.com",
+        },
+        {
         name: supportContacts?.hdTeam?.name || "N/A",
         role: "Helpdesk Support Team",
         description: "For FnF, PF, gratuity and document queries after exit",
         email: supportContacts?.hdTeam?.email || "",
-      },
+        },
     ],
     [supportContacts]
   );
@@ -360,7 +517,7 @@ const SeparationDashboard: React.FC = () => {
       {/* Top Header - Matching Other App Pages */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-200 pb-3 mb-1">
         <div className="flex flex-col">
-          <Typography variant="h4">Separation Dashboard</Typography>
+          <Typography variant="h4">Exit Page</Typography>
           <Typography variant="bodySmall" color="body2">
             Track notice period progress, asset clearances, and full &amp; final settlement.
           </Typography>
@@ -1121,26 +1278,46 @@ const SeparationDashboard: React.FC = () => {
                       >
                         <WrapperHoverCard employeeId={r.name}>
                           <div className="cursor-pointer hover:opacity-80 transition-opacity">
-                            <Typography variant="bodySmall" className="font-bold text-gray-900">
-                              {r.employee_name || r.name}
-                            </Typography>
-                            {repDesignation && (
-                              <Typography variant="caption" className="text-gray-500 font-medium ml-1.5">
-                                ({repDesignation})
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <Typography variant="bodySmall" className="font-bold text-gray-900">
+                                {r.employee_name || r.name}
                               </Typography>
-                            )}
+                              {repDesignation && (
+                                <Typography variant="caption" className="text-gray-500 font-medium ml-1.5">
+                                  ({repDesignation})
+                                </Typography>
+                              )}
+                            </div>
+                            <Typography variant="caption" className="text-gray-400 font-medium block mt-0.5">
+                              reporting manager pending
+                            </Typography>
                           </div>
                         </WrapperHoverCard>
-                        <Typography variant="caption" className="text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-md font-semibold border border-emerald-200">
-                          {r.status || "Active"}
-                        </Typography>
+                        <div className="flex items-center gap-2.5 shrink-0">
+                          <Typography variant="caption" className="text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-md font-semibold border border-emerald-200">
+                            {r.status || "Active"}
+                          </Typography>
+                          <button
+                            type="button"
+                            disabled={isLoadingTriggerForEmployee === r.name}
+                            onClick={() =>
+                              handleOpenManagerChangeModal({
+                                name: r.name,
+                                employee_name: r.employee_name || r.name,
+                              })
+                            }
+                            className="text-xs font-semibold text-primary-700 hover:text-primary-800 hover:underline flex items-center gap-1 transition-colors disabled:opacity-50"
+                          >
+                            {isLoadingTriggerForEmployee === r.name ? "Loading..." : "Change manager \u2192"}
+                          </button>
+                        </div>
                       </div>
                     );
                   })}
                 </div>
 
                 <Typography variant="caption" className="text-primary-950 bg-primary-50/80 p-2.5 rounded-lg border border-primary-200 font-medium mt-3.5 block">
-                  {data.recommendedManagerNotice}
+                  {`Recommended manager: ${reportingManagerName}, awaiting approval.`}
                 </Typography>
               </>
             )}
@@ -1181,7 +1358,10 @@ const SeparationDashboard: React.FC = () => {
                 {openItems.map((item, idx) => (
                   <div
                     key={idx}
-                    className="bg-gray-50/90 p-2.5 sm:p-3 rounded-xl border border-gray-200 flex flex-col items-center justify-center"
+                    onClick={item.type === "tasks" ? handleNavigateToTodo : undefined}
+                    className={`bg-gray-50/90 p-2.5 sm:p-3 rounded-xl border border-gray-200 flex flex-col items-center justify-center ${
+                      item.type === "tasks" ? "cursor-pointer hover:bg-gray-100/80 transition-colors" : ""
+                    }`}
                   >
                     <Typography
                       variant={item.type === "expenses" ? "subheading" : "h3"}
@@ -1203,6 +1383,78 @@ const SeparationDashboard: React.FC = () => {
                 ))}
               </div>
             )}
+          </div>
+
+          {/* Task Box Card */}
+          <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-5 shadow-xs">
+            <div className="flex items-center justify-between pb-3 mb-3 border-b border-gray-100">
+              <div>
+                <Typography variant="subheading" className="text-gray-900 block font-bold">
+                  Task box
+                </Typography>
+                <Typography variant="caption" className="text-gray-500 font-medium block mt-0.5">
+                  Assigned to you &middot; {totalPendingTasks} pending, across {todoCategories.length}{" "}
+                  {todoCategories.length === 1 ? "category" : "categories"}
+                </Typography>
+              </div>
+              <button
+                type="button"
+                onClick={handleNavigateToTodo}
+                className="text-xs font-semibold text-primary-700 hover:text-primary-800 hover:underline flex items-center gap-1 transition-colors shrink-0 ml-2"
+              >
+                View to-do &rarr;
+              </button>
+            </div>
+
+            {isLoadingTodoCategories ? (
+              <div className="space-y-2 py-1 min-h-[140px]">
+                {[1, 2, 3].map((i) => (
+                  <div
+                    key={i}
+                    className="p-2.5 rounded-xl bg-gray-50 animate-pulse flex items-center justify-between"
+                  >
+                    <div className="h-3.5 bg-gray-200 rounded w-1/3" />
+                    <div className="h-5 w-7 bg-gray-200 rounded-full" />
+                  </div>
+                ))}
+              </div>
+            ) : sortedTodoCategories.length === 0 ? (
+              <div className="py-2 min-h-[140px] flex items-center justify-center">
+                <NoDataFound
+                  title="You're all caught up 🎉"
+                  subtitle="No pending tasks assigned to you right now."
+                />
+              </div>
+            ) : (
+              <div className="min-h-[140px] max-h-[320px] overflow-y-auto space-y-1.5 pr-1">
+                {sortedTodoCategories.map((cat) => (
+                  <button
+                    key={cat.name}
+                    type="button"
+                    onClick={() => handleCategoryClick(cat.name)}
+                    className="w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl border border-gray-100 bg-gray-50/70 hover:bg-primary-50/60 hover:border-primary-200/80 transition-all text-left group cursor-pointer"
+                  >
+                    <Typography
+                      variant="bodySmall"
+                      className="font-medium text-gray-800 group-hover:text-primary-700 transition-colors truncate"
+                    >
+                      {cat.name}
+                    </Typography>
+
+                    <span className="min-w-[24px] px-2.5 py-0.5 rounded-full text-xs font-semibold text-gray-600 bg-white border border-gray-200 group-hover:bg-primary-100 group-hover:text-primary-800 group-hover:border-primary-200 transition-colors text-center shrink-0">
+                      {cat.count}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
+
+            <Typography
+              variant="caption"
+              className="text-gray-500 font-medium mt-3 pt-2.5 border-t border-gray-100 block text-[11px] leading-relaxed"
+            >
+              These are tasks waiting on your action. Review and act on each one before your last working day.
+            </Typography>
           </div>
 
           {/* People / Contacts */}
@@ -1357,10 +1609,26 @@ const SeparationDashboard: React.FC = () => {
           </div>,
           document.body
         )}
+
+      {/* Manager Change Confirmation Modal */}
+      <ActionConfirmationModal
+        isOpen={isManagerChangeModalOpen}
+        title="Initiate Flow"
+        message='Are you sure you want to initiate "Manager Change Flow"?'
+        confirmLabel="Yes, Initiate"
+        cancelLabel="Cancel"
+        confirmBgColor="primary"
+        isPending={isInitiatingFlow}
+        onConfirm={handleConfirmManagerChange}
+        onCancel={() => {
+          setIsManagerChangeModalOpen(false);
+          setSelectedReporteeForChange(null);
+        }}
+      />
     </div>
   );
 };
 
-export default SeparationDashboard;
+export default ExitPage;
 
 

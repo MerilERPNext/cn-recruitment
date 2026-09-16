@@ -477,10 +477,10 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
           permissionKey: "Separation",
         },
         {
-          name: "Separation Dashboard",
+          name: "Exit Page",
           icon: LayoutDashboard,
           href: "/webapp/flow-app/separation-dashboard",
-          permissionKey: "Separation Dashboard",
+          permissionKey: "Exit Page",
         },
         {
           name: "Performance Improvement",

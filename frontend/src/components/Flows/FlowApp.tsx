@@ -54,8 +54,8 @@ const FlowApp: React.FC = () => {
         permissionKey: "Separation",
       }, {
         key: "Separation Dashboard",
-        label: "Separation Dashboard",
-        permissionKey: "Separation Dashboard",
+        label: "Exit Page",
+        permissionKey: "Exit Page",
       }
     ];
 
