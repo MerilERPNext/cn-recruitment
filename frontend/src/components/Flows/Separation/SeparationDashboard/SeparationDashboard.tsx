@@ -21,7 +21,6 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 
-import { DUMMY_SEPARATION_DATA } from "./separationDashboardData";
 import { Typography } from "../../../shared/atoms/Typography";
 import Button from "../../../shared/atoms/Button";
 import { ViewAll } from "../../../shared/atoms/ViewAll";
@@ -84,7 +83,6 @@ const getStageIcon = (stageName: string) => {
 
 const SeparationDashboard: React.FC = () => {
   const navigate = useNavigate();
-  const data = DUMMY_SEPARATION_DATA;
   const [showPolicyModal, setShowPolicyModal] = useState<boolean>(false);
 
   // Todo Categories & Navigation
@@ -361,24 +359,36 @@ const SeparationDashboard: React.FC = () => {
   // 7. People & Support (reports_to, custom_hrbp, custom_hd_team for target/current employee)
   const peopleList = useMemo(
     () => [
-      {
-        name: supportContacts?.hrbp?.name || "N/A",
-        role: "HR Business Partner",
-        description: "Separation Buddy & Exit Coordinator",
-        email: supportContacts?.hrbp?.email || "",
-      },
-      {
-        name: supportContacts?.manager?.name || "N/A",
-        role: "Reporting Manager",
-        description: "Handover & Separation Approval",
-        email: supportContacts?.manager?.email || "",
-      },
-      {
+        {
+          name: supportContacts?.hrbp?.name || "N/A",
+          role: "HR Business Partner",
+          description: "Separation Buddy & Exit Coordinator",
+          email: supportContacts?.hrbp?.email || "",
+        },
+        {
+          name: supportContacts?.manager?.name || "N/A",
+          role: "Reporting Manager",
+          description: "Handover & Separation Approval",
+          email: supportContacts?.manager?.email || "",
+        },
+        {
+          name: "Karan Mehta",
+          role: "Offboarding team, IT and assets · ID OPS10221",
+          description: "Asset pickup",
+          email: "dummy@gmail.com",
+        },
+        {
+          name: "Simran Kaur",
+          role: "Offboarding team, finance and FnF · ID FIN10765",
+          description: "Settlement queries",
+          email: "dummy@gmail.com",
+        },
+        {
         name: supportContacts?.hdTeam?.name || "N/A",
         role: "Helpdesk Support Team",
         description: "For FnF, PF, gratuity and document queries after exit",
         email: supportContacts?.hdTeam?.email || "",
-      },
+        },
     ],
     [supportContacts]
   );
@@ -1172,7 +1182,7 @@ const SeparationDashboard: React.FC = () => {
                 </div>
 
                 <Typography variant="caption" className="text-primary-950 bg-primary-50/80 p-2.5 rounded-lg border border-primary-200 font-medium mt-3.5 block">
-                  {data.recommendedManagerNotice}
+                  Recommended manager: Rohan Gupta, awaiting approval.
                 </Typography>
               </>
             )}
