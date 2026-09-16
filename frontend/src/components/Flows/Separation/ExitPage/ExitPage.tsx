@@ -46,6 +46,9 @@ import {
   useGetSeparationWorkflowStages,
   useGetFullAndFinalEstimate,
 } from "../../../../hooks/useSeparation";
+import ActionConfirmationModal from "../../../shared/ActionConfirmationModal";
+import { useChatAssistantFlowInitiateData } from "../../../../hooks/useFlows";
+import { getFlowConfigOthersTriggerList } from "../../../../services/flowsService";
 import { ROUTES } from "../../../../constants/routes";
 
 interface ExtendedEmployeeFields {
@@ -287,6 +290,118 @@ const ExitPage: React.FC = () => {
     isError: isReporteesError,
     refetch: refetchReportees,
   } = useActiveReportees(effectiveEmployeeId);
+
+  // Manager Change Flow for Reportees
+  const [selectedReporteeForChange, setSelectedReporteeForChange] = useState<{
+    name: string;
+    employee_name?: string;
+    definitionName: string;
+  } | null>(null);
+  const [isManagerChangeModalOpen, setIsManagerChangeModalOpen] = useState(false);
+  const [isLoadingTriggerForEmployee, setIsLoadingTriggerForEmployee] = useState<string | null>(null);
+
+  const { mutateAsync: initiateFlow, isPending: isInitiatingFlow } =
+    useChatAssistantFlowInitiateData();
+
+  const handleOpenManagerChangeModal = async (reportee: {
+    name: string;
+    employee_name?: string;
+  }) => {
+    setIsLoadingTriggerForEmployee(reportee.name);
+    try {
+      const response = await getFlowConfigOthersTriggerList(reportee.name);
+      let triggers: any[] = [];
+      if (Array.isArray(response)) {
+        triggers = response;
+      } else if (typeof response === "string") {
+        try {
+          triggers = JSON.parse(response);
+        } catch {
+          triggers = [];
+        }
+      }
+
+      const match = triggers.find((t: any) => {
+        // Normalize whitespace (e.g. "Manager  Change Flow" → "manager change flow")
+        const normalize = (s: string) => s.replace(/\s+/g, " ").trim().toLowerCase();
+        const actionName = normalize(
+          t?.data_obj?.name_of_action || t?.name_of_action || ""
+        );
+        const btnLabel = normalize(
+          t?.button_label || t?.data_obj?.button_label || ""
+        );
+        const funnel = normalize(t?.funnel_name || "");
+        const name = (t?.name || "").toLowerCase();
+        return (
+          actionName.includes("manager change") ||
+          btnLabel.includes("manager change") ||
+          funnel.includes("manager change") ||
+          name.includes("manager_change")
+        );
+      });
+
+      if (!match?.name) {
+        toast.error("Manager Change flow is not available for this employee.");
+        return;
+      }
+
+      setSelectedReporteeForChange({
+        name: reportee.name,
+        employee_name: reportee.employee_name || reportee.name,
+        definitionName: match.name,
+      });
+      setIsManagerChangeModalOpen(true);
+    } catch (err) {
+      console.error("Could not fetch triggers list for manager change flow.", err);
+      toast.error("Failed to load Manager Change flow. Please try again.");
+    } finally {
+      setIsLoadingTriggerForEmployee(null);
+    }
+  };
+
+  const handleConfirmManagerChange = async () => {
+    if (!selectedReporteeForChange) return;
+
+    const definitionName = selectedReporteeForChange.definitionName;
+    if (!definitionName) {
+      toast.error("Manager Change flow definition is missing. Please try again.");
+      return;
+    }
+
+    try {
+      const result = await initiateFlow({
+        document_name: selectedReporteeForChange.name,
+        definition_name: definitionName,
+      });
+
+      setIsManagerChangeModalOpen(false);
+      const reporteeDisplayName =
+        selectedReporteeForChange.employee_name || selectedReporteeForChange.name;
+      setSelectedReporteeForChange(null);
+
+      if (
+        typeof window !== "undefined" &&
+        typeof window.trigger_chatnext_assistant === "function"
+      ) {
+        window.trigger_chatnext_assistant(true, result?.session);
+      } else {
+        toast.success(
+          `Manager Change Flow initiated for ${reporteeDisplayName}`
+        );
+      }
+    } catch (error) {
+      console.error("Failed to initiate Manager Change Flow:", error);
+      toast.error(
+        errorResponseFormater(error, "Failed to initiate Manager Change Flow.")
+      );
+      setIsManagerChangeModalOpen(false);
+    }
+  };
+
+  const reportingManagerName =
+    supportContacts?.manager?.name && supportContacts.manager.name !== "N/A"
+      ? supportContacts.manager.name
+      : currentEmployee?.reports_to || "Reporting Manager";
 
   // 4. Open Items (Live Open Tasks, Attendance Flags, & Expenses Due)
   const {
@@ -1163,26 +1278,46 @@ const ExitPage: React.FC = () => {
                       >
                         <WrapperHoverCard employeeId={r.name}>
                           <div className="cursor-pointer hover:opacity-80 transition-opacity">
-                            <Typography variant="bodySmall" className="font-bold text-gray-900">
-                              {r.employee_name || r.name}
-                            </Typography>
-                            {repDesignation && (
-                              <Typography variant="caption" className="text-gray-500 font-medium ml-1.5">
-                                ({repDesignation})
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <Typography variant="bodySmall" className="font-bold text-gray-900">
+                                {r.employee_name || r.name}
                               </Typography>
-                            )}
+                              {repDesignation && (
+                                <Typography variant="caption" className="text-gray-500 font-medium ml-1.5">
+                                  ({repDesignation})
+                                </Typography>
+                              )}
+                            </div>
+                            <Typography variant="caption" className="text-gray-400 font-medium block mt-0.5">
+                              reporting manager pending
+                            </Typography>
                           </div>
                         </WrapperHoverCard>
-                        <Typography variant="caption" className="text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-md font-semibold border border-emerald-200">
-                          {r.status || "Active"}
-                        </Typography>
+                        <div className="flex items-center gap-2.5 shrink-0">
+                          <Typography variant="caption" className="text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-md font-semibold border border-emerald-200">
+                            {r.status || "Active"}
+                          </Typography>
+                          <button
+                            type="button"
+                            disabled={isLoadingTriggerForEmployee === r.name}
+                            onClick={() =>
+                              handleOpenManagerChangeModal({
+                                name: r.name,
+                                employee_name: r.employee_name || r.name,
+                              })
+                            }
+                            className="text-xs font-semibold text-primary-700 hover:text-primary-800 hover:underline flex items-center gap-1 transition-colors disabled:opacity-50"
+                          >
+                            {isLoadingTriggerForEmployee === r.name ? "Loading..." : "Change manager \u2192"}
+                          </button>
+                        </div>
                       </div>
                     );
                   })}
                 </div>
 
                 <Typography variant="caption" className="text-primary-950 bg-primary-50/80 p-2.5 rounded-lg border border-primary-200 font-medium mt-3.5 block">
-                  Recommended manager: Rohan Gupta, awaiting approval.
+                  {`Recommended manager: ${reportingManagerName}, awaiting approval.`}
                 </Typography>
               </>
             )}
@@ -1474,6 +1609,22 @@ const ExitPage: React.FC = () => {
           </div>,
           document.body
         )}
+
+      {/* Manager Change Confirmation Modal */}
+      <ActionConfirmationModal
+        isOpen={isManagerChangeModalOpen}
+        title="Initiate Flow"
+        message='Are you sure you want to initiate "Manager Change Flow"?'
+        confirmLabel="Yes, Initiate"
+        cancelLabel="Cancel"
+        confirmBgColor="primary"
+        isPending={isInitiatingFlow}
+        onConfirm={handleConfirmManagerChange}
+        onCancel={() => {
+          setIsManagerChangeModalOpen(false);
+          setSelectedReporteeForChange(null);
+        }}
+      />
     </div>
   );
 };
