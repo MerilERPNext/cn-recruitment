@@ -248,9 +248,13 @@ def _check_employee_pool(applicant, settings, gate, reasons):
 	blocking = [m for m in matches if m.get("action") == BLOCK]
 	if blocking and not gate.allow_hiring:
 		match = blocking[0]
+		# Led by the verdict, not by "is already an employee": the same refusal
+		# covers a current employee, a Do Not Rehire flag and too recent an exit,
+		# and only the first of those is about still being on the payroll.
 		frappe.throw(
-			_("{0} is already on record as an employee ({1} — {2}). {3}").format(
+			_("{0} cannot be offered this role — {1}: {2} ({3}). {4}").format(
 				frappe.bold(applicant.get("applicant_name") or _("This candidate")),
+				frappe.bold(match.get("verdict_label")),
 				match.get("name"),
 				match.get("employee_name") or "",
 				match.get("verdict_detail") or "",
