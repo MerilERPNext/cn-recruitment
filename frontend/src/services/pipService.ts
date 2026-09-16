@@ -1,6 +1,7 @@
 import FrappeAPI from "../utils/frappeAPI";
 import type { FilterCondition } from "../types/frappe";
 import type { FlowRequestItem } from "../types/flows";
+import type { PipFlowTriggerItem, PipFunnelActivityItem } from "../types/pip";
 
 
 export interface ActiveRepotreeTypes {
@@ -230,4 +231,87 @@ export const getPipFlowRequestsForEmployee = async (
   );
 
   return filtered.length > 0 ? filtered : candidates;
+};
+
+/**
+ * Fetch PIP trigger list with priority, lock status, and completion state for an employee.
+ * API: nextai.funnel.doctype.flow_config.flow_config.get_flow_config_other_employee_initiate_trigger_list
+ */
+export const getPipFlowTriggerList = async (
+  employee: string
+): Promise<PipFlowTriggerItem[]> => {
+  const response = await FrappeAPI.getMethod(
+    "nextai.funnel.doctype.flow_config.flow_config.get_flow_config_other_employee_initiate_trigger_list",
+    {
+      doctype: "Employee",
+      employee,
+      flow_type: "PIP",
+    },
+    { skipTargetEmployee: true }
+  );
+
+  let list = response;
+  if (typeof list === "string") {
+    try {
+      list = JSON.parse(list);
+    } catch {
+      return [];
+    }
+  }
+
+  if (list && typeof list === "object" && "message" in (list as Record<string, unknown>)) {
+    list = (list as Record<string, unknown>).message;
+    if (typeof list === "string") {
+      try {
+        list = JSON.parse(list);
+      } catch {
+        return [];
+      }
+    }
+  }
+
+  if (!Array.isArray(list)) return [];
+  return list as PipFlowTriggerItem[];
+};
+
+/**
+ * Fetch PIP Funnel Activity details (API 2: what actually happened).
+ * API: cn_hrms_core.cn_hrms_core.apis.funnel_activity.get_funnel_activity_details
+ * POST with body: { doctype: "Employee", page: 1, limit: 20, order_by: "creation desc", flow_type: "PIP" }
+ * Header: X-Target-Employee-Id: {employeeId}
+ */
+export const getPipFunnelActivities = async (
+  employeeId: string
+): Promise<PipFunnelActivityItem[]> => {
+  const response = await FrappeAPI.callMethod(
+    "cn_hrms_core.cn_hrms_core.apis.funnel_activity.get_funnel_activity_details",
+    {
+      doctype: "Employee",
+      page: 1,
+      limit: 20,
+      order_by: "creation desc",
+      flow_type: "PIP",
+    },
+    {
+      headers: { "X-Target-Employee-Id": employeeId },
+    }
+  );
+
+  const res = response as
+    | { data?: PipFunnelActivityItem[]; message?: { data?: PipFunnelActivityItem[] } }
+    | PipFunnelActivityItem[];
+
+  const rawList: PipFunnelActivityItem[] = Array.isArray(
+    (res as { data?: PipFunnelActivityItem[] })?.data
+  )
+    ? (res as { data: PipFunnelActivityItem[] }).data
+    : Array.isArray(
+        (res as { message?: { data?: PipFunnelActivityItem[] } })?.message?.data
+      )
+    ? (res as { message: { data: PipFunnelActivityItem[] } }).message.data
+    : Array.isArray(res)
+    ? res
+    : [];
+
+  return rawList;
 };
