@@ -1,11 +1,14 @@
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import type { FlowRequestItem } from "../types/flows";
+import type { PipFlowTriggerItem, PipFunnelActivityItem } from "../types/pip";
 import {
   ActiveRepotreeTypes,
   getAllActiveEmployees,
   getActiveReportees,
   getPipFlowRequestsByEmployee,
   getPipFlowRequestsForEmployee,
+  getPipFlowTriggerList,
+  getPipFunnelActivities,
 } from "../services/pipService";
 
 const PAGE_SIZE = 20;
@@ -125,6 +128,39 @@ export const usePipFlowRequestsForEmployee = (
     queryKey: ["pip-flow-requests-for-employee", employeeId],
     queryFn: () => getPipFlowRequestsForEmployee(employeeId!),
     enabled: !!employeeId,
+    staleTime: 1 * 60 * 1000,
+  });
+};
+
+/**
+ * Fetches the PIP trigger list with priority, lock status, and completion state for an employee.
+ * API 1: get_flow_config_other_employee_initiate_trigger_list with flow_type=PIP.
+ */
+export const usePipFlowTriggerList = (
+  employeeId: string | undefined,
+  enabled = true
+) => {
+  return useQuery<PipFlowTriggerItem[]>({
+    queryKey: ["pip-flow-trigger-list", employeeId],
+    queryFn: () => getPipFlowTriggerList(employeeId!),
+    enabled: enabled && !!employeeId,
+    staleTime: 1 * 60 * 1000,
+  });
+};
+
+/**
+ * Fetches PIP Funnel Activity details (API 2: what actually happened).
+ * API: cn_hrms_core.cn_hrms_core.apis.funnel_activity.get_funnel_activity_details with flow_type=PIP.
+ * Scoped to reportee via X-Target-Employee-Id header.
+ */
+export const usePipFunnelActivities = (
+  employeeId: string | undefined,
+  enabled = true
+) => {
+  return useQuery<PipFunnelActivityItem[]>({
+    queryKey: ["pip-funnel-activities", employeeId],
+    queryFn: () => getPipFunnelActivities(employeeId!),
+    enabled: enabled && !!employeeId,
     staleTime: 1 * 60 * 1000,
   });
 };
