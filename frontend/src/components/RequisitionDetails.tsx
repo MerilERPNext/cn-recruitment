@@ -148,7 +148,6 @@ const RequisitionDetails: React.FC = () => {
         case "approved draft":
         case "approved active":
           return { label: "Urgent", color: "text-red-500" };
-        case "approval pending":
         case "on hold":
         case "auto archived":
           return { label: "Normal Priority", color: "text-yellow-600" };

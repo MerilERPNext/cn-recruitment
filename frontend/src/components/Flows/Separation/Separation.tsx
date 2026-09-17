@@ -10,6 +10,7 @@ import {
   useDifinitaionNameForSeparation,
   getDefinitionByFilter,
   useGetFlowRequestById,
+  useStartRevokeFlow,
 } from "../../../hooks/useFlows";
 import Button from "../../shared/atoms/Button";
 import RetriggerButton from "../RetriggerButton";
@@ -25,13 +26,12 @@ import { useGetUiPermission } from "../../../hooks/userUiPermission";
 import { SeparationSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
 import { getActionsEnabled } from "../../../utils/uiPermission";
 import { useQueryClient } from "@tanstack/react-query";
-import { useGetEmployeeSeparationType, useGetSeparationFunnelDetails, useGetNoticePeriodAndSeparationPolicy, useRevokeEmployeeSeparation } from "../../../hooks/useSeparation";
+import { useGetEmployeeSeparationType, useGetSeparationFunnelDetails, useGetNoticePeriodAndSeparationPolicy } from "../../../hooks/useSeparation";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 import { FlowRequestItem } from "../../../types/flows";
 import ActivityLogDrawer from "../../shared/ActivityLogDrawer";
 import Tooltip from "../../shared/Tooltip";
 import DropdownMenu from "../../shared/DropDownMenu";
-import ActionReasonModal from "../../shared/ActionReasonModal";
 import ActionConfirmationModal from "../../shared/ActionConfirmationModal";
 import { errorResponseFormater } from "../../../utils/errorResponseFormater";
 import toast from "react-hot-toast";
@@ -74,7 +74,7 @@ const Separation = () => {
       "terminate",
       "retrigger_separation",
       "retrigger_termination",
-      "revoke_separation",
+      "request_revoke",
       "show_separation_activity_log",
     ],
     "Separation",
@@ -96,7 +96,6 @@ const Separation = () => {
   const separationPending = item?.approval_status === "Pending";
 
   const reference_name = item?.workflow_stages?.[0]?.todo?.reference_name ?? null;
-  const separation_name = item?.approval_stages?.[0]?.todo?.reference_name ?? null;
 
   const { data: separationType, isLoading: isLoadingSeparationType } = useGetEmployeeSeparationType(reference_name);
   const { data: policyData, isLoading: isLoadingPolicy } = useGetNoticePeriodAndSeparationPolicy(document_name);
@@ -113,38 +112,42 @@ const Separation = () => {
   const isCompleted = item?.approval_status === "Completed";
 
   const [isActivityLogOpen, setIsActivityLogOpen] = useState(false);
-  const [isRevokeModalOpen, setIsRevokeModalOpen] = useState(false);
+  const [isRequestRevokeModalOpen, setIsRequestRevokeModalOpen] = useState(false);
   const [isSeparationConfirmOpen, setIsSeparationConfirmOpen] = useState(false);
   const [isTerminateConfirmOpen, setIsTerminateConfirmOpen] = useState(false);
 
-  const showRevokeButton =
-    !!separation_name &&
-    !!enabledActions.revoke_separation &&
-    !isRevoked &&
-    item?.approval_status &&
-    !["Approved", "Completed", "Rejected", "Cancelled"].includes(item.approval_status);
+  const startRevokeMutation = useStartRevokeFlow();
+  const canRequestRevoke = enabledActions.request_revoke;
+  const showRequestRevokeButton =
+    canRequestRevoke &&
+    !!item?.request_id &&
+    !!(flowRequestData?.can_request_revoke || flowRequestData?.can_revoke || (item as any)?.can_request_revoke || (item as any)?.can_revoke);
 
-  // console.log("show Revoke Condition: ", { separation_name, enabledActions: enabledActions.revoke_separation, isRevoked, status: item?.approval_status })
+  const handleStartRevokeConfirm = async () => {
+    if (!item?.request_id) return;
+    try {
+      const response = await startRevokeMutation.mutateAsync({
+        funnel_activity: item.request_id,
+      });
 
-  const { mutate: revokeSeparation, isPending: isRevoking } = useRevokeEmployeeSeparation();
+      const resData = (response as { message?: { session_id?: string } })?.message ?? response;
+      const sessionId = resData?.session_id;
 
-  const handleRevokeSubmit = (reason: string | null) => {
-    if (!separation_name) return;
-    revokeSeparation(
-      { separation_name: separation_name, reason: reason ?? "" },
-      {
-        onSuccess: () => {
-          toast.success("Separation request revoked successfully");
-          setIsRevokeModalOpen(false);
-          refetchSeparationFunnelDetails();
-          queryClient.invalidateQueries({ queryKey: ["separation-workflow"] });
-          queryClient.invalidateQueries({ queryKey: ["employee", activeEmployee?.name] });
-        },
-        onError: (error: any) => {
-          toast.error(errorResponseFormater(error, "Failed to revoke separation request."));
-        },
+      setIsRequestRevokeModalOpen(false);
+      toast.success("Revocation flow started successfully.");
+
+      if (sessionId && typeof (window as any).trigger_chatnext_assistant === "function") {
+        (window as any).trigger_chatnext_assistant(true, sessionId);
       }
-    );
+
+      refetchSeparationFunnelDetails();
+      queryClient.invalidateQueries({ queryKey: ["separation-workflow"] });
+      queryClient.invalidateQueries({ queryKey: ["employee", activeEmployee?.name] });
+      queryClient.invalidateQueries({ queryKey: ["employee-flow-requests"] });
+      queryClient.invalidateQueries({ queryKey: ["employee-flow-request-details"] });
+    } catch (error) {
+      toast.error(errorResponseFormater(error, "Failed to request revoke."));
+    }
   };
 
   const isLoading = isLoadingSeparationFunnelDetails || isLoadingSeparationType || isLoadingPolicy || isLoadingCurrentEmployee || (!!item?.request_id && isLoadingFlowRequest);
@@ -261,10 +264,10 @@ const Separation = () => {
   /* ---------------------------------------------------------- */
 
   const mobileMenuItems = [];
-  if (showRevokeButton) {
+  if (showRequestRevokeButton) {
     mobileMenuItems.push({
-      label: "Revoke Separation",
-      onClick: () => setIsRevokeModalOpen(true),
+      label: "Request Revoke",
+      onClick: () => setIsRequestRevokeModalOpen(true),
       icon: <XCircle size={16} />,
       className: "text-red-600 hover:bg-red-50 hover:text-red-700",
     });
@@ -297,15 +300,16 @@ const Separation = () => {
         </div>
         {isDesktop ? (
           <div className="flex items-center gap-2">
-            {showRevokeButton && (
+            {showRequestRevokeButton && (
               <Button
                 variant="outline"
                 bgColor="error"
-                onClick={() => setIsRevokeModalOpen(true)}
-                className="flex items-center gap-2 py-1.5 transition-all rounded-md shadow-sm"
-                disabled={isRevoking}
+                onClick={() => setIsRequestRevokeModalOpen(true)}
+                className="flex items-center gap-2 py-1.5 transition-all rounded-md shadow-xs"
+                loading={startRevokeMutation.isPending}
+                disabled={startRevokeMutation.isPending}
               >
-                Revoke Separation
+                Request Revoke
               </Button>
             )}
             <Button
@@ -369,7 +373,7 @@ const Separation = () => {
           <div className="max-w-full">
             <ApprovalTracker
               For={separationType?.custom_resignaion_type === "Termination" ? "Employee Termination" : "Employee Separation"}
-              data={item as FlowRequestItem}
+              data={flowRequestData || (item as FlowRequestItem)}
               isLoading={isLoading}
             />
           </div>
@@ -509,17 +513,16 @@ const Separation = () => {
           </Button>
         )}
       </div>
-      <ActionReasonModal
-        isOpen={isRevokeModalOpen}
-        isPending={isRevoking}
-        type="act"
-        required={false}
-        title="Revoke Separation Request"
-        description="Are you sure you want to revoke this separation request? Please provide a reason."
-        label="Reason for Revocation"
-        placeholder="Enter reason for revoking..."
-        onCancel={() => setIsRevokeModalOpen(false)}
-        onSave={handleRevokeSubmit}
+      <ActionConfirmationModal
+        isOpen={isRequestRevokeModalOpen}
+        title="Request Revoke"
+        message="Are you sure you want to request revoke? This action cannot be undone."
+        confirmLabel="Yes, Revoke"
+        cancelLabel="Cancel"
+        confirmBgColor="error"
+        isPending={startRevokeMutation.isPending}
+        onConfirm={handleStartRevokeConfirm}
+        onCancel={() => setIsRequestRevokeModalOpen(false)}
       />
 
       <ActionConfirmationModal

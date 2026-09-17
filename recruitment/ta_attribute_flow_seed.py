@@ -325,10 +325,7 @@ def _strategy_template(chain, assignment):
 		is_interview = kind == "Interview"
 		doc.append("interview_rounds", {
 			"round_name": round_name,
-			# The Select offers only "" and "Interview" — a screening round is the
-			# empty one, and _stage_type_for_round maps it back to "Screening" on
-			# the Job Opening's stage row.
-			"step_type": "Interview" if is_interview else "",
+			"step_type": kind,
 			"is_mandatory": 1 if is_interview else 0,
 			"allow_skipping": "No" if is_interview else "Yes",
 			"enable_panel_interview": "No",

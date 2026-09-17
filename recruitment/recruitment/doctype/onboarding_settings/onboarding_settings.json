@@ -10,8 +10,11 @@
   "automation_section",
   "enable_auto_manager_mapping",
   "enable_doj_outcome_automation",
+  "spoc_section",
+  "hr_onboarding_spocs",
   "review_section",
   "enable_onboarding_review_actions",
+  "complete_onboarding_on_form_approval",
   "candidate_journey_section",
   "onboarding_journey_title",
   "onboarding_journey_subtitle",
@@ -50,21 +53,41 @@
    "label": "Automate DOJ Outcome (Joined / Not Joined / Postponed)"
   },
   {
+   "fieldname": "spoc_section",
+   "fieldtype": "Section Break",
+   "label": "Onboarding SPOCs"
+  },
+  {
+   "description": "Copied onto every new Employee Onboarding as its Onboarding SPOCs. Each SPOC receives the form-verification email and task, and the joining preparation task. Leave empty to fall back to the user who created the Job Offer. Changing this list only affects onboardings created afterwards.",
+   "fieldname": "hr_onboarding_spocs",
+   "fieldtype": "Table MultiSelect",
+   "label": "HR Onboarding SPOCs",
+   "options": "Onboarding Buddy User"
+  },
+  {
    "fieldname": "review_section",
    "fieldtype": "Section Break",
    "label": "Onboarding Review Actions"
   },
   {
    "default": "0",
-   "description": "When enabled, HR can Approve the onboarding form or Send Back rejected fields to the candidate — from the Employee Onboarding desk form AND the portal UI. These actions drive the Flow Config emails (Form Approved / Updates Needed). Leave OFF for projects that don't use this review flow. Per-site setting, so enable only on the one project's site.",
+   "description": "When enabled, HR can Approve the onboarding form or Send Back rejected fields to the candidate \u2014 from the Employee Onboarding desk form AND the portal UI. These actions drive the Flow Config emails (Form Approved / Updates Needed). Leave OFF for projects that don't use this review flow. Per-site setting, so enable only on the one project's site.",
    "fieldname": "enable_onboarding_review_actions",
    "fieldtype": "Check",
    "label": "Enable Onboarding Review Actions (Approve / Send Back)"
   },
   {
+   "default": "0",
+   "depends_on": "enable_onboarding_review_actions",
+   "description": "Onboarding Status means 'the candidate's form is done', not 'the tasks are done'. It reads Completed the moment every candidate portal field is Approved; a field rejected afterwards takes it back to In Process, and re-approving returns it to Completed. Task progress no longer overwrites it. Leave OFF to keep the standard meaning, where the onboarding tasks drive the status.",
+   "fieldname": "complete_onboarding_on_form_approval",
+   "fieldtype": "Check",
+   "label": "Complete Onboarding on Form Approval"
+  },
+  {
    "fieldname": "candidate_journey_section",
    "fieldtype": "Section Break",
-   "label": "Candidate Portal — \"After you're onboarded\""
+   "label": "Candidate Portal \u2014 \"After you're onboarded\""
   },
   {
    "default": "After you're onboarded",
@@ -74,7 +97,7 @@
    "label": "Journey Heading"
   },
   {
-   "description": "Sub-heading shown under the journey heading (e.g. \"Your first two weeks — at a glance.\").",
+   "description": "Sub-heading shown under the journey heading (e.g. \"Your first two weeks \u2014 at a glance.\").",
    "fieldname": "onboarding_journey_subtitle",
    "fieldtype": "Small Text",
    "label": "Journey Sub-heading"
@@ -90,7 +113,7 @@
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2026-05-14 10:00:00.000000",
+ "modified": "2026-09-17 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "Onboarding Settings",

@@ -187,6 +187,22 @@
 		} catch (e) { /* non-fatal */ }
 	}
 
+	// A candidate let through a duplicity match runs on a different workflow than
+	// everyone else on the opening, and that must be obvious on the form itself.
+	function setDuplicityFlag(frm) {
+		try {
+			if (!frm.doc.custom_duplicity_flagged) return;
+			frm.dashboard.add_comment(
+				__("Hiring allowed despite a duplicity match ({0}) — hiring workflow {1}; the Job Offer will need exceptional approval. Reasons are on the Employee Record tab.", [
+					esc(frm.doc.custom_duplicity_check_setting || ""),
+					esc(frm.doc.custom_duplicity_hiring_workflow || __("of the Job Opening")),
+				]),
+				"orange",
+				true
+			);
+		} catch (e) { /* non-fatal */ }
+	}
+
 	// ── Formatting ──────────────────────────────────────────────────────────
 	function dateText(value) {
 		return value ? frappe.datetime.str_to_user(value) : "";
@@ -257,7 +273,9 @@
 		const bits = [];
 		// The employee-pool rules are decided at the JOB OFFER, not here, so the
 		// wording must not imply this application is being stopped.
-		if (data.blocking_count) {
+		if (data.allow_hiring && (data.blocking_count || data.exception_count)) {
+			bits.push(__("Hiring is allowed despite this match — a job offer to this person would go to exceptional approval."));
+		} else if (data.blocking_count) {
 			bits.push(__("A job offer to this person would be refused by the duplicity check."));
 		} else if (data.exception_count) {
 			bits.push(__("A job offer to this person would need exceptional approval."));
@@ -380,6 +398,7 @@
 				injectStyles();
 				// Nothing to look up until the applicant exists.
 				if (frm.is_new()) { hideTab(frm); return; }
+				setDuplicityFlag(frm);
 				keepTabVisible(frm);
 				bindTabClick(frm);
 				load(frm);

@@ -83,6 +83,25 @@ export const getSeparationWorkflow = async (
   return response as any;
 };
 
+export const getSeparationWorkflowForEmployee = async (
+  employeeId: string | undefined,
+  reference_doctype: string,
+  reference_docname: string
+) => {
+  const options = employeeId
+    ? { headers: { "X-Target-Employee-Id": employeeId } }
+    : {};
+  const response = await FrappeAPI.callMethod(
+    'cn_hrms_core.cn_hrms_core.apis.funnel_activity.get_funnel_activity',
+    {
+      reference_doctype,
+      reference_docname,
+    },
+    options
+  );
+
+  return response as any;
+};
 
 export const getSeparationFunnelData = async (
   docname: string
@@ -95,6 +114,26 @@ export const getSeparationFunnelData = async (
   );
 
   return response ?? [] as any;
+};
+
+export const getSeparationFunnelDataForEmployee = async (
+  employeeId: string | undefined,
+  docname: string,
+  doctype = "Employee"
+) => {
+  const options = employeeId
+    ? { headers: { "X-Target-Employee-Id": employeeId } }
+    : {};
+  const response = await FrappeAPI.callMethod(
+    'nextai.funnel.doctype.funnel_task.awaiting_actions.chatnext_assistant_multi_actions.get_permitted_multi_actions',
+    {
+      doctype,
+      docname,
+    },
+    options
+  );
+
+  return (response ?? []) as any;
 };
 
 export const postSelectEventFromOptions = async (
@@ -133,6 +172,23 @@ export const getFlowRequests = async (
     {
       doctype: "Employee"
     },
+  );
+
+  return response as any;
+};
+
+export const getFlowRequestsForEmployee = async (
+  employeeId?: string
+) => {
+  const options = employeeId
+    ? { headers: { "X-Target-Employee-Id": employeeId } }
+    : {};
+  const response = await FrappeAPI.callMethod(
+    'cn_hrms_core.cn_hrms_core.apis.funnel_activity.get_funnel_activity_details',
+    {
+      doctype: "Employee",
+    },
+    options
   );
 
   return response as any;
@@ -246,3 +302,23 @@ export const revokeFlow = async (
   );
   return response as any;
 };
+
+export interface StartRevokeFlowResponse {
+  ok?: boolean;
+  funnel_activity?: string;
+  session_id?: string;
+  [key: string]: unknown;
+}
+
+export const startRevokeFlow = async (
+  funnel_activity: string
+): Promise<StartRevokeFlowResponse> => {
+  const response = await FrappeAPI.callMethod(
+    "nextai.funnel.doctype.flow_config.revoke_request.start_revoke",
+    {
+      funnel_activity,
+    }
+  );
+  return response as StartRevokeFlowResponse;
+};
+

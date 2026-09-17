@@ -28,6 +28,8 @@ import frappe
 from frappe import _
 from frappe.utils import flt, get_url, now_datetime, today
 
+from recruitment.recruitment.communication_log import sendmail_with_log
+
 # Custom fields added on Job Applicant (see recruitment/custom/job_applicant.json)
 STAGE_FIELD = "custom_current_stage"
 HISTORY_FIELD = "custom_stage_history"
@@ -167,6 +169,51 @@ def get_openings_stages(job_openings):
 		o: (_append_offer_stages(o, stages, enable_pre=pre_flags.get(o)) if stages else stages)
 		for o, stages in grouped.items()
 	}
+
+
+# Job Applicant field naming a hiring workflow that replaces the opening's stages
+# for that one candidate. Stamped by the duplicity check when "Allow Hiring Even
+# Though It Matches" lets a match through (customizations.ta_duplicity_check).
+WORKFLOW_OVERRIDE_FIELD = "custom_duplicity_hiring_workflow"
+
+
+def get_applicant_stages(applicant):
+	"""The ordered hiring stages THIS candidate follows — a doc or a dict carrying
+	``job_title`` and ``custom_duplicity_hiring_workflow``.
+
+	Normally the opening's. A candidate let through a duplicity match runs on the
+	hiring workflow named on their application instead: the rounds of that TA
+	Interview Strategy Template, mapped exactly as a Job Opening is prefilled
+	from it, with the opening's virtual offer stages appended — so every consumer
+	below treats the two alike. Falls back to the opening's stages when the
+	template is gone or has no rounds, rather than leave the candidate stranded.
+	"""
+	opening = applicant.get("job_title")
+	template = applicant.get(WORKFLOW_OVERRIDE_FIELD)
+	if template:
+		rows = _template_stages(template)
+		if rows:
+			return _append_offer_stages(opening, rows)
+	return get_opening_stages(opening)
+
+
+def _template_stages(template):
+	"""A TA Interview Strategy Template's rounds, shaped like the opening's rows."""
+	from recruitment.recruitment.doctype.ta_interview_strategy_template.ta_interview_strategy_template import (
+		_map_rounds_to_stages,
+	)
+
+	try:
+		doc = frappe.get_doc("TA Interview Strategy Template", template)
+	except frappe.DoesNotExistError:
+		return []
+
+	rows = _map_rounds_to_stages(doc)
+	for idx, row in enumerate(rows, start=1):
+		row.setdefault("owner_role", None)
+		row.setdefault("notes", "")
+		row["idx"] = idx
+	return rows
 
 
 def _require_applicant_write(job_applicant):
@@ -374,9 +421,25 @@ def _campus_stage_mail_allowed(doc):
 	                                       "notify_campus_candidates_on_stage_change"))
 
 
+def _stage_mail_disabled_site_wide():
+	"""Recruitment Settings -> Disable Stage-Change Email to Candidates.
+
+	A "disable" switch on purpose: a Single's checkbox reads 0 until someone
+	saves it, so an untouched site keeps sending exactly as before. Checked
+	against the meta first so code deployed ahead of `bench migrate` does not
+	fail on a field that is not there yet.
+	"""
+	fieldname = "disable_stage_change_email"
+	if not frappe.get_meta("Recruitment Settings").has_field(fieldname):
+		return False
+	return bool(frappe.db.get_single_value("Recruitment Settings", fieldname))
+
+
 def _notify_stage_entry(doc, stage):
 	"""Best-effort candidate email on stage entry. Never blocks the transition."""
 	try:
+		if _stage_mail_disabled_site_wide():
+			return
 		if not _campus_stage_mail_allowed(doc):
 			return
 		recipient = doc.get("email_id")
@@ -394,7 +457,7 @@ def _notify_stage_entry(doc, stage):
 				"stage": stage.get("stage_name") or "",
 			},
 		)
-		frappe.sendmail(
+		sendmail_with_log(
 			recipients=[recipient],
 			subject=subject,
 			message=message,
@@ -415,7 +478,7 @@ def seed_first_stage(doc, method=None):
 			return
 		if doc.get(STAGE_FIELD):
 			return
-		stages = get_opening_stages(doc.get("job_title"))
+		stages = get_applicant_stages(doc)
 		if not stages:
 			return
 		_enter_stage(
@@ -435,7 +498,7 @@ def get_stage_options(job_applicant):
 		return {"enabled": False, "stages": []}
 
 	doc = frappe.get_doc("Job Applicant", job_applicant)
-	stages = get_opening_stages(doc.get("job_title"))
+	stages = get_applicant_stages(doc)
 	current = doc.get(STAGE_FIELD)
 	idx = _find_stage(stages, current) if current else -1
 	current_type = stages[idx].get("stage_type") if idx >= 0 else None
@@ -451,7 +514,7 @@ def get_stage_options(job_applicant):
 @frappe.whitelist()
 def move_to_next_stage(job_applicant):
 	doc = frappe.get_doc("Job Applicant", job_applicant)
-	stages = get_opening_stages(doc.get("job_title"))
+	stages = get_applicant_stages(doc)
 	if not stages:
 		frappe.throw(_("No hiring stages are defined on the linked Job Opening."))
 
@@ -468,10 +531,10 @@ def move_to_next_stage(job_applicant):
 @frappe.whitelist()
 def set_stage(job_applicant, stage_name):
 	doc = frappe.get_doc("Job Applicant", job_applicant)
-	stages = get_opening_stages(doc.get("job_title"))
+	stages = get_applicant_stages(doc)
 	idx = _find_stage(stages, stage_name)
 	if idx < 0:
-		frappe.throw(_("Stage {0} is not part of this Job Opening's workflow.").format(stage_name))
+		frappe.throw(_("Stage {0} is not part of this candidate's hiring workflow.").format(stage_name))
 
 	# Forward-only: a completed / current stage can't be revisited.
 	current = doc.get(STAGE_FIELD)
@@ -488,7 +551,7 @@ def set_stage(job_applicant, stage_name):
 @frappe.whitelist()
 def reject_at_current_stage(job_applicant, reason=None):
 	doc = frappe.get_doc("Job Applicant", job_applicant)
-	stages = get_opening_stages(doc.get("job_title"))
+	stages = get_applicant_stages(doc)
 	current = doc.get(STAGE_FIELD)
 	idx = _find_stage(stages, current) if current else -1
 	stage = stages[idx] if idx >= 0 else {"stage_name": current or "—", "stage_type": ""}
@@ -653,7 +716,7 @@ def prepare_interview(job_applicant, stage_name=None):
 	stage (the "+" on that stage node); when omitted we use the current stage.
 	"""
 	doc = frappe.get_doc("Job Applicant", job_applicant)
-	stages = get_opening_stages(doc.get("job_title"))
+	stages = get_applicant_stages(doc)
 	target = stage_name or doc.get(STAGE_FIELD)
 	idx = _find_stage(stages, target) if target else -1
 	if idx < 0:
@@ -737,7 +800,7 @@ def advance_on_interview_result(interview_name):
 			return
 
 		doc = frappe.get_doc("Job Applicant", applicant)
-		stages = get_opening_stages(doc.get("job_title"))
+		stages = get_applicant_stages(doc)
 		current = doc.get(STAGE_FIELD)
 		idx = _find_stage(stages, current) if current else -1
 		if idx < 0:
@@ -779,7 +842,7 @@ def advance_on_screening_result(job_applicant, passed):
 		if not is_hiring_workflow_enabled():
 			return
 		doc = frappe.get_doc("Job Applicant", job_applicant)
-		stages = get_opening_stages(doc.get("job_title"))
+		stages = get_applicant_stages(doc)
 		current = doc.get(STAGE_FIELD)
 		idx = _find_stage(stages, current) if current else -1
 		if idx < 0:
@@ -809,7 +872,7 @@ def advance_on_pre_offer_approved(job_applicant):
 		if not is_hiring_workflow_enabled():
 			return
 		doc = frappe.get_doc("Job Applicant", job_applicant)
-		stages = get_opening_stages(doc.get("job_title"))
+		stages = get_applicant_stages(doc)
 		current = doc.get(STAGE_FIELD)
 		idx = _find_stage(stages, current) if current else -1
 		if idx < 0:
@@ -845,7 +908,7 @@ def advance_on_job_offer_outcome(doc, method=None):
 		if not applicant:
 			return
 		ja = frappe.get_doc("Job Applicant", applicant)
-		stages = get_opening_stages(ja.get("job_title"))
+		stages = get_applicant_stages(ja)
 		current = ja.get(STAGE_FIELD)
 		idx = _find_stage(stages, current) if current else -1
 		if idx < 0:
@@ -970,7 +1033,7 @@ def complete_interview(job_applicant, rating, comments=None, assessment=None, st
 	"""
 	_require_applicant_write(job_applicant)
 	doc = frappe.get_doc("Job Applicant", job_applicant)
-	stages = get_opening_stages(doc.get("job_title"))
+	stages = get_applicant_stages(doc)
 	target = stage_name or doc.get(STAGE_FIELD)
 	idx = _find_stage(stages, target) if target else -1
 	if idx < 0:
@@ -1017,7 +1080,7 @@ def complete_interview(job_applicant, rating, comments=None, assessment=None, st
 
 
 def _stage_or_throw(doc, stage_name):
-	stages = get_opening_stages(doc.get("job_title"))
+	stages = get_applicant_stages(doc)
 	target = stage_name or doc.get(STAGE_FIELD)
 	idx = _find_stage(stages, target) if target else -1
 	if idx < 0:
@@ -1100,7 +1163,7 @@ def send_interview_feedback_form(job_applicant, stage_name=None):
 	)
 	emailed = True
 	try:
-		frappe.sendmail(
+		sendmail_with_log(
 			recipients=interviewers,
 			subject=_("Interview feedback requested — {0}").format(doc.get("applicant_name") or doc.name),
 			message=message,
@@ -1221,7 +1284,7 @@ def get_workflow_view(job_applicant):
 		return {"enabled": False, "stages": []}
 
 	doc = frappe.get_doc("Job Applicant", job_applicant)
-	stages = get_opening_stages(doc.get("job_title"))
+	stages = get_applicant_stages(doc)
 	current = doc.get(STAGE_FIELD)
 	idx = _find_stage(stages, current) if current else -1
 

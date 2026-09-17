@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 
 /**
  * Shadow DOM wrapper for todo-app-atomic web component
@@ -183,6 +184,8 @@ const TodoSkeleton = () => (
 // ─── Main wrapper ─────────────────────────────────────────────────────────────
 const TodoAppShadowWrapper = () => {
     const containerRef = useRef<HTMLDivElement>(null);
+    const [searchParams] = useSearchParams();
+    const categoryParam = searchParams.get("category");
     const [isScriptLoaded, setIsScriptLoaded] = useState(false);
     const [isCssReady, setIsCssReady] = useState(false);
     const [loadError, setLoadError] = useState<string | null>(null);
@@ -318,6 +321,9 @@ const TodoAppShadowWrapper = () => {
         // Create and append the web component (mounts in background while skeleton shows)
         const todoApp = document.createElement("todo-app-atomic");
         todoApp.setAttribute("mode", "widget");
+        if (categoryParam) {
+            todoApp.setAttribute("category", categoryParam);
+        }
         shadowRoot.appendChild(todoApp);
 
         return () => {
@@ -325,6 +331,36 @@ const TodoAppShadowWrapper = () => {
             setIsCssReady(false);
         };
     }, [isScriptLoaded]);
+
+    // Update category attribute if categoryParam changes while already loaded
+    useEffect(() => {
+        const container = containerRef.current;
+        if (!container || !container.shadowRoot) return;
+        const todoApp = container.shadowRoot.querySelector("todo-app-atomic");
+        if (todoApp && categoryParam) {
+            todoApp.setAttribute("category", categoryParam);
+        }
+    }, [categoryParam]);
+
+    // Clean up category query parameter from address bar once component is ready so it doesn't persist
+    useEffect(() => {
+        if (categoryParam && isCssReady) {
+            const timer = setTimeout(() => {
+                try {
+                    const url = new URL(window.location.href);
+                    if (url.searchParams.has("category")) {
+                        url.searchParams.delete("category");
+                        const cleanSearch = url.searchParams.toString();
+                        const newUrl = url.pathname + (cleanSearch ? `?${cleanSearch}` : "") + url.hash;
+                        window.history.replaceState(window.history.state, "", newUrl);
+                    }
+                } catch (e) {
+                    console.error(e);
+                }
+            }, 600);
+            return () => clearTimeout(timer);
+        }
+    }, [categoryParam, isCssReady]);
 
     // ── Error state ────────────────────────────────────────────────────────────
     if (loadError) {

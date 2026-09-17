@@ -42,6 +42,11 @@ DNR_EMP_PAN = "DUPTD9012N"
 RECENT_EXIT_EMAIL = "duptest.recent@example.com"
 RECENT_EXIT_PAN = "DUPTR3456E"
 
+# Flagged on the EMPLOYEE record and nowhere else — the person barred without a
+# separation ever being processed.
+EMP_FLAG_EMAIL = "duptest.empflag@example.com"
+EMP_FLAG_PAN = "DUPTE7890F"
+
 MATCH_FIELDS = ("email_id", "custom_pan_number")
 
 # The configuration under test. Every row of the specification is switched on to
@@ -72,9 +77,17 @@ def _log(msg):
 # Seed
 # ---------------------------------------------------------------------------
 
+# Configured on the record by hand, not by this fixture — and a re-seed deletes
+# and recreates that record, so they are read off the old one and put back.
+_ALLOW_HIRING_FIELDS = (
+	"allow_hiring_on_duplicity_match", "hiring_workflow", "exceptional_approval_workflow",
+)
+
+
 def seed():
 	"""Build the whole fixture. Prints what to do with it."""
 	_log_lines.clear()
+	carried = _carried_allow_hiring()
 	teardown(quiet=True)
 
 	if not frappe.db.exists("Company", COMPANY):
@@ -86,7 +99,8 @@ def seed():
 	openings = _openings(designation, requisition)
 	employees = _employees()
 	_separation(employees["dnr"])
-	settings = _settings()
+	_flag_employee_record(employees["emp_flag"])
+	settings = _settings(carried)
 	applicants = _applicants(openings, employees)
 
 	frappe.db.commit()
@@ -102,6 +116,23 @@ def _designation_cached():
 	if not _DESIGNATION:
 		_DESIGNATION.append(frappe.db.get_value("Designation", {}, "name"))
 	return _DESIGNATION[0]
+
+
+_EMP_DESIGNATION = []
+
+
+def _employee_designation():
+	"""A designation an Employee insert actually accepts on this site.
+
+	Employee.custom_designation_title is a Link of its own, fetched from the
+	designation — so a Designation whose fetched value is not a real record fails
+	the whole insert (the openings' designation has no such chain, which is why it
+	takes any). Borrowing one already in use by an employee keeps the chain valid.
+	"""
+	if not _EMP_DESIGNATION:
+		existing = frappe.db.get_value("Employee", {"designation": ["is", "set"]}, "designation")
+		_EMP_DESIGNATION.append(existing or _designation_cached())
+	return _EMP_DESIGNATION[0]
 
 
 def _designation():
@@ -204,7 +235,7 @@ def _employee(first_name, email, pan, status, relieving=None, joining=None):
 		"personal_email": email,
 		"status": "Active",
 		"department": _department(),
-		"designation": _designation_cached(),
+		"designation": _employee_designation(),
 	})
 	if frappe.get_meta("Employee").has_field("pan_number"):
 		doc.pan_number = pan
@@ -234,11 +265,38 @@ def _employees():
 		# Left 20 days ago, against a 180-day rule -> "too soon".
 		"recent": _employee("DupTest RecentExit", RECENT_EXIT_EMAIL, RECENT_EXIT_PAN, "Left",
 		                    relieving=add_days(nowdate(), -20)),
+		# Left, flagged on the Employee record with NO separation at all.
+		"emp_flag": _employee("DupTest EmployeeFlag", EMP_FLAG_EMAIL, EMP_FLAG_PAN, "Left",
+		                      relieving=add_days(nowdate(), -400)),
 	}
 
 
+def _flag_employee_record(employee):
+	"""Flag Do Not Rehire on the EMPLOYEE, with no separation behind it.
+
+	The other half of the check: an employee whose exit was never processed here
+	can still be barred, and the rehire check has to see it. Pairs with
+	``_separation`` — between them both sources are covered.
+	"""
+	if not frappe.get_meta("Employee").has_field("custom_do_not_rehire"):
+		_log("Employee.custom_do_not_rehire missing — run bench migrate; case skipped")
+		return
+	frappe.db.set_value("Employee", employee, {
+		"custom_do_not_rehire": 1,
+		"custom_do_not_rehire_comment": MARKER + " flagged on the employee record",
+	}, update_modified=False)
+	_log(f"employee {employee} — Do Not Rehire on the Employee record (no separation)")
+
+
 def _separation(employee):
-	"""The Do Not Rehire flag lives on Employee Separation, not on Employee."""
+	"""Do Not Rehire recorded the usual way — on the Employee Separation.
+
+	The Employee-record flag is cleared on this one on purpose: the patch that
+	introduced that field backfills it from exactly these separations, and a
+	person carrying both flags cannot tell you which one the check read.
+	"""
+	if frappe.get_meta("Employee").has_field("custom_do_not_rehire"):
+		frappe.db.set_value("Employee", employee, "custom_do_not_rehire", 0, update_modified=False)
 	if frappe.db.exists("Employee Separation", {"employee": employee, "docstatus": ["<", 2]}):
 		return
 	doc = frappe.get_doc({
@@ -256,22 +314,64 @@ def _separation(employee):
 	return doc.name
 
 
-def _settings():
-	doc = frappe.get_doc({
-		"doctype": "TA Duplicity Check Settings",
-		"duplicity_check_setting_name": MARKER + " Settings",
-		"applicable_to_scope": "Specific Companies",
-		"created_on": today(),
-		**SETTINGS,
-	})
+def _carried_allow_hiring():
+	"""The Allow Hiring wiring on the settings record this seed is about to replace."""
+	meta = frappe.get_meta("TA Duplicity Check Settings")
+	fields = [f for f in _ALLOW_HIRING_FIELDS if meta.has_field(f)]
+	if not fields:
+		return {}
+
+	rows = frappe.get_all(
+		"TA Duplicity Check Settings",
+		filters={"duplicity_check_setting_name": ["like", MARKER + "%"]},
+		fields=fields, limit=1,
+	)
+	carried = {k: v for k, v in (rows[0].items() if rows else []) if v}
+	if carried:
+		_log(f"carrying Allow Hiring configuration across: {carried}")
+	return carried
+
+
+def _settings(carried=None):
+	"""Rewrite this fixture's settings record, reusing it when it is still there.
+
+	Teardown cannot always delete it — a company may belong to only one settings
+	record, so a leftover would refuse the new one — and keeping the same record
+	also keeps whatever was wired to it by name, such as the Flow Config that
+	starts the Exceptional Approval Workflow.
+	"""
+	existing = frappe.db.get_value(
+		"TA Duplicity Check Settings",
+		{"duplicity_check_setting_name": ["like", MARKER + "%"]},
+		"name",
+	)
+	if existing:
+		doc = frappe.get_doc("TA Duplicity Check Settings", existing)
+		doc.applicable_to = []
+		doc.select_duplicity_check_fields = []
+		doc.override_roles = []
+	else:
+		doc = frappe.get_doc({
+			"doctype": "TA Duplicity Check Settings",
+			"duplicity_check_setting_name": MARKER + " Settings",
+			"created_on": today(),
+		})
+
+	doc.applicable_to_scope = "Specific Companies"
+	doc.update(SETTINGS)
+	doc.update(carried or {})
 	doc.append("applicable_to", {"company": COMPANY})
 	for field in MATCH_FIELDS:
 		doc.append("select_duplicity_check_fields", {"applicant_field": field})
 	if frappe.db.exists("Role", "HR Manager"):
 		doc.append("override_roles", {"role": "HR Manager"})
 	doc.flags.ignore_mandatory = True
-	doc.insert(ignore_permissions=True)
-	_log(f"settings {doc.name} — match keys {list(MATCH_FIELDS)}, override ON")
+	if existing:
+		doc.save(ignore_permissions=True)
+	else:
+		doc.insert(ignore_permissions=True)
+	_log(f"settings {doc.name} — match keys {list(MATCH_FIELDS)}, override ON"
+	     + (" (reused)" if existing else ""))
 	return doc.name
 
 
@@ -353,6 +453,10 @@ def _applicants(openings, employees):
 		MARKER + " RecentExit Applicant", RECENT_EXIT_EMAIL, RECENT_EXIT_PAN,
 		openings["b"], "Open", source="Careers Page",
 	)
+	out["is_emp_flagged"] = _applicant(
+		MARKER + " EmployeeFlagged Applicant", EMP_FLAG_EMAIL, EMP_FLAG_PAN,
+		openings["b"], "Open", source="Careers Page",
+	)
 	return out
 
 
@@ -366,7 +470,7 @@ def teardown(quiet=False):
 		print("\n=== removing " + MARKER + " ===")
 
 	emails = [REPEAT_EMAIL, ACTIVE_EMP_EMAIL, DNR_EMP_EMAIL, RECENT_EXIT_EMAIL,
-	          "duptest.multi@example.com", "duptest.ijp@example.com"]
+	          EMP_FLAG_EMAIL, "duptest.multi@example.com", "duptest.ijp@example.com"]
 
 	# Offers first, then applicants: the offer links the applicant.
 	applicants = set(frappe.get_all(
@@ -495,27 +599,50 @@ APPLICATION-TIME rules — new Job Applicant, company {COMPANY}
 OFFER-TIME rules — create a Job Offer for these applicants
   5  Active employee, source != IJP        -> BLOCK
      Offer to "{MARKER} Active Employee Applicant" ({applicants['is_active_employee']}).
-     EXPECT: refused, "is already on record as an employee".
+     EXPECT: refused, "cannot be offered this role — Currently employed".
 
-  6  Do Not Rehire                          -> EXCEPTIONAL APPROVAL
+  6  Do Not Rehire, flagged on the SEPARATION -> EXCEPTIONAL APPROVAL
      Offer to "{MARKER} DoNotRehire Applicant" ({applicants['is_dnr']}).
-     EXPECT: saves, orange message, and on the offer
-             "Duplicity Exception Required" = ticked with a reason.
-             That checkbox is the Flow Config trigger.
+     EXPECT: saves, orange message, and the trigger stamped on the offer —
+             "Duplicity Exception Required" normally, or "Duplicity Approval
+             Trigger" (carrying the approval flow's name) when Allow Hiring is
+             on. That field is what the Flow Config fires on.
 
-  7  Exited too recently (180 days)         -> BLOCK
+  7  Do Not Rehire, flagged on the EMPLOYEE  -> EXCEPTIONAL APPROVAL
+     Offer to "{MARKER} EmployeeFlagged Applicant" ({applicants['is_emp_flagged']}).
+     Employee {employees['emp_flag']} is ticked Do Not Rehire on the Employee
+     record and has NO separation at all.
+     EXPECT: exactly the same outcome as step 6 — either flag counts.
+     Untick it on the Employee and save the offer again: it goes straight
+     through, which is what proves the Employee field is the one being read.
+
+  8  Exited too recently (180 days)         -> BLOCK
      Offer to "{MARKER} RecentExit Applicant" ({applicants['is_recent_exit']}).
      EXPECT: refused, "Left 20 day(s) ago; this company requires 180".
 
-  8  Active offer elsewhere
+  9  Active offer elsewhere
      Give {applicants['is_dnr']} an offer (step 6), then create a SECOND
      Job Applicant with the same email {DNR_EMP_EMAIL} on opening A and offer
      that one too.
      EXPECT: refused, "already holds an active job offer".
 
-  9  Override
+  10 Override
      Repeat any blocked step as an HR Manager.
      EXPECT: goes through.
+
+ALLOW HIRING — on {settings} tick "Allow Hiring Even Though It Matches ...",
+pick a Hiring Workflow and an Exceptional Approval Workflow, and save
+ 11  Application let through
+     Repeat step 2 or 3.
+     EXPECT: saves with an orange message; Employee Record tab shows the
+             Duplicity Match section with the reasons; the Hiring workflow
+             tab shows the chosen workflow's stages, not the opening's.
+
+ 12  Offer routed to approval
+     Repeat step 5 or 8, or offer to the applicant from step 11.
+     EXPECT: saves with the reasons; a few seconds later "Duplicity Approval
+             Trigger" = the Exceptional Approval Workflow's name, which starts
+             that Flow Config (an HR Manager approval ToDo appears).
 
 Clean up
   bench --site {frappe.local.site} execute recruitment.duplicity_test_seed.teardown

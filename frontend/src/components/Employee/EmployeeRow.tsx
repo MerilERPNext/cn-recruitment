@@ -91,6 +91,21 @@ const EmployeeRow: React.FC<EmployeeRowProps> = ({
 
   const { data: currentEmployee } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
   const navigate = useNavigate();
+
+  // Whatever an admin added to Employee Search Settings rides along with each
+  // search result, so a row can show the field someone actually searched on.
+  const details = Array.from(
+    new Set(
+      [
+        emp.designation,
+        emp.department_display,
+        emp.branch_display,
+        ...(emp.search_fields ?? []).map((field) =>
+          field.value == null ? "" : String(field.value),
+        ),
+      ].filter(Boolean) as string[],
+    ),
+  );
   const { isDesktop } = useScreenSize();
 
   const handleonClick = (emp: Employee) => () => {
@@ -138,11 +153,9 @@ const EmployeeRow: React.FC<EmployeeRowProps> = ({
                 </span>
               )}
             </div>
-            {(emp.branch_display || emp.department_display || emp.designation) && (
+            {details.length > 0 && (
               <p className="text-xs text-gray-500 truncate mt-0.5">
-                {[emp.designation, emp.department_display, emp.branch_display]
-                  .filter(Boolean)
-                  .join(" • ")}
+                {details.join(" • ")}
               </p>
             )}
           </div>

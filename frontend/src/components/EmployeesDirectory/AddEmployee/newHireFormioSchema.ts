@@ -71,9 +71,9 @@ export const LINK_FIELD_DEPENDENCIES: Record<
 };
 
 export const REQUISITION_SCOPE_FILTERED: Record<string, string> = {
-  company: "&requisition_scope=1",
-  department: "&requisition_scope=1&req_company={{ data.company }}",
-  designation: "&requisition_scope=1&req_company={{ data.company }}&req_department={{ data.department }}",
+  company: "",
+  department: "&req_company={{ data.company }}",
+  designation: "&req_company={{ data.company }}&req_department={{ data.department }}",
 };
 
 export const LINK_FIELDS_SHOWING_ID = new Set(["department", "designation"]);
@@ -189,10 +189,10 @@ export const buildFormField = (field: NewHireField): FormioComponent => {
     case "Select": {
       const values = field.options
         ? field.options
-            .split(/[\n,]/)
-            .map((o) => o.trim())
-            .filter(Boolean)
-            .map((o) => ({ label: o, value: o }))
+          .split(/[\n,]/)
+          .map((o) => o.trim())
+          .filter(Boolean)
+          .map((o) => ({ label: o, value: o }))
         : [];
       return {
         ...base,
@@ -211,10 +211,10 @@ export const buildFormField = (field: NewHireField): FormioComponent => {
         (field.fieldname === "company"
           ? "Company"
           : field.fieldname === "department"
-          ? "Department"
-          : field.fieldname === "designation"
-          ? "Designation"
-          : "");
+            ? "Department"
+            : field.fieldname === "designation"
+              ? "Designation"
+              : "");
       const activeEmployeeFilter = linkDoctype === "Employee" ? "&status=Active" : "";
       const scopeFilter = REQUISITION_SCOPE_FILTERED[field.fieldname] || "";
 
@@ -240,11 +240,11 @@ export const buildFormField = (field: NewHireField): FormioComponent => {
         searchField: "search_text",
         ...(dependency
           ? {
-              refreshOn: dependency.on,
-              clearOnRefresh: true,
-              clearOnHide: true,
-              ...(dependency.customConditional ? { customConditional: dependency.customConditional } : {}),
-            }
+            refreshOn: dependency.on,
+            clearOnRefresh: true,
+            clearOnHide: true,
+            ...(dependency.customConditional ? { customConditional: dependency.customConditional } : {}),
+          }
           : {}),
       };
     }
@@ -397,17 +397,17 @@ export const layoutFieldsInColumns = (
         },
         ...(currentPair.length > 1
           ? [
-              {
-                width: 6,
-                components: [currentPair[1]],
-              },
-            ]
+            {
+              width: 6,
+              components: [currentPair[1]],
+            },
+          ]
           : [
-              {
-                width: 6,
-                components: [],
-              },
-            ]),
+            {
+              width: 6,
+              components: [],
+            },
+          ]),
       ],
     });
     currentPair = [];

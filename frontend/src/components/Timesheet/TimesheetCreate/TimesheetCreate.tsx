@@ -252,21 +252,24 @@ const TimesheetCreate: React.FC = () => {
       const records = dayData?.timesheet_records || [];
 
       if (records.length > 0) {
-        // Check custom_timesheet_status directly from the timesheet records for this day
+        const hasRejected = records.some(r => r.custom_timesheet_status === "Rejected");
+        const hasDraft = records.some(r => r.custom_timesheet_status === "Draft");
         const hasApproved = records.some(r => r.custom_timesheet_status === "Approved");
         const hasSubmitted = records.some(
           r => r.custom_timesheet_status === "Pending for Approval" || (r.custom_timesheet_status as string) === "Submitted"
         );
-        const hasRejected = records.some(r => r.custom_timesheet_status === "Rejected");
 
-        if (hasApproved) {
+        if (hasRejected) {
+          map[dateKey] = "Rejected";
+          return;
+        } else if (hasDraft) {
+          map[dateKey] = "Draft";
+          return;
+        } else if (hasApproved) {
           map[dateKey] = "Approved";
           return;
         } else if (hasSubmitted) {
           map[dateKey] = "Submitted";
-          return;
-        } else if (hasRejected) {
-          map[dateKey] = "Rejected";
           return;
         } else {
           map[dateKey] = "Draft";
@@ -399,11 +402,8 @@ const TimesheetCreate: React.FC = () => {
         }
 
         if (
-          approvalStatus !== "Rejected" && (
-            ["Submitted", "Billed", "Cancelled"].includes(record.status || "") ||
-            record.docstatus === 1 ||
-            record.docstatus === 2
-          )
+          approvalStatus === "Pending for Approval" ||
+          (approvalStatus as string) === "Submitted"
         ) {
           isDaySubmitted = true;
         }
@@ -448,36 +448,58 @@ const TimesheetCreate: React.FC = () => {
     setSubmittedDatesList(submittedDays);
     setNonEditableDays(lockedDays);
 
-    // Derive overall status from custom_timesheet_status values
-    // Priority: Rejected > Pending for Approval > Approved > Draft
-    // Only set to Approved / Pending for Approval if all active/non-disabled days are approved/submitted or if there are no editable days left
-    const allDaysLockedOrDisabled = daysOfWeek.every(day => {
-      const dateKey = format(day, "yyyy-MM-dd");
-      const disabledWeekOffs = allowWeekoffTimesheet ? [] : weekOffDates;
-      const disabledHolidays = hideHolidayTimesheet ? holidayDates : [];
-      return (
-        disabledWeekOffs.includes(dateKey) ||
-        disabledHolidays.includes(dateKey) ||
-        submittedDays.includes(dateKey) ||
-        lockedDays.includes(dateKey)
-      );
-    });
+    // Derive overall status:
+    // Exclude non-editable days configured by backend (disabled week-offs / disabled holidays)
+    // Rules:
+    // - any Rejected -> Rejected
+    // - any Draft (and no Rejected) -> Draft
+    // - all Approved -> Approved
+    // - all Pending For Approval / Submitted -> Submitted
+    const configEligibleDays = daysOfWeek
+      .map(day => format(day, "yyyy-MM-dd"))
+      .filter(dateKey => {
+        const isWeekOffDisabled = !allowWeekoffTimesheet && weekOffDates.includes(dateKey);
+        const isHolidayDisabled = hideHolidayTimesheet && holidayDates.includes(dateKey);
+        return !isWeekOffDisabled && !isHolidayDisabled;
+      });
 
     let derivedStatus = "Draft";
-    if (allDaysLockedOrDisabled && allStatuses.size > 0) {
-      if (allStatuses.has("Rejected")) {
+    if (configEligibleDays.length > 0) {
+      const dayStatuses = configEligibleDays.map(dateKey => {
+        const dayRecords = (weeklyData.days || []).find(d => d.date === dateKey)?.timesheet_records || [];
+        if (dayRecords.some(r => r.custom_timesheet_status === "Rejected")) {
+          return "Rejected";
+        }
+        if (dayRecords.some(r => r.custom_timesheet_status === "Draft")) {
+          return "Draft";
+        }
+        if (dayRecords.length > 0 && dayRecords.every(r => r.custom_timesheet_status === "Approved")) {
+          return "Approved";
+        }
+        if (
+          submittedDays.includes(dateKey) ||
+          dayRecords.some(
+            r =>
+              r.custom_timesheet_status === "Pending for Approval" ||
+              (r.custom_timesheet_status as string) === "Submitted"
+          )
+        ) {
+          return "Submitted";
+        }
+        return "Draft";
+      });
+
+      if (dayStatuses.some(s => s === "Rejected")) {
         derivedStatus = "Rejected";
-      } else if (allStatuses.has("Pending for Approval")) {
-        derivedStatus = "Pending for Approval";
-      } else if (allStatuses.has("Approved")) {
+      } else if (dayStatuses.some(s => s === "Draft")) {
+        derivedStatus = "Draft";
+      } else if (dayStatuses.every(s => s === "Approved")) {
         derivedStatus = "Approved";
+      } else if (dayStatuses.every(s => s === "Submitted" || s === "Approved")) {
+        derivedStatus = "Submitted";
       } else {
         derivedStatus = "Draft";
       }
-    } else if (allStatuses.has("Rejected")) {
-      derivedStatus = "Rejected";
-    } else {
-      derivedStatus = "Draft";
     }
 
     setTimesheetStatus(derivedStatus);
@@ -485,7 +507,7 @@ const TimesheetCreate: React.FC = () => {
     const parsedData = Object.values(rowsMap);
     setProjectsData(parsedData);
     setInitialProjectsData(parsedData);
-  }, [weeklyData, showSubtask]);
+  }, [weeklyData, showSubtask, daysOfWeek, allowWeekoffTimesheet, weekOffDates, hideHolidayTimesheet, holidayDates]);
 
   // Add cell hour changes
   const handleHourChange = (rowId: string, dateKey: string, value: string) => {
@@ -1104,20 +1126,58 @@ const TimesheetCreate: React.FC = () => {
         setLastSavedTime(format(new Date(), "hh:mm a"));
         if (isSubmit) {
           const newSubmitted = Object.keys(payload).filter(date => payload[date].status === "Submit");
-          setSubmittedDatesList(prev => {
-            const updated = Array.from(new Set([...prev, ...newSubmitted]));
-            return updated;
-          });
+          const updatedSubmittedList = Array.from(new Set([...submittedDatesList, ...newSubmitted]));
+          setSubmittedDatesList(updatedSubmittedList);
           setNonEditableDays(prev => Array.from(new Set([...prev, ...newSubmitted])));
           setSelectedDates(prev => prev.filter(d => !newSubmitted.includes(d)));
 
-          const allDatesSubmitted = daysOfWeek.every(day => {
-            const dateKey = format(day, "yyyy-MM-dd");
-            return allDisabledDays.includes(dateKey) || newSubmitted.includes(dateKey) || submittedDatesList.includes(dateKey);
-          });
-          if (allDatesSubmitted) {
-            setTimesheetStatus("Pending for Approval");
+          const configEligibleDays = daysOfWeek
+            .map(day => format(day, "yyyy-MM-dd"))
+            .filter(dateKey => {
+              const isWeekOffDisabled = !allowWeekoffTimesheet && weekOffDates.includes(dateKey);
+              const isHolidayDisabled = hideHolidayTimesheet && holidayDates.includes(dateKey);
+              return !isWeekOffDisabled && !isHolidayDisabled;
+            });
+
+          let derivedStatus = "Draft";
+          if (configEligibleDays.length > 0) {
+            const dayStatuses = configEligibleDays.map(dateKey => {
+              const dayRecords = (weeklyData?.days || []).find(d => d.date === dateKey)?.timesheet_records || [];
+              if (dayRecords.some(r => r.custom_timesheet_status === "Rejected")) {
+                return "Rejected";
+              }
+              if (dayRecords.some(r => r.custom_timesheet_status === "Draft") && !updatedSubmittedList.includes(dateKey)) {
+                return "Draft";
+              }
+              if (dayRecords.length > 0 && dayRecords.every(r => r.custom_timesheet_status === "Approved")) {
+                return "Approved";
+              }
+              if (
+                updatedSubmittedList.includes(dateKey) ||
+                dayRecords.some(
+                  r =>
+                    r.custom_timesheet_status === "Pending for Approval" ||
+                    (r.custom_timesheet_status as string) === "Submitted"
+                )
+              ) {
+                return "Submitted";
+              }
+              return "Draft";
+            });
+
+            if (dayStatuses.some(s => s === "Rejected")) {
+              derivedStatus = "Rejected";
+            } else if (dayStatuses.some(s => s === "Draft")) {
+              derivedStatus = "Draft";
+            } else if (dayStatuses.every(s => s === "Approved")) {
+              derivedStatus = "Approved";
+            } else if (dayStatuses.every(s => s === "Submitted" || s === "Approved")) {
+              derivedStatus = "Submitted";
+            } else {
+              derivedStatus = "Draft";
+            }
           }
+          setTimesheetStatus(derivedStatus);
         } else {
           setTimesheetStatus("Draft");
         }

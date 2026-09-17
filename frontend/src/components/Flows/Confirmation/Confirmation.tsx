@@ -40,6 +40,7 @@ import FormPreview from "../../shared/molecules/FormPreview";
 import ActivityLogDrawer from "../../shared/ActivityLogDrawer";
 import type { FlowRequestItem } from "../../../types/flows";
 import ActionConfirmationModal from "../../shared/ActionConfirmationModal";
+import { useActButtonSetting } from "../../../hooks/useActButtonSetting";
 
 const ConfirmationWorkflow = () => {
   const { isDesktop } = useScreenSize();
@@ -85,6 +86,7 @@ const ConfirmationWorkflow = () => {
     ["act_confirmation", "initiate_confirmation", "retrigger"],
     "Confirmation",
   );
+  const { data: showActOnAllTasks = false } = useActButtonSetting();
 
   // END action buttons permission
 
@@ -317,7 +319,11 @@ const ConfirmationWorkflow = () => {
   }
   /* ---------------------------------------------------------- */
 
+  // System Manager bypass: when show_act_button_on_all_tasks is enabled, a
+  // System Manager can act on any pending confirmation stage regardless of
+  // assignment — same pattern as Phase 1 My Requests Act button.
   const canActOnThisRequest = Boolean(
+    showActOnAllTasks ||
     (item as FlowRequestItem | undefined)?.approval_stages?.some((s) => s?.todo?.custom_doctype_actions),
   );
 

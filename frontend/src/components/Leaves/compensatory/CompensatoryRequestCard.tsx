@@ -1,3 +1,4 @@
+import { useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import { usePayCompOff } from "../../../hooks/useLeaves";
 import { useScreenSize } from "../../../hooks/useScreenSize";
@@ -27,6 +28,9 @@ export type CompensatoryRequestItem = {
   allocated_roles?: string[];
   allocated_to_user: string;
   role_assigned_users?: RoleAssignedUsersType[];
+  todo_id?: string;
+  custom_doctype_actions?: string | string[];
+  custom_approval_type?: string;
 };
 
 type CompensatoryRequestCardProps = {
@@ -39,6 +43,7 @@ const CompensatoryRequestCard = ({
   onClick,
 }: CompensatoryRequestCardProps) => {
   const { isDesktop } = useScreenSize();
+  const queryClient = useQueryClient();
   const { mutate: payCompOff, isPending } = usePayCompOff();
 
   const handlePay = () => {
@@ -134,9 +139,13 @@ const CompensatoryRequestCard = ({
           }}
           canPay={item?.pay_button_required}
           isPendingStatus={isPendingStatus}
+          todoId={item?.todo_id}
           onPay={handlePay}
           payLoading={isPending}
           requestItem={item}
+          onActionComplete={() => {
+            queryClient.invalidateQueries({ queryKey: ["comp-off-list"] });
+          }}
         />
       </div>
     </div>
@@ -212,9 +221,13 @@ const CompensatoryRequestCard = ({
           variant="buttons"
           canPay={item?.pay_button_required}
           isPendingStatus={isPendingStatus}
+          todoId={item?.todo_id}
           onPay={handlePay}
           payLoading={isPending}
           requestItem={item}
+          onActionComplete={() => {
+            queryClient.invalidateQueries({ queryKey: ["comp-off-list"] });
+          }}
         />
       </div>
     </div>

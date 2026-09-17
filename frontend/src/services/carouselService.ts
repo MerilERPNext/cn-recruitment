@@ -6,6 +6,9 @@ export interface CarouselCard {
   card_label: string;
   description: string;
   icon: string | null;
+  module?: string | null;
+  module_title?: string | null;
+  module_icon?: string | null;
   sort_order: number;
   show_on_mobile_app?: number;
   redirect_route: string;

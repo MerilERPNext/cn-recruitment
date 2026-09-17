@@ -46,7 +46,9 @@ export const useSearchEmployees = (
   limit?: number,
 ): UseQueryResult<Employee[], Error> => {
   return useQuery<Employee[], Error>({
-    queryKey: ["employee", "search", filters],
+    // limit is part of the key: two callers can search the same terms and want
+    // different result counts.
+    queryKey: ["employee", "search", filters, limit],
     queryFn: () => EmployeeService.getSearchMembers(filters, limit),
     enabled: !!filters,
     refetchOnWindowFocus: true,

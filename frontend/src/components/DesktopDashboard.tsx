@@ -69,6 +69,7 @@ import InitiateFlow from "./Flows/Initiate/InitiateFlow";
 import RequestIssueModal from "./HelpDesk/RequestIssueModal";
 import { useRequestLeaveModal } from "./Leaves/RequestLeaveModalContext";
 import NotificationBell from "./Notification/NotificationBell";
+import RedeemablePointsBadge from "./Notification/RedeemablePointsBadge";
 import Button from "./shared/atoms/Button";
 import { Card } from "./shared/atoms/Card";
 import { Typography } from "./shared/atoms/Typography";
@@ -597,6 +598,8 @@ export default function DesktopDashboard() {
           </div>
 
           <div className="flex items-center gap-4 flex-shrink-0">
+            <RedeemablePointsBadge className="text-white" />
+
             <button
               onClick={() => navigate("/webapp/notification-log")}
               className="relative p-2 hover:bg-primary-400/20 rounded-lg transition-colors"

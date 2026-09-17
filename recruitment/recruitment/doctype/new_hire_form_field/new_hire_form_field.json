@@ -11,6 +11,7 @@
   "col_break_1",
   "expose",
   "mandatory_override",
+  "source_mandatory",
   "read_only_override",
   "employment_type",
   "layout_section",
@@ -70,6 +71,14 @@
    "in_list_view": 1,
    "label": "Mandatory",
    "options": "Default\nRequired\nOptional"
+  },
+  {
+   "default": "0",
+   "description": "Set automatically: this field is Mandatory for a hiring source (Careers, IJP, Refer, Campus or Pre-offer) in Job Applicant Profile Settings, so it stays on the form and Required.",
+   "fieldname": "source_mandatory",
+   "fieldtype": "Check",
+   "label": "Mandatory at Source",
+   "read_only": 1
   },
   {
    "default": "Default",
@@ -141,7 +150,7 @@
  "index_web_pages_for_search": 0,
  "istable": 1,
  "links": [],
- "modified": "2026-09-01 10:00:00.000000",
+ "modified": "2026-09-11 10:00:00.000000",
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "New Hire Form Field",

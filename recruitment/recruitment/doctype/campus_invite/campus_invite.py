@@ -20,6 +20,9 @@ def tpo_contacts_for_institutes(institutes):
 	once. Primary rows are ordered first so that when someone is the Primary TPO at
 	one institute and, say, an Asst TPO at another, the row we keep is the Primary
 	one (that is the row which earns a portal user + invite email).
+
+	Each row carries `institute_name` so HR can tell which college a contact is for;
+	a person carried once for several institutes lists all of them.
 	"""
 	institutes = [i for i in (institutes or []) if i]
 	if not institutes:
@@ -28,20 +31,36 @@ def tpo_contacts_for_institutes(institutes):
 	contacts = frappe.get_all(
 		"Institute TPO Contact",
 		filters={"parenttype": "Institute", "parent": ["in", institutes]},
-		fields=["contact_name", "role", "email", "phone", "invite_status"],
+		fields=["parent as institute", "contact_name", "role", "email", "phone", "invite_status"],
 		order_by="parent asc, idx asc",
 	)
 	# Stable sort: Primary TPOs first, everyone else keeps institute/row order.
 	contacts.sort(key=lambda c: 0 if c.role == PRIMARY_TPO_ROLE else 1)
 
-	seen = set()
+	label = dict(
+		frappe.get_all(
+			"Institute",
+			filters={"name": ["in", institutes]},
+			fields=["name", "institute_name"],
+			as_list=True,
+		)
+	)
+
+	seen = {}
 	deduped = []
 	for contact in contacts:
+		institute = contact.pop("institute")
+		names = [label.get(institute) or institute]
 		key = (contact.email or "").strip().lower()
 		if key:
 			if key in seen:
+				kept_contact, kept_names = seen[key]
+				if names[0] not in kept_names:
+					kept_names.append(names[0])
+					kept_contact.institute_name = ", ".join(kept_names)
 				continue
-			seen.add(key)
+			seen[key] = (contact, names)
+		contact.institute_name = names[0]
 		deduped.append(contact)
 	return deduped
 

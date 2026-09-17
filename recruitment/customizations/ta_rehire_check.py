@@ -16,8 +16,8 @@ Record tab and the offer gate can never disagree.
 The four outcomes, in the order they are decided:
 
     ACTIVE      currently employed here                 per settings
-    DO NOT      left, flagged on their Employee         per settings
-      REHIRE    Separation (custom_mark_do_not_rehire)
+    DO NOT      left, flagged on their Employee          per settings
+      REHIRE    record, or on their Employee Separation
     TOO SOON    left more recently than the configured   blocks
                 "# of Days Before Reapplication Post Exit" allows
     CLEAN       left long enough ago, no flag           allowed
@@ -50,6 +50,14 @@ from recruitment.customizations.ta_duplicity_check import (
 
 EMPLOYEE = "Employee"
 EMPLOYEE_SEPARATION = "Employee Separation"
+
+# Do Not Rehire is carried in two places. HR ticks it on the Employee for someone
+# who never had a separation processed; the exit process records it on the
+# separation. Either one counts — see ``_do_not_rehire``.
+EMPLOYEE_FLAG = "custom_do_not_rehire"
+EMPLOYEE_FLAG_COMMENT = "custom_do_not_rehire_comment"
+SEPARATION_FLAG = "custom_mark_do_not_rehire"
+SEPARATION_FLAG_COMMENT = "custom_not_to_be_rehired_comment"
 
 # Job Applicant fieldname -> the Employee columns holding the same fact. The
 # first column that exists AND matches wins; all are tried.
@@ -84,6 +92,7 @@ _OPTIONAL_COLUMNS = (
 	"designation", "department", "company", "branch", "date_of_joining",
 	"relieving_date", "company_email", "personal_email", "cell_number",
 	"image", "reports_to", "employee_number", "pan_number",
+	EMPLOYEE_FLAG, EMPLOYEE_FLAG_COMMENT,
 )
 
 
@@ -134,31 +143,53 @@ def _read_columns():
 	return list(_CORE_COLUMNS) + [c for c in _OPTIONAL_COLUMNS if meta.has_field(c)]
 
 
-def _do_not_rehire(employee):
-	"""``(flagged, comment)`` from the employee's Employee Separation.
+def _do_not_rehire(row, separations):
+	"""``(flagged, comment)`` for one matched Employee row.
 
-	The flag lives on the separation, not on Employee — that is where the exit
-	process records it, and reading anywhere else would miss every real case.
+	The Employee's own flag is checked first and costs nothing — it is read with
+	the match query. It is the only place a person with no separation record can
+	be flagged, and the separation is still consulted after it so a flag set
+	before the Employee field existed (or on a draft separation) is never missed.
+	"""
+	if cint(row.get(EMPLOYEE_FLAG)):
+		return True, (row.get(EMPLOYEE_FLAG_COMMENT) or "")
+	return separations.get(row.get("name")) or (False, "")
+
+
+def _separation_flags(employees):
+	"""``{employee: (flagged, comment)}`` for *employees*, in ONE query.
+
+	Only each employee's LATEST separation counts — a flag that was lifted by a
+	later exit is not a flag — so the rows are read newest first and the first one
+	seen per employee wins. Read in a batch because this sits on the Job Applicant
+	form load and the Job Offer save, where a query per matched employee is a
+	query too many.
 	"""
 	meta = frappe.get_meta(EMPLOYEE_SEPARATION)
-	if not meta.has_field("custom_mark_do_not_rehire"):
-		return False, ""
+	if not employees or not meta.has_field(SEPARATION_FLAG):
+		return {}
 
-	fields = ["custom_mark_do_not_rehire"]
-	if meta.has_field("custom_not_to_be_rehired_comment"):
-		fields.append("custom_not_to_be_rehired_comment")
+	fields = ["employee", SEPARATION_FLAG]
+	if meta.has_field(SEPARATION_FLAG_COMMENT):
+		fields.append(SEPARATION_FLAG_COMMENT)
 
 	rows = frappe.get_all(
 		EMPLOYEE_SEPARATION,
-		filters={"employee": employee, "docstatus": ["<", 2]},
+		filters={"employee": ["in", list(employees)], "docstatus": ["<", 2]},
 		fields=fields,
 		order_by="modified desc",
-		limit=1,
 		ignore_permissions=True,
 	)
-	if not rows or not cint(rows[0].get("custom_mark_do_not_rehire")):
-		return False, ""
-	return True, (rows[0].get("custom_not_to_be_rehired_comment") or "")
+
+	latest = {}
+	for row in rows:
+		if row.employee in latest:
+			continue
+		latest[row.employee] = (
+			bool(cint(row.get(SEPARATION_FLAG))),
+			row.get(SEPARATION_FLAG_COMMENT) or "",
+		)
+	return latest
 
 
 def _days_since(value):
@@ -184,7 +215,7 @@ def _action(settings, fieldname):
 	return value if value in (BLOCK, EXCEPTIONAL, ALLOW) else ALLOW
 
 
-def _verdict(row, settings, applicant_is_ijp):
+def _verdict(row, settings, applicant_is_ijp, separations):
 	"""Classify one matched Employee. Order matters — the strongest reason wins."""
 	if (row.get("status") or "") == ACTIVE_STATUS:
 		# The rule is scoped to non-IJP applications: an employee applying through
@@ -197,15 +228,15 @@ def _verdict(row, settings, applicant_is_ijp):
 			"detail": _("This person is an Active employee ({0}).").format(row.get("name")),
 		}
 
-	flagged, comment = _do_not_rehire(row.get("name"))
+	flagged, comment = _do_not_rehire(row, separations)
 	if flagged:
 		return {
 			"code": DO_NOT_REHIRE,
 			"action": _action(settings, "do_not_rehire_action"),
 			"label": _("Do Not Rehire"),
 			"detail": (
-				_("Flagged Do Not Rehire on exit: {0}").format(comment)
-				if comment else _("Flagged Do Not Rehire on exit.")
+				_("Flagged Do Not Rehire: {0}").format(comment)
+				if comment else _("Flagged Do Not Rehire.")
 			),
 		}
 
@@ -274,9 +305,12 @@ def find_matches(applicant, settings=None):
 	applied_employee = applicant.get("custom_applied_employee")
 	applicant_is_ijp = is_ijp(applicant)
 
+	# One read for every matched employee, before the per-row classification.
+	separations = _separation_flags([r.get("name") for r in rows if r.get("name")])
+
 	matches = []
 	for row in rows:
-		verdict = _verdict(row, settings, applicant_is_ijp)
+		verdict = _verdict(row, settings, applicant_is_ijp, separations)
 		matches.append({
 			**row,
 			"verdict": verdict["code"],
@@ -296,6 +330,39 @@ def find_matches(applicant, settings=None):
 	return {**empty, "matches": matches}
 
 
+def controlled_pool_matches(applicant, settings):
+	"""Matches whose configured outcome is Block Job Offer or Exceptional Approval.
+
+	These are the matches the settings act on — refused, routed to an approval, or
+	(under Allow Hiring) let through with the candidate flagged. The employee an IJP
+	application was raised from is left out: the flow linked them on purpose. When
+	no outcome is configured to act on, the Employee read is skipped entirely.
+	"""
+	configured = [
+		_setting(settings, f, ALLOW)
+		for f in ("active_employee_non_ijp_action", "do_not_rehire_action")
+	]
+	if not cint(_setting(settings, "days_before_reapplication_post_exit")) and all(
+		a in (ALLOW, None, "") for a in configured
+	):
+		return []
+
+	return [
+		m for m in find_matches(applicant, settings=settings)["matches"]
+		if not m.get("is_linked") and m.get("action") in (BLOCK, EXCEPTIONAL)
+	]
+
+
+def match_reason(match):
+	"""One line naming the employee a candidate matched and why it matters."""
+	return _("{0} ({1} — {2}): {3}").format(
+		match.get("verdict_label"),
+		match.get("name"),
+		match.get("employee_name") or "",
+		match.get("verdict_detail") or "",
+	)
+
+
 def _matched_on(applicant, row, match_fields):
 	"""Which keys actually tied this candidate to this employee — HR's first
 	question is always "how do you know it's the same person?"."""
@@ -309,3 +376,32 @@ def _matched_on(applicant, row, match_fields):
 				hits.append(column)
 				break
 	return hits
+
+
+# ---------------------------------------------------------------------------
+# Hook (hooks.py -> Employee Separation -> on_submit)
+# ---------------------------------------------------------------------------
+
+def mirror_do_not_rehire_to_employee(doc, method=None):
+	"""Copy a submitted separation's Do Not Rehire flag onto the Employee.
+
+	Set-only, and one way. It never clears the Employee flag: HR may have set it
+	for something this exit knows nothing about, and unticking it there is a
+	decision, not a side effect of someone's last day. The check reads both
+	anyway — this only keeps the Employee form telling the truth.
+	"""
+	try:
+		if not cint(doc.get(SEPARATION_FLAG)) or not doc.get("employee"):
+			return
+		meta = frappe.get_meta(EMPLOYEE)
+		if not meta.has_field(EMPLOYEE_FLAG):
+			return
+
+		values = {EMPLOYEE_FLAG: 1}
+		comment = doc.get(SEPARATION_FLAG_COMMENT)
+		if comment and meta.has_field(EMPLOYEE_FLAG_COMMENT):
+			values[EMPLOYEE_FLAG_COMMENT] = comment
+		frappe.db.set_value(EMPLOYEE, doc.employee, values, update_modified=False)
+	except Exception:
+		# A separation must never fail to submit because of the mirror.
+		frappe.log_error(frappe.get_traceback(), "Do Not Rehire mirror failed")
