@@ -9,7 +9,7 @@ import {
   useSubmitAcknowledgement,
 } from "../../hooks/useEmployeeDocuments";
 import { useGetUiPermission } from "../../hooks/userUiPermission";
-import { getActionsEnabled } from "../../utils/uiPermission";
+import { getActionsEnabled, isActionEnabled } from "../../utils/uiPermission";
 import { useTargetUser } from "../../context/ViewedUserContext";
 import DesktopLayoutWrapper from "../DesktopLayoutWrapper";
 import Button from "../shared/atoms/Button";
@@ -23,7 +23,8 @@ import { DocumentMobileCard } from "./DocumentMobileCard";
 import { DocumentTableRow } from "./DocumentTableRow";
 import { DocumentItem } from "../../types/employeeDocument";
 import { FilterCondition } from "../../types/frappe";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
+import EmployeeDocumentUploadModal from "./EmployeeDocumentUploadModal";
 
 const PAGE_SIZE = 10;
 
@@ -39,6 +40,8 @@ const EmployeeDocumentsPage: React.FC = () => {
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
   const [selectedDocId, setSelectedDocId] = useState<string | null>(null);
   const [acknowledged, setAcknowledged] = useState(false);
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+
 
   const { targetEmployeeId } = useTargetUser();
   const queryClient = useQueryClient();
@@ -86,6 +89,13 @@ const EmployeeDocumentsPage: React.FC = () => {
       "download_system_document",
     ],
     "Employee Profile",
+  );
+
+  const { data: employeeDocUiPermission } = useGetUiPermission("Employee Documents");
+  const canAddDocument = isActionEnabled(
+    employeeDocUiPermission,
+    "add_document",
+    "Employee Documents",
   );
 
   const handleSubmit = (e: React.MouseEvent) => {
@@ -189,11 +199,23 @@ const EmployeeDocumentsPage: React.FC = () => {
                 View and manage all your employee documents in one place
               </Typography>
             </div>
+            {canAddDocument && (
+              <Button
+                variant="contain"
+                bgColor="primary"
+                size="md"
+                onClick={() => setIsUploadModalOpen(true)}
+                className="mt-2"
+              >
+                <Plus className="w-4 h-4 mr-1.5" />
+                Add Document
+              </Button>
+            )}
           </div>
         )}
 
         {isMobile ? (
-          <div className="w-full mb-4 flex justify-end">
+          <div className="w-full mb-4 flex items-center justify-between gap-2">
             <CustomDropdown
               value={activeTab}
               onChange={(e) => setActiveTab(e.target.value)}
@@ -203,6 +225,18 @@ const EmployeeDocumentsPage: React.FC = () => {
               }))}
               position="bottom-left"
             />
+            {canAddDocument && (
+              <Button
+                variant="contain"
+                bgColor="primary"
+                size="sm"
+                onClick={() => setIsUploadModalOpen(true)}
+                className="whitespace-nowrap"
+              >
+                <Plus className="w-4 h-4 mr-1" />
+                Add Document
+              </Button>
+            )}
           </div>
         ) : (
           <div className="flex overflow-x-auto gap-1 py-2 mb-4 scrollbar-hide">
@@ -376,9 +410,20 @@ const EmployeeDocumentsPage: React.FC = () => {
             </div>
           </div>
         )}
+
+        {/* Employee Document Upload Modal */}
+        <EmployeeDocumentUploadModal
+          isOpen={isUploadModalOpen}
+          onClose={() => setIsUploadModalOpen(false)}
+          onSuccess={() => {
+            queryClient.invalidateQueries({ queryKey: ["employee-documents"] });
+            queryClient.invalidateQueries({ queryKey: ["employee-documents-count"] });
+          }}
+        />
       </div>
     </DesktopLayoutWrapper>
   );
 };
 
 export default EmployeeDocumentsPage;
+

@@ -1,0 +1,17 @@
+.pdf-forms-module {height:100%;min-height:0;min-width:0;overflow:hidden;display:flex;flex-direction:column;background:var(--color-app,#f8fafc)}
+.pdf-forms-workspace {display:grid;grid-template-columns:270px minmax(0,1fr);flex:1;min-height:0;min-width:0}
+.pdf-question-panel {display:flex;flex-direction:column;min-height:0;min-width:0;background:white;border-right:1px solid #e5e7eb}
+.pdf-question-rows {overflow-y:auto;min-height:0;flex:1;padding:12px}
+.pdf-document-view {display:flex;flex-direction:column;min-height:0;min-width:0;background:#eef1f5}
+.pdf-page-scroll {overflow:auto;flex:1;padding:24px 24px 50px}
+.pdf-page-canvas {position:relative;margin:0 auto 25px;background:white;box-shadow:0 3px 15px #1829401a;container-type:inline-size}
+.pdf-page-canvas>img {display:block;width:100%;height:100%;pointer-events:none}
+.pdf-answer-overlay {position:absolute;min-width:0;min-height:0;margin:0;padding:0 2px;border:1px solid #739fea66;border-radius:2px;background:#dbeafe70;font-size:1.6cqw;line-height:1.1;color:#111827}
+.pdf-answer-overlay:focus {outline:2px solid var(--color-primary,#2563eb);outline-offset:2px;background:#eff6ffed;z-index:2}
+.pdf-answer-overlay:disabled {opacity:1;color:#475569;background:#f1f5f980}
+.pdf-answer-overlay[type=radio],.pdf-answer-overlay[type=checkbox] {accent-color:var(--color-primary,#2563eb);padding:0;cursor:pointer}
+button.pdf-answer-overlay {overflow:hidden;font-size:1.35cqw}
+button.pdf-answer-overlay img {object-fit:contain;width:100%;height:100%}
+.pdf-signature-canvas {width:100%;height:160px;border:1px dashed #b8c4d2;touch-action:none;border-radius:8px;background:white}
+@media(max-width:850px) {.pdf-forms-workspace{grid-template-columns:225px minmax(0,1fr)}.pdf-page-scroll{padding:16px 12px 40px}}
+@media(max-width:640px) {.pdf-forms-module{height:calc(100dvh - 60px)}.pdf-forms-workspace{grid-template-columns:minmax(0,1fr);grid-template-rows:190px minmax(0,1fr)}.pdf-question-rows{display:flex;gap:8px;overflow-x:auto;min-width:0}.pdf-question-rows>div{min-width:185px;width:185px;flex-shrink:0}.pdf-question-intro{display:none}.pdf-page-scroll{padding:14px 8px 35px}}

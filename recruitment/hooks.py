@@ -135,7 +135,13 @@ doctype_js = {
         # interview.js (it is, being a hooks entry) so the override sticks.
         "public/js/interview_feedback_route.js",
     ],
-    "Interview Feedback": ["public/js/interview_feedback.js"],
+    "Interview Feedback": [
+        "public/js/interview_feedback.js",
+        # Draws the evaluation form the recruiter picked on the Interview, when
+        # there is one. Kept separate from interview_feedback.js, which owns the
+        # campus region/work-location sections — the two share no state.
+        "public/js/interview_feedback_form.js",
+    ],
     "User": ["public/js/user.js"],
     "Employee Onboarding": [
         "public/js/employee_onboarding.js",
@@ -328,6 +334,12 @@ doc_events = {
         "after_insert": "recruitment.recruitment.tpo_mailers.send_tpo_welcome",
         "on_update": "recruitment.recruitment.tpo_mailers.send_tpo_welcome",
     },
+    # An edited evaluation form must not leave interviewers filling the old
+    # questions. The schema cache also revalidates itself against `modified`, so
+    # this is the fast path rather than the only protection.
+    "Microapp Form Widget": {
+        "on_update": "recruitment.api.interview_feedback_form.clear_form_cache",
+    },
     "Interview": {
         "before_save": "recruitment.customizations.interview.interview.check_feedback_of_previous_interview",
         "validate": "recruitment.customizations.job_applicant.validation_blacklist_on_doctypes",
@@ -348,6 +360,11 @@ doc_events = {
             # Stamp the candidate's region on the feedback and check the work
             # location the panel picked is one of that region's locations.
             "recruitment.api.interview_work_location.validate_work_location",
+            # When the interview has an evaluation form configured, enforce its
+            # required answers and freeze what the answers meant. On validate, not
+            # on_submit: the submit chain below already re-saves the Interview, and
+            # a missing answer should be flagged while the panel is still writing.
+            "recruitment.api.interview_feedback_form.validate_form_response",
         ],
         "on_submit": [
             "recruitment.customizations.interview_feedback.interview_feedback.on_submit_feedback",
@@ -726,6 +743,10 @@ doc_events = {
         "on_submit": [
             "recruitment.customizations.employee_separation.employee_separation.update_employee_relieving_date",
             "recruitment.customizations.employee_separation.employee_separation.create_attendance_regularize_todo",
+            # Mirror "Mark Do Not Rehire?" onto the Employee, so the flag the
+            # rehire check reads is visible on the employee's own record. Never
+            # clears it — see ta_rehire_check.mirror_do_not_rehire_to_employee.
+            "recruitment.customizations.ta_rehire_check.mirror_do_not_rehire_to_employee",
         ],
         "on_trash": [
             "recruitment.customizations.employee_separation.funnel_cleanup.cleanup_separation_funnel_artifacts",

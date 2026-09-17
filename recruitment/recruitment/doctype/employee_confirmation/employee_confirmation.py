@@ -99,27 +99,42 @@ class EmployeeConfirmation(Document):
 		return getdate(from_time)
 
 	def validate(self):
-		draft_exists = frappe.db.exists(
-			"Employee Confirmation",
-			{
-				"employee": self.employee,
-				"docstatus": 0,
-				"name": ["!=", self.name]
-			}
-		)
+		rejected = set()
+		if frappe.get_meta("Employee Confirmation").has_field("approval_status"):
+			rejected = set(frappe.get_all(
+				"Employee Confirmation",
+				filters={"employee": self.employee, "approval_status": "Rejected"},
+				pluck="name"
+			))
+
+		draft_exists = [
+			name for name in frappe.get_all(
+				"Employee Confirmation",
+				filters={
+					"employee": self.employee,
+					"docstatus": 0,
+					"name": ["!=", self.name]
+				},
+				pluck="name"
+			)
+			if name not in rejected
+		]
 		if draft_exists:
 			frappe.throw("There is already a pending confirmation request for this employee. Please complete or cancel it before creating a new one.")
 
-		active_exists = frappe.get_all(
-			"Employee Confirmation",
-			filters={
-				"employee": self.employee,
-				"docstatus": 1,
-				"status": ["!=", "Probation Extended"],
-				"name": ["!=", self.name]
-			},
-			fields=["name"]
-		)
+		active_exists = [
+			row for row in frappe.get_all(
+				"Employee Confirmation",
+				filters={
+					"employee": self.employee,
+					"docstatus": 1,
+					"status": ["!=", "Probation Extended"],
+					"name": ["!=", self.name]
+				},
+				fields=["name"]
+			)
+			if row.name not in rejected
+		]
 		if active_exists:
 			frappe.throw("This employee has already been confirmed. You cannot create another confirmation at this time.")
 
