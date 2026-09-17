@@ -3099,9 +3099,25 @@ def create_alumni_category_rule(rule_data) -> dict:
     return {"success": True, "rule_name": rule.name, "message": _("Delegation rule created successfully.")}
 
 
+# Reference doctypes whose ToDos are always exposed to the portal, regardless
+# of `Todo Type.custom_show_in_alumni_portal`. These are ToDos the Alumni
+# Portal has its own dedicated screen/button for (e.g. the Separation status
+# page's "Act" button) and that HR did not create through the normal
+# category-tagged ToDo flow -- e.g. the Separation engine's own ToDos
+# (`customizations/employee_separation/employee_separation.py`) are plain
+# `ToDo`s with no `custom_todo_type` set at all, so the opt-in Todo Type flag
+# can never be ticked for them without a code change wiring one in. Until/
+# unless that happens, gate on the reference instead of the (absent) category.
+_ALUMNI_ALWAYS_VISIBLE_REFERENCE_TYPES = {"Employee Separation"}
+
+
 def _todo_type_visible_to_alumni(todo: str) -> bool:
     """Whether this ToDo's category is exposed to the portal."""
-    todo_type = frappe.db.get_value("ToDo", todo, "custom_todo_type")
+    todo_type, reference_type = frappe.db.get_value(
+        "ToDo", todo, ["custom_todo_type", "reference_type"]
+    )
+    if reference_type in _ALUMNI_ALWAYS_VISIBLE_REFERENCE_TYPES:
+        return True
     if not todo_type:
         return False
     return bool(
@@ -3128,11 +3144,29 @@ def _user_owns_todo(user: str, name: str, row: dict) -> bool:
     role-less Website User) the role-based arms of that query match nothing, so
     it reduces to direct assignment.
     """
+    # An alumnus may still own ToDos allocated to their pre-switch company
+    # email (see `recruitment.recruitment.alumni_user_switch`) — resolve every
+    # identity `user` is known by before checking any allocation mechanism, so
+    # ownership here agrees with cn_todo_manager's own `get_todo_list` (which
+    # resolves the same way). A plain, non-alumni caller just gets back
+    # `[user]` unchanged.
+    try:
+        from cn_todo_manager.chatnext_todo_manager.utils.user_utils import (
+            _todo_identity_users,
+        )
+
+        identity_users = _todo_identity_users(user)
+    except Exception:
+        identity_users = [user]
+
     # Cheap direct checks first — the common case, and no query needed.
     # `owner` is included because the Team Todo scope lists by owner
     # (`owner = user AND allocated_to != user`), i.e. work the user raised for
     # someone else. Without it, opening a row from that tab 403s.
-    if user in (row.get("allocated_to"), row.get("assigned_by"), row.get("owner")):
+    if any(
+        identity in (row.get("allocated_to"), row.get("assigned_by"), row.get("owner"))
+        for identity in identity_users
+    ):
         return True
 
     try:
@@ -3142,7 +3176,7 @@ def _user_owns_todo(user: str, name: str, row: dict) -> bool:
 
         builder = OptimizedTodoQueryBuilder.__new__(OptimizedTodoQueryBuilder)
         builder.user = user
-        return name in (builder.get_todo_names_for_users([user]) or [])
+        return name in (builder.get_todo_names_for_users(identity_users) or [])
     except Exception:
         # If that resolver is unavailable or changes shape, fall back to the
         # two child-table mechanisms rather than silently granting access.
@@ -3151,7 +3185,8 @@ def _user_owns_todo(user: str, name: str, row: dict) -> bool:
         )
 
     if frappe.db.exists(
-        "Nextai User Select", {"parent": name, "parenttype": "ToDo", "user": user}
+        "Nextai User Select",
+        {"parent": name, "parenttype": "ToDo", "user": ["in", identity_users]},
     ):
         return True
 

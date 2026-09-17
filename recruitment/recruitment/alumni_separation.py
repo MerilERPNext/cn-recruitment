@@ -125,6 +125,14 @@ def get_my_separation_status() -> dict:
     except Exception:
         frappe.log_error(frappe.get_traceback(), "Alumni: separation details lookup failed")
 
+    pending_todo = {"has_pending_todo": False}
+    try:
+        from recruitment.recruitment.alumni_todo import get_my_pending_separation_todo
+
+        pending_todo = get_my_pending_separation_todo()
+    except Exception:
+        frappe.log_error(frappe.get_traceback(), "Alumni: pending separation ToDo lookup failed")
+
     return {
         "has_separation_record": True,
         "separation": {
@@ -148,6 +156,7 @@ def get_my_separation_status() -> dict:
                 "loan_advance_noc": _d(sep.custom_loan_advance_noc_date),
             },
             "approval": approval_summary,
+            "pending_todo": pending_todo,
         },
     }
 
