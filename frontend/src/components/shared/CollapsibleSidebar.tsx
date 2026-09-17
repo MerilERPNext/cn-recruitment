@@ -52,9 +52,9 @@ import { useSingleCompanyLogo } from "../../hooks/useCompanyLogo";
 import { useCurrentEmployeeDetails } from "../../hooks/useEmployee";
 import { useGetUiPermission } from "../../hooks/userUiPermission";
 import { useRecognitionFlags } from "../../services/recognitionService";
-import { useTodoPendingCount, useTodoSettings } from "../../hooks/useTodo";
+import { useTodoPendingCount } from "../../hooks/useTodo";
 import { useOptionalTargetEmployeeId } from "../../context/ViewedUserContext";
-import { useAttendanceSettings } from "../../hooks/useAttendance";
+import { useImpersonationSettings } from "../../hooks/useImpersonationSettings";
 import { getImpersonationFallbackRoute } from "../../utils/impersonationUtils";
 import Avatar from "./Avatar";
 import { Typography } from "./atoms/Typography";
@@ -139,22 +139,21 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
     !!singleCompanyLogo.custom_logo_has_company_name;
   const { getCount, getSubModuleCount } = useAppNotificationCounts();
   const { data: todoPendingCount = 0 } = useTodoPendingCount();
-  const { data: todoSettings } = useTodoSettings();
+  const { data: impersonationSettings } = useImpersonationSettings();
   const targetEmployeeId = useOptionalTargetEmployeeId();
 
-  const { data: attendanceSettings } = useAttendanceSettings();
+  const isImpersonating =
+    !!targetEmployeeId &&
+    !!currentEmployee?.name &&
+    targetEmployeeId !== currentEmployee.name;
 
-  // When show_todo_for_self_only is enabled, hide Todo during impersonation
+  // When show_todo is not enabled, hide Todo during impersonation
   const isTodoHiddenBySettings =
-    !!todoSettings?.show_todo_for_self_only &&
-    !!targetEmployeeId &&
-    targetEmployeeId !== currentEmployee?.name;
+    isImpersonating && !impersonationSettings?.show_todo;
 
-  // When show_dashboard_self_only is enabled, hide Dashboard during impersonation
+  // When show_dashboard is not enabled, hide Dashboard during impersonation
   const isDashboardHiddenBySettings =
-    Boolean(attendanceSettings?.show_dashboard_self_only) &&
-    !!targetEmployeeId &&
-    targetEmployeeId !== currentEmployee?.name;
+    isImpersonating && !impersonationSettings?.show_dashboard;
 
   // Returns the badge count for a nav item — todo uses its own API, others use notification counts
   const getNavItemCount = (label: string): number => {
@@ -750,7 +749,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
           return null;
         }
 
-        // Hide Dashboard when hide_dashboard_on_impersonation is enabled and impersonating
+        // Hide Dashboard when impersonating and show_dashboard is not enabled
         if (
           (item.label === "Dashboard" || item.path === "/webapp/") &&
           isDashboardHiddenBySettings
@@ -758,7 +757,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
           return null;
         }
 
-        // Hide Todo when show_todo_for_self_only is enabled and impersonating
+        // Hide Todo when impersonating and show_todo is not enabled
         if (item.permissionKey === "Todo" && isTodoHiddenBySettings) {
           return null;
         }
