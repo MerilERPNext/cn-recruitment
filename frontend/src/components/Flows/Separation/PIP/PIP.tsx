@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { Sparkles } from "lucide-react";
 
 import {
@@ -7,6 +7,8 @@ import {
 } from "../../../../hooks/useEmployee";
 import { useCurrentUser, isAdminUser } from "../../../../hooks/useCurrentUser";
 import { useTargetUser } from "../../../../context/ViewedUserContext";
+import { useGetUiPermission } from "../../../../hooks/userUiPermission";
+import { isActionEnabled } from "../../../../utils/uiPermission";
 import type { ActiveRepotreeTypes } from "../../../../services/pipService";
 
 import { Typography } from "../../../shared/atoms/Typography";
@@ -20,6 +22,19 @@ const PerformanceImprovementPlan: React.FC = () => {
   // Current user & admin check
   const { data: currentUser } = useCurrentUser();
   const isAdmin = isAdminUser(currentUser ?? null);
+
+  // UI Permission check for HR Process -> Performance Improvement
+  const { data: userUiPermission } = useGetUiPermission("HR Process");
+  const canAdminAdminView = isActionEnabled(
+    userUiPermission,
+    "admin_admin_view",
+    "Performance Improvement"
+  );
+  const canAdminManagerView = isActionEnabled(
+    userUiPermission,
+    "admin_manager_view",
+    "Performance Improvement"
+  );
 
   // Current user & target user context
   const { isViewingOtherUser, targetEmployeeId } = useTargetUser();
@@ -38,8 +53,24 @@ const PerformanceImprovementPlan: React.FC = () => {
 
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>("");
   const [employeeList, setEmployeeList] = useState<ActiveRepotreeTypes[]>([]);
+  const [viewMode, setViewMode] = useState<"admin" | "manager">("admin");
 
-  const isAllEmployeesMode = isAdmin && !isViewingOtherUser;
+  // Keep viewMode synced with available permissions
+  useEffect(() => {
+    if (isAdmin && !isViewingOtherUser) {
+      if (canAdminAdminView && !canAdminManagerView) {
+        setViewMode("admin");
+      } else if (!canAdminAdminView && canAdminManagerView) {
+        setViewMode("manager");
+      }
+    }
+  }, [isAdmin, isViewingOtherUser, canAdminAdminView, canAdminManagerView]);
+
+  const isAllEmployeesMode =
+    isAdmin &&
+    !isViewingOtherUser &&
+    canAdminAdminView &&
+    (viewMode === "admin" || !canAdminManagerView);
 
   // Derive active selected employee
   const selectedEmployee: ActiveRepotreeTypes | undefined = useMemo(() => {
@@ -85,6 +116,10 @@ const PerformanceImprovementPlan: React.FC = () => {
           currentEmployeeId={currentEmployee?.name}
           isEmployeeLoading={isEmployeeLoading}
           onEmployeesLoaded={setEmployeeList}
+          viewMode={viewMode}
+          onViewModeChange={setViewMode}
+          canAdminAdminView={canAdminAdminView}
+          canAdminManagerView={canAdminManagerView}
         />
 
         {/* Right Column: Selected Employee Details & PIP Cards */}
