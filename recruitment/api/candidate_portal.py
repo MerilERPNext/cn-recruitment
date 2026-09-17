@@ -319,13 +319,24 @@ def _apply_onboarding_automation_fields(doc, applicant, job_offer_name=None):
         if not doc.get("custom_onboarding_recruiter") and applicant.get("custom_recruiter"):
             doc.custom_onboarding_recruiter = applicant.get("custom_recruiter")
 
+        # SPOCs: the Onboarding Settings list; with none configured, the user who
+        # created the Job Offer (else whoever is creating this onboarding).
+        from recruitment.recruitment.onboarding_spocs import (
+            set_onboarding_spocs,
+            settings_spocs,
+        )
+
         if not doc.get("custom_onboarding_spoc"):
-            spoc = None
-            if job_offer_name:
-                spoc = frappe.db.get_value("Job Offer", job_offer_name, "owner")
-            spoc = spoc or frappe.session.user
-            if spoc and spoc != "Guest" and frappe.db.exists("User", spoc):
-                doc.custom_onboarding_spoc = spoc
+            spocs = settings_spocs()
+            if not spocs:
+                spoc = None
+                if job_offer_name:
+                    spoc = frappe.db.get_value("Job Offer", job_offer_name, "owner")
+                spoc = spoc or frappe.session.user
+                if spoc and spoc != "Guest" and frappe.db.exists("User", spoc):
+                    spocs = [spoc]
+            if spocs:
+                set_onboarding_spocs(doc, spocs)
 
         # Rule-based multi assignments (lists of users) + single Manager.
         try:
@@ -356,6 +367,8 @@ def _apply_onboarding_automation_fields(doc, applicant, job_offer_name=None):
 
 
 ONBOARDING_TEMPLATE = "Employee Onboarding Template"
+# Optional per-activity Email Template (recruitment/custom/employee_boarding_activity.json).
+ACTIVITY_TEMPLATE_FIELD = "custom_email_template"
 
 
 def _default_onboarding_template():
@@ -438,18 +451,24 @@ def _template_activities(template):
     A candidate accepting an offer from the portal is Guest, and Guest has no
     permission on this doctype.
     """
+    fields = [
+        "activity_name",
+        "role",
+        "user",
+        "required_for_employee_creation",
+        "description",
+        "task_weight",
+        "begin_on",
+        "duration",
+    ]
+    # The activity's optional Email Template travels with it, so the task
+    # created from this row knows which mail to send.
+    if frappe.get_meta("Employee Boarding Activity").has_field(ACTIVITY_TEMPLATE_FIELD):
+        fields.append(ACTIVITY_TEMPLATE_FIELD)
+
     return frappe.get_all(
         "Employee Boarding Activity",
-        fields=[
-            "activity_name",
-            "role",
-            "user",
-            "required_for_employee_creation",
-            "description",
-            "task_weight",
-            "begin_on",
-            "duration",
-        ],
+        fields=fields,
         filters={"parent": template, "parenttype": ONBOARDING_TEMPLATE},
         order_by="idx",
         ignore_permissions=True,
@@ -1069,6 +1088,18 @@ def _get_branding(eo_doc, applicant_doc):
     }
 
 
+def _offer_expected_doj(eo_doc):
+    """The onboarding's Job Offer Expected DOJ, or None. Never raises."""
+    try:
+        offer = eo_doc.get("job_offer")
+        if not offer or not frappe.get_meta("Job Offer").has_field("custom_expected_doj"):
+            return None
+        return frappe.db.get_value("Job Offer", offer, "custom_expected_doj")
+    except Exception:
+        frappe.log_error(frappe.get_traceback(), "Candidate portal: offer expected DOJ lookup failed")
+        return None
+
+
 def _get_joining_info(eo_doc, applicant_doc):
     """Date-of-joining block driving the "days to joining" / "pick a date" header."""
     from frappe.utils import getdate, nowdate, date_diff
@@ -1077,7 +1108,6 @@ def _get_joining_info(eo_doc, applicant_doc):
     bbo = eo_doc.get("boarding_begins_on") if eo_doc is not None else None
     if not doj and applicant_doc is not None:
         doj = applicant_doc.get("custom_date_of_joining")
-    days = date_diff(getdate(doj), getdate(nowdate())) if doj else None
 
     # A Trainee starts twice: the traineeship on this date, the permanent role on
     # date_of_joining. Read from the onboarding, falling back to the accepted offer
@@ -1100,6 +1130,18 @@ def _get_joining_info(eo_doc, applicant_doc):
     else:
         trainee_doj = None
     trainee_days = date_diff(getdate(trainee_doj), getdate(nowdate())) if trainee_doj else None
+
+    # `date_of_joining` here is the permanent-role date. A project may move the
+    # onboarding's own date_of_joining to the traineeship start (to plan tasks
+    # around it), which made both rows show the trainee date. So, for a trainee
+    # only, the permanent date is read from the offer. No trainee date, no offer
+    # date, or any error: the value above stands.
+    if trainee_doj and eo_doc is not None:
+        permanent_doj = _offer_expected_doj(eo_doc)
+        if permanent_doj:
+            doj = permanent_doj
+
+    days = date_diff(getdate(doj), getdate(nowdate())) if doj else None
 
     # Role (Designation) and Department — Employee Onboarding wins, falling back
     # to the Job Applicant (designation / custom_department) when EO is empty.
