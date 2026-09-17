@@ -8,6 +8,8 @@ import { useScreenSize } from "./hooks/useScreenSize";
 import { Expense, ExpenseClaim } from "./types/expenseAdvance";
 import { lazyWithRetry } from "./utils/lazyWithRetry";
 
+const PDFFormsPage = lazyWithRetry(() => import("./components/PDFForms/PDFFormsPage"));
+
 // Keep critical components as static imports for better UX
 import TeamAdvanceRequest from "./components/Compansation/Advances/ApprovalAdvanceRquest";
 import ExtraPayment from "./components/Compansation/Extrapayment/ExtraPayment";
@@ -829,6 +831,16 @@ const ShiftRequestDefaultRoute = () => {
 };
 
 export const routesConfig: AppRoute[] = [
+  {
+    path: "/webapp/pdf-form-template",
+    element: <Suspense fallback={<div className="p-6">Loading PDF forms…</div>}><PDFFormsPage /></Suspense>,
+    permissionKey: "PDF Form Template",
+  },
+  {
+    path: "/webapp/pdf-form-submission",
+    element: <Suspense fallback={<div className="p-6">Loading PDF form…</div>}><PDFFormsPage /></Suspense>,
+    permissionKey: "PDF Form Submission",
+  },
   // notification page route
   {
     path: "/webapp/notification-log",
