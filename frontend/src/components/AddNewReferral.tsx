@@ -21,6 +21,7 @@ import Modal from "./shared/Modal";
 import DataListView from "./DataListView";
 import { compileFormioSchema, ApplicationField } from "./Recruitment/referralFormSchemas";
 import toast from "react-hot-toast";
+import { errorResponseFormater } from "../utils/errorResponseFormater";
 import ReferralReviewStep from "./Recruitment/ReferralReviewStep";
 import CardTable from "./shared/CardTable";
 import { Typography } from "./shared/atoms/Typography";
@@ -399,17 +400,19 @@ const AddNewReferral: React.FC = () => {
   };
 
   const uploadFile = async (file: File): Promise<string | null> => {
-    const fd = new FormData();
-    fd.append("file", file);
     try {
       setUploading(true);
-      const res = await fetch("/api/method/upload_file", { method: "POST", body: fd });
-      const result = await res.json();
+      const result = await FrappeAPI.uploadFile(file, file.name);
       setUploading(false);
-      return result?.message?.file_url || null;
+      if (!result?.file_url) {
+        toast.error("Upload failed.");
+        return null;
+      }
+      return result.file_url;
     } catch (error) {
       setUploading(false);
       console.error("Upload error", error);
+      errorResponseFormater(error, "Upload failed.", { showToast: true });
       return null;
     }
   };
@@ -1208,8 +1211,6 @@ const AddNewReferral: React.FC = () => {
                                     prev.filter(n => n !== field.display_name)
                                   );
                                   toast.success(`${field.display_name} uploaded successfully!`);
-                                } else {
-                                  toast.error("Upload failed.");
                                 }
                               }
                             }}
