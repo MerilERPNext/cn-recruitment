@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { todoService, type TodoFilters, type ToDo, type TodoApprovalConfig, type TodoSettings } from "../services/todoService";
+import { todoService, type TodoFilters, type ToDo, type TodoApprovalConfig } from "../services/todoService";
 
 import type { TodoCategory } from "../types/todos";
 
@@ -38,10 +38,3 @@ export function useTodoTypeApprovalConfig(todo_name?: string) {
   });
 }
 
-export function useTodoSettings() {
-  return useQuery<TodoSettings>({
-    queryKey: ["todo-settings"],
-    queryFn: () => todoService.getTodoSettings(),
-    staleTime: 10 * 60 * 1000, // 10 minutes — settings rarely change
-  });
-}
