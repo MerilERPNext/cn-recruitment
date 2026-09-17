@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import { Search, Users, X } from "lucide-react";
+import { Search, ShieldCheck, UserCheck, Users, X } from "lucide-react";
 
 import {
   useInfiniteAllActiveEmployees,
@@ -45,6 +45,10 @@ interface PipSerachEmployeeSectionProps {
   currentEmployeeId?: string;
   isEmployeeLoading?: boolean;
   onEmployeesLoaded?: (employees: ActiveRepotreeTypes[]) => void;
+  viewMode?: "admin" | "manager";
+  onViewModeChange?: (mode: "admin" | "manager") => void;
+  canAdminAdminView?: boolean;
+  canAdminManagerView?: boolean;
 }
 
 export const PipSerachEmployeeSection: React.FC<PipSerachEmployeeSectionProps> = ({
@@ -56,14 +60,24 @@ export const PipSerachEmployeeSection: React.FC<PipSerachEmployeeSectionProps> =
   currentEmployeeId,
   isEmployeeLoading = false,
   onEmployeesLoaded,
+  viewMode = "admin",
+  onViewModeChange,
+  canAdminAdminView = true,
+  canAdminManagerView = true,
 }) => {
   const [searchTerm, setSearchTerm] = useState<string>("");
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
-  const isAllEmployeesMode = isAdmin && !isViewingOtherUser;
+  const showTabs =
+    isAdmin && !isViewingOtherUser && canAdminAdminView && canAdminManagerView;
+  const isAllEmployeesMode =
+    isAdmin &&
+    !isViewingOtherUser &&
+    canAdminAdminView &&
+    (viewMode === "admin" || !canAdminManagerView);
   const reporteeManagerId = isViewingOtherUser
     ? (targetEmployeeId ?? "")
-    : (!isAdmin ? (currentEmployeeId ?? "") : "");
+    : (currentEmployeeId ?? "");
 
   const {
     data: allActiveEmployeesData,
@@ -151,13 +165,53 @@ export const PipSerachEmployeeSection: React.FC<PipSerachEmployeeSectionProps> =
 
   return (
     <aside className="w-full lg:w-80 shrink-0 bg-white rounded-2xl border border-gray-200 p-4 shadow-xs space-y-3.5">
+      {/* Admin / Manager Switch Tabs (Only for Admin when not viewing other user) */}
+      {showTabs && (
+        <div className="bg-gray-100/90 p-1 rounded-xl flex items-center gap-1 border border-gray-200/70">
+          <button
+            type="button"
+            onClick={() => {
+              if (viewMode !== "admin") {
+                onViewModeChange?.("admin");
+                setSearchTerm("");
+              }
+            }}
+            className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+              viewMode === "admin"
+                ? "bg-white text-primary-700 shadow-2xs font-bold"
+                : "text-gray-600 hover:text-gray-900"
+            }`}
+          >
+            <ShieldCheck className="w-3.5 h-3.5" />
+            <span>Admin View</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              if (viewMode !== "manager") {
+                onViewModeChange?.("manager");
+                setSearchTerm("");
+              }
+            }}
+            className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+              viewMode === "manager"
+                ? "bg-white text-primary-700 shadow-2xs font-bold"
+                : "text-gray-600 hover:text-gray-900"
+            }`}
+          >
+            <UserCheck className="w-3.5 h-3.5" />
+            <span>Manager View</span>
+          </button>
+        </div>
+      )}
+
       {/* Sidebar Header with Title, Count badge, and explanatory caption */}
       <div className="space-y-1 pb-2.5 border-b border-gray-100">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Users className="w-4 h-4 text-primary-600" />
             <Typography variant="label" className="font-bold text-gray-800 uppercase tracking-wider block">
-              {isAllEmployeesMode ? "All Employees" : "Direct Reportees"}
+              {isAllEmployeesMode ? "All Employees" : (showTabs ? "My Reportees" : "Direct Reportees")}
             </Typography>
           </div>
           <span className="px-2.5 py-0.5 rounded-xl text-[11px] font-semibold bg-gray-100 text-gray-700">
@@ -196,7 +250,7 @@ export const PipSerachEmployeeSection: React.FC<PipSerachEmployeeSectionProps> =
       {/* Employees List with infinite scroll */}
       <div
         onScroll={handleSidebarScroll}
-        className="flex flex-col gap-1.5 max-h-[580px] overflow-y-auto pr-0.5"
+        className="flex flex-col gap-1.5 max-h-52 sm:max-h-64 lg:max-h-[580px] overflow-y-auto pr-0.5"
       >
         {isLoadingEmployees ? (
           <ReporteesSidebarSkeleton />
@@ -217,7 +271,7 @@ export const PipSerachEmployeeSection: React.FC<PipSerachEmployeeSectionProps> =
             </Button>
           </div>
         ) : employeeList.length === 0 ? (
-          <div className="py-8 px-2 text-center">
+          <div className="py-4 lg:py-8 px-2 text-center">
             <NoDataFound
               title={isAllEmployeesMode ? "No Employees Found" : "No Reportees Found"}
               subtitle={
