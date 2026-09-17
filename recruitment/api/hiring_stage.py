@@ -421,9 +421,25 @@ def _campus_stage_mail_allowed(doc):
 	                                       "notify_campus_candidates_on_stage_change"))
 
 
+def _stage_mail_disabled_site_wide():
+	"""Recruitment Settings -> Disable Stage-Change Email to Candidates.
+
+	A "disable" switch on purpose: a Single's checkbox reads 0 until someone
+	saves it, so an untouched site keeps sending exactly as before. Checked
+	against the meta first so code deployed ahead of `bench migrate` does not
+	fail on a field that is not there yet.
+	"""
+	fieldname = "disable_stage_change_email"
+	if not frappe.get_meta("Recruitment Settings").has_field(fieldname):
+		return False
+	return bool(frappe.db.get_single_value("Recruitment Settings", fieldname))
+
+
 def _notify_stage_entry(doc, stage):
 	"""Best-effort candidate email on stage entry. Never blocks the transition."""
 	try:
+		if _stage_mail_disabled_site_wide():
+			return
 		if not _campus_stage_mail_allowed(doc):
 			return
 		recipient = doc.get("email_id")

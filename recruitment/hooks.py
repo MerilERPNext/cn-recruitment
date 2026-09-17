@@ -461,7 +461,11 @@ doc_events = {
         "on_cancel": [
             "recruitment.api.offer_position.sync_offer_position",
             "recruitment.api.requisition_pipeline.refresh_from_job_offer",
+            "recruitment.recruitment.hr_ops_offer_review.close_hr_ops_todos",
         ],
+        # "Send Job Offer" stamps email_status with db_set, which raises only
+        # on_change — so that is where the HR Ops "verify & release" ToDos close.
+        "on_change": "recruitment.recruitment.hr_ops_offer_review.close_hr_ops_todos",
         # Deleting an offer has to hand the position back too. sync_offer_position
         # cannot cover this one: it decides claim-vs-release from the offer's
         # status, and a deleted offer has none.
@@ -693,7 +697,12 @@ doc_events = {
             "recruitment.api.new_hire.require_job_offer_unless_direct_hire",
         ],
         # "before_save": "recruitment.customizations.employee_onboarding.document_verification.update_verification_documents",
-        "before_save": "recruitment.recruitment.onboarding_extras.auto_map_manager",
+        "before_save": [
+            "recruitment.recruitment.onboarding_extras.auto_map_manager",
+            # HRMS copies template activities without the custom Email Template
+            # field; this fills it on new rows from the onboarding template.
+            "recruitment.recruitment.onboarding_extras.copy_activity_email_templates",
+        ],
         # Tasks are no longer created on submit (see overide_class.on_submit) —
         # they're created via the "Create Onboarding Tasks" button, which stamps
         # task metadata itself. This hook only keeps metadata fresh on post-submit

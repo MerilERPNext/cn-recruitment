@@ -924,13 +924,14 @@ _ONBOARDING_FIELDS = (
     "custom_current_office_location",
     "custom_onboarding_portal_form",
     "custom_manager",
-    "custom_onboarding_spoc",
     "custom_onboarding_recruiter",
 )
 
 # The only child tables this endpoint reads. {fieldname: (child doctype, columns)}
 _ONBOARDING_CHILD_TABLES = {
     "activities": ("Employee Boarding Activity", ["user"]),
+    # A Table MultiSelect now, so it is read here — it has no column to select.
+    "custom_onboarding_spoc": ("Onboarding Buddy User", ["user"]),
     "custom_onboarding_buddy": ("Onboarding Buddy User", ["user"]),
     "custom_joining_buddy": ("Onboarding Buddy User", ["user"]),
     "custom_candidate_portal_fields": (
@@ -1455,7 +1456,10 @@ def get_employee_onboarding_detail(name):
         employee_name = header_values.get("employee_name")
 
         manager = doc.get("custom_manager")
-        spoc = doc.get("custom_onboarding_spoc")
+        spocs = _multiselect_users(doc, "custom_onboarding_spoc")
+        # `onboarding_spoc` keeps its single-person shape for the portal; the
+        # full list is sent alongside as `onboarding_spocs`.
+        spoc = spocs[0] if spocs else None
         recruiter = doc.get("custom_onboarding_recruiter")
         buddies = _multiselect_users(doc, "custom_onboarding_buddy")
         teammates = _multiselect_users(doc, "custom_joining_buddy")
@@ -1470,7 +1474,7 @@ def get_employee_onboarding_detail(name):
                     notify.append(user_id)
 
         directory = _people_directory(
-            [manager, spoc, recruiter] + buddies + teammates + notify
+            [manager, recruiter] + spocs + buddies + teammates + notify
         )
 
         data = {
@@ -1507,6 +1511,7 @@ def get_employee_onboarding_detail(name):
             "manager": _person(directory, manager),
             "key_people": {
                 "onboarding_spoc": _person(directory, spoc),
+                "onboarding_spocs": [_person(directory, u) for u in spocs],
                 "recruiter": _person(directory, recruiter),
                 "buddies": [_person(directory, u) for u in buddies],
                 "teammates": [_person(directory, u) for u in teammates],

@@ -10,6 +10,8 @@
   "automation_section",
   "enable_auto_manager_mapping",
   "enable_doj_outcome_automation",
+  "spoc_section",
+  "hr_onboarding_spocs",
   "review_section",
   "enable_onboarding_review_actions",
   "complete_onboarding_on_form_approval",
@@ -49,6 +51,18 @@
    "fieldname": "enable_doj_outcome_automation",
    "fieldtype": "Check",
    "label": "Automate DOJ Outcome (Joined / Not Joined / Postponed)"
+  },
+  {
+   "fieldname": "spoc_section",
+   "fieldtype": "Section Break",
+   "label": "Onboarding SPOCs"
+  },
+  {
+   "description": "Copied onto every new Employee Onboarding as its Onboarding SPOCs. Each SPOC receives the form-verification email and task, and the joining preparation task. Leave empty to fall back to the user who created the Job Offer. Changing this list only affects onboardings created afterwards.",
+   "fieldname": "hr_onboarding_spocs",
+   "fieldtype": "Table MultiSelect",
+   "label": "HR Onboarding SPOCs",
+   "options": "Onboarding Buddy User"
   },
   {
    "fieldname": "review_section",
@@ -99,7 +113,7 @@
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2026-05-14 10:00:00.000000",
+ "modified": "2026-09-17 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "Onboarding Settings",

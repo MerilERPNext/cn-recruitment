@@ -8,7 +8,9 @@ module runs: no extra button, no extra guard, the offer flow is exactly what it
 was before this file existed.
 
 ON adds one step. The recruiter saves the offer and clicks "Notify HR Ops",
-which emails everyone holding the **HR Ops** role a link to the offer in Desk.
+which emails everyone holding the **HR Ops** role a link to the offer in Desk,
+and gives each of those same users a ToDo on the offer. The ToDos close by
+themselves once the offer is sent or cancelled.
 "Send Job Offer" (form button, list bulk action and the server call behind both)
 stays out of reach until that notification has gone out; HR Ops then reviews,
 submits and sends.
@@ -26,6 +28,9 @@ SETTING_FIELD = "enable_hr_ops_offer_verification"
 
 HR_OPS_ROLE = "HR Ops"
 EMAIL_TEMPLATE = "HR Ops Offer Verification"
+
+# Every HR Ops ToDo starts with this, which is how they are found again to close.
+TODO_PREFIX = "Verify & release Job Offer"
 
 
 # --- the setting -------------------------------------------------------------
@@ -52,8 +57,11 @@ def send_blocked(doc, enabled=None):
 
 # --- recipients --------------------------------------------------------------
 
-def hr_ops_recipients():
-	"""Email addresses of the enabled users holding the HR Ops role."""
+def hr_ops_users():
+	"""`(user, email)` for each enabled System User holding the HR Ops role.
+
+	One list feeds both the mail and the ToDos, so the same people get both.
+	"""
 	users = frappe.get_all(
 		"Has Role",
 		filters={"role": HR_OPS_ROLE, "parenttype": "User"},
@@ -68,15 +76,74 @@ def hr_ops_recipients():
 		fields=["name", "email"],
 	)
 
-	seen = []
+	out = []
+	seen = set()
 	for row in rows:
 		email = (row.email or row.name or "").strip()
 		if not email or email in seen:
 			continue
 		if not validate_email_address(email, throw=False):
 			continue
-		seen.append(email)
-	return seen
+		seen.add(email)
+		out.append((row.name, email))
+	return out
+
+
+def hr_ops_recipients():
+	"""Email addresses of the enabled users holding the HR Ops role."""
+	return [email for _user, email in hr_ops_users()]
+
+
+# --- the ToDos ---------------------------------------------------------------
+
+def _open_todo_filters(doc, user=None):
+	filters = {
+		"reference_type": doc.doctype,
+		"reference_name": doc.name,
+		"status": "Open",
+		"description": ["like", f"{TODO_PREFIX}%"],
+	}
+	if user:
+		filters["allocated_to"] = user
+	return filters
+
+
+def raise_hr_ops_todos(doc, users):
+	"""One open "verify & release" ToDo per HR Ops user on this offer.
+
+	Created directly rather than through `assign_to.add`, which skips a user who
+	already has any open ToDo on the record and so could quietly drop this one.
+	Returns how many were created.
+	"""
+	detail = doc.get("applicant_name") or doc.get("job_applicant") or doc.name
+	created = 0
+	for user in users:
+		if frappe.db.exists("ToDo", _open_todo_filters(doc, user)):
+			continue
+		frappe.get_doc({
+			"doctype": "ToDo",
+			"allocated_to": user,
+			"reference_type": doc.doctype,
+			"reference_name": doc.name,
+			"description": f"{TODO_PREFIX}: {detail} ({doc.name})",
+			"priority": "Medium",
+		}).insert(ignore_permissions=True)
+		created += 1
+	return created
+
+
+def close_hr_ops_todos(doc, method=None):
+	"""Job Offer on_change / on_cancel: the HR Ops task is done once the offer
+	has been sent, and moot once it is cancelled. Never raises."""
+	try:
+		if not (doc.docstatus == 2 or doc.get("email_status") == "Sent"):
+			return
+		for name in frappe.get_all("ToDo", filters=_open_todo_filters(doc), pluck="name"):
+			todo = frappe.get_doc("ToDo", name)
+			todo.status = "Closed"
+			todo.save(ignore_permissions=True)
+	except Exception:
+		frappe.log_error(frappe.get_traceback(), f"HR Ops ToDo close failed: {doc.name}")
 
 
 # --- the email ---------------------------------------------------------------
