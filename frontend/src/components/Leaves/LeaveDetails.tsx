@@ -24,11 +24,8 @@ import { Typography } from "../shared/atoms/Typography";
 import StatusBadge from "../shared/atoms/statusBadge";
 import { AttachmentCard } from "../shared/molecules/AttachmentCard";
 import ActionReasonModal from "../shared/ActionReasonModal";
-import MobileAllocatedTo from "../shared/MobileAllocatedTo";
-import AllocatedToTooltip from "../shared/AllocatedToTooltip";
 import LeaveBalanceField from "./LeaveBalanceField";
 import type { MyLeaveRequestType } from "../../types/leaves";
-import type { allocatedToType } from "../../types/allocatedToTooltip";
 
 type LeaveAttachment = {
   file_url: string;
@@ -39,43 +36,7 @@ const hasValue = (value: unknown): boolean => {
   return value !== null && value !== undefined && String(value).trim() !== "";
 };
 
-const normalizeAllocatedUsers = (value: unknown): allocatedToType[] => {
-  const values = Array.isArray(value) ? value : [value];
 
-  return values.flatMap((item): allocatedToType[] => {
-    if (typeof item === "string") {
-      const trimmed = item.trim();
-      if (!trimmed) return [];
-
-      if (trimmed.startsWith("[")) {
-        try {
-          return normalizeAllocatedUsers(JSON.parse(trimmed) as unknown);
-        } catch {
-          // Treat malformed JSON as a plain user value.
-        }
-      }
-
-      return [{ name: trimmed, designation_name: null, employee: null }];
-    }
-
-    if (item && typeof item === "object") {
-      const record = item as Record<string, unknown>;
-      const name = typeof record.name === "string" ? record.name.trim() : "";
-      if (!name) return [];
-
-      return [{
-        name,
-        designation_name:
-          typeof record.designation_name === "string"
-            ? record.designation_name
-            : null,
-        employee: typeof record.employee === "string" ? record.employee : null,
-      }];
-    }
-
-    return [];
-  });
-};
 
 export function LeaveDetailView({
   actionsEnabled,
@@ -140,20 +101,13 @@ export function LeaveDetailView({
   const leaveType =
     data?.reference_document?.custom_leave_type_name ||
     data?.reference_document?.leave_type;
-  const assignedUsers = normalizeAllocatedUsers(data?.allocated_to);
   const displayStatus =
     data?.custom_allow_revoke &&
     data?.reference_document?.docstatus === 2 &&
     data?.todo_status?.toLowerCase() === "cancelled"
       ? "Revoked"
       : data?.reference_document?.status;
-  const hasAssignedTo = [
-    assignedUsers,
-    data?.username,
-    data?.role,
-    data?.allocated_roles,
-    data?.role_assigned_users,
-  ].some(hasValue);
+
   const sendbackCommentValue = sendBackComment || data?.send_back_comment;
 
   const [currentAction, setCurrentAction] = useState<string | null>(null);
@@ -344,21 +298,7 @@ export function LeaveDetailView({
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
           {/* Status */}
           <div className="flex justify-end p-1">
-            <div>
-              <AllocatedToTooltip
-                title="Assigned To"
-                users={assignedUsers}
-                allocated_to_user={data?.username}
-                roles={data?.allocated_roles}
-                role={data?.role}
-                RoleAssignedUsers={data?.role_assigned_users}
-                position="top"
-              >
-                <span>
-                  <StatusBadge status={displayStatus} />
-                </span>
-              </AllocatedToTooltip>
-            </div>
+            <StatusBadge status={displayStatus} />
           </div>
 
           <div className="flex flex-col items-start justify-between mt-2 rounded-md p-1 gap-4">
@@ -391,25 +331,16 @@ export function LeaveDetailView({
                 />
               </div>
             )}
-            <div className="flex justify-between w-full">
-              {hasAssignedTo && <MobileAllocatedTo
-                users={assignedUsers}
-                allocated_to_user={data?.username}
-                roles={data?.allocated_roles}
-                role={data?.role}
-                RoleAssignedUsers={data?.role_assigned_users}
-                align="left"
-                label="Assigned To"
-              />}
-              {hasValue(leaveReason) && <div className="flex flex-col gap-2 text-right">
+            {hasValue(leaveReason) && (
+              <div className="flex flex-col gap-2">
                 <Typography variant="mobileCardLabel" className="block">
                   Reason
                 </Typography>
                 <Typography variant="mobileCardValue">
                   {leaveReason}
                 </Typography>
-              </div>}
-            </div>
+              </div>
+            )}
             <div className="flex justify-between w-full">
               {hasValue(data?.reference_document?.from_date) && hasValue(data?.reference_document?.to_date) && <div className="flex flex-col gap-2">
                 <Typography variant="mobileCardLabel" className="block">
