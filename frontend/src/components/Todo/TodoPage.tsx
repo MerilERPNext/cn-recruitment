@@ -6,34 +6,32 @@ import HeaderBar from "../HeaderBar";
 import DesktopLayoutWrapper from "../DesktopLayoutWrapper";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import TodoAppShadowWrapper from "../TodoAppShadowWrapper.tsx";
-import { useTodoSettings } from "../../hooks/useTodo";
+import { useImpersonationSettings } from "../../hooks/useImpersonationSettings";
 import { useTargetUser } from "../../context/ViewedUserContext";
 import { useCurrentEmployeeDetails } from "../../hooks/useEmployee";
-import { useAttendanceSettings } from "../../hooks/useAttendance";
 import { useGetUiPermission } from "../../hooks/userUiPermission";
 import { getImpersonationFallbackRoute } from "../../utils/impersonationUtils";
 
 const TodoPage = () => {
   const { isDesktop } = useScreenSize();
   const navigate = useNavigate();
-  const { data: todoSettings } = useTodoSettings();
+  const { data: impersonationSettings } = useImpersonationSettings();
   const { targetEmployeeId } = useTargetUser();
   const { data: currentEmployee } = useCurrentEmployeeDetails({
     logged_in_employee_details: true,
   });
-  const { data: attendanceSettings } = useAttendanceSettings();
   const { data: uiPermissions } = useGetUiPermission();
 
-  // Redirect when show_todo_for_self_only is enabled and impersonating
+  // Redirect when impersonating and show_todo is not enabled
   const isImpersonating =
     !!targetEmployeeId && targetEmployeeId !== currentEmployee?.name;
 
+  const isTodoHidden = isImpersonating && !impersonationSettings?.show_todo;
   const isDashboardHidden =
-    Boolean(attendanceSettings?.show_dashboard_self_only) &&
-    isImpersonating;
+    isImpersonating && !impersonationSettings?.show_dashboard;
 
   useEffect(() => {
-    if (todoSettings?.show_todo_for_self_only && isImpersonating) {
+    if (isTodoHidden) {
       toast.error("Todo is only available for your own profile.", { id: "todo-self-only" });
       const targetPath = isDashboardHidden
         ? getImpersonationFallbackRoute(uiPermissions)
@@ -41,15 +39,14 @@ const TodoPage = () => {
       navigate(targetPath, { replace: true });
     }
   }, [
-    todoSettings?.show_todo_for_self_only,
-    isImpersonating,
+    isTodoHidden,
     isDashboardHidden,
     uiPermissions,
     navigate,
   ]);
 
   // Don't render while redirecting
-  if (todoSettings?.show_todo_for_self_only && isImpersonating) {
+  if (isTodoHidden) {
     return null;
   }
 

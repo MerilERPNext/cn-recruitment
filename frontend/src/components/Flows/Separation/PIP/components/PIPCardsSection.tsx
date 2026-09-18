@@ -33,6 +33,8 @@ import ActionConfirmationModal from "../../../../shared/ActionConfirmationModal"
 import WrapperHoverCard from "../../../../shared/WrapperHoverCard";
 import formatToIndianDate from "../../../../../utils/formatToIndianDate";
 import { errorResponseFormater } from "../../../../../utils/errorResponseFormater";
+import { useGetUiPermission } from "../../../../../hooks/userUiPermission";
+import { isActionEnabled } from "../../../../../utils/uiPermission";
 import { PIPCardDetailDrawer } from "./PIPCardDetailDrawer";
 
 interface PIPCardsSectionProps {
@@ -126,6 +128,14 @@ export const PIPCardsSection: React.FC<PIPCardsSectionProps> = ({
     error: activitiesError,
     refetch: refetchActivities,
   } = usePipFunnelActivities(employeeId);
+
+  // UI permission check for HR Process -> Performance Improvement -> initiate_pip
+  const { data: userUiPermission } = useGetUiPermission("HR Process");
+  const canInitiatePipAction = isActionEnabled(
+    userUiPermission,
+    "initiate_pip",
+    "Performance Improvement"
+  );
 
   // Flow initiation mutation
   const { mutateAsync: initiateFlow, isPending: isInitiatingFlow } =
@@ -299,10 +309,11 @@ export const PIPCardsSection: React.FC<PIPCardsSectionProps> = ({
                 !activityStatus.includes("cancelled")))
           );
 
-          // Card state: locked/completed from API 1, or pending from API 2
+          // Card state: locked/completed from API 1, or pending from API 2, gated by initiate_pip action
           const isCompleted = Boolean(pipStatus?.completed);
           const isLocked = Boolean(pipStatus?.locked);
-          const canInitiate = !isLocked && !isCompleted && !isActivityPending;
+          const canInitiate =
+            !isLocked && !isCompleted && !isActivityPending && canInitiatePipAction;
 
           // Unlock message if locked
           const unlockMessage = pipStatus?.blocked_by_priority

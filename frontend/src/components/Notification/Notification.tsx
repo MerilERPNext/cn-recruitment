@@ -52,10 +52,8 @@ const NotificationList = () => {
 
   const LIMIT = 20;
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageCache, setPageCache] = useState<Record<number, NotificationLog[]>>({});
 
   const { data: currentUser } = useCurrentUser();
-
 
   const effectiveUser = currentUser?.email || currentUser?.name;
 
@@ -95,21 +93,12 @@ const NotificationList = () => {
   const markAsRead = useMarkAsRead();
   const markAllAsRead = useMarkAllAsRead();
 
-  // ✅ Reset page + cache when tab changes
+  // ✅ Reset page when tab changes
   useEffect(() => {
     setCurrentPage(1);
-    setPageCache({});
   }, [activeTab]);
 
-  useEffect(() => {
-    if (!apiNotifications.length) return;
-    setPageCache((prev) => ({
-      ...prev,
-      [currentPage]: apiNotifications,
-    }));
-  }, [apiNotifications, currentPage]);
-
-  const currentNotifications: NotificationLog[] = pageCache[currentPage] ?? [];
+  const currentNotifications: NotificationLog[] = apiNotifications;
 
   // ✅ No client-side filter needed — API already filtered
   const filteredNotifications = currentNotifications;
@@ -118,11 +107,24 @@ const NotificationList = () => {
   const hasNextPage = apiNotifications.length === LIMIT;
   const totalPages = hasNextPage ? currentPage + 1 : currentPage;
 
-  // ✅ Unread IDs in current page (for Mark All as Read scope)
+  // ✅ Fetch unread record from API to check if any unread notifications exist globally
+  const { data: unreadApiData } = useNotifications(
+    effectiveUser,
+    1,
+    0,
+    0
+  );
+  const hasUnreadApiRecord = (unreadApiData?.length ?? 0) > 0;
+
+  // ✅ Unread IDs in current page (for unread tab scope)
   const unreadIds = useMemo(
     () => currentNotifications.filter((n) => n.read === 0).map((n) => n.name),
     [currentNotifications]
   );
+
+  const hasUnread =
+    activeTab === "all" ? hasUnreadApiRecord : unreadIds.length > 0;
+  const isMarkAllDisabled = !hasUnread || markAllAsRead.isPending;
 
   // ✅ Handlers
   const handleItemClick = async (item: NotificationLog) => {
@@ -137,28 +139,12 @@ const NotificationList = () => {
   };
 
   const handleDrawerClose = () => {
-    if (selectedNotification && selectedNotification.read === 0) {
-      setPageCache((prev) => ({
-        ...prev,
-        [currentPage]: (prev[currentPage] ?? []).map((n) =>
-          n.name === selectedNotification.name ? { ...n, read: 1 } : n
-        ),
-      }));
-    }
     setSelectedNotification(null);
   };
 
   const handleMarkAllAsRead = async () => {
     try {
       await markAllAsRead.mutateAsync(effectiveUser);
-      // Optimistically update cache across all cached pages
-      setPageCache((prev) => {
-        const nextCache: Record<number, NotificationLog[]> = {};
-        for (const page in prev) {
-          nextCache[page] = (prev[page] ?? []).map((n) => ({ ...n, read: 1 }));
-        }
-        return nextCache;
-      });
     } catch (err) {
       console.error(err);
     }
@@ -275,9 +261,9 @@ const NotificationList = () => {
         {activeTab !== "read" && (
           <button
             onClick={handleMarkAllAsRead}
-            disabled={unreadIds.length === 0 || markAllAsRead.isPending}
+            disabled={isMarkAllDisabled}
             className={`text-xs font-medium whitespace-nowrap transition-colors
-              ${unreadIds.length === 0 || markAllAsRead.isPending
+              ${isMarkAllDisabled
                 ? "text-gray-300 border border-gray-400 py-1 px-2 rounded hover:bg-gray-100 cursor-not-allowed"
                 : "text-primary border border-primary-400 py-1 px-2 rounded hover:bg-primary-100 cursor-pointer"
               }`}

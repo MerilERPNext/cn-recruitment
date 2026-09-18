@@ -15,8 +15,9 @@ from frappe.utils import now
 from recruitment.recruitment.communication_log import sendmail_with_log
 from recruitment.recruitment.hr_ops_offer_review import (
 	HR_OPS_ROLE,
-	hr_ops_recipients,
+	hr_ops_users,
 	is_notified,
+	raise_hr_ops_todos,
 	render_email,
 	verification_enabled,
 )
@@ -24,11 +25,12 @@ from recruitment.recruitment.hr_ops_offer_review import (
 
 @frappe.whitelist()
 def notify_hr_ops(job_offers):
-	"""Email the HR Ops role about one or more offers awaiting verification.
+	"""Email the HR Ops role about one or more offers awaiting verification, and
+	give each of those users a ToDo on the offer.
 
-	Returns `{notified, already_notified, skipped, failed}` — the counts the list
-	view reports. Already-notified offers are counted, not re-mailed: the button
-	is a handover, not a reminder.
+	Returns `{notified, already_notified, skipped, failed, todos}` — the counts the
+	list view reports. Already-notified offers are counted, not re-mailed: the
+	button is a handover, not a reminder.
 	"""
 	frappe.has_permission("Job Offer", "write", throw=True)
 
@@ -42,7 +44,10 @@ def notify_hr_ops(job_offers):
 			_("HR Ops verification is turned off in Recruitment Settings, so there is nothing to notify.")
 		)
 
-	recipients = hr_ops_recipients()
+	# One list for both the mail and the ToDos, so the same people get both.
+	people = hr_ops_users()
+	recipients = [email for _user, email in people]
+	users = [user for user, _email in people]
 	if not recipients:
 		frappe.throw(
 			_("No enabled user holds the {0} role, so there is no one to notify.").format(HR_OPS_ROLE)
@@ -52,6 +57,7 @@ def notify_hr_ops(job_offers):
 	already_notified = 0
 	skipped = 0
 	failed = 0
+	todos = 0
 
 	for name in job_offers:
 		try:
@@ -90,11 +96,20 @@ def notify_hr_ops(job_offers):
 		except Exception:
 			failed += 1
 			frappe.log_error(frappe.get_traceback(), "Notify HR Ops failed")
+			continue
+
+		# After the stamp and outside its try: the mail has gone and the gate is
+		# open, so a ToDo problem is logged rather than reported as a failed notify.
+		try:
+			todos += raise_hr_ops_todos(doc, users)
+		except Exception:
+			frappe.log_error(frappe.get_traceback(), "Notify HR Ops: ToDo failed")
 
 	return {
 		"notified": notified,
 		"already_notified": already_notified,
 		"skipped": skipped,
 		"failed": failed,
+		"todos": todos,
 		"recipients": len(recipients),
 	}

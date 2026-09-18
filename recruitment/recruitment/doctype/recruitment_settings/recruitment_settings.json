@@ -35,6 +35,7 @@
   "dummy_salary_structure_assignment",
   "interview_settings_section",
   "authorized_feedback_roles",
+  "disable_stage_change_email",
   "requisition_settings_section",
   "max_positions_per_requisition",
   "allowed_replacement_employee_statuses",
@@ -276,6 +277,13 @@
    "fieldtype": "Table MultiSelect",
    "label": "Authorized Roles for Feedback Submission",
    "options": "Roles"
+  },
+  {
+   "default": "0",
+   "description": "When ticked, candidates are NOT emailed \"Update on your application\" when they move from one hiring stage to another — on every Job Opening, whatever each stage's Notify box says. Leave unticked to keep the per-stage Notify setting in charge.",
+   "fieldname": "disable_stage_change_email",
+   "fieldtype": "Check",
+   "label": "Disable Stage-Change Email to Candidates"
   },
   {
    "description": "Controls for Job Requisition creation, position types and replacement employee selection.",
@@ -597,7 +605,7 @@
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2026-09-15 12:00:00.000000",
+ "modified": "2026-09-17 12:30:00.000000",
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "Recruitment Settings",

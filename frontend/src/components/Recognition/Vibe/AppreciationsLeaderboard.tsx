@@ -11,6 +11,7 @@ import { useTargetUser } from "../../../context/ViewedUserContext";
 import {
   useAppreciationLeaderboard,
   useAppreciationPrograms,
+  useLeaderboardRelationOptions,
   LeaderboardPersonEntry,
   LeaderboardSpan,
   AppreciationApiItem,
@@ -120,28 +121,33 @@ const AppreciationNoteCard: React.FC<{ item: AppreciationApiItem }> = ({ item })
 
 const SIDEBAR_VISIBLE = 3;
 
-// In the order the dropdown should list them — widest scope first.
-const SPAN_OPTIONS: { value: LeaderboardSpan; label: string }[] = [
-  { value: "organization", label: "Organization" },
-  { value: "hod", label: "HOD" },
-  { value: "cxo", label: "CXO" },
-];
-
 const AppreciationsLeaderboard: React.FC = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<"Receivers" | "Recognizers">("Receivers");
   const [appreciationTab, setAppreciationTab] = useState<"Received" | "Given">("Received");
   const [query, setQuery] = useState("");
-  const [span, setSpan] = useState<LeaderboardSpan>("organization");
+  // CXO / HOD dropdowns — same visual/interaction pattern as the Work Connect
+  // feed's "CXO: All" / "HRBP: All" selectors: empty value = "All" (unscoped),
+  // picking a person in one clears the other so only one scope is ever active
+  // at a time.
+  const [cxoPerson, setCxoPerson] = useState("");
+  const [hodPerson, setHodPerson] = useState("");
+  const { data: relationOptions } = useLeaderboardRelationOptions();
+  const cxoOptions = relationOptions?.cxo ?? [];
+  const hodOptions = relationOptions?.hod ?? [];
+
+  const span: LeaderboardSpan = cxoPerson ? "cxo" : hodPerson ? "hod" : "organization";
+  const scopePerson = cxoPerson || hodPerson || undefined;
 
   // ── Left: leaderboard (Receivers / Recognizers) ──────────────────────────────
   const { data: lbResp, isLoading: lbLoading } = useAppreciationLeaderboard({
     tab: activeTab === "Receivers" ? "receivers" : "recognizers",
     page_length: 100,
     span,
+    scope_person: scopePerson,
   });
-  // The backend falls back to "organization" when the viewer has no HOD/CXO
-  // configured (rather than returning an empty leaderboard) — surfaced here
+  // The backend falls back to "organization" when the picked person couldn't
+  // be resolved (rather than returning an empty leaderboard) — surfaced here
   // so the list's own label never silently disagrees with what's shown.
   const appliedSpan = lbResp?.span ?? span;
   const entries = lbResp?.data ?? [];
@@ -229,14 +235,34 @@ const AppreciationsLeaderboard: React.FC = () => {
               </div>
               <div className="flex items-center gap-2">
                 <select
-                  value={span}
-                  onChange={(e) => setSpan(e.target.value as LeaderboardSpan)}
-                  aria-label="Leaderboard span"
+                  value={cxoPerson}
+                  onChange={(e) => {
+                    setCxoPerson(e.target.value);
+                    setHodPerson("");
+                  }}
+                  aria-label="Filter leaderboard by CXO"
                   className="rounded-lg border border-gray-200 py-1.5 pl-3 pr-8 text-xs font-medium text-gray-700 outline-none focus:border-primary focus:ring-1 focus:ring-primary/30"
                 >
-                  {SPAN_OPTIONS.map((opt) => (
+                  <option value="">CXO: All</option>
+                  {cxoOptions.map((opt) => (
                     <option key={opt.value} value={opt.value}>
-                      {opt.label}
+                      CXO: {opt.label}
+                    </option>
+                  ))}
+                </select>
+                <select
+                  value={hodPerson}
+                  onChange={(e) => {
+                    setHodPerson(e.target.value);
+                    setCxoPerson("");
+                  }}
+                  aria-label="Filter leaderboard by HOD"
+                  className="rounded-lg border border-gray-200 py-1.5 pl-3 pr-8 text-xs font-medium text-gray-700 outline-none focus:border-primary focus:ring-1 focus:ring-primary/30"
+                >
+                  <option value="">HOD: All</option>
+                  {hodOptions.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      HOD: {opt.label}
                     </option>
                   ))}
                 </select>
@@ -253,12 +279,12 @@ const AppreciationsLeaderboard: React.FC = () => {
               </div>
             </div>
 
-            {/* Only shown when the backend couldn't honor the pick (no HOD/CXO
-                set for the viewer) and silently fell back to organization-wide. */}
+            {/* Only shown when the backend couldn't resolve the picked CXO/HOD
+                and silently fell back to organization-wide. */}
             {!lbLoading && appliedSpan !== span && (
               <p className="-mt-3 mb-4 text-xs text-amber-600">
-                {span === "hod" ? "No HOD" : "No CXO"} is set for you — showing the
-                whole organization instead.
+                That {span === "cxo" ? "CXO" : "HOD"} selection couldn't be applied —
+                showing the whole organization instead.
               </p>
             )}
 

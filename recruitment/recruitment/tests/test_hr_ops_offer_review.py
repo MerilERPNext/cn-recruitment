@@ -188,6 +188,57 @@ class TestHrOpsOfferReview(FrappeTestCase):
 		self.assertFalse(self.offer.custom_hr_ops_notified)
 		self.assertTrue(rules.send_blocked(self.offer))
 
+	# --- the ToDos ----------------------------------------------------------------
+
+	def _open_todos(self):
+		return frappe.get_all("ToDo", filters={
+			"reference_type": "Job Offer",
+			"reference_name": self.offer.name,
+			"status": "Open",
+			"description": ["like", f"{rules.TODO_PREFIX}%"],
+		}, pluck="allocated_to")
+
+	def test_notify_gives_the_same_hr_ops_users_a_todo(self):
+		self._enable()
+		result = hr_ops_notify.notify_hr_ops(json.dumps([self.offer.name]))
+
+		self.assertEqual(result["todos"], 1)
+		self.assertEqual(self._open_todos(), [HR_OPS_USER])
+
+	def test_second_notify_does_not_add_a_second_todo(self):
+		self._enable()
+		hr_ops_notify.notify_hr_ops(json.dumps([self.offer.name]))
+		hr_ops_notify.notify_hr_ops(json.dumps([self.offer.name]))
+		self.assertEqual(rules.raise_hr_ops_todos(self.offer, [HR_OPS_USER]), 0)
+		self.assertEqual(self._open_todos(), [HR_OPS_USER])
+
+	def test_failed_mail_raises_no_todo(self):
+		self._enable()
+
+		def boom(**kwargs):
+			raise Exception("smtp down")
+
+		frappe.sendmail = boom
+		hr_ops_notify.notify_hr_ops(json.dumps([self.offer.name]))
+		self.assertEqual(self._open_todos(), [])
+
+	def test_todos_close_once_the_offer_is_sent(self):
+		self._enable()
+		hr_ops_notify.notify_hr_ops(json.dumps([self.offer.name]))
+		self.offer.reload()
+
+		# The same write "Send Job Offer" makes.
+		self.offer.db_set({"email_status": "Sent"})
+		self.assertEqual(self._open_todos(), [])
+
+	def test_todos_stay_open_while_the_offer_is_unsent(self):
+		self._enable()
+		hr_ops_notify.notify_hr_ops(json.dumps([self.offer.name]))
+		self.offer.reload()
+
+		self.offer.db_set({"email_status": "Pending"})
+		self.assertEqual(self._open_todos(), [HR_OPS_USER])
+
 	# --- the send path -----------------------------------------------------------
 
 	def test_bulk_send_skips_an_unnotified_offer(self):
