@@ -34,6 +34,7 @@ import {
 import TasksAwaiting from "../../components/DashboardComponent/TasksAwaiting";
 import EmployeeFallback from "../../components/EmployeeFallback";
 import NotificationBell from "../../components/Notification/NotificationBell";
+import RedeemablePointsBadge from "../../components/Notification/RedeemablePointsBadge";
 import Requests from "../../components/Requests";
 import Button from "../../components/shared/atoms/Button";
 import { Typography } from "../../components/shared/atoms/Typography";
@@ -376,7 +377,9 @@ const MobileDashboard: React.FC = () => {
             </Typography>
           </Button>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <RedeemablePointsBadge variant="light" />
+
             <button
               onClick={() => navigate("/webapp/notification-log")}
               className="relative p-2 hover:bg-primary-400/20 rounded-lg transition-colors"
