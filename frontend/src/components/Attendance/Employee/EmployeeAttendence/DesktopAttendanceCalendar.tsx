@@ -1,4 +1,5 @@
 import React, { useEffect } from "react";
+import { format } from "date-fns";
 
 import { Calendar, CalendarRange, CheckCircle2, ChevronLeft, ChevronRight, CircleX, Columns2, Gift, Home, XCircle } from "lucide-react";
 
@@ -41,6 +42,9 @@ const getEventBadgeStyle = (doctype: string): { label: string; borderClass: stri
             return { label: "Overtime Request", borderClass: "border-l-2 border-orange-400" };
         case "Out Duty":
             return { label: "Out Duty", borderClass: "border-l-2 border-purple-400" };
+        case "Holiday":
+        case "Holidays":
+            return { label: "Holiday", borderClass: "border-l-2 border-blue-400" };
         default:
             return { label: doctype, borderClass: "border-l-2 border-gray-400" };
     }
@@ -70,6 +74,13 @@ const getStatusBgStyle = (status: string): string => {
             return "bg-yellow-50 text-yellow-700 border-l-2 border-yellow-400";
         case "Revoked":
             return "bg-purple-50 text-purple-700 border-l-2 border-purple-400";
+        case "Weekly Off":
+        case "weekly off":
+        case "week-off":
+            return "bg-gray-100 text-gray-700 border-l-2 border-gray-400";
+        case "Holiday":
+        case "holiday":
+            return "bg-blue-50 text-blue-700 border-l-2 border-blue-400";
         default:
             return "bg-gray-50 text-gray-600 border-l-2 border-gray-400";
     }
@@ -140,6 +151,21 @@ const getEventDisplay = (event: AttendanceRecord): { label: string; className: s
     const doctype = event?.doctype || "Request";
     const status = event?.status || "";
     const baseClass = "border-l-2";
+
+    if (doctype === "Holiday" || doctype === "Holidays") {
+        const isWO = event?.weekly_off === 1 || status?.toLowerCase() === "weekly off";
+        const title = event?.title;
+        const cleanTitle = title?.startsWith("Holiday: ") ? title.replace(/^Holiday:\s*/, "") : title;
+        const label = isWO
+            ? (cleanTitle && cleanTitle !== "WO" ? cleanTitle : "Weekly Off")
+            : (cleanTitle || "Holiday");
+        return {
+            label,
+            className: isWO
+                ? `${baseClass} border-gray-400 bg-gray-100 text-gray-700`
+                : `${baseClass} border-blue-400 bg-blue-50 text-blue-700`,
+        };
+    }
 
     if (doctype === "Leave Request" && status === "Approved") {
         return {
@@ -242,13 +268,8 @@ const DesktopAttendanceCalendar: React.FC<attendanceProps> = ({
                         }
                         const eventDisplay = getEventDisplay({ ...event, doctype: doctypeKey });
                         return (
-                            <Tooltip content={eventDisplay.label}>
-
+                            <Tooltip key={index} content={eventDisplay.label}>
                                 <div
-                                    key={index}
-                                    // onClick={(e) => {
-                                    // e.stopPropagation();
-                                    // }}
                                     className={`min-w-0 text-[10px] text-left font-semibold pl-1.5 pr-1 py-0.5 leading-tight truncate rounded-sm ${eventDisplay.className}`}
                                     title={eventDisplay.label}
                                 >
@@ -395,11 +416,23 @@ const DesktopAttendanceCalendar: React.FC<attendanceProps> = ({
                     if (!date) return;
                     setSelectedDate(date);
                     const attendance = getAttendanceStatus(date as Date);
+                    const dateKey = format(date as Date, "yyyy-MM-dd");
 
                     setShowDetailsFor({
                         date: date as Date,
                         status: attendance?.status,
-                        data: attendance?.record as AttendanceRecord,
+                        data:
+                            attendance?.record ||
+                            ({
+                                name: `placeholder-${dateKey}`,
+                                doctype: "Attendance",
+                                start: dateKey,
+                                end: dateKey,
+                                title: "No Data",
+                                status: attendance?.status,
+                                docstatus: "",
+                                employee: "",
+                            } as AttendanceRecord),
                         events: attendance?.events as AttendanceRecord[],
                         isWeeklyOff: attendance?.isWeeklyOff,
                     });
