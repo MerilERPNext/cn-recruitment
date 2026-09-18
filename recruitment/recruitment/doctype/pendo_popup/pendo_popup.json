@@ -1,0 +1,180 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "autoname": "PND.#####",
+ "creation": "2026-09-11 00:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "title",
+  "is_active",
+  "priority",
+  "content_section",
+  "image",
+  "message",
+  "buttons_column_break",
+  "act_button_label",
+  "act_url",
+  "decline_button_label",
+  "validity_section",
+  "start_date",
+  "validity_days",
+  "validity_column_break",
+  "frequency",
+  "day_of_week",
+  "day_of_month"
+ ],
+ "fields": [
+  {
+   "description": "Admin-facing label only — not shown to employees.",
+   "fieldname": "title",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Title",
+   "reqd": 1
+  },
+  {
+   "default": "1",
+   "description": "Untick to stop showing this popup to anyone, without deleting it.",
+   "fieldname": "is_active",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Is Active"
+  },
+  {
+   "default": "0",
+   "description": "When more than one popup is due for the same employee on the same day, the highest priority wins (ties broken by most recently created). Only one popup is ever shown at a time.",
+   "fieldname": "priority",
+   "fieldtype": "Int",
+   "label": "Priority"
+  },
+  {
+   "fieldname": "content_section",
+   "fieldtype": "Section Break",
+   "label": "Content"
+  },
+  {
+   "fieldname": "image",
+   "fieldtype": "Attach Image",
+   "label": "Image",
+   "reqd": 1
+  },
+  {
+   "fieldname": "message",
+   "fieldtype": "Text Editor",
+   "label": "Message"
+  },
+  {
+   "fieldname": "buttons_column_break",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Act",
+   "fieldname": "act_button_label",
+   "fieldtype": "Data",
+   "label": "Act Button Label",
+   "reqd": 1
+  },
+  {
+   "description": "Where \"Act\" navigates once clicked — an internal path (starting with /) or a full external URL. Leave blank to have Act just record the response and close, same as the other two buttons.",
+   "fieldname": "act_url",
+   "fieldtype": "Data",
+   "label": "Act URL"
+  },
+  {
+   "default": "I do not want to act",
+   "fieldname": "decline_button_label",
+   "fieldtype": "Data",
+   "label": "Decline Button Label",
+   "reqd": 1
+  },
+  {
+   "fieldname": "validity_section",
+   "fieldtype": "Section Break",
+   "label": "Validity"
+  },
+  {
+   "fieldname": "start_date",
+   "fieldtype": "Date",
+   "label": "Start Date",
+   "reqd": 1
+  },
+  {
+   "default": "30",
+   "description": "The popup is eligible to show for this many days starting from Start Date.",
+   "fieldname": "validity_days",
+   "fieldtype": "Int",
+   "label": "Validity (Days)",
+   "non_negative": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "validity_column_break",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Once",
+   "description": "How often the popup reappears for an employee who dismissed it (Act, Decline, or Close all count as a dismissal). \"Once\" never reappears once responded to.",
+   "fieldname": "frequency",
+   "fieldtype": "Select",
+   "label": "Frequency",
+   "options": "Once\nDaily\nWeekly\nMonthly",
+   "reqd": 1
+  },
+  {
+   "depends_on": "eval:doc.frequency == 'Weekly'",
+   "fieldname": "day_of_week",
+   "fieldtype": "Select",
+   "label": "Day of Week",
+   "mandatory_depends_on": "eval:doc.frequency == 'Weekly'",
+   "options": "Monday\nTuesday\nWednesday\nThursday\nFriday\nSaturday\nSunday"
+  },
+  {
+   "depends_on": "eval:doc.frequency == 'Monthly'",
+   "description": "If a month has fewer days than this, the popup shows on that month's last day instead.",
+   "fieldname": "day_of_month",
+   "fieldtype": "Int",
+   "label": "Day of Month",
+   "mandatory_depends_on": "eval:doc.frequency == 'Monthly'",
+   "non_negative": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-09-11 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Recruitment",
+ "name": "Pendo Popup",
+ "naming_rule": "Expression (old style)",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "HR Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

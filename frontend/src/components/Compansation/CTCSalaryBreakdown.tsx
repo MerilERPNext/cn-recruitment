@@ -222,6 +222,12 @@ const CTCSalaryUI = () => {
     ...(salarySlip.variable_pay_include_ctc || []),
     ...(salarySlip.variable_pay_exclude_ctc || []),
     ...(salarySlip.total_final_ctc || []).map((i: AmountComponent) => ({ ...i, type: "Total" })),
+    ...(salarySlip.variable_deduction || []),
+    ...(Array.isArray(salarySlip.net_pay)
+      ? salarySlip.net_pay.map((i: AmountComponent) => ({ ...i, type: "Total" }))
+      : typeof salarySlip.net_pay === "number"
+      ? [{ component: "Net Pay", annual_amount: salarySlip.net_pay, type: "Total" }]
+      : []),
   ] : [];
 
   return (

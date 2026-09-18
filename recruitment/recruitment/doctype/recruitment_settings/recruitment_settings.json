@@ -22,6 +22,7 @@
   "offer_action_item_trigger",
   "disable_send_offer_after_sent",
   "withdraw_offer_only_after_sent",
+  "enable_hr_ops_offer_verification",
   "section_break_xbvj",
   "job_offer_print_format",
   "job_offer_print_format_mapping",
@@ -34,6 +35,7 @@
   "dummy_salary_structure_assignment",
   "interview_settings_section",
   "authorized_feedback_roles",
+  "disable_stage_change_email",
   "requisition_settings_section",
   "max_positions_per_requisition",
   "allowed_replacement_employee_statuses",
@@ -48,6 +50,7 @@
   "enable_moving_requisition_back_to_draft",
   "allow_future_dated_positions",
   "allow_hiring_manager_override",
+  "enable_aop_budget_check",
   "salary_range_limits_section",
   "salary_range_limits",
   "job_posting_settings_section",
@@ -196,6 +199,13 @@
    "label": "Allow Withdraw Offer Only After It Is Sent"
   },
   {
+   "default": "0",
+   "description": "Adds a 'Notify HR Ops' button on the Job Offer (form and list). 'Send Job Offer' stays hidden until HR Ops has been notified, so the recruiter hands the offer over for verification and HR Ops releases it to the candidate. Off = current flow, no extra step.",
+   "fieldname": "enable_hr_ops_offer_verification",
+   "fieldtype": "Check",
+   "label": "Require HR Ops Verification Before Sending Offer"
+  },
+  {
    "fieldname": "section_break_xbvj",
    "fieldtype": "Section Break"
   },
@@ -267,6 +277,13 @@
    "fieldtype": "Table MultiSelect",
    "label": "Authorized Roles for Feedback Submission",
    "options": "Roles"
+  },
+  {
+   "default": "0",
+   "description": "When ticked, candidates are NOT emailed \"Update on your application\" when they move from one hiring stage to another — on every Job Opening, whatever each stage's Notify box says. Leave unticked to keep the per-stage Notify setting in charge.",
+   "fieldname": "disable_stage_change_email",
+   "fieldtype": "Check",
+   "label": "Disable Stage-Change Email to Candidates"
   },
   {
    "description": "Controls for Job Requisition creation, position types and replacement employee selection.",
@@ -366,6 +383,13 @@
    "fieldname": "allow_hiring_manager_override",
    "fieldtype": "Check",
    "label": "Allow Hiring Manager Override in Requisition"
+  },
+  {
+   "default": "0",
+   "description": "Block a requisition whose Salary Range (Max) × positions is more than the budget left (Budget − Budget Utilization) on its Department or Cost Center, and flag live requisitions that go over budget.",
+   "fieldname": "enable_aop_budget_check",
+   "fieldtype": "Check",
+   "label": "Enable AOP Budget Check (Department & Cost Center)"
   },
   {
    "description": "Allowed salary range per Salary Timeframe on a Job Requisition. Leave the table empty for no limit.",
@@ -581,7 +605,7 @@
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2026-09-11 12:30:00.000000",
+ "modified": "2026-09-17 12:30:00.000000",
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "Recruitment Settings",

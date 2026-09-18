@@ -70,3 +70,4 @@ recruitment.patches.add_requisition_tat_fields
 recruitment.patches.add_job_opening_jd_file
 recruitment.patches.migrate_application_field_role_permissions
 recruitment.patches.sync_new_hire_source_mandatory_fields
+recruitment.patches.employee_do_not_rehire_flag

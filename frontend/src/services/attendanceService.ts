@@ -550,7 +550,6 @@ export const attendanceService = {
     enable_approval_confirm_modal: number;
     enable_rejection_confirm_modal: number;
     show_all_employees_by_default_in_directory?: number;
-    show_dashboard_self_only?: number;
   } | null> => {
     try {
       const res = (await FrappeAPI.getDocument(
@@ -560,13 +559,11 @@ export const attendanceService = {
           "enable_approval_confirm_modal",
           "enable_rejection_confirm_modal",
           "show_all_employees_by_default_in_directory",
-          "show_dashboard_self_only",
         ]
       )) as {
         enable_approval_confirm_modal: number;
         enable_rejection_confirm_modal: number;
         show_all_employees_by_default_in_directory?: number;
-        show_dashboard_self_only?: number;
       } | undefined;
       return res || null;
     } catch (error) {

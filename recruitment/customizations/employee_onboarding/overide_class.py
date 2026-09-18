@@ -197,6 +197,25 @@ class CustomEmployeeOnboarding(EmployeeOnboarding):
     def on_cancel(self):
         super().on_cancel()
 
+    def get_project_start_date(self):
+        """Earliest date any task of this onboarding can start.
+
+        Tasks are dated `boarding_begins_on + activity.begin_on`, and
+        pre-joining activities use a negative `begin_on`, so they fall before
+        the date of joining. Task.validate_parent_project_dates rejects a task
+        that starts before its project, so the project must start no later
+        than the earliest task. Falls back to the date of joining whenever the
+        activity dates cannot be worked out.
+        """
+        candidates = [self.date_of_joining]
+
+        offsets = [a.begin_on for a in self.activities if a.begin_on is not None]
+        if offsets and self.boarding_begins_on:
+            candidates.append(frappe.utils.add_days(self.boarding_begins_on, min(offsets)))
+
+        dates = [frappe.utils.getdate(d) for d in candidates if d]
+        return min(dates) if dates else None
+
     def create_onboarding_tasks(self):
         """Create the Project and Tasks for this onboarding on demand.
 
@@ -213,7 +232,7 @@ class CustomEmployeeOnboarding(EmployeeOnboarding):
             project = frappe.get_doc({
                 "doctype": "Project",
                 "project_name": project_name,
-                "expected_start_date": self.date_of_joining,
+                "expected_start_date": self.get_project_start_date(),
                 "department": self.department,
                 "company": self.company,
             }).insert(ignore_permissions=True, ignore_mandatory=True)

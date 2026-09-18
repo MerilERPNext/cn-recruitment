@@ -59,6 +59,7 @@ export const errorResponseFormater = (
     err = fallback;
   }
 
+  if (err == null && error instanceof Error) err = error.message;
   if (err == null) err = fallback;
   // ❗ Always return sanitized HTML ReactNode
 

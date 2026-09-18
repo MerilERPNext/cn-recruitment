@@ -135,7 +135,13 @@ doctype_js = {
         # interview.js (it is, being a hooks entry) so the override sticks.
         "public/js/interview_feedback_route.js",
     ],
-    "Interview Feedback": ["public/js/interview_feedback.js"],
+    "Interview Feedback": [
+        "public/js/interview_feedback.js",
+        # Draws the evaluation form the recruiter picked on the Interview, when
+        # there is one. Kept separate from interview_feedback.js, which owns the
+        # campus region/work-location sections — the two share no state.
+        "public/js/interview_feedback_form.js",
+    ],
     "User": ["public/js/user.js"],
     "Employee Onboarding": [
         "public/js/employee_onboarding.js",
@@ -328,6 +334,12 @@ doc_events = {
         "after_insert": "recruitment.recruitment.tpo_mailers.send_tpo_welcome",
         "on_update": "recruitment.recruitment.tpo_mailers.send_tpo_welcome",
     },
+    # An edited evaluation form must not leave interviewers filling the old
+    # questions. The schema cache also revalidates itself against `modified`, so
+    # this is the fast path rather than the only protection.
+    "Microapp Form Widget": {
+        "on_update": "recruitment.api.interview_feedback_form.clear_form_cache",
+    },
     "Interview": {
         "before_save": "recruitment.customizations.interview.interview.check_feedback_of_previous_interview",
         "validate": "recruitment.customizations.job_applicant.validation_blacklist_on_doctypes",
@@ -348,6 +360,11 @@ doc_events = {
             # Stamp the candidate's region on the feedback and check the work
             # location the panel picked is one of that region's locations.
             "recruitment.api.interview_work_location.validate_work_location",
+            # When the interview has an evaluation form configured, enforce its
+            # required answers and freeze what the answers meant. On validate, not
+            # on_submit: the submit chain below already re-saves the Interview, and
+            # a missing answer should be flagged while the panel is still writing.
+            "recruitment.api.interview_feedback_form.validate_form_response",
         ],
         "on_submit": [
             "recruitment.customizations.interview_feedback.interview_feedback.on_submit_feedback",
@@ -444,7 +461,11 @@ doc_events = {
         "on_cancel": [
             "recruitment.api.offer_position.sync_offer_position",
             "recruitment.api.requisition_pipeline.refresh_from_job_offer",
+            "recruitment.recruitment.hr_ops_offer_review.close_hr_ops_todos",
         ],
+        # "Send Job Offer" stamps email_status with db_set, which raises only
+        # on_change — so that is where the HR Ops "verify & release" ToDos close.
+        "on_change": "recruitment.recruitment.hr_ops_offer_review.close_hr_ops_todos",
         # Deleting an offer has to hand the position back too. sync_offer_position
         # cannot cover this one: it decides claim-vs-release from the offer's
         # status, and a deleted offer has none.
@@ -470,6 +491,11 @@ doc_events = {
             # Enforce Recruitment Settings -> Job Requisition Settings
             # (max positions, replacement-employee restriction & uniqueness).
             "recruitment.api.job_requisition.validate_requisition_settings",
+            # Recruitment Settings -> "Enable AOP Budget Check": refuse a
+            # requisition whose Salary Range (Max) x positions is more than its
+            # Department / Cost Center budget has left. Runs after
+            # sync_no_of_positions so the position count is current.
+            "recruitment.api.requisition_budget.enforce_budget",
             # Capture the Regions child table's region on the parent
             # `custom_region` so it is filterable/reportable from the
             # requisition itself — same mirror as on the Job Opening.
@@ -508,7 +534,18 @@ doc_events = {
             # openings collected and how far they got, plus its own position
             # approvals. Same on_update reasoning as store_headcount above.
             "recruitment.api.requisition_pipeline.store_pipeline",
+            # Over Budget flag for the form banner — derived, so written here with
+            # db.set_value for the same reason as store_headcount above.
+            "recruitment.api.requisition_budget.store_budget_flag",
         ],
+    },
+    # Accounts edit the AOP budget / utilization by hand on these masters; an edit
+    # re-flags live requisitions right away instead of at the nightly run.
+    "Cost Center": {
+        "on_update": "recruitment.api.requisition_budget.on_budget_master_update",
+    },
+    "Department": {
+        "on_update": "recruitment.api.requisition_budget.on_budget_master_update",
     },
     "Job Opening": {
         "validate": [
@@ -660,12 +697,30 @@ doc_events = {
             "recruitment.api.new_hire.require_job_offer_unless_direct_hire",
         ],
         # "before_save": "recruitment.customizations.employee_onboarding.document_verification.update_verification_documents",
-        "before_save": "recruitment.recruitment.onboarding_extras.auto_map_manager",
+        "before_save": [
+            "recruitment.recruitment.onboarding_extras.auto_map_manager",
+            # HRMS copies template activities without the custom Email Template
+            # field; this fills it on new rows from the onboarding template.
+            "recruitment.recruitment.onboarding_extras.copy_activity_email_templates",
+        ],
         # Tasks are no longer created on submit (see overide_class.on_submit) —
         # they're created via the "Create Onboarding Tasks" button, which stamps
         # task metadata itself. This hook only keeps metadata fresh on post-submit
         # edits (e.g. DOJ / Postponed changes).
-        "on_update_after_submit": "recruitment.recruitment.onboarding_extras.populate_onboarding_task_meta",
+        "on_update_after_submit": [
+            "recruitment.recruitment.onboarding_extras.populate_onboarding_task_meta",
+            # The DOJ outcome is decided AFTER the onboarding is submitted — an
+            # Employee cannot be created from a draft (see overide_class), and the
+            # manager answers on their joining-day task, by which time the
+            # onboarding is long submitted. Registered on on_update alone, this
+            # handler could never run for that: a post-submit save fires
+            # on_update_after_submit and nothing else. Joined / Not Joined /
+            # Postponed were therefore all inert in practice.
+            "recruitment.recruitment.onboarding_extras.handle_doj_outcome",
+            # Same reason: the portal-field approvals that decide boarding_status
+            # continue after submit.
+            "recruitment.api.field_level_approval.refresh_boarding_status",
+        ],
         "on_update": [
             "recruitment.auto_fetch_fields.update_employee_fields",
             "recruitment.recruitment.onboarding_extras.handle_doj_outcome",
@@ -673,7 +728,18 @@ doc_events = {
             # approval has cleared every portal field. Activation stays a
             # deliberate act. No-op for a recruitment onboarding.
             "recruitment.api.new_hire.stage_from_onboarding",
+            # Keep boarding_status a function of the candidate portal field
+            # approvals, whatever route changed them. No-op when the onboarding
+            # has no portal fields. See field_level_approval.refresh_boarding_status.
+            "recruitment.api.field_level_approval.refresh_boarding_status",
         ],
+    },
+    "Project": {
+        # HRMS rewrites Employee Onboarding.boarding_status from task completion on
+        # every Project save. Only relevant while Onboarding Settings -> "Complete
+        # Onboarding on Form Approval" is on, where the candidate's form owns that
+        # status instead; this puts the form's answer back. No-op otherwise.
+        "on_update": "recruitment.api.field_level_approval.protect_boarding_status_from_task_sync",
     },
     "Employee Separation": {
         "before_insert": [
@@ -686,6 +752,10 @@ doc_events = {
         "on_submit": [
             "recruitment.customizations.employee_separation.employee_separation.update_employee_relieving_date",
             "recruitment.customizations.employee_separation.employee_separation.create_attendance_regularize_todo",
+            # Mirror "Mark Do Not Rehire?" onto the Employee, so the flag the
+            # rehire check reads is visible on the employee's own record. Never
+            # clears it — see ta_rehire_check.mirror_do_not_rehire_to_employee.
+            "recruitment.customizations.ta_rehire_check.mirror_do_not_rehire_to_employee",
         ],
         "on_trash": [
             "recruitment.customizations.employee_separation.funnel_cleanup.cleanup_separation_funnel_artifacts",
@@ -719,6 +789,9 @@ scheduler_events = {
             "recruitment.recruitment.onboarding_extras.refresh_onboarding_task_days_to_join",
             "recruitment.recruitment.scheduled_jobs.mark_relieved_employees_as_left",
             "recruitment.recruitment.scheduled_jobs.auto_separate_employees_on_lwd",
+            # AOP budget: re-flag live requisitions their Department / Cost Center
+            # budget left no longer covers. No-op (clears flags) when disabled.
+            "recruitment.api.requisition_budget.refresh_over_budget_flags",
         ],
         "30 1 * * *": [
             # Pay every referral reward installment that is due and still eligible.

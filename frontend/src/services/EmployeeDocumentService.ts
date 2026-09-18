@@ -1,4 +1,4 @@
-import { DocumentItem } from "../types/employeeDocument";
+import { DocumentItem, CreateEmployeeDocumentPayload } from "../types/employeeDocument";
 import { FilterCondition } from "../types/frappe";
 import FrappeAPI from "../utils/frappeAPI";
 
@@ -38,6 +38,37 @@ export const EmployeeDocumentService = {
     }
 
     return FrappeAPI.getDocumentCount("Employee Documents", countFilters);
+  },
+
+  createEmployeeDocument: async (
+    payload: CreateEmployeeDocumentPayload
+  ): Promise<DocumentItem> => {
+    const response = await FrappeAPI.createDocument(
+      "Employee Documents",
+      payload as unknown as Record<string, unknown>
+    );
+    return response as DocumentItem;
+  },
+
+  uploadDocumentFile: async (
+    file: File,
+    docName: string
+  ): Promise<{ file_url: string; name: string }> => {
+    return FrappeAPI.uploadFile(
+      file,
+      file.name,
+      docName,
+      "Employee Documents",
+      undefined,
+      "0"
+    );
+  },
+
+  updateEmployeeDocumentFileName: async (
+    name: string,
+    file_name: string
+  ): Promise<unknown> => {
+    return FrappeAPI.updateDocument("Employee Documents", name, { file_name });
   },
 };
 

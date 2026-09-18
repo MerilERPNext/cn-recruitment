@@ -42,16 +42,29 @@ const HistoryCardList = ({ items, relationLabel }: HistoryCardListProps) => (
           </div>
         </div>
 
-        <div className="mt-4 rounded-lg bg-gray-50 px-3 py-2">
-          <Typography variant="mobileCardLabel" className="block">
-            Value
-          </Typography>
-          <Typography
-            variant="bodySmall"
-            className="mt-1 block font-semibold text-gray-700"
-          >
-            {item.value}
-          </Typography>
+        <div className="mt-4 flex items-start gap-3">
+          <div className="min-w-0 flex-1 rounded-lg bg-gray-50 px-3 py-2">
+            <Typography variant="mobileCardLabel" className="block">
+              Value
+            </Typography>
+            <Typography
+              variant="bodySmall"
+              className="mt-1 block font-semibold text-gray-700"
+            >
+              {item.value}
+            </Typography>
+          </div>
+          <div className="shrink-0 rounded-lg bg-amber-50 px-3 py-2 text-center">
+            <Typography variant="mobileCardLabel" className="block">
+              Points
+            </Typography>
+            <Typography
+              variant="bodySmall"
+              className="mt-1 block font-bold text-amber-600"
+            >
+              {item.points ?? 0}
+            </Typography>
+          </div>
         </div>
 
         <HistoryActions item={item} className="mt-4" />

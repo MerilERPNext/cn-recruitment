@@ -22,3 +22,10 @@ export interface DocumentListResponse {
   status: string;
   data: DocumentItem[];
 }
+
+export interface CreateEmployeeDocumentPayload {
+  employee: string;
+  type: "Personal";
+  status: string;
+  file_name?: string;
+}

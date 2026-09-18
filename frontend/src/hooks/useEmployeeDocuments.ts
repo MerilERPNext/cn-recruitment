@@ -2,7 +2,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { AcknowledgementRequiredService, EmployeeDocumentService } from "../services/EmployeeDocumentService";
 import { FilterCondition } from "../types/frappe";
 
-import { DocumentItem } from "../types/employeeDocument";
+import { DocumentItem, CreateEmployeeDocumentPayload } from "../types/employeeDocument";
 
 const PAGE_SIZE = 10;
 
@@ -36,5 +36,12 @@ export const useSubmitAcknowledgement = () => {
   return useMutation({
     mutationFn: (documentId: string) =>
       AcknowledgementRequiredService.submitAcknowledgement(documentId),
+  });
+};
+
+export const useCreateEmployeeDocument = () => {
+  return useMutation({
+    mutationFn: (payload: CreateEmployeeDocumentPayload) =>
+      EmployeeDocumentService.createEmployeeDocument(payload),
   });
 };

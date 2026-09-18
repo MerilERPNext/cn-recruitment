@@ -5,7 +5,7 @@ from frappe import _
 from  hrms.payroll.doctype.salary_slip import salary_slip
 from frappe.model.mapper import get_mapped_doc
 from frappe.utils import cint
-from frappe.utils import escape_html, formatdate, now_datetime, time_diff_in_hours, flt, fmt_money
+from frappe.utils import escape_html, formatdate, now_datetime, time_diff_in_hours, flt
 
 from recruitment.recruitment.link_token import OFFER_SCOPE, offer_token, require_token
 from recruitment.recruitment.offer_document_template import (
@@ -901,14 +901,6 @@ def get_job_offer_summary(appl, token=None):
             v = flt(value)
             return int(v) if v == int(v) else v
 
-        def fmt(value):
-            """Comma-grouped string matching how the document displays the amount
-            (uses the site Number Format setting, e.g. "3,500,000"). No currency
-            symbol; no decimals for whole numbers."""
-            v = flt(value)
-            precision = 0 if v == int(v) else 2
-            return fmt_money(v, precision=precision)
-
         # --- Compensation: driven by what's actually on the offer ---------------
         # Populate the stipend and/or the fixed/variable/total fields based on which
         # amounts are present, independent of role. Normally only one set is filled
@@ -941,42 +933,36 @@ def get_job_offer_summary(appl, token=None):
             # Null when the offer carries no location allowance, so the UI can
             # simply skip the row — same convention as every other field here.
             "location_allowance": None,
+            # Fixed pay with the location allowance folded in — the single
+            # "Total Fixed Pay" line the portal shows. `fixed` and
+            # `location_allowance` stay as they were for any other consumer.
+            "total_fixed": None,
             "total": None,
-            # Comma-grouped display strings (match the doc); UI may use these directly.
-            "stipend_formatted": None,
-            "fixed_formatted": None,
-            "variable_formatted": None,
-            "location_allowance_formatted": None,
-            "total_formatted": None,
         }
 
+        # Raw amounts only — the portal formats them itself.
         if has_stipend:
             compensation["stipend"] = num(stipend_val)
-            compensation["stipend_formatted"] = fmt(stipend_val)
         if has_fixed:
             compensation["fixed"] = num(fixed_val)
             compensation["variable"] = num(variable_val)
             compensation["total"] = num(total_val)
-            compensation["fixed_formatted"] = fmt(fixed_val)
-            compensation["variable_formatted"] = fmt(variable_val)
-            compensation["total_formatted"] = fmt(total_val)
         if location_val > 0:
             compensation["location_allowance"] = num(location_val)
-            compensation["location_allowance_formatted"] = fmt(location_val)
 
         # Nothing filled -> fall back to the original role-based default so the
         # response shape and values are unchanged for those offers.
         if not has_stipend and not has_fixed:
             if is_intern:
                 compensation["stipend"] = num(stipend_val)
-                compensation["stipend_formatted"] = fmt(stipend_val)
             else:
                 compensation["fixed"] = num(fixed_val)
                 compensation["variable"] = num(variable_val)
                 compensation["total"] = num(total_val)
-                compensation["fixed_formatted"] = fmt(fixed_val)
-                compensation["variable_formatted"] = fmt(variable_val)
-                compensation["total_formatted"] = fmt(total_val)
+
+        # Filled wherever `fixed` is, so the UI can rely on one field for the row.
+        if compensation["fixed"] is not None:
+            compensation["total_fixed"] = num(fixed_val + location_val)
 
         # Hint for the UI: "both" when a stipend AND fixed pay are present (the
         # trainee dual-letter case), else the single kind as before.

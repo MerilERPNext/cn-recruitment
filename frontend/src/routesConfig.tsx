@@ -8,6 +8,8 @@ import { useScreenSize } from "./hooks/useScreenSize";
 import { Expense, ExpenseClaim } from "./types/expenseAdvance";
 import { lazyWithRetry } from "./utils/lazyWithRetry";
 
+const PDFFormsPage = lazyWithRetry(() => import("./components/PDFForms/PDFFormsPage"));
+
 // Keep critical components as static imports for better UX
 import TeamAdvanceRequest from "./components/Compansation/Advances/ApprovalAdvanceRquest";
 import ExtraPayment from "./components/Compansation/Extrapayment/ExtraPayment";
@@ -484,9 +486,9 @@ const SeparationRecord = lazyWithRetry(
   "SeparationRecord",
 );
 
-const SeparationDashboard = lazyWithRetry(
-  () => import("./components/Flows/Separation/SeparationDashboard/SeparationDashboard"),
-  "SeparationDashboard",
+const ExitPage = lazyWithRetry(
+  () => import("./components/Flows/Separation/ExitPage/ExitPage.tsx"),
+  "ExitPage",
 );
 
 const PerformanceImprovement = lazyWithRetry(
@@ -619,6 +621,10 @@ const LinkAccounts = lazyWithRetry(
 const ConfigureJobBoards = lazyWithRetry(
   () => import("./components/Recruitment/ConfigureJobBoards"),
   "ConfigureJobBoards",
+);
+const IntegrationsApp = lazyWithRetry(
+  () => import("./components/Integrations/IntegrationsApp"),
+  "IntegrationsApp",
 );
 const RecognitionAdminDashboard = lazyWithRetry(
   () => import("./components/Recognition/Vibe/RecognitionAdminDashboard"),
@@ -825,6 +831,16 @@ const ShiftRequestDefaultRoute = () => {
 };
 
 export const routesConfig: AppRoute[] = [
+  {
+    path: "/webapp/pdf-form-template",
+    element: <Suspense fallback={<div className="p-6">Loading PDF forms…</div>}><PDFFormsPage /></Suspense>,
+    permissionKey: "PDF Form Template",
+  },
+  {
+    path: "/webapp/pdf-form-submission",
+    element: <Suspense fallback={<div className="p-6">Loading PDF form…</div>}><PDFFormsPage /></Suspense>,
+    permissionKey: "PDF Form Submission",
+  },
   // notification page route
   {
     path: "/webapp/notification-log",
@@ -1519,8 +1535,8 @@ export const routesConfig: AppRoute[] = [
       },
       {
         path: "separation-dashboard",
-        element: <SeparationDashboard />,
-        permissionKey: "Separation Dashboard",
+        element: <ExitPage />,
+        permissionKey: "Exit Page",
       },
       {
         path: "performance-improvement",
@@ -1804,6 +1820,11 @@ export const routesConfig: AppRoute[] = [
     path: "/webapp/scheduled-imports",
     element: <ScheduledImportsPage />,
     permissionKey: "Scheduled Imports",
+  },
+  {
+    path: "/webapp/integrations",
+    element: <IntegrationsApp />,
+    permissionKey: "Integrations",
   },
   {
     path: "/webapp/recognition/vibe",

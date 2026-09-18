@@ -20,8 +20,8 @@ export const useMarkAsRead = () => {
   return useMutation({
     mutationFn: (id: string) => NotificationService.markAsRead(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["notifications"] });
-      queryClient.invalidateQueries({ queryKey: ["unread-notification-count"] });
+      queryClient.invalidateQueries({ queryKey: ["notifications"], refetchType: "all" });
+      queryClient.invalidateQueries({ queryKey: ["unread-notification-count"], refetchType: "all" });
     },
     onError: (error) => {
       toast.error(errorResponseFormater(error, "Failed to update notification"));
@@ -35,8 +35,8 @@ export const useMarkAllAsRead = () => {
   return useMutation({
     mutationFn: (forUser?: string) => NotificationService.markAllAsRead(forUser),
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["notifications"] });
-      queryClient.invalidateQueries({ queryKey: ["unread-notification-count"] });
+      queryClient.invalidateQueries({ queryKey: ["notifications"], refetchType: "all" });
+      queryClient.invalidateQueries({ queryKey: ["unread-notification-count"], refetchType: "all" });
 
       const count =
         typeof data === "number"

@@ -6,6 +6,7 @@ import { LogOut, ChevronDown, User, Dock, RotateCcwKey } from "lucide-react";
 import defaultProfile from "../assets/face-rec.png";
 import CollapsibleSidebar from "./shared/CollapsibleSidebar";
 import NotificationBell from "./Notification/NotificationBell";
+import RedeemablePointsBadge from "./Notification/RedeemablePointsBadge";
 
 import { useCurrentEmployee, useCurrentEmployeeDetails } from "../hooks/useEmployee";
 import { ROUTES } from "../constants/routes";
@@ -198,6 +199,8 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
             </div>
           )}
           <div className="flex items-center gap-4 flex-shrink-0">
+            <RedeemablePointsBadge className="text-white" />
+
             <button
               onClick={handleNotificationClick}
               className="relative p-2 hover:bg-primary-400/20 rounded-lg transition-colors"

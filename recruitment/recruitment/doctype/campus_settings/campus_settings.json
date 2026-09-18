@@ -17,6 +17,8 @@
   "tpo_welcome_email_template",
   "send_campus_invite_email",
   "campus_invite_email_template",
+  "send_interview_panel_email",
+  "interview_panel_email_template",
   "notify_campus_candidates_on_stage_change"
  ],
  "fields": [
@@ -103,6 +105,21 @@
    "fieldname": "campus_invite_email_template",
    "fieldtype": "Link",
    "label": "Campus Invite Email Template",
+   "options": "Email Template"
+  },
+  {
+   "default": "0",
+   "description": "Emailed to each panelist when candidates are assigned to them on a drive (scheduling a round, reassigning a candidate, or an additional round), asking them to take the interview and submit feedback. ONE mail per interviewer listing all their candidates, not one per interview. Sent once per person per interview. Jinja vars: interviewer_name, count, interviews, interview_table, round, scheduled_on, portal_url.",
+   "fieldname": "send_interview_panel_email",
+   "fieldtype": "Check",
+   "label": "Send Interview Panel Email"
+  },
+  {
+   "default": "Campus Interview Panel Assignment",
+   "depends_on": "send_interview_panel_email",
+   "fieldname": "interview_panel_email_template",
+   "fieldtype": "Link",
+   "label": "Interview Panel Email Template",
    "options": "Email Template"
   },
   {

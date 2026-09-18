@@ -111,6 +111,9 @@ PARENT_READONLY_FIELDS = (
     "custom_active_requisitions",
     "custom_active_openings",
     "custom_headcount_last_updated",
+    # Set by recruitment.api.requisition_budget when the Department / Cost Center
+    # budget left no longer covers this live requisition.
+    "custom_over_budget",
 )
 
 # Fields that Frappe / workflow engine controls — never written by this API.
@@ -3794,6 +3797,9 @@ _EDIT_AFTER_APPROVAL_IGNORE = {
     # them here gives nothing away while letting a pre-existing requisition pick
     # the values up on its next save.
     "custom_region", "custom_position_location",
+    # Recomputed from the Department / Cost Center budgets after every save and
+    # nightly (recruitment.api.requisition_budget) — never a user edit.
+    "custom_over_budget",
 }
 _LAYOUT_FIELDTYPES = {
     "Section Break", "Column Break", "Tab Break", "HTML", "Button", "Heading", "Fold",
@@ -4197,7 +4203,8 @@ def get_requisition_approval_flow(requisition_name):
         fields=["name", "stage_index", "stage_name", "status", "user",
                 "custom_allocated_to_users", "custom_assigned_to_roles", "role",
                 "approval_time", "creation", "is_row_log", "row_label", "row_idx",
-                "row_docnames", "approval_label", "rejection_label"],
+                "row_docnames", "approval_label", "rejection_label",
+                "todo_reference"],
         order_by="stage_index asc, row_idx asc, idx asc",
     )
 
@@ -4251,6 +4258,26 @@ def get_requisition_approval_flow(requisition_name):
                 if role and role not in roles:
                     roles.append(role)
 
+        # For Act button: fetch todo details from the pending log so the frontend
+        # can render MyApprovalActionPill with the real todo_id and actions.
+        pending_log = next(
+            (l for l in stage_logs if l.get("status") == "Pending" and l.get("todo_reference")),
+            None,
+        )
+        todo_info = {}
+        if pending_log and pending_log.get("todo_reference"):
+            todo_doc = frappe.db.get_value(
+                "ToDo",
+                pending_log["todo_reference"],
+                ["name", "custom_doctype_actions", "custom_approval_type"],
+                as_dict=True,
+            ) or {}
+            todo_info = {
+                "todo_id": todo_doc.get("name"),
+                "custom_doctype_actions": todo_doc.get("custom_doctype_actions"),
+                "custom_approval_type": todo_doc.get("custom_approval_type"),
+            }
+
         entry = {
             "stage_index": index,
             "stage_name": (
@@ -4266,6 +4293,8 @@ def get_requisition_approval_flow(requisition_name):
             "trigger_date": stage_logs[0].get("creation") if stage_logs else None,
             # A stage is only "completed" once nothing in it is still pending.
             "completed_date": max(completed) if completed and aggregate["status"] != "Pending" else None,
+            # Act button fields: todo_id + actions for the System Manager Act button.
+            **todo_info,
         }
 
         # Per-position detail for a stage that fanned out.
@@ -4341,8 +4370,12 @@ def get_job_requisition_details(requisition_name=None, name=None):
 
     doc = frappe.get_doc(JOB_REQUISITION, requisition_name)
 
+    from recruitment.api.requisition_budget import budget_status
+
     return {
         "requisition": _serialise_requisition(doc),
         # Permission was checked above; the flow helper re-checks harmlessly.
         "approval_flow": get_requisition_approval_flow(requisition_name),
+        # What the Over Budget banner lists; empty unless the requisition is flagged.
+        "budget_status": budget_status(doc),
     }

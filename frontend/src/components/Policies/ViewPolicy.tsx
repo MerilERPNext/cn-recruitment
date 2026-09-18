@@ -2,6 +2,8 @@ import { DownloadIcon } from "lucide-react";
 import React from "react";
 import { useParams } from "react-router-dom";
 import { useFrappeDocument } from "../../hooks/useFrappeQuery";
+import { useGetUiPermission } from "../../hooks/userUiPermission";
+import { isActionEnabled } from "../../utils/uiPermission";
 import HeaderBar from "../HeaderBar";
 import SecurePdfViewer from "../SecurePdfViewer_CookieAuth";
 import { FilePreview } from "../shared/molecules/FilePreview";
@@ -9,6 +11,8 @@ import { getFileTypeInfo } from "../../utils/fileUtils";
 
 const ViewPolicy: React.FC = () => {
   const { policyName } = useParams<{ policyName: string }>();
+  const { data: userUiPermission } = useGetUiPermission("Policies");
+  const canDownload = isActionEnabled(userUiPermission, "download", "Policies");
 
   const { data, isLoading, error } = useFrappeDocument(
     "Policy Details",
@@ -24,6 +28,7 @@ const ViewPolicy: React.FC = () => {
       href={documentUrl}
       download
       className="flex items-center gap-1.5 text-primary hover:text-primary-700 transition-colors font-brand text-sm font-medium"
+      title="Download Policy Document"
     >
       <DownloadIcon className="w-5 h-5 md:w-6 md:h-6" />
     </a>
@@ -77,7 +82,7 @@ const ViewPolicy: React.FC = () => {
     <div className="h-full bg-surface flex flex-col overflow-hidden">
       <HeaderBar
         title="View Policy"
-        rightSlot={<DownloadDocument />}
+        rightSlot={canDownload ? <DownloadDocument /> : undefined}
       />
       <main className="flex-1 min-h-0 flex flex-col px-1 md:px-2 pb-2 overflow-hidden">
         <div className="flex-1 min-h-0 border border-primary-100 rounded-xl bg-white overflow-hidden shadow-sm">

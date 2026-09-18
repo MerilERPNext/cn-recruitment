@@ -1,0 +1,186 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "autoname": "format:ALM-REQ-{YYYY}-{#####}",
+ "creation": "2026-09-14 00:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "alumni_employee",
+  "alumni_employee_name",
+  "alumni_user",
+  "request_category",
+  "status",
+  "column_break_apr1",
+  "requested_on",
+  "current_stage_idx",
+  "reason",
+  "section_break_apr_stages",
+  "stages",
+  "section_break_apr_decision",
+  "decided_by",
+  "decision_on",
+  "column_break_apr2",
+  "decision_remarks",
+  "revoke_reason"
+ ],
+ "fields": [
+  {
+   "fieldname": "alumni_employee",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Alumni Employee",
+   "options": "Employee",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fetch_from": "alumni_employee.employee_name",
+   "fieldname": "alumni_employee_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Alumni Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "alumni_user",
+   "fieldtype": "Link",
+   "label": "Alumni User",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "request_category",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Request Category",
+   "options": "Alumni Request Category",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "default": "Draft",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Status",
+   "options": "Draft\nSubmitted\nIn Review\nApproved\nRejected\nRevoked\nCompleted",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_apr1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "requested_on",
+   "fieldtype": "Datetime",
+   "label": "Requested On",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "current_stage_idx",
+   "fieldtype": "Int",
+   "hidden": 1,
+   "label": "Current Stage Index",
+   "read_only": 1
+  },
+  {
+   "fieldname": "reason",
+   "fieldtype": "Small Text",
+   "label": "Reason (from Alumnus)",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_break_apr_stages",
+   "fieldtype": "Section Break",
+   "label": "Review Stages"
+  },
+  {
+   "fieldname": "stages",
+   "fieldtype": "Table",
+   "label": "Stages",
+   "options": "Alumni Portal Request Stage",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_break_apr_decision",
+   "fieldtype": "Section Break",
+   "label": "Final Decision"
+  },
+  {
+   "fieldname": "decided_by",
+   "fieldtype": "Link",
+   "label": "Decided By",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "decision_on",
+   "fieldtype": "Datetime",
+   "label": "Decision On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_apr2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "decision_remarks",
+   "fieldtype": "Small Text",
+   "label": "Decision Remarks",
+   "read_only": 1
+  },
+  {
+   "fieldname": "revoke_reason",
+   "fieldtype": "Small Text",
+   "label": "Revoke Reason",
+   "read_only": 1
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-09-14 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Recruitment",
+ "name": "Alumni Portal Request",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "HR Manager",
+   "write": 1
+  },
+  {
+   "read": 1,
+   "role": "HR User"
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "alumni_employee_name",
+ "track_changes": 1
+}

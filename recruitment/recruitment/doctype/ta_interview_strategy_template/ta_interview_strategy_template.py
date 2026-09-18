@@ -201,11 +201,20 @@ def get_interviewer_user_assignments(doctype, txt, searchfield, start, page_len,
 # ── Rounds → stages ───────────────────────────────────────────────────────────
 
 
+# Step types a round may carry. They are Job Opening Hiring Stage types verbatim,
+# so a round's stage behaves exactly like one added on the opening by hand
+# (Screen / Shortlist actions, status mapping in api.hiring_stage).
+ROUND_STAGE_TYPES = ("Screening", "Shortlist", "Interview")
+
+
 def _stage_type_for_round(round_row):
-	"""Map a template round's step_type onto a Job Opening Hiring Stage type."""
-	if (round_row.get("step_type") or "").strip() == "Interview":
-		return "Interview"
-	return "Screening"
+	"""Map a template round's step_type onto a Job Opening Hiring Stage type.
+
+	A blank step type is a screening round — the only non-interview kind rounds
+	could express before Screening and Shortlist were offered.
+	"""
+	step_type = (round_row.get("step_type") or "").strip()
+	return step_type if step_type in ROUND_STAGE_TYPES else "Screening"
 
 
 def _is_mandatory(row):

@@ -62,29 +62,7 @@ const TODO_CATEGORIES_API_METHOD =
 const TODO_APPROVAL_CONFIG_API_METHOD =
   "cn_todo_manager.chatnext_todo_manager.api.todo_api.get_todo_type_approval_config";
 
-export interface TodoSettings {
-  show_todo_for_self_only: number; // 0 or 1
-}
-
 export const todoService = {
-  /**
-   * Fetch the `show_todo_for_self_only` flag from the ToDo Settings single doc.
-   * Uses skipTargetEmployee because settings are global, not per-employee.
-   */
-  getTodoSettings: async (): Promise<TodoSettings> => {
-    try {
-      const res = await FrappeAPI.getDocument(
-        "ToDo Settings",
-        "ToDo Settings",
-        ["show_todo_for_self_only"],
-      );
-      return res as TodoSettings;
-    } catch (error) {
-      console.error("📡 Error fetching todo settings:", error);
-      return { show_todo_for_self_only: 0 };
-    }
-  },
-
   getTodoList: async (filters: TodoFilters = {}): Promise<ToDo[]> => {
     try {
       const params: TodoFilters = {

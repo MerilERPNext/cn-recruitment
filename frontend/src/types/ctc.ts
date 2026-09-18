@@ -12,7 +12,29 @@ export interface AmountComponent {
   amount?: number;
 }
 
+export interface VersionValueChanged {
+  property: string;
+  old_value: unknown;
+  new_value: unknown;
+  modified: string;
+  modified_by: string;
+}
+
+export interface VersionItem {
+  salary_structure_assignment: string;
+  version_name: string;
+  values_changed: VersionValueChanged[];
+  row_values_changed?: unknown[];
+}
+
 export interface SalarySlip {
+  employee?: string;
+  assignment_name?: string;
+  docstatus?: number;
+  active?: number;
+  from_date?: string;
+  salary_structure?: string;
+  custom_ctc_category?: string | null;
   earning_part_of_ctc: SalaryComponent[];
   deduction_part_of_ctc: SalaryComponent[];
   reimbursements_part_of_ctc: SalaryComponent[];
@@ -21,7 +43,13 @@ export interface SalarySlip {
   variable_pay_include_ctc?: SalaryComponent[];
   variable_pay_exclude_ctc?: SalaryComponent[];
   total_final_ctc: AmountComponent[];
+  variable_deduction?: SalaryComponent[];
+  net_pay?: AmountComponent[] | number;
+  version?: VersionItem[];
   annual_ctc?: number;
   total_deduction?: number;
-  net_pay?: number;
+}
+
+export interface SalaryStructureAssignmentItem extends SalarySlip {
+  fixed_gross_annual?: number;
 }
