@@ -53,9 +53,9 @@ const TicketStatusBadge: React.FC<{ status: string }> = ({ status }) => {
 
   return (
     <span
-      className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-semibold whitespace-nowrap ${badge.className}`}
+      className={`inline-flex items-center gap-1.5 rounded-xl px-2 py-0.5 text-[11px] font-semibold whitespace-nowrap ${badge.className}`}
     >
-      <span className={`w-1.5 h-1.5 rounded-full ${badge.dotClassName}`} />
+      <span className={`w-1.5 h-1.5 rounded-xl ${badge.dotClassName}`} />
       {badge.label}
     </span>
   );
@@ -92,18 +92,19 @@ const MyToDoItem: React.FC<{ item: ToDo; iconClassName: string }> = ({ item, ico
   return (
     <div
       key={item.name}
-      className="flex cursor-pointer items-center justify-between gap-3 py-3 border border-transparent hover-lift transition-all group"
+      onClick={handleClick}
+      className="flex cursor-pointer items-center justify-between gap-3.5 p-3 rounded-xl border border-gray-100 bg-white hover:border-primary-200 hover:bg-slate-50/50 hover:shadow-xs transition-all duration-150 group"
     >
       <div className="flex items-center gap-3 min-w-0 flex-1">
         <div
-          className={`w-10 h-10 min-w-[40px] min-h-[40px] flex-shrink-0 rounded-xl flex items-center justify-center ${iconClassName}`}
+          className={`w-10 h-10 min-w-[40px] min-h-[40px] flex-shrink-0 rounded-xl flex items-center justify-center transition-transform group-hover:scale-105 ${iconClassName}`}
         >
           <Icon className="w-5 h-5" />
         </div>
         <div className="min-w-0 flex-1 flex flex-col gap-1">
           <Typography
             variant="bodySmall"
-            className="font-medium block line-clamp-1"
+            className="font-medium text-text-title block line-clamp-1 group-hover:text-primary-600 transition-colors"
           >
             {cleanDescription || "Task"}
           </Typography>
@@ -128,8 +129,11 @@ const MyToDoItem: React.FC<{ item: ToDo; iconClassName: string }> = ({ item, ico
         </div>
       </div>
       <button
-        onClick={handleClick}
-        className="text-primary-600 text-xs font-semibold px-3 py-1.5 rounded-lg bg-primary-50 hover:bg-primary-100 transition-colors whitespace-nowrap"
+        onClick={(e) => {
+          e.stopPropagation();
+          handleClick();
+        }}
+        className="text-primary-600 group-hover:text-primary-700 text-xs font-semibold px-3 py-1.5 rounded-lg bg-primary-50 group-hover:bg-primary-100 hover:bg-primary-200 transition-colors whitespace-nowrap flex-shrink-0"
       >
         View task
       </button>
@@ -184,7 +188,7 @@ const TasksAwaiting: React.FC = () => {
       : {}
   );
 
-  // Show only top 3 items
+  // Show only top 5 items
   const displayedTodos = useMemo(() => todos.slice(0, 5), [todos]);
 
   const filterOptions = useMemo(() => {
@@ -243,12 +247,12 @@ const TasksAwaiting: React.FC = () => {
               type="button"
               aria-label="Scroll categories left"
               onClick={() => scrollChips(-1)}
-              className="flex-shrink-0 p-1 text-gray-400 hover:text-gray-700 transition-colors"
+              className="flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
           )}
-          <div ref={chipsRef} className="flex gap-3 p-2 min-w-0 flex-1 overflow-x-auto">
+          <div ref={chipsRef} className="flex gap-2.5 p-2 min-w-0 flex-1 overflow-x-auto scrollbar-hide">
             {categories.map((cat, idx) => {
               const isActive = activeCategory === cat.name;
               const colors = getCategoryColors(idx).chip;
@@ -257,9 +261,9 @@ const TasksAwaiting: React.FC = () => {
                 <button
                   key={cat.name}
                   onClick={() => setActiveCategory(cat.name)}
-                  className={`px-4 py-2 rounded-2xl text-sm whitespace-nowrap font-semibold shadow transition-all ${isActive
-                    ? `scale-105 ring-2 ${colors}`
-                    : `${colors} opacity-70 hover:opacity-100`
+                  className={`px-3.5 py-1.5 rounded-xl text-xs sm:text-sm whitespace-nowrap font-medium shadow-xs transition-all ${isActive
+                    ? `scale-[1.02] ring-2 font-semibold ${colors}`
+                    : `${colors} opacity-75 hover:opacity-100 hover:scale-[1.01]`
                     } `}
                 >
                   {cat.name} ({cat.count})
@@ -272,7 +276,7 @@ const TasksAwaiting: React.FC = () => {
               type="button"
               aria-label="Scroll categories right"
               onClick={() => scrollChips(1)}
-              className="flex-shrink-0 p-1 text-gray-400 hover:text-gray-700 transition-colors"
+              className="flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors"
             >
               <ChevronRight className="w-4 h-4" />
             </button>
@@ -280,8 +284,8 @@ const TasksAwaiting: React.FC = () => {
         </div>
       )}
 
-      {/* Show only top 3 items for the active category */}
-      <div className="flex-1 flex flex-col divide-y divide-gray-100">
+      {/* Show only top 5 items for the active category */}
+      <div className="flex-1 flex flex-col gap-2.5">
         {isLoading || isTodosLoading ? (
           <CardSkeleton rows={2} />
         ) : displayedTodos.length > 0 ? (
