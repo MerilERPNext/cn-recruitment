@@ -34,6 +34,8 @@ export interface ToDo {
   creation: string;
   reference_type: string;
   reference_name: string;
+  /** `status` of the reference document, when that doctype has one. */
+  reference_status?: string | null;
   custom_due_datetime: string | null;
   custom_doctype_actions: string;
   custom_funnel_task: string;
