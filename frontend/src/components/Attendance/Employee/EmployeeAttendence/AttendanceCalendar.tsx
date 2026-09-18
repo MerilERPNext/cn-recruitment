@@ -39,6 +39,9 @@ const getEventDotColor = (doctype: string): string => {
       return "bg-orange-500";
     case "Out Duty":
       return "bg-purple-500";
+    case "Holiday":
+    case "Holidays":
+      return "bg-blue-500";
     default:
       return "bg-gray-400";
   }

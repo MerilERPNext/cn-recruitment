@@ -229,59 +229,76 @@ const EmployeeAttendance = () => {
       let attendanceRecord: AttendanceRecord | undefined = undefined;
       let isWeeklyOff = false;
 
-      records.forEach((record) => {
-        const isAttendanceType = ["Attendance", "Holiday", "Holidays"].includes(
-          record.doctype,
-        );
-        const isHoliday = ["Holiday", "Holidays"].includes(record.doctype);
+      const actualAttendance = records.find((r) => r.doctype === "Attendance");
+      const holidayRecords = records.filter((r) =>
+        ["Holiday", "Holidays"].includes(r.doctype),
+      );
+      const otherRecords = records.filter(
+        (r) => !["Attendance", "Holiday", "Holidays"].includes(r.doctype),
+      );
 
-        if (isHoliday && record.weekly_off === 1) {
-          isWeeklyOff = true;
+      if (
+        holidayRecords.some(
+          (h) =>
+            h.weekly_off === 1 ||
+            h.status?.toLowerCase().trim() === "weekly off",
+        )
+      ) {
+        isWeeklyOff = true;
+      }
+
+      if (actualAttendance) {
+        attendanceRecord = actualAttendance;
+        const rawStatus = actualAttendance.status?.toLowerCase().trim();
+
+        switch (rawStatus) {
+          case "present":
+            status = "present";
+            break;
+          case "absent":
+            status = "absent";
+            break;
+          case "on leave":
+          case "leave":
+            status = "on-leave";
+            break;
+          case "holiday":
+            status = "holiday";
+            break;
+          case "weekly off":
+            status = "week-off";
+            break;
+          case "work from home":
+            status = "work-from-home";
+            break;
+          case "half day":
+            status = "half-day";
+            firstHalf = actualAttendance.half_day_status_first_half || "";
+            secondHalf = actualAttendance.half_day_status_second_half || "";
+            break;
+          default:
+            status = "default";
+        }
+        // if custom_auto_created is 1 that means its a Unpaid Leave and we treat it like a leave on UI in yellow color
+        if (actualAttendance?.custom_auto_created === 1) {
+          status = "unpaid";
         }
 
-        if (isAttendanceType) {
-          // Actual Attendance record takes priority over Holiday (e.g. working on a week-off)
-          if (isHoliday && attendanceRecord?.doctype === "Attendance") return;
-          attendanceRecord = record;
-          const rawStatus = record.status?.toLowerCase().trim();
-
-          switch (rawStatus) {
-            case "present":
-              status = "present";
-              break;
-            case "absent":
-              status = "absent";
-              break;
-            case "on leave":
-            case "leave":
-              status = "on-leave";
-              break;
-            case "holiday":
-              status = "holiday";
-              break;
-            case "weekly off":
-              status = "week-off";
-              break;
-            case "work from home":
-              status = "work-from-home";
-              break;
-            case "half day":
-              status = "half-day";
-              firstHalf = record.half_day_status_first_half || "";
-              secondHalf = record.half_day_status_second_half || "";
-              break;
-            default:
-              status = "default";
-          }
-          // if custom_auto_created is 1 that means its a Unpaid Leave and we treat it like a leave on UI in yellow color
-          if (record?.custom_auto_created === 1) {
-            status = "unpaid";
-          }
+        events.push(...holidayRecords);
+        events.push(...otherRecords);
+      } else if (holidayRecords.length > 0) {
+        const holidayRecord = holidayRecords[0];
+        attendanceRecord = holidayRecord;
+        if (isWeeklyOff) {
+          status = "week-off";
         } else {
-          // Range-expanded events land here automatically
-          events.push(record);
+          status = "holiday";
         }
-      });
+        events.push(...holidayRecords.slice(1));
+        events.push(...otherRecords);
+      } else {
+        events.push(...otherRecords);
+      }
 
       // Build final object
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
