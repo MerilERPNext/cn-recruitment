@@ -12,7 +12,7 @@ import { Typography } from "../shared/atoms/Typography";
 import { AdminAppsSkeleton } from "../shared/molecules/Skeletons/TableSkeleton";
 
 const MicroAppInDashboard: React.FC = () => {
-  const { data: microappsList, isLoading } = useUserMicroApps();
+  const { data: microappsList, isLoading } = useUserMicroApps(true);
   const { mutateAsync: saveUserMicroApps } = useSaveUserMicroApps();
   const handleOrderChange = (apps: CNMicroapp[]) => {
     // Persist to backend
