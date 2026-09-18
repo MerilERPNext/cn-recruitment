@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useRef, useState } from "react";
 
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
@@ -39,9 +39,6 @@ const getEventDotColor = (doctype: string): string => {
       return "bg-orange-500";
     case "Out Duty":
       return "bg-purple-500";
-    case "Holiday":
-    case "Holidays":
-      return "bg-blue-500";
     default:
       return "bg-gray-400";
   }
@@ -115,6 +112,23 @@ const AttendanceCalendar: React.FC<attendanceProps> = ({
   setShowDetailsFor,
 }) => {
   const [searchParams, setSearchParams] = useSearchParams();
+  const [isMonthYearPickerOpen, setIsMonthYearPickerOpen] = useState(false);
+  const [monthYearPickerView, setMonthYearPickerView] = useState<"month" | "year">("month");
+  const monthYearPickerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!isMonthYearPickerOpen) return;
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        monthYearPickerRef.current &&
+        !monthYearPickerRef.current.contains(event.target as Node)
+      ) {
+        setIsMonthYearPickerOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [isMonthYearPickerOpen]);
 
   useEffect(() => {
     if (!selectedDate && !searchParams.get("date")) return;
@@ -194,6 +208,8 @@ const AttendanceCalendar: React.FC<attendanceProps> = ({
         inline
         renderCustomHeader={({
           date,
+          changeMonth,
+          changeYear,
           decreaseMonth,
           increaseMonth,
           prevMonthButtonDisabled,
@@ -208,10 +224,83 @@ const AttendanceCalendar: React.FC<attendanceProps> = ({
             >
               <ChevronLeft className="w-5 h-5" />
             </Button>
-            <span className="base-title">
-              {date.toLocaleString("default", { month: "long" })}{" "}
-              {date.getFullYear()}
-            </span>
+            <div className="relative" ref={monthYearPickerRef}>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsMonthYearPickerOpen((prev) => !prev);
+                  setMonthYearPickerView("month");
+                }}
+                className="base-title bg-transparent hover:bg-gray-50 rounded-md px-2 py-1 cursor-pointer"
+              >
+                {date.toLocaleString("default", { month: "long" })}{" "}
+                {date.getFullYear()}
+              </button>
+              {isMonthYearPickerOpen && (
+                <div className="popup-datepicker-reset month-year-picker-popup absolute z-50 top-full left-1/2 -translate-x-1/2 mt-1">
+                  <DatePicker
+                    inline
+                    showMonthYearPicker={monthYearPickerView === "month"}
+                    showYearPicker={monthYearPickerView === "year"}
+                    selected={date}
+                    onChange={(selected) => {
+                      if (!selected) return;
+                      if (monthYearPickerView === "year") {
+                        // A year was picked from the year grid -- drop back
+                        // into the month grid for that year instead of
+                        // closing, so picking a month is still one more click.
+                        changeYear(selected.getFullYear());
+                        setMonthYearPickerView("month");
+                        return;
+                      }
+                      changeYear(selected.getFullYear());
+                      changeMonth(selected.getMonth());
+                      setIsMonthYearPickerOpen(false);
+                    }}
+                    renderCustomHeader={({
+                      monthDate,
+                      decreaseYear,
+                      increaseYear,
+                      prevYearButtonDisabled,
+                      nextYearButtonDisabled,
+                      visibleYearsRange,
+                    }) => (
+                      <div className="month-year-picker-header flex items-center justify-between px-2 py-2">
+                        <button
+                          type="button"
+                          onClick={decreaseYear}
+                          disabled={prevYearButtonDisabled}
+                          className="month-year-picker-nav-year"
+                        >
+                          <ChevronLeft className="w-4 h-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setMonthYearPickerView((prev) =>
+                              prev === "month" ? "year" : "month"
+                            )
+                          }
+                          className="month-year-picker-year-toggle"
+                        >
+                          {monthYearPickerView === "year" && visibleYearsRange
+                            ? `${visibleYearsRange.startYear} - ${visibleYearsRange.endYear}`
+                            : monthDate.getFullYear()}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={increaseYear}
+                          disabled={nextYearButtonDisabled}
+                          className="month-year-picker-nav-year"
+                        >
+                          <ChevronRight className="w-4 h-4" />
+                        </button>
+                      </div>
+                    )}
+                  />
+                </div>
+              )}
+            </div>
             <Button
               variant="subtle"
               onClick={increaseMonth}
