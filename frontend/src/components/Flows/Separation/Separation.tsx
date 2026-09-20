@@ -30,7 +30,6 @@ import { useGetEmployeeSeparationType, useGetSeparationFunnelDetails, useGetNoti
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 import { FlowRequestItem } from "../../../types/flows";
 import ActivityLogDrawer from "../../shared/ActivityLogDrawer";
-import Tooltip from "../../shared/Tooltip";
 import DropdownMenu from "../../shared/DropDownMenu";
 import ActionConfirmationModal from "../../shared/ActionConfirmationModal";
 import { errorResponseFormater } from "../../../utils/errorResponseFormater";
