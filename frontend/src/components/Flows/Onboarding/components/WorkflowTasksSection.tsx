@@ -5,7 +5,7 @@ import { Typography } from "../../../shared/atoms/Typography";
 import SearchInput from "./SearchInput";
 import type { WorkflowStage } from "../../../../types/flows";
 import { useQueryClient } from "@tanstack/react-query";
-import useCurrentUser from "../../../../hooks/useCurrentUser";
+import useCurrentUser, { isAdminUser } from "../../../../hooks/useCurrentUser";
 import { useApprovalAction } from "../../../../hooks/userApprovalList";
 import { extractRolesAndUsers } from "../../../../utils/flowUtils";
 import { getStageAssignedUsersCell } from "../../../../utils/getAssignedUsersCell";
@@ -13,6 +13,7 @@ import MobileAllocatedTo from "../../../shared/MobileAllocatedTo";
 import AllocatedToTooltip from "../../../shared/AllocatedToTooltip";
 import StatusBadge from "../../../shared/atoms/statusBadge";
 import WorkflowStageActions from "../../FlowRequests/FlowDetails/WorkflowStageActions";
+import { useActButtonSetting } from "../../../../hooks/useActButtonSetting";
 
 interface WorkflowTasksSectionProps {
   tasks: WorkflowStage[];
@@ -105,6 +106,10 @@ const WorkflowTasksSection = ({
 
 const useWorkflowStagePermission = (task: WorkflowStage) => {
   const { data: currentUser } = useCurrentUser();
+  // System Manager bypass: when show_act_button_on_all_tasks is enabled,
+  // a System Manager can act on any pending Onboarding workflow task
+  // regardless of user/role assignment — same pattern as Phase 1 My Requests.
+  const { data: showActOnAllTasks = false } = useActButtonSetting();
 
   const stageForExtract = useMemo(
     () => ({
@@ -130,6 +135,16 @@ const useWorkflowStagePermission = (task: WorkflowStage) => {
 
   const canPerformActions = useMemo(() => {
     if (task.status !== "Pending" || !task.can_act) return false;
+
+    const isSystemManager = isAdminUser(currentUser || null);
+    const isAssigned = Boolean(
+      (allocatedTo?.users && allocatedTo.users.length > 0) ||
+      (allocatedTo?.roles && allocatedTo.roles.length > 0)
+    );
+
+    // System Manager: can act on ALL tasks if setting is ON, or on UNASSIGNED tasks if OFF
+    if (isSystemManager && (showActOnAllTasks || !isAssigned)) return true;
+
     let actionPermission = false;
 
     if (allocatedTo?.users && currentUser?.name)
@@ -141,7 +156,7 @@ const useWorkflowStagePermission = (task: WorkflowStage) => {
       );
 
     return actionPermission;
-  }, [currentUser, task.status, allocatedTo, task.can_act]);
+  }, [currentUser, task.status, allocatedTo, task.can_act, showActOnAllTasks]);
 
   return { stageForExtract, allocatedTo, canPerformActions };
 };

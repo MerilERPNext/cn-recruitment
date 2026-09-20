@@ -41,7 +41,8 @@ import GlobalModalRenderer from "./components/GlobalModalRenderer";
 import { useWebsiteBranding } from "./hooks/useBranding";
 import MandatoryHrProcessHandler from "./components/MandatoryHrProcessHandler";
 import MandatoryDocumentsHandler from "./components/MandatoryDocumentsHandler";
-import { useAttendanceSettings } from "./hooks/useAttendance";
+import PendoHandler from "./components/PendoHandler";
+import { useImpersonationSettings } from "./hooks/useImpersonationSettings";
 import { getImpersonationFallbackRoute } from "./utils/impersonationUtils";
 
 // Component to sync ViewedUserContext with frappeAPI
@@ -295,6 +296,7 @@ const App: React.FC = () => {
                 <MandatoryHrProcessHandler />
                 <MandatoryDocumentsHandler />
                 <ImpersonationDashboardHandler />
+                <PendoHandler />
 
                 <div
                   className="min-h-screen bg-app"
@@ -414,14 +416,13 @@ const MandatoryPoliciesHandler = () => {
 
 const ImpersonationDashboardHandler: React.FC = () => {
   const { isViewingOtherUser } = useTargetUser();
-  const { data: attendanceSettings } = useAttendanceSettings();
+  const { data: impersonationSettings } = useImpersonationSettings();
   const { data: uiPermissions } = useGetUiPermission();
   const location = useLocation();
   const navigate = useNavigate();
 
   const isDashboardHidden =
-    Boolean(attendanceSettings?.show_dashboard_self_only) &&
-    isViewingOtherUser;
+    isViewingOtherUser && !impersonationSettings?.show_dashboard;
 
   useEffect(() => {
     if (!isDashboardHidden) return;
@@ -441,12 +442,11 @@ const ImpersonationDashboardHandler: React.FC = () => {
 
 const FallbackRedirect: React.FC = () => {
   const { isViewingOtherUser } = useTargetUser();
-  const { data: attendanceSettings } = useAttendanceSettings();
+  const { data: impersonationSettings } = useImpersonationSettings();
   const { data: uiPermissions } = useGetUiPermission();
 
   const isDashboardHidden =
-    Boolean(attendanceSettings?.show_dashboard_self_only) &&
-    isViewingOtherUser;
+    isViewingOtherUser && !impersonationSettings?.show_dashboard;
 
   const targetPath = isDashboardHidden
     ? getImpersonationFallbackRoute(uiPermissions)

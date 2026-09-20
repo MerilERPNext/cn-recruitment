@@ -10,6 +10,10 @@ from recruitment.job_offer_utils import (
 )
 from recruitment.recruitment.communication_log import sendmail_with_log
 from recruitment.recruitment.offer_send_rules import send_locked
+from recruitment.recruitment.hr_ops_offer_review import (
+    send_blocked as hr_ops_send_blocked,
+    verification_enabled as hr_ops_verification_enabled,
+)
 from recruitment.api.action_center import sync_job_offer_action_item
 
 
@@ -276,6 +280,12 @@ def send_bulk_job_offer(job_offers):
     skipped = 0
     failed = 0
     already_sent = 0
+    pending_hr_ops = 0
+
+    # Recruitment Settings -> Require HR Ops Verification Before Sending Offer.
+    # Read once for the whole batch; False (the default) leaves every offer below
+    # on the path it has always taken.
+    hr_ops_gate = hr_ops_verification_enabled()
 
     settings = frappe.get_doc("Recruitment Settings")
     JOB_OFFER_TEMPLATE = settings.job_offer_template
@@ -292,6 +302,14 @@ def send_bulk_job_offer(job_offers):
             # Only allow submitted job offers
             if job_offer.docstatus != 1:
                 skipped += 1
+                continue
+
+            # The offer only leaves for the candidate once HR Ops has been told
+            # to verify it. Enforced here and not just in the UI, so neither the
+            # bulk action nor a direct call can jump the queue.
+            if hr_ops_send_blocked(job_offer, enabled=hr_ops_gate):
+                skipped += 1
+                pending_hr_ops += 1
                 continue
 
             # Recruitment Settings -> Hide Send Job Offer Once Sent. Checked
@@ -470,6 +488,8 @@ def send_bulk_job_offer(job_offers):
         "skipped": skipped,
         "failed": failed,
         "already_sent": already_sent,
+        # Always present, always 0 unless HR Ops verification is switched on.
+        "pending_hr_ops": pending_hr_ops,
     }
 
 

@@ -615,6 +615,47 @@ frappe.ui.form.on("Job Requisition", {
     },
 });
 
+// ---------------------------------------------------------------------------
+// Over Budget banner. `custom_over_budget` marks a live requisition whose
+// Department / Cost Center budget left no longer covers it (see
+// recruitment.api.requisition_budget); the banner says which one and by how much.
+//
+// Rendered in its own block rather than the dashboard headline: HRMS's own
+// refresh clears that headline to show its Employee Referral note, which would
+// wipe this banner whenever both apply.
+// ---------------------------------------------------------------------------
+
+frappe.ui.form.on("Job Requisition", {
+    refresh(frm) {
+        frm.layout.wrapper.find(".over-budget-banner").remove();
+        if (frm.is_new() || !frm.doc.custom_over_budget) {
+            return;
+        }
+        const name = frm.doc.name;
+        frappe.call({
+            method: "recruitment.api.requisition_budget.get_budget_status",
+            args: { job_requisition: name },
+            callback(r) {
+                const status = (r && r.message) || {};
+                // The user may have moved to another requisition while this loaded.
+                if (!status.over_budget || frm.doc.name !== name) {
+                    return;
+                }
+                const rows = status.shortfalls
+                    .map((row) => `<li>${frappe.utils.escape_html(row.summary)}</li>`)
+                    .join("");
+                frm.layout.wrapper.find(".over-budget-banner").remove();
+                $(`<div class="form-message red over-budget-banner">
+                        <div><b>${__("Over Budget")}</b>: ${__(
+                            "the budget that is left no longer covers this requisition."
+                        )}</div>
+                        <ul class="mb-0 mt-1">${rows}</ul>
+                    </div>`).insertBefore(frm.layout.message);
+            },
+        });
+    },
+});
+
 frappe.ui.form.on("Job Requisition Region", {
     region(frm) {
         preview_headcount(frm);

@@ -714,6 +714,8 @@ export type AwardEmployeePointsResponse = {
 };
 
 // ─── Appreciation Leaderboard (get_appreciation_leaderboard) ──────────────────
+export type LeaderboardSpan = "organization" | "hod" | "cxo" | "hrbp";
+
 export type AppreciationLeaderboardParams = {
   tab?: "receivers" | "recognizers";
   program?: string;
@@ -723,7 +725,38 @@ export type AppreciationLeaderboardParams = {
   search?: string;
   start?: number;
   page_length?: number;
+  /** Scope the ranked list to a CXO's/HRBP's/HOD's team instead of the whole
+   * organization. Defaults to "organization" server-side. */
+  span?: LeaderboardSpan;
+  /** The User id of the specific CXO/HRBP/HOD picked from the "CXO: <name>" /
+   * "HRBP: <name>" dropdown (options from `useLeaderboardRelationOptions`).
+   * Omitted (dropdown left on "All") falls back to the viewer's own team. */
+  scope_person?: string;
 };
+
+export type LeaderboardRelationOption = { value: string; label: string };
+
+export type LeaderboardRelationOptionsResponse = {
+  success: boolean;
+  cxo: LeaderboardRelationOption[];
+  hod: LeaderboardRelationOption[];
+};
+
+/** The real CXO/HOD people for the Leaderboard's "CXO: <name>" / "HOD: <name>"
+ * dropdowns -- built the same way as the Work Connect feed's CXO/HRBP
+ * dropdowns (`get_relation_feed_options`), just scoped to CXO/HOD instead. */
+export const useLeaderboardRelationOptions = () =>
+  useQuery<LeaderboardRelationOptionsResponse>({
+    queryKey: ["recognition", "leaderboard-relation-options"],
+    queryFn: async () => {
+      const response = await FrappeAPI.callMethod(
+        "chatnext_work_connect.chatnext_work_connect.api.recognition_points.get_leaderboard_relation_options",
+        {},
+      );
+      return response as LeaderboardRelationOptionsResponse;
+    },
+    staleTime: 10 * 60 * 1000,
+  });
 
 export type LeaderboardPersonEntry = {
   rank: number;
@@ -744,6 +777,9 @@ export type AppreciationLeaderboardResponse = {
   total_count: number;
   /** Whether ranks/scores are driven by total points or appreciation count. */
   ranking_basis?: "points" | "count";
+  /** The span actually applied — falls back to "organization" server-side
+   * when the viewer has no HOD/CXO configured. */
+  span?: LeaderboardSpan;
   filter_options: { programs: { value: string; label: string }[] };
 };
 

@@ -88,6 +88,17 @@ const EmployeeAttendanceDetails = ({
     return events?.find((e) => e.doctype === "Leave Request");
   }, [events]);
 
+  const holidayEvent = useMemo(() => {
+    return (
+      events?.find((e) => ["Holiday", "Holidays"].includes(e.doctype)) ||
+      (["Holiday", "Holidays"].includes(data?.doctype || "") ||
+      data?.status?.toLowerCase() === "holiday" ||
+      data?.status?.toLowerCase() === "weekly off"
+        ? data
+        : undefined)
+    );
+  }, [events, data]);
+
   const isLeaveRecord =
     data?.custom_auto_created === 1 ||
     status === "on leave" ||
@@ -266,8 +277,39 @@ const EmployeeAttendanceDetails = ({
     "edit_leave_request",
     "My Attendance",
   );
+
+  const combinedAttendanceRequests = useMemo(() => {
+    const list: AttendanceRequest[] = [...(attendanceRequests || [])];
+    const existingNames = new Set(list.map((r) => r.name).filter(Boolean));
+
+    const checkAndAdd = (item?: AttendanceRecord) => {
+      if (
+        item &&
+        ((item as any).doctype === "Attendance Request" || (item as any).doc_type === "Attendance Request") &&
+        item.name &&
+        !existingNames.has(item.name)
+      ) {
+        existingNames.add(item.name);
+        list.push({
+          name: item.name,
+          custom_status: item.status || (item as any).custom_status || "Pending",
+          custom_request_type: (item as any).request_type || (item as any).custom_request_type,
+          from_date: item.start,
+          to_date: item.end,
+          employee: item.employee,
+          employee_name: (item as any).employee_name,
+          docstatus: typeof item.docstatus === "number" ? item.docstatus : 0,
+        } as AttendanceRequest);
+      }
+    };
+
+    if (data) checkAndAdd(data);
+    events?.forEach(checkAndAdd);
+    return list;
+  }, [attendanceRequests, events, data]);
+
   const hasExistingRequest =
-    attendanceRequests && attendanceRequests.length > 0;
+    combinedAttendanceRequests && combinedAttendanceRequests.length > 0;
 
   // Handler for revoking leave
   const handleRevoke = () => {
@@ -542,17 +584,33 @@ const EmployeeAttendanceDetails = ({
     </>
   );
 
-  const renderWeekOffMessage = () => {
+  const renderWeekOffMessage = (title?: string) => {
+    const cleanTitle = title?.startsWith("Holiday: ") ? title.replace(/^Holiday:\s*/, "") : title;
     return (
-      <div>
-        <div className="my-4 p-4 bg-gray-50/30 rounded-lg text-center">
-          <Typography
-            variant="bodySmall"
-            className="font-semibold text-gray-800"
-          >
-            Week off
-          </Typography>
-        </div>
+      <div className="my-2 p-3 bg-gray-100 border border-gray-200 rounded-lg text-center">
+        <Typography
+          variant="bodySmall"
+          className="font-semibold text-gray-800"
+        >
+          {cleanTitle && cleanTitle !== "WO" ? cleanTitle : "Week off"}
+        </Typography>
+      </div>
+    );
+  };
+
+  const renderHolidayMessage = (title?: string) => {
+    let displayTitle = title?.trim() || "Holiday";
+    if (displayTitle.toLowerCase() !== "holiday" && !/^holiday\s*:/i.test(displayTitle)) {
+      displayTitle = `Holiday: ${displayTitle}`;
+    }
+    return (
+      <div className="my-2 p-3 bg-blue-50 border border-blue-200 rounded-lg text-center">
+        <Typography
+          variant="bodySmall"
+          className="font-semibold text-blue-800"
+        >
+          {displayTitle}
+        </Typography>
       </div>
     );
   };
@@ -626,24 +684,30 @@ const EmployeeAttendanceDetails = ({
   };
 
   const renderMainContent = () => {
-    if (data?.status.toLowerCase() === "holiday" && data?.title) {
-      return (
-        <div className="p-2">
-          <div className="my-4 p-4 bg-primary-50 border border-primary-100 rounded-lg text-center">
-            <Typography
-              variant="bodySmall"
-              className="font-semibold text-primary-800"
-            >
-              {data.title}
-            </Typography>
-          </div>
-          {renderCompoffLateDetails()}
-        </div>
-      );
-    }
+    const isWeekOffDay =
+      status === "week off" ||
+      isWeeklyOff ||
+      holidayEvent?.weekly_off === 1 ||
+      holidayEvent?.status?.toLowerCase() === "weekly off" ||
+      data?.weekly_off === 1 ||
+      data?.status?.toLowerCase() === "weekly off";
+
+    const isNonWoHoliday =
+      !isWeekOffDay &&
+      (status === "holiday" ||
+        (holidayEvent &&
+          holidayEvent.weekly_off !== 1 &&
+          holidayEvent.status?.toLowerCase() !== "weekly off") ||
+        (data?.doctype === "Holiday" &&
+          data?.weekly_off !== 1 &&
+          data?.status?.toLowerCase() !== "weekly off"));
+
+    const holidayTitle = holidayEvent?.title || data?.title;
+
     return (
       <div className="flex-grow overflow-y-auto p-4 space-y-6 ">
-        {(status === "week off" || isWeeklyOff) && renderWeekOffMessage()}
+        {isWeekOffDay && renderWeekOffMessage(holidayTitle)}
+        {isNonWoHoliday && renderHolidayMessage(holidayTitle)}
         {renderCompoffLateDetails()}
         {isLoading ? (
           renderLoadingState()
@@ -658,10 +722,10 @@ const EmployeeAttendanceDetails = ({
           </div>
         )}
 
-        {attendanceRequests && attendanceRequests.length > 0 && (
+        {combinedAttendanceRequests && combinedAttendanceRequests.length > 0 && (
           <div className="pt-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <div className="flex flex-col gap-6">
-              {attendanceRequests.map((req, idx) => {
+              {combinedAttendanceRequests.map((req, idx) => {
                 const attendanceTodoItem = attendanceApprovalTodos?.find(
                   (t) =>
                     t?.reference_name === req.name ||
@@ -696,7 +760,7 @@ const EmployeeAttendanceDetails = ({
     // )
     //   return null;
 
-    const hasActiveAttendanceRequest = attendanceRequests?.some(
+    const hasActiveAttendanceRequest = combinedAttendanceRequests?.some(
       (x) => x?.custom_status === "Pending" || x?.custom_status === "Approved",
     );
     // leaveDetails?.status === "Open" || leaveDetails?.status === "Approved";
@@ -742,15 +806,19 @@ const EmployeeAttendanceDetails = ({
       </div>
     );
   };
+  const footerButtonContent = renderFooterButton();
+
   return (
     <div className="bg-white flex flex-col h-full rounded-lg">
       {renderHeader()}
 
       {renderMainContent()}
 
-      <div className="p-3 border-t bg-white sticky bottom-0 w-full z-40 mt-auto rounded-bl-lg rounded-br-lg">
-        {renderFooterButton()}
-      </div>
+      {footerButtonContent && (
+        <div className="p-3 border-t bg-white sticky bottom-0 w-full z-40 mt-auto rounded-bl-lg rounded-br-lg">
+          {footerButtonContent}
+        </div>
+      )}
       {showReqAttendanceCorrection &&
         createPortal(
           <AttendanceRequestFormV2

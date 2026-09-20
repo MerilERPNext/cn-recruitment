@@ -63,6 +63,12 @@ const HistoryTable = ({ items, relationLabel }: HistoryTableProps) => (
             >
               {item.date}
             </Typography>
+            <Typography
+              variant="bodySmall"
+              className="text-center font-semibold text-amber-600"
+            >
+              {item.points ?? 0}
+            </Typography>
             <HistoryActions item={item} className="mx-auto" />
           </div>
         ))}

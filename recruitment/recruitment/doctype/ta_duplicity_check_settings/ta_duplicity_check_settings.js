@@ -2,6 +2,14 @@
 // For license information, please see license.txt
 
 frappe.ui.form.on("TA Duplicity Check Settings", {
+	setup(frm) {
+		// Only a live Job Offer flow can approve an offer; an archived version
+		// never fires.
+		frm.set_query("exceptional_approval_workflow", () => ({
+			filters: { module_transaction: "Job Offer", is_archived: 0 },
+		}));
+	},
+
 	applicable_to_scope(frm) {
 		// The server clears the company rows when the scope becomes group-wide
 		// (see validate_scope). Say so before the save, so rows disappearing

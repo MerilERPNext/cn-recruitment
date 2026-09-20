@@ -146,7 +146,9 @@ const InitiateFlow: React.FC<InitiateFlowProps> = ({
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className={`bg-white rounded-lg w-full ${isDesktop ? "max-w-xl" : "h-screen"}  pb-5`}
+        className={`bg-white w-full ${
+          isDesktop ? "rounded-lg max-w-xl pb-5" : "h-screen flex flex-col"
+        }`}
       >
         {isDesktop ? (
           <>
@@ -166,10 +168,10 @@ const InitiateFlow: React.FC<InitiateFlowProps> = ({
           <HeaderBar title="Initiate Flow" onBack={handlGoBack} />
         )}
 
-        <div className="sm:px-8 px-4 sm:min-h-96 sm:max-h-96 flex flex-col">
+        <div className="px-4 sm:px-8 sm:min-h-96 sm:max-h-96 flex flex-col flex-1 min-h-0">
           {/* Self / Others Tabs */}
           {!isViewingOtherUser && enabledActions.for_others ? (
-            <div className="flex bg-white rounded-lg p-1 mt-2 border border-gray-200">
+            <div className="flex bg-white rounded-lg p-1 mt-2 border border-gray-200 shrink-0">
               <Button
                 size="md"
                 fullWidth
@@ -197,7 +199,7 @@ const InitiateFlow: React.FC<InitiateFlowProps> = ({
 
           {/* Employee info banner when impersonating */}
           {isViewingOtherUser && impersonatedEmployee && (
-            <div className="flex items-center gap-2 mt-3 px-3 py-2 bg-blue-50 border border-blue-200 rounded-lg">
+            <div className="flex items-center gap-2 mt-3 px-3 py-2 bg-blue-50 border border-blue-200 rounded-lg shrink-0">
               <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
               <span className="text-sm text-blue-900">
                 Showing actions for{" "}
@@ -213,7 +215,7 @@ const InitiateFlow: React.FC<InitiateFlowProps> = ({
 
           {/* Employee Selector (shown only for Others tab) */}
           {effectiveIsForOthers && !isViewingOtherUser && (
-            <div className="mt-3">
+            <div className="mt-3 shrink-0">
               <EmployeeSelect
                 value={selectedEmployee}
                 onChange={(val) => setSelectedEmployee(val)}
@@ -223,22 +225,22 @@ const InitiateFlow: React.FC<InitiateFlowProps> = ({
           )}
 
           {isLoading && effectiveSelectedEmployee ? (
-            <>
+            <div className="flex-1 flex flex-col min-h-0">
               <SearchSkeleton />
-              <div className="mt-6">
+              <div className="mt-6 flex-1 overflow-y-auto pb-16 sm:pb-8">
                 <CardsSkeletonGrid />
               </div>
-            </>
+            </div>
           ) : !effectiveIsForOthers && isSelfLoading ? (
-            <>
+            <div className="flex-1 flex flex-col min-h-0">
               <SearchSkeleton />
-              <div className="mt-6">
+              <div className="mt-6 flex-1 overflow-y-auto pb-16 sm:pb-8">
                 <CardsSkeletonGrid />
               </div>
-            </>
+            </div>
           ) : (
-            <>
-              <div className="relative mt-2 w-full">
+            <div className="flex-1 flex flex-col min-h-0">
+              <div className="relative mt-2 w-full shrink-0">
                 <input
                   value={inputSearch}
                   onChange={(e) => setInputSearch(e.target.value)}
@@ -251,9 +253,9 @@ const InitiateFlow: React.FC<InitiateFlowProps> = ({
                 <Search className="absolute peer-focus:text-gray-600 text-gray-400 left-3 top-1/2 -translate-y-1/2 w-4 h-4" />
               </div>
 
-              <div className="mt-6 space-y-8 flex-1 overflow-y-auto">
+              <div className="mt-6 flex-1 overflow-y-auto pb-16 sm:pb-8">
                 {EmptyStateComponent}
-                <div className="flex flex-wrap gap-4">
+                <div className="flex flex-wrap gap-4 pb-10">
                   {filteredTriggerList.map((t) => (
                     <RequestTypeCard
                       key={t.name}
@@ -263,7 +265,7 @@ const InitiateFlow: React.FC<InitiateFlowProps> = ({
                   ))}
                 </div>
               </div>
-            </>
+            </div>
           )}
         </div>
       </div>

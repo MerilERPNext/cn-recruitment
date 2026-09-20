@@ -1,0 +1,25 @@
+{
+  "title": "Upload Employee Document",
+  "name": "employeeDocumentUpload",
+  "path": "employee-document-upload",
+  "display": "form",
+  "components": [
+    {
+      "type": "file",
+      "key": "file_name",
+      "label": "Document Attachment <span style='color:red;margin-left:3px;'> *</span>",
+      "errorLabel": "Document Attachment",
+      "input": true,
+      "multiple": false,
+      "storage": "customfiles",
+      "fileReader": false,
+      "privateDownload": false,
+      "filePattern": ".pdf,.doc,.docx,.jpg,.jpeg,.png,.xls,.xlsx",
+      "tooltip": "Upload document file (PDF, DOC, Images, etc.)",
+      "validate": {
+        "required": false
+      },
+      "customClass": "w-full mb-4"
+    }
+  ]
+}

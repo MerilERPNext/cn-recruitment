@@ -18,8 +18,9 @@ import formatToIndianDate from "../../../utils/formatToIndianDate";
 import DataListView from "../../DataListView";
 import html2pdf from "html2pdf.js";
 import { Download } from "lucide-react";
+import type { SalaryStructureAssignmentItem } from "../../../types/ctc";
 
-type SalaryItem = any;
+type SalaryItem = SalaryStructureAssignmentItem;
 
 type PayrollPeriod = {
   name: string;
@@ -62,7 +63,7 @@ const getDisplayValues = (item: SalaryItem) => {
   return { fixedGrossMonthly, fixedGrossAnnual, monthlyCTC, annualCTC, ctcCategory };
 };
 
-const renderRemark = (remark: string | undefined) => {
+const renderRemark = (remark: string | null | undefined) => {
   if (!remark) return "—";
   
   if (remark.includes("↑") || remark.includes("↓")) {
@@ -90,7 +91,7 @@ const DesktopRow = ({ item, showAmount, onView, onVersions }: RowProps) => {
       style={{ gridTemplateColumns: columnWidths.join(" ") }}
     >
       <Typography variant="bodySmall" className="font-medium text-center">
-        {formatToIndianDate(item.from_date)}
+        {item.from_date ? formatToIndianDate(item.from_date) : "—"}
       </Typography>
 
       <div className="flex items-center justify-center">
@@ -149,7 +150,7 @@ const MobileRow = ({ item, showAmount, onView, onVersions }: RowProps) => {
           <div className="flex flex-col gap-1">
             <Typography variant="mobileCardLabel">Effective Date</Typography>
             <Typography variant="mobileCardValue">
-              {formatToIndianDate(item.from_date)}
+              {item.from_date ? formatToIndianDate(item.from_date) : "—"}
             </Typography>
           </div>
           <div className="flex flex-col gap-1 items-end">
@@ -575,6 +576,40 @@ export default function SalaryAssignmentList() {
                         <td className="px-4 py-3 text-right">{renderAmount(item.annual_amount, showAmount)}</td>
                       </tr>
                     ))}
+
+                    {/* Variable Deduction */}
+                    {selected.variable_deduction?.map((item: any, idx: number) => (
+                      <tr key={`varded-${idx}`} className="hover:bg-gray-50">
+                        <td className="px-4 py-3">{item.component}</td>
+                        <td className="px-4 py-3 text-center">{renderAmount(item.amount, showAmount)}</td>
+                        <td className="px-4 py-3 text-right">{renderAmount(item.annual_amount, showAmount)}</td>
+                      </tr>
+                    ))}
+
+                    {/* Net Pay */}
+                    {Array.isArray(selected.net_pay)
+                      ? selected.net_pay.map((item: any, idx: number) => (
+                          <tr key={`netpay-${idx}`} className="bg-slate-50/70 font-semibold border-y border-gray-200">
+                            <td className="px-4 py-3">{item.component || "Net Pay"}</td>
+                            <td className="px-4 py-3 text-center">
+                              {renderAmount(item.monthly_amount ?? item.amount, showAmount)}
+                            </td>
+                            <td className="px-4 py-3 text-right">
+                              {renderAmount(item.annual_amount, showAmount)}
+                            </td>
+                          </tr>
+                        ))
+                      : selected.net_pay != null
+                      ? (
+                          <tr className="bg-slate-50/70 font-semibold border-y border-gray-200">
+                            <td className="px-4 py-3">Net Pay</td>
+                            <td className="px-4 py-3 text-center">—</td>
+                            <td className="px-4 py-3 text-right">
+                              {renderAmount(selected.net_pay, showAmount)}
+                            </td>
+                          </tr>
+                        )
+                      : null}
                   </tbody>
                 </table>
               </div>

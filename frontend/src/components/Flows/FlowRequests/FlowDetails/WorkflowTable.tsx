@@ -8,11 +8,12 @@ import {
 
 import { useQueryClient } from "@tanstack/react-query";
 import { Check, Clock, User, X } from "lucide-react";
-import useCurrentUser from "../../../../hooks/useCurrentUser";
+import useCurrentUser, { isAdminUser } from "../../../../hooks/useCurrentUser";
 import {
   handleActionType,
   useApprovalAction,
 } from "../../../../hooks/userApprovalList";
+import { useActButtonSetting } from "../../../../hooks/useActButtonSetting";
 import { useScreenSize } from "../../../../hooks/useScreenSize";
 import {
   extractRolesAndUsers,
@@ -162,8 +163,22 @@ const WorkflowCard = ({
     [stageForExtract],
   );
 
+  // System Manager bypass: when show_act_button_on_all_tasks is enabled,
+  // a System Manager can act on any pending HR Flow stage. When disabled,
+  // System Manager can act on UNASSIGNED tasks, while assigned users/roles act on theirs.
+  const { data: showActOnAllTasks = false } = useActButtonSetting();
   const canPerformActions = useMemo(() => {
     if (!isActive || !stage.can_act) return false;
+
+    const isSystemManager = isAdminUser(currentUser || null);
+    const isAssigned = Boolean(
+      (allocatedTo?.users && allocatedTo.users.length > 0) ||
+      (allocatedTo?.roles && allocatedTo.roles.length > 0)
+    );
+
+    // System Manager: can act on ALL tasks if setting is ON, or on UNASSIGNED tasks if OFF
+    if (isSystemManager && (showActOnAllTasks || !isAssigned)) return true;
+
     let actionPermission = false;
 
     if (allocatedTo?.users && currentUser?.name)
@@ -175,7 +190,7 @@ const WorkflowCard = ({
       );
 
     return actionPermission;
-  }, [currentUser, isActive, allocatedTo, stage.can_act]);
+  }, [currentUser, isActive, allocatedTo, stage.can_act, showActOnAllTasks]);
 
   // Actual Trigger Date — the todo creation timestamp is when the stage was actually triggered
   const actualTriggerDate = stage.todo?.creation ?? null;
