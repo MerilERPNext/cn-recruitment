@@ -259,6 +259,7 @@ def create_alumni_hd_ticket(
         "subject": subject,
         "description": structured_desc,
         "raised_by": email,
+        "via_customer_portal": 1,
     }
 
     # Map to custom category / sub_category if the fields exist.

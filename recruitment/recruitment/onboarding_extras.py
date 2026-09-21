@@ -14,9 +14,13 @@ Wiring:
     "Task": [..., "public/js/task_onboarding_form.js"]
     "Task": "public/js/task_onboarding_listview.js"
 
-Convention:
-  Each Boarding Activity row's `activity_name` MUST equal an Email Template name.
-  When HR triggers an interaction, we look up the Email Template by Task.subject.
+Which email an interaction sends:
+  1. The activity row's optional "Email Template" (`custom_email_template`),
+     picked once on the Employee Onboarding Template and copied with the row.
+  2. Nothing picked -> the original convention: an Email Template whose name
+     equals the row's `activity_name`.
+  Other apps can add template variables (hook `onboarding_email_context`) and
+  react to a sent interaction (hook `onboarding_interaction_sent`).
 
 Settings (Onboarding Settings single, all default ON / non-breaking):
   - enable_auto_manager_mapping     -> gates auto_map_manager
@@ -26,7 +30,11 @@ Settings (Onboarding Settings single, all default ON / non-breaking):
 
 import frappe
 from frappe import _
-from frappe.utils import add_days, getdate, today
+from frappe.utils import add_days, cint, getdate, today
+
+# Optional per-activity Email Template (recruitment/custom/employee_boarding_activity.json).
+ACTIVITY_TEMPLATE_FIELD = "custom_email_template"
+ONBOARDING_TEMPLATE = "Employee Onboarding Template"
 
 
 # ---------------------------------------------------------------------------
@@ -203,6 +211,19 @@ def handle_doj_outcome(doc, method=None):
 
 def _doj_joined(doc):
     if doc.get("employee"):
+        if frappe.db.get_value("Employee", doc.employee, "status") == "Pending":
+            # A New Hire held at Pending. Saved through the document, not
+            # db.set_value: the role grants in cn_hrms_core hang off
+            # Employee.on_update, and a raw write fires none of them — the
+            # joiner would be Active with no access. Same as activate_employee.
+            from recruitment.api.new_hire import STAGE_FIELD
+
+            employee = frappe.get_doc("Employee", doc.employee)
+            employee.status = "Active"
+            if employee.meta.has_field(STAGE_FIELD):
+                employee.set(STAGE_FIELD, "Completed")
+            employee.save(ignore_permissions=True)
+            return
         # Already created — just ensure status is Active.
         frappe.db.set_value("Employee", doc.employee, "status", "Active")
         return
@@ -399,8 +420,11 @@ def bulk_trigger_interactions(tasks):
 
 
 def _trigger_one(task_name: str) -> dict:
-    """Send the Email Template named `<Task.subject>` to the candidate, then
-    mark the Task Completed. Adds an audit comment on the Employee Onboarding.
+    """Send the activity's Email Template to the candidate, then mark the Task
+    Completed. Adds an audit comment on the Employee Onboarding.
+
+    The template is the one picked on the activity row; with none picked, the
+    Email Template named after the activity (the original behaviour).
     """
     task = frappe.get_doc("Task", task_name)
 
@@ -418,14 +442,7 @@ def _trigger_one(task_name: str) -> dict:
 
     onboarding = frappe.get_doc("Employee Onboarding", onboarding_name)
 
-    # HRMS sets Task.subject as `<activity_name> : <employee_name>` (see
-    # hrms/controllers/employee_boarding_controller.py). Strip the candidate
-    # suffix so the lookup matches the Email Template / activity_name.
-    template_name = _activity_name_from_task(task, onboarding)
-    if not frappe.db.exists("Email Template", template_name):
-        frappe.throw(
-            _("No Email Template named '{0}'. Create one with that exact name to enable this interaction.").format(template_name)
-        )
+    template_name = _resolve_interaction_template(task, onboarding)
     template = frappe.get_doc("Email Template", template_name)
 
     recipient = _resolve_candidate_email(onboarding)
@@ -438,16 +455,17 @@ def _trigger_one(task_name: str) -> dict:
         else (onboarding.employee_name or "")
     )
 
+    view = InteractionDoc(onboarding, interaction_context_extras(onboarding))
     context = {
-        "doc": onboarding,
-        "onboarding": onboarding,
+        "doc": view,
+        "onboarding": view,
         "candidate_name": candidate_name,
         "doj": onboarding.date_of_joining,
         "boarding_begins_on": onboarding.boarding_begins_on,
     }
 
     subject = frappe.render_template(template.subject or template_name, context)
-    message = frappe.render_template(template.response or "", context)
+    message = frappe.render_template(template_body(template), context)
 
     frappe.sendmail(
         recipients=[recipient],
@@ -474,7 +492,160 @@ def _trigger_one(task_name: str) -> dict:
         _("Interaction '{0}' triggered. Email sent to {1}.").format(template_name, recipient),
     )
 
+    _run_interaction_sent_hooks(task, onboarding, template_name)
+
     return {"ok": True, "task": task.name, "sent_to": recipient, "interaction": template_name}
+
+
+# --- which template ----------------------------------------------------------
+
+def _activity_row(task, onboarding):
+    """The onboarding's activity row this Task was created from."""
+    for activity in (onboarding.get("activities") or []):
+        if activity.task == task.name:
+            return activity
+    return None
+
+
+def _resolve_interaction_template(task, onboarding) -> str:
+    """The Email Template this Task sends.
+
+    The row's own pick wins. Without one, the Email Template named after the
+    activity — exactly what this did before the field existed, so a site or an
+    activity that never sets it behaves as it always has.
+    """
+    row = _activity_row(task, onboarding)
+    chosen = row.get(ACTIVITY_TEMPLATE_FIELD) if row is not None else None
+    if chosen:
+        if not frappe.db.exists("Email Template", chosen):
+            frappe.throw(
+                _("Email Template '{0}' set on activity '{1}' no longer exists.").format(
+                    chosen, row.activity_name or task.name
+                )
+            )
+        return chosen
+
+    # HRMS sets Task.subject as `<activity_name> : <employee_name>` (see
+    # hrms/controllers/employee_boarding_controller.py). Strip the candidate
+    # suffix so the lookup matches the Email Template / activity_name.
+    template_name = _activity_name_from_task(task, onboarding)
+    if not frappe.db.exists("Email Template", template_name):
+        frappe.throw(
+            _("No Email Template named '{0}'. Create one with that exact name to enable this interaction.").format(template_name)
+        )
+    return template_name
+
+
+def copy_activity_email_templates(doc, method=None):
+    """Employee Onboarding before_save: bring each new activity row's Email
+    Template over from the onboarding template.
+
+    HRMS copies template activities onto the onboarding with a fixed field list
+    that does not include this custom field, so a row added from the Desk form
+    would otherwise arrive without it. Only NEW rows with the field EMPTY are
+    touched — a row HR has since edited is left alone. Never raises.
+    """
+    try:
+        template = doc.get("employee_onboarding_template")
+        if not template:
+            return
+        if not frappe.get_meta("Employee Boarding Activity").has_field(ACTIVITY_TEMPLATE_FIELD):
+            return
+
+        rows = [
+            r for r in (doc.get("activities") or [])
+            if r.is_new() and r.activity_name and not r.get(ACTIVITY_TEMPLATE_FIELD)
+        ]
+        if not rows:
+            return
+
+        picks = {}
+        for source in frappe.get_all(
+            "Employee Boarding Activity",
+            filters={"parent": template, "parenttype": ONBOARDING_TEMPLATE},
+            fields=["activity_name", ACTIVITY_TEMPLATE_FIELD],
+            order_by="idx",
+            ignore_permissions=True,
+        ):
+            value = source.get(ACTIVITY_TEMPLATE_FIELD)
+            if value and source.activity_name not in picks:
+                picks[source.activity_name] = value
+
+        for row in rows:
+            if picks.get(row.activity_name):
+                row.set(ACTIVITY_TEMPLATE_FIELD, picks[row.activity_name])
+    except Exception:
+        frappe.log_error(frappe.get_traceback(), "Onboarding: copy activity email templates failed")
+
+
+# --- rendering ---------------------------------------------------------------
+
+def template_body(template):
+    """The body Frappe itself would use: HTML when "Use HTML" is ticked.
+
+    Reading only `response` sent an empty email for every HTML template.
+    """
+    if cint(template.get("use_html")):
+        return template.get("response_html") or template.get("response") or ""
+    return template.get("response") or template.get("response_html") or ""
+
+
+class InteractionDoc:
+    """The onboarding as an email template sees it.
+
+    Frappe renders an unknown name as its own `{{ ... }}` source, so a template
+    asking for a field this site does not have mailed that text to the
+    candidate. Here an unknown name reads as "", real fields and methods still
+    work, and names supplied by other apps (`onboarding_email_context`) are
+    served first. Read-only: rendering must never change the record.
+    """
+
+    def __init__(self, doc, extra=None):
+        self._doc = doc
+        self._extra = extra or {}
+
+    def get(self, key, default=""):
+        value = self._extra[key] if key in self._extra else self._doc.get(key)
+        return default if value is None else value
+
+    def __getattr__(self, key):
+        if key.startswith("_"):
+            raise AttributeError(key)
+        if key in self._extra:
+            return self._extra[key]
+        value = self._doc.get(key)
+        if value is not None:
+            return value
+        attr = getattr(self._doc, key, None)
+        return "" if attr is None else attr
+
+    def __getitem__(self, key):
+        return self.get(key)
+
+
+def interaction_context_extras(onboarding) -> dict:
+    """Extra template variables from other apps' `onboarding_email_context` hooks.
+
+    Each hook takes the onboarding and returns a dict. A failing hook is logged
+    and skipped — it can cost a variable, never the email.
+    """
+    extras = {}
+    for method in frappe.get_hooks("onboarding_email_context") or []:
+        try:
+            extras.update(frappe.get_attr(method)(onboarding) or {})
+        except Exception:
+            frappe.log_error(frappe.get_traceback(), f"onboarding_email_context failed: {method}")
+    return extras
+
+
+def _run_interaction_sent_hooks(task, onboarding, template_name):
+    """Let other apps act on a sent interaction. Failures are logged only: the
+    candidate's email has gone and the task is complete either way."""
+    for method in frappe.get_hooks("onboarding_interaction_sent") or []:
+        try:
+            frappe.get_attr(method)(task=task, onboarding=onboarding, template=template_name)
+        except Exception:
+            frappe.log_error(frappe.get_traceback(), f"onboarding_interaction_sent failed: {method}")
 
 
 def _log_communication(subject, message, recipient, onboarding_name, task_name=None):
@@ -526,6 +697,11 @@ def _activity_name_from_task(task, onboarding) -> str:
 
 
 def _resolve_candidate_email(onboarding):
+    # The personal address the candidate gave on the onboarding form, where the
+    # site has that field; otherwise the original lookups below.
+    personal = onboarding.get("custom_personal_email_id")
+    if personal:
+        return personal
     if onboarding.job_applicant:
         email = frappe.db.get_value("Job Applicant", onboarding.job_applicant, "email_id")
         if email:

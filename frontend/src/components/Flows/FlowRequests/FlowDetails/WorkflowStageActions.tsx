@@ -152,6 +152,8 @@ const WorkflowStageActions = ({
             <div key={action.key} className="flex items-center gap-1.5">
               <Tooltip content={action.tooltip} position="top">
                 <button
+                  aria-label={action.label}
+                  title={action.tooltip}
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();

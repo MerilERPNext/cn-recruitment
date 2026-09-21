@@ -1,5 +1,19 @@
 {
- "custom_fields": [],
+ "custom_fields": [
+  {
+   "allow_on_submit": 1,
+   "description": "Optional. Sent to the candidate when this activity's task is completed with \"Send Interaction Email & Mark Done\". Leave empty for activities that need no email.",
+   "dt": "Employee Boarding Activity",
+   "fieldname": "custom_email_template",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "insert_after": "activity_name",
+   "label": "Email Template",
+   "module": "Recruitment",
+   "name": "Employee Boarding Activity-custom_email_template",
+   "options": "Email Template"
+  }
+ ],
  "custom_perms": [],
  "doctype": "Employee Boarding Activity",
  "links": [],
@@ -25,7 +39,7 @@
    "property": "field_order",
    "property_type": "Data",
    "row_name": null,
-   "value": "[\"activity_name\", \"user\", \"role\", \"begin_on\", \"duration\", \"custom_department\", \"column_break_3\", \"task\", \"task_weight\", \"required_for_employee_creation\", \"section_break_6\", \"description\"]"
+   "value": "[\"activity_name\", \"custom_email_template\", \"user\", \"role\", \"begin_on\", \"duration\", \"custom_department\", \"column_break_3\", \"task\", \"task_weight\", \"required_for_employee_creation\", \"section_break_6\", \"description\"]"
   }
  ],
  "sync_on_migrate": 1

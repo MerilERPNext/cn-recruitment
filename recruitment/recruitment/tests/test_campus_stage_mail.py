@@ -20,6 +20,7 @@ from recruitment.api import hiring_stage as hs
 
 PREFIX = "_Test StageMail"
 SETTING = "notify_campus_candidates_on_stage_change"
+SITE_SWITCH = "disable_stage_change_email"
 STAGE = {"stage_name": "Technical Round 1", "stage_type": "Interview", "notify": 1, "auto": 1}
 
 
@@ -80,6 +81,9 @@ class TestCampusStageMail(FrappeTestCase):
 		self._real_sendmail = frappe.sendmail
 		frappe.sendmail = lambda **kw: self.sent.append(kw)
 		frappe.db.set_single_value("Campus Settings", SETTING, 0)
+		# Pinned off so these tests describe the per-stage behaviour on any site,
+		# including one that has the site-wide switch turned on.
+		frappe.db.set_single_value("Recruitment Settings", SITE_SWITCH, 0)
 
 	def tearDown(self):
 		frappe.sendmail = self._real_sendmail
@@ -133,6 +137,30 @@ class TestCampusStageMail(FrappeTestCase):
 		doc = frappe.get_doc("Job Applicant", self.lateral)
 		_enter_stage(doc, quiet, result="test", save=False, ignore_permissions=True)
 		self.assertEqual(self.sent, [])
+
+	# ── the site-wide switch (Recruitment Settings) ──
+
+	def test_the_site_wide_switch_stops_the_mail_for_everyone(self):
+		frappe.db.set_single_value("Recruitment Settings", SITE_SWITCH, 1)
+		frappe.db.set_single_value("Campus Settings", SETTING, 1)
+		self._notify(self.lateral)
+		self._notify(self.campus)
+		self.assertEqual(self.sent, [])
+
+	def test_the_site_wide_switch_overrides_a_stage_that_notifies(self):
+		from recruitment.api.hiring_stage import _enter_stage
+
+		frappe.db.set_single_value("Recruitment Settings", SITE_SWITCH, 1)
+		doc = frappe.get_doc("Job Applicant", self.lateral)
+		_enter_stage(doc, STAGE, result="test", save=False, ignore_permissions=True)
+		self.assertEqual(self.sent, [])
+
+	def test_an_untouched_site_keeps_sending(self):
+		"""Unset reads as 0, which must mean 'send' — no site loses the mail on upgrade."""
+		frappe.db.delete("Singles", {"doctype": "Recruitment Settings", "field": SITE_SWITCH})
+		self.assertFalse(hs._stage_mail_disabled_site_wide())
+		self._notify(self.lateral)
+		self.assertEqual(len(self.sent), 1)
 
 
 def run():

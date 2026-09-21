@@ -98,7 +98,16 @@ def _create_alumni_user(employee, email: str) -> str:
     )
     user.flags.ignore_permissions = True
     user.insert(ignore_permissions=True)
+    _stamp_alumni_category(user.name)
     return user.name
+
+
+def _stamp_alumni_category(email: str) -> None:
+    """Mark the User as an Alumni account in custom_user_category (if the field exists)."""
+    if not frappe.get_meta("User").get_field("custom_user_category"):
+        return
+    if frappe.db.get_value("User", email, "custom_user_category") != "Alumni":
+        frappe.db.set_value("User", email, "custom_user_category", "Alumni", update_modified=False)
 
 
 def _configure_alumni_user(email: str) -> None:
@@ -122,6 +131,7 @@ def _configure_alumni_user(email: str) -> None:
 
     if values:
         frappe.db.set_value("User", email, values, update_modified=False)
+    _stamp_alumni_category(email)
 
 
 # ── Transitions ───────────────────────────────────────────────────────────────

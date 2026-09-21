@@ -77,26 +77,26 @@ export const useEmployeeSupportContacts = (employeeId?: string | null) => {
   });
 };
 
-export const useGetSeparationOpenItems = (employee?: string | null) => {
+export const useGetSeparationOpenItems = (employee?: string | null, enabled: boolean = true) => {
   return useQuery<SeparationOpenItemsData>({
     queryKey: ["separation-open-items", employee],
     queryFn: () => getSeparationOpenItems(employee || ""),
-    enabled: Boolean(employee),
+    enabled: Boolean(employee) && enabled,
   });
 };
 
-export const useGetSeparationWorkflowStages = (employee?: string | null) => {
+export const useGetSeparationWorkflowStages = (employee?: string | null, enabled: boolean = true) => {
   return useQuery<SeparationWorkflowStagesResponse>({
     queryKey: ["separation-workflow-stages", employee],
     queryFn: () => getSeparationWorkflowStages(employee || ""),
-    enabled: Boolean(employee),
+    enabled: Boolean(employee) && enabled,
   });
 };
 
-export const useGetFullAndFinalEstimate = (employee?: string | null) => {
+export const useGetFullAndFinalEstimate = (employee?: string | null, enabled: boolean = true) => {
   return useQuery<FullAndFinalEstimateResponse | null>({
     queryKey: ["full-and-final-estimate", employee],
     queryFn: () => getFullAndFinalEstimate(employee || ""),
-    enabled: Boolean(employee),
+    enabled: Boolean(employee) && enabled,
   });
 };

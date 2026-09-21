@@ -915,6 +915,7 @@ def get_alumni_profile() -> dict:
             ("custom__custom_marital_status", "custom__custom_marital_status"),
             ("date_of_joining", "date_of_joining"),
             ("relieving_date", "relieving_date"),
+            ("reason_for_leaving", "reason_for_leaving"),
             ("company_email", "company_email"),
             ("personal_email", "personal_email"),
             ("preferred_email", "prefered_email"),
@@ -963,6 +964,104 @@ def get_alumni_profile() -> dict:
             profile["image"] = emp["image"]
 
     return {"success": True, "profile": profile}
+
+
+def _child_rows(doctype: str, parent: str, wanted: dict, order_by: str) -> list[dict]:
+    """Rows of a child table, keyed by output name.
+
+    ``wanted`` maps ``{output key: column}`` or ``{output key: (col, fallback…)}``
+    -- these tables carry the same fact in both a standard and a custom column
+    depending on which form captured it (``qualification`` vs
+    ``custom_education_degree``), so the first non-empty candidate wins.
+
+    Columns absent from this database are skipped rather than queried: a field
+    present in the meta but missing a column would raise OperationalError 1054.
+    """
+    candidates = {
+        key: [c for c in ((cols,) if isinstance(cols, str) else cols)
+              if frappe.db.has_column(doctype, c)]
+        for key, cols in wanted.items()
+    }
+    columns = [c for cols in candidates.values() for c in cols]
+    if not columns:
+        return []
+
+    order = order_by if frappe.db.has_column(doctype, order_by.split()[0]) else "idx"
+    rows = frappe.get_all(
+        doctype,
+        filters={"parenttype": "Employee", "parent": parent},
+        fields=list(dict.fromkeys(columns + ["idx"])),
+        order_by=order,
+    ) or []
+
+    out = []
+    for row in rows:
+        item = {}
+        for key, cols in candidates.items():
+            val = next((row.get(c) for c in cols if row.get(c) not in (None, "", 0)), None)
+            item[key] = (
+                _d(val) if val and key.endswith(("_date", "_from", "_to")) else (val or "")
+            )
+        out.append(item)
+    return out
+
+
+def _alumni_education(emp_name: str) -> list[dict]:
+    """Education history — the portal's "Education" block."""
+    return _child_rows(
+        "Employee Education",
+        emp_name,
+        {
+            "qualification": ("qualification", "custom_education_degree", "custom_course_name"),
+            "specialization": ("maj_opt_subj", "custom_field_of_specialisation"),
+            "institution": ("school_univ", "custom_university", "custom_institute"),
+            "level": "level",
+            "year_of_passing": ("year_of_passing", "custom_passing_year"),
+            "from_date": "custom_start_date",
+            "to_date": ("custom_completion_date", "custom_to_date"),
+        },
+        "idx asc",
+    )
+
+
+def _alumni_work_history(emp_name: str) -> list[dict]:
+    """Employment outside this company — the portal's "Current company" block.
+
+    Newest first, so the portal can show the most recent row as the current
+    employer without sorting client-side.
+    """
+    return _child_rows(
+        "Employee External Work History",
+        emp_name,
+        {
+            "company_name": "company_name",
+            "designation": "designation",
+            "total_experience": "total_experience",
+            "from_date": "custom_from_datee",
+            "to_date": "custom_to_datee",
+        },
+        "idx desc",
+    )
+
+
+def _tenure_months(doj, relieving) -> int:
+    """Whole months served, 0 when the joining date is unknown.
+
+    Counts up to the relieving date, or to today for anyone still on the books.
+    """
+    from frappe.utils import getdate, now_datetime
+
+    if not doj:
+        return 0
+    try:
+        start = getdate(doj)
+        end = getdate(relieving) if relieving else now_datetime().date()
+        months = (end.year - start.year) * 12 + (end.month - start.month)
+        if end.day < start.day:
+            months -= 1
+        return max(months, 0)
+    except Exception:
+        return 0
 
 
 # Fields an alumnus may edit on their OWN profile. HR-controlled fields
@@ -1362,10 +1461,8 @@ def _apply_alumni_category_filter(filters: dict) -> None:
 
 
 def _ticket_status_label(status: str) -> str:
-    if status in _TICKET_RESOLVED_STATUSES:
-        return "Resolved"
-    if status in _TICKET_OPEN_STATUSES:
-        return "Open"
+    if status in ("Replied", "Awaiting User Response"):
+        return "Awaiting User Response"
     return status or ""
 
 
@@ -1710,14 +1807,18 @@ def add_alumni_ticket_comment(ticket_id: str | None = None, comment: str | None 
 def get_alumni_tickets(status=None, category=None, limit=50, start=0) -> dict:
     """The alumnus's support tickets (HD Ticket) with stats + category flags.
 
-    `status`: "open" | "resolved" (tab). `category`: an HD Ticket Type (chip).
+    `status`: exact HD Ticket status string —
+        "Open" | "Closed" | "Replied" | "Reopened" | "Not Assigned" |
+        "Archived" | "Requested Closure" | "Resolved"
+        Omit (or pass "all") to return tickets of every status.
+    `category`: an HD Ticket Type (chip). Omit for all categories.
     Stats are always computed across ALL of the user's tickets, not the filter.
     """
     user = _require_alumni_session()
     email = _alumni_email(user)
 
     filters = {"raised_by": email}
-    if category:
+    if category and str(category).strip().lower() != "all":
         # A specific category chip was picked (chips only list alumni-portal
         # categories, so this is always within the allowed set).
         if frappe.db.has_column("HD Ticket", "custom_category"):
@@ -1727,10 +1828,36 @@ def get_alumni_tickets(status=None, category=None, limit=50, start=0) -> dict:
     else:
         # No specific chip → restrict to all Alumni-Portal categories only.
         _apply_alumni_category_filter(filters)
-    if status == "open":
-        filters["status"] = ["in", _TICKET_OPEN_STATUSES]
-    elif status == "resolved":
-        filters["status"] = ["in", _TICKET_RESOLVED_STATUSES]
+
+    if status and str(status).strip().lower() not in ("all", "all statuses", "all_statuses", "none", ""):
+        if isinstance(status, list):
+            # List of statuses → use `in` filter
+            expanded = []
+            for s in status:
+                s_str = str(s).strip()
+                if s_str.lower() in ("awaiting user response", "awaiting_user_response", "replied"):
+                    expanded.extend(["Replied", "Awaiting User Response"])
+                else:
+                    expanded.append(s_str)
+            filters["status"] = ["in", list(dict.fromkeys(expanded))]
+        elif isinstance(status, str) and "," in status:
+            # Comma-separated → split into list
+            expanded = []
+            for s in status.split(","):
+                s_str = s.strip()
+                if not s_str:
+                    continue
+                if s_str.lower() in ("awaiting user response", "awaiting_user_response", "replied"):
+                    expanded.extend(["Replied", "Awaiting User Response"])
+                else:
+                    expanded.append(s_str)
+            filters["status"] = ["in", list(dict.fromkeys(expanded))]
+        else:
+            st = str(status).strip()
+            if st.lower() in ("awaiting user response", "awaiting_user_response", "replied"):
+                filters["status"] = ["in", ["Replied", "Awaiting User Response"]]
+            else:
+                filters["status"] = st
 
     fields = [
         "name", "subject", "ticket_type", "status", "agent_group",
@@ -1778,6 +1905,16 @@ def get_alumni_tickets(status=None, category=None, limit=50, start=0) -> dict:
     open_count = sum(1 for x in all_t if x.status in _TICKET_OPEN_STATUSES)
     resolved_count = sum(1 for x in all_t if x.status in _TICKET_RESOLVED_STATUSES)
 
+    status_counts = {}
+    for x in all_t:
+        st = x.status or "Open"
+        status_counts[st] = status_counts.get(st, 0) + 1
+
+    awaiting_count = status_counts.get("Replied", 0) + status_counts.get("Awaiting User Response", 0)
+    if awaiting_count > 0:
+        status_counts["Replied"] = awaiting_count
+        status_counts["Awaiting User Response"] = awaiting_count
+
     from frappe.utils import add_days, get_datetime, now_datetime, time_diff_in_seconds
 
     cutoff = add_days(now_datetime(), -30)
@@ -1802,10 +1939,22 @@ def get_alumni_tickets(status=None, category=None, limit=50, start=0) -> dict:
             "open_tickets": open_count,
             "resolved_tickets": resolved_count,
             "total": len(all_t),
+            "status_counts": status_counts,
             "avg_response_hours": avg_response_hours,
             "satisfaction_percent": satisfaction_percent,
         },
-        "filter_options": {"categories": hd_categories_res.get("categories", [])},
+        "filter_options": {
+            "categories": hd_categories_res.get("categories", []),
+            "statuses": [
+                {"label": "Open", "value": "Open"},
+                {"label": "Awaiting User Response", "value": "Replied"},
+                {"label": "Closed", "value": "Closed"},
+                {"label": "Reopened", "value": "Reopened"},
+                {"label": "Not Assigned", "value": "Not Assigned"},
+                {"label": "Archived", "value": "Archived"},
+                {"label": "Requested Closure", "value": "Requested Closure"},
+            ],
+        },
         "tickets": tickets,
     }
 
@@ -1829,6 +1978,7 @@ def raise_alumni_ticket(subject, description=None, category=None, priority=None)
             "subject": subject,
             "description": description or "",
             "raised_by": _alumni_email(user),
+            "via_customer_portal": 1,
         }
     )
     if category and frappe.db.exists("HD Ticket Type", category):
@@ -4392,7 +4542,21 @@ def create_alumni_post(data=None, **kwargs) -> dict:
     from frappe.utils import strip_html
     from frappe.utils.html_utils import sanitize_html
 
+    from recruitment.recruitment.alumni_guard import is_alumni_user
+
     user = _require_alumni_session()
+
+    # Alumni read and interact with the feed; they do not publish to it. The
+    # direct method (chatnext…post.create_post) is deliberately absent from
+    # alumni_guard's allowlist too, so neither route reaches post creation.
+    #
+    # The check is kept rather than deleting this endpoint so a portal build
+    # that still calls it gets a clear 403 instead of "method not found".
+    if is_alumni_user():
+        frappe.local.response["http_status_code"] = 403
+        frappe.throw(
+            _("You do not have permission to create posts."), frappe.PermissionError
+        )
 
     if isinstance(data, str):
         try:
@@ -4675,6 +4839,165 @@ def delete_alumni_post(post_id=None, **kwargs) -> dict:
     return result
 
 
+# ── Alumni feed permission model ──────────────────────────────────────────────
+# Three of the portal's feed actions are switchable per site: commenting,
+# reacting and saving. The switches live on the "Alumni Portal Settings" single
+# doctype, following chatnext_work_connect's "Work Connect Settings" precedent —
+# the client is never trusted, the server decides.
+#
+# Why wrappers rather than guarding the Work Connect methods directly: those
+# live in chatnext_work_connect, which ESS shares and which must not be edited.
+# So the direct methods come OFF the alumni allowlist and the portal calls these
+# wrappers instead, which check the setting and then delegate to the very same
+# functions. Response envelopes are passed through untouched.
+#
+# Note these wrappers need no allowlist entry: `alumni_guard.ALUMNI_NAMESPACES`
+# already admits everything under `recruitment.recruitment.alumni_portal.`.
+
+_ALUMNI_ACTION_SETTINGS = {
+    "comment": ("allow_alumni_comment", "Commenting is currently disabled for alumni users."),
+    "reaction": ("allow_alumni_reaction", "Reactions are currently disabled for alumni users."),
+    "save": ("allow_alumni_save", "Saving posts is currently disabled for alumni users."),
+}
+
+
+def alumni_action_allowed(action: str) -> tuple[bool, str]:
+    """(allowed, denial message) for one feed action.
+
+    Non-alumni are always allowed: this gate exists only to restrain the Alumni
+    Portal and must never change ESS behaviour, so it returns early before
+    reading any setting.
+
+    Fails OPEN on an unreadable setting — a missing doctype or a transient DB
+    error must not silently strip permissions that default to on.
+    """
+    from recruitment.recruitment.alumni_guard import is_alumni_user
+
+    if not is_alumni_user():
+        return True, ""
+
+    field, message = _ALUMNI_ACTION_SETTINGS.get(action, (None, ""))
+    if not field:
+        return False, _("Unknown action.")
+
+    try:
+        from frappe.utils import cint
+
+        # Read tabSingles with raw SQL, deliberately, on two counts:
+        #   * db.get_single_value casts through cast_fieldtype, which turns a
+        #     missing row into 0 for a Check field -- making "never configured"
+        #     look identical to "switched off". Every flag defaults to 1, so a
+        #     freshly migrated site would then deny the entire feed.
+        #   * db.get_value("Singles", ...) appends ORDER BY `modified`, a column
+        #     tabSingles does not have, and raises OperationalError 1054.
+        row = frappe.db.sql(
+            "select value from tabSingles where doctype=%s and field=%s limit 1",
+            ("Alumni Portal Settings", field),
+        )
+        stored = row[0][0] if row else None
+    except Exception:
+        frappe.log_error(frappe.get_traceback(), "Alumni Portal Settings unreadable")
+        return True, ""
+
+    if stored is None:
+        return True, ""
+
+    return (True, "") if cint(stored) else (False, _(message))
+
+
+def _require_alumni_action(action: str) -> None:
+    """Throw 403 with the configured message when `action` is switched off."""
+    allowed, message = alumni_action_allowed(action)
+    if not allowed:
+        frappe.local.response["http_status_code"] = 403
+        frappe.throw(message, frappe.PermissionError)
+
+
+# ── Comment wrappers ──────────────────────────────────────────────────────────
+@frappe.whitelist(methods=["POST"])
+def add_alumni_comment(post: str, content: str, parent_comment: str | None = None) -> dict:
+    """Comment on a feed post, subject to `allow_alumni_comment`."""
+    _require_alumni_session()
+    _require_alumni_action("comment")
+
+    from chatnext_work_connect.chatnext_work_connect.api import comment as comment_api
+
+    return comment_api.add_comment(post=post, content=content, parent_comment=parent_comment)
+
+
+@frappe.whitelist(methods=["POST"])
+def update_alumni_comment(comment_id: str, content: str = None, data=None) -> dict:
+    """Edit one's own comment, subject to `allow_alumni_comment`.
+
+    Ownership is enforced by the delegate, which refuses unless the comment's
+    author is the session user.
+    """
+    _require_alumni_session()
+    _require_alumni_action("comment")
+
+    from chatnext_work_connect.chatnext_work_connect.api import comment as comment_api
+
+    return comment_api.update_comment(comment_id=comment_id, content=content, data=data)
+
+
+@frappe.whitelist(methods=["POST"])
+def delete_alumni_comment(comment_id: str) -> dict:
+    """Delete one's own comment, subject to `allow_alumni_comment`."""
+    _require_alumni_session()
+    _require_alumni_action("comment")
+
+    from chatnext_work_connect.chatnext_work_connect.api import comment as comment_api
+
+    return comment_api.delete_comment(comment_id=comment_id)
+
+
+# ── Reaction wrappers ─────────────────────────────────────────────────────────
+@frappe.whitelist(methods=["POST"])
+def add_alumni_reaction(post: str, reaction_type: str) -> dict:
+    """React to a feed post, subject to `allow_alumni_reaction`."""
+    _require_alumni_session()
+    _require_alumni_action("reaction")
+
+    from chatnext_work_connect.chatnext_work_connect.api import reaction as reaction_api
+
+    return reaction_api.add_reaction(post=post, reaction_type=reaction_type)
+
+
+@frappe.whitelist(methods=["POST"])
+def remove_alumni_reaction(post: str) -> dict:
+    """Withdraw one's reaction, subject to `allow_alumni_reaction`."""
+    _require_alumni_session()
+    _require_alumni_action("reaction")
+
+    from chatnext_work_connect.chatnext_work_connect.api import reaction as reaction_api
+
+    return reaction_api.remove_reaction(post=post)
+
+
+# ── Saved post wrappers ───────────────────────────────────────────────────────
+@frappe.whitelist(methods=["POST"])
+def save_alumni_post(post_id: str) -> dict:
+    """Bookmark a feed post, subject to `allow_alumni_save`."""
+    _require_alumni_session()
+    _require_alumni_action("save")
+
+    from chatnext_work_connect.chatnext_work_connect.api import saved_post as saved_post_api
+
+    return saved_post_api.save_post(post_id=post_id)
+
+
+@frappe.whitelist(methods=["POST"])
+def unsave_alumni_post(post_id: str) -> dict:
+    """Remove a bookmark, subject to `allow_alumni_save`."""
+    _require_alumni_session()
+    _require_alumni_action("save")
+
+    from chatnext_work_connect.chatnext_work_connect.api import saved_post as saved_post_api
+
+    return saved_post_api.unsave_post(post_id=post_id)
+
+
+# ── Follow suggestions, alumni only ───────────────────────────────────────────
 @frappe.whitelist(methods=["POST"])
 def get_alumni_follow_suggestions(limit: int = 10) -> dict:
     """Follow suggestions restricted to other alumni.
@@ -4786,6 +5109,272 @@ _FOLLOW_OVERFETCH = 5
 
 
 @frappe.whitelist(methods=["POST"])
+def get_alumni_feed_permissions() -> dict:
+    """What the signed-in alumnus may do in the feed.
+
+    Lets the portal disable controls up front instead of surfacing a 403 after
+    the click. `can_create_post` is always False — alumni read and interact
+    with the feed, they do not publish to it.
+    """
+    _require_alumni_session()
+
+    return {
+        "success": True,
+        "permissions": {
+            "can_create_post": False,
+            "can_comment": alumni_action_allowed("comment")[0],
+            "can_react": alumni_action_allowed("reaction")[0],
+            "can_save": alumni_action_allowed("save")[0],
+        },
+    }
+
+
+# ── Profile child rows the alumnus maintains themselves ───────────────────────
+# The portal's "Add education" and "Add company" buttons. Both append to a child
+# table on the alumnus's OWN Employee -- the parent is resolved from
+# frappe.session.user and never accepted from the caller, so one alumnus can
+# never write onto another's record.
+#
+# Rows are inserted as child documents rather than by appending to the Employee
+# and saving it: this Employee doctype carries a great deal of customisation and
+# validation, and re-saving the whole record to add one education row risks
+# tripping over unrelated fields.
+#
+# Each field is written to the SAME column its reader treats as primary (see
+# _alumni_education / _alumni_work_history), so what goes in comes back out.
+
+_EDU_MAX_LEN = 140
+_WORK_MAX_LEN = 140
+
+
+def _own_employee_or_throw() -> str:
+    """The signed-in alumnus's Employee, or 403."""
+    user = _require_alumni_session()
+    emp = alumni_employee_name(user)
+    if not emp:
+        frappe.local.response["http_status_code"] = 403
+        frappe.throw(_("No employee record is linked to your account."), frappe.PermissionError)
+    return emp
+
+
+def _coerce_payload(data, kwargs) -> dict:
+    """Accept `data` as a dict or JSON string, else fall back to flat kwargs."""
+    import json
+
+    if isinstance(data, str):
+        try:
+            data = json.loads(data)
+        except (TypeError, ValueError):
+            frappe.throw(_("Malformed request data."))
+    if isinstance(data, dict):
+        return data
+    return {k: v for k, v in (kwargs or {}).items() if k not in ("cmd", "sid")}
+
+
+def _clean(value, limit: int) -> str:
+    from frappe.utils import strip_html
+
+    return strip_html(str(value or "")).strip()[:limit]
+
+
+def _child_insert(doctype: str, parent: str, parentfield: str, values: dict) -> str:
+    """Append one child row to an Employee, through the parent document.
+
+    Deliberately goes via ``Employee.append() + save()`` rather than inserting
+    the child doc directly. Inserting the child on its own does write the row,
+    and it does show on the form, but it bypasses everything the parent save
+    does for you:
+
+      * ``idx`` stays 0 on every row, so the grid has no stable order;
+      * ``Employee.modified`` is never touched, so the record looks untouched;
+      * no Version row is written, so the change is absent from the Employee's
+        edit history -- an audit gap on a record HR relies on.
+
+    Columns missing from this database are skipped, as elsewhere in this module.
+    """
+    row = {}
+    for column, value in values.items():
+        if value in (None, "") or not frappe.db.has_column(doctype, column):
+            continue
+        row[column] = value
+
+    # Inserted as a child document rather than by appending to the Employee and
+    # saving it. Employee.on_update fans out a very long way -- into
+    # cn_hrms_core's update_contact_details (which saves the linked Contact) and
+    # the alumni account-switch handlers, which touch the User record. That is
+    # far more blast radius than adding one education row warrants, and it fails
+    # outright anyway: the nested Contact save runs without ignore_permissions,
+    # and an alumnus has no write access to Contact.
+    #
+    # What the parent save WOULD have given us is reproduced explicitly below --
+    # a sequential idx, a refreshed `modified`, and a timeline entry naming the
+    # alumnus -- without firing a single Employee hook.
+    from frappe.utils import now_datetime
+
+    actor = frappe.session.user
+
+    last_idx = frappe.db.sql(
+        """select max(idx) from `tab{0}`
+           where parent=%s and parenttype='Employee' and parentfield=%s""".format(doctype),
+        (parent, parentfield),
+    )[0][0] or 0
+
+    row.update(
+        {
+            "doctype": doctype,
+            "parent": parent,
+            "parenttype": "Employee",
+            "parentfield": parentfield,
+            "idx": last_idx + 1,
+        }
+    )
+
+    child = frappe.get_doc(row)
+    child.insert(ignore_permissions=True)
+
+    # Touch the parent so the record does not look untouched. update_modified is
+    # off because `modified` is being written explicitly here, and because this
+    # must not trigger the Employee's hooks.
+    frappe.db.set_value(
+        "Employee",
+        parent,
+        {"modified": now_datetime(), "modified_by": actor},
+        update_modified=False,
+    )
+
+    _log_portal_edit(parent, parentfield, actor)
+    frappe.db.commit()
+    return child.name
+
+
+def _log_portal_edit(employee: str, parentfield: str, actor: str) -> None:
+    """Record who really made a portal edit on the Employee's timeline.
+
+    The save runs as Administrator (see above), so the Version row credits
+    Administrator. Without this the Employee's history would show the change
+    but not the alumnus behind it.
+    """
+    label = "education" if parentfield == "education" else "employment history"
+    try:
+        frappe.get_doc(
+            {
+                "doctype": "Comment",
+                "comment_type": "Info",
+                "reference_doctype": "Employee",
+                "reference_name": employee,
+                "content": _("Added {0} via the Alumni Portal ({1}).").format(label, actor),
+            }
+        ).insert(ignore_permissions=True)
+    except Exception:
+        # Never fail the edit over its own audit note.
+        frappe.log_error(frappe.get_traceback(), "Alumni portal edit comment failed")
+
+
+@frappe.whitelist(methods=["POST"])
+def add_alumni_education(data=None, **kwargs) -> dict:
+    """Append one education row to the signed-in alumnus's own Employee.
+
+    Payload: ``{qualification, specialization?, institution, year_of_passing?,
+    from_date?, to_date?}``.
+    """
+    from frappe.utils import cint, getdate
+
+    emp = _own_employee_or_throw()
+    payload = _coerce_payload(data, kwargs)
+
+    qualification = _clean(payload.get("qualification"), _EDU_MAX_LEN)
+    institution = _clean(payload.get("institution"), _EDU_MAX_LEN)
+    if not qualification:
+        frappe.throw(_("Qualification is required."))
+    if not institution:
+        frappe.throw(_("Institution is required."))
+
+    def _date(value):
+        if not value:
+            return None
+        try:
+            return getdate(value)
+        except Exception:
+            frappe.throw(_("{0} is not a valid date.").format(value))
+
+    from_date, to_date = _date(payload.get("from_date")), _date(payload.get("to_date"))
+    if from_date and to_date and to_date < from_date:
+        frappe.throw(_("The end date cannot be before the start date."))
+
+    # `qualification` looks like free text in the base doctype, but a Property
+    # Setter on this site turns it into a Link on "Education Stage" (relabelled
+    # "Education Stage"), so it accepts only the 9 stage records -- "10th",
+    # "Graduation", "Post Graduation" and so on. A degree like "MBA" is not one
+    # of them and inserting it raises LinkValidationError.
+    #
+    # So the degree goes to `custom_education_degree`, a plain Data column, and
+    # `qualification` is used only when the value really is a stage. The reader
+    # already falls back across both, so either way it comes back out.
+    values = {
+        "school_univ": institution,
+        "maj_opt_subj": _clean(payload.get("specialization"), _EDU_MAX_LEN),
+        "year_of_passing": cint(payload.get("year_of_passing")) or None,
+        "custom_start_date": from_date,
+        "custom_completion_date": to_date,
+    }
+    if frappe.db.exists("Education Stage", qualification):
+        values["qualification"] = qualification
+    else:
+        values["custom_education_degree"] = qualification
+
+    name = _child_insert("Employee Education", emp, "education", values)
+
+    return {"success": True, "name": name, "education": _alumni_education(emp)}
+
+
+@frappe.whitelist(methods=["POST"])
+def add_alumni_work_history(data=None, **kwargs) -> dict:
+    """Append one external-employer row to the alumnus's own Employee.
+
+    Payload: ``{company_name, designation, from_date?, to_date?}``. This is what
+    backs the portal's "Current company" block.
+    """
+    from frappe.utils import getdate
+
+    emp = _own_employee_or_throw()
+    payload = _coerce_payload(data, kwargs)
+
+    company_name = _clean(payload.get("company_name"), _WORK_MAX_LEN)
+    designation = _clean(payload.get("designation"), _WORK_MAX_LEN)
+    if not company_name:
+        frappe.throw(_("Company name is required."))
+    if not designation:
+        frappe.throw(_("Designation is required."))
+
+    def _date(value):
+        if not value:
+            return None
+        try:
+            return getdate(value)
+        except Exception:
+            frappe.throw(_("{0} is not a valid date.").format(value))
+
+    from_date, to_date = _date(payload.get("from_date")), _date(payload.get("to_date"))
+    if from_date and to_date and to_date < from_date:
+        frappe.throw(_("The end date cannot be before the start date."))
+
+    name = _child_insert(
+        "Employee External Work History",
+        emp,
+        "external_work_history",
+        {
+            "company_name": company_name,
+            "designation": designation,
+            "custom_from_datee": from_date,
+            "custom_to_datee": to_date,
+        },
+    )
+
+    return {"success": True, "name": name, "work_history": _alumni_work_history(emp)}
+
+
+# ── Upcoming celebrations, alumni only ────────────────────────────────────────
+@frappe.whitelist(methods=["POST"])
 def get_alumni_celebrations(days: int = 30, days_in_advance: int = None) -> dict:
     """Birthdays and work anniversaries, restricted to fellow alumni.
 
@@ -4803,6 +5392,9 @@ def get_alumni_celebrations(days: int = 30, days_in_advance: int = None) -> dict
 
     _require_alumni_session()
 
+    result = celebrations_api.get_upcoming_celebrations(
+        days=days, days_in_advance=days_in_advance
+    ) or {}
     # The delegate is guarded by Work Connect's role gate, which an alumnus (a
     # role-less Website User) does not pass. This wrapper is itself an authorised,
     # alumni-only entry point and re-filters the (read-only, workforce-wide)

@@ -32,7 +32,10 @@ def _guard_meta_doctype(doctype_name):
 
 
 class RecruitmentSettings(Document):
-    pass
+    def on_update(self):
+        from recruitment.api.requisition_budget import on_settings_update
+
+        on_settings_update(self)
 
 @frappe.whitelist()
 def get_doctype_fields(doctype_name):

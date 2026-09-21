@@ -17,6 +17,17 @@ The offer-time rules from the same settings record (active-offer block, and the
 employee-pool outcomes) live in ``ta_duplicity_job_offer`` — they are decided at
 the Job Offer, not here.
 
+Allow Hiring
+------------
+With "Allow Hiring Even Though It Matches Duplicity Check Settings" ticked, no
+rule here refuses the application. Each refusal is recorded instead (see
+``Gate``), the employee-pool outcomes are checked here too, and a candidate with
+any reason is flagged: the setting and its Hiring Workflow are copied onto the
+application, which the stage engine then follows in place of the opening's
+stages (``hiring_stage.get_applicant_stages``). Their Job Offer goes through the
+setting's Exceptional Approval Workflow. Missing match keys still refuse — that
+is missing data, not a match.
+
 Matching
 --------
 Match keys are Job Applicant fieldnames stored bare by the picker (see
@@ -36,7 +47,7 @@ comparison would only ever match other blank rows.
 
 import frappe
 from frappe import _
-from frappe.utils import add_days, cint, getdate, nowdate
+from frappe.utils import add_days, cint, escape_html, getdate, nowdate, strip_html
 
 ALL_COMPANIES = "All Group Companies"
 
@@ -44,6 +55,12 @@ _ADMIN_ROLES = frozenset({"Administrator", "System Manager"})
 _WITHDRAWN_SUBSTATUS = "Withdrawn by Candidate"
 _REJECTED = "Rejected"
 IJP_SOURCE = "IJP"
+
+# Job Applicant fields stamped when Allow Hiring lets a match through.
+FLAGGED_FIELD = "custom_duplicity_flagged"
+FLAG_SETTING_FIELD = "custom_duplicity_check_setting"
+FLAG_WORKFLOW_FIELD = "custom_duplicity_hiring_workflow"
+FLAG_REASON_FIELD = "custom_duplicity_match_reason"
 
 # Columns read off candidate applications for the in-Python rule evaluation.
 # The custom ones are resolved against the meta before every read: this runs
@@ -142,6 +159,86 @@ def user_can_override(settings):
 	}
 	return bool(roles & allowed)
 
+
+
+# ---------------------------------------------------------------------------
+# Allow Hiring
+# ---------------------------------------------------------------------------
+
+def allows_hiring(settings):
+	"""True when a match lets the candidate through instead of refusing them."""
+	return bool(cint(_setting(settings, "allow_hiring_on_duplicity_match")))
+
+
+class Gate:
+	"""Where a rule's refusal goes.
+
+	Without Allow Hiring it is raised, exactly as before. With it the refusal is
+	recorded instead, and the reasons are what the candidate is flagged with — and,
+	at the offer, what the approver is shown.
+	"""
+
+	def __init__(self, settings):
+		self.allow_hiring = allows_hiring(settings)
+		self.reasons = []
+
+	def refuse(self, message, title):
+		if not self.allow_hiring:
+			frappe.throw(message, title=title)
+		self.add(_("{0}: {1}").format(title, strip_html(message)))
+
+	def add(self, reason):
+		if reason and reason not in self.reasons:
+			self.reasons.append(reason)
+
+	def extend(self, reasons):
+		for reason in reasons or []:
+			self.add(reason)
+
+
+def flag_applicant(applicant, settings, reasons):
+	"""Stamp a new Job Applicant that Allow Hiring let through a match.
+
+	The Hiring Workflow is copied onto the application rather than read off the
+	settings each time, so the candidate stays on the workflow they started on even
+	if the setting is edited mid-pipeline.
+	"""
+	if not reasons:
+		return
+
+	meta = frappe.get_meta("Job Applicant")
+	if not meta.has_field(FLAGGED_FIELD):
+		frappe.log_error(
+			"Allow Hiring let {0} through {1}, but the Job Applicant duplicity fields are "
+			"missing — run bench migrate.".format(applicant.get("applicant_name") or "", settings.name),
+			"Duplicity Check: Allow Hiring fields missing",
+		)
+		return
+
+	workflow = _setting(settings, "hiring_workflow", None)
+	values = {
+		FLAGGED_FIELD: 1,
+		FLAG_SETTING_FIELD: settings.name,
+		FLAG_WORKFLOW_FIELD: workflow,
+		FLAG_REASON_FIELD: "\n".join(reasons),
+	}
+	for fieldname, value in values.items():
+		if meta.has_field(fieldname):
+			applicant.set(fieldname, value)
+
+	# Said to HR only: a candidate applying through a portal must not be shown the
+	# internal reasons their application was flagged for.
+	if frappe.db.get_value("User", frappe.session.user, "user_type") == "System User":
+		frappe.msgprint(
+			_("This candidate matches {0}, and hiring is allowed under it. They will follow "
+			  "hiring workflow {1}, and their Job Offer will need exceptional approval.<br><br>{2}").format(
+				frappe.bold(settings.name),
+				frappe.bold(workflow or _("of the Job Opening")),
+				"<br>".join(escape_html(r) for r in reasons),
+			),
+			title=_("Duplicity Match — Hiring Allowed"),
+			indicator="orange",
+		)
 
 
 # ---------------------------------------------------------------------------
@@ -318,19 +415,32 @@ def check_duplicity(applicant, method=None):
 	if user_can_override(settings):
 		return
 
+	# Not waived by Allow Hiring: without the keys nothing could be checked at all.
 	validate_match_keys_present(applicant, settings)
 
+	gate = Gate(settings)
 	if is_ijp(applicant):
-		_check_ijp(applicant, settings, company)
+		_check_ijp(applicant, settings, company, gate)
 	else:
-		_check_candidate(applicant, settings, company)
+		_check_candidate(applicant, settings, company, gate)
+
+	if not gate.allow_hiring:
+		return
+
+	# The employee-pool outcomes are otherwise decided at the offer. Under Allow
+	# Hiring they are checked here as well, so a matching candidate is on the
+	# controlled workflow from their first stage, not switched onto it at the offer.
+	from recruitment.customizations.ta_rehire_check import controlled_pool_matches, match_reason
+
+	gate.extend(match_reason(m) for m in controlled_pool_matches(applicant, settings))
+	flag_applicant(applicant, settings, gate.reasons)
 
 
 # ---------------------------------------------------------------------------
 # Candidate (external pool) rules
 # ---------------------------------------------------------------------------
 
-def _check_candidate(applicant, settings, company):
+def _check_candidate(applicant, settings, company, gate):
 	or_filters = _or_filters(applicant, match_fields(settings))
 	if not or_filters:
 		return  # No matchable values — nothing this rule set can compare.
@@ -340,6 +450,7 @@ def _check_candidate(applicant, settings, company):
 		return
 
 	_enforce_rejection_cooldown(
+		gate,
 		applicant,
 		rows,
 		cint(_setting(settings, "days_before_candidate_reapplication")),
@@ -368,7 +479,7 @@ def _check_candidate(applicant, settings, company):
 	if not other:
 		return
 
-	frappe.throw(
+	gate.refuse(
 		_("This candidate already has an active application ({0}) for {1}. "
 		  "Applying to multiple positions simultaneously is not permitted{2}.").format(
 			frappe.bold(other[0]["name"]),
@@ -383,12 +494,12 @@ def _check_candidate(applicant, settings, company):
 # IJP (employee applying internally) rules
 # ---------------------------------------------------------------------------
 
-def _check_ijp(applicant, settings, company):
+def _check_ijp(applicant, settings, company, gate):
 	employee = applicant.get("custom_applied_employee")
 	if not employee:
 		# Source says IJP but no employee is linked — the employee-keyed rules
 		# below have nothing to match on, so fall back to the candidate keys.
-		_check_candidate(applicant, settings, company)
+		_check_candidate(applicant, settings, company, gate)
 		return
 
 	rows = _history(applicant, company, employee=employee)
@@ -396,6 +507,7 @@ def _check_ijp(applicant, settings, company):
 		return
 
 	_enforce_rejection_cooldown(
+		gate,
 		applicant,
 		rows,
 		cint(_setting(settings, "days_before_ijp_reapplication_if_rejected")),
@@ -415,7 +527,7 @@ def _check_ijp(applicant, settings, company):
 			last = max(getdate(r.get("creation")) for r in elsewhere)
 			allowed_from = add_days(last, gap)
 			if getdate(nowdate()) < getdate(allowed_from):
-				frappe.throw(
+				gate.refuse(
 					_("You applied via IJP on {0}. A further IJP application to a "
 					  "different job opening is allowed only from {1}.").format(
 						frappe.bold(frappe.utils.formatdate(last)),
@@ -434,7 +546,7 @@ def _check_ijp(applicant, settings, company):
 	if not other:
 		return
 
-	frappe.throw(
+	gate.refuse(
 		_("You already have an active IJP application ({0}) for {1}. Applying to "
 		  "multiple positions via IJP simultaneously is not permitted.").format(
 			frappe.bold(other[0]["name"]),
@@ -448,7 +560,7 @@ def _check_ijp(applicant, settings, company):
 # Shared rule
 # ---------------------------------------------------------------------------
 
-def _enforce_rejection_cooldown(applicant, rows, days, title, message):
+def _enforce_rejection_cooldown(gate, applicant, rows, days, title, message):
 	"""Block reapplication to a job the person was rejected in, for *days* days."""
 	if not days or not applicant.job_title:
 		return
@@ -466,7 +578,7 @@ def _enforce_rejection_cooldown(applicant, rows, days, title, message):
 	if getdate(nowdate()) >= getdate(allowed_from):
 		return
 
-	frappe.throw(
+	gate.refuse(
 		message.format(
 			frappe.bold(applicant.job_title),
 			frappe.bold(frappe.utils.formatdate(allowed_from)),

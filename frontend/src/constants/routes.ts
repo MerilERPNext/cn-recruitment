@@ -9,6 +9,7 @@ export const ROUTES = {
   EMPLOYEE_DOCUMENTS: "/webapp/employee-documents",
   EMPLOYEES_DIRECTORY_ADD: "/webapp/employees-directory/add-employee",
   EMPLOYEES_DIRECTORY_NEW_HIRES: "/webapp/employees-directory/new-hires",
+  EMPLOYEES_DIRECTORY_INITIATE_ONBOARDING: "/webapp/employees-directory/initiate-onboarding",
   SEPARATION: "/webapp/flow-app/separation",
   SEPARATION_DASHBOARD: "/webapp/flow-app/separation-dashboard",
   PERFORMANCE_IMPROVEMENT: "/webapp/flow-app/performance-improvement",

@@ -11,7 +11,10 @@ import {
   AlertTriangle,
   X,
   ChevronRight,
-  ChevronLeft
+  ChevronLeft,
+  Eye,
+  Download,
+  Trash2
 } from "lucide-react";
 import { Form } from "@tsed/react-formio";
 import { useCurrentEmployeeDetails } from "../hooks/useEmployee";
@@ -21,12 +24,15 @@ import Modal from "./shared/Modal";
 import DataListView from "./DataListView";
 import { compileFormioSchema, ApplicationField } from "./Recruitment/referralFormSchemas";
 import toast from "react-hot-toast";
+import { errorResponseFormater } from "../utils/errorResponseFormater";
 import ReferralReviewStep from "./Recruitment/ReferralReviewStep";
 import CardTable from "./shared/CardTable";
 import { Typography } from "./shared/atoms/Typography";
 import { useReferralListColumns } from "../hooks/useReferralDetails";
 import type { ReferralListColumn } from "../types/referral";
 import formatToIndianDate, { formatToIndianDateWithTime } from "../utils/formatToIndianDate";
+import { FilePreviewModal } from "./shared/molecules/FilePreviewModal";
+import { FileTypeIcon, getFileTypeInfo, getFileName } from "../utils/fileUtils";
 
 // ─── Status Modal ────────────────────────────────────────────────────────────
 
@@ -190,6 +196,11 @@ const AddNewReferral: React.FC = () => {
   const pushFormSync = useCallback(() => setFormSyncTick(t => t + 1), []);
   const [uploading, setUploading] = useState(false);
   const [copied, setCopied] = useState(false);
+
+  // Attachment preview: original filenames keyed by field, plus the file open in the viewer
+  const [attachFileNames, setAttachFileNames] = useState<Record<string, string>>({});
+  const [uploadingField, setUploadingField] = useState<string>("");
+  const [previewFile, setPreviewFile] = useState<{ url: string; name: string } | null>(null);
 
   // ── Resume analyzer field state (dummy — AI integration coming later) ──
   const [resumeAnalyzing, setResumeAnalyzing] = useState(false);
@@ -399,17 +410,19 @@ const AddNewReferral: React.FC = () => {
   };
 
   const uploadFile = async (file: File): Promise<string | null> => {
-    const fd = new FormData();
-    fd.append("file", file);
     try {
       setUploading(true);
-      const res = await fetch("/api/method/upload_file", { method: "POST", body: fd });
-      const result = await res.json();
+      const result = await FrappeAPI.uploadFile(file, file.name);
       setUploading(false);
-      return result?.message?.file_url || null;
+      if (!result?.file_url) {
+        toast.error("Upload failed.");
+        return null;
+      }
+      return result.file_url;
     } catch (error) {
       setUploading(false);
       console.error("Upload error", error);
+      errorResponseFormater(error, "Upload failed.", { showToast: true });
       return null;
     }
   };
@@ -1194,22 +1207,25 @@ const AddNewReferral: React.FC = () => {
                             accept=".pdf,.doc,.docx,.txt"
                             onChange={async e => {
                               const file = e.target.files?.[0];
+                              // Reset so picking the same file again still fires onChange
+                              e.target.value = "";
                               if (file) {
                                 if (file.size > 5 * 1024 * 1024) {
                                   toast.error("File exceeds 5MB size limit.");
                                   return;
                                 }
+                                setUploadingField(field.reference_name);
                                 const url = await uploadFile(file);
+                                setUploadingField("");
                                 if (url) {
                                   formDataRef.current = { ...formDataRef.current, [field.reference_name]: url };
                                   setFormData(prev => ({ ...prev, [field.reference_name]: url }));
+                                  setAttachFileNames(prev => ({ ...prev, [field.reference_name]: file.name }));
                                   pushFormSync();
                                   setStepValidationErrors(prev =>
                                     prev.filter(n => n !== field.display_name)
                                   );
                                   toast.success(`${field.display_name} uploaded successfully!`);
-                                } else {
-                                  toast.error("Upload failed.");
                                 }
                               }
                             }}
@@ -1222,12 +1238,84 @@ const AddNewReferral: React.FC = () => {
                           >
                             {formData[field.reference_name] ? "Change File" : "Browse Files"}
                           </label>
-                          {formData[field.reference_name] && (
-                            <div className="flex items-center gap-2 text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-100">
-                              <CheckCircle size={14} /> Attachment Uploaded
-                            </div>
-                          )}
-                          {uploading && (
+                          {(() => {
+                            const fileUrl = formData[field.reference_name];
+                            if (typeof fileUrl !== "string" || !fileUrl) return null;
+
+                            const fileName =
+                              attachFileNames[field.reference_name] || getFileName(fileUrl);
+                            const { category, label, iconColor, bgColor } =
+                              getFileTypeInfo(fileName);
+
+                            return (
+                              <div className="w-full flex items-center gap-3 rounded-xl border border-emerald-100 bg-emerald-50/50 px-3 py-2.5">
+                                {category === "image" ? (
+                                  <img
+                                    src={fileUrl}
+                                    alt={fileName}
+                                    className="w-10 h-10 rounded-lg object-cover border border-gray-200 shrink-0"
+                                  />
+                                ) : (
+                                  <div
+                                    className={`w-10 h-10 rounded-lg ${bgColor} flex items-center justify-center shrink-0`}
+                                  >
+                                    <FileTypeIcon category={category} className={`w-5 h-5 ${iconColor}`} />
+                                  </div>
+                                )}
+
+                                <div className="min-w-0 flex-1 text-left">
+                                  <p className="text-xs font-bold text-gray-800 truncate" title={fileName}>
+                                    {fileName}
+                                  </p>
+                                  <p className="text-[11px] text-emerald-600 font-semibold flex items-center gap-1">
+                                    <CheckCircle size={11} /> Uploaded · {label}
+                                  </p>
+                                </div>
+
+                                <div className="flex items-center gap-1.5 shrink-0">
+                                  <button
+                                    type="button"
+                                    title="View"
+                                    onClick={() => setPreviewFile({ url: fileUrl, name: fileName })}
+                                    className="p-2 rounded-lg border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 transition-colors"
+                                  >
+                                    <Eye size={14} />
+                                  </button>
+                                  <a
+                                    href={fileUrl}
+                                    download={fileName}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    title="Download"
+                                    className="p-2 rounded-lg border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 transition-colors"
+                                  >
+                                    <Download size={14} />
+                                  </a>
+                                  <button
+                                    type="button"
+                                    title="Remove"
+                                    onClick={() => {
+                                      formDataRef.current = {
+                                        ...formDataRef.current,
+                                        [field.reference_name]: "",
+                                      };
+                                      setFormData(prev => ({ ...prev, [field.reference_name]: "" }));
+                                      setAttachFileNames(prev => {
+                                        const next = { ...prev };
+                                        delete next[field.reference_name];
+                                        return next;
+                                      });
+                                      pushFormSync();
+                                    }}
+                                    className="p-2 rounded-lg border border-rose-200 bg-white text-rose-600 hover:bg-rose-50 transition-colors"
+                                  >
+                                    <Trash2 size={14} />
+                                  </button>
+                                </div>
+                              </div>
+                            );
+                          })()}
+                          {uploadingField === field.reference_name && (
                             <p
                               className="text-xs font-bold animate-pulse"
                               style={{ color: "var(--primary-color)" }}
@@ -1407,6 +1495,14 @@ const AddNewReferral: React.FC = () => {
         message={modalMessage}
         onClose={handleCloseModal}
       />
+
+      {previewFile && (
+        <FilePreviewModal
+          fileUrl={previewFile.url}
+          fileName={previewFile.name}
+          onClose={() => setPreviewFile(null)}
+        />
+      )}
     </div>
   );
 };

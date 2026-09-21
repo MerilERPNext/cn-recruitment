@@ -1,7 +1,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, AlertTriangle, RefreshCw, CheckCircle2, ChevronRight, ChevronLeft } from "lucide-react";
+import {
+  ArrowLeft,
+  AlertTriangle,
+  RefreshCw,
+  CheckCircle2,
+  ChevronRight,
+  ChevronLeft,
+} from "lucide-react";
 import { Form } from "@tsed/react-formio";
 import toast from "react-hot-toast";
 
@@ -21,6 +28,7 @@ import NoDataFound from "../../shared/atoms/NoDataFound";
 import Button from "../../shared/atoms/Button";
 import { Typography } from "../../shared/atoms/Typography";
 import { errorResponseFormater } from "../../../utils/errorResponseFormater";
+import { ROUTES } from "../../../constants/routes";
 
 const AddEmployee: React.FC = () => {
   const { isDesktop } = useScreenSize();
@@ -188,7 +196,7 @@ const AddEmployee: React.FC = () => {
   };
 
   // Submit new hire
-  const handleSave = async () => {
+  const handleSave = async (redirectRoute = "/webapp/employees-directory") => {
     const validation = validateAllTabs();
     if (!validation.isValid) {
       if (validation.tabIndex !== undefined && validation.tabIndex !== activeTabIndex) {
@@ -208,14 +216,19 @@ const AddEmployee: React.FC = () => {
 
       const hireName = res?.data?.name || "New Recruit";
       toast.success(`New recruit ${hireName} created successfully!`);
-      navigate("/webapp/employees-directory");
+      navigate(redirectRoute, {
+        state: {
+          recruit: res?.data,
+          formData: formDataRef.current,
+        },
+      });
     } catch (err) {
       const msg = errorResponseFormater(err, "Failed to create new recruit.");
       toast.error(msg);
     }
   };
 
-  // Header & back control
+  // Header & back control (Desktop)
   const headerContent = (
     <div className="flex items-center justify-between pb-4 border-b border-gray-200 mb-4 bg-white px-4 py-3 rounded-lg shadow-sm">
       <div className="flex items-center gap-3">
@@ -242,21 +255,25 @@ const AddEmployee: React.FC = () => {
           </Typography>
         </div>
       </div>
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <Button
-          variant="subtle"
+          variant="outline"
           size="md"
-          onClick={() => navigate("/webapp/employees-directory")}
+          onClick={() => handleSave("/webapp/employees-directory")}
+          loading={isSubmitting}
         >
-          Cancel
+          ASSIGN/SKIP
         </Button>
         <Button
           variant="contain"
           size="md"
-          onClick={handleSave}
-          loading={isSubmitting}
+          onClick={() =>
+            navigate(ROUTES.EMPLOYEES_DIRECTORY_INITIATE_ONBOARDING, {
+              state: { formData: formDataRef.current },
+            })
+          }
         >
-          Submit Recruit
+          ASSIGN AND INITIATE ONBOARDING
         </Button>
       </div>
     </div>
@@ -387,25 +404,26 @@ const AddEmployee: React.FC = () => {
         </div>
 
         {/* Navigation & Action Footer */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 bg-white rounded-xl border border-gray-200 shadow-sm">
-          <Button
-            variant="subtle"
-            size="md"
-            icon={<ChevronLeft className="w-4 h-4" />}
-            onClick={() => {
-              if (activeTabIndex > 0) {
-                setActiveTabIndex((prev) => prev - 1);
-                window.scrollTo({ top: 0, behavior: "smooth" });
-              } else {
-                navigate("/webapp/employees-directory");
-              }
-            }}
-          >
-            {activeTabIndex > 0 ? "Previous Step" : "Cancel"}
-          </Button>
+        <div className="flex flex-col gap-3 p-4 bg-white rounded-xl border border-gray-200 shadow-sm">
+          {/* Top Row: Step Navigation */}
+          <div className="flex items-center justify-between gap-3 w-full">
+            {activeTabIndex > 0 ? (
+              <Button
+                variant="subtle"
+                size="md"
+                icon={<ChevronLeft className="w-4 h-4" />}
+                onClick={() => {
+                  setActiveTabIndex((prev) => prev - 1);
+                  window.scrollTo({ top: 0, behavior: "smooth" });
+                }}
+              >
+                Previous Step
+              </Button>
+            ) : (
+              <div />
+            )}
 
-          <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
-            {activeTabIndex < tabs.length - 1 ? (
+            {activeTabIndex < tabs.length - 1 && (
               <Button
                 variant="contain"
                 size="md"
@@ -414,17 +432,33 @@ const AddEmployee: React.FC = () => {
                 <span>Next Step</span>
                 <ChevronRight className="w-4 h-4 ml-1" />
               </Button>
-            ) : (
-              <Button
-                variant="contain"
-                size="md"
-                icon={<CheckCircle2 className="w-4 h-4" />}
-                onClick={handleSave}
-                loading={isSubmitting}
-              >
-                Submit New Recruit
-              </Button>
             )}
+          </div>
+
+          {/* Bottom Row: Action Buttons on Same Row */}
+          <div className="border-t border-gray-100 pt-3 flex flex-row items-center justify-end gap-3 w-full">
+            <Button
+              variant="outline"
+              size="md"
+              onClick={() => handleSave("/webapp/employees-directory")}
+              loading={isSubmitting}
+              className="flex-1 sm:flex-initial"
+            >
+              ASSIGN/SKIP
+            </Button>
+            <Button
+              variant="contain"
+              size="md"
+              icon={<CheckCircle2 className="w-4 h-4" />}
+              onClick={() =>
+                navigate(ROUTES.EMPLOYEES_DIRECTORY_INITIATE_ONBOARDING, {
+                  state: { formData: formDataRef.current },
+                })
+              }
+              className="flex-1 sm:flex-initial"
+            >
+              ASSIGN AND INITIATE ONBOARDING
+            </Button>
           </div>
         </div>
       </div>
@@ -450,7 +484,16 @@ const AddEmployee: React.FC = () => {
         onBack={() => navigate("/webapp/employees-directory")}
       />
       <main className="flex-grow p-4 max-w-2xl mx-auto w-full">
-        {headerContent}
+        {configData?.form && (
+          <div className="mb-4 flex items-center justify-between bg-white px-3.5 py-2.5 rounded-lg border border-gray-200 shadow-xs">
+            <Typography variant="bodySmall" color="secondary">
+              Intake Form
+            </Typography>
+            <span className="px-2 py-0.5 text-xs font-semibold rounded-md bg-primary-50 text-primary border border-primary-200">
+              {configData.form}
+            </span>
+          </div>
+        )}
         {renderContent()}
       </main>
     </div>

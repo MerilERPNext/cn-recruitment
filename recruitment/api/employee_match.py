@@ -17,7 +17,7 @@ logic of its own.
 import frappe
 from frappe import _
 
-from recruitment.customizations.ta_duplicity_check import get_settings, _setting
+from recruitment.customizations.ta_duplicity_check import allows_hiring, get_settings, _setting
 from recruitment.customizations.ta_rehire_check import ALLOW, find_matches
 
 JOB_APPLICANT = "Job Applicant"
@@ -62,6 +62,9 @@ def get_employee_match(job_applicant):
 		"configured": bool(result.get("settings")),
 		# Whether any of these matches would affect a Job Offer today.
 		"enforced": enforced,
+		# Under Allow Hiring a block does not refuse the offer — it routes it to
+		# the setting's exceptional approval, and the panel must not say otherwise.
+		"allow_hiring": bool(settings) and allows_hiring(settings),
 		"match_fields": result.get("match_fields") or [],
 		"total": len(matches),
 		"attention_count": sum(1 for m in matches if m["verdict"] in ATTENTION),

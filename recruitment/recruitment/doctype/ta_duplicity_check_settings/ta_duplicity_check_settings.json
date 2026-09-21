@@ -31,6 +31,11 @@
   "days_before_ijp_reapplication_if_rejected",
   "column_break_employee",
   "allow_employee_multi_positions_ijp",
+  "allow_hiring_section",
+  "allow_hiring_on_duplicity_match",
+  "column_break_allow_hiring",
+  "hiring_workflow",
+  "exceptional_approval_workflow",
   "override_permissions_section",
   "allow_override_by_admins_and_roles",
   "override_roles"
@@ -197,6 +202,41 @@
    "label": "Allow Member to Apply for Multiple Positions via IJP"
   },
   {
+   "description": "Instead of refusing a candidate who matches any rule above, let the hiring go ahead under closer control: the candidate runs on a separate hiring workflow, and their Job Offer goes through an exceptional approval.",
+   "fieldname": "allow_hiring_section",
+   "fieldtype": "Section Break",
+   "label": "Allow Hiring on Duplicity Match"
+  },
+  {
+   "default": "0",
+   "description": "Every rule in this setting that would block — at application or at Job Offer — lets the candidate through instead, and so does every outcome set to Exceptional Approval. The candidate is flagged on the Job Applicant with the reasons. Outcomes set to Allow Job Offer are unaffected. Override permission holders are never flagged.",
+   "fieldname": "allow_hiring_on_duplicity_match",
+   "fieldtype": "Check",
+   "label": "Allow Hiring Even Though It Matches Duplicity Check Settings"
+  },
+  {
+   "fieldname": "column_break_allow_hiring",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "allow_hiring_on_duplicity_match",
+   "description": "The hiring stages a flagged candidate goes through, in place of the Job Opening's own. Takes effect only while Recruitment Settings -> Enable Hiring Workflow is on.",
+   "fieldname": "hiring_workflow",
+   "fieldtype": "Link",
+   "label": "Hiring Workflow",
+   "mandatory_depends_on": "allow_hiring_on_duplicity_match",
+   "options": "TA Interview Strategy Template"
+  },
+  {
+   "depends_on": "allow_hiring_on_duplicity_match",
+   "description": "The Flow Config that approves a flagged candidate's Job Offer. Set it up with Module Transaction = Job Offer, Trigger Type = Document Event, Doc Event Type = on_update, Doc Event Field = custom_duplicity_approval_trigger, and Value = the Flow Config's own name (for a versioned flow, the name of its first version). Several settings may share one flow.",
+   "fieldname": "exceptional_approval_workflow",
+   "fieldtype": "Link",
+   "label": "Exceptional Approval Workflow",
+   "mandatory_depends_on": "allow_hiring_on_duplicity_match",
+   "options": "Flow Config"
+  },
+  {
    "fieldname": "override_permissions_section",
    "fieldtype": "Section Break",
    "label": "Override Permissions"
@@ -219,7 +259,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-08-24 10:00:00.000000",
+ "modified": "2026-09-15 10:00:00.000000",
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "TA Duplicity Check Settings",

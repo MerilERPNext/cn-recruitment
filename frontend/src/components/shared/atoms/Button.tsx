@@ -16,7 +16,7 @@ export type ButtonColor =
 
 export type ButtonContentAlign = "start" | "center" | "end" | "between";
 
-interface ButtonProps {
+interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   icon?: ReactNode;
   children: ReactNode;
   type?: "button" | "submit" | "reset";
@@ -46,6 +46,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       className = "",
       contentAlign = "center",
       onClick,
+      ...nativeProps
     },
     ref,
   ) => {
@@ -158,6 +159,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
 
     return (
       <button
+        {...nativeProps}
         ref={ref}
         type={type}
         onClick={onClick}
