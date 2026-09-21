@@ -46,6 +46,10 @@ import { ViewAll } from "../../../shared/atoms/ViewAll";
 import Avatar from "../../../shared/Avatar";
 import TableSkeleton from "../../../shared/molecules/Skeletons/TableSkeleton";
 import WrapperHoverCard from "../../../shared/WrapperHoverCard";
+import { useEmployeeDocument } from "../../../../hooks/useEmployeeDocuments";
+import { DocumentItem } from "../../../../types/employeeDocument";
+import { getFileNameFromUrl } from "../../../../utils/urlFormating";
+import { FilePreviewModal } from "../../../shared/molecules/FilePreviewModal";
 
 interface ExtendedEmployeeFields {
   relieving_date?: string | null;
@@ -606,6 +610,26 @@ const ExitPage: React.FC = () => {
     ],
     [supportContacts],
   );
+
+  // 8. Documents, since you joined (Employee Documents API)
+  const [previewFile, setPreviewFile] = useState<{
+    url: string;
+    name: string;
+  } | null>(null);
+
+  const { data: employeeDocuments = [], isLoading: isLoadingDocs } =
+    useEmployeeDocument(effectiveEmployeeId, 1, 20, [], hasSeparation);
+
+  const getFileUrl = (path: string) => {
+    if (!path) return "";
+    if (path.startsWith("http")) return path;
+    const cleanPath = path.startsWith("/") ? path : `/${path}`;
+    return `${window.location.origin}${cleanPath}`;
+  };
+
+  const displayedEmployeeDocs: DocumentItem[] = useMemo(() => {
+    return employeeDocuments.slice(0, 7);
+  }, [employeeDocuments]);
 
   return (
     <div className="w-full p-3.5 sm:p-4 md:p-6 space-y-4 sm:space-y-5">
@@ -1629,89 +1653,103 @@ const ExitPage: React.FC = () => {
                 </>
               )}
             </div>
+
+            {/* Documents, since you joined Card */}
+            <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-5 shadow-xs">
+              <div className="flex items-center justify-between pb-3 mb-2 border-b border-gray-100">
+                <div>
+                  <Typography
+                    variant="subheading"
+                    className="text-gray-900 block font-bold"
+                  >
+                    Documents, since you joined
+                  </Typography>
+                  <Typography
+                    variant="caption"
+                    className="text-gray-500 font-medium block mt-0.5"
+                  >
+                    Service records, policies, and exit certificates
+                  </Typography>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => navigate(ROUTES.EMPLOYEE_DOCUMENTS)}
+                  className="text-xs font-semibold text-primary-700 hover:text-primary-800 hover:underline flex items-center gap-1 transition-colors shrink-0 ml-2"
+                >
+                  View all in My Documents &rarr;
+                </button>
+              </div>
+
+              {isLoadingDocs ? (
+                <div className="space-y-3 py-1">
+                  {[1, 2, 3, 4].map((i) => (
+                    <div
+                      key={i}
+                      className="py-2.5 flex items-center justify-between gap-4 border-b border-gray-100 last:border-b-0 animate-pulse"
+                    >
+                      <div className="h-4 bg-gray-200 rounded w-1/3" />
+                      <div className="h-4 bg-gray-200 rounded w-28" />
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="divide-y divide-gray-100 text-xs">
+                  {displayedEmployeeDocs.length === 0 ? (
+                    <div className="py-6 text-center text-gray-400 font-medium">
+                      No documents found.
+                    </div>
+                  ) : (
+                    displayedEmployeeDocs.map((doc, idx) => {
+                      const docDisplayName =
+                        getFileNameFromUrl(doc.file_name) ||
+                        doc.file_name ||
+                        doc.name;
+                      const uploadDate = doc.creation
+                        ? formatToIndianDate(doc.creation)
+                        : "";
+
+                      return (
+                        <div
+                          key={doc.name || idx}
+                          className="py-3 first:pt-1 last:pb-1 flex items-center justify-between gap-4"
+                        >
+                          <div className="flex items-center gap-2 min-w-0">
+                            <Typography
+                              variant="bodySmall"
+                              className="font-medium text-gray-900 truncate"
+                              title={docDisplayName}
+                            >
+                              {docDisplayName}
+                            </Typography>
+                          </div>
+
+                          <div className="shrink-0 flex items-center gap-2 text-gray-500 font-medium">
+                            {uploadDate && <span>{uploadDate}</span>}
+                            {uploadDate && <span>&middot;</span>}
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setPreviewFile({
+                                  url: getFileUrl(doc.file_name),
+                                  name: docDisplayName,
+                                })
+                              }
+                              className="font-semibold text-primary-700 hover:text-primary-800 hover:underline"
+                            >
+                              View
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Right Column (5 cols) */}
           <div className="lg:col-span-5 space-y-4 sm:space-y-5">
-            {/* Open Items Card */}
-            <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-5 shadow-xs">
-              <Typography
-                variant="subheading"
-                className="text-gray-900 mb-3 block"
-              >
-                Open Items
-              </Typography>
-              {isLoadingOpenItems ? (
-                <div className="grid grid-cols-3 gap-2 sm:gap-2.5">
-                  {[1, 2, 3].map((i) => (
-                    <div
-                      key={i}
-                      className="bg-gray-50/90 p-2.5 sm:p-3 rounded-xl border border-gray-200 flex flex-col items-center justify-center animate-pulse min-h-[84px]"
-                    >
-                      <div className="h-5 w-10 bg-gray-200 rounded mb-2" />
-                      <div className="h-3 w-14 bg-gray-200 rounded mb-1" />
-                      <div className="h-2 w-16 bg-gray-200 rounded" />
-                    </div>
-                  ))}
-                </div>
-              ) : isOpenItemsError ? (
-                <div className="py-3 text-center">
-                  <Typography
-                    variant="caption"
-                    className="text-rose-600 font-medium mb-1.5 block"
-                  >
-                    Failed to load open items
-                  </Typography>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => refetchOpenItems()}
-                  >
-                    Try Again
-                  </Button>
-                </div>
-              ) : (
-                <div className="grid grid-cols-3 gap-2 sm:gap-2.5 text-center">
-                  {openItems.map((item, idx) => (
-                    <div
-                      key={idx}
-                      onClick={
-                        item.type === "tasks" ? handleNavigateToTodo : undefined
-                      }
-                      className={`bg-gray-50/90 p-2.5 sm:p-3 rounded-xl border border-gray-200 flex flex-col items-center justify-center ${
-                        item.type === "tasks"
-                          ? "cursor-pointer hover:bg-gray-100/80 transition-colors"
-                          : ""
-                      }`}
-                    >
-                      <Typography
-                        variant={item.type === "expenses" ? "subheading" : "h3"}
-                        className={`font-bold text-gray-900 leading-tight ${
-                          item.type === "expenses"
-                            ? "text-xs sm:text-sm md:text-base"
-                            : "text-base sm:text-lg md:text-xl"
-                        }`}
-                      >
-                        {item.count}
-                      </Typography>
-                      <Typography
-                        variant="caption"
-                        className="font-bold text-gray-800 mt-1 sm:mt-1.5 block text-[11px] sm:text-xs"
-                      >
-                        {item.label}
-                      </Typography>
-                      <Typography
-                        variant="caption"
-                        className="text-gray-500 font-medium leading-tight mt-0.5 block text-[10px] sm:text-xs"
-                      >
-                        {item.sublabel}
-                      </Typography>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
             {/* Actionables for you Card */}
             <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-5 shadow-xs">
               <div className="flex items-center justify-between pb-3 mb-2 border-b border-gray-100">
@@ -1813,7 +1851,11 @@ const ExitPage: React.FC = () => {
                         variant="caption"
                         className="text-gray-500 font-medium mt-0.5 block"
                       >
-                        {expenseCount} {expenseCount === 1 ? "claim" : "claims"}
+                        {expenseCount}{" "}
+                        {expenseCount === 1 ? "claim" : "claims"}
+                        {relievingDate
+                          ? `, by ${formatToIndianDate(relievingDate)}`
+                          : ""}
                       </Typography>
                     </div>
                     <button
@@ -1824,6 +1866,85 @@ const ExitPage: React.FC = () => {
                       File expenses &rarr;
                     </button>
                   </div>
+                </div>
+              )}
+            </div>
+
+            {/* Open Items Card */}
+            <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-5 shadow-xs">
+              <Typography
+                variant="subheading"
+                className="text-gray-900 mb-3 block"
+              >
+                Open Items
+              </Typography>
+              {isLoadingOpenItems ? (
+                <div className="grid grid-cols-3 gap-2 sm:gap-2.5">
+                  {[1, 2, 3].map((i) => (
+                    <div
+                      key={i}
+                      className="bg-gray-50/90 p-2.5 sm:p-3 rounded-xl border border-gray-200 flex flex-col items-center justify-center animate-pulse min-h-[84px]"
+                    >
+                      <div className="h-5 w-10 bg-gray-200 rounded mb-2" />
+                      <div className="h-3 w-14 bg-gray-200 rounded mb-1" />
+                      <div className="h-2 w-16 bg-gray-200 rounded" />
+                    </div>
+                  ))}
+                </div>
+              ) : isOpenItemsError ? (
+                <div className="py-3 text-center">
+                  <Typography
+                    variant="caption"
+                    className="text-rose-600 font-medium mb-1.5 block"
+                  >
+                    Failed to load open items
+                  </Typography>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => refetchOpenItems()}
+                  >
+                    Try Again
+                  </Button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-3 gap-2 sm:gap-2.5 text-center">
+                  {openItems.map((item, idx) => (
+                    <div
+                      key={idx}
+                      onClick={
+                        item.type === "tasks" ? handleNavigateToTodo : undefined
+                      }
+                      className={`bg-gray-50/90 p-2.5 sm:p-3 rounded-xl border border-gray-200 flex flex-col items-center justify-center ${
+                        item.type === "tasks"
+                          ? "cursor-pointer hover:bg-gray-100/80 transition-colors"
+                          : ""
+                      }`}
+                    >
+                      <Typography
+                        variant={item.type === "expenses" ? "subheading" : "h3"}
+                        className={`font-bold text-gray-900 leading-tight ${
+                          item.type === "expenses"
+                            ? "text-xs sm:text-sm md:text-base"
+                            : "text-base sm:text-lg md:text-xl"
+                        }`}
+                      >
+                        {item.count}
+                      </Typography>
+                      <Typography
+                        variant="caption"
+                        className="font-bold text-gray-800 mt-1 sm:mt-1.5 block text-[11px] sm:text-xs"
+                      >
+                        {item.label}
+                      </Typography>
+                      <Typography
+                        variant="caption"
+                        className="text-gray-500 font-medium leading-tight mt-0.5 block text-[10px] sm:text-xs"
+                      >
+                        {item.sublabel}
+                      </Typography>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>
@@ -1976,6 +2097,15 @@ const ExitPage: React.FC = () => {
           setSelectedReporteeForChange(null);
         }}
       />
+
+      {/* Document File Preview Modal */}
+      {previewFile && (
+        <FilePreviewModal
+          fileUrl={previewFile.url}
+          fileName={previewFile.name}
+          onClose={() => setPreviewFile(null)}
+        />
+      )}
     </div>
   );
 };
