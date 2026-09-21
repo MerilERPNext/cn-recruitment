@@ -211,6 +211,19 @@ def handle_doj_outcome(doc, method=None):
 
 def _doj_joined(doc):
     if doc.get("employee"):
+        if frappe.db.get_value("Employee", doc.employee, "status") == "Pending":
+            # A New Hire held at Pending. Saved through the document, not
+            # db.set_value: the role grants in cn_hrms_core hang off
+            # Employee.on_update, and a raw write fires none of them — the
+            # joiner would be Active with no access. Same as activate_employee.
+            from recruitment.api.new_hire import STAGE_FIELD
+
+            employee = frappe.get_doc("Employee", doc.employee)
+            employee.status = "Active"
+            if employee.meta.has_field(STAGE_FIELD):
+                employee.set(STAGE_FIELD, "Completed")
+            employee.save(ignore_permissions=True)
+            return
         # Already created — just ensure status is Active.
         frappe.db.set_value("Employee", doc.employee, "status", "Active")
         return
