@@ -32,6 +32,7 @@ import {
   useGetSeparationOpenItems,
   useGetSeparationWorkflowStages,
 } from "../../../../hooks/useSeparation";
+import { useMyPendingTaskCounts } from "../../../../hooks/useTasks";
 import { useTodoCategories } from "../../../../hooks/useTodo";
 import { getFlowConfigOthersTriggerList } from "../../../../services/flowsService";
 import { formatCurrency } from "../../../../utils/currency";
@@ -167,6 +168,37 @@ const ExitPage: React.FC = () => {
     }
     navigate(
       `/webapp/todo-app${params.toString() ? `?${params.toString()}` : ""}`,
+    );
+  };
+
+  const handleNavigateToAttendance = () => {
+    const params = new URLSearchParams();
+    if (targetEmployeeId) {
+      params.set("target_user", targetEmployeeId);
+    }
+    navigate(
+      `/webapp/attendance/attendance-request${params.toString() ? `?${params.toString()}` : ""}`,
+    );
+  };
+
+  const handleNavigateToLeave = () => {
+    const params = new URLSearchParams();
+    if (targetEmployeeId) {
+      params.set("target_user", targetEmployeeId);
+    }
+    navigate(
+      `/webapp/leave-app/leaves/leave-requests/my${params.toString() ? `?${params.toString()}` : ""}`,
+    );
+  };
+
+  const handleNavigateToExpenses = () => {
+    const params = new URLSearchParams();
+    if (targetEmployeeId) {
+      params.set("target_user", targetEmployeeId);
+    }
+    navigate(
+      `/webapp/expenses-app/expenses-list${params.toString() ? `?${params.toString()}` : ""}`,
+      { state: { initialFilter: "Pending" } },
     );
   };
   const { data: currentEmployee } = useCurrentEmployeeDetails({
@@ -456,7 +488,17 @@ const ExitPage: React.FC = () => {
       ? supportContacts.manager.name
       : currentEmployee?.reports_to || "Reporting Manager";
 
-  // 4. Open Items (Live Open Tasks, Attendance Flags, & Expenses Due)
+  // 4. Actionables for you (Pending Attendance Requests, Leave Requests, and Expense Claims)
+  const {
+    attendanceCount,
+    leaveCount,
+    expenseCount,
+    isLoading: isLoadingActionables,
+    isError: isActionablesError,
+    refetch: refetchActionables,
+  } = useMyPendingTaskCounts(effectiveEmployeeId, hasSeparation);
+
+  // 5. Open Items (Live Open Tasks, Attendance Flags, & Expenses Due)
   const {
     data: openItemsData,
     isLoading: isLoadingOpenItems,
@@ -505,7 +547,7 @@ const ExitPage: React.FC = () => {
     ],
   );
 
-  // 5. Clearance Department Status (Separation Workflow Stages from API)
+  // 6. Clearance Department Status (Separation Workflow Stages from API)
   const {
     data: workflowStagesData,
     isLoading: isLoadingStages,
@@ -515,7 +557,7 @@ const ExitPage: React.FC = () => {
 
   const workflowStages = workflowStagesData?.workflow_stages || [];
 
-  // 6. Full and Final Settlement Estimate
+  // 7. Full and Final Settlement Estimate
   const {
     data: fnfEstimate,
     isLoading: isLoadingFnf,
@@ -1666,6 +1708,122 @@ const ExitPage: React.FC = () => {
                       </Typography>
                     </div>
                   ))}
+                </div>
+              )}
+            </div>
+
+            {/* Actionables for you Card */}
+            <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-5 shadow-xs">
+              <div className="flex items-center justify-between pb-3 mb-2 border-b border-gray-100">
+                <Typography
+                  variant="subheading"
+                  className="text-gray-900 block font-bold"
+                >
+                  Actionables for you
+                </Typography>
+                {isActionablesError && (
+                  <button
+                    type="button"
+                    onClick={() => refetchActionables()}
+                    className="text-xs font-semibold text-primary-700 hover:text-primary-800 hover:underline"
+                  >
+                    Retry
+                  </button>
+                )}
+              </div>
+
+              {isLoadingActionables ? (
+                <div className="space-y-3 py-1">
+                  {[1, 2, 3].map((i) => (
+                    <div
+                      key={i}
+                      className="py-2.5 flex items-center justify-between gap-4 border-b border-gray-100 last:border-b-0 animate-pulse"
+                    >
+                      <div className="space-y-1.5 w-1/2">
+                        <div className="h-4 bg-gray-200 rounded w-3/4" />
+                        <div className="h-3 bg-gray-200 rounded w-1/4" />
+                      </div>
+                      <div className="h-4 bg-gray-200 rounded w-28" />
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="divide-y divide-gray-100">
+                  {/* Attendance */}
+                  <div className="py-3 first:pt-1 last:pb-1 flex items-center justify-between gap-4">
+                    <div>
+                      <Typography
+                        variant="bodySmall"
+                        className="font-medium text-gray-900 block"
+                      >
+                        Attendance flags to review
+                      </Typography>
+                      <Typography
+                        variant="caption"
+                        className="text-gray-500 font-medium mt-0.5 block"
+                      >
+                        {attendanceCount}{" "}
+                        {attendanceCount === 1 ? "flag" : "flags"}
+                      </Typography>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleNavigateToAttendance}
+                      className="text-xs font-semibold text-primary-700 hover:text-primary-800 hover:underline flex items-center gap-1 transition-colors shrink-0"
+                    >
+                      Review attendance &rarr;
+                    </button>
+                  </div>
+
+                  {/* Leave */}
+                  <div className="py-3 first:pt-1 last:pb-1 flex items-center justify-between gap-4">
+                    <div>
+                      <Typography
+                        variant="bodySmall"
+                        className="font-medium text-gray-900 block"
+                      >
+                        Leave request pending approval
+                      </Typography>
+                      <Typography
+                        variant="caption"
+                        className="text-gray-500 font-medium mt-0.5 block"
+                      >
+                        {leaveCount} {leaveCount === 1 ? "request" : "requests"}
+                      </Typography>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleNavigateToLeave}
+                      className="text-xs font-semibold text-primary-700 hover:text-primary-800 hover:underline flex items-center gap-1 transition-colors shrink-0"
+                    >
+                      View leave request &rarr;
+                    </button>
+                  </div>
+
+                  {/* Expense */}
+                  <div className="py-3 first:pt-1 last:pb-1 flex items-center justify-between gap-4">
+                    <div>
+                      <Typography
+                        variant="bodySmall"
+                        className="font-medium text-gray-900 block"
+                      >
+                        Expense claims due
+                      </Typography>
+                      <Typography
+                        variant="caption"
+                        className="text-gray-500 font-medium mt-0.5 block"
+                      >
+                        {expenseCount} {expenseCount === 1 ? "claim" : "claims"}
+                      </Typography>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleNavigateToExpenses}
+                      className="text-xs font-semibold text-primary-700 hover:text-primary-800 hover:underline flex items-center gap-1 transition-colors shrink-0"
+                    >
+                      File expenses &rarr;
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
