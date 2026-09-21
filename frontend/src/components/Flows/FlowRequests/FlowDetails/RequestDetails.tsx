@@ -558,7 +558,7 @@ const RequestDetails: React.FC = () => {
           <div className="rounded-xl border border-gray-200/80 overflow-hidden shadow-[0_1px_3px_rgba(0,0,0,0.04)] bg-white">
             <button
               onClick={() => setApprovalExpanded((prev) => !prev)}
-              className="w-full flex items-center justify-between px-5 sm:px-6 py-3.5 sm:py-4 bg-gradient-to-r from-primary-50/60 to-white hover:from-primary-50 hover:to-primary-50/30 transition-all duration-200 group border-l-[3px] border-l-primary-500"
+              className={`w-full sm:mb-0 ${approvalExpanded ? "mb-2" : "mb-0"} flex items-center justify-between px-5 sm:px-6 py-3.5 sm:py-4 bg-gradient-to-r from-primary-50/60 to-white hover:from-primary-50 hover:to-primary-50/30 transition-all duration-200 group border-l-[3px] border-l-primary-500`}
             >
               <div className="flex items-center gap-3 flex-wrap">
                 <span className="text-[13px] sm:text-[15px] font-semibold text-gray-800">
