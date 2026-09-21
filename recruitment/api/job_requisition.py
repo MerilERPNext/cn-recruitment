@@ -111,6 +111,9 @@ PARENT_READONLY_FIELDS = (
     "custom_active_requisitions",
     "custom_active_openings",
     "custom_headcount_last_updated",
+    # Set by recruitment.api.requisition_budget when the Department / Cost Center
+    # budget left no longer covers this live requisition.
+    "custom_over_budget",
 )
 
 # Fields that Frappe / workflow engine controls — never written by this API.
@@ -294,9 +297,11 @@ def _group_positions_by_location(positions):
 def _group_openings_by_region(regions):
     """Fresher flow: total openings per region, preserving first-seen order.
 
-    Mirrors _group_positions_by_location but for the `custom_regions` table —
-    multiple rows for the same region are summed so one Job Requisition is
-    created per unique region carrying that region's total openings."""
+    Mirrors _group_positions_by_location but for the `custom_regions` table.
+    This is a DE-DUPLICATION, not a split: a Fresher submission produces ONE
+    requisition carrying one row per unique region, so two rows naming the same
+    region are summed into that region's single row rather than fighting over it.
+    """
     totals, order = {}, []
     for r in regions:
         region = r["region"]
@@ -305,6 +310,35 @@ def _group_openings_by_region(regions):
             order.append(region)
         totals[region] += int(r.get("no_of_openings") or 0)
     return [(region, totals[region]) for region in order]
+
+
+# The per-region fields the Hiring Lead fills in during approval. Listed once
+# because three places have to agree on them: the update endpoint that accepts
+# them, the readiness gate that requires them, and the Job Opening that is built
+# from them.
+REGION_HIRING_LEAD_FIELDS = ("fixed_pay", "variable_pay", "recruiter")
+
+
+def _region_row(r):
+    """One `custom_regions` row from a payload dict.
+
+    Carries the requester's ask (region + openings) AND the Hiring Lead's
+    additions (fixed pay, variable pay, recruiter) — the latter only when the
+    payload actually names them, so an update that touches openings alone cannot
+    silently wipe pay that was already agreed.
+
+    `job_opening` is never taken from a payload: it is written by
+    `recruitment.customizations.fresher_openings` and is the record of what the
+    system created, not an input.
+    """
+    row = {"region": r["region"], "no_of_openings": frappe.utils.cint(r.get("no_of_openings"))}
+    for fieldname in REGION_HIRING_LEAD_FIELDS:
+        if fieldname in r:
+            value = r.get(fieldname)
+            row[fieldname] = (
+                frappe.utils.flt(value) if fieldname != "recruiter" else (value or None)
+            )
+    return row
 
 
 def _bypass_hrms_duplicate_check(doc):
@@ -424,13 +458,14 @@ def _drop_invalid_link_values(doc, payload):
     existing record, so a stray value never fails the whole save with a
     LinkValidationError.
 
-    This guards two common frontend mistakes:
-      - `custom_job_description_template` (Link → Job Description) receiving the
-        rendered JD *HTML* instead of a JD name.
-      - `custom_preferred_company` (Link → Preferred Target Company) receiving a
-        free-text company name that isn't in that master yet.
-    The offending field is simply not written (and logged); everything else on
-    the requisition still saves.
+    The classic case it guards is `custom_job_description_template`
+    (Link → Job Description) receiving the rendered JD *HTML* instead of a JD
+    name. The offending field is simply not written (and logged); everything
+    else on the requisition still saves.
+
+    Only Link fields pass through here. `custom_preferred_company` used to be
+    one and is now a Table MultiSelect — the same "drop the unknown value, keep
+    the save" rule lives in `_apply_preferred_companies` for it.
     """
     meta = doc.meta
     for field in _get_writable_parent_fields(doc):
@@ -641,6 +676,54 @@ def _apply_skills(doc, payload):
             doc.append("custom_skills", {"skill": skill_name})
 
 
+PREFERRED_COMPANY_FIELD = "custom_preferred_company"
+PREFERRED_COMPANY_MASTER = "Preferred Target Company"
+
+
+def _apply_preferred_companies(doc, payload):
+    """Fill `custom_preferred_company` (Table MultiSelect → Job Requisition
+    Preferred Company) — the multi-select twin of _apply_skills.
+
+    Accepts every shape a client might send: a list of IDs (["Infosys"]), a
+    list of child-row dicts ([{"preferred_company": "Infosys"}]), or the bare
+    string this field carried while it was still a single Link. Duplicates are
+    collapsed, and an ID that isn't in the Preferred Target Company master is
+    dropped (and logged) rather than failing the whole save — exactly what
+    _drop_invalid_link_values did for it as a Link field.
+
+    Unlike _apply_skills this does NOT clear the table when the payload omits
+    the field: while it was a Link, an update that didn't mention it left the
+    value alone, and callers that partially update a requisition still rely on
+    that. Send an explicit `[]` to clear it.
+    """
+    if not _has_table_field(doc, PREFERRED_COMPANY_FIELD):
+        return
+
+    value = payload.get(PREFERRED_COMPANY_FIELD)
+    if value in (None, ""):
+        return
+    rows = [value] if isinstance(value, str) else _list_field(payload, PREFERRED_COMPANY_FIELD)
+
+    doc.set(PREFERRED_COMPANY_FIELD, [])
+    seen = set()
+    for row in rows:
+        company = (row.get("preferred_company") or row.get("name")) if isinstance(row, dict) else row
+        if not isinstance(company, str):
+            continue
+        company = company.strip()
+        if not company or company in seen:
+            continue
+        if not frappe.db.exists(PREFERRED_COMPANY_MASTER, company):
+            frappe.logger().info(
+                "create/update Job Requisition: dropping unknown preferred company {0!r}".format(
+                    company[:80]
+                )
+            )
+            continue
+        seen.add(company)
+        doc.append(PREFERRED_COMPANY_FIELD, {"preferred_company": company})
+
+
 def _sanitize_cv(value):
     """Normalize the candidate `cv` payload to a file URL or empty string.
 
@@ -757,6 +840,67 @@ def _sync_positions_from_regions(doc):
     )
 
 
+def enforce_fresher_region_readiness(doc, method=None):
+    """`validate` hook — a Fresher requisition may not be approved half-filled.
+
+    The requester states only WHERE and HOW MANY. Fixed pay, variable pay and the
+    recruiter are the Hiring Lead's to add while the requisition is still
+    Approval Pending, and every one of them is needed the moment it is approved:
+    each region's Job Opening is built from that row (see
+    `recruitment.customizations.fresher_openings`), and an opening with no
+    recruiter belongs to nobody while one with no pay cannot be posted.
+
+    Enforced on the TRANSITION into an approved status only — not on every later
+    save. Once past the gate the requisition keeps being saved (the opening names
+    are stamped back onto these very rows), and re-running the check there would
+    make an already-approved requisition unable to record its own openings.
+    Documents created directly in an approved state — seeds, fixtures, imports —
+    never crossed the gate and are likewise left alone.
+
+    Fresher only: Lateral requisitions hold no region rows and are untouched.
+    """
+    if (doc.get("custom_hiring_type") or "").strip() != HIRING_TYPE_FRESHER:
+        return
+    if doc.get("status") not in _REQUISITION_APPROVED_STATUSES:
+        return
+    if doc.is_new():
+        return
+
+    before = doc.get_doc_before_save()
+    if not before or before.get("status") in _REQUISITION_APPROVED_STATUSES:
+        return
+
+    rows = doc.get("custom_regions") or []
+    if not rows:
+        return
+
+    region_meta = frappe.get_meta("Job Requisition Region")
+    labels = {
+        fieldname: region_meta.get_label(fieldname) or fieldname
+        for fieldname in REGION_HIRING_LEAD_FIELDS
+    }
+
+    # A zero pay reads as "not filled in": Currency defaults to 0, so there is no
+    # way to tell a deliberate zero from an untouched field, and letting 0 through
+    # would post an opening with no compensation on it.
+    incomplete = []
+    for row in rows:
+        missing = [
+            labels[fieldname]
+            for fieldname in REGION_HIRING_LEAD_FIELDS
+            if not row.get(fieldname)
+        ]
+        if missing:
+            incomplete.append("{0}: {1}".format(row.region or _("(no region)"), ", ".join(missing)))
+
+    if incomplete:
+        frappe.throw(
+            _("This requisition cannot be approved until every region has its "
+              "recruiter and pay filled in. Still missing — {0}.").format("; ".join(incomplete)),
+            title=_("Region details incomplete"),
+        )
+
+
 def _default_jd_name():
     """The configured default Job Description, Active versions only.
 
@@ -850,6 +994,7 @@ def _build_requisition_doc(payload, positions_for_location):
 
     _apply_qualifications(doc, payload)
     _apply_skills(doc, payload)
+    _apply_preferred_companies(doc, payload)
     _apply_pre_screened(doc, payload)
 
     parent_vacancy = payload.get("custom_type_of_position")
@@ -864,15 +1009,24 @@ def _build_requisition_doc(payload, positions_for_location):
     return doc
 
 
-def _build_region_requisition_doc(payload, region, openings):
-    """Construct an unsaved Job Requisition for one region (Fresher flow).
+def _build_fresher_requisition_doc(payload, groups):
+    """Construct the single unsaved Job Requisition for a Fresher submission.
 
-    Parallels _build_requisition_doc but for the region grouping:
-      - carries a single `custom_regions` row (this region + its openings),
-      - leaves `custom_position_details` empty (Fresher requisitions don't use
-        the position/location table),
-      - `no_of_positions` = openings for this region,
+    A Fresher requisition hires across several regions at once and is ONE
+    document: `groups` (region, openings pairs from `_group_openings_by_region`)
+    becomes one `custom_regions` row each. It used to be one requisition per
+    region, which scattered a single ask across N documents that then had to be
+    approved, tracked and reported on N times over.
+
+    Parallels _build_requisition_doc but for the region shape:
+      - fills `custom_regions`, leaves `custom_position_details` empty (Fresher
+        requisitions don't use the position/location table),
+      - `no_of_positions` = total openings across every region,
       - `custom_type_of_position` = "New" — every Fresher requisition is New.
+
+    Per-region pay and recruiter are deliberately NOT set here: the requester
+    only states where and how many, and the Hiring Lead fills the rest during
+    approval (see `enforce_fresher_region_readiness`).
 
     sync_no_of_positions / validate_requisition_settings both no-op when
     `custom_position_details` is empty, so these values are preserved on save."""
@@ -882,7 +1036,7 @@ def _build_region_requisition_doc(payload, region, openings):
     _apply_parent_fields(doc, payload)
     _ensure_description(doc, payload)
 
-    doc.no_of_positions = openings
+    doc.no_of_positions = sum(openings for _region, openings in groups)
     doc.custom_type_of_position = "New"
     if not doc.get("custom_hiring_type"):
         doc.custom_hiring_type = HIRING_TYPE_FRESHER
@@ -891,9 +1045,11 @@ def _build_region_requisition_doc(payload, region, openings):
 
     _apply_qualifications(doc, payload)
     _apply_skills(doc, payload)
+    _apply_preferred_companies(doc, payload)
     _apply_pre_screened(doc, payload)
 
-    doc.append("custom_regions", {"region": region, "no_of_openings": openings})
+    for region, openings in groups:
+        doc.append("custom_regions", {"region": region, "no_of_openings": openings})
 
     return doc
 
@@ -926,6 +1082,10 @@ _LAYOUT_TYPES = frozenset({
 _SKIP_FIELDNAMES = frozenset({
     "naming_series", "amended_from", "amendment_date",
     "status", "workflow_state",
+    # Derived mirrors of the Regions / Position Details tables — filled on save,
+    # never entered, so they would only render as empty read-only boxes on the
+    # requisition form.
+    "custom_region", "custom_position_location",
 })
 
 # `applies_to` value (config) → parent Table fieldname on Job Requisition.
@@ -1235,6 +1395,54 @@ def _is_hiring_manager_locked(fieldname):
 	return True
 
 
+SALARY_TIMEFRAME_FIELD = "custom_salary_timeframe"
+SALARY_MIN_FIELD = "custom_salary_range_min"
+SALARY_MAX_FIELD = "custom_salary_range_max"
+
+
+def _to_amount(value):
+    """Salary min/max are free-text `Data` fields — parse one to a number, or
+    None when it is blank / not a number (never raises)."""
+    if value in (None, ""):
+        return None
+    try:
+        return float(str(value).replace(",", "").strip())
+    except (TypeError, ValueError):
+        return None
+
+
+def _limits_from_rows(rows):
+    """Recruitment Settings -> Salary Range Limits rows as
+    `{timeframe: {"min": x|None, "max": y|None}}`.
+
+    A blank (or zero) end means that end is unrestricted, and a timeframe with
+    no row is simply absent from the map — so an unconfigured site gets `{}` and
+    neither the form config nor the save-time check changes anything."""
+    limits = {}
+    for row in rows or []:
+        timeframe = (row.get("salary_timeframe") or "").strip()
+        if not timeframe:
+            continue
+        low = frappe.utils.flt(row.get("min_amount"))
+        high = frappe.utils.flt(row.get("max_amount"))
+        limits[timeframe] = {
+            "min": low if low > 0 else None,
+            "max": high if high > 0 else None,
+        }
+    return limits
+
+
+@frappe.request_cache
+def _salary_range_limits():
+    """`_limits_from_rows` over the live Recruitment Settings doc. Guarded so a
+    site that hasn't migrated the new child table yet just gets `{}`."""
+    try:
+        settings = frappe.get_cached_doc("Recruitment Settings")
+    except Exception:
+        return {}
+    return _limits_from_rows(settings.get("salary_range_limits"))
+
+
 def _build_form_config(doc=None, hiring_type=None):
     """Meta-first tabs → sections → fields tree for the Job Requisition form,
     with the single settings doc's overrides applied. Parent fields come from
@@ -1266,6 +1474,13 @@ def _build_form_config(doc=None, hiring_type=None):
     # None = don't filter by hiring type (feature off, or caller didn't name one).
     selected = _resolve_selected_hiring_type(settings, hiring_type)
     meta = frappe.get_meta(JOB_REQUISITION)
+
+    # Recruitment Settings -> Salary Range Limits. The active timeframe is the
+    # requisition's own on an edit; on a blank form there is none yet, so the
+    # field's min/max start empty and the UI re-reads them from
+    # `limits_by_timeframe` when the user picks a timeframe (no refetch needed).
+    salary_limits = _salary_range_limits()
+    active_timeframe = (doc.get(SALARY_TIMEFRAME_FIELD) if doc is not None else "") or ""
 
     tab_order, tab_map = [], {}
     current_tab, current_section = "", ""
@@ -1321,6 +1536,14 @@ def _build_form_config(doc=None, hiring_type=None):
             # switch, not a per-field presentation choice, so a settings-doc
             # "Editable" override must not be able to unlock it.
             entry["read_only"] = 1
+
+        if df.fieldname in (SALARY_MIN_FIELD, SALARY_MAX_FIELD):
+            # Bounds for the timeframe already on the requisition. On a create
+            # call there is none yet, so both stay null and the form reads the
+            # top-level `salary_limits` map once the user picks a timeframe.
+            bounds = salary_limits.get(active_timeframe) or {}
+            entry["min"] = bounds.get("min")
+            entry["max"] = bounds.get("max")
 
         if doc is not None:
             entry["value"] = doc.get(df.fieldname)
@@ -1417,6 +1640,16 @@ def _build_form_config(doc=None, hiring_type=None):
         "allow_hiring_manager_override": frappe.utils.cint(
             frappe.db.get_single_value("Recruitment Settings", "allow_hiring_manager_override")
         ),
+        # Recruitment Settings -> "Max number of positions per requisition", so
+        # the form can cap the position rows client-side instead of letting the
+        # save fail on `_enforce_max_positions`. 0 means no limit, same as there.
+        "max_positions_per_requisition": frappe.utils.cint(
+            frappe.db.get_single_value("Recruitment Settings", "max_positions_per_requisition")
+        ),
+        # Recruitment Settings -> Salary Range Limits, keyed by Salary Timeframe.
+        # Same numbers the save-time check uses, so the form can show the error
+        # before the request instead of after it. `{}` = nothing configured.
+        "salary_limits": salary_limits,
         "tabs": tabs,
         "child_groups": child_groups,
     }
@@ -1440,6 +1673,7 @@ def get_job_requisition_form_config(name=None, hiring_type=None):
 
     Returns the project response envelope with
     `{settings, restrict_to_configured, basis_hiring_type, hiring_type,
+    allow_hiring_manager_override, max_positions_per_requisition,
     tabs:[{tab, sections:[{section, fields:[...]}]}], child_groups}`.
     """
     try:
@@ -1769,10 +2003,12 @@ def create_job_requisition(payload=None):
     """
     Submit a Job Requisition.
 
-    Groups `custom_position_details` rows by `location` and creates one fresh
-    JR per unique location, each holding only that location's positions. Each
-    submission is independent — positions are never merged into requisitions
-    created by an earlier submission.
+    Lateral groups `custom_position_details` rows by `location` and creates one
+    fresh JR per unique location, each holding only that location's positions.
+
+    Fresher creates exactly ONE requisition holding every region it hires in, as
+    one `custom_regions` row per unique region. Each submission is independent —
+    nothing is merged into requisitions created by an earlier submission.
 
     Returns:
         {
@@ -1781,6 +2017,7 @@ def create_job_requisition(payload=None):
           "data": {
             "requisitions": [
               {"name": "HR-HIREQ-...", "location": "Pune", "positions_count": 2, "action": "created"},
+              {"name": "HR-HIREQ-...", "regions": ["North", "West"], "positions_count": 8, "action": "created"},
               ...
             ]
           }
@@ -1798,8 +2035,8 @@ def create_job_requisition(payload=None):
 
         fresher = _is_fresher(payload)
         if fresher:
-            # Fresher flow: group the `custom_regions` rows by region and create
-            # one requisition per unique region.
+            # Fresher flow: de-duplicate the `custom_regions` rows to one row per
+            # region — all of which live on a single requisition.
             groups = _group_openings_by_region(_list_field(payload, "custom_regions"))
         else:
             # Lateral (default) flow — unchanged.
@@ -1810,22 +2047,22 @@ def create_job_requisition(payload=None):
         savepoint = "create_job_requisition"
         frappe.db.savepoint(savepoint)
         try:
-            # One fresh Job Requisition per group in THIS submission — by location
-            # for Lateral, by region for Fresher. Each carries only its own group's
-            # data. We deliberately do NOT merge into requisitions from earlier
-            # submissions — every submit stands on its own.
+            # Lateral: one fresh Job Requisition per location group in THIS
+            # submission, each carrying only its own group's positions.
+            # Fresher: a single requisition carrying every region.
+            # Either way we deliberately do NOT merge into requisitions from
+            # earlier submissions — every submit stands on its own.
             if fresher:
-                for region, openings in groups:
-                    doc = _build_region_requisition_doc(payload, region, openings)
-                    doc.insert(ignore_permissions=False)
-                    results.append(
-                        {
-                            "name": doc.name,
-                            "region": region,
-                            "positions_count": openings,
-                            "action": "created",
-                        }
-                    )
+                doc = _build_fresher_requisition_doc(payload, groups)
+                doc.insert(ignore_permissions=False)
+                results.append(
+                    {
+                        "name": doc.name,
+                        "regions": [region for region, _openings in groups],
+                        "positions_count": doc.no_of_positions,
+                        "action": "created",
+                    }
+                )
             else:
                 for location, group_positions in groups:
                     doc = _build_requisition_doc(payload, group_positions)
@@ -2181,11 +2418,22 @@ def _serialise_requisition(doc):
         {
             "region": row.get("region"),
             "no_of_openings": row.get("no_of_openings"),
+            # What the Hiring Lead fills in during approval, and what each
+            # region's Job Opening is then built from.
+            "fixed_pay": row.get("fixed_pay") or 0,
+            "variable_pay": row.get("variable_pay") or 0,
+            "recruiter": row.get("recruiter"),
+            # The opening this region produced, once the requisition went
+            # Approved Active. Read-only: written by the system.
+            "job_opening": row.get("job_opening"),
             # Per-region existing strength / live demand, so the UI can show each
             # region's "asking for N, already have M" line next to its ask.
             "active_employees": row.get("active_employees") or 0,
             "active_requisitions": row.get("active_requisitions") or 0,
             "active_openings": row.get("active_openings") or 0,
+            # Child row name, so a caller updating one region's pay/recruiter can
+            # address the row it means rather than matching on region alone.
+            "row_name": row.get("name"),
         }
         for row in doc.get("custom_regions") or []
     ]
@@ -2455,16 +2703,30 @@ def update_job_requisition(name=None, payload=None):
         # create, update targets one existing requisition, so rows are replaced
         # in place (no re-grouping/splitting). `no_of_positions` becomes the sum
         # of the openings and the type stays "New".
+        #
+        # This is also the endpoint the Hiring Lead's ToDo uses to set each
+        # region's fixed pay, variable pay and recruiter — so the rewrite carries
+        # forward whatever the payload does NOT mention, keyed by region. Without
+        # that, a caller sending only openings would wipe agreed pay, and (worse)
+        # clear `job_opening`, letting a second opening be raised for a region
+        # that already has one.
         if "custom_regions" in payload:
             regions = _list_field(payload, "custom_regions")
+            existing = {
+                row.region: row for row in (doc.get("custom_regions") or []) if row.region
+            }
             doc.set("custom_regions", [])
             total_openings = 0
             for r in regions:
                 if not isinstance(r, dict) or not r.get("region"):
                     continue
-                openings = int(r.get("no_of_openings") or 0)
-                total_openings += openings
-                doc.append("custom_regions", {"region": r["region"], "no_of_openings": openings})
+                row = _region_row(r)
+                previous = existing.get(row["region"])
+                if previous:
+                    for fieldname in REGION_HIRING_LEAD_FIELDS + ("job_opening",):
+                        row.setdefault(fieldname, previous.get(fieldname))
+                total_openings += row["no_of_openings"]
+                doc.append("custom_regions", row)
             if doc.get("custom_regions"):
                 doc.no_of_positions = total_openings
                 doc.custom_type_of_position = "New"
@@ -2474,6 +2736,8 @@ def update_job_requisition(name=None, payload=None):
             _apply_qualifications(doc, payload)
         if "custom_skills" in payload:
             _apply_skills(doc, payload)
+        if "custom_preferred_company" in payload:
+            _apply_preferred_companies(doc, payload)
         if "custom_pre_screened_candidates" in payload:
             _apply_pre_screened(doc, payload)
 
@@ -3194,19 +3458,24 @@ def get_allowed_replacement_employee_statuses():
 
 
 @frappe.whitelist()
-def get_hiring_lead_options(company=None, employee=None, search_text=None, query=None, txt=None, limit=20, include=None):
+def get_hiring_lead_options(company=None, employee=None, search_text=None, query=None, txt=None, limit=20, include=None, context=None):
     """Employee options for the Job Requisition 'Hiring lead' field.
 
     Limited to configured hiring leads when a Hiring Lead Configuration matches —
-    **Company Wise** by `company`, or **Assignment Framework** by `employee` (the
-    requisition's Hiring Manager / Requested By). Falls back to ALL Employees when
-    no configuration matches, so requisition creation is never blocked. Same
-    response shape as get_link_field_options."""
+    **Company Wise** by `company`, or **Assignment Framework** by the attributes on
+    its User Assignments, matched against the requisition `context`. Falls back to
+    ALL Employees when no configuration matches, so requisition creation is never
+    blocked. Same response shape as get_link_field_options.
+
+    `context` is the requisition's field values as a dict (or a JSON string of
+    one). It is deliberately untyped: attribute rows name the fields they scope by,
+    so listing them here would re-introduce the coupling the attribute engine
+    removed. `company` and `employee` fold in as `company` / `requested_by`."""
     from recruitment.recruitment.doctype.hiring_lead_configuration.hiring_lead_configuration import (
         get_config_users,
     )
 
-    leads, _ = get_config_users(company, employee)
+    leads, _ = get_config_users(company, employee, context)
     filters = {"user_id": ["in", list(leads)]} if leads else None
     return get_link_field_options(
         "Employee", search_text=search_text, query=query, txt=txt,
@@ -3215,18 +3484,19 @@ def get_hiring_lead_options(company=None, employee=None, search_text=None, query
 
 
 @frappe.whitelist()
-def get_recruiter_options(company=None, employee=None, search_text=None, query=None, txt=None, limit=20, include=None):
+def get_recruiter_options(company=None, employee=None, search_text=None, query=None, txt=None, limit=20, include=None, context=None):
     """User options for the Job Requisition 'Assign to Recruiter' field.
 
     Limited to configured recruiters when a Hiring Lead Configuration matches —
-    **Company Wise** by `company`, or **Assignment Framework** by `employee` (the
-    requisition's Hiring Manager / Requested By). Falls back to ALL users when no
-    configuration matches. Same response shape as get_link_field_options."""
+    **Company Wise** by `company`, or **Assignment Framework** by the attributes on
+    its User Assignments, matched against the requisition `context` (see
+    get_hiring_lead_options). Falls back to ALL users when no configuration
+    matches. Same response shape as get_link_field_options."""
     from recruitment.recruitment.doctype.hiring_lead_configuration.hiring_lead_configuration import (
         get_config_users,
     )
 
-    _, recruiters = get_config_users(company, employee)
+    _, recruiters = get_config_users(company, employee, context)
     filters = {"name": ["in", list(recruiters)]} if recruiters else None
     return get_link_field_options(
         "User", search_text=search_text, query=query, txt=txt,
@@ -3235,21 +3505,26 @@ def get_recruiter_options(company=None, employee=None, search_text=None, query=N
 
 
 @frappe.whitelist()
-def get_hiring_lead_employees(company=None, employee=None, search_text=None, limit=20, skip=0):
+def get_hiring_lead_employees(company=None, employee=None, search_text=None, limit=20, skip=0, context=None):
     """UI-facing list of Employees selectable as the Job Requisition 'Hiring lead'.
 
     Mirrors the Desk form behaviour so the external/React UI shows the SAME list:
       * When a **Company Wise** Hiring Lead Configuration matches `company`, the
         result is limited to the configured hiring leads (Employees whose linked
         User is configured for that company).
-      * When an **Assignment Framework** Hiring Lead Configuration matches
-        `employee` (the requisition's Hiring Manager / Requested By, via its
-        Dynamic User Assignments), the configured hiring leads are added too.
-      * When no configuration matches either key, ALL Employees are returned, so
+      * When an **Assignment Framework** Hiring Lead Configuration's User
+        Assignments admit the requisition — their **Attributes** permit the values
+        in `context` for the fields they scope — its hiring leads are added too.
+      * When no configuration matches either way, ALL Employees are returned, so
         the flow is never blocked — identical to the Desk fallback.
 
-    `employee` is the Employee ID whose Assignment Framework membership drives the
-    match; pass the requisition's Hiring Manager. Company Wise callers may omit it.
+    `context` is the requisition's field values as a dict (or a JSON string of
+    one) — pass whatever the form has filled. A field an assignment restricts but
+    the context has not filled *defers* rather than fails, so a half-filled form
+    stays unrestricted and narrows as Company / Department / Designation arrive.
+    `company` and `employee` fold into that context as the Job Requisition fields
+    they are (`company` and `requested_by`), so a caller with only those two keeps
+    working and an assignment may legitimately scope by either.
 
     Unlike `get_hiring_lead_options` (which returns the Desk link-widget
     ``{id, label}`` shape), this returns the richer employee fields a form needs
@@ -3273,10 +3548,10 @@ def get_hiring_lead_employees(company=None, employee=None, search_text=None, lim
         get_config_users,
     )
 
-    leads, _ = get_config_users(company, employee)
+    leads, _ = get_config_users(company, employee, context)
     # `leads` is the set of configured hiring-lead Users matched via the Company
-    # Wise (`company`) and/or Assignment Framework (`employee`) paths. An empty set
-    # means "no config matched" -> no restriction (show everyone).
+    # Wise (`company`) and/or Assignment Framework (attributes vs `context`) paths.
+    # An empty set means "no config matched" -> no restriction (show everyone).
     filters = {"user_id": ["in", list(leads)]} if leads else {}
 
     search = (search_text or "").strip()
@@ -3328,11 +3603,15 @@ def validate_requisition_settings(doc, method=None):
     Only acts on requisitions that use our `custom_position_details` flow (rows
     present); legacy / HRMS-standard requisitions (which use the `vacancies`
     table) are left untouched, matching sync_no_of_positions' guard."""
+    settings = frappe.get_cached_doc("Recruitment Settings")
+    # Salary limits are a plain field-value rule, not tied to our position rows,
+    # so they run before the flow guard below and apply to every requisition.
+    _enforce_salary_range(doc, settings)
+
     rows = doc.get("custom_position_details") or []
     if not rows:
         return
 
-    settings = frappe.get_cached_doc("Recruitment Settings")
     _enforce_max_positions(doc, rows, settings)
     _enforce_unique_replacement(doc, rows, settings)
     _enforce_future_dated(doc, settings)
@@ -3340,6 +3619,42 @@ def validate_requisition_settings(doc, method=None):
     _enforce_edit_after_approval(doc, settings)
     _enforce_initiation_lock(doc, settings)
     _enforce_requested_by_lock(doc, settings)
+
+
+def _enforce_salary_range(doc, settings):
+    """Block a salary outside the range configured for the requisition's Salary
+    Timeframe (Recruitment Settings -> Salary Range Limits).
+
+    No row for the timeframe, a blank end, or a blank/non-numeric salary means
+    nothing is checked — so this is a no-op on every site until HR configures
+    the table."""
+    timeframe = (doc.get(SALARY_TIMEFRAME_FIELD) or "").strip()
+    if not timeframe:
+        return
+
+    bounds = _limits_from_rows(settings.get("salary_range_limits")).get(timeframe)
+    if not bounds:
+        return
+
+    low, high = bounds.get("min"), bounds.get("max")
+    for fieldname in (SALARY_MIN_FIELD, SALARY_MAX_FIELD):
+        amount = _to_amount(doc.get(fieldname))
+        if amount is None:
+            continue
+        df = doc.meta.get_field(fieldname)
+        label = _(df.label) if df and df.label else fieldname
+        if low is not None and amount < low:
+            frappe.throw(
+                _("{0} ({1}) is below the minimum of {2} allowed for {3} salaries. "
+                  "Change the amount or update the limit in Recruitment Settings.")
+                .format(label, frappe.utils.fmt_money(amount), frappe.utils.fmt_money(low), timeframe)
+            )
+        if high is not None and amount > high:
+            frappe.throw(
+                _("{0} ({1}) exceeds the maximum of {2} allowed for {3} salaries. "
+                  "Change the amount or update the limit in Recruitment Settings.")
+                .format(label, frappe.utils.fmt_money(amount), frappe.utils.fmt_money(high), timeframe)
+            )
 
 
 def _enforce_max_positions(doc, rows, settings):
@@ -3475,6 +3790,16 @@ _EDIT_AFTER_APPROVAL_IGNORE = {
     # from the stored value without anyone having edited the requisition.
     "custom_active_employees", "custom_active_requisitions", "custom_active_openings",
     "custom_headcount_last_updated",
+    # Parent mirrors of where the requisition hires — the Regions table's region
+    # and the Position Details table's location (see
+    # recruitment.customizations.job_requisition_region). Derived, never typed —
+    # and both tables they are copied from are themselves guarded, so ignoring
+    # them here gives nothing away while letting a pre-existing requisition pick
+    # the values up on its next save.
+    "custom_region", "custom_position_location",
+    # Recomputed from the Department / Cost Center budgets after every save and
+    # nightly (recruitment.api.requisition_budget) — never a user edit.
+    "custom_over_budget",
 }
 _LAYOUT_FIELDTYPES = {
     "Section Break", "Column Break", "Tab Break", "HTML", "Button", "Heading", "Fold",
@@ -3484,8 +3809,13 @@ _ROW_META_KEYS = {
     "parent", "parentfield", "parenttype", "docstatus", "doctype",
 }
 # Child-row columns that are derived, not entered — same reasoning as the parent
-# entries above, for the per-region breakdown on custom_regions.
-_ROW_DERIVED_KEYS = {"active_employees", "active_requisitions", "active_openings"}
+# entries above, for the per-region breakdown on custom_regions. `job_opening` is
+# stamped by recruitment.customizations.fresher_openings when the requisition goes
+# Approved Active, which is precisely a save OF an approved requisition — counting
+# it as a business edit would make the requisition refuse its own bookkeeping.
+_ROW_DERIVED_KEYS = {
+    "active_employees", "active_requisitions", "active_openings", "job_opening",
+}
 
 
 def _row_snapshot(d, fieldname):
@@ -3708,7 +4038,11 @@ def activate_job_requisition(job_requisition, job_opening):
     # call are held to the requisition/position status matrix too. Imported here
     # rather than at module scope: requisition_status is a sibling API module and
     # a top-level import would couple the two files' load order.
-    from recruitment.api.requisition_status import ACTIVATE, _require_action
+    from recruitment.api.requisition_status import (
+        ACTIVATE,
+        _require_action,
+        mark_requisition_active,
+    )
 
     _require_action(job_requisition, ACTIVATE)
 
@@ -3740,14 +4074,9 @@ def activate_job_requisition(job_requisition, job_opening):
 
     # Activating a requisition opens it up: the requisition becomes Approved
     # Active and every position that was still Draft becomes Open. Positions
-    # already Filled / On Hold / Archived are left as they are.
-    if doc.status != "Approved Active":
-        frappe.db.set_value("Job Requisition", job_requisition, "status", "Approved Active")
-    for row in doc.get("custom_position_summary") or []:
-        if (row.status or "Draft") == "Draft":
-            frappe.db.set_value(
-                "Job Requisition Position", row.name, "status", "Open", update_modified=False
-            )
+    # already Filled / On Hold / Archived are left as they are. Shared with the
+    # Job Opening hook so this action and "Create Job Opening" cannot diverge.
+    mark_requisition_active(job_requisition)
 
     return {
         "job_requisition": job_requisition,
@@ -3874,7 +4203,8 @@ def get_requisition_approval_flow(requisition_name):
         fields=["name", "stage_index", "stage_name", "status", "user",
                 "custom_allocated_to_users", "custom_assigned_to_roles", "role",
                 "approval_time", "creation", "is_row_log", "row_label", "row_idx",
-                "row_docnames", "approval_label", "rejection_label"],
+                "row_docnames", "approval_label", "rejection_label",
+                "todo_reference"],
         order_by="stage_index asc, row_idx asc, idx asc",
     )
 
@@ -3928,6 +4258,26 @@ def get_requisition_approval_flow(requisition_name):
                 if role and role not in roles:
                     roles.append(role)
 
+        # For Act button: fetch todo details from the pending log so the frontend
+        # can render MyApprovalActionPill with the real todo_id and actions.
+        pending_log = next(
+            (l for l in stage_logs if l.get("status") == "Pending" and l.get("todo_reference")),
+            None,
+        )
+        todo_info = {}
+        if pending_log and pending_log.get("todo_reference"):
+            todo_doc = frappe.db.get_value(
+                "ToDo",
+                pending_log["todo_reference"],
+                ["name", "custom_doctype_actions", "custom_approval_type"],
+                as_dict=True,
+            ) or {}
+            todo_info = {
+                "todo_id": todo_doc.get("name"),
+                "custom_doctype_actions": todo_doc.get("custom_doctype_actions"),
+                "custom_approval_type": todo_doc.get("custom_approval_type"),
+            }
+
         entry = {
             "stage_index": index,
             "stage_name": (
@@ -3943,6 +4293,8 @@ def get_requisition_approval_flow(requisition_name):
             "trigger_date": stage_logs[0].get("creation") if stage_logs else None,
             # A stage is only "completed" once nothing in it is still pending.
             "completed_date": max(completed) if completed and aggregate["status"] != "Pending" else None,
+            # Act button fields: todo_id + actions for the System Manager Act button.
+            **todo_info,
         }
 
         # Per-position detail for a stage that fanned out.
@@ -4018,8 +4370,12 @@ def get_job_requisition_details(requisition_name=None, name=None):
 
     doc = frappe.get_doc(JOB_REQUISITION, requisition_name)
 
+    from recruitment.api.requisition_budget import budget_status
+
     return {
         "requisition": _serialise_requisition(doc),
         # Permission was checked above; the flow helper re-checks harmlessly.
         "approval_flow": get_requisition_approval_flow(requisition_name),
+        # What the Over Budget banner lists; empty unless the requisition is flagged.
+        "budget_status": budget_status(doc),
     }

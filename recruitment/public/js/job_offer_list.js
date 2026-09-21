@@ -1,3 +1,50 @@
+// Bulk "Notify HR Ops" — the list-view half of the handover on the Job Offer form.
+// Added only when Recruitment Settings -> Require HR Ops Verification Before Sending
+// Offer is on. Cancelled and already-notified offers are sorted out by the server,
+// which reports them back in the counts.
+function add_notify_hr_ops_action(listview) {
+
+    listview.page.add_action_item("Notify HR Ops", function() {
+
+        let selected = listview.get_checked_items();
+
+        if (!selected.length) {
+            frappe.msgprint("Please select Job Offers");
+            return;
+        }
+
+        frappe.confirm(
+            `Notify HR Ops to verify and release ${selected.length} offer(s)?`,
+            function() {
+
+                frappe.call({
+                    method: "recruitment.api.hr_ops_notify.notify_hr_ops",
+                    args: {
+                        job_offers: JSON.stringify(selected.map(d => d.name))
+                    },
+                    freeze: true,
+                    freeze_message: "Notifying HR Ops…",
+                    callback: function(r) {
+
+                        let m = r.message || {};
+
+                        frappe.msgprint(
+                            "Notified: " + (m.notified || 0) +
+                            (m.already_notified ? "<br>Already Notified: " + m.already_notified : "") +
+                            (m.skipped ? "<br>Skipped (Cancelled): " + m.skipped : "") +
+                            "<br>Failed: " + (m.failed || 0)
+                        );
+
+                        listview.refresh();
+                    }
+                });
+
+            }
+        );
+
+    });
+}
+
 frappe.listview_settings['Job Offer'] = {
 
     onload(listview) {
@@ -48,6 +95,13 @@ frappe.listview_settings['Job Offer'] = {
             },
             callback: function(r) {
 
+                // Recruitment Settings -> Require HR Ops Verification Before Sending
+                // Offer. Off (the default) means this whole block behaves exactly as
+                // it did before: no extra action, no extra gate on sending.
+                if (r.message.enable_hr_ops_offer_verification) {
+                    add_notify_hr_ops_action(listview);
+                }
+
                 if (!r.message.allow_bulk_job_offer_email) return;
 
                 listview.page.add_action_item("Send Job Offer", function() {
@@ -88,6 +142,11 @@ frappe.listview_settings['Job Offer'] = {
                                 frappe.msgprint(
                                     "Emails Sent: " + r.message.sent +
                                     "<br>Skipped: " + r.message.skipped +
+                                    (r.message.already_sent ? " (already sent: " + r.message.already_sent + ")" : "") +
+                                    // Only ever non-zero while HR Ops verification is on.
+                                    (r.message.pending_hr_ops
+                                        ? "<br>Pending HR Ops verification: " + r.message.pending_hr_ops
+                                        : "") +
                                     "<br>Failed: " + r.message.failed
                                 );
 

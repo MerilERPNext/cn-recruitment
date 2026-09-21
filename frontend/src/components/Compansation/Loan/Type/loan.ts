@@ -1,76 +1,72 @@
-import { TodoType } from "../../../../types/todos"
+import { TodoType } from "../../../../types/todos";
 
-export interface Installment {
-  loan_end_date: string
-  loan_start_date: string
-  principal: string
-  perquisite_amount: number
-  opening_balance: number
-  payment_date: string
-  balance_loan_amount: number
-  principal_amount: number
-  total_payment: number
-  interest_amount: number
-  id: number
-  month: string
-  openingBalance: number
-  installmentAmount: number
-  interest: number
-  loanEmi: number
-  standardInterest: number
-  principalBalance: number
-  perquisites: number
-  isLocked: boolean
+export interface RepaymentSchedule {
+  balance_loan_amount: number;
+  creation: string;
+  docstatus: number;
+  doctype: string;
+  idx: number;
+  interest_amount: number;
+  modified: string;
+  modified_by: string;
+  name: string;
+  owner: string;
+  parent: string;
+  parentfield: string;
+  parenttype: string;
+  payment_date: string;
+  principal_amount: number;
+  total_payment: number;
 }
 
 export interface Loan {
-  allocated_to: string[];
-  allocated_to_roles: string[]
-  allocated_to_user: string | null;
-  can_edit: number;
-  employee_name: string
-  for_user: string
-  loan_requested_amount: number
-  loan_amount: number
-  loan_name: string
-  loan_type: string
-  emi_type: string
-  rate_of_interest: number
-  standard_interest: number
-  loan_tenure: number
-  loan_start_date: string
-  loan_approved_amount: number
-  status: string
-  repayment_schedule: Installment[]
-  monthly_repayment_amount: number
-  total_months: number
-  paid_months: number
-  total_loan_amount: number
-  total_paid_amount: number
-  remaining_amount: number
-  remaining_months: number
-  remainingAmount: number
-  totalPaidAmount: number
-  totalLoanAmount: number
-  remainingMonths: number
-  totalMonths: number
-  totalPayment: number
-  loanAmount: number
-  paidMonths: number
-  applicantName: string
-  standardInterest: number
-  loanName: string
-  name: string
-  employee: string;
-  todo_list: TodoType[] | null;
-  pending_principal?: number;
-  pending_principal_with_interest?: number;
+  rate_of_interest: number;
+  status: string;
+  applicant_name: string;
+  applicant: string;
+  company: string;
+  loan_type: string;
+  loan_requested_amount: number;
+  loan_approved_amount: number;
+  loan_start_date: string;
+  loan_tenure: number;
+  mode_of_payment: string;
+  applicant_type: string;
+  monthly_repayment_amount: number;
+  total_amount_paid: number;
+  total_interest_payable: number;
+  total_payment: number;
+  standard_interest: number;
+  emi_type: string;
+  loan_name: string;
+  name: string;
+  creation: string;
+  posting_date?: string;
+  repayment_schedule: RepaymentSchedule[];
+  todo_list?: TodoType[];
+  remaining_months?: number | string;
   total_principal?: number;
-  total_principal_interest?: number;
   paid_principal?: number;
+  pending_principal?: number;
+  total_principal_interest?: number;
   paid_principal_with_interest?: number;
+  pending_principal_with_interest?: number;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  [key: string]: any;
 }
 
+export interface Installment {
+  name?: string;
+  creation?: string;
+  modified?: string;
+  payment_date?: string;
+  total_payment?: number;
+  principal_amount?: number;
+  interest_amount?: number;
+  balance_loan_amount?: number;
+  perquisite_amount?: number;
+  status?: string;
+}
 
 export type LoanResponseType = {
   loan_product: string;
@@ -78,4 +74,27 @@ export type LoanResponseType = {
   repayment_method: string;
   repayment_periods: number;
   description: string;
+};
+
+export interface HoldInstallmentPayload {
+  doc_id: string;
+  payment_date: string;
+  hold_option: string;
+  number_of_months: number;
+  [key: string]: unknown;
+}
+
+export interface EditInstallmentPayload {
+  doc_id: string;
+  payment_date: string;
+  hold_option: string;
+  number_of_months: number;
+  repayment_amount: number;
+  [key: string]: unknown;
+}
+
+export interface InstallmentActionResponse {
+  message?: string;
+  status?: string;
+  [key: string]: unknown;
 }

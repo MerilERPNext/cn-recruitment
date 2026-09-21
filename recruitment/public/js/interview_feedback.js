@@ -9,12 +9,18 @@
 //
 // The Work Location the panel picks becomes the candidate's final location on
 // submit, so the options are restricted to locations of the region that owns the
-// candidate — or of the region recommended above, when the panel ticked one.
+// candidate. Ticking "Recommend for a different Region" empties the field and locks
+// it instead: this panel is saying the candidate belongs to another region, so the
+// branch is that region's panel's to choose once HR moves the candidate.
 // The panel now arrives here straight from the Interview's "Submit Feedback" (see
 // public/js/interview_feedback_route.js), so this form is the first thing they see —
 // and on its own it shows an interview ID and nothing about the interview. The
 // context strip below carries what they need in front of them while they write:
 // which round and mode, who the candidate is, the resume, and the slot.
+// Both round fieldnames are listed on purpose — HRMS v15 calls it
+// `interview_round`, v16 renamed it to `interview_type` — but see
+// interviewFieldsOnThisSite(): the list is filtered to what this version really
+// has before it is sent, because the server rejects the read outright otherwise.
 const CONTEXT_FIELDS = [
     "interview_type",
     "interview_round",
@@ -35,21 +41,39 @@ function renderInterviewContext(frm) {
     if (frm.__context_for === frm.doc.interview) return;
     frm.__context_for = frm.doc.interview;
 
-    frappe.call({
-        method: "frappe.client.get_value",
-        args: {
-            doctype: "Interview",
-            filters: { name: frm.doc.interview },
-            // Asked for as a list so a field this HRMS version lacks (v15 has
-            // interview_round, v16 interview_type) comes back missing rather than
-            // erroring the whole read.
-            fieldname: CONTEXT_FIELDS,
-        },
-        callback: (r) => {
-            const iv = (r && r.message) || {};
-            if (!Object.keys(iv).length) return;
-            drawContext(frm, iv);
-        },
+    interviewFieldsOnThisSite(CONTEXT_FIELDS, (fieldname) => {
+        frappe.call({
+            method: "frappe.client.get_value",
+            args: {
+                doctype: "Interview",
+                filters: { name: frm.doc.interview },
+                fieldname: fieldname,
+            },
+            callback: (r) => {
+                const iv = (r && r.message) || {};
+                if (!Object.keys(iv).length) return;
+                drawContext(frm, iv);
+            },
+        });
+    });
+}
+
+/**
+ * Narrow `fields` to the ones the Interview doctype actually has here.
+ *
+ * `frappe.client.get_value` does NOT ignore a field the doctype lacks — it
+ * throws `DataError: Field not permitted in query` and the whole read fails
+ * (frappe/desk/reportview.py, `raise_invalid_field`). Listing both the v15
+ * (`interview_round`) and v16 (`interview_type`) round fieldnames to "let the
+ * missing one come back empty" therefore breaks the request on EVERY site
+ * instead of on none, which is why this strip errored on open.
+ *
+ * `with_doctype` caches, so this costs one meta load per page at most — and the
+ * panel usually arrives from the Interview form, where it is already loaded.
+ */
+function interviewFieldsOnThisSite(fields, done) {
+    frappe.model.with_doctype("Interview", () => {
+        done(fields.filter((f) => frappe.meta.has_field("Interview", f)));
     });
 }
 
@@ -148,14 +172,15 @@ function applyCampusSections(frm) {
         return;
     }
 
-    const recommended = frm.doc.custom_recommend_other_region
-        ? frm.doc.custom_recommended_region || null
-        : null;
+    // The tick defers the location on its own — before a region has been named — so
+    // it is sent as well as the region, not derived from it.
+    const recommending = Boolean(frm.doc.custom_recommend_other_region);
+    const recommended = recommending ? frm.doc.custom_recommended_region || null : null;
 
     // refresh() fires on load, after every save and on tab switches, so the answer is
-    // cached against the only two inputs that change it. Without this the form makes
-    // a server round trip every time the user glances at it.
-    const key = `${frm.doc.job_applicant}|${recommended || ""}`;
+    // cached against the only inputs that change it. Without this the form makes a
+    // server round trip every time the user glances at it.
+    const key = `${frm.doc.job_applicant}|${recommending ? 1 : 0}|${recommended || ""}`;
     if (frm.__work_location_key === key && frm.__work_location_ctx) {
         render(frm, frm.__work_location_ctx);
         return;
@@ -166,7 +191,11 @@ function applyCampusSections(frm) {
     frappe
         .call({
             method: "recruitment.api.interview_work_location.get_work_location_context",
-            args: { job_applicant: frm.doc.job_applicant, recommended_region: recommended },
+            args: {
+                job_applicant: frm.doc.job_applicant,
+                recommends_other_region: recommending ? 1 : 0,
+                recommended_region: recommended,
+            },
         })
         .then((r) => {
             const ctx = (r && r.message) || {};
@@ -247,19 +276,31 @@ function applyWorkLocation(frm, ctx) {
         frm.refresh_field("custom_work_location_region");
     }
 
+    // This panel ticked "Recommend for a different Region": they are arguing the
+    // candidate belongs somewhere else, so the branch is not theirs to pick. Empty
+    // and read-only — the panel of the region HR moves the candidate to sets it on
+    // their own feedback. Takes precedence over the lock below, because repeating a
+    // posting in the region the candidate is being recommended out of is exactly the
+    // record this avoids. The server clears it too on save; read-only on a form is
+    // only a hint.
+    const deferred = Boolean(ctx.deferred);
+    if (deferred && frm.doc.docstatus === 0 && frm.doc.custom_work_location) {
+        frm.set_value("custom_work_location", null);
+    }
+
     // An earlier round already settled where this candidate goes. Carry that value
     // and lock it, so a later panel records the same posting instead of quietly
-    // moving the candidate somewhere else. The server enforces this too — read-only
-    // on a form is only a hint.
-    const locked = Boolean(ctx.locked_to);
+    // moving the candidate somewhere else. The server enforces this too.
+    const locked = !deferred && Boolean(ctx.locked_to);
     if (locked) {
         if (frm.doc.docstatus === 0 && frm.doc.custom_work_location !== ctx.locked_to) {
             frm.set_value("custom_work_location", ctx.locked_to);
         }
     } else if (
-        // Region changed under a location that was already picked (the panel ticked a
-        // recommendation, say) — drop it rather than submit a location the new region
-        // does not run.
+        !deferred &&
+        // The region changed under a location that was already picked — HR re-routed
+        // the candidate while this feedback sat open. Drop it rather than submit a
+        // location the new region does not run.
         frm.doc.docstatus === 0 &&
         frm.doc.custom_work_location &&
         ctx.restricted &&
@@ -268,11 +309,18 @@ function applyWorkLocation(frm, ctx) {
         frm.set_value("custom_work_location", null);
     }
 
-    frm.set_df_property("custom_work_location", "read_only", locked ? 1 : 0);
+    frm.set_df_property("custom_work_location", "read_only", deferred || locked ? 1 : 0);
     frm.set_df_property("custom_work_location", "description", describe(ctx));
 }
 
 function describe(ctx) {
+    if (ctx.deferred) {
+        return ctx.deferred_to
+            ? __("You are recommending this candidate for {0}, so the work location is not set here. If HR accepts, the {0} panel taking their next round picks a location of that region.", [
+                  `<b>${frappe.utils.escape_html(ctx.deferred_to)}</b>`,
+              ])
+            : __("You are recommending this candidate for another region, so the work location is not set here — the panel of the region HR moves them to picks it on their own feedback.");
+    }
     if (ctx.locked_to) {
         return __("Already set to {0} by {1} in an earlier round, so it cannot be changed here. HR can still change it on the candidate.", [
             `<b>${frappe.utils.escape_html(ctx.locked_to)}</b>`,

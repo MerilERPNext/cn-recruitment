@@ -157,6 +157,9 @@
         .hwf-btn:hover{background:var(--control-bg-on-gray,var(--bg-color));}
         .hwf-btn.primary{background:var(--blue-500,#2490ef);border-color:var(--blue-500,#2490ef);color:#fff;}
         .hwf-btn.primary:hover{background:var(--blue-600,#1479d6);}
+        .hwf-btn[disabled]{opacity:.5;cursor:not-allowed;}
+        .hwf-req{font-size:.66rem;font-weight:600;letter-spacing:.03em;text-transform:uppercase;
+            padding:1px 6px;border-radius:9px;background:var(--orange-100,#fdebd0);color:var(--orange-700,#9c5700);}
         .hwf-btn.danger{color:var(--red-600,#c0392b);border-color:var(--red-200,#f0b4b4);}
         .hwf-btn.danger:hover{background:var(--red-50,#fdeaea);}
         .hwf-more-wrap{position:relative;display:inline-block;}
@@ -172,7 +175,13 @@
         .hwf-banner.bad{background:var(--red-50,#fdeaea);color:var(--red-700,#b02a2a);}
         .hwf-sub{margin-top:10px;font-size:.8rem;color:var(--text-muted);}
         .hwf-ivlist{margin-top:8px;border-top:1px dashed var(--border-color);padding-top:8px;}
-        .hwf-ivrow{display:flex;align-items:center;gap:8px;font-size:.8rem;padding:3px 0;}
+        .hwf-ivrow{display:flex;align-items:center;gap:8px;font-size:.8rem;padding:3px 0;flex-wrap:wrap;}
+        .hwf-ivitem{padding:1px 0;}
+        .hwf-ivitem + .hwf-ivitem{margin-top:4px;}
+        /* People line sits under its interview row, indented to the row's text and
+           free to wrap — a five-person panel must not stretch the card. */
+        .hwf-ivpeople{font-size:.76rem;color:var(--text-muted);padding:0 0 2px 2px;line-height:1.5;}
+        .hwf-owner-label{font-weight:600;color:var(--text-color,#36414c);}
         .hwf-pill{font-size:.68rem;padding:1px 7px;border-radius:10px;font-weight:600;}
         .hwf-pill.Cleared,.hwf-pill.Approved{background:var(--green-100,#d3efd9);color:var(--green-700,#1e7a34);}
         .hwf-pill.Rejected{background:var(--red-100,#fbd8d8);color:var(--red-700,#b02a2a);}
@@ -180,6 +189,16 @@
         .hwf-empty{padding:18px;text-align:center;color:var(--text-muted);font-size:.85rem;}
         .hwf-link{color:var(--blue-500,#2490ef);cursor:pointer;text-decoration:none;}
         .hwf-link:hover{text-decoration:underline;}
+        /* Pre-offer form preview — lives inside its own dialog, so nothing here
+           can reach the stage cards. */
+        .hwf-pv-head{font-size:.82rem;color:var(--text-muted);margin-bottom:12px;}
+        .hwf-pv-sec{margin-bottom:14px;}
+        .hwf-pv-sec-title{font-size:.72rem;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--text-muted);border-bottom:1px solid var(--border-color);padding-bottom:4px;margin-bottom:6px;}
+        .hwf-pv-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:4px 0;border-bottom:1px solid var(--border-color,#ebeef0);}
+        .hwf-pv-row:last-child{border-bottom:none;}
+        .hwf-pv-label{font-size:.85rem;font-weight:500;color:var(--text-color,#36414c);}
+        .hwf-pv-req{font-size:.66rem;font-weight:700;padding:1px 7px;border-radius:10px;background:var(--red-100,#fbd8d8);color:var(--red-700,#b02a2a);}
+        .hwf-pv-type{margin-left:auto;font-size:.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.4px;}
         `;
         const el = document.createElement("style");
         el.id = "hwf-styles";
@@ -238,6 +257,62 @@
         else if (frm.scroll_to_field) frm.scroll_to_field("custom_pre_offer_approval_html");
     }
 
+    // The pre-offer form as the candidate will receive it — the fields the linked
+    // Job Opening marks "Pre-offer: View", with the mandatory ones tagged. Read
+    // only; it neither sends nor changes anything.
+    function previewPreOfferForm(frm) {
+        frappe.call({
+            method: API + ".get_pre_offer_form_preview",
+            args: { job_applicant: frm.doc.name },
+            freeze: true,
+            freeze_message: __("Loading form…"),
+            callback: (r) => {
+                const res = (r && r.message) || {};
+                const fields = res.fields || [];
+                const d = new frappe.ui.Dialog({
+                    title: __("Pre Offer Form Preview"),
+                    size: "large",
+                    fields: [{ fieldtype: "HTML", fieldname: "body" }],
+                    primary_action_label: __("Close"),
+                    primary_action: () => d.hide(),
+                });
+
+                let html;
+                if (!fields.length) {
+                    html = `<div class="hwf-empty">${res.job_opening
+                        ? __("No pre-offer fields are configured on {0}.", [esc(res.job_opening)])
+                        : __("This candidate has no linked Job Opening.")}</div>`;
+                } else {
+                    // Group by the section the opening's config puts each field in,
+                    // keeping the configured order within each group.
+                    const groups = [];
+                    const byName = {};
+                    fields.forEach((f) => {
+                        const key = f.section || __("General");
+                        if (!byName[key]) { byName[key] = []; groups.push(key); }
+                        byName[key].push(f);
+                    });
+                    const required = fields.filter((f) => f.reqd).length;
+                    html = `<div class="hwf-pv">
+                        <div class="hwf-pv-head">${__("The candidate will be asked for these fields")}${res.job_opening
+                            ? ` — <a href="/app/job-opening/${encodeURIComponent(res.job_opening)}" target="_blank">${esc(res.job_opening)}</a>` : ""}
+                            <span class="text-muted"> · ${__("{0} field(s), {1} mandatory", [fields.length, required])}</span>
+                        </div>` +
+                        groups.map((g) => `<div class="hwf-pv-sec">
+                            <div class="hwf-pv-sec-title">${esc(g)}</div>
+                            ${byName[g].map((f) => `<div class="hwf-pv-row">
+                                <span class="hwf-pv-label">${esc(f.display_name || f.reference_name || "")}</span>
+                                ${f.reqd ? `<span class="hwf-pv-req">${__("Mandatory")}</span>` : ""}
+                                <span class="hwf-pv-type">${esc(f.fieldtype || "")}</span>
+                            </div>`).join("")}
+                        </div>`).join("") + `</div>`;
+                }
+                d.fields_dict.body.$wrapper.html(html);
+                d.show();
+            },
+        });
+    }
+
     function sendFeedbackForm(frm, stageName) {
         frappe.call({
             method: API + ".send_interview_feedback_form",
@@ -278,9 +353,20 @@
                 frappe.model.with_doctype("Interview", () => {
                     const d = frappe.model.get_new_doc("Interview");
                     d.job_applicant = m.job_applicant;
-                    d.interview_round = m.interview_round;
+                    // v15 links the round through `interview_round`, v16 through
+                    // `interview_type`; the server says which this site has.
+                    d[m.interview_round_field || "interview_round"] = m.interview_round;
                     if (m.designation) d.designation = m.designation;
                     if (m.job_opening) d.job_opening = m.job_opening;
+                    // The stage's configured panel. Plain assignment, not
+                    // frm.set_value: HRMS's own `interview_round` handler CLEARS
+                    // interview_details and refills it from the round, so these
+                    // rows only survive because nothing triggers that handler
+                    // here. A recruiter who re-picks the round on the form is
+                    // choosing HRMS's list, and that is the right outcome.
+                    (m.interviewers || []).forEach((interviewer) => {
+                        frappe.model.add_child(d, "Interview Detail", "interview_details").interviewer = interviewer;
+                    });
                     frappe.set_route("Form", "Interview", d.name);
                 });
             },
@@ -416,13 +502,31 @@
         });
     }
 
+    // The Job Applicant keeps the name in parts — `applicant_name` is the FIRST name
+    // — and derives `custom_full_name` from them on save. Anything that shows a
+    // candidate to a person shows that.
+    function candidateName(doc) {
+        if (doc.custom_full_name) return doc.custom_full_name;
+        // Fallback for a row saved before the derived field shipped: skip a part
+        // already sitting in an earlier one, so a surname is never printed twice.
+        let out = "";
+        [doc.applicant_name, doc.custom_applicant_middle_name, doc.custom_applicant_last_name]
+            .map((p) => String(p || "").trim())
+            .filter(Boolean)
+            .forEach((part) => {
+                if (out.toLowerCase().includes(part.toLowerCase())) return;
+                out = out ? `${out} ${part}` : part;
+            });
+        return out || doc.name;
+    }
+
     // Open a prefilled Job Offer form for review (don't create it silently) —
     // HR fills salary/terms and saves it themselves.
     function routeToNewJobOffer(frm, position) {
         frappe.model.with_doctype("Job Offer", () => {
             const d = frappe.model.get_new_doc("Job Offer");
             d.job_applicant = frm.doc.name;
-            d.applicant_name = frm.doc.applicant_name;
+            d.applicant_name = candidateName(frm.doc);
             d.applicant_email = frm.doc.email_id;
             if (frm.doc.designation) d.designation = frm.doc.designation;
             if (frm.doc.custom_expected_doj) d.custom_expected_doj = frm.doc.custom_expected_doj;
@@ -465,15 +569,41 @@
         return "hwf-sb-upcoming";
     }
 
+    const names = (people) => (people || []).map((p) => p.full_name || p.user).filter(Boolean);
+
+    // "Whose action is this?" — the interviewers still owing feedback while the
+    // interview is open, or who gave it once the round is decided. Its own line
+    // under the interview row so a long panel wraps instead of stretching the row.
+    function ivPeopleHtml(iv) {
+        const pending = names(iv.pending_with);
+        if (pending.length) {
+            return `<div class="hwf-ivpeople"><span class="hwf-owner-label">${__("Pending with")}:</span> ${esc(pending.join(", "))}</div>`;
+        }
+        const panel = names(iv.interviewers);
+        if (panel.length) {
+            return `<div class="hwf-ivpeople"><span class="hwf-owner-label">${__("Interviewers")}:</span> ${esc(panel.join(", "))}</div>`;
+        }
+        return "";
+    }
+
     function interviewsHtml(stage) {
         const list = stage.interviews || [];
-        if (!list.length) return "";
+        if (!list.length) {
+            // Nothing scheduled yet — the round is waiting on whoever books it.
+            const owner = names(stage.pending_with);
+            return owner.length
+                ? `<div class="hwf-sub" style="margin-top:8px;"><span class="hwf-owner-label">${__("Pending with")}:</span> ${esc(owner.join(", "))} — ${__("no interview scheduled yet")}</div>`
+                : "";
+        }
         return `<div class="hwf-ivlist">` + list.map((iv) =>
-            `<div class="hwf-ivrow">
-                <a class="hwf-link" data-open-iv="${esc(iv.name)}">${esc(iv.name)}</a>
-                ${pill(iv.status || "Pending")}
-                <span>${ratingStars(iv.average_rating)}</span>
-                <span class="text-muted">${iv.scheduled_on ? esc(frappe.datetime.str_to_user(iv.scheduled_on)) : ""}</span>
+            `<div class="hwf-ivitem">
+                <div class="hwf-ivrow">
+                    <a class="hwf-link" data-open-iv="${esc(iv.name)}">${esc(iv.name)}</a>
+                    ${pill(iv.status || "Pending")}
+                    <span>${ratingStars(iv.average_rating)}</span>
+                    <span class="text-muted">${iv.scheduled_on ? esc(frappe.datetime.str_to_user(iv.scheduled_on)) : ""}</span>
+                </div>
+                ${ivPeopleHtml(iv)}
             </div>`).join("") + `</div>`;
     }
 
@@ -494,6 +624,26 @@
         return `<div class="hwf-panel"><div class="hwf-empty" style="padding-bottom:4px;">${__("Candidate is not on any stage yet.")}</div>${startBtn}</div>`;
     }
 
+    // "Mark as Not Required" is offered only where skipping is actually allowed:
+    // a stage the workflow marks Mandatory can be cleared or rejected, never
+    // stepped around. Returns null so moreMenu() drops the entry (and the whole
+    // ⋮ button, when nothing else is left in it).
+    function notRequiredItem(stage) {
+        if (stage && stage.is_mandatory) return null;
+        return { key: "notreq", label: __("Mark as Not Required"), cls: "danger" };
+    }
+
+    function moreMenu(items) {
+        const live = (items || []).filter(Boolean);
+        if (!live.length) return "";
+        const links = live.map((i) =>
+            `<a data-menu="${esc(i.key)}"${i.cls ? ` class="${esc(i.cls)}"` : ""}>${esc(i.label)}</a>`).join("");
+        return `<span class="hwf-more-wrap">
+                <button class="hwf-btn" data-act="more" title="${__("More")}">⋮</button>
+                <div class="hwf-menu" style="display:none;">${links}</div>
+            </span>`;
+    }
+
     // Actions + context for the stage the candidate is standing on. Rendered inside
     // that stage's card in the vertical flow, so it carries no frame of its own.
     function renderStageActions(frm, view, cur) {
@@ -505,27 +655,29 @@
         } else if (type === "Shortlist") {
             actions += `<button class="hwf-btn primary" data-act="review" data-mode="Shortlist">${__("Shortlist")}</button>`;
         } else if (type === "Interview") {
+            // Feedback is filed against the interview that was actually held, so
+            // the stage can't be completed before one exists — the server refuses
+            // it too (complete_interview), this just says so before the click.
+            const hasInterview = (cur.interviews || []).length > 0;
             actions += `<button class="hwf-btn" data-act="interview">+ ${__("Schedule Interview")}</button>`;
-            actions += `<button class="hwf-btn primary" data-act="markdone">${__("Mark as Completed")}</button>`;
-            actions += `<span class="hwf-more-wrap">
-                <button class="hwf-btn" data-act="more" title="${__("More")}">⋮</button>
-                <div class="hwf-menu" style="display:none;">
-                    <a data-menu="feedbackform">${__("Send Feedback Form")}</a>
-                    <a data-menu="notreq" class="danger">${__("Mark as Not Required")}</a>
-                </div>
-            </span>`;
+            actions += hasInterview
+                ? `<button class="hwf-btn primary" data-act="markdone">${__("Mark as Completed")}</button>`
+                : `<button class="hwf-btn primary" disabled title="${__("Schedule an interview for this stage first.")}">${__("Mark as Completed")}</button>`;
+            actions += moreMenu([
+                { key: "feedbackform", label: __("Send Feedback Form") },
+                notRequiredItem(cur),
+            ]);
         } else if (type === "Pre Offer") {
             const po = view.pre_offer || {};
             const poLabel = po.sent ? __("Resend Pre Offer Form") : __("Send Pre Offer Form");
             actions += `<button class="hwf-btn primary" data-act="preoffer">+ ${poLabel}</button>`;
+            // "View Pre Offer Form" opens the approval panel, which only has rows
+            // once the candidate submits. This one answers the other question —
+            // what is this opening going to ask for — and works before sending.
+            actions += `<button class="hwf-btn" data-act="previewpreoffer">${__("Preview")}</button>`;
             actions += `<button class="hwf-btn" data-act="viewpreoffer">${__("View Pre Offer Form")}</button>`;
             if (!view.is_last) actions += `<button class="hwf-btn" data-act="complete">✓ ${__("Complete stage")}</button>`;
-            actions += `<span class="hwf-more-wrap">
-                <button class="hwf-btn" data-act="more" title="${__("More")}">⋮</button>
-                <div class="hwf-menu" style="display:none;">
-                    <a data-menu="notreq" class="danger">${__("Mark as Not Required")}</a>
-                </div>
-            </span>`;
+            actions += moreMenu([notRequiredItem(cur)]);
         } else if (type === "Offer") {
             actions += view.job_offer
                 ? `<button class="hwf-btn" data-act="openoffer">${__("Open Job Offer")}</button>`
@@ -562,7 +714,7 @@
 
     // What a stage shows when expanded: live actions for the current stage, the
     // recorded outcome for anything already passed, a "move here" for what's ahead.
-    function stageBody(frm, view, s) {
+    function stageBody(frm, view, s, i) {
         if (s.state === "current" && !view.is_closed) return renderStageActions(frm, view, s);
 
         const bits = [];
@@ -574,7 +726,16 @@
         // Forward-only: a completed or current stage can't be revisited, so the jump
         // is offered on upcoming stages only.
         if (s.state === "upcoming" && !view.is_closed) {
-            html += `<div class="hwf-actions" style="margin-top:10px;">
+            // Jumping here would leave every stage in between with no outcome —
+            // which a mandatory stage does not allow. set_stage refuses it
+            // server-side; this names the blocker instead of offering the click.
+            const blockers = (view.stages || [])
+                .slice(view.current_stage_index + 1, i)
+                .filter((b) => b.is_mandatory)
+                .map((b) => b.stage_name);
+            html += blockers.length
+                ? `<div class="hwf-sub" style="margin-top:10px;">${__("Can't move here — the mandatory stage(s) {0} must be completed first.", [esc(blockers.join(", "))])}</div>`
+                : `<div class="hwf-actions" style="margin-top:10px;">
                 <button class="hwf-btn" data-jump="${esc(s.stage_name)}">${__("Move candidate to this stage")}</button>
             </div>`;
         }
@@ -618,9 +779,10 @@
                         <span class="hwf-name">${esc(s.stage_name || "")}</span>
                         <span class="hwf-sbadge ${stageStatusCls(s)}">${esc(stageStatusLabel(s))}</span>
                         <span class="hwf-type">${esc(s.stage_type || "")}</span>
+                        ${s.is_mandatory ? `<span class="hwf-req" title="${__("This stage can't be skipped.")}">${__("Mandatory")}</span>` : ""}
                         <span class="hwf-chevron">⌄</span>
                     </div>
-                    <div class="hwf-card-body">${stageBody(frm, view, s)}</div>
+                    <div class="hwf-card-body">${stageBody(frm, view, s, i)}</div>
                 </div>
             </div>`;
         }).join("");
@@ -662,6 +824,7 @@
             else if (act === "review") openReviewDialog(frm, $(this).data("mode"));
             else if (act === "screening") runScreening(frm);
             else if (act === "preoffer") sendPreOffer(frm);
+            else if (act === "previewpreoffer") previewPreOfferForm(frm);
             else if (act === "viewpreoffer") gotoPreOfferApprovalTab(frm);
             else if (act === "createoffer") createJobOffer(frm);
             else if (act === "openoffer") frappe.set_route("Form", "Job Offer", view.job_offer.name);
@@ -748,7 +911,7 @@
     function openReviewDialog(frm, mode) {
         const actionLabel = mode === "Shortlist" ? __("Shortlist") : __("Screen");
         const d = new frappe.ui.Dialog({
-            title: `${mode} — ${frm.doc.applicant_name || frm.doc.name}`,
+            title: `${mode} — ${candidateName(frm.doc)}`,
             size: "large",
             fields: [
                 { fieldtype: "HTML", fieldname: "summary" },

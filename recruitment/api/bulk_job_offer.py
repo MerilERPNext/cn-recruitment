@@ -4,9 +4,17 @@ from frappe import _
 from frappe.utils import now, get_url, validate_email_address
 
 from recruitment.job_offer_utils import (
+    get_culture_book_attachment,
     get_job_offer_document_template,
     render_job_offer_via_document_template,
 )
+from recruitment.recruitment.communication_log import sendmail_with_log
+from recruitment.recruitment.offer_send_rules import send_locked
+from recruitment.recruitment.hr_ops_offer_review import (
+    send_blocked as hr_ops_send_blocked,
+    verification_enabled as hr_ops_verification_enabled,
+)
+from recruitment.api.action_center import sync_job_offer_action_item
 
 
 def _get_support_email():
@@ -57,12 +65,21 @@ def resend_welcome_email(job_offer):
     template variables never drift between paths. Unlike `send_bulk_job_offer`
     this is an explicit re-send: it does not skip already-responded candidates and
     does not overwrite the offer's `email_status` bookkeeping.
+
+    Requires the email to have gone out once already (`email_status` == "Sent",
+    stamped by `send_bulk_job_offer`) — the guard matching the hidden form button,
+    so this cannot be used as a first send. Repeat retriggers stay allowed.
     """
     frappe.has_permission("Job Offer", "write", throw=True)
 
     offer = frappe.get_doc("Job Offer", job_offer)
     if not offer.job_applicant:
         frappe.throw(_("This Job Offer has no linked Job Applicant."))
+
+    if offer.get("email_status") != "Sent" and not offer.get("email_sent_on"):
+        frappe.throw(
+            _("The welcome email has not been sent for this offer yet. Use 'Send Job Offer' first.")
+        )
 
     applicant = frappe.get_doc("Job Applicant", offer.job_applicant)
     email = (offer.get("applicant_email") or applicant.get("email_id") or "").strip()
@@ -83,10 +100,15 @@ def resend_welcome_email(job_offer):
     subject = frappe.render_template(subject_t, context)
     message = frappe.render_template(message_t, context)
 
-    frappe.sendmail(
+    # The Culture Book rides along when one is configured; None when it isn't, so
+    # the re-send carries exactly what the original send did.
+    culture_book = get_culture_book_attachment()
+
+    sendmail_with_log(
         recipients=[email],
         subject=subject,
         message=message,
+        attachments=[culture_book] if culture_book else None,
         reference_doctype="Job Offer",
         reference_name=offer.name,
         args=context,
@@ -160,6 +182,9 @@ def _mark_offer_stage(applicant, sub_status):
 
 @frappe.whitelist()
 def create_bulk_job_offer(applicants):
+    from recruitment.api.offer_position import first_available_position, requires_position
+    from recruitment.customizations.job_offer import _requisition_for_applicant
+
     # Creates Job Offers (was ignore_permissions with no role gate). Require
     # Job Offer create — the desk HR caller already has it.
     frappe.has_permission("Job Offer", "create", throw=True)
@@ -171,6 +196,8 @@ def create_bulk_job_offer(applicants):
     created = 0
     skipped = 0
     failed = 0
+    # Why each applicant was left out, so the caller can say more than a number.
+    reasons = []
 
     for app in applicants:
 
@@ -190,6 +217,7 @@ def create_bulk_job_offer(applicants):
 
             if existing_offer:
                 skipped += 1
+                reasons.append(f"{applicant.name}: already has a job offer")
                 continue
 
             job_offer = frappe.new_doc("Job Offer")
@@ -204,19 +232,40 @@ def create_bulk_job_offer(applicants):
 
             job_offer.offer_date = frappe.utils.today()
 
+            # A lateral requisition itemises its headcount, so an offer against one
+            # must name the seat it consumes — validate_position_choice refuses it
+            # otherwise, which is what made this whole action unusable for lateral
+            # candidates. There is nobody to ask here, so the lowest-numbered free
+            # position is claimed, by exactly the rule the picker uses. Campus /
+            # region requisitions have no position rows and skip all of this.
+            requisition = _requisition_for_applicant(applicant.name)
+            if requisition and requires_position(requisition):
+                position = first_available_position(requisition)
+                if not position:
+                    skipped += 1
+                    reasons.append(
+                        f"{applicant.name}: no free position left on {requisition}"
+                    )
+                    continue
+                job_offer.custom_job_requisition = requisition
+                job_offer.custom_requisition_position = position.name
+
             job_offer.insert(ignore_permissions=True)
             _mark_offer_stage(applicant.name, SUB_STATUS_TO_SEND)
 
             created += 1
 
-        except Exception:
+        except Exception as exc:
             failed += 1
+            reasons.append(f"{app}: {frappe.utils.strip_html(str(exc))[:140]}")
             frappe.log_error(frappe.get_traceback(), "Bulk Job Offer Creation")
 
     return {
         "created": created,
         "skipped": skipped,
-        "failed": failed
+        "failed": failed,
+        # Additive: the existing caller reads the three counters and ignores this.
+        "reasons": reasons,
     }
 
 @frappe.whitelist()
@@ -230,6 +279,13 @@ def send_bulk_job_offer(job_offers):
     sent = 0
     skipped = 0
     failed = 0
+    already_sent = 0
+    pending_hr_ops = 0
+
+    # Recruitment Settings -> Require HR Ops Verification Before Sending Offer.
+    # Read once for the whole batch; False (the default) leaves every offer below
+    # on the path it has always taken.
+    hr_ops_gate = hr_ops_verification_enabled()
 
     settings = frappe.get_doc("Recruitment Settings")
     JOB_OFFER_TEMPLATE = settings.job_offer_template
@@ -246,6 +302,21 @@ def send_bulk_job_offer(job_offers):
             # Only allow submitted job offers
             if job_offer.docstatus != 1:
                 skipped += 1
+                continue
+
+            # The offer only leaves for the candidate once HR Ops has been told
+            # to verify it. Enforced here and not just in the UI, so neither the
+            # bulk action nor a direct call can jump the queue.
+            if hr_ops_send_blocked(job_offer, enabled=hr_ops_gate):
+                skipped += 1
+                pending_hr_ops += 1
+                continue
+
+            # Recruitment Settings -> Hide Send Job Offer Once Sent. Checked
+            # before anything is written, so the offer keeps its "Sent" status.
+            if send_locked(job_offer):
+                skipped += 1
+                already_sent += 1
                 continue
 
             if not job_offer.job_applicant:
@@ -311,6 +382,14 @@ def send_bulk_job_offer(job_offers):
                         "fcontent": pdf_bytes,
                         "content_type": "application/pdf",
                     }]
+
+            # Culture Book (Recruitment Settings -> culture_book), appended after
+            # the letter so the offer stays the first attachment. None when the
+            # setting is blank or the file cannot be read, in which case the email
+            # goes out exactly as it did before the feature existed.
+            culture_book = get_culture_book_attachment()
+            if culture_book:
+                attachments = (attachments or []) + [culture_book]
 
             # ----------------------------
             # Send Email
@@ -379,6 +458,14 @@ def send_bulk_job_offer(job_offers):
             communication_doc.recipients = email + ","
             communication_doc.save(ignore_permissions=True)
 
+            # The offer now counts as sent. db_set fires no hooks, so raise the
+            # candidate's Action Center item here — this is the moment the
+            # "On Offer Email Sent" setting waits for (a harmless re-upsert otherwise).
+            try:
+                sync_job_offer_action_item(job_offer)
+            except Exception:
+                frappe.log_error(frappe.get_traceback(), "Job Offer: Action Center item after send failed")
+
             # ----------------------------
             # Update Applicant
             # ----------------------------
@@ -399,7 +486,10 @@ def send_bulk_job_offer(job_offers):
     return {
         "sent": sent,
         "skipped": skipped,
-        "failed": failed
+        "failed": failed,
+        "already_sent": already_sent,
+        # Always present, always 0 unless HR Ops verification is switched on.
+        "pending_hr_ops": pending_hr_ops,
     }
 
 

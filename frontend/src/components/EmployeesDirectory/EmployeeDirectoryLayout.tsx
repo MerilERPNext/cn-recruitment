@@ -1,27 +1,64 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { UserPlus, Users } from "lucide-react";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import DesktopLayoutWrapper from "../DesktopLayoutWrapper";
 import HeaderBar from "../HeaderBar";
 import EmployeeDirectoryContent from "./EmployeeDirectoryContent";
+import Button from "../shared/atoms/Button";
+import { useNewHireFormConfig } from "../../hooks/useNewHire";
 
 const EmployeeDirectoryLayout: React.FC = () => {
   const { isDesktop } = useScreenSize();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<'directory' | 'my_reportees'>('directory');
 
+  const { data: formConfigRes, isSuccess } = useNewHireFormConfig();
+  const canShowNewRecruit = isSuccess && formConfigRes?.success && Boolean(formConfigRes?.data);
+
   const tabs = (
-    <div className="flex border-b border-gray-200 mb-2 px-4 md:px-0 bg-white md:bg-transparent">
-      <button
-        onClick={() => setActiveTab('my_reportees')}
-        className={`px-4 py-3 text-sm font-bold uppercase tracking-wider ${activeTab === 'my_reportees' ? 'border-b-2 border-primary text-primary' : 'text-gray-600 hover:text-gray-800'}`}
-      >
-        My Reportees
-      </button>
-      <button
-        onClick={() => setActiveTab('directory')}
-        className={`px-4 py-3 text-sm font-bold uppercase tracking-wider ${activeTab === 'directory' ? 'border-b-2 border-primary text-primary' : 'text-gray-600 hover:text-gray-800'}`}
-      >
-        Directory
-      </button>
+    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 mb-2 px-4 md:px-0 bg-white md:bg-transparent">
+      {/* Left: Directory Tabs */}
+      <div className="flex items-center">
+        <button
+          onClick={() => setActiveTab('my_reportees')}
+          className={`px-4 py-3 text-sm font-bold uppercase tracking-wider ${activeTab === 'my_reportees' ? 'border-b-2 border-primary text-primary' : 'text-gray-600 hover:text-gray-800'}`}
+        >
+          My Reportees
+        </button>
+        <button
+          onClick={() => setActiveTab('directory')}
+          className={`px-4 py-3 text-sm font-bold uppercase tracking-wider ${activeTab === 'directory' ? 'border-b-2 border-primary text-primary' : 'text-gray-600 hover:text-gray-800'}`}
+        >
+          Directory
+        </button>
+      </div>
+
+      {/* Right: Action Buttons */}
+      {canShowNewRecruit && (
+        <div className="flex items-center gap-2 pb-2 md:pb-0">
+          {false &&
+            <Button
+              variant="soft"
+              size="md"
+              onClick={() => navigate("/webapp/employees-directory/new-hires")}
+              icon={<Users className="w-4 h-4" />}
+              className="shadow-xs font-semibold"
+            >
+              New Hires
+            </Button>
+          }
+          <Button
+            variant="contain"
+            size="md"
+            onClick={() => navigate("/webapp/employees-directory/add-employee")}
+            icon={<UserPlus className="w-4 h-4" />}
+            className="shadow-xs font-semibold"
+          >
+            New Recruit
+          </Button>
+        </div>
+      )}
     </div>
   );
 

@@ -46,7 +46,9 @@ export const useSearchEmployees = (
   limit?: number,
 ): UseQueryResult<Employee[], Error> => {
   return useQuery<Employee[], Error>({
-    queryKey: ["employee", "search", filters],
+    // limit is part of the key: two callers can search the same terms and want
+    // different result counts.
+    queryKey: ["employee", "search", filters, limit],
     queryFn: () => EmployeeService.getSearchMembers(filters, limit),
     enabled: !!filters,
     refetchOnWindowFocus: true,
@@ -130,6 +132,9 @@ export const DEFAULT_EMPLOYEE_FIELDS = [
   "blood_group",
   "custom_emergency_blood_group",
   "company_name",
+  "custom_hrbp",
+  "custom_hd_team",
+  "relieving_date",
 ] as const;
 
 export interface EmployeeDetilsType {
@@ -156,6 +161,7 @@ export interface EmployeeDetilsType {
 
   status: string;
   date_of_joining: string;
+  relieving_date?: string | null;
 
   default_shift: string | null;
 
@@ -172,6 +178,11 @@ export interface EmployeeDetilsType {
 
   custom_dotted_line_manager: string | null;
   dotted_manager_member_id: string | null;
+
+  custom_hrbp?: string | null;
+  custom_hrbp_name?: string | null;
+  custom_hd_team?: string | null;
+  custom_hd_team_name?: string | null;
 
   employee: string;
 
@@ -493,6 +504,15 @@ export const useGenderTypes = () => {
     staleTime: 1000 * 60 * 5,
   });
 };
+
+export const useRelationshipTypes = () => {
+  return useQuery({
+    queryKey: ["relationship-types"],
+    queryFn: () => profileService.getRelationshipTypes(),
+    staleTime: 1000 * 60 * 10,
+  });
+};
+
 
 export const useGetEmployeeFieldPermissions = ({
   docname,

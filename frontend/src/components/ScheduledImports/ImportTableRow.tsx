@@ -2,6 +2,7 @@ import { AlertCircle, Download, FileText } from "lucide-react";
 import React from "react";
 import { Link } from "react-router-dom";
 import { useEmployeeByUserId } from "../../hooks/useEmployee";
+import { hasErrorFile } from "../../types/scheduledImports";
 import type { ScheduledDataImport } from "../../types/scheduledImports";
 import { formatToIndianDateWithTime } from "../../utils/formatToIndianDate";
 import {
@@ -158,7 +159,7 @@ const ImportTableRow: React.FC<ImportTableRowProps> = ({
 
       {/* Actions */}
       <div className="flex flex-wrap items-center justify-center gap-2 min-w-0">
-        {item.failed_records_count > 0 && (
+        {hasErrorFile(item) && (
           <Button
             size="sm"
             variant="outline"

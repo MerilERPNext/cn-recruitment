@@ -3,10 +3,17 @@ import { format } from "date-fns";
 import FrappeAPI from "../../../../utils/frappeAPI";
 import type { TimesheetRow } from "../TimesheetCreate";
 
-interface DocItem {
+interface ProjectDocItem {
   name: string;
   project_name?: string;
+}
+
+interface TaskDocItem {
+  name: string;
   subject?: string;
+  project?: string;
+  parent_task?: string;
+  is_group?: number;
 }
 
 /**
@@ -19,6 +26,7 @@ export const downloadTimesheetTemplate = ({
   projectsData,
   dayStatusMap = {},
   disabledDays = [],
+  showSubtask = true,
 }: {
   currentWeekStart: Date;
   currentWeekEnd: Date;
@@ -26,11 +34,12 @@ export const downloadTimesheetTemplate = ({
   projectsData: TimesheetRow[];
   dayStatusMap?: Record<string, string>;
   disabledDays?: string[];
+  showSubtask?: boolean;
 }): void => {
   const headers = [
     "Row ID (Optional)",
     "Project",
-    "Task",
+    ...(showSubtask ? ["Task", "Sub Task"] : ["Task"]),
     ...daysOfWeek.flatMap((d) => {
       const dateKey = format(d, "yyyy-MM-dd");
       const status = dayStatusMap[dateKey];
@@ -47,7 +56,12 @@ export const downloadTimesheetTemplate = ({
       ? projectsData.map((r) => [
           r.id || "",
           r.projectName || r.project || "",
-          r.taskSubject || r.task || "",
+          ...(showSubtask
+            ? [
+                r.parentTaskSubject || r.parentTask || "",
+                r.taskSubject || r.task || "",
+              ]
+            : [r.parentTaskSubject || r.parentTask || r.taskSubject || r.task || ""]),
           ...daysOfWeek.flatMap((d) => {
             const dateKey = format(d, "yyyy-MM-dd");
             const cell = r.days[dateKey];
@@ -60,7 +74,7 @@ export const downloadTimesheetTemplate = ({
           [
             "",
             "Sample Project",
-            "Sample Task",
+            ...(showSubtask ? ["Sample Task", "Sample Sub Task"] : ["Sample Task"]),
             ...daysOfWeek.flatMap((d, idx) => {
               const dateKey = format(d, "yyyy-MM-dd");
               const isDisabled = disabledDays.includes(dateKey);
@@ -76,7 +90,7 @@ export const downloadTimesheetTemplate = ({
   worksheet["!cols"] = [
     { wch: 22 },
     { wch: 26 },
-    { wch: 26 },
+    ...(showSubtask ? [{ wch: 26 }, { wch: 26 }] : [{ wch: 26 }]),
     ...daysOfWeek.flatMap((d) => {
       const dateKey = format(d, "yyyy-MM-dd");
       const hasStatus = !!dayStatusMap[dateKey];
@@ -107,18 +121,100 @@ export const parseHourValue = (val: unknown): number => {
   return isNaN(num) ? 0 : Math.max(0, num);
 };
 
-const resolveDoc = (docs: DocItem[], val: string, labelKey: "project_name" | "subject") => {
+const resolveProject = (docs: ProjectDocItem[], val: string) => {
   const trimmed = (val || "").trim();
   if (!trimmed) return { id: "", label: "" };
 
   const match = docs.find(
     (d) =>
       d.name.toLowerCase() === trimmed.toLowerCase() ||
-      d[labelKey]?.toLowerCase() === trimmed.toLowerCase()
+      d.project_name?.toLowerCase() === trimmed.toLowerCase()
   );
   return {
     id: match?.name || trimmed,
-    label: match?.[labelKey] || match?.name || trimmed,
+    label: match?.project_name || match?.name || trimmed,
+  };
+};
+
+const resolveTask = (
+  taskDocs: TaskDocItem[],
+  taskVal: string,
+  parentTaskVal?: string,
+  projectId?: string
+) => {
+  const tTrim = (taskVal || "").trim();
+  const ptTrim = (parentTaskVal || "").trim();
+
+  // Case 1: Both Parent Task and Sub Task are specified
+  if (ptTrim && tTrim) {
+    const parentMatch = taskDocs.find(
+      (d) =>
+        (!projectId || d.project === projectId) &&
+        (d.name.toLowerCase() === ptTrim.toLowerCase() ||
+         d.subject?.toLowerCase() === ptTrim.toLowerCase())
+    );
+    const parentId = parentMatch?.name || ptTrim;
+    const parentLabel = parentMatch?.subject || parentMatch?.name || ptTrim;
+
+    const taskMatch =
+      taskDocs.find(
+        (d) =>
+          (!projectId || d.project === projectId) &&
+          (d.parent_task === parentId || !d.parent_task) &&
+          (d.name.toLowerCase() === tTrim.toLowerCase() ||
+           d.subject?.toLowerCase() === tTrim.toLowerCase())
+      ) ||
+      taskDocs.find(
+        (d) =>
+          d.name.toLowerCase() === tTrim.toLowerCase() ||
+          d.subject?.toLowerCase() === tTrim.toLowerCase()
+      );
+
+    return {
+      taskId: taskMatch?.name || tTrim,
+      taskSubject: taskMatch?.subject || taskMatch?.name || tTrim,
+      parentTaskId: parentId,
+      parentTaskSubject: parentLabel,
+    };
+  }
+
+  // Case 2: Only one task string is provided
+  const singleVal = tTrim || ptTrim;
+  if (!singleVal) {
+    return { taskId: "", taskSubject: "", parentTaskId: "", parentTaskSubject: "" };
+  }
+
+  const match =
+    taskDocs.find(
+      (d) =>
+        (!projectId || d.project === projectId) &&
+        (d.name.toLowerCase() === singleVal.toLowerCase() ||
+         d.subject?.toLowerCase() === singleVal.toLowerCase())
+    ) ||
+    taskDocs.find(
+      (d) =>
+        d.name.toLowerCase() === singleVal.toLowerCase() ||
+        d.subject?.toLowerCase() === singleVal.toLowerCase()
+    );
+
+  if (match) {
+    const parentDoc = match.parent_task
+      ? taskDocs.find((d) => d.name === match.parent_task)
+      : undefined;
+
+    return {
+      taskId: match.name,
+      taskSubject: match.subject || match.name,
+      parentTaskId: match.parent_task || match.name,
+      parentTaskSubject: parentDoc?.subject || match.parent_task || match.subject || match.name,
+    };
+  }
+
+  return {
+    taskId: singleVal,
+    taskSubject: singleVal,
+    parentTaskId: singleVal,
+    parentTaskSubject: singleVal,
   };
 };
 
@@ -127,19 +223,25 @@ const matchProjectAndTask = (
   projId: string,
   projLabel: string,
   taskId: string,
-  taskLabel: string
+  taskLabel: string,
+  parentTaskId?: string,
+  parentTaskLabel?: string
 ) => {
   const pId = (projId || "").toLowerCase().trim();
   const pLabel = (projLabel || "").toLowerCase().trim();
   const tId = (taskId || "").toLowerCase().trim();
   const tLabel = (taskLabel || "").toLowerCase().trim();
+  const ptId = (parentTaskId || "").toLowerCase().trim();
+  const ptLabel = (parentTaskLabel || "").toLowerCase().trim();
 
-  if (!pId && !pLabel && !tId && !tLabel) return false;
+  if (!pId && !pLabel && !tId && !tLabel && !ptId && !ptLabel) return false;
 
   const rp = (r.project || "").toLowerCase().trim();
   const rpn = (r.projectName || "").toLowerCase().trim();
   const rt = (r.task || "").toLowerCase().trim();
   const rts = (r.taskSubject || "").toLowerCase().trim();
+  const rpt = (r.parentTask || "").toLowerCase().trim();
+  const rpts = (r.parentTaskSubject || "").toLowerCase().trim();
 
   const pMatch =
     !pId && !pLabel
@@ -153,7 +255,13 @@ const matchProjectAndTask = (
       : (tId && (rt === tId || rts === tId)) ||
         (tLabel && (rt === tLabel || rts === tLabel));
 
-  return pMatch && tMatch;
+  const ptMatch =
+    !ptId && !ptLabel
+      ? true
+      : (ptId && (rpt === ptId || rpts === ptId || rt === ptId)) ||
+        (ptLabel && (rpt === ptLabel || rpts === ptLabel || rts === ptLabel));
+
+  return pMatch && (tMatch || ptMatch);
 };
 
 /**
@@ -164,11 +272,13 @@ export const parseTimesheetExcelFile = async ({
   daysOfWeek,
   existingRows = [],
   disabledDays = [],
+  showSubtask = true,
 }: {
   file: File;
   daysOfWeek: Date[];
   existingRows?: TimesheetRow[];
   disabledDays?: string[];
+  showSubtask?: boolean;
 }): Promise<{ rows: TimesheetRow[]; rowCount: number; skippedDisabledHours: boolean }> => {
   const buffer = await file.arrayBuffer();
   const workbook = XLSX.read(buffer, { type: "array" });
@@ -190,20 +300,29 @@ export const parseTimesheetExcelFile = async ({
   if (projectCol === -1) {
     projectCol = idCol === 0 ? 1 : 0;
   }
-  let taskCol = headers.findIndex((h) => h.includes("task"));
+
+  // Detect separate parent task and sub task columns if present
+  let parentTaskCol = showSubtask ? headers.findIndex((h) => /(parent.*task|group.*task|main.*task)/i.test(h)) : -1;
+  const subTaskCol = showSubtask ? headers.findIndex((h) => /(sub.*task|child.*task)/i.test(h)) : -1;
+  let taskCol = headers.findIndex((h) => h === "task" || h.includes("task"));
+
+  if (parentTaskCol === -1 && subTaskCol !== -1 && taskCol !== -1 && taskCol !== subTaskCol) {
+    parentTaskCol = taskCol;
+  }
+
   if (taskCol === -1) {
     taskCol = projectCol === 1 ? 2 : 1;
   }
 
-  let projectDocs: DocItem[] = [];
-  let taskDocs: DocItem[] = [];
+  let projectDocs: ProjectDocItem[] = [];
+  let taskDocs: TaskDocItem[] = [];
   try {
     const [projRes, taskRes] = await Promise.all([
       FrappeAPI.getDocumentList("Project", { fields: ["name", "project_name"], limit: 0 }),
-      FrappeAPI.getDocumentList("Task", { fields: ["name", "subject", "project"], limit: 0 }),
+      FrappeAPI.getDocumentList("Task", { fields: ["name", "subject", "project", "parent_task", "is_group"], limit: 0 }),
     ]);
-    projectDocs = (projRes?.data as unknown as DocItem[]) || [];
-    taskDocs = (taskRes?.data as unknown as DocItem[]) || [];
+    projectDocs = (projRes?.data as unknown as ProjectDocItem[]) || [];
+    taskDocs = (taskRes?.data as unknown as TaskDocItem[]) || [];
   } catch (e) {
     console.warn("Could not fetch project/task list:", e);
   }
@@ -235,8 +354,9 @@ export const parseTimesheetExcelFile = async ({
       (h) => isDayHeader(h) && /(comment|desc|note|remark)/i.test(h)
     );
 
-    const baseOffset = idCol !== -1 ? 1 : 0;
-    const resolvedHoursCol = hoursCol !== -1 ? hoursCol : 2 + baseOffset + idx * 2;
+    const taskColsCount = showSubtask && parentTaskCol !== -1 && subTaskCol !== -1 ? 2 : 1;
+    const baseOffset = (idCol !== -1 ? 1 : 0) + taskColsCount;
+    const resolvedHoursCol = hoursCol !== -1 ? hoursCol : 1 + baseOffset + idx * 2;
     const resolvedCommentCol =
       commentCol !== -1
         ? commentCol
@@ -244,7 +364,7 @@ export const parseTimesheetExcelFile = async ({
           hoursCol + 1 < headers.length &&
           /(comment|desc|note|remark)/i.test(headers[hoursCol + 1])
         ? hoursCol + 1
-        : 3 + baseOffset + idx * 2;
+        : 2 + baseOffset + idx * 2;
 
     return {
       dateKey,
@@ -260,11 +380,14 @@ export const parseTimesheetExcelFile = async ({
   rawRows.slice(headerIdx + 1).forEach((row, rIdx) => {
     const rawRowId = idCol !== -1 ? String(row[idCol] || "").trim() : "";
     const rawProj = String(row[projectCol] || "").trim();
-    const rawTask = String(row[taskCol] || "").trim();
-    if (!rawRowId && !rawProj && !rawTask && !row.some((c) => String(c).trim() !== "")) return;
+    const rawParentTask = parentTaskCol !== -1 ? String(row[parentTaskCol] || "").trim() : "";
+    const rawSubTask = subTaskCol !== -1 ? String(row[subTaskCol] || "").trim() : "";
+    const rawTask = rawSubTask || String(row[taskCol] || "").trim();
 
-    const proj = resolveDoc(projectDocs, rawProj, "project_name");
-    const task = resolveDoc(taskDocs, rawTask, "subject");
+    if (!rawRowId && !rawProj && !rawTask && !rawParentTask && !row.some((c) => String(c).trim() !== "")) return;
+
+    const proj = resolveProject(projectDocs, rawProj);
+    const taskResolved = resolveTask(taskDocs, rawTask, rawParentTask, proj.id);
 
     // Match priority:
     // 1. By unique Row ID (if present and matches an unused existing row)
@@ -280,7 +403,15 @@ export const parseTimesheetExcelFile = async ({
       matchedExisting = existingRows.find(
         (r) =>
           !usedExistingRowIds.has(r.id) &&
-          matchProjectAndTask(r, proj.id, proj.label, task.id, task.label)
+          matchProjectAndTask(
+            r,
+            proj.id,
+            proj.label,
+            taskResolved.taskId,
+            taskResolved.taskSubject,
+            taskResolved.parentTaskId,
+            taskResolved.parentTaskSubject
+          )
       );
     }
 
@@ -303,11 +434,19 @@ export const parseTimesheetExcelFile = async ({
       hasLockedOnDisabledDay && matchedExisting
         ? matchedExisting.projectName || matchedExisting.project
         : proj.label;
-    const finalTaskId = hasLockedOnDisabledDay && matchedExisting ? matchedExisting.task : task.id;
+    const finalTaskId = hasLockedOnDisabledDay && matchedExisting ? matchedExisting.task : taskResolved.taskId;
     const finalTaskSubject =
       hasLockedOnDisabledDay && matchedExisting
         ? matchedExisting.taskSubject || matchedExisting.task
-        : task.label;
+        : taskResolved.taskSubject;
+    const finalParentTaskId =
+      hasLockedOnDisabledDay && matchedExisting
+        ? matchedExisting.parentTask || matchedExisting.task
+        : taskResolved.parentTaskId;
+    const finalParentTaskSubject =
+      hasLockedOnDisabledDay && matchedExisting
+        ? matchedExisting.parentTaskSubject || matchedExisting.parentTask || matchedExisting.taskSubject
+        : taskResolved.parentTaskSubject;
 
     const days: Record<string, { hours: number; description: string }> = {};
     let rowHasEditableData = false;
@@ -352,6 +491,8 @@ export const parseTimesheetExcelFile = async ({
       projectName: finalProjectName,
       task: finalTaskId,
       taskSubject: finalTaskSubject,
+      parentTask: finalParentTaskId,
+      parentTaskSubject: finalParentTaskSubject,
       activityType: matchedExisting?.activityType || "Service",
       isBillable: matchedExisting?.isBillable ?? true,
       days,

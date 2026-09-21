@@ -12,7 +12,7 @@ import { toast } from "react-hot-toast";
 import { useCurrentUser } from "../../../hooks/useCurrentUser";
 import { useCurrentEmployeeDetails } from "../../../hooks/useEmployee";
 import { useGetAllEventsAndAttendance } from "../../../hooks/useAttendance";
-import { useCreateOrUpdateTimesheetEntries, useWeeklyTimesheetData } from "../../../hooks/useTimesheet";
+import { useCreateOrUpdateTimesheetEntries, useWeeklyTimesheetData, useTimesheetSettings } from "../../../hooks/useTimesheet";
 import { getWeeklyTimesheetData } from "../../../services/timesheetService";
 import type { TimesheetApprovalStatus } from "../../../types/timesheet";
 import { useGetUiPermission } from "../../../hooks/userUiPermission";
@@ -39,6 +39,8 @@ export interface TimesheetRow {
   projectName: string;
   task: string;
   taskSubject: string;
+  parentTask?: string;
+  parentTaskSubject?: string;
   activityType: string;
   isBillable: boolean;
   days: Record<string, { hours: number; description: string }>;
@@ -46,7 +48,8 @@ export interface TimesheetRow {
 
 interface RowItemType {
   project: string;
-  task: string;
+  task?: string;
+  custom_parent_task?: string;
   comment: string;
   hrs: number;
 }
@@ -56,7 +59,7 @@ import { TimesheetTopBar } from "./components/TimesheetTopBar";
 import { TimesheetMetrics } from "./components/TimesheetMetrics";
 import { TimesheetActionFooter } from "./components/TimesheetActionFooter";
 import { AddTimeEntryButton } from "./components/AddTimeEntryButton";
-import Badge from "../../shared/Badge";
+
 
 const TimesheetCreate: React.FC = () => {
   const loadingOverlay = useLoadingOverlay();
@@ -75,10 +78,6 @@ const TimesheetCreate: React.FC = () => {
 
   const startOfWeekStr = useMemo(() => format(currentWeekStart, "yyyy-MM-dd"), [currentWeekStart]);
 
-  const daysOfWeek = useMemo(() => {
-    return Array.from({ length: 7 }).map((_, idx) => addDays(currentWeekStart, idx));
-  }, [currentWeekStart]);
-
   // Employee details
   const { data: user } = useCurrentUser();
   const { data: employeeDetails, isLoading: isEmployeeLoading } = useCurrentEmployeeDetails({
@@ -93,7 +92,13 @@ const TimesheetCreate: React.FC = () => {
     week_start_date: startOfWeekStr
   }, !!employeeId);
 
-  const isDetailLoading = isWeeklyLoading || isEmployeeLoading;
+  const { data: timesheetSettingsData, isLoading: isSettingsLoading } = useTimesheetSettings();
+  const showSubtask = timesheetSettingsData ? (Number(timesheetSettingsData.show_subtask) === 1 || timesheetSettingsData.show_subtask === true) : true;
+  const hideHolidayTimesheet = timesheetSettingsData ? (Number(timesheetSettingsData.hide_holiday_timesheet) === 1 || timesheetSettingsData.hide_holiday_timesheet === true) : false;
+  const allowWeekoffTimesheet = timesheetSettingsData ? (Number(timesheetSettingsData.allow_weekoff_timesheet) === 1 || timesheetSettingsData.allow_weekoff_timesheet === true) : false;
+  const showSelectDaysToSubmit = timesheetSettingsData ? (Number(timesheetSettingsData.show_select_days_to_submit) === 1 || timesheetSettingsData.show_select_days_to_submit === true) : false;
+
+  const isDetailLoading = isWeeklyLoading || isEmployeeLoading || isSettingsLoading;
 
   // Attendance Working Hours Map from weekly timesheet data
   const attendanceHoursMap = useMemo(() => {
@@ -138,11 +143,78 @@ const TimesheetCreate: React.FC = () => {
   });
 
   const weekOffDates = useMemo(() => {
-    if (!attendanceEvents) return [];
-    return attendanceEvents
-      .filter((event) => event.status === "Weekly Off" || event.custom_status === "Weekly Off" || event.title === "Weekly Off")
-      .map((event) => event.start?.split(" ")[0] || "");
+    const dates = new Set<string>();
+    (attendanceEvents || []).forEach((event) => {
+      const isWeeklyOff =
+        event.status === "Weekly Off" ||
+        event.custom_status === "Weekly Off" ||
+        event.title === "Weekly Off" ||
+        (["Holiday", "Holidays"].includes(event.doctype || "") && event.weekly_off === 1);
+      if (isWeeklyOff) {
+        const d = event.start?.split(" ")[0];
+        if (d) dates.add(d);
+      }
+    });
+    (weeklyData?.days || []).forEach((day) => {
+      if (day.attendance_status?.toLowerCase() === "weekly off" || day.attendance_status?.toLowerCase() === "week off") {
+        dates.add(day.date);
+      }
+    });
+    return Array.from(dates);
+  }, [attendanceEvents, weeklyData]);
+
+  const holidayDates = useMemo(() => {
+    const dates = new Set<string>();
+    (attendanceEvents || []).forEach((event) => {
+      const isHolidayDoc = ["Holiday", "Holidays"].includes(event.doctype || "");
+      const isHolidayStatus =
+        event.status?.toLowerCase() === "holiday" ||
+        event.custom_status?.toLowerCase() === "holiday" ||
+        event.title?.toLowerCase() === "holiday";
+      const isWeeklyOff =
+        event.weekly_off === 1 ||
+        event.status === "Weekly Off" ||
+        event.custom_status === "Weekly Off" ||
+        event.title === "Weekly Off";
+      if ((isHolidayDoc || isHolidayStatus) && !isWeeklyOff) {
+        const d = event.start?.split(" ")[0];
+        if (d) dates.add(d);
+      }
+    });
+    (weeklyData?.days || []).forEach((day) => {
+      if (day.attendance_status?.toLowerCase() === "holiday" && !weekOffDates.includes(day.date)) {
+        dates.add(day.date);
+      }
+    });
+    return Array.from(dates);
+  }, [attendanceEvents, weeklyData, weekOffDates]);
+
+  // Map date -> holiday title for tooltip display
+  const holidayTitleMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    (attendanceEvents || []).forEach((event) => {
+      const isHolidayDoc = ["Holiday", "Holidays"].includes(event.doctype || "");
+      const isHolidayStatus =
+        event.status?.toLowerCase() === "holiday" ||
+        event.custom_status?.toLowerCase() === "holiday";
+      const isWeeklyOff =
+        event.weekly_off === 1 ||
+        event.status === "Weekly Off" ||
+        event.custom_status === "Weekly Off" ||
+        event.title === "Weekly Off";
+      if ((isHolidayDoc || isHolidayStatus) && !isWeeklyOff) {
+        const d = event.start?.split(" ")[0];
+        if (d && event.title) {
+          map[d] = event.title;
+        }
+      }
+    });
+    return map;
   }, [attendanceEvents]);
+
+  const daysOfWeek = useMemo(() => {
+    return Array.from({ length: 7 }).map((_, idx) => addDays(currentWeekStart, idx));
+  }, [currentWeekStart]);
 
   // Project & Task names are now provided directly in the API response
   // No need for separate projectsList / tasksList fetches
@@ -159,19 +231,19 @@ const TimesheetCreate: React.FC = () => {
   const [attachedFile, setAttachedFile] = useState<File | null>(null);
   const [isFileModified, setIsFileModified] = useState<boolean>(false);
   const [submittedDatesList, setSubmittedDatesList] = useState<string[]>([]);
+  const [selectedDates, setSelectedDates] = useState<string[]>([]);
+  const [activeHolidayTooltipDate, setActiveHolidayTooltipDate] = useState<string | null>(null);
 
   const allDisabledDays = useMemo(() => {
-    return Array.from(new Set([...weekOffDates, ...submittedDatesList, ...nonEditableDays]));
-  }, [weekOffDates, submittedDatesList, nonEditableDays]);
+    const disabledWeekOffs = allowWeekoffTimesheet ? [] : weekOffDates;
+    const disabledHolidays = hideHolidayTimesheet ? holidayDates : [];
+    return Array.from(new Set([...disabledWeekOffs, ...disabledHolidays, ...submittedDatesList, ...nonEditableDays]));
+  }, [allowWeekoffTimesheet, weekOffDates, hideHolidayTimesheet, holidayDates, submittedDatesList, nonEditableDays]);
 
   const dayStatusMap = useMemo(() => {
-    const map: Record<string, "Week Off" | "Draft" | "Submitted" | "Approved" | "Rejected"> = {};
+    const map: Record<string, "Week Off" | "Holiday" | "Draft" | "Submitted" | "Approved" | "Rejected"> = {};
     daysOfWeek.forEach(day => {
       const dateKey = format(day, "yyyy-MM-dd");
-      if (weekOffDates.includes(dateKey)) {
-        map[dateKey] = "Week Off";
-        return;
-      }
       if (submittedDatesList.includes(dateKey)) {
         map[dateKey] = "Submitted";
         return;
@@ -179,29 +251,44 @@ const TimesheetCreate: React.FC = () => {
       const dayData = weeklyData?.days?.find(d => d.date === dateKey);
       const records = dayData?.timesheet_records || [];
 
-      if (records.length === 0) {
-        return; // Day with no timesheet records has no status
+      if (records.length > 0) {
+        const hasRejected = records.some(r => r.custom_timesheet_status === "Rejected");
+        const hasDraft = records.some(r => r.custom_timesheet_status === "Draft");
+        const hasApproved = records.some(r => r.custom_timesheet_status === "Approved");
+        const hasSubmitted = records.some(
+          r => r.custom_timesheet_status === "Pending for Approval" || (r.custom_timesheet_status as string) === "Submitted"
+        );
+
+        if (hasRejected) {
+          map[dateKey] = "Rejected";
+          return;
+        } else if (hasDraft) {
+          map[dateKey] = "Draft";
+          return;
+        } else if (hasApproved) {
+          map[dateKey] = "Approved";
+          return;
+        } else if (hasSubmitted) {
+          map[dateKey] = "Submitted";
+          return;
+        } else {
+          map[dateKey] = "Draft";
+          return;
+        }
       }
 
-      // Check custom_timesheet_status directly from the timesheet records for this day
-      const hasApproved = records.some(r => r.custom_timesheet_status === "Approved");
-      const hasSubmitted = records.some(
-        r => r.custom_timesheet_status === "Pending for Approval" || (r.custom_timesheet_status as string) === "Submitted"
-      );
-      const hasRejected = records.some(r => r.custom_timesheet_status === "Rejected");
+      if (weekOffDates.includes(dateKey)) {
+        map[dateKey] = "Week Off";
+        return;
+      }
 
-      if (hasApproved) {
-        map[dateKey] = "Approved";
-      } else if (hasSubmitted) {
-        map[dateKey] = "Submitted";
-      } else if (hasRejected) {
-        map[dateKey] = "Rejected";
-      } else {
-        map[dateKey] = "Draft";
+      if (holidayDates.includes(dateKey)) {
+        map[dateKey] = "Holiday";
+        return;
       }
     });
     return map;
-  }, [daysOfWeek, weekOffDates, weeklyData, submittedDatesList]);
+  }, [daysOfWeek, weekOffDates, holidayDates, weeklyData, submittedDatesList]);
 
   const { uploadFiles } = useFileUploader();
 
@@ -214,7 +301,40 @@ const TimesheetCreate: React.FC = () => {
   const hasSubmitPermission = isActionEnabled(uiPermission, "submit", "Timesheet");
   const hasCancelPermission = isActionEnabled(uiPermission, "cancel", "Timesheet");
 
-  const isGridEditable = timesheetStatus !== "Approved" && (hasSavePermission || hasSubmitPermission);
+  // Read-only only when ALL days are disabled (all approved/submitted/week-off/holiday) or timesheet is Cancelled
+  const isReadOnly = useMemo(() => {
+    if (timesheetStatus === "Cancelled") return true;
+    const allDaysDisabled = daysOfWeek.every(day => {
+      const dateKey = format(day, "yyyy-MM-dd");
+      return allDisabledDays.includes(dateKey);
+    });
+    return allDaysDisabled;
+  }, [timesheetStatus, daysOfWeek, allDisabledDays]);
+
+  const isGridEditable = !isReadOnly && (hasSavePermission || hasSubmitPermission);
+
+  // Single Day Selection handlers
+  const handleToggleDateSelection = (dateKey: string) => {
+    if (!showSelectDaysToSubmit || allDisabledDays.includes(dateKey) || !isGridEditable || isReadOnly) return;
+    setSelectedDates(prev =>
+      prev.includes(dateKey) ? prev.filter(d => d !== dateKey) : [...prev, dateKey]
+    );
+  };
+
+  const handleSelectAllDays = () => {
+    if (!showSelectDaysToSubmit) return;
+    const selectableDays = daysOfWeek
+      .map(day => format(day, "yyyy-MM-dd"))
+      .filter(dateKey => !allDisabledDays.includes(dateKey));
+
+    if (selectableDays.length === 0) return;
+
+    if (selectedDates.length === selectableDays.length) {
+      setSelectedDates([]);
+    } else {
+      setSelectedDates(selectableDays);
+    }
+  };
 
   // Modal States
   const [commentModalConfig, setCommentModalConfig] = useState<{
@@ -238,6 +358,7 @@ const TimesheetCreate: React.FC = () => {
     setAttachedFile(null);
     setIsFileModified(false);
     setNonEditableDays([]);
+    setSelectedDates([]);
   }, [startOfWeekStr]);
 
 
@@ -281,18 +402,17 @@ const TimesheetCreate: React.FC = () => {
         }
 
         if (
-          approvalStatus !== "Rejected" && (
-            ["Submitted", "Billed", "Cancelled"].includes(record.status || "") ||
-            record.docstatus === 1 ||
-            record.docstatus === 2
-          )
+          approvalStatus === "Pending for Approval" ||
+          (approvalStatus as string) === "Submitted"
         ) {
           isDaySubmitted = true;
         }
 
         (record.time_logs || []).forEach((log, logIndex) => {
           const projectId = log.project_id || "";
-          const taskId = log.task_id || "";
+          const taskId = log.task || log.task_id || "";
+          const parentTaskId = log.custom_parent_task_id || (!showSubtask ? taskId : "");
+          const parentTaskName = log.custom_parent_task_name || (!showSubtask ? (log.task_name || taskId) : (log.custom_parent_task_id || ""));
           const key = `${projectId}_${taskId}_${logIndex}`;
 
           if (!rowsMap[key]) {
@@ -300,6 +420,8 @@ const TimesheetCreate: React.FC = () => {
               id: key,
               project: projectId,
               projectName: log.project_name || projectId,
+              parentTask: parentTaskId,
+              parentTaskSubject: parentTaskName,
               task: taskId,
               taskSubject: log.task_name || taskId,
               activityType: "Service",
@@ -326,21 +448,58 @@ const TimesheetCreate: React.FC = () => {
     setSubmittedDatesList(submittedDays);
     setNonEditableDays(lockedDays);
 
-    // Derive overall status from custom_timesheet_status values
-    // Priority: Rejected > Pending for Approval > Approved > Draft
+    // Derive overall status:
+    // Exclude non-editable days configured by backend (disabled week-offs / disabled holidays)
+    // Rules:
+    // - any Rejected -> Rejected
+    // - any Draft (and no Rejected) -> Draft
+    // - all Approved -> Approved
+    // - all Pending For Approval / Submitted -> Submitted
+    const configEligibleDays = daysOfWeek
+      .map(day => format(day, "yyyy-MM-dd"))
+      .filter(dateKey => {
+        const isWeekOffDisabled = !allowWeekoffTimesheet && weekOffDates.includes(dateKey);
+        const isHolidayDisabled = hideHolidayTimesheet && holidayDates.includes(dateKey);
+        return !isWeekOffDisabled && !isHolidayDisabled;
+      });
+
     let derivedStatus = "Draft";
-    if (allStatuses.size > 0) {
-      if (allStatuses.has("Rejected")) {
+    if (configEligibleDays.length > 0) {
+      const dayStatuses = configEligibleDays.map(dateKey => {
+        const dayRecords = (weeklyData.days || []).find(d => d.date === dateKey)?.timesheet_records || [];
+        if (dayRecords.some(r => r.custom_timesheet_status === "Rejected")) {
+          return "Rejected";
+        }
+        if (dayRecords.some(r => r.custom_timesheet_status === "Draft")) {
+          return "Draft";
+        }
+        if (dayRecords.length > 0 && dayRecords.every(r => r.custom_timesheet_status === "Approved")) {
+          return "Approved";
+        }
+        if (
+          submittedDays.includes(dateKey) ||
+          dayRecords.some(
+            r =>
+              r.custom_timesheet_status === "Pending for Approval" ||
+              (r.custom_timesheet_status as string) === "Submitted"
+          )
+        ) {
+          return "Submitted";
+        }
+        return "Draft";
+      });
+
+      if (dayStatuses.some(s => s === "Rejected")) {
         derivedStatus = "Rejected";
-      } else if (allStatuses.has("Pending for Approval")) {
-        derivedStatus = "Pending for Approval";
-      } else if (allStatuses.has("Approved")) {
+      } else if (dayStatuses.some(s => s === "Draft")) {
+        derivedStatus = "Draft";
+      } else if (dayStatuses.every(s => s === "Approved")) {
         derivedStatus = "Approved";
+      } else if (dayStatuses.every(s => s === "Submitted" || s === "Approved")) {
+        derivedStatus = "Submitted";
       } else {
         derivedStatus = "Draft";
       }
-    } else if (!foundName) {
-      derivedStatus = "Draft";
     }
 
     setTimesheetStatus(derivedStatus);
@@ -348,7 +507,7 @@ const TimesheetCreate: React.FC = () => {
     const parsedData = Object.values(rowsMap);
     setProjectsData(parsedData);
     setInitialProjectsData(parsedData);
-  }, [weeklyData]);
+  }, [weeklyData, showSubtask, daysOfWeek, allowWeekoffTimesheet, weekOffDates, hideHolidayTimesheet, holidayDates]);
 
   // Add cell hour changes
   const handleHourChange = (rowId: string, dateKey: string, value: string) => {
@@ -539,8 +698,8 @@ const TimesheetCreate: React.FC = () => {
           return;
         }
 
-        // Do not overwrite week off dates
-        if (weekOffDates.includes(shiftedDateStr)) {
+        // Do not overwrite disabled days (week-offs or holidays based on settings)
+        if (allDisabledDays.includes(shiftedDateStr)) {
           return;
         }
 
@@ -548,7 +707,9 @@ const TimesheetCreate: React.FC = () => {
           (record.time_logs || []).forEach((log, logIndex) => {
             hasLogs = true;
             const projectId = log.project_id || "";
-            const taskId = log.task_id || "";
+            const taskId = log.task || log.task_id || "";
+            const parentTaskId = log.custom_parent_task_id || (!showSubtask ? taskId : "");
+            const parentTaskName = log.custom_parent_task_name || (!showSubtask ? (log.task_name || taskId) : (log.custom_parent_task_id || ""));
             const key = `${projectId}_${taskId}_${logIndex}`;
 
             if (!rowsMap[key]) {
@@ -556,6 +717,8 @@ const TimesheetCreate: React.FC = () => {
                 id: key,
                 project: projectId,
                 projectName: log.project_name || projectId,
+                parentTask: parentTaskId,
+                parentTaskSubject: parentTaskName,
                 task: taskId,
                 taskSubject: log.task_name || taskId,
                 activityType: "Service",
@@ -603,6 +766,7 @@ const TimesheetCreate: React.FC = () => {
         projectsData,
         dayStatusMap,
         disabledDays: allDisabledDays,
+        showSubtask,
       });
       toast.success("Timesheet template downloaded successfully");
     } catch (err) {
@@ -620,6 +784,7 @@ const TimesheetCreate: React.FC = () => {
         daysOfWeek,
         existingRows: projectsData,
         disabledDays: allDisabledDays,
+        showSubtask,
       });
 
       loadingOverlay.hide();
@@ -662,6 +827,8 @@ const TimesheetCreate: React.FC = () => {
       id: tempId,
       project: "",
       projectName: "",
+      parentTask: "",
+      parentTaskSubject: "",
       task: "",
       taskSubject: "",
       activityType: "Service",
@@ -676,7 +843,8 @@ const TimesheetCreate: React.FC = () => {
   const handleConfigureRow = useCallback((rowId: string, submission: any) => {
     const data = submission.data;
     const projectVal = data.project || "";
-    const taskVal = data.task || "";
+    const parentTaskVal = data.custom_parent_task || "";
+    const taskVal = showSubtask ? (data.task || "") : (data.custom_parent_task || "");
     const isBillable = data.is_billable !== undefined ? !!data.is_billable : true;
 
     setProjectsData(prev =>
@@ -686,6 +854,8 @@ const TimesheetCreate: React.FC = () => {
           ...r,
           project: projectVal,
           projectName: projectVal,
+          parentTask: parentTaskVal,
+          parentTaskSubject: parentTaskVal,
           task: taskVal,
           taskSubject: taskVal,
           isBillable: isBillable
@@ -698,8 +868,46 @@ const TimesheetCreate: React.FC = () => {
       delete newErrs[`${rowId}_project_task`];
       return newErrs;
     });
-  }, []);
-  const formSchema = useMemo(() => addTimeEntrySchema, []);
+  }, [showSubtask]);
+  const formSchema = useMemo(() => {
+    const schema = JSON.parse(JSON.stringify(addTimeEntrySchema));
+    if (!showSubtask) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const projectComp = schema.components.find((c: any) => c.key === "project");
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const taskColumns = schema.components.find((c: any) => c.key === "taskColumns");
+      if (projectComp && taskColumns && taskColumns.columns) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const parentTaskComp = taskColumns.columns[0].components.find((c: any) => c.key === "custom_parent_task");
+
+        // When subtask is hidden, show only non-group (leaf) tasks instead of group tasks
+        if (parentTaskComp) {
+          parentTaskComp.data.url = parentTaskComp.data.url.replace(
+            '["is_group","=",1]',
+            '["is_group","=",0]'
+          );
+        }
+
+        // Put project and parent_task side-by-side in a new columns layout
+        schema.components = [
+          {
+            type: "columns",
+            columns: [
+              {
+                width: 6,
+                components: [projectComp]
+              },
+              {
+                width: 6,
+                components: [parentTaskComp]
+              }
+            ]
+          }
+        ];
+      }
+    }
+    return schema;
+  }, [showSubtask]);
 
 
   // Comments handlers
@@ -764,14 +972,49 @@ const TimesheetCreate: React.FC = () => {
       return;
     }
 
+    const isSelective = showSelectDaysToSubmit && selectedDates.length > 0;
+    const targetDates = isSelective
+      ? selectedDates.filter(d => !allDisabledDays.includes(d))
+      : daysOfWeek
+          .map(d => format(d, "yyyy-MM-dd"))
+          .filter(d => !allDisabledDays.includes(d));
+
+    if (targetDates.length === 0) {
+      toast.error("No editable days available to " + (isSubmit ? "submit." : "save."));
+      return;
+    }
+
     const newErrors: Record<string, string> = {};
     let hasValidationError = false;
 
+    if (isSelective) {
+      // Validate that every selected day has logged hours on at least one row
+      targetDates.forEach(dateKey => {
+        const dayTotal = projectsData.reduce((sum, row) => sum + (row.days[dateKey]?.hours || 0), 0);
+        if (dayTotal <= 0) {
+          hasValidationError = true;
+          const dayDate = parseISO(dateKey);
+          const dayLabel = format(dayDate, "EEE, dd MMM");
+          newErrors[`day_${dateKey}_empty`] = `${dayLabel}: Please log hours for this selected day.`;
+        }
+      });
+    }
+
     projectsData.forEach((row, index) => {
       const rowIndex = index + 1;
-      if (!row.project || !row.task) {
-        hasValidationError = true;
-        newErrors[`${row.id}_project_task`] = `Row ${rowIndex}: Project and Task are required.`;
+      const isTaskMissing = showSubtask ? (!row.task || !row.parentTask) : !row.parentTask;
+
+      // Check if this row has logged hours on any target date
+      const hasHoursOnTargetDates = targetDates.some(dateKey => {
+        const cell = row.days[dateKey];
+        return cell && cell.hours > 0;
+      });
+
+      if (!isSelective || hasHoursOnTargetDates) {
+        if (!row.project || isTaskMissing) {
+          hasValidationError = true;
+          newErrors[`${row.id}_project_task`] = `Row ${rowIndex}: Project and Task are required.`;
+        }
       }
 
       let hasAtLeastOneCellInRow = false;
@@ -782,14 +1025,14 @@ const TimesheetCreate: React.FC = () => {
 
         if (cell && cell.hours > 0) {
           hasAtLeastOneCellInRow = true;
-          if (!cell.description || !cell.description.trim()) {
+          if (targetDates.includes(dateKey) && (!cell.description || !cell.description.trim())) {
             hasValidationError = true;
             newErrors[`${row.id}_${dateKey}_comment`] = `Row ${rowIndex} (${format(day, 'EEE')}): Comment is required.`;
           }
         }
       }
 
-      if (!hasAtLeastOneCellInRow) {
+      if (!isSelective && !hasAtLeastOneCellInRow) {
         hasValidationError = true;
         if (!newErrors[`${row.id}_project_task`]) {
           newErrors[`${row.id}_empty_row`] = `Row ${rowIndex}: Must have at least one logged hour.`;
@@ -809,21 +1052,24 @@ const TimesheetCreate: React.FC = () => {
 
     let hasAtLeastOneHourEntry = false;
 
-    daysOfWeek.forEach(day => {
-      const dateKey = format(day, "yyyy-MM-dd");
-
-      if (submittedDatesList.includes(dateKey) || nonEditableDays.includes(dateKey)) {
-        return; // Skip already submitted or non-editable days
-      }
-
+    targetDates.forEach(dateKey => {
       const rowsForDay: RowItemType[] = [];
 
       projectsData.forEach(row => {
         const cell = row.days[dateKey];
         if (cell && cell.hours > 0) {
+          const taskPayload = showSubtask
+            ? {
+                task: row.task || "",
+                custom_parent_task: row.parentTask || "",
+              }
+            : {
+                task: row.parentTask || "",
+              };
+
           rowsForDay.push({
             project: row.project || "",
-            task: row.task || "",
+            ...taskPayload,
             comment: cell.description || "",
             hrs: cell.hours
           });
@@ -853,11 +1099,19 @@ const TimesheetCreate: React.FC = () => {
     });
 
     if (!hasAtLeastOneHourEntry && !Object.values(payload).some(entry => entry.status === "Delete")) {
-      toast.error("Please log at least one hour on any project day.");
+      toast.error(
+        targetDates.length === 1
+          ? `Please log at least one hour for ${format(parseISO(targetDates[0]), "dd MMM")}.`
+          : "Please log at least one hour on any project day."
+      );
       return;
     }
 
-    loadingOverlay.show(isSubmit ? "Submitting timesheet entries..." : "Saving timesheet entries...");
+    const loadingMsg = isSubmit
+      ? (targetDates.length === 1 ? `Submitting timesheet for ${format(parseISO(targetDates[0]), "dd MMM")}...` : "Submitting timesheet entries...")
+      : (targetDates.length === 1 ? `Saving timesheet for ${format(parseISO(targetDates[0]), "dd MMM")}...` : "Saving timesheet entries...");
+
+    loadingOverlay.show(loadingMsg);
     setIsSavingLocally(true);
 
     createOrUpdateEntries(payload, {
@@ -865,16 +1119,65 @@ const TimesheetCreate: React.FC = () => {
       onSuccess: async (data: any) => {
         setIsSavingLocally(false);
         loadingOverlay.hide();
-        toast.success(isSubmit ? "Timesheet submitted successfully" : "Timesheet saved successfully");
+        const successMsg = isSubmit
+          ? (targetDates.length === 1 ? `Timesheet for ${format(parseISO(targetDates[0]), "dd MMM")} submitted successfully` : "Timesheet submitted successfully")
+          : (targetDates.length === 1 ? `Timesheet for ${format(parseISO(targetDates[0]), "dd MMM")} saved successfully` : "Timesheet saved successfully");
+        toast.success(successMsg);
         setLastSavedTime(format(new Date(), "hh:mm a"));
         if (isSubmit) {
           const newSubmitted = Object.keys(payload).filter(date => payload[date].status === "Submit");
-          setSubmittedDatesList(prev => {
-            const updated = Array.from(new Set([...prev, ...newSubmitted]));
-            return updated;
-          });
-          setTimesheetStatus("Pending for Approval");
+          const updatedSubmittedList = Array.from(new Set([...submittedDatesList, ...newSubmitted]));
+          setSubmittedDatesList(updatedSubmittedList);
           setNonEditableDays(prev => Array.from(new Set([...prev, ...newSubmitted])));
+          setSelectedDates(prev => prev.filter(d => !newSubmitted.includes(d)));
+
+          const configEligibleDays = daysOfWeek
+            .map(day => format(day, "yyyy-MM-dd"))
+            .filter(dateKey => {
+              const isWeekOffDisabled = !allowWeekoffTimesheet && weekOffDates.includes(dateKey);
+              const isHolidayDisabled = hideHolidayTimesheet && holidayDates.includes(dateKey);
+              return !isWeekOffDisabled && !isHolidayDisabled;
+            });
+
+          let derivedStatus = "Draft";
+          if (configEligibleDays.length > 0) {
+            const dayStatuses = configEligibleDays.map(dateKey => {
+              const dayRecords = (weeklyData?.days || []).find(d => d.date === dateKey)?.timesheet_records || [];
+              if (dayRecords.some(r => r.custom_timesheet_status === "Rejected")) {
+                return "Rejected";
+              }
+              if (dayRecords.some(r => r.custom_timesheet_status === "Draft") && !updatedSubmittedList.includes(dateKey)) {
+                return "Draft";
+              }
+              if (dayRecords.length > 0 && dayRecords.every(r => r.custom_timesheet_status === "Approved")) {
+                return "Approved";
+              }
+              if (
+                updatedSubmittedList.includes(dateKey) ||
+                dayRecords.some(
+                  r =>
+                    r.custom_timesheet_status === "Pending for Approval" ||
+                    (r.custom_timesheet_status as string) === "Submitted"
+                )
+              ) {
+                return "Submitted";
+              }
+              return "Draft";
+            });
+
+            if (dayStatuses.some(s => s === "Rejected")) {
+              derivedStatus = "Rejected";
+            } else if (dayStatuses.some(s => s === "Draft")) {
+              derivedStatus = "Draft";
+            } else if (dayStatuses.every(s => s === "Approved")) {
+              derivedStatus = "Approved";
+            } else if (dayStatuses.every(s => s === "Submitted" || s === "Approved")) {
+              derivedStatus = "Submitted";
+            } else {
+              derivedStatus = "Draft";
+            }
+          }
+          setTimesheetStatus(derivedStatus);
         } else {
           setTimesheetStatus("Draft");
         }
@@ -941,15 +1244,6 @@ const TimesheetCreate: React.FC = () => {
     });
   };
 
-  // Read-only only when ALL 7 days are disabled (all approved/submitted/week-off)
-  const isReadOnly = useMemo(() => {
-    if (timesheetStatus === "Cancelled") return true;
-    const allDaysDisabled = daysOfWeek.every(day => {
-      const dateKey = format(day, "yyyy-MM-dd");
-      return weekOffDates.includes(dateKey) || submittedDatesList.includes(dateKey) || nonEditableDays.includes(dateKey);
-    });
-    return allDaysDisabled;
-  }, [timesheetStatus, daysOfWeek, weekOffDates, submittedDatesList, nonEditableDays]);
 
   // Attachment upload simulation
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -1008,6 +1302,150 @@ const TimesheetCreate: React.FC = () => {
           </div>
         )}
 
+        {showSelectDaysToSubmit && !isDesktop && !isDetailLoading && (
+          <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <Typography variant="bodySmall" className="text-gray-900 font-bold text-xs tracking-wide">
+                  Select Days
+                </Typography>
+                {selectedDates.length > 0 && (
+                  <span className="bg-primary/10 text-primary text-[10px] font-bold px-2.5 py-0.5 rounded-full">
+                    {selectedDates.length} selected
+                  </span>
+                )}
+              </div>
+              {!isReadOnly && isGridEditable && daysOfWeek.some(day => !allDisabledDays.includes(format(day, "yyyy-MM-dd"))) && (() => {
+                const selectableDays = daysOfWeek.filter(day => !allDisabledDays.includes(format(day, "yyyy-MM-dd")));
+                const allSelected = selectableDays.length > 0 && selectableDays.every(day => selectedDates.includes(format(day, "yyyy-MM-dd")));
+                return (
+                  <button
+                    type="button"
+                    onClick={handleSelectAllDays}
+                    className="flex items-center gap-1.5 cursor-pointer select-none group"
+                    title="Select / Deselect all editable days"
+                  >
+                    <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center transition-all duration-200 ${
+                      allSelected
+                        ? "bg-primary border-primary text-white scale-110"
+                        : "border-gray-300 text-transparent group-hover:border-primary/50"
+                    }`}>
+                      {allSelected && (
+                        <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                      )}
+                    </div>
+                    <span className="text-gray-600 group-hover:text-primary transition-colors text-xs font-semibold">
+                      All
+                    </span>
+                  </button>
+                );
+              })()}
+            </div>
+            <div className="grid grid-cols-7 gap-0.5 sm:gap-1.5">
+              {daysOfWeek.map(day => {
+                const dateKey = format(day, "yyyy-MM-dd");
+                const status = dayStatusMap[dateKey];
+                const isDayDisabled = allDisabledDays.includes(dateKey) || !isGridEditable || isReadOnly;
+                const isSelected = selectedDates.includes(dateKey);
+                const holidayTitle = holidayTitleMap[dateKey];
+
+                return (
+                  <div
+                    key={dateKey}
+                    onClick={() => {
+                      if (!isDayDisabled) {
+                        handleToggleDateSelection(dateKey);
+                      }
+                    }}
+                    className={`relative min-w-0 flex flex-col items-center py-2 px-0.5 sm:py-2.5 sm:px-1 rounded-xl border transition-all duration-200 select-none ${
+                      !isDayDisabled ? "cursor-pointer hover:shadow-md active:scale-[0.97]" : "cursor-default"
+                    } ${
+                      isSelected
+                        ? "bg-primary-50/70 border-primary shadow-sm ring-1 ring-primary/20"
+                        : isDayDisabled
+                          ? "bg-gray-50/90 border-gray-200/80"
+                          : "bg-white border-gray-200 hover:border-gray-300 shadow-xs"
+                    }`}
+                  >
+                    <div className="flex items-center justify-center mb-1.5">
+                      {!isDayDisabled ? (
+                        <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center transition-all duration-200 ${
+                          isSelected
+                            ? "bg-primary border-primary text-white scale-110"
+                            : "border-gray-300 text-transparent"
+                        }`}>
+                          {isSelected && (
+                            <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                            </svg>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="w-4 h-4 rounded-full bg-gray-200/60 flex items-center justify-center">
+                          <span className="w-1.5 h-1.5 rounded-full bg-gray-400" />
+                        </div>
+                      )}
+                    </div>
+                    <span className={`text-sm font-bold leading-none ${isDayDisabled ? "text-gray-600" : "text-gray-900"}`}>
+                      {format(day, "d")}
+                    </span>
+                    <span className={`text-[10px] font-semibold mt-1 leading-none uppercase ${isDayDisabled ? "text-gray-400" : "text-gray-500"}`}>
+                      {format(day, "EEE")}
+                    </span>
+                    {status && (
+                      <div className="mt-2 flex flex-col items-center gap-1 w-full">
+                        {status !== "Holiday" && (
+                          <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded-md leading-none text-center w-full truncate ${
+                            status === "Week Off"
+                              ? "bg-orange-50 text-orange-600 border border-orange-200/70"
+                              : status === "Approved"
+                                ? "bg-emerald-50 text-emerald-600 border border-emerald-200/70"
+                                : status === "Submitted"
+                                  ? "bg-amber-50 text-amber-600 border border-amber-200/70"
+                                  : status === "Rejected"
+                                    ? "bg-red-50 text-red-600 border border-red-200/70"
+                                    : "bg-sky-50 text-sky-700 border border-sky-200/80 font-semibold"
+                          }`}>
+                            {status === "Week Off" ? "Off" : (status || "Draft")}
+                          </span>
+                        )}
+                        {(status === "Holiday" || holidayDates.includes(dateKey)) && (
+                          <div className="group relative flex items-center justify-center w-full">
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setActiveHolidayTooltipDate(prev => prev === dateKey ? null : dateKey);
+                              }}
+                              className="inline-flex items-center gap-0.5 text-[8px] font-bold px-1.5 py-0.5 rounded-md leading-none text-center bg-violet-50 text-violet-700 border border-violet-200/70 cursor-pointer hover:bg-violet-100 transition-colors"
+                            >
+                              <span>Holiday</span>
+                              {holidayTitle && (
+                                <span className="w-2.5 h-2.5 rounded-full bg-violet-200/80 text-violet-800 text-[7px] font-bold inline-flex items-center justify-center leading-none">
+                                  ?
+                                </span>
+                              )}
+                            </button>
+                            {holidayTitle && (
+                              <span className={`pointer-events-none absolute top-full left-1/2 -translate-x-1/2 mt-1.5 px-2.5 py-1 rounded-lg bg-gray-900 text-white text-[10px] font-medium whitespace-nowrap text-center transition-all duration-200 shadow-2xl z-[100] ${
+                                activeHolidayTooltipDate === dateKey ? "opacity-100 visible" : "opacity-0 invisible group-hover:opacity-100 group-hover:visible"
+                              }`}>
+                                {holidayTitle}
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         {/* Weekly Grid Sheet Table */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
           {isDetailLoading ? (
@@ -1020,48 +1458,134 @@ const TimesheetCreate: React.FC = () => {
                 {isDesktop && (
                   <thead className="bg-gray-50/70 border-b border-gray-100">
                     <tr>
-                      <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider min-w-[380px]">
-                        Projects / Tasks
+                      <th className="px-6 py-3.5 text-xs font-bold text-gray-500 uppercase tracking-wider min-w-[380px] align-top">
+                        <div className="flex items-center justify-between min-h-[20px]">
+                          <span>Projects / Tasks</span>
+                          {showSelectDaysToSubmit && !isReadOnly && isGridEditable && daysOfWeek.some(day => !allDisabledDays.includes(format(day, "yyyy-MM-dd"))) && (() => {
+                            const selectableDays = daysOfWeek.filter(day => !allDisabledDays.includes(format(day, "yyyy-MM-dd")));
+                            const allSelected = selectableDays.length > 0 && selectableDays.every(day => selectedDates.includes(format(day, "yyyy-MM-dd")));
+                            return (
+                              <button
+                                type="button"
+                                onClick={handleSelectAllDays}
+                                className="flex items-center gap-1.5 cursor-pointer select-none group"
+                                title="Select / Deselect all editable days"
+                              >
+                                <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center transition-all duration-200 ${
+                                  allSelected
+                                    ? "bg-primary border-primary text-white scale-110"
+                                    : "border-gray-300 text-transparent group-hover:border-primary/50"
+                                }`}>
+                                  {allSelected && (
+                                    <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                    </svg>
+                                  )}
+                                </div>
+                                <span className="text-gray-500 group-hover:text-primary transition-colors text-[11px] normal-case font-medium">
+                                  Select all
+                                </span>
+                              </button>
+                            );
+                          })()}
+                        </div>
                       </th>
                       {daysOfWeek.map((day) => {
                         const dateKey = format(day, "yyyy-MM-dd");
                         const status = dayStatusMap[dateKey];
+                        const isDayDisabled = allDisabledDays.includes(dateKey) || !isGridEditable || isReadOnly;
+                        const isSelected = selectedDates.includes(dateKey);
+                        const holidayTitle = holidayTitleMap[dateKey];
+
                         return (
                           <th
                             key={dateKey}
-                            className="px-3 py-3 text-center border-l border-gray-50 min-w-[100px]"
+                            onClick={() => {
+                              if (showSelectDaysToSubmit && !isDayDisabled) {
+                                handleToggleDateSelection(dateKey);
+                              }
+                            }}
+                            className={`px-3 py-3.5 text-center border-l border-gray-100/60 min-w-[100px] align-top transition-all duration-200 ${
+                              isSelected ? "bg-primary-50/40" : ""
+                            } ${showSelectDaysToSubmit && !isDayDisabled ? "cursor-pointer hover:bg-gray-100/50 select-none" : ""}`}
                           >
-                            <div className="text-gray-900 font-bold text-sm">
-                              {format(day, "d MMM")}
+                            <div className="flex flex-col items-center justify-start gap-1">
+                              {showSelectDaysToSubmit && (
+                                <div className="h-5 flex items-center justify-center">
+                                  {!isDayDisabled ? (
+                                    <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center transition-all duration-200 ${
+                                      isSelected
+                                        ? "bg-primary border-primary text-white scale-110"
+                                        : "border-gray-300 text-transparent hover:border-primary/50"
+                                    }`}>
+                                      {isSelected && (
+                                        <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                        </svg>
+                                      )}
+                                    </div>
+                                  ) : (
+                                    <div className="w-4 h-4 rounded-full bg-gray-200/50 flex items-center justify-center">
+                                      <span className="w-1 h-1 rounded-full bg-gray-400/70" />
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+
+                              <span className={`text-sm font-bold leading-none ${isDayDisabled ? "text-gray-600" : "text-gray-900"}`}>
+                                {format(day, "d MMM")}
+                              </span>
+
+                              <span className={`text-[11px] font-bold text-center leading-none uppercase ${isDayDisabled ? "text-gray-400" : "text-gray-500"}`}>
+                                {format(day, "EEE")}
+                              </span>
+
+                              {status && (
+                                <div className="mt-1 flex flex-col items-center justify-center gap-1">
+                                  {status !== "Holiday" && (
+                                    <span
+                                      className={`text-[10px] font-semibold px-2 py-[3px] rounded-xl ${
+                                        status === "Week Off"
+                                          ? "bg-orange-50 text-orange-600 border border-orange-200/60"
+                                          : status === "Approved"
+                                            ? "bg-emerald-50 text-emerald-600 border border-emerald-200/60"
+                                            : status === "Submitted"
+                                              ? "bg-amber-50 text-amber-600 border border-amber-200/60"
+                                              : status === "Rejected"
+                                                ? "bg-red-50 text-red-600 border border-red-200/60"
+                                                : "bg-sky-50 text-sky-700 border border-sky-200/80 font-semibold"
+                                      }`}
+                                    >
+                                      {status}
+                                    </span>
+                                  )}
+                                  {(status === "Holiday" || holidayDates.includes(dateKey)) && (
+                                    <div className="group relative inline-flex items-center">
+                                      <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-[3px] rounded-xl bg-violet-50 text-violet-700 border border-violet-200/80 cursor-help hover:bg-violet-100 transition-colors">
+                                        <span>Holiday</span>
+                                        {holidayTitle && (
+                                          <span className="w-3 h-3 rounded-full bg-violet-200/80 text-violet-800 text-[9px] font-bold inline-flex items-center justify-center leading-none">
+                                            ?
+                                          </span>
+                                        )}
+                                      </span>
+                                      {holidayTitle && (
+                                        <span className="pointer-events-none absolute top-full left-1/2 -translate-x-1/2 mt-2 px-3 py-1.5 rounded-lg bg-gray-900 text-white text-xs font-medium whitespace-nowrap text-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-2xl z-[100]">
+                                          {holidayTitle}
+                                        </span>
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
+                              )}
                             </div>
-                            <div className="text-gray-500 text-xs font-semibold mt-0.5">
-                              {format(day, "EEE").toUpperCase()}
-                            </div>
-                            {status && (
-                              <div className="mt-1.5 flex justify-center">
-                                <span
-                                  className={`text-[10px] font-semibold px-2 py-0.5 rounded-md border ${status === "Week Off"
-                                    ? "bg-red-50 text-red-700 border-red-200"
-                                    : status === "Approved"
-                                      ? "bg-green-50 text-green-700 border-green-200"
-                                      : status === "Submitted"
-                                        ? "bg-amber-50 text-amber-700 border-amber-200"
-                                        : status === "Rejected"
-                                          ? "bg-red-50 text-red-700 border-red-200"
-                                          : "bg-gray-50 text-gray-600 border-gray-200"
-                                    }`}
-                                >
-                                  {status}
-                                </span>
-                              </div>
-                            )}
                           </th>
                         );
                       })}
-                      <th className="px-4 py-3 text-center border-l border-gray-50 text-xs font-bold text-gray-500 uppercase tracking-wider w-[120px]">
+                      <th className="px-4 py-3.5 text-center border-l border-gray-50 text-xs font-bold text-gray-500 uppercase tracking-wider w-[120px] align-top">
                         Total Hours
                       </th>
-                      <th className="px-4 py-3 text-center border-l border-gray-50 text-xs font-bold text-gray-500 uppercase tracking-wider w-[60px]">
+                      <th className="px-4 py-3.5 text-center border-l border-gray-50 text-xs font-bold text-gray-500 uppercase tracking-wider w-[60px] align-top">
 
                       </th>
                     </tr>
@@ -1071,24 +1595,21 @@ const TimesheetCreate: React.FC = () => {
                   {/* Attendance row */}
                   {weeklyData?.days && (
                     isDesktop ? (
-                      <tr className="bg-gray-50/40 text-gray-600 font-medium">
-                        <td className="px-6 py-3  font-semibold text-gray-700">
+                      <tr className="bg-gray-50/30 text-gray-600 font-medium">
+                        <td className="px-6 py-3 font-semibold text-gray-700">
                           Attendance Hours
                         </td>
                         {daysOfWeek.map(day => {
                           const dateKey = format(day, "yyyy-MM-dd");
                           return (
-                            <td key={dateKey} className="px-3 py-3 text-center border-l border-gray-50">
-                              {weekOffDates.includes(dateKey) ? (
-                                <div className="flex w-full  justify-center"><Badge variant="danger" label="Week Off" size="sm" /></div>
-                              ) : (
-                                attendanceHoursMap[dateKey] || "0h 0m"
-                              )}
+                            <td key={dateKey} className="px-3 py-3 text-center border-l border-gray-100/60">
+                              <span className="text-sm text-gray-600 font-medium">
+                                {attendanceHoursMap[dateKey] || "0:00"}
+                              </span>
                             </td>
                           );
                         })}
-                        <td className="px-4 py-3 text-center border-l border-gray-50 font-bold">
-                          {/* sum up daily attendance hours */}
+                        <td className="px-4 py-3 text-center border-l border-gray-100/60 font-bold">
                           {formatCellOnBlur(
                             daysOfWeek.reduce((acc, day) => {
                               const dateKey = format(day, "yyyy-MM-dd");
@@ -1097,30 +1618,28 @@ const TimesheetCreate: React.FC = () => {
                             }, 0)
                           ) || "0:00"}
                         </td>
-                        <td className="border-l border-gray-50"></td>
+                        <td className="border-l border-gray-100/60"></td>
                       </tr>
                     ) : (
-                      <tr className="block  border-none  px-2 py-3 sm:p-4">
+                      <tr className="block border-none px-1 py-2 sm:px-2 sm:py-3">
                         <td className="block border-none w-full">
-                          <div className="bg-gray-50 rounded-xl p-3 shadow-sm space-y-4">
+                          <div className="bg-gray-50/80 backdrop-blur-sm rounded-xl p-2 sm:p-3 shadow-sm space-y-2.5">
                             <div className="flex justify-between items-center font-semibold text-gray-700">
                               <span className="text-sm">Attendance Hours</span>
                               <span className="text-primary font-bold">
                                 {formatCellOnBlur(daysOfWeek.reduce((acc, day) => acc + ((weeklyData.days.find(d => d.date === format(day, "yyyy-MM-dd")))?.attendance_hours || 0), 0)) || "0:00"}
                               </span>
                             </div>
-                            <div className="grid grid-cols-7 gap-1">
+                            <div className="grid grid-cols-7 gap-0.5 sm:gap-1">
                               {daysOfWeek.map(day => {
                                 const dateKey = format(day, "yyyy-MM-dd");
                                 return (
-                                  <div key={dateKey} className="flex flex-col items-center">
-                                    <span className="text-[10px] font-bold text-gray-600 leading-tight">{format(day, "d")}</span>
-                                    <span className="text-[9px] text-gray-400 mb-1 leading-tight">{format(day, "EEE")}</span>
-                                    {weekOffDates.includes(dateKey) ? (
-                                      <div className="w-full flex justify-center pt-0.5"><Badge variant="danger" label="Off" size="sm" /></div>
-                                    ) : (
-                                      <span className="text-[10px] font-bold text-gray-700 bg-gray-200/50 w-full text-center py-1 rounded">{attendanceHoursMap[dateKey] || "0h"}</span>
-                                    )}
+                                  <div key={dateKey} className="min-w-0 flex flex-col items-center">
+                                    <span className="text-[10px] sm:text-[11px] font-bold text-gray-900 leading-tight">{format(day, "d")}</span>
+                                    <span className="text-[8px] sm:text-[9px] font-semibold text-gray-400 mb-0.5 leading-tight uppercase">{format(day, "EEE")}</span>
+                                    <span className="text-[9px] sm:text-[10px] font-bold text-gray-600 bg-gray-200/40 w-full text-center py-1 rounded-md truncate px-0.5">
+                                      {attendanceHoursMap[dateKey] || "0:00"}
+                                    </span>
                                   </div>
                                 );
                               })}
@@ -1145,7 +1664,9 @@ const TimesheetCreate: React.FC = () => {
                   ) : (
                     projectsData.map(row => {
                       const projName = row.projectName || row.project || "[No Project]";
-                      const taskName = row.taskSubject || row.task || "[No Task]";
+                      const taskName = showSubtask
+                        ? (row.taskSubject || row.task || "[No Task]")
+                        : (row.parentTaskSubject || row.parentTask || row.taskSubject || row.task || "[No Task]");
 
                       return (
                         <TimesheetRow
@@ -1166,6 +1687,9 @@ const TimesheetCreate: React.FC = () => {
                           handleDeleteRow={handleDeleteRow}
                           disabledDays={allDisabledDays}
                           dayStatusMap={dayStatusMap}
+                          showSubtask={showSubtask}
+                          company={company}
+                          selectedDates={selectedDates}
                         />
                       );
                     })
@@ -1209,22 +1733,23 @@ const TimesheetCreate: React.FC = () => {
                       <td className="border-l border-gray-100"></td>
                     </tr>
                   ) : (
-                    <tr className="block border-t border-gray-200 px-2 py-4 sm:p-4 bg-gray-50/50">
+                    <tr className="block border-t border-gray-200 px-1 py-2 sm:px-2 sm:py-4 bg-gray-50/50">
                       <td className="block w-full">
-                        <div className="space-y-4 bg-white p-3 rounded-xl border border-gray-200 shadow-sm">
+                        <div className="space-y-3 bg-white p-2 sm:p-3 rounded-xl border border-gray-200 shadow-sm">
                           <div className="flex justify-between items-center font-bold text-gray-900">
                             <span className="text-sm">Total Weekly Hours</span>
-                            <span className="text-primary text-lg">{formatCellOnBlur(totals.totalWeeklyHours) || "0:00"}</span>
+                            <span className="text-primary text-base sm:text-lg">{formatCellOnBlur(totals.totalWeeklyHours) || "0:00"}</span>
                           </div>
-                          <div className="grid grid-cols-7 gap-1">
+                          <div className="grid grid-cols-7 gap-0.5 sm:gap-1">
                             {daysOfWeek.map(day => {
                               const dateKey = format(day, "yyyy-MM-dd");
                               const dayHrs = totals.dailyTotals[dateKey] || 0;
+                              const isSelected = selectedDates.includes(dateKey);
                               return (
-                                <div key={dateKey} className="flex flex-col items-center">
-                                  <span className="text-[10px] font-bold text-gray-600 leading-tight">{format(day, "d")}</span>
-                                  <span className="text-[9px] text-gray-400 mb-1 leading-tight">{format(day, "EEE")}</span>
-                                  <span className="text-[10px] font-bold bg-primary/10 text-primary w-full text-center py-1 rounded">{formatCellOnBlur(dayHrs) || "0:00"}</span>
+                                <div key={dateKey} className={`min-w-0 flex flex-col items-center p-0.5 rounded ${isSelected ? "bg-primary-50" : ""}`}>
+                                  <span className="text-[10px] sm:text-[11px] font-bold text-gray-600 leading-tight">{format(day, "d")}</span>
+                                  <span className="text-[8px] sm:text-[9px] text-gray-400 mb-0.5 leading-tight uppercase">{format(day, "EEE")}</span>
+                                  <span className="text-[9px] sm:text-[10px] font-bold bg-primary/10 text-primary w-full text-center py-1 rounded truncate px-0.5">{formatCellOnBlur(dayHrs) || "0:00"}</span>
                                 </div>
                               );
                             })}
@@ -1273,6 +1798,9 @@ const TimesheetCreate: React.FC = () => {
         handleFileChange={handleFileChange}
         handleSaveOrSubmit={handleSaveOrSubmit}
         handleCancelTimesheet={handleCancelTimesheet}
+        showSelectDaysToSubmit={showSelectDaysToSubmit}
+        selectedDates={selectedDates}
+        onClearSelectedDates={() => setSelectedDates([])}
       />
     </div>
   );

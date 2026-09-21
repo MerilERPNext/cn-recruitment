@@ -667,6 +667,13 @@ def sync_job_offer_action_item(doc, method=None):
             _sync_onboarding_action_for_applicant(candidate_id, candidate_email)
         return
 
+    # Recruitment Settings -> Create Candidate Action Item: on creation (default),
+    # on submit, or only once the offer email has been sent.
+    from recruitment.recruitment.offer_send_rules import action_item_due
+
+    if not action_item_due(doc):
+        return
+
     _upsert_minimal_item(
         candidate_email=candidate_email,
         reference_doctype=doc.doctype,
@@ -1006,12 +1013,204 @@ def get_action_center_items(candidate_id=None, candidate_email=None, limit=100):
         limit_page_length=max(1, min(limit, 500)),
     )
 
+    _attach_job_context(rows)
+
     return {
         "status": "success",
         "candidate_email": resolved_email,
         "total": len(rows),
         "items": rows,
     }
+
+
+# How each action item's reference doc leads back to the Job Applicant that owns
+# the job. The child-table row (Pre Offer Form) hangs off its parent applicant;
+# everything else names it outright.
+_JOB_APPLICANT_SOURCE = {
+    "Job Offer": "job_applicant",
+    "Employee Onboarding": "job_applicant",
+    "Job Applicant Pre Offer Form": "parent",
+    "Job Applicant": None,  # the reference IS the applicant
+}
+
+# Extra columns worth reading off the reference doc itself — used only where the
+# job opening doesn't answer it (an onboarding can name a department the opening
+# never did).
+_REFERENCE_FALLBACK_FIELDS = {
+    "Job Offer": ("designation", "company"),
+    "Employee Onboarding": ("designation", "company", "department"),
+}
+
+_EMPTY_JOB = {
+    "job_applicant": "",
+    "job_opening": "",
+    "job_title": "",
+    "designation": "",
+    "designation_name": "",
+    "department": "",
+    "department_name": "",
+    "company": "",
+    "company_name": "",
+    "location": "",
+    "location_name": "",
+    "employment_type": "",
+    "employment_type_name": "",
+}
+
+# job key -> the doctype its id points at. Each one also gets a `<key>_name`
+# holding that record's title, so a card can show "Accounts Manager" instead of
+# "Accounts - D" without the UI resolving links itself.
+_JOB_LINK_TARGETS = {
+    "designation": "Designation",
+    "department": "Department",
+    "company": "Company",
+    "location": "Branch",
+    "employment_type": "Employment Type",
+}
+
+
+def _resolve_link_titles(jobs):
+    """Fill each `<key>_name` on the given job blocks, in place.
+
+    One query per linked doctype for the whole list, using that doctype's own
+    title field. A doctype whose title IS its name (Employment Type, Branch)
+    simply echoes the id back, and anything unreadable or missing leaves the
+    name as "" — the id it accompanies is still there.
+    """
+    for key, doctype in _JOB_LINK_TARGETS.items():
+        ids = {j.get(key) for j in jobs if j.get(key)}
+        if not ids:
+            continue
+        try:
+            title_field = frappe.get_meta(doctype).get_title_field() or "name"
+        except Exception:
+            continue
+        try:
+            if title_field == "name":
+                titles = {i: i for i in ids}
+            else:
+                titles = {
+                    r["name"]: (r.get(title_field) or r["name"])
+                    for r in frappe.get_all(
+                        doctype, filters={"name": ["in", list(ids)]}, fields=["name", title_field]
+                    )
+                }
+        except Exception:
+            continue
+        for job in jobs:
+            value = job.get(key)
+            if value:
+                job[key + "_name"] = titles.get(value) or ""
+
+
+def _attach_job_context(rows):
+    """Add a `job` block to every action item, in place.
+
+    The portal's task cards show only the task; this answers "which job is this
+    about?" without a second round-trip per card. Nothing is stored — it is
+    resolved from each item's reference doc through to the Job Applicant and its
+    Job Opening.
+
+    Two guarantees the caller can rely on:
+      * every key is always present, "" when unknown — so the UI can read
+        `item.job.designation` without guarding;
+      * any failure here leaves the items exactly as they were (logged, not
+        raised) — a deleted opening or an unmapped reference type must never
+        break the action center.
+
+    Costs a handful of bulk queries for the whole list, never one per item.
+    """
+    try:
+        for row in rows:
+            row["job"] = dict(_EMPTY_JOB)
+        if not rows:
+            return
+
+        # 1. Reference docs, grouped by doctype so each type is one query.
+        by_doctype = {}
+        for row in rows:
+            dt, dn = row.get("reference_doctype"), row.get("reference_docname")
+            if dt in _JOB_APPLICANT_SOURCE and dn:
+                by_doctype.setdefault(dt, set()).add(dn)
+
+        # (doctype, docname) -> {"job_applicant": ..., plus any fallback fields}
+        reference_data = {}
+        for dt, names in by_doctype.items():
+            link_field = _JOB_APPLICANT_SOURCE[dt]
+            if link_field is None:
+                # The reference is the applicant itself.
+                for dn in names:
+                    reference_data[(dt, dn)] = {"job_applicant": dn}
+                continue
+            fields = ["name", link_field] + list(_REFERENCE_FALLBACK_FIELDS.get(dt, ()))
+            filters = {"name": ["in", list(names)]}
+            if link_field == "parent":
+                # Frappe refuses a child-table query that doesn't name its parent.
+                filters["parenttype"] = "Job Applicant"
+            try:
+                for doc in frappe.get_all(dt, filters=filters, fields=fields):
+                    data = {"job_applicant": doc.get(link_field) or ""}
+                    for f in _REFERENCE_FALLBACK_FIELDS.get(dt, ()):
+                        data[f] = doc.get(f) or ""
+                    reference_data[(dt, doc["name"])] = data
+            except Exception:
+                # One unreadable doctype must not cost the others their context.
+                continue
+
+        # 2. Applicants -> their opening.
+        applicants = {d.get("job_applicant") for d in reference_data.values() if d.get("job_applicant")}
+        applicant_rows = (
+            frappe.get_all(
+                "Job Applicant",
+                filters={"name": ["in", list(applicants)]},
+                fields=["name", "job_title", "designation"],
+            )
+            if applicants
+            else []
+        )
+        applicant_map = {a["name"]: a for a in applicant_rows}
+
+        # 3. Openings -> the job details themselves.
+        openings = {a.get("job_title") for a in applicant_rows if a.get("job_title")}
+        opening_map = {
+            o["name"]: o
+            for o in (
+                frappe.get_all(
+                    "Job Opening",
+                    filters={"name": ["in", list(openings)]},
+                    fields=[
+                        "name", "job_title", "designation", "department",
+                        "company", "location", "employment_type",
+                    ],
+                )
+                if openings
+                else []
+            )
+        }
+
+        for row in rows:
+            ref = reference_data.get((row.get("reference_doctype"), row.get("reference_docname")))
+            if not ref:
+                continue
+            applicant = applicant_map.get(ref.get("job_applicant")) or {}
+            opening = opening_map.get(applicant.get("job_title")) or {}
+            job = row["job"]
+            job["job_applicant"] = ref.get("job_applicant") or ""
+            job["job_opening"] = applicant.get("job_title") or ""
+            job["job_title"] = opening.get("job_title") or ""
+            # Opening first, then whatever the offer / onboarding itself recorded,
+            # then the applicant's own designation — first non-empty wins.
+            job["designation"] = (
+                opening.get("designation") or ref.get("designation") or applicant.get("designation") or ""
+            )
+            job["department"] = opening.get("department") or ref.get("department") or ""
+            job["company"] = opening.get("company") or ref.get("company") or ""
+            job["location"] = opening.get("location") or ""
+            job["employment_type"] = opening.get("employment_type") or ""
+
+        _resolve_link_titles([row["job"] for row in rows])
+    except Exception:
+        frappe.log_error(frappe.get_traceback(), "get_action_center_items: job context failed")
 
 
 @frappe.whitelist(allow_guest=True)

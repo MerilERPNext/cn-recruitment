@@ -22,7 +22,7 @@ app_include_js = [
 	# fingerprints *.bundle.js), so browsers hold the old copy indefinitely and a
 	# change here silently doesn't reach anyone. Bump the number whenever this file
 	# changes — the new URL defeats the browser cache and any service worker.
-	"/assets/recruitment/js/applicant_fields_ui.js?v=3",
+	"/assets/recruitment/js/applicant_fields_ui.js?v=14",
 	# Column registry behind the designed Job Applicant / Job Opening / Job
 	# Requisition list views — which columns show, in what order, alignment and
 	# width, plus the "Configure Columns" dialog. Global rather than per-doctype
@@ -34,6 +34,13 @@ app_include_js = [
 	# repeated `=` on one field into a single `in`. Global for the same reason as
 	# the column engine — the *_list.js files build on it. Bump ?v= when it changes.
 	"/assets/recruitment/js/list_filter_multi.js?v=1",
+	# The Group Discussion board — the group cards, the marking table and their CSS.
+	# Shared verbatim by the Campus Drive (HR's whole hall) and the Group Discussion
+	# doctype (one panel's own group), so the two can never drift into looking or
+	# behaving differently. Global rather than per-doctype because both of those load it
+	# and a doctype's own JS is evaluated before any doctype_js hook. Bump ?v= when it
+	# changes.
+	"/assets/recruitment/js/campus_gd_board.js?v=1",
 ]
 
 add_to_apps_screen = [
@@ -94,6 +101,10 @@ doctype_js = {
         "public/js/hiring_workflow_flow.js",
         "public/js/pre_offer_field_approval.js",
         "public/js/job_applicant_banner.js",
+        # "Previous Applications" tab — has this candidate applied to us before?
+        "public/js/job_applicant_other_applications.js",
+        # "Employee Record" tab — is this candidate already/formerly an employee?
+        "public/js/job_applicant_employee_record.js",
         "public/js/job_applicant_section_nav.js",
     ],
     "Job Opening": [
@@ -124,7 +135,13 @@ doctype_js = {
         # interview.js (it is, being a hooks entry) so the override sticks.
         "public/js/interview_feedback_route.js",
     ],
-    "Interview Feedback": ["public/js/interview_feedback.js"],
+    "Interview Feedback": [
+        "public/js/interview_feedback.js",
+        # Draws the evaluation form the recruiter picked on the Interview, when
+        # there is one. Kept separate from interview_feedback.js, which owns the
+        # campus region/work-location sections — the two share no state.
+        "public/js/interview_feedback_form.js",
+    ],
     "User": ["public/js/user.js"],
     "Employee Onboarding": [
         "public/js/employee_onboarding.js",
@@ -133,6 +150,7 @@ doctype_js = {
         "public/js/emp_OB_field_level_approval.js",
         "public/js/employee_onboarding_statutory.js",
     ],
+    "New Hire Form": ["public/js/new_hire_form_builder.js"],
     "Employee Referral": ["public/js/employee_referral_referral_reward.js"],
     "Employee Separation": ["public/js/employee_separation.js"],
     "Employee Promotion": ["public/js/employee_promotion.js"],
@@ -187,12 +205,17 @@ permission_query_conditions = {
     "Job Opening": "recruitment.permissions.doc_type_permissions.job_opening_query",
     "Campus Invite": "recruitment.permissions.doc_type_permissions.campus_invite_query",
     "Candidate Registration": "recruitment.permissions.doc_type_permissions.candidate_registration_query",
+    # A panel member's GD list holds their own groups only.
+    "Group Discussion": "recruitment.permissions.doc_type_permissions.group_discussion_query",
 }
 
 # A TPO may only read/act on the Candidate Registrations they own (mirrors the
 # query condition above at the document level). Everyone else defers to defaults.
 has_permission = {
     "Candidate Registration": "recruitment.permissions.doc_type_permissions.candidate_registration_has_permission",
+    # Same rule as the query above, applied to a single document — the query only
+    # scopes lists, and a GD opened straight by URL never goes through one.
+    "Group Discussion": "recruitment.permissions.doc_type_permissions.group_discussion_has_permission",
 }
 
 # Jinja
@@ -227,6 +250,9 @@ extend_bootinfo = "recruitment.api.list_columns.extend_bootinfo"
 after_install = "recruitment.recruitment.install.after_install"
 after_migrate = [
     "recruitment.recruitment.install.after_migrate",
+    # Configured employee search fields are cached; a migrate can add, rename or
+    # drop the columns they point at, so drop the cache rather than let it go stale.
+    "recruitment.api.employee_search.clear_cache",
 ]
 
 # Uninstallation
@@ -276,6 +302,25 @@ after_migrate = [
 # Hook on document methods and events
 
 doc_events = {
+    # Custom Doctype Fields (nextai) decides where a managed field sits on the
+    # Job Applicant form. Job Applicant Profile Settings groups fields into its
+    # own curated sections and never re-groups an existing row, so a managed
+    # field moved on the form kept its old settings section — and one deleted and
+    # re-added could stay suppressed for good. Re-place them on every config save.
+    "Custom Doctype Fields": {
+        "on_update": "recruitment.recruitment.managed_field_profile_sync.sync_managed_field_placement",
+    },
+    "Custom Field": {
+        # Forget the field in synced_field_refs the moment it is deleted, so one
+        # created later under the same name reads as new instead of "already seen".
+        "on_trash": "recruitment.recruitment.managed_field_profile_sync.forget_deleted_field",
+    },
+    "Job Applicant Profile Settings": {
+        # A field Mandatory for any source (Careers, IJP, Refer, Campus,
+        # Pre-offer) is put on every New Hire Form as Required — a direct hire
+        # skips those forms and must not skip the data.
+        "on_update": "recruitment.recruitment.new_hire_source_fields.sync_all_forms",
+    },
     # "Salary Structure Assignment": {
     # 	"on_submit": "recruitment.customizations.salary_structure_assignment.salary_structure_assignment.on_submit",
     # },
@@ -289,18 +334,37 @@ doc_events = {
         "after_insert": "recruitment.recruitment.tpo_mailers.send_tpo_welcome",
         "on_update": "recruitment.recruitment.tpo_mailers.send_tpo_welcome",
     },
+    # An edited evaluation form must not leave interviewers filling the old
+    # questions. The schema cache also revalidates itself against `modified`, so
+    # this is the fast path rather than the only protection.
+    "Microapp Form Widget": {
+        "on_update": "recruitment.api.interview_feedback_form.clear_form_cache",
+    },
     "Interview": {
         "before_save": "recruitment.customizations.interview.interview.check_feedback_of_previous_interview",
         "validate": "recruitment.customizations.job_applicant.validation_blacklist_on_doctypes",
         # Mirror the candidate's resume onto the interview, so the panel can open it
         # without permission on the Job Applicant it is attached to.
-        "on_update": "recruitment.api.interview_resume.pull_resume_from_applicant",
+        "on_update": [
+            "recruitment.api.interview_resume.pull_resume_from_applicant",
+            # Roll "Interview Scheduled / Done" up to the requisition behind this
+            # candidate's opening. Never raises — see requisition_pipeline.
+            "recruitment.api.requisition_pipeline.refresh_from_interview",
+        ],
+        "on_submit": "recruitment.api.requisition_pipeline.refresh_from_interview",
+        "on_cancel": "recruitment.api.requisition_pipeline.refresh_from_interview",
+        "on_trash": "recruitment.api.requisition_pipeline.refresh_from_interview",
     },
     "Interview Feedback": {
         "validate": [
             # Stamp the candidate's region on the feedback and check the work
             # location the panel picked is one of that region's locations.
             "recruitment.api.interview_work_location.validate_work_location",
+            # When the interview has an evaluation form configured, enforce its
+            # required answers and freeze what the answers meant. On validate, not
+            # on_submit: the submit chain below already re-saves the Interview, and
+            # a missing answer should be flagged while the panel is still writing.
+            "recruitment.api.interview_feedback_form.validate_form_response",
         ],
         "on_submit": [
             "recruitment.customizations.interview_feedback.interview_feedback.on_submit_feedback",
@@ -329,7 +393,15 @@ doc_events = {
         "before_submit": [
             "recruitment.customizations.job_offer.set_employment_type",
             "recruitment.customizations.job_offer.validate_offer_is_complete",
+            # Last of the three: it matches the offer against the Document
+            # Template assignments, and Employee Type is one of the attributes
+            # templates are commonly scoped by — so it has to run after the stamp
+            # above, never before it.
+            "recruitment.recruitment.offer_document_template.validate_offer_document_template",
         ],
+        # An amended offer starts unsent, so the send rules in Recruitment Settings
+        # (Action Center item, Send lock, Withdraw) treat it as the new letter it is.
+        "before_insert": "recruitment.recruitment.offer_send_rules.reset_send_status_on_amend",
         "validate": [
             "recruitment.customizations.job_applicant.validation_blacklist_on_doctypes",
             # Hiring Lead Permission Settings (change designation at offer stage).
@@ -341,14 +413,24 @@ doc_events = {
             # Record the requisition this offer draws on and pull its agreed
             # Fixed / Variable Pay across. Only fills empty fields.
             "recruitment.customizations.job_offer.set_requisition_and_pay",
+            # Region: the field's own fetch_from covers the candidate's interview
+            # region; this reaches the region applied under and the opening's.
+            # On save, not at submit — HR is meant to see and change it while
+            # drafting. Only fills when empty.
+            "recruitment.customizations.job_offer.set_offer_region",
             # The position this offer consumes must belong to the offer's
             # requisition and still be free. Runs before save so a stale pick is
             # rejected rather than silently claiming the wrong row.
             "recruitment.api.offer_position.validate_position_choice",
+            # Offer-time duplicity rules from TA Duplicity Check Settings: an
+            # active offer held by the same person under another application, and
+            # the employee-pool outcomes (block / exceptional approval / allow).
+            "recruitment.customizations.ta_duplicity_job_offer.check_job_offer_duplicity",
         ],
         "before_save": "recruitment.customizations.job_offer.calculate_salary_structure",
         "after_insert": [
             "recruitment.api.action_center.sync_job_offer_action_item",
+            "recruitment.api.requisition_pipeline.refresh_from_job_offer",
             # Claim the position (Filled + candidate) while the offer is live,
             # release it the moment it is withdrawn / rejected / cancelled, then
             # roll the result up to the requisition. Wired to every lifecycle
@@ -358,18 +440,36 @@ doc_events = {
         "on_submit": [
             "recruitment.api.action_center.sync_job_offer_action_item",
             "recruitment.api.offer_position.sync_offer_position",
+            # "Offer Generated" on the requisition's TAT block.
+            "recruitment.api.requisition_pipeline.refresh_from_job_offer",
         ],
         # Reflect Accepted/Rejected offer outcome on the candidate's hiring stage.
         "on_update": [
             "recruitment.api.hiring_stage.advance_on_job_offer_outcome",
             "recruitment.api.offer_position.sync_offer_position",
+            # Stamp the day the candidate accepted. Both update events, because
+            # `status` is allow_on_submit — an offer accepted after submit never
+            # reaches validate. Writes once, then never again.
+            "recruitment.customizations.job_offer.stamp_offer_accepted_on",
         ],
         "on_update_after_submit": [
             "recruitment.api.action_center.sync_job_offer_action_item",
             "recruitment.api.hiring_stage.advance_on_job_offer_outcome",
             "recruitment.api.offer_position.sync_offer_position",
+            "recruitment.customizations.job_offer.stamp_offer_accepted_on",
         ],
-        "on_cancel": "recruitment.api.offer_position.sync_offer_position",
+        "on_cancel": [
+            "recruitment.api.offer_position.sync_offer_position",
+            "recruitment.api.requisition_pipeline.refresh_from_job_offer",
+            "recruitment.recruitment.hr_ops_offer_review.close_hr_ops_todos",
+        ],
+        # "Send Job Offer" stamps email_status with db_set, which raises only
+        # on_change — so that is where the HR Ops "verify & release" ToDos close.
+        "on_change": "recruitment.recruitment.hr_ops_offer_review.close_hr_ops_todos",
+        # Deleting an offer has to hand the position back too. sync_offer_position
+        # cannot cover this one: it decides claim-vs-release from the offer's
+        # status, and a deleted offer has none.
+        "on_trash": "recruitment.api.offer_position.release_offer_position",
     },
     "Job Requisition": {
         "before_insert": [
@@ -391,8 +491,34 @@ doc_events = {
             # Enforce Recruitment Settings -> Job Requisition Settings
             # (max positions, replacement-employee restriction & uniqueness).
             "recruitment.api.job_requisition.validate_requisition_settings",
+            # Recruitment Settings -> "Enable AOP Budget Check": refuse a
+            # requisition whose Salary Range (Max) x positions is more than its
+            # Department / Cost Center budget has left. Runs after
+            # sync_no_of_positions so the position count is current.
+            "recruitment.api.requisition_budget.enforce_budget",
+            # Capture the Regions child table's region on the parent
+            # `custom_region` so it is filterable/reportable from the
+            # requisition itself — same mirror as on the Job Opening.
+            "recruitment.customizations.job_requisition_region.set_region_from_regions_table",
+            # The Lateral counterpart: the Position Details table's location on
+            # `custom_position_location`, and onto the empty `custom_location`.
+            "recruitment.customizations.job_requisition_region.set_location_from_position_details",
+            # A Fresher requisition may not be approved until every region row
+            # names its recruiter and its pay — each region's Job Opening is built
+            # from that row, and an opening with no recruiter belongs to nobody.
+            # Fires on the transition into an approved status only.
+            "recruitment.api.job_requisition.enforce_fresher_region_readiness",
+            # Days between posting_date and expected_by, kept on the requisition
+            # so the requested wait is visible and reportable.
+            "recruitment.customizations.job_requisition.set_days_to_expected_by",
         ],
         "on_update": [
+            # A Fresher requisition hires across several regions at once. Reaching
+            # "Approved Active" is what turns each region row into its own fully
+            # populated Job Opening (headcount, recruiter, pay, Campus posting,
+            # campus hiring workflow). Idempotent — a region already carrying an
+            # opening is skipped. Lateral requisitions are untouched.
+            "recruitment.customizations.fresher_openings.create_openings_for_regions",
             # Once a requisition is approved its positions "start appearing in the
             # position master": materialise the per-position tracking rows
             # (custom_position_summary) from the headcount rows
@@ -404,7 +530,22 @@ doc_events = {
             # they would look like a business edit to the edit-after-approval guard
             # and every save of an approved requisition would be refused.
             "recruitment.api.requisition_headcount.store_headcount",
+            # The "TAT Information" block: how many candidates the requisition's
+            # openings collected and how far they got, plus its own position
+            # approvals. Same on_update reasoning as store_headcount above.
+            "recruitment.api.requisition_pipeline.store_pipeline",
+            # Over Budget flag for the form banner — derived, so written here with
+            # db.set_value for the same reason as store_headcount above.
+            "recruitment.api.requisition_budget.store_budget_flag",
         ],
+    },
+    # Accounts edit the AOP budget / utilization by hand on these masters; an edit
+    # re-flags live requisitions right away instead of at the nightly run.
+    "Cost Center": {
+        "on_update": "recruitment.api.requisition_budget.on_budget_master_update",
+    },
+    "Department": {
+        "on_update": "recruitment.api.requisition_budget.on_budget_master_update",
     },
     "Job Opening": {
         "validate": [
@@ -423,6 +564,10 @@ doc_events = {
             # Capture the Regions child table's region on the parent `custom_region`
             # so it is searchable/filterable from the Job Opening (search_fields).
             "recruitment.customizations.job_opening_region.set_region_from_regions_table",
+            # A Fresher opening advertises ITS region's headcount. `vacancies` is
+            # fetched from the requisition's total, which is the sum across every
+            # region — right for Lateral, wrong here, and re-applied on every save.
+            "recruitment.customizations.fresher_openings.sync_vacancies_from_region",
             # Guarantee a collision-free web route — sibling requisitions (same
             # company + designation) would otherwise generate an identical route
             # and fail with "Route must be unique". Runs last so it de-duplicates
@@ -431,13 +576,25 @@ doc_events = {
             # First save on which the opening is posted to Campus: copy the default
             # eligibility conditions from Campus Eligibility Settings onto it.
             "recruitment.recruitment.eligibility_engine.apply_default_eligibility_rules",
+            # A field locked in Job Applicant Profile Settings is frozen for every
+            # opening: discard any per-opening override for it. The tab renders
+            # those rows disabled, but a disabled control is not a rule — the
+            # override table is ordinary child data the API can write.
+            "recruitment.recruitment.doctype.job_applicant_profile_settings.job_applicant_profile_settings.enforce_locked_fields",
         ],
         # Tell an external recruiter the opening is theirs to work on. Both events
         # so a recruiter added to an existing opening is mailed too; sent once per
         # recruiter per posting row (Job Opening Posting Channel.notified_recruiters),
         # and only while Recruitment Settings says so.
         "after_insert": "recruitment.recruitment.external_recruiter_mailers.notify_assigned_recruiters",
-        "on_update": "recruitment.recruitment.external_recruiter_mailers.notify_assigned_recruiters",
+        "on_update": [
+            "recruitment.recruitment.external_recruiter_mailers.notify_assigned_recruiters",
+            # Saving an opening against an Approved Draft requisition is what
+            # activates it: the requisition becomes Approved Active and its
+            # positions open, so an offer can be raised against them. Same step
+            # the "Activate" action performs, applied to the create path too.
+            "recruitment.api.requisition_status.activate_requisition_on_opening",
+        ],
     },
     "Employee": {
         "before_insert": "recruitment.customizations.job_applicant.validate_blacklist_employee",
@@ -447,6 +604,12 @@ doc_events = {
             "recruitment.recruitment.referral_reward_engine.generate_referral_reward_on_employee",
         ],
         "before_save": "recruitment.recruitment.employee_confirmation_hooks.calculate_final_confirmation_date",
+        "validate": [
+            # Block converting an employee to alumni (status -> Left/Inactive)
+            # without a usable personal_email, BEFORE the company-email User is
+            # disabled — so the alumnus is never left with no working login.
+            "recruitment.recruitment.alumni_user_switch.validate_alumni_personal_email",
+        ],
         "on_update": [
             # Keep the User's "Is Alumni Employee" flag in sync with status == "Left"
             # (only sets that checkbox; never touches Employee.status or User.enabled).
@@ -455,10 +618,22 @@ doc_events = {
             # company-email User and provision/restore the personal-email Alumni
             # User (and the reverse when the employee rejoins).
             "recruitment.recruitment.alumni_user_switch.handle_employee_status_change",
+            # New Hire: hand a pending Employee to onboarding the moment the
+            # approval matrix clears it — but only when its New Hire Form ticks
+            # "Initiate Onboarding on Approval". A no-op for every real employee
+            # (it returns immediately unless status is Pending).
+            "recruitment.api.new_hire.auto_initiate_on_approval",
         ],
     },
     "Job Applicant": {
-        "before_insert": "recruitment.customizations.ta_duplicity_check.check_duplicity",
+        "before_insert": [
+            # Duplicity check: match keys mandatory, rejection cooldown, and the
+            # multi-position rules — for candidates and for IJP. The employee-pool
+            # rules from the same settings record are decided at the Job Offer
+            # instead (see ta_duplicity_job_offer); ta_rehire_check now only
+            # DETECTS, feeding the Job Applicant's Employee Record tab.
+            "recruitment.customizations.ta_duplicity_check.check_duplicity",
+        ],
         "before_save": [
             "recruitment.customizations.job_applicant.validate_blacklist",
             # Campus candidates arrive carrying their Campus Invite; resolve the
@@ -478,13 +653,27 @@ doc_events = {
             # branch on them belongs to the region they are leaving, so it is
             # cleared and the next panel picks one in the new region.
             "recruitment.api.interview_work_location.clear_location_on_region_change",
+            # Uppercase / de-space the PAN and check its shape. PAN is a match key
+            # for the rehire check, and a mistyped one silently matches nothing.
+            "recruitment.api.applicant_pan.normalize_pan",
         ],
         # Place a new applicant on the linked opening's first hiring stage
         # (no-op unless the Hiring Workflow feature is enabled).
-        "after_insert": "recruitment.api.hiring_stage.seed_first_stage",
+        "after_insert": [
+            "recruitment.api.hiring_stage.seed_first_stage",
+            # A new candidate changes "Candidates Applied" on the requisition
+            # behind their opening.
+            "recruitment.api.requisition_pipeline.refresh_from_applicant",
+        ],
         # A resume uploaded after the interviews were scheduled still has to reach
         # the panel — see recruitment.api.interview_resume.
-        "on_update": "recruitment.api.interview_resume.push_resume_to_interviews",
+        "on_update": [
+            "recruitment.api.interview_resume.push_resume_to_interviews",
+            # Stage moves change Screened / Shortlisted on the requisition's TAT
+            # block. Never raises — see requisition_pipeline.
+            "recruitment.api.requisition_pipeline.refresh_from_applicant",
+        ],
+        "on_trash": "recruitment.api.requisition_pipeline.refresh_from_applicant",
     },
     "Appointment Letter": {
         "validate": "recruitment.customizations.job_applicant.validation_blacklist_on_doctypes"
@@ -496,18 +685,61 @@ doc_events = {
         "on_update": "recruitment.recruitment.alumni_employee_request_service.handle_workflow_transition",
     },
     "Employee Onboarding": {
-        "validate": "recruitment.customizations.job_applicant.validation_blacklist_on_doctypes",
+        # Mark an onboarding raised from a New Hire form. Must run before the
+        # mandatory check, because the flag is what makes `job_offer` optional
+        # for a direct hire — and only for a direct hire.
+        "validate": [
+            "recruitment.customizations.job_applicant.validation_blacklist_on_doctypes",
+            # Server-side half of the direct-hire exemption: `job_offer` is no
+            # longer `reqd` on the meta (so a direct hire can save), and Frappe
+            # does not enforce `mandatory_depends_on` outside the desk form — so
+            # the requirement is kept here for everyone else.
+            "recruitment.api.new_hire.require_job_offer_unless_direct_hire",
+        ],
         # "before_save": "recruitment.customizations.employee_onboarding.document_verification.update_verification_documents",
-        "before_save": "recruitment.recruitment.onboarding_extras.auto_map_manager",
+        "before_save": [
+            "recruitment.recruitment.onboarding_extras.auto_map_manager",
+            # HRMS copies template activities without the custom Email Template
+            # field; this fills it on new rows from the onboarding template.
+            "recruitment.recruitment.onboarding_extras.copy_activity_email_templates",
+        ],
         # Tasks are no longer created on submit (see overide_class.on_submit) —
         # they're created via the "Create Onboarding Tasks" button, which stamps
         # task metadata itself. This hook only keeps metadata fresh on post-submit
         # edits (e.g. DOJ / Postponed changes).
-        "on_update_after_submit": "recruitment.recruitment.onboarding_extras.populate_onboarding_task_meta",
+        "on_update_after_submit": [
+            "recruitment.recruitment.onboarding_extras.populate_onboarding_task_meta",
+            # The DOJ outcome is decided AFTER the onboarding is submitted — an
+            # Employee cannot be created from a draft (see overide_class), and the
+            # manager answers on their joining-day task, by which time the
+            # onboarding is long submitted. Registered on on_update alone, this
+            # handler could never run for that: a post-submit save fires
+            # on_update_after_submit and nothing else. Joined / Not Joined /
+            # Postponed were therefore all inert in practice.
+            "recruitment.recruitment.onboarding_extras.handle_doj_outcome",
+            # Same reason: the portal-field approvals that decide boarding_status
+            # continue after submit.
+            "recruitment.api.field_level_approval.refresh_boarding_status",
+        ],
         "on_update": [
             "recruitment.auto_fetch_fields.update_employee_fields",
             "recruitment.recruitment.onboarding_extras.handle_doj_outcome",
+            # New Hire: mark the pending Employee ready once field-level
+            # approval has cleared every portal field. Activation stays a
+            # deliberate act. No-op for a recruitment onboarding.
+            "recruitment.api.new_hire.stage_from_onboarding",
+            # Keep boarding_status a function of the candidate portal field
+            # approvals, whatever route changed them. No-op when the onboarding
+            # has no portal fields. See field_level_approval.refresh_boarding_status.
+            "recruitment.api.field_level_approval.refresh_boarding_status",
         ],
+    },
+    "Project": {
+        # HRMS rewrites Employee Onboarding.boarding_status from task completion on
+        # every Project save. Only relevant while Onboarding Settings -> "Complete
+        # Onboarding on Form Approval" is on, where the candidate's form owns that
+        # status instead; this puts the form's answer back. No-op otherwise.
+        "on_update": "recruitment.api.field_level_approval.protect_boarding_status_from_task_sync",
     },
     "Employee Separation": {
         "before_insert": [
@@ -520,6 +752,10 @@ doc_events = {
         "on_submit": [
             "recruitment.customizations.employee_separation.employee_separation.update_employee_relieving_date",
             "recruitment.customizations.employee_separation.employee_separation.create_attendance_regularize_todo",
+            # Mirror "Mark Do Not Rehire?" onto the Employee, so the flag the
+            # rehire check reads is visible on the employee's own record. Never
+            # clears it — see ta_rehire_check.mirror_do_not_rehire_to_employee.
+            "recruitment.customizations.ta_rehire_check.mirror_do_not_rehire_to_employee",
         ],
         "on_trash": [
             "recruitment.customizations.employee_separation.funnel_cleanup.cleanup_separation_funnel_artifacts",
@@ -553,6 +789,9 @@ scheduler_events = {
             "recruitment.recruitment.onboarding_extras.refresh_onboarding_task_days_to_join",
             "recruitment.recruitment.scheduled_jobs.mark_relieved_employees_as_left",
             "recruitment.recruitment.scheduled_jobs.auto_separate_employees_on_lwd",
+            # AOP budget: re-flag live requisitions their Department / Cost Center
+            # budget left no longer covers. No-op (clears flags) when disabled.
+            "recruitment.api.requisition_budget.refresh_over_budget_flags",
         ],
         "30 1 * * *": [
             # Pay every referral reward installment that is due and still eligible.

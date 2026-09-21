@@ -88,15 +88,29 @@ frappe.ui.form.on("Job Offer", {
 		// (clause_type / salary_component pickers are set up in the handler below,
 		// which owns the Salary Component custom-field filters.)
 
-		// Offer Letter Template picker: only Document Templates whose reference
-		// doctype is Job Offer.
+		// Offer Letter Template picker: only the templates whose assignment admits
+		// THIS offer — its Company, or the attributes on its User Assignments. A
+		// server-side link query, not a filters dict, because the match depends on
+		// attribute configuration only the server can evaluate; the form's current
+		// (possibly unsaved) values go along so the list narrows as HR types.
+		//
+		// The field must carry NO `link_filters` (Customize Form → "Filters"), or
+		// this query is silently thrown away: Frappe's link control merges the two
+		// by *replacing* get_query with one that returns only `{filters}` — the
+		// `query` below never reaches the server, and the context keys here (which
+		// are Job Offer fieldnames, not Document Template ones) then hit the plain
+		// search as real columns and the picker 500s with an OperationalError. The
+		// "doctype_name = Job Offer" restriction a link filter would add is already
+		// applied server-side by _candidate_templates(), so nothing is lost.
 		frm.set_query("custom_offer_letter_template", () => ({
-			filters: { doctype_name: "Job Offer" },
+			query: "recruitment.recruitment.offer_document_template.offer_document_template_query",
+			filters: recruitment_offer_template_context(frm),
 		}));
 
 		// Offer Letter tab (Template / Preview), rendered inline on the form.
 		recruitment_offer_letter_styles();
 		recruitment_render_offer_letter_tab(frm);
+		recruitment_check_offer_template_availability(frm);
 
 		// Offer-letter buttons — each gated by a Recruitment Settings toggle
 		// (both default ON). Only for a saved Job Offer.
@@ -431,13 +445,75 @@ frappe.ui.form.on("Extra Payment Child Doc", {
     }
 });
 
+// Re-check availability when a field a template can be scoped by changes, and
+// drop the rendered-letter cache when the template itself does — otherwise the
+// Offer Letter tab keeps showing the letter that was resolved before the change.
+frappe.ui.form.on("Job Offer", {
+	company: recruitment_offer_template_changed,
+	designation: recruitment_offer_template_changed,
+	custom_employment_type: recruitment_offer_template_changed,
+	job_applicant: recruitment_offer_template_changed,
+	custom_offer_letter_template: recruitment_offer_template_changed,
+});
+
+function recruitment_offer_template_changed(frm) {
+	frm._ol_cache = {};
+	recruitment_check_offer_template_availability(frm);
+	recruitment_render_offer_letter_tab(frm);
+}
+
+// The form values the template picker and the availability check are matched
+// against. Sent live rather than read from the database so an offer being filled
+// in filters correctly before its first save; the server falls back to what is
+// stored for anything not listed here.
+function recruitment_offer_template_context(frm) {
+	const ctx = { job_offer: frm.doc.name && !frm.is_new() ? frm.doc.name : "" };
+	["company", "designation", "custom_employment_type", "job_applicant", "custom_location"].forEach((f) => {
+		if (frm.doc[f]) ctx[f] = frm.doc[f];
+	});
+	return ctx;
+}
+
+// Banner above the Offer Letter Template field: when the Document Template path
+// is on and nothing admits this offer, say so where HR is looking — the submit
+// would otherwise be the first time they hear about it.
+function recruitment_check_offer_template_availability(frm) {
+	const field = frm.fields_dict && frm.fields_dict.custom_offer_letter_template;
+	if (!field || !field.$wrapper) return;
+
+	const clear = () => field.$wrapper.find(".ol-unavailable").remove();
+
+	// A hand-picked template is HR overriding the rules on purpose — nothing to warn about.
+	if (frm.doc.custom_offer_letter_template) {
+		clear();
+		return;
+	}
+
+	frappe.call({
+		method: "recruitment.recruitment.offer_document_template.get_offer_template_availability",
+		args: {
+			job_offer: frm.doc.name && !frm.is_new() ? frm.doc.name : null,
+			overlay: JSON.stringify(recruitment_offer_template_context(frm)),
+		},
+	}).then((r) => {
+		const res = (r && r.message) || {};
+		clear();
+		if (!res.enabled || res.available) return;
+		field.$wrapper.prepend(
+			`<div class="ol-unavailable">${frappe.utils.escape_html(res.message || "")}</div>`
+		);
+	}).catch(() => clear());
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Offer Letter tab — Template (raw placeholders) + Preview (rendered).
 //
 // Same two endpoints the dialog uses, rendered inline on the form's "Offer
 // Letter" tab so the letter sits beside the fields instead of behind a button.
-// `get_offer_letter_preview_html` resolves the Document Template first and falls
-// back to the Job Offer print format, so Preview always shows something.
+// `get_offer_letter_preview_html` resolves the Document Template first; with the
+// Document Template path on and nothing admitting this offer it returns the
+// "contact HR" notice rather than falling back to a Print Format, so Preview
+// never shows a letter the candidate will not be sent.
 // ─────────────────────────────────────────────────────────────────────────────
 function recruitment_render_offer_letter_tab(frm) {
 	const field = frm.fields_dict && frm.fields_dict.custom_offer_letter_html;
@@ -524,6 +600,11 @@ function recruitment_offer_letter_styles() {
 		.ol-tab.active { color:var(--blue-600,#1479d6); font-weight:600; border-bottom-color:var(--blue-600,#1479d6); }
 		.ol-body { min-height:340px; }
 		.ol-empty { padding:48px; text-align:center; color:var(--text-muted,#8d99a6); }
+		.ol-unavailable {
+			margin-bottom:8px; padding:9px 12px; border-radius:6px;
+			background:var(--bg-orange,#fff8e6); color:var(--text-color,#7a5c00);
+			border:1px solid var(--yellow-300,#ffe8a3); font-size:12px; line-height:1.5;
+		}
 
 		/* An Employment Type mapped to several letters is previewed as one pane per
 		   letter, never merged — see get_offer_letter_preview_html. Each pane keeps
@@ -568,6 +649,47 @@ function recruitment_offer_letter_styles() {
         });
     }
 
+    // "Notify HR Ops" — hands a saved offer to the HR Ops role for verification.
+    // Shown only while Recruitment Settings -> Require HR Ops Verification Before
+    // Sending Offer is on, and only until the notification has gone out (the
+    // offer carries custom_hr_ops_notified from then on).
+    function notify_hr_ops_button(frm) {
+        frm.add_custom_button(__("Notify HR Ops"), () => {
+            frappe.confirm(
+                __("Notify HR Ops to verify and release this offer for {0}?", [
+                    frappe.utils.escape_html(frm.doc.applicant_name || frm.doc.job_applicant || frm.doc.name),
+                ]),
+                () => {
+                    frappe.call({
+                        method: "recruitment.api.hr_ops_notify.notify_hr_ops",
+                        args: { job_offers: JSON.stringify([frm.doc.name]) },
+                        freeze: true,
+                        freeze_message: __("Notifying HR Ops…"),
+                        callback: (r) => {
+                            const m = (r && r.message) || {};
+                            if (m.notified) {
+                                frappe.show_alert({
+                                    message: __("HR Ops notified."), indicator: "green",
+                                });
+                            } else if (m.already_notified) {
+                                frappe.msgprint({
+                                    title: __("Not sent"), indicator: "orange",
+                                    message: __("HR Ops has already been notified for this offer."),
+                                });
+                            } else {
+                                frappe.msgprint({
+                                    title: __("Not sent"), indicator: "red",
+                                    message: __("Could not notify HR Ops. Check the Error Log for the reason."),
+                                });
+                            }
+                            frm.reload_doc();
+                        },
+                    });
+                }
+            );
+        });
+    }
+
     frappe.ui.form.on("Job Offer", {
         job_applicant(frm) {
             fillFromRequisition(frm);
@@ -609,11 +731,36 @@ function recruitment_offer_letter_styles() {
             // Gated on its own toggle, following enable_offer_letter_button and
             // friends — NOT on allow_bulk_job_offer_email. Turning off mass emailing
             // should not also remove a recruiter's ability to send one offer.
-            if (frm.doc.docstatus !== 1) return;
+            //
+            // "Notify HR Ops" sits in front of it, but only on a site that has
+            // Recruitment Settings -> Require HR Ops Verification Before Sending
+            // Offer ticked. With the setting off (the default) neither the button
+            // nor the gate below exists and this reads exactly as it did before.
+            if (frm.is_new()) return;
 
-            frappe.db.get_single_value("Recruitment Settings", "enable_send_job_offer_button")
-                .then((enabled) => {
+            Promise.all([
+                frappe.db.get_single_value("Recruitment Settings", "enable_send_job_offer_button"),
+                frappe.db.get_single_value("Recruitment Settings", "disable_send_offer_after_sent"),
+                frappe.db.get_single_value("Recruitment Settings", "enable_hr_ops_offer_verification"),
+            ])
+                .then(([enabled, hide_once_sent, hr_ops_gate]) => {
+                    const hr_ops_notified = !!frm.doc.custom_hr_ops_notified;
+
+                    // The handover: the recruiter raises and saves the offer, HR Ops
+                    // verifies and releases it. Available on a draft too — HR Ops is
+                    // the one who submits.
+                    if (hr_ops_gate && !hr_ops_notified && frm.doc.docstatus !== 2) {
+                        notify_hr_ops_button(frm);
+                    }
+
+                    if (frm.doc.docstatus !== 1) return;
                     if (!enabled) return;
+                    // Recruitment Settings -> Hide Send Job Offer Once Sent.
+                    if (hide_once_sent && frm.doc.email_status === "Sent") return;
+                    // Nothing goes to the candidate before HR Ops has seen it. The
+                    // server refuses the send as well (bulk_job_offer), so this is
+                    // the courtesy half of the gate, not the whole of it.
+                    if (hr_ops_gate && !hr_ops_notified) return;
                     frm.add_custom_button(__("Send Job Offer"), () => {
                         frappe.confirm(
                             __("Send the offer email to {0}?", [
@@ -630,6 +777,16 @@ function recruitment_offer_letter_styles() {
                                         if (m.sent) {
                                             frappe.show_alert({
                                                 message: __("Offer email sent."), indicator: "green",
+                                            });
+                                        } else if (m.already_sent) {
+                                            frappe.msgprint({
+                                                title: __("Not sent"), indicator: "orange",
+                                                message: __("This offer has already been sent. Use 'Retrigger Welcome Email' to re-send it."),
+                                            });
+                                        } else if (m.pending_hr_ops) {
+                                            frappe.msgprint({
+                                                title: __("Not sent"), indicator: "orange",
+                                                message: __("HR Ops has not been notified for this offer yet. Click 'Notify HR Ops' first."),
                                             });
                                         } else if (m.skipped) {
                                             // Skipped means the candidate has already
@@ -773,10 +930,15 @@ function choose_offer_position(frm, opts) {
 // Retrigger Welcome Email — manually re-send the configured welcome / offer email
 // (Recruitment Settings -> job_offer_template) to the candidate. Direct top-level
 // button; only for a saved offer that has a linked Job Applicant.
+//
+// Only after the email has actually gone out once (send_bulk_job_offer stamps
+// email_status = "Sent" / email_sent_on). Re-sending never clears those, so the
+// button stays available for any number of retriggers.
 // ---------------------------------------------------------------------------
 frappe.ui.form.on("Job Offer", {
     refresh(frm) {
         if (frm.is_new() || !frm.doc.job_applicant) return;
+        if (frm.doc.email_status !== "Sent" && !frm.doc.email_sent_on) return;
 
         frm.add_custom_button(__("Retrigger Welcome Email"), () => {
             frappe.confirm(
@@ -814,36 +976,90 @@ frappe.ui.form.on("Job Offer", {
         if (frm.is_new() || frm.doc.docstatus === 2) return;
         if (["Withdrawn", "Accepted"].includes(frm.doc.status)) return;
 
-        frm.add_custom_button(__("Withdraw Offer"), () => {
-            frappe.prompt(
-                [
-                    {
-                        fieldname: "reason",
-                        label: __("Reason"),
-                        fieldtype: "Small Text",
-                        description: __(
-                            "Recorded on the offer's timeline. The position returns to Open and frees up the requisition's headcount."
-                        ),
-                    },
-                ],
-                (values) => {
-                    frappe.call({
-                        method: "recruitment.api.offer_position.withdraw_offer",
-                        args: { job_offer: frm.doc.name, reason: values.reason },
-                        freeze: true,
-                        freeze_message: __("Withdrawing…"),
-                        callback: () => {
-                            frappe.show_alert({
-                                message: __("Offer withdrawn"),
-                                indicator: "orange",
-                            });
-                            frm.reload_doc();
-                        },
-                    });
-                },
-                __("Withdraw Offer"),
-                __("Withdraw")
-            );
-        });
+        // Recruitment Settings -> Allow Withdraw Offer Only After It Is Sent:
+        // then only a submitted offer whose email went out can be withdrawn.
+        frappe.db.get_single_value("Recruitment Settings", "withdraw_offer_only_after_sent")
+            .then((only_after_sent) => {
+                const sent = frm.doc.docstatus === 1 && frm.doc.email_status === "Sent";
+                if (only_after_sent && !sent) return;
+                add_withdraw_offer_button(frm);
+            });
     },
+});
+
+function add_withdraw_offer_button(frm) {
+    frm.add_custom_button(__("Withdraw Offer"), () => {
+        frappe.prompt(
+            [
+                {
+                    fieldname: "reason",
+                    label: __("Reason"),
+                    fieldtype: "Small Text",
+                    description: __(
+                        "Recorded on the offer's timeline. The position returns to Open and frees up the requisition's headcount."
+                    ),
+                },
+            ],
+            (values) => {
+                frappe.call({
+                    method: "recruitment.api.offer_position.withdraw_offer",
+                    args: { job_offer: frm.doc.name, reason: values.reason },
+                    freeze: true,
+                    freeze_message: __("Withdrawing…"),
+                    callback: () => {
+                        frappe.show_alert({
+                            message: __("Offer withdrawn"),
+                            indicator: "orange",
+                        });
+                        frm.reload_doc();
+                    },
+                });
+            },
+            __("Withdraw Offer"),
+            __("Withdraw")
+        );
+    });
+}
+
+/*
+ * Work Location follows Region.
+ *
+ * Branch — the Work Location master — carries `custom_region`, so once a Region is
+ * chosen only the branches inside it can be offered. Two halves:
+ *
+ *   1. The picker is filtered to that region.
+ *   2. Changing the Region drops a Work Location that no longer belongs to it.
+ *
+ * Filtered here rather than with a `link_filters` on the custom field because an
+ * offer with no Region yet would then query `custom_region = null` and show an
+ * empty branch list, which reads as a broken field. With no Region set, every
+ * branch stays offerable exactly as before.
+ *
+ * The clear is conditional — only when the branch actually disagrees with the new
+ * region. `custom_region` fetches from the Job Applicant, so an unconditional
+ * clear would wipe the Work Location that was seeded from the same applicant the
+ * moment the offer is created.
+ */
+frappe.ui.form.on("Job Offer", {
+	refresh(frm) {
+		frm.set_query("custom_work_location", () => {
+			const region = frm.doc.custom_region;
+			return region ? { filters: { custom_region: region } } : {};
+		});
+	},
+
+	custom_region(frm) {
+		const region = frm.doc.custom_region;
+		const branch = frm.doc.custom_work_location;
+		if (!branch) return;
+		if (!region) {
+			frm.set_value("custom_work_location", null);
+			return;
+		}
+		frappe.db.get_value("Branch", branch, "custom_region").then((r) => {
+			if ((r.message || {}).custom_region !== region) {
+				frm.set_value("custom_work_location", null);
+			}
+		});
+	},
 });

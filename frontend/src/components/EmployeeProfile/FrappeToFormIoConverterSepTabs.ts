@@ -4,6 +4,23 @@ import { profileService } from "../../services/profileService";
 
 // Cache for table field metadata to prevent duplicate API calls
 const tableFieldsCache = new Map<string, any[]>();
+let relationshipTypesCache: { value: string; code: string; alias: string }[] | null = null;
+
+export async function getRelationshipTypes(): Promise<{ value: string; code: string; alias: string }[]> {
+  if (relationshipTypesCache && relationshipTypesCache.length > 0) {
+    return relationshipTypesCache;
+  }
+  try {
+    const res = await profileService.getRelationshipTypes();
+    if (res?.length) {
+      relationshipTypesCache = res;
+      return res;
+    }
+  } catch (e) {
+    console.error("Failed to fetch relationship types", e);
+  }
+  return [];
+}
 
 // Tabs from the backend that should never be rendered in the profile UI
 const SKIP_TAB_LABELS = new Set(["Attendance & Leaves"]);
@@ -57,6 +74,7 @@ async function getTableFields(doctype: string): Promise<any[]> {
  */
 export function clearTableFieldsCache() {
   tableFieldsCache.clear();
+  relationshipTypesCache = null;
 }
 
 /**
@@ -69,7 +87,10 @@ async function prefetchTableFields(apiFields: any[]): Promise<void> {
   );
   const uniqueDoctypes = [...new Set(tableFields.map((f) => f.options))];
 
-  await Promise.all(uniqueDoctypes.map((doctype) => getTableFields(doctype)));
+  await Promise.all([
+    ...uniqueDoctypes.map((doctype) => getTableFields(doctype)),
+    uniqueDoctypes.includes("Dependent") ? getRelationshipTypes() : Promise.resolve([]),
+  ]);
 }
 
 // Enhanced mapping for better FormIO compatibility
@@ -126,7 +147,7 @@ const formioFieldTypeMap: Record<string, string> = {
 };
 
 
-function mapFieldToFormio(field: any, fieldValue: any): any {
+function mapFieldToFormio(field: any, fieldValue: any, parentDoctype?: string): any {
   const type = formioFieldTypeMap[field.fieldtype] || "textfield";
 
   let schema: any = {
@@ -260,6 +281,10 @@ function mapFieldToFormio(field: any, fieldValue: any): any {
       break;
     }
     case "Link": {
+      const isDependentRelation =
+        field.fieldname === "relation" &&
+        (field.parent === "Dependent" || parentDoctype === "Dependent");
+
       schema.type = "select";
       schema.widget = "choicesjs";
       schema.dropdown = "body";
@@ -267,56 +292,62 @@ function mapFieldToFormio(field: any, fieldValue: any): any {
       schema.searchEnabled = true;
       schema.multiple = false;
 
-      schema.data = {
-        url: `/api/method/cn_hrms_core.cn_hrms_core.apis.fetch_data.get_searched_doc_list?fields=["*"]&doctype=${field.link_options || field.options || ""}&limit=20`,
-      };
+      if (isDependentRelation) {
+        schema.isDependentRelation = true;
+        schema.data = {
+          url: "/api/method/cn_hrms_core.cn_hrms_core.apis.dependent.get_relationship_types",
+        };
+        schema.lazyLoad = false;
+        schema.dataType = "string";
+        schema.idPath = "code";
+        schema.valueProperty = "code";
+        schema.selectValues = "message";
+        schema.searchFields = ["label", "alias", "value", "code"];
+        schema.template = "<span>{{ item.alias || item.value || item.code }}</span>";
+      } else {
+        schema.data = {
+          url: `/api/method/cn_hrms_core.cn_hrms_core.apis.fetch_data.get_searched_doc_list?fields=["*"]&doctype=${field.link_options || field.options || ""}&limit=20`,
+        };
 
-      schema.lazyLoad = true;
-      schema.dataType = "string";
-      schema.idPath = "name";
-      schema.valueProperty = "name";
-      schema.selectValues = "message";
-      schema.searchField = "q";
-      schema.template = (item: any) => {
-        const data = item?.item || {};
+        schema.lazyLoad = true;
+        schema.dataType = "string";
+        schema.idPath = "name";
+        schema.valueProperty = "name";
+        schema.selectValues = "message";
+        schema.searchField = "q";
+        schema.template = (item: any) => {
+          const data = item?.item || {};
 
-        const name = data.name || "";
-        const label = data?.reference_name || ""
-        // const secondary =
-        //   data.employee_name ||
-        //   data.title ||
-        //   data.label ||
-        //   data.full_name ||
-        //   data.fullname ||
-        //   data.first_name ||
-        //   "";
+          const name = data.name || "";
+          const label = data?.reference_name || ""
 
-        const designation = data.custom_designation_name || "";
-        const branch = data.branch || "";
+          const designation = data.custom_designation_name || "";
+          const branch = data.branch || "";
 
-        const infoText =
-          designation && branch
-            ? `${designation} | ${branch}`
-            : designation || branch;
+          const infoText =
+            designation && branch
+              ? `${designation} | ${branch}`
+              : designation || branch;
 
-        return `
-          <div class="formio-select-item">
-            <div class="formio-select-item-main">
-              <span class="primary">${label}</span>
-              ${name ? `<span class="secondary">(${name})</span>` : ""}
-            </div>
-
-            ${infoText
-            ? `
-              <div class="formio-select-item-info">
-                <span>${infoText}</span>
+          return `
+            <div class="formio-select-item">
+              <div class="formio-select-item-main">
+                <span class="primary">${label}</span>
+                ${name ? `<span class="secondary">(${name})</span>` : ""}
               </div>
-            `
-            : ""}
 
-          </div>
-        `;
-      };
+              ${infoText
+              ? `
+                <div class="formio-select-item-info">
+                  <span>${infoText}</span>
+                </div>
+              `
+              : ""}
+
+            </div>
+          `;
+        };
+      }
       break;
     }
 
@@ -334,6 +365,8 @@ function mapFieldToFormio(field: any, fieldValue: any): any {
       break;
 
     case "Date":
+      schema.enableTime = false;
+      schema.datePicker = { disableWeekends: false, disableWeekdays: false };
       schema.widget = {
         type: "calendar",
         displayInTimezone: "viewer",
@@ -343,6 +376,7 @@ function mapFieldToFormio(field: any, fieldValue: any): any {
         allowInput: true,
         clickOpens: true,
         enableTime: false,
+        noCalendar: false,
         mode: "single",
       };
       schema.format = "dd-MM-yyyy";
@@ -604,6 +638,18 @@ export function formatValueForFormio(value: any, component: any, displayValue?: 
     return [];
   }
 
+  // For Dependent relation, always preserve raw code and do not format into displayValue (value)
+  if (
+    component?.isDependentRelation ||
+    (component?.key === "relation" && component?.data?.url?.includes("get_relationship_types"))
+  ) {
+    if (typeof value === "string") {
+      const match = value.match(/^.+?\s\((.+?)\)$/);
+      if (match) return match[1];
+    }
+    return value;
+  }
+
   // Combine value and displayValue if they differ and it's not a complex type
   if (displayValue !== undefined && displayValue !== null && displayValue !== "" && displayValue !== value) {
     return `${displayValue} (${value})`;
@@ -839,7 +885,7 @@ export async function convertToFormioWithTabMetadata(
             childComponents = res
               .filter((fd: any) => allowedFields.has(fd.fieldtype))
               .map((childField: any) => {
-                const component = mapFieldToFormio(childField, undefined);
+                const component = mapFieldToFormio(childField, undefined, field.options);
                 component.applyMaskOn = "change";
                 if (childField.fieldtype !== "Read Only") {
                   component.disabled = false;
@@ -1235,7 +1281,7 @@ export async function convertToFormioWithLayout(
             childComponents = res
               .filter((fd: any) => allowedFields.has(fd.fieldtype))
               .map((childField: any) => {
-                const component = mapFieldToFormio(childField, undefined);
+                const component = mapFieldToFormio(childField, undefined, field.options);
                 component.applyMaskOn = "change";
                 if (childField.fieldtype !== "Read Only") {
                   component.disabled = false;
@@ -1589,6 +1635,7 @@ export async function convertFieldsToSimpleTabbedData(
 
       if (field.fieldtype === 'Table' && field.options) {
         const res = await getTableFields(field.options);
+        const relTypes = field.options === "Dependent" ? await getRelationshipTypes() : [];
         const standardFields = new Set(['name', 'owner', 'creation', 'modified', 'modified_by', 'docstatus', 'idx', 'parent', 'parentfield', 'parenttype', 'doctype', 'amended_from']);
         const fieldMetaMap = new Map((res || []).map(f => [f.fieldname, f]));
 
@@ -1637,6 +1684,19 @@ export async function convertFieldsToSimpleTabbedData(
                   row[`${childField.fieldname}_display`] !== undefined
                     ? row[`${childField.fieldname}_display`]
                     : row[childField.fieldname];
+
+                if (
+                  (field.options === "Dependent" || childField.parent === "Dependent") &&
+                  childField.fieldname === "relation" &&
+                  childValue
+                ) {
+                  const matched = relTypes.find(
+                    (r) => r.code === childValue || r.value === childValue
+                  );
+                  if (matched?.alias) {
+                    childValue = matched.alias;
+                  }
+                }
 
                 // Standardize date format for child table fields
                 if (

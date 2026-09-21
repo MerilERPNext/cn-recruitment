@@ -6,7 +6,13 @@
 
 [post_model_sync]
 # Patches added in this section will be executed after doctypes are migrated
-recruitment.patches.interviewfeedback_funnel
+# recruitment.patches.interviewfeedback_funnel
+# Removed: it seeded the "Interview Feedback" Funnel from
+# patches/json_files/interview_feedback_funnel.json, and that file (with every
+# other funnel seed) was deleted in 43a35180 when funnel seeding was dropped —
+# its sibling patches/funnel.py was commented out in the same move, this one was
+# missed. On any site that has not already recorded it in Patch Log (a fresh
+# install, a fresh DB) it raised FileNotFoundError and stopped `bench migrate`.
 recruitment.patches.add_client_script
 recruitment.patches.candidate_portal_auth_defaults
 recruitment.patches.candidate_portal_feature_flag_defaults
@@ -48,3 +54,26 @@ recruitment.patches.backfill_applicant_employment_type
 recruitment.patches.rename_institutes_by_name
 recruitment.patches.backfill_campus_drive_type
 recruitment.patches.default_recruitment_email_settings
+recruitment.patches.job_offer_applicant_full_name
+recruitment.patches.tpo_space_registration_above_drives
+recruitment.patches.restore_orphaned_applicant_profile_fields
+recruitment.patches.add_onboarding_trainee_joining_date
+recruitment.patches.backfill_requisition_region
+recruitment.patches.add_job_offer_region
+recruitment.patches.backfill_requisition_position_location
+recruitment.patches.job_offer_applicant_first_name
+recruitment.patches.move_campus_drive_pay_to_job_opening
+recruitment.patches.add_employment_type_to_employee
+recruitment.patches.add_applicant_pan_number
+recruitment.patches.migrate_offer_document_templates_to_attributes
+recruitment.patches.duplicity_check_employee_pool
+recruitment.patches.migrate_strategy_template_scope_to_attributes
+recruitment.patches.create_group_discussions
+recruitment.patches.seed_dpdp_external_consent_defaults
+recruitment.patches.add_show_act_button_system_setting
+recruitment.patches.create_external_recruiter_openings_block
+recruitment.patches.add_requisition_tat_fields
+recruitment.patches.add_job_opening_jd_file
+recruitment.patches.migrate_application_field_role_permissions
+recruitment.patches.sync_new_hire_source_mandatory_fields
+recruitment.patches.employee_do_not_rehire_flag

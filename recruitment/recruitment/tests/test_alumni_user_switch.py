@@ -245,6 +245,46 @@ class TestAlumniUserSwitch(FrappeTestCase):
         )
         frappe.db.commit()
 
+    # ── 5b. Interactive conversion without personal email is hard-blocked ──────
+    def test_conversion_without_personal_email_is_blocked_on_save(self):
+        """A `validate` hook aborts the Active -> Left transition when there is no
+        personal email, BEFORE the company User is disabled — so the employee is
+        never left with a disabled company account and no alumni login.
+
+        This is the interactive (`doc.save`) path; the backfill path
+        (`apply_account_state`) keeps its softer log-and-skip behaviour, covered
+        by ``test_employee_without_personal_email_provisions_no_alumni_user``.
+        """
+        _set_status(self.employee, "Active")
+        self.assertEqual(_enabled(COMPANY_EMAIL), 1)
+
+        doc = frappe.get_doc("Employee", self.employee)
+        doc.personal_email = ""
+        doc.status = "Left"
+        if not doc.relieving_date:
+            doc.relieving_date = "2026-01-31"
+
+        with self.assertRaises(frappe.ValidationError):
+            doc.save(ignore_permissions=True)
+        frappe.db.rollback()
+
+        # The whole transition was aborted: company User still enabled, status Active.
+        self.assertEqual(
+            _enabled(COMPANY_EMAIL), 1,
+            "company User must NOT be disabled when the conversion is blocked",
+        )
+        self.assertEqual(
+            frappe.db.get_value("Employee", self.employee, "status"), "Active",
+            "status change must not persist when validation fails",
+        )
+
+        # Restore personal email for the remaining tests.
+        frappe.db.set_value(
+            "Employee", self.employee, "personal_email", PERSONAL_EMAIL,
+            update_modified=False,
+        )
+        frappe.db.commit()
+
     # ── 6. Existing ToDos are left alone ──────────────────────────────────────
     def _todos_for(self, user: str, status: str = "Open") -> list[str]:
         return frappe.get_all(

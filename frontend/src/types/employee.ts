@@ -54,6 +54,8 @@ export interface EmployeeFromAPI {
   custom_functional_area?: string;
   custom_hod?: string;
   custom_hrbp?: string;
+  custom_hd_team?: string | null;
+  custom_hd_team_name?: string | null;
   custom_dotted_line_manager?: string;
   dotted_manager_member_id?: string;
   custom_cxo?: string;
@@ -408,6 +410,15 @@ export interface EmployeeSupplementary {
   cost_centers?: EmployeeCostCenter[];
   company_name?: string;
   current_address?: string;
+  /** Fields an admin added to Employee Search Settings; search results only */
+  search_fields?: EmployeeSearchFieldValue[];
+}
+
+/** One extra field returned with a search result, configured in Employee Search Settings */
+export interface EmployeeSearchFieldValue {
+  fieldname: string;
+  label: string;
+  value: string | number | null;
 }
 
 export interface Employee extends EmployeeFromAPI, EmployeeSupplementary { }

@@ -1,0 +1,279 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "autoname": "format:GD-{YYYY}-{#####}",
+ "creation": "2026-09-02 00:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "details_section",
+  "campus_drive",
+  "drive_name",
+  "round_code",
+  "round_name",
+  "group_name",
+  "column_break_details",
+  "status",
+  "scheduled_on",
+  "mode",
+  "results_pushed",
+  "scope_section",
+  "panel_name",
+  "candidate_count",
+  "region",
+  "region_name",
+  "column_break_scope",
+  "institute",
+  "job_opening",
+  "job_title",
+  "board_section",
+  "gd_board_html",
+  "panel_section",
+  "interviewers",
+  "candidates_section",
+  "candidates"
+ ],
+ "fields": [
+  {
+   "fieldname": "details_section",
+   "fieldtype": "Section Break",
+   "label": "Group Discussion"
+  },
+  {
+   "fieldname": "campus_drive",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Campus Drive",
+   "options": "Campus Drive",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fetch_from": "campus_drive.drive_name",
+   "fieldname": "drive_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Drive",
+   "read_only": 1
+  },
+  {
+   "fieldname": "round_code",
+   "fieldtype": "Data",
+   "label": "Round Code",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "round_name",
+   "fieldtype": "Data",
+   "label": "Round",
+   "read_only": 1
+  },
+  {
+   "fieldname": "group_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Group",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_details",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Planned",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Status",
+   "options": "Planned\nScheduled\nIn Progress\nCompleted",
+   "read_only": 1,
+   "description": "Set from the board below (or from the Campus Drive). Completed means the results have been pushed and the group is closed."
+  },
+  {
+   "fieldname": "scheduled_on",
+   "fieldtype": "Datetime",
+   "label": "Scheduled On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "mode",
+   "fieldtype": "Select",
+   "label": "Mode",
+   "options": "\nOn-Site\nOnline",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "results_pushed",
+   "fieldtype": "Check",
+   "label": "Results Pushed",
+   "read_only": 1
+  },
+  {
+   "fieldname": "scope_section",
+   "fieldtype": "Section Break",
+   "label": "Scope"
+  },
+  {
+   "fieldname": "panel_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Panel",
+   "read_only": 1
+  },
+  {
+   "fieldname": "candidate_count",
+   "fieldtype": "Int",
+   "label": "Candidates",
+   "read_only": 1
+  },
+  {
+   "fieldname": "region",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Region",
+   "options": "Region",
+   "read_only": 1,
+   "description": "Whose region runs this GD: the panel's own if its panelists are tagged with one, else the college's, else the drive's."
+  },
+  {
+   "fetch_from": "region.location_region",
+   "fieldname": "region_name",
+   "fieldtype": "Data",
+   "label": "Region Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_scope",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "institute",
+   "fieldtype": "Link",
+   "label": "Institute",
+   "options": "Institute",
+   "read_only": 1
+  },
+  {
+   "fieldname": "job_opening",
+   "fieldtype": "Link",
+   "label": "Role / Job Opening",
+   "options": "Job Opening",
+   "read_only": 1
+  },
+  {
+   "fieldname": "job_title",
+   "fieldtype": "Data",
+   "label": "Role",
+   "read_only": 1
+  },
+  {
+   "fieldname": "board_section",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "gd_board_html",
+   "fieldtype": "HTML",
+   "label": "Group"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "panel_section",
+   "fieldtype": "Section Break",
+   "label": "Panel"
+  },
+  {
+   "fieldname": "interviewers",
+   "fieldtype": "Table",
+   "label": "Interviewers",
+   "options": "Group Discussion Interviewer",
+   "read_only": 1
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "candidates_section",
+   "fieldtype": "Section Break",
+   "label": "Candidates"
+  },
+  {
+   "fieldname": "candidates",
+   "fieldtype": "Table",
+   "label": "Candidates",
+   "options": "Group Discussion Candidate",
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-09-02 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Recruitment",
+ "name": "Group Discussion",
+ "naming_rule": "Expression (old style)",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "HR Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "HR User",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Interviewer",
+   "write": 1
+  },
+  {
+   "read": 1,
+   "report": 1,
+   "role": "Hiring Lead"
+  }
+ ],
+ "quick_entry": 0,
+ "row_format": "Dynamic",
+ "search_fields": "drive_name,group_name,panel_name,status",
+ "show_title_field_in_link": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "group_name",
+ "track_changes": 1
+}

@@ -64,12 +64,14 @@ apiClient.interceptors.request.use(
       config.headers["X-Frappe-CSRF-Token"] = window.csrf_token;
     }
 
-    // Inject target employee ID header if set
+    // Inject target employee ID header if set and not explicitly provided in request
     if (
       currentTargetEmployeeId &&
       !(config as CustomAxiosRequestConfig).skipTargetEmployee
     ) {
-      config.headers["X-Target-Employee-Id"] = currentTargetEmployeeId;
+      if (!config.headers["X-Target-Employee-Id"]) {
+        config.headers["X-Target-Employee-Id"] = currentTargetEmployeeId;
+      }
     }
 
     return config;
@@ -168,7 +170,7 @@ export const FrappeAPI = {
       params.append("filters", JSON.stringify(options.filters));
     if (options.orFilters)
       params.append("or_filters", JSON.stringify(options.orFilters));
-    if (options.limit)
+    if (options.limit !== undefined)
       params.append("limit_page_length", options.limit.toString());
     if (options.limitStart)
       params.append("limit_start", options.limitStart.toString());
@@ -186,20 +188,26 @@ export const FrappeAPI = {
 
   getMethod: async (
     method: string,
-    params: Record<string, unknown> = {}
+    params: Record<string, unknown> = {},
+    options: { skipTargetEmployee?: boolean; headers?: Record<string, string> } = {}
   ): Promise<unknown> => {
-    const response = await apiClient.get(`/api/method/${method}`, { params });
+    const response = await apiClient.get(`/api/method/${method}`, {
+      params,
+      skipTargetEmployee: options.skipTargetEmployee,
+      headers: options.headers,
+    } as CustomAxiosRequestConfig);
     return response.data.message;
   },
 
   callMethod: async (
     method: string,
     args: Record<string, unknown> = {},
-    options: { skipTargetEmployee?: boolean } = {}
+    options: { skipTargetEmployee?: boolean; headers?: Record<string, string> } = {}
   ): Promise<unknown> => {
     try {
       const response = await apiClient.post(`/api/method/${method}`, args, {
         skipTargetEmployee: options.skipTargetEmployee,
+        headers: options.headers,
       } as CustomAxiosRequestConfig);
       return response.data.message;
     } catch (error) {

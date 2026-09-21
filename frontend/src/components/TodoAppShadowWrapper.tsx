@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 
 /**
  * Shadow DOM wrapper for todo-app-atomic web component
@@ -25,11 +26,6 @@ import { useEffect, useRef, useState } from "react";
  *  - A module-level `resolvedBundleUrl` survives React unmount / remount so
  *    navigating away and back skips the assets.json fetch entirely.
  */
-
-// ─── Module-level state (survives React unmount / remount) ───────────────────
-// Remembers which bundle URL has already been injected so we never fetch
-// assets.json or double-inject the script when the user tabs back.
-let resolvedBundleUrl: string | null = null;
 
 // ─── Skeleton loader ─────────────────────────────────────────────────────────
 /**
@@ -188,97 +184,82 @@ const TodoSkeleton = () => (
 // ─── Main wrapper ─────────────────────────────────────────────────────────────
 const TodoAppShadowWrapper = () => {
     const containerRef = useRef<HTMLDivElement>(null);
+    const [searchParams] = useSearchParams();
+    const categoryParam = searchParams.get("category");
     const [isScriptLoaded, setIsScriptLoaded] = useState(false);
     const [isCssReady, setIsCssReady] = useState(false);
     const [loadError, setLoadError] = useState<string | null>(null);
 
     // Load (or hot-swap) the todo manager bundle script.
-    // If we already know the bundle URL from a previous mount, skip the
-    // assets.json fetch and mark the script as loaded immediately.
     useEffect(() => {
         let cancelled = false;
 
-        if (resolvedBundleUrl) {
-            // Bundle already injected in this page session — skip network round-trip.
-            setIsScriptLoaded(true);
-            return;
+        // A timestamp version stamp used for cache-busting on every load.
+        const version = Date.now();
+        const directBundleUrl = `/assets/cn_todo_manager/todoapp/index.js?v=${version}`;
+
+        const existingScript = document.querySelector<HTMLScriptElement>(
+            "script[data-todo-bundle]"
+        );
+
+        if (existingScript) {
+            existingScript.remove();
         }
 
-        // A timestamp version stamp used for cache-busting on every mount.
-        // assets.json is tiny (~1 KB) so the extra network hit is negligible.
-        const version = Date.now();
+        // Direct Vite entry point load with cache-busting
+        const script = document.createElement("script");
+        script.type = "module";
+        script.src = directBundleUrl;
+        script.setAttribute("data-todo-bundle", "true");
+        script.onload = () => {
+            if (!cancelled) {
+                setIsScriptLoaded(true);
+            }
+        };
+        script.onerror = () => {
+            // Fallback via assets.json if direct path is not available
+            fetch(`/assets/assets.json?v=${version}`)
+                .then((response) => {
+                    if (!response.ok) {
+                        throw new Error(`assets.json fetch failed: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then((data) => {
+                    if (cancelled) return;
 
-        fetch(`/assets/assets.json?v=${version}`)
-            .then((response) => {
-                if (!response.ok) {
-                    throw new Error(`assets.json fetch failed: ${response.status}`);
-                }
-                return response.json();
-            })
-            .then((data) => {
-                if (cancelled) return;
-
-                const newBundleUrl: string = data["cn_todo_manager.bundle.js"];
-                if (!newBundleUrl) {
-                    throw new Error("cn_todo_manager.bundle.js key missing from assets.json");
-                }
-
-                const existingScript = document.querySelector<HTMLScriptElement>(
-                    "script[data-todo-bundle]"
-                );
-
-                // Fix 3: If a script tag already exists but points to a stale bundle
-                // (i.e. the page was open during a deployment), remove it and reload
-                // with the new bundle URL.
-                if (existingScript) {
-                    const existingSrc = existingScript.src.split("?")[0];
-                    const newSrc = newBundleUrl.split("?")[0];
-
-                    if (existingSrc === newSrc) {
-                        // Same bundle → already loaded, nothing to do
-                        resolvedBundleUrl = newBundleUrl;
-                        setIsScriptLoaded(true);
-                        return;
+                    const fallbackUrl: string = data["cn_todo_manager.bundle.js"];
+                    if (!fallbackUrl) {
+                        throw new Error("cn_todo_manager.bundle.js key missing from assets.json");
                     }
 
-                    // Different bundle → stale script from before deploy; replace it
-                    console.warn(
-                        "[TodoApp] Detected stale bundle tag after deployment – reloading bundle:",
-                        { old: existingSrc, new: newSrc }
-                    );
-                    existingScript.remove();
-                    resolvedBundleUrl = null;
-                }
-
-                // Fix 1: Load new bundle.
-                const script = document.createElement("script");
-                script.type = "module";
-                script.src = newBundleUrl;
-                script.setAttribute("data-todo-bundle", "true");
-                script.onload = () => {
+                    const fallbackScript = document.createElement("script");
+                    fallbackScript.type = "module";
+                    fallbackScript.src = `${fallbackUrl}?v=${version}`;
+                    fallbackScript.setAttribute("data-todo-bundle", "true");
+                    fallbackScript.onload = () => {
+                        if (!cancelled) {
+                            setIsScriptLoaded(true);
+                        }
+                    };
+                    fallbackScript.onerror = () => {
+                        if (!cancelled) {
+                            setLoadError("Failed to load the Todo module. Please refresh the page.");
+                        }
+                    };
+                    document.body.appendChild(fallbackScript);
+                })
+                .catch((error) => {
                     if (!cancelled) {
-                        resolvedBundleUrl = newBundleUrl;
-                        setIsScriptLoaded(true);
-                    }
-                };
-                script.onerror = () => {
-                    if (!cancelled) {
-                        console.error("[TodoApp] Failed to load todo bundle:", newBundleUrl);
+                        console.error("[TodoApp] Failed to resolve todo manager bundle:", error);
                         setLoadError(
-                            "Failed to load the Todo module. Please refresh the page."
+                            "Could not load Todo configuration. Please refresh the page."
                         );
                     }
-                };
-                document.body.appendChild(script);
-            })
-            .catch((error) => {
-                if (!cancelled) {
-                    console.error("[TodoApp] Failed to resolve todo manager bundle:", error);
-                    setLoadError(
-                        "Could not load Todo configuration. Please refresh the page."
-                    );
-                }
-            });
+                });
+        };
+
+        document.body.appendChild(script);
 
         return () => {
             cancelled = true;
@@ -340,6 +321,9 @@ const TodoAppShadowWrapper = () => {
         // Create and append the web component (mounts in background while skeleton shows)
         const todoApp = document.createElement("todo-app-atomic");
         todoApp.setAttribute("mode", "widget");
+        if (categoryParam) {
+            todoApp.setAttribute("category", categoryParam);
+        }
         shadowRoot.appendChild(todoApp);
 
         return () => {
@@ -347,6 +331,36 @@ const TodoAppShadowWrapper = () => {
             setIsCssReady(false);
         };
     }, [isScriptLoaded]);
+
+    // Update category attribute if categoryParam changes while already loaded
+    useEffect(() => {
+        const container = containerRef.current;
+        if (!container || !container.shadowRoot) return;
+        const todoApp = container.shadowRoot.querySelector("todo-app-atomic");
+        if (todoApp && categoryParam) {
+            todoApp.setAttribute("category", categoryParam);
+        }
+    }, [categoryParam]);
+
+    // Clean up category query parameter from address bar once component is ready so it doesn't persist
+    useEffect(() => {
+        if (categoryParam && isCssReady) {
+            const timer = setTimeout(() => {
+                try {
+                    const url = new URL(window.location.href);
+                    if (url.searchParams.has("category")) {
+                        url.searchParams.delete("category");
+                        const cleanSearch = url.searchParams.toString();
+                        const newUrl = url.pathname + (cleanSearch ? `?${cleanSearch}` : "") + url.hash;
+                        window.history.replaceState(window.history.state, "", newUrl);
+                    }
+                } catch (e) {
+                    console.error(e);
+                }
+            }, 600);
+            return () => clearTimeout(timer);
+        }
+    }, [categoryParam, isCssReady]);
 
     // ── Error state ────────────────────────────────────────────────────────────
     if (loadError) {

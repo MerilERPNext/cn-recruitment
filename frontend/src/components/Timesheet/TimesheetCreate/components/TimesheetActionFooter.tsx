@@ -18,6 +18,9 @@ interface TimesheetActionFooterProps {
   handleFileChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   handleSaveOrSubmit: (isSubmit: boolean) => void;
   handleCancelTimesheet: () => void;
+  showSelectDaysToSubmit?: boolean;
+  selectedDates?: string[];
+  onClearSelectedDates?: () => void;
 }
 
 export const TimesheetActionFooter: React.FC<TimesheetActionFooterProps> = ({
@@ -32,7 +35,10 @@ export const TimesheetActionFooter: React.FC<TimesheetActionFooterProps> = ({
   attachedFile,
   handleFileChange,
   handleSaveOrSubmit,
-  handleCancelTimesheet
+  handleCancelTimesheet,
+  showSelectDaysToSubmit = false,
+  selectedDates = [],
+  onClearSelectedDates
 }) => {
   const { isDesktop } = useScreenSize();
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -117,6 +123,23 @@ export const TimesheetActionFooter: React.FC<TimesheetActionFooterProps> = ({
 
               {/* Action Buttons Container: Grid with max 2 buttons per row on mobile, fullWidth buttons */}
               <div className={`grid ${actionButtonsCount > 1 ? 'grid-cols-2' : 'grid-cols-1'} gap-2 w-full sm:flex sm:items-center sm:w-auto`}>
+                {showSelectDaysToSubmit && selectedDates.length > 0 && (
+                  <div className="flex items-center gap-1.5 bg-primary-50 border border-primary-200 text-primary-700 px-3 py-1.5 rounded-xl text-xs font-semibold col-span-full sm:col-span-1 justify-between sm:justify-start">
+                    <span>
+                      {selectedDates.length === 1 ? "1 Day Selected" : `${selectedDates.length} Days Selected`}
+                    </span>
+                    {onClearSelectedDates && (
+                      <button
+                        type="button"
+                        onClick={onClearSelectedDates}
+                        className="hover:text-primary-900 ml-1 p-0.5 rounded-lg hover:bg-primary-100 transition-colors"
+                        title="Clear selection"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+                )}
                 {hasSavePermission && (
                   <Button
                     variant="outline"
@@ -128,7 +151,7 @@ export const TimesheetActionFooter: React.FC<TimesheetActionFooterProps> = ({
                     onClick={() => handleSaveOrSubmit(false)}
                     className="justify-center shadow-sm sm:shadow-none"
                   >
-                    {isSaving ? "Saving..." : "Save Draft"}
+                    {isSaving ? "Saving..." : (showSelectDaysToSubmit && selectedDates.length === 1 ? "Save Day Draft" : showSelectDaysToSubmit && selectedDates.length > 1 ? `Save (${selectedDates.length} Days)` : "Save Draft")}
                   </Button>
                 )}
                 {hasSubmitPermission && (
@@ -142,7 +165,7 @@ export const TimesheetActionFooter: React.FC<TimesheetActionFooterProps> = ({
                     onClick={() => handleSaveOrSubmit(true)}
                     className="justify-center shadow-sm sm:shadow-none"
                   >
-                    {isSaving ? "Submitting..." : "Submit"}
+                    {isSaving ? "Submitting..." : (showSelectDaysToSubmit && selectedDates.length === 1 ? "Submit (1 Day)" : showSelectDaysToSubmit && selectedDates.length > 1 ? `Submit (${selectedDates.length} Days)` : "Submit")}
                   </Button>
                 )}
               </div>

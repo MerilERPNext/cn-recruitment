@@ -234,7 +234,10 @@ class TestCampusGdFreeze(FrappeTestCase):
 		self._candidates(2, start=200)
 		cd.generate_gd_groups(self.drive, self.gd_round, group_size=2)
 		names = [g.group_name for g in self._groups()]
-		self.assertEqual(names, ["Group 1", "Group 2", "Group 3"])
+		# A group's name carries its drive ("Group 3 - _Test GDF Drive") because these
+		# names are read outside the drive now — see campus_drive._gd_group_name.
+		drive_name = frappe.db.get_value("Campus Drive", self.drive, "drive_name")
+		self.assertEqual(names, [f"Group {n} - {drive_name}" for n in (1, 2, 3)])
 
 	# ── pushing freezes ──
 

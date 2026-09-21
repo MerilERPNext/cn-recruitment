@@ -34,7 +34,9 @@ frappe.provide("recruitment.applicant_fields_ui");
 	// key   — used for the per-group enabled count
 	// cls   — drives the accent colour (see --apf-g-* in the stylesheet)
 	// cols  — the columns rendered under the group header
-	AFU.COLUMN_GROUPS = [
+	//
+	// Channel bands (both pages): which candidate forms show a field, and where it's required.
+	AFU.CHANNEL_GROUPS = [
 		{ key: "careers",  label: "CAREERS",  cls: "careers", cols: [
 			{ label: "VIEW",      col: "view_careers",      type: "toggle" },
 			{ label: "MANDATORY", col: "mandatory_careers", type: "toggle" },
@@ -56,21 +58,65 @@ frappe.provide("recruitment.applicant_fields_ui");
 			{ label: "MANDATORY", col: "mandatory_preoffer", type: "toggle" },
 			{ label: "CTQ",       col: "ctq_flag",           type: "toggle" },
 		]},
-		{ key: "general",  label: "GENERAL",  cls: "general", cols: [
-			{ label: "VISIBILITY",   col: "visibility",   type: "select",
-			  options: ["All", "Hiring Team", "Recruiter Only", "Hidden"] },
-			{ label: "EDITABILITY",  col: "editability",  type: "select",
-			  options: ["Editable", "Read Only"] },
-		]},
-		// Labels stay short — the group chip above already says PRE-OFFER RULES, and
-		// a header wider than its column just truncates to nonsense ("PRE-OFFE…").
-		{ key: "preoffer-rules", label: "PRE-OFFER RULES", cls: "preoffer-rules", cols: [
-			{ label: "VISIBILITY",   col: "preoffer_visibility",     type: "select",
-			  options: ["Same as visibility", "All", "Hiring Team", "Hidden"] },
-			{ label: "EDIT/APPROVE", col: "preoffer_edit_approve",   type: "select",
-			  options: ["Editable", "Approval Required", "Read Only"] },
+	];
+
+	// PROFILE VIEW PERMISSIONS (settings page only): roles that may see the field on
+	// the applicant profile — the one rule that is global rather than per-opening.
+	AFU.PROFILE_PERMISSION_GROUPS = [
+		{ key: "profile-perms", label: "PROFILE VIEW PERMISSIONS", cls: "profile-perms", cols: [
+			{ label: "VIEW ACCESS", col: "profile_view_roles", type: "roles",
+			  hint: "Roles that may see this field on the applicant profile" },
 		]},
 	];
+
+	/**
+	 * GENERAL and PRE-OFFER RULES (Job Opening only) — role lists, see
+	 * field_role_permissions.py.
+	 *
+	 * editableWhenLocked: stays editable on a locked field — locking freezes the
+	 *   field's shape, but each opening decides who may see/edit/approve it.
+	 * gateCols: the cells are read-only until one of these VIEW switches is on, so
+	 *   a rule can't be set on a field no source collects. The stored rule is kept.
+	 */
+	AFU.OPENING_RULE_GROUPS = [
+		{ key: "general",  label: "GENERAL",  cls: "general", editableWhenLocked: true,
+		  gateCols: ["view_careers", "view_ijp", "view_refer", "view_campus", "view_preoffer"],
+		  gateHint: "Turn this field on for at least one source (Careers, IJP, Refer, Campus Hiring or Pre-offer) before choosing who may see or edit it.",
+		  cols: [
+			{ label: "VISIBILITY",   col: "visibility",   type: "roles",
+			  hint: "Roles that may see this field on this opening" },
+			{ label: "EDITABILITY",  col: "editability",  type: "roles",
+			  hint: "Roles that may edit this field on this opening" },
+		]},
+		{ key: "preoffer-rules", label: "PRE-OFFER RULES", cls: "preoffer-rules", editableWhenLocked: true,
+		  gateCols: ["view_preoffer"],
+		  gateHint: "Turn PRE-OFFER → VIEW on for this field before choosing who may see or approve it.",
+		  cols: [
+			{ label: "VISIBILITY",   col: "preoffer_visibility",   type: "roles",
+			  hint: "Roles that may see this field on the pre-offer form" },
+			{ label: "EDIT/APPROVE", col: "preoffer_edit_approve", type: "roles",
+			  hint: "Roles that may edit or approve this field on the pre-offer form" },
+		]},
+	];
+
+	/** Whether `row` satisfies `g.gateCols` — an ungated band is always open. */
+	AFU.gateOpen = function (g, row) {
+		if (!g.gateCols || !g.gateCols.length) return true;
+		return g.gateCols.some((c) => !!(row || {})[c]);
+	};
+
+	// Bands to render: `opts.profilePermissions` = the settings page, otherwise the Job Opening.
+	AFU.groupsFor = function (opts) {
+		return AFU.CHANNEL_GROUPS.concat(
+			(opts && opts.profilePermissions) ? AFU.PROFILE_PERMISSION_GROUPS : AFU.OPENING_RULE_GROUPS
+		);
+	};
+
+	// Every band either page can render — the union, for anything that needs to
+	// reason about columns without knowing which page it is on.
+	AFU.COLUMN_GROUPS = AFU.CHANNEL_GROUPS
+		.concat(AFU.PROFILE_PERMISSION_GROUPS)
+		.concat(AFU.OPENING_RULE_GROUPS);
 
 	AFU.CHILD_CHANNEL_GROUPS = [
 		{ label: "CAREERS",   cls: "careers",  cols: [
@@ -95,13 +141,37 @@ frappe.provide("recruitment.applicant_fields_ui");
 		]},
 	];
 
-	// checkbox + no. + field + actions, plus every channel column.
-	AFU.TOTAL_COLS = 4 + AFU.COLUMN_GROUPS.reduce((s, g) => s + g.cols.length, 0);
+	// Applicability column (settings page only, `opts.applicability`). Kept out of
+	// COLUMN_GROUPS, which drives the tallies and bulk bar.
+	AFU.APPLICABILITY_COLS = [
+		{ label: "APPLICABLE TO" },
+	];
+
+	// Colspan for this page. Pass the same `opts` the rows were rendered with —
+	// the two pages have different column counts.
+	AFU.totalCols = function (opts) {
+		return 4
+			+ AFU.groupsFor(opts).reduce((s, g) => s + g.cols.length, 0)
+			+ ((opts && opts.applicability) ? AFU.APPLICABILITY_COLS.length : 0);
+	};
 	AFU.CHILD_TOTAL_COLS = 1 + AFU.CHILD_CHANNEL_GROUPS.reduce((s, g) => s + g.cols.length, 0);
 
-	// Channel groups that carry a VIEW column — the ones worth counting and worth
-	// offering in the bulk bar. GENERAL / PRE-OFFER RULES hold selects, not switches.
-	AFU.TOGGLE_GROUPS = AFU.COLUMN_GROUPS.filter((g) => g.cols.every((c) => c.type === "toggle"));
+	// Only switches can be bulk-flipped and tallied; role bands use a picker.
+	AFU.TOGGLE_GROUPS = AFU.CHANNEL_GROUPS;
+
+	// Lock affordances. Kept next to the other shared styles so both pages get
+	// them from the one stylesheet injectStyles() writes.
+	AFU.LOCK_CSS = `
+		.apf-lock{display:inline-flex;align-items:center;gap:4px;margin-left:8px;font-size:10px;
+			font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--text-muted);cursor:pointer;}
+		.apf-lock input{margin:0;cursor:pointer;}
+		.apf-lock-badge{display:inline-flex;align-items:center;gap:3px;margin-left:8px;padding:1px 6px;
+			border-radius:9px;font-size:10px;font-weight:600;letter-spacing:.03em;
+			background:var(--gray-200,#e6e9ec);color:var(--gray-700,#4a5157);white-space:nowrap;}
+		tr.apf-frozen{background:var(--subtle-fg,rgba(0,0,0,.02));}
+		tr.apf-frozen input:disabled,tr.apf-frozen select:disabled{opacity:.55;cursor:not-allowed;}
+		.apf-grip-off{opacity:.3;cursor:not-allowed;}
+	`;
 
 	AFU.escapeHtml = function (s) {
 		if (s === null || s === undefined) return "";
@@ -142,6 +212,12 @@ frappe.provide("recruitment.applicant_fields_ui");
 				--apf-g-preoffer: #C2410C;
 				--apf-g-general: #4B5563;
 				--apf-g-preoffer-rules: #B91C1C;
+				--apf-g-applicability: #0F766E;
+				--apf-appl-company: #2563EB;
+				--apf-appl-assignment: #7C3AED;
+				--apf-appl-always: #15803D;
+				--apf-appl-warn: #B45309;
+				--apf-g-profile-perms: #7C3AED;
 
 				background: var(--apf-bg); border: 1px solid var(--apf-border);
 				border-radius: 12px; overflow: hidden; display: flex; min-height: 540px;
@@ -168,6 +244,12 @@ frappe.provide("recruitment.applicant_fields_ui");
 				--apf-g-preoffer: #FB923C;
 				--apf-g-general: #9CA3AF;
 				--apf-g-preoffer-rules: #F87171;
+				--apf-g-applicability: #2DD4BF;
+				--apf-appl-company: #60A5FA;
+				--apf-appl-assignment: #A78BFA;
+				--apf-appl-always: #4ADE80;
+				--apf-appl-warn: #FBBF24;
+				--apf-g-profile-perms: #C4B5FD;
 				box-shadow: none;
 			}
 
@@ -295,21 +377,32 @@ frappe.provide("recruitment.applicant_fields_ui");
 			   the headers to "MANDATO" / "EDITABILI". At the real sum the table
 			   simply overflows and .apf-scroll scrolls it, which is exactly what the
 			   frozen identity columns are there to make comfortable.
-			   34 + 56 + 208 + (11 x 92) + (4 x 148) + 38 = 1940 */
+
+			   Sized for the WIDER of the two layouts, the Job Opening's:
+			   34 + 56 + 208 + (11 x 92 channel) + (4 x 148 role) + 38 = 1940.
+			   Job Applicant Profile Settings trades three of those role columns for
+			   the applicability band and comes out narrower, so its columns simply
+			   share the slack — nothing truncates either way. */
 			.apf-table {
 				width: 100%; border-collapse: separate; border-spacing: 0;
 				font-size: 12px; min-width: 1940px; table-layout: fixed;
 			}
+			/* Both header rows freeze against the top of .apf-scroll: a toggle a
+			   hundred rows down is unreadable once the channel band above it has
+			   scrolled away. The second row parks directly beneath the first —
+			   --apf-group-h is measured by AFU.freezeHeader, the band's height
+			   being font-dependent. The fallback holds until that first measure. */
 			.apf-table thead .apf-group-row th {
 				padding: 9px 4px 6px; text-align: center; font-weight: 700;
 				font-size: 10px; letter-spacing: .07em; color: var(--apf-text-dim);
 				background: var(--apf-bg); border-bottom: 1px solid var(--apf-border-soft);
+				position: sticky; top: 0; z-index: 3;
 			}
 			.apf-table thead .apf-col-row th {
 				padding: 7px 4px; text-align: center; font-weight: 600;
 				font-size: 9.5px; letter-spacing: .05em; color: var(--apf-text-dim);
 				background: var(--apf-bg-head); border-bottom: 1px solid var(--apf-border);
-				white-space: nowrap; position: sticky; top: 0;
+				white-space: nowrap; position: sticky; top: var(--apf-group-h, 46px);
 			}
 			/* The group's accent, carried by its header chip, its column band and
 			   its ON switches — this is what makes a column readable at a glance. */
@@ -320,6 +413,117 @@ frappe.provide("recruitment.applicant_fields_ui");
 			.apf-g-preoffer       { --g: var(--apf-g-preoffer); }
 			.apf-g-general        { --g: var(--apf-g-general); }
 			.apf-g-preoffer-rules { --g: var(--apf-g-preoffer-rules); }
+			.apf-g-applicability  { --g: var(--apf-g-applicability); }
+			.apf-g-profile-perms  { --g: var(--apf-g-profile-perms); }
+
+			/* ---------------------------------------------------- applicability -- */
+			/* Applicability band. blue = Company, violet = Assignment, green = always
+			   shown, amber = on but nothing chosen. Cells stay on one line. */
+			.apf-col-appl {
+				--g: var(--apf-g-applicability);
+				width: 272px; min-width: 272px; max-width: 272px;
+				text-align: left; vertical-align: middle; white-space: nowrap; padding: 6px 10px;
+			}
+			.apf-appl-start { border-left: 2px solid color-mix(in srgb, var(--g) 35%, transparent); }
+			/* table-layout:fixed sizes columns from the first header row, so the width goes there. */
+			.apf-table th.apf-appl-w { width: 272px; min-width: 272px; max-width: 272px; }
+			th.apf-col-appl { color: var(--g); }
+			.apf-appl-cell { display: flex; align-items: center; gap: 10px; min-width: 0; }
+			.apf-appl-cell > .apf-toggle { flex: none; }
+			.apf-appl-ico { width: 12px; height: 12px; flex: none; }
+
+			/* Off: the default, so it recedes. */
+			.apf-appl-all {
+				display: inline-flex; align-items: center; gap: 5px;
+				font-size: 11px; color: var(--apf-text-dim);
+			}
+			/* Excluded in Applicability Configuration: no switch, a reason. */
+			.apf-appl-always {
+				display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px;
+				border-radius: 999px; font-size: 10.5px; font-weight: 600;
+				color: var(--apf-appl-always);
+				background: color-mix(in srgb, var(--apf-appl-always) 10%, transparent);
+				border: 1px solid color-mix(in srgb, var(--apf-appl-always) 25%, transparent);
+			}
+
+			.apf-appl-edit {
+				display: inline-flex; align-items: center; gap: 5px;
+				border: 1px dashed color-mix(in srgb, var(--g) 55%, transparent); background: transparent;
+				color: var(--g); border-radius: 6px; padding: 3px 9px; font-size: 11px; font-weight: 600;
+				cursor: pointer; white-space: nowrap;
+			}
+			.apf-appl-edit:hover { background: color-mix(in srgb, var(--g) 10%, transparent); }
+			/* Switched on with nothing chosen. */
+			.apf-appl-edit-warn {
+				--g: var(--apf-appl-warn); border-style: solid;
+				background: color-mix(in srgb, var(--apf-appl-warn) 8%, transparent);
+			}
+
+			/* Configured: a button holding one chip per type. */
+			.apf-appl-summary {
+				display: flex; align-items: center; gap: 5px; min-width: 0; flex: 1;
+				border: none; background: transparent; padding: 0; cursor: pointer; text-align: left;
+			}
+			.apf-appl-summary:hover .apf-appl-chip { filter: brightness(.96); box-shadow: 0 0 0 2px color-mix(in srgb, var(--c) 18%, transparent); }
+			.apf-appl-chip {
+				--c: var(--apf-appl-company);
+				display: inline-flex; align-items: center; gap: 4px; min-width: 0;
+				padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; line-height: 1.5;
+				color: var(--c); background: color-mix(in srgb, var(--c) 11%, transparent);
+				border: 1px solid color-mix(in srgb, var(--c) 28%, transparent);
+			}
+			.apf-appl-chip.is-assignment { --c: var(--apf-appl-assignment); }
+			/* Two chips share the width evenly. */
+			.apf-appl-summary > .apf-appl-chip { flex: 1 1 0; max-width: fit-content; }
+			.apf-appl-chip.is-missing { --c: var(--apf-g-preoffer-rules); text-decoration: line-through; }
+			.apf-appl-chip-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+			.apf-appl-chip-more {
+				flex: none; font-size: 9.5px; font-weight: 700; padding: 0 5px; border-radius: 999px;
+				background: color-mix(in srgb, var(--c) 20%, transparent);
+			}
+
+			/* Header: what the band is, and where the always-shown list lives. */
+			.apf-appl-head { display: inline-flex; align-items: center; gap: 6px; }
+			.apf-appl-info {
+				display: inline-flex; width: 15px; height: 15px; border-radius: 50%; align-items: center;
+				justify-content: center; font-size: 10px; font-weight: 700; cursor: help;
+				color: var(--g); border: 1px solid color-mix(in srgb, var(--g) 45%, transparent);
+			}
+			.apf-appl-cfg-link {
+				display: block; margin-top: 3px; font-size: 9.5px; font-weight: 600; letter-spacing: .02em;
+				color: var(--apf-text-faint); text-decoration: none;
+			}
+			.apf-appl-cfg-link:hover { color: var(--g); text-decoration: underline; }
+
+			/* Job Opening: why a candidate on THIS opening will or won't see a field. */
+			.apf-appl-badge {
+				display: inline-flex; align-items: center; gap: 4px; margin-top: 4px; margin-right: 4px;
+				padding: 1px 8px; border-radius: 999px; font-size: 10px; font-weight: 700; letter-spacing: .02em;
+			}
+			.apf-appl-badge.is-shown {
+				color: var(--apf-appl-always);
+				background: color-mix(in srgb, var(--apf-appl-always) 10%, transparent);
+			}
+			.apf-appl-badge.is-hidden {
+				color: var(--apf-appl-warn);
+				background: color-mix(in srgb, var(--apf-appl-warn) 12%, transparent);
+			}
+			.apf-appl-note {
+				margin-top: 6px; max-width: 640px; padding: 5px 10px; border-radius: 6px;
+				font-size: 11.5px; line-height: 1.45; color: var(--apf-appl-warn);
+				background: color-mix(in srgb, var(--apf-appl-warn) 9%, transparent);
+				border-left: 3px solid var(--apf-appl-warn);
+			}
+			/* Not shown on this opening: dim its switches. */
+			tr.apf-appl-offrow td.apf-band { opacity: .45; }
+
+			/* Section badge, shown only in cross-section search results. */
+			.apf-row-section {
+				display: inline-block; margin-top: 4px; padding: 1px 7px; border-radius: 999px;
+				font-size: 9.5px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
+				color: var(--apf-text-dim); background: var(--apf-bg-head);
+				border: 1px solid var(--apf-border);
+			}
 
 			.apf-group-label {
 				display: inline-block; color: var(--g); background: color-mix(in srgb, var(--g) 12%, transparent);
@@ -403,6 +607,74 @@ frappe.provide("recruitment.applicant_fields_ui");
 				border-color: var(--apf-accent);
 				box-shadow: 0 0 0 3px color-mix(in srgb, var(--apf-accent) 15%, transparent);
 			}
+
+			/* ------------------------------------------------------ role lists -- */
+			/* One line, so a long role list can't stretch the row. */
+			.apf-roles {
+				display: inline-flex; align-items: center; gap: 5px; max-width: 100%;
+				border: 1px solid color-mix(in srgb, var(--g, var(--apf-accent)) 30%, transparent);
+				background: color-mix(in srgb, var(--g, var(--apf-accent)) 10%, transparent);
+				color: var(--g, var(--apf-accent)); border-radius: 999px;
+				padding: 3px 5px 3px 10px; font-size: 11px; font-weight: 600;
+				cursor: pointer; white-space: nowrap;
+			}
+			.apf-roles:hover { background: color-mix(in srgb, var(--g, var(--apf-accent)) 18%, transparent); }
+			.apf-roles:disabled { opacity: .55; cursor: not-allowed; }
+			.apf-roles-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+			.apf-roles-count {
+				flex: none; min-width: 17px; text-align: center; border-radius: 999px;
+				background: color-mix(in srgb, var(--g, var(--apf-accent)) 22%, transparent);
+				padding: 1px 5px; font-size: 10px; font-weight: 700;
+			}
+			/* Unrestricted is the resting state and should not shout. */
+			.apf-roles-all {
+				border-style: dashed; background: transparent;
+				color: var(--apf-text-dim); border-color: var(--apf-border);
+			}
+			.apf-roles-all:hover { background: var(--apf-hover); }
+			/* "No one" — amber, as it's most likely an accident. */
+			.apf-roles-none {
+				--g: var(--apf-warn);
+				border-style: solid;
+			}
+			/* Gated: no source collects the field, so the rule can't apply. */
+			.apf-roles-gated {
+				--g: var(--apf-text-faint);
+				border-style: dashed; background: transparent;
+				color: var(--apf-text-faint); border-color: var(--apf-border);
+				opacity: .8;
+			}
+			.apf-roles-gated .apf-roles-count {
+				background: var(--apf-off); color: var(--apf-text-faint);
+			}
+
+			/* Picker dialog — outside .apf-container, so no --apf-* tokens. */
+			.apf-roles-help { font-size: 12px; color: var(--text-muted); margin-bottom: 12px; line-height: 1.5; }
+			.apf-roles-everyone {
+				display: flex; align-items: center; gap: 8px; font-size: 13px;
+				font-weight: 600; margin: 0; cursor: pointer;
+			}
+			.apf-roles-everyone input { margin: 0; cursor: pointer; }
+			.apf-roles-sub { font-size: 11.5px; color: var(--text-muted); margin: 6px 0 0 24px; }
+			.apf-roles-add-label {
+				margin-top: 16px; margin-bottom: 8px; font-size: 10px; font-weight: 700;
+				letter-spacing: .06em; text-transform: uppercase; color: var(--text-muted);
+				border-top: 1px solid var(--border-color); padding-top: 12px;
+			}
+			.apf-roles-search { margin-bottom: 10px; }
+			/* Scrolls, so Apply stays on screen. */
+			.apf-roles-list {
+				max-height: 240px; overflow-y: auto; border: 1px solid var(--border-color);
+				border-radius: 6px; padding: 6px;
+			}
+			.apf-roles-list-off { opacity: .45; pointer-events: none; }
+			.apf-roles-opt {
+				display: flex; align-items: center; gap: 8px; padding: 5px 8px; border-radius: 4px;
+				font-size: 13px; font-weight: 400; margin: 0; cursor: pointer;
+			}
+			.apf-roles-opt:hover { background: var(--bg-light-gray, rgba(0, 0, 0, .04)); }
+			.apf-roles-opt input { margin: 0; }
+			.apf-roles-empty { font-size: 12px; color: var(--text-muted); padding: 8px; }
 			.apf-delete {
 				border: none; background: transparent; color: var(--apf-text-faint);
 				cursor: pointer; padding: 2px 5px; border-radius: 5px; font-size: 15px; line-height: 1;
@@ -442,8 +714,14 @@ frappe.provide("recruitment.applicant_fields_ui");
 			}
 			.apf-child-container[hidden] { display: none; }
 			/* The child's own scroller: its columns scroll here, independently of the
-			   parent, and it is the ancestor the frozen FIELD column sticks to. */
-			.apf-child-scroll { overflow-x: auto; overflow-y: hidden; }
+			   parent, and it is the ancestor BOTH frozen edges stick to — the FIELD
+			   column to its left, the header row to its top.
+			   It has to scroll vertically as well as horizontally: with overflow-y
+			   hidden the panel simply grew as tall as its rows, so a child table with
+			   twenty stages pushed the page itself into scrolling and took its own
+			   header off-screen with it. Capped so the parent grid stays in view
+			   above it. */
+			.apf-child-scroll { overflow: auto; max-height: 320px; }
 			.apf-child-header {
 				background: color-mix(in srgb, var(--apf-g-campus) 12%, transparent); color: var(--apf-g-campus);
 				font-size: 10.5px; font-weight: 700; padding: 7px 12px; letter-spacing: .06em; text-transform: uppercase;
@@ -458,10 +736,23 @@ frappe.provide("recruitment.applicant_fields_ui");
 				border-collapse: separate; border-spacing: 0;
 				font-size: 11.5px; background: var(--apf-bg);
 			}
+			/* Frozen header — the same reasoning as the parent grid's: a toggle far
+			   down a child table is unreadable once its channel column heading has
+			   scrolled away. Sticks to the top of .apf-child-scroll, which is the
+			   panel's own scrollport, so it never travels with the page. */
 			.apf-child-table thead th {
 				padding: 6px 8px; background: var(--apf-bg-head); color: var(--apf-text-dim); font-size: 9.5px;
 				font-weight: 700; text-align: center; border-bottom: 1px solid var(--apf-border); letter-spacing: .05em;
+				position: sticky; z-index: 2;
 			}
+			/* BOTH rows freeze, and each needs its own offset — pinned at a shared
+			   top:0 they land on top of each other, and the column row (later in the
+			   DOM) paints over the channel band, so the first scroll loses exactly
+			   the CAREERS / IJP / REFER heading the freeze was there to keep. The
+			   band's height is font-dependent, so --apf-child-group-h is measured by
+			   AFU.freezeChildHeader; the fallback holds until that first measure. */
+			.apf-child-table thead tr.apf-child-group-row th { top: 0; }
+			.apf-child-table thead tr.apf-child-col-row th { top: var(--apf-child-group-h, 26px); }
 			.apf-child-table thead th.apf-child-col-field { text-align: left; }
 			.apf-child-group-header { color: var(--g); letter-spacing: .06em; }
 			.apf-child-table tbody td {
@@ -482,7 +773,12 @@ frappe.provide("recruitment.applicant_fields_ui");
 				position: sticky; left: 0; width: 298px; min-width: 298px;
 				box-shadow: 1px 0 0 var(--apf-border);
 			}
-			.apf-child-table tbody td.apf-child-col-field { background: var(--apf-bg); z-index: 2; }
+			/* Three layers, and the order matters now that the header is sticky too:
+			   scrolling cells (auto) < frozen FIELD cells (1) < header row (2) <
+			   the corner cell where both freezes meet (3). Left at the old 2, the
+			   body's FIELD cells tied with the header row and — coming later in the
+			   DOM — painted straight over it on the first vertical scroll. */
+			.apf-child-table tbody td.apf-child-col-field { background: var(--apf-bg); z-index: 1; }
 			.apf-child-table thead th.apf-child-col-field { background: var(--apf-bg-head); z-index: 3; }
 			.apf-child-table tbody tr:hover td.apf-child-col-field { background: var(--apf-hover); }
 			.apf-child-field-label { color: var(--apf-text); font-weight: 500; font-size: 11.5px; }
@@ -557,7 +853,7 @@ frappe.provide("recruitment.applicant_fields_ui");
 				padding: 8px 10px 2px; border-top: 1px solid var(--apf-border);
 				margin-top: 8px;
 			}
-		`;
+		` + AFU.LOCK_CSS;
 		document.head.appendChild(style);
 	};
 
@@ -576,6 +872,265 @@ frappe.provide("recruitment.applicant_fields_ui");
 		return `<select class="apf-select" data-ref="${esc(ref)}" data-col="${col}">${opts}</select>`;
 	};
 
+	// ------------------------------------------------------ role-list cells --
+	// Stored as JSON: ["All"] or empty = everyone, [] = nobody. Understands the old
+	// Select words too. Mirrors parse_roles() in field_role_permissions.py.
+	AFU.ROLE_ALL = "All";
+	const LEGACY_ROLE_WORDS = {
+		"All": [AFU.ROLE_ALL],
+		"Editable": [AFU.ROLE_ALL],
+		"Same as visibility": [AFU.ROLE_ALL],
+		"Approval Required": [AFU.ROLE_ALL],
+		"Hiring Team": [AFU.ROLE_ALL],
+		"Recruiter Only": [AFU.ROLE_ALL],
+		"Read Only": [],
+		"Hidden": [],
+	};
+
+	AFU.parseRoles = function (raw) {
+		if (raw === null || raw === undefined || raw === "") return [AFU.ROLE_ALL];
+		if (Array.isArray(raw)) return raw.filter(Boolean).map(String);
+		const str = String(raw).trim();
+		if (!str) return [AFU.ROLE_ALL];
+		if (Object.prototype.hasOwnProperty.call(LEGACY_ROLE_WORDS, str)) {
+			return LEGACY_ROLE_WORDS[str].slice();
+		}
+		let parsed;
+		try { parsed = JSON.parse(str); } catch (e) { return [AFU.ROLE_ALL]; }
+		if (!Array.isArray(parsed)) return [AFU.ROLE_ALL];
+		return parsed.filter(Boolean).map(String);
+	};
+
+	AFU.serializeRoles = function (roles) {
+		const cleaned = [];
+		(roles || []).forEach((r) => {
+			const v = String(r || "").trim();
+			if (v && !cleaned.includes(v)) cleaned.push(v);
+		});
+		// "All" absorbs the rest — a cell reading "All +3" would look like a
+		// restriction it is not.
+		return JSON.stringify(cleaned.includes(AFU.ROLE_ALL) ? [AFU.ROLE_ALL] : cleaned);
+	};
+
+	// A one-line button (first role + count) rather than an inline multi-select,
+	// so a long rule can't stretch the row; the picker holds the detail.
+	AFU.renderRoles = function (ref, col, raw, gcls, hint) {
+		const roles = AFU.parseRoles(raw);
+		const all = roles.includes(AFU.ROLE_ALL);
+		let label = __("All");
+		let cls = "apf-roles apf-roles-all";
+		if (!all) {
+			if (!roles.length) {
+				label = __("No one");
+				cls = "apf-roles apf-roles-none";
+			} else {
+				label = roles.length > 1 ? `${roles[0]} +${roles.length - 1}` : roles[0];
+				cls = "apf-roles apf-roles-some";
+			}
+		}
+		const count = (!all && roles.length > 1)
+			? `<span class="apf-roles-count">${roles.length}</span>` : "";
+		// data-value lets refreshRuleGates restore the tooltip without a re-render.
+		return `<button class="${cls}" data-ref="${esc(ref)}" data-col="${col}"
+			data-value="${esc(AFU.serializeRoles(roles))}"
+			${gcls ? `data-gcls="${esc(gcls)}"` : ""} title="${esc(AFU.roleTooltip(hint, roles))}">
+			<span class="apf-roles-text">${esc(label)}</span>${count}
+		</button>`;
+	};
+
+	/** Hover text for a role cell. */
+	AFU.roleTooltip = function (hint, raw) {
+		const roles = AFU.parseRoles(raw);
+		return [
+			hint ? __(hint) : "",
+			roles.includes(AFU.ROLE_ALL)
+				? __("Everyone")
+				: (roles.length ? roles.join(", ") : __("No role selected")),
+			__("Click to change"),
+		].filter(Boolean).join("\n");
+	};
+
+	/** Disable a rendered role button and say why (the field isn't collected yet). */
+	AFU.gateRoleButton = function (html, gateHint) {
+		return html
+			.replace("<button ", "<button disabled ")
+			.replace('class="apf-roles', 'class="apf-roles apf-roles-gated')
+			.replace(/title="[^"]*"/, `title="${esc(__(gateHint || "Not applicable while the field is off."))}"`);
+	};
+
+	/**
+	 * Re-gate rule cells against the current switches. Runs from refreshCounts and
+	 * updates in place — a re-render would collapse open panels and reset scroll.
+	 */
+	AFU.refreshRuleGates = function (host) {
+		const gated = AFU.COLUMN_GROUPS.filter((g) => g.gateCols && g.gateCols.length);
+		if (!gated.length) return;
+
+		host.querySelectorAll("tbody tr[data-ref]").forEach((tr) => {
+			gated.forEach((g) => {
+				const open = g.gateCols.some((c) => {
+					const input = tr.querySelector(`input[type=checkbox][data-col="${c}"]`);
+					return !!(input && input.checked);
+				});
+				g.cols.forEach((c) => {
+					const btn = tr.querySelector(`button.apf-roles[data-col="${c.col}"]`);
+					if (!btn) return;
+					btn.disabled = !open;
+					btn.classList.toggle("apf-roles-gated", !open);
+					btn.title = open
+						? AFU.roleTooltip(c.hint, btn.getAttribute("data-value"))
+						: __(g.gateHint || "Not applicable while the field is off.");
+				});
+			});
+		});
+	};
+
+	// Role options, fetched once per page for every picker.
+	let rolesPromise = null;
+	AFU.loadRoleOptions = function () {
+		if (!rolesPromise) {
+			rolesPromise = frappe
+				.xcall("recruitment.recruitment.field_role_permissions.get_role_options")
+				.then((rows) => rows || [])
+				.catch(() => []); // "All" / "No one" still work without the list
+		}
+		return rolesPromise;
+	};
+
+	/**
+	 * Role picker. "Everyone" is a separate switch, not a checkbox in the list —
+	 * "All" plus named roles isn't storable (see serializeRoles).
+	 *
+	 * @param {object} o  {title, hint, value, onSubmit(serializedJson)}
+	 */
+	AFU.openRolesDialog = function (o) {
+		const selected = new Set(AFU.parseRoles(o.value).filter((r) => r !== AFU.ROLE_ALL));
+		let everyone = AFU.parseRoles(o.value).includes(AFU.ROLE_ALL);
+		let search = "";
+		let options = [];
+
+		const d = new frappe.ui.Dialog({
+			title: o.title || __("Permissions"),
+			size: "small",
+			fields: [{ fieldtype: "HTML", fieldname: "body" }],
+			primary_action_label: __("Apply"),
+			primary_action() {
+				o.onSubmit(AFU.serializeRoles(everyone ? [AFU.ROLE_ALL] : [...selected]));
+				d.hide();
+			},
+		});
+		const $body = d.fields_dict.body.$wrapper;
+
+		function draw() {
+			const shown = options.filter((r) =>
+				!search || `${r.label} ${r.value}`.toLowerCase().includes(search.toLowerCase())
+			);
+			const list = shown.length
+				? shown.map((r) => `<label class="apf-roles-opt">
+						<input type="checkbox" data-role="${esc(r.value)}"
+							${selected.has(r.value) ? "checked" : ""}${everyone ? " disabled" : ""}/>
+						<span>${esc(r.label || r.value)}</span>
+					</label>`).join("")
+				: `<div class="apf-roles-empty">${
+						options.length ? __("No role matches that search.") : __("No roles available.")
+					}</div>`;
+
+			// The count is the point of the summary line: "No one" is a legitimate
+			// setting and has to be distinguishable from "not finished yet".
+			const summary = everyone
+				? __("Everyone — no restriction.")
+				: (selected.size
+					? __("{0} role(s) selected.", [selected.size])
+					: `<b>${__("No one")}</b> — ${__("this field is hidden from every user.")}`);
+
+			$body.html(`
+				<div class="apf-roles-dlg">
+					${o.hint ? `<div class="apf-roles-help">${esc(o.hint)}</div>` : ""}
+					<label class="apf-roles-everyone">
+						<input type="checkbox" class="apf-roles-all-chk"${everyone ? " checked" : ""}/>
+						<span>${__("Everyone")}</span>
+					</label>
+					<div class="apf-roles-sub">${summary}</div>
+					<div class="apf-roles-add-label">${__("Or choose specific roles")}</div>
+					<input class="apf-roles-search form-control" type="text"
+						placeholder="${__("Search roles")}" value="${esc(search)}"${everyone ? " disabled" : ""}/>
+					<div class="apf-roles-list${everyone ? " apf-roles-list-off" : ""}">${list}</div>
+				</div>`);
+
+			$body.find(".apf-roles-all-chk").on("change", (e) => {
+				everyone = e.currentTarget.checked;
+				draw();
+			});
+			// `change` rather than `input`: redrawing on every keystroke drops focus.
+			$body.find(".apf-roles-search").on("change", (e) => {
+				search = e.currentTarget.value || "";
+				draw();
+			});
+			$body.find(".apf-roles-list input[type=checkbox]").on("change", (e) => {
+				const role = e.currentTarget.getAttribute("data-role");
+				if (e.currentTarget.checked) selected.add(role);
+				else selected.delete(role);
+				draw();
+			});
+		}
+
+		draw();
+		d.show();
+		AFU.loadRoleOptions().then((rows) => {
+			options = rows;
+			// Keep a stored role that no longer exists visible, so Apply doesn't drop it silently.
+			const known = new Set(options.map((r) => r.value));
+			[...selected].filter((r) => !known.has(r)).forEach((r) => {
+				options.push({ value: r, label: `${r} (${__("not a role")})` });
+			});
+			draw();
+		});
+	};
+
+	/**
+	 * Bind role cells to the picker; pages differ only in `write(ref, col, json)`.
+	 * Buttons are marked once bound — re-binding after a cell is replaced would
+	 * otherwise stack listeners on every other button.
+	 */
+	AFU.bindRoleCells = function (host, getValue, write) {
+		host.querySelectorAll("button.apf-roles").forEach((btn) => {
+			if (btn.dataset.apfRolesBound) return;
+			btn.dataset.apfRolesBound = "1";
+			btn.addEventListener("click", () => {
+				const ref = btn.getAttribute("data-ref");
+				const col = btn.getAttribute("data-col");
+				const meta = AFU.roleColumn(col) || {};
+				AFU.openRolesDialog({
+					title: meta.dialogTitle || __("Permissions"),
+					hint: meta.hint ? __(meta.hint) : "",
+					value: getValue(ref, col),
+					onSubmit(json) {
+						write(ref, col, json);
+						// Redraw just this cell: a full re-render would collapse any open
+						// child-field panel and scroll the grid back to the left.
+						btn.outerHTML = AFU.renderRoles(
+							ref, col, json, btn.getAttribute("data-gcls"), meta.hint
+						);
+						AFU.bindRoleCells(host, getValue, write);
+						// The replacement is rendered ungated; restate the row's gates
+						// on it so it matches every other cell in the band.
+						AFU.refreshRuleGates(host);
+					},
+				});
+			});
+		});
+	};
+
+	/** The column definition behind a role cell, with a title for its dialog. */
+	AFU.roleColumn = function (col) {
+		for (const g of AFU.COLUMN_GROUPS) {
+			for (const c of g.cols) {
+				if (c.col === col) return { ...c, dialogTitle: `${g.label} · ${c.label}` };
+			}
+		}
+		return null;
+	};
+
 	AFU.renderChildToggle = function (parentRef, childRef, col, checked, gcls) {
 		return `<label class="apf-toggle${gcls ? ` apf-g-${gcls}` : ""}">
 			<input type="checkbox" class="apf-child-toggle"
@@ -584,6 +1139,55 @@ frappe.provide("recruitment.applicant_fields_ui");
 				data-col="${col}" ${checked ? "checked" : ""}/>
 			<span class="apf-toggle-slider"></span>
 		</label>`;
+	};
+
+	/**
+	 * Park the VIEW / MANDATORY header row directly under the channel band.
+	 *
+	 * Both rows are `position: sticky`, but the second needs to know how tall the
+	 * first is to stop in the right place, and CSS has no way to ask. The band
+	 * carries a pill label plus (for toggle groups) a count line, so its height
+	 * moves with the font — a hardcoded offset shows up either as a seam of
+	 * scrolling rows between the two, or as the second row covering the first.
+	 */
+	AFU.freezeHeader = function (host) {
+		const table = host && host.querySelector(".apf-table");
+		const band = table && table.querySelector("thead .apf-group-row");
+		if (!band) return;
+
+		// Re-rendered on every section switch: without this each render leaves
+		// another live observer measuring a table no longer on the page.
+		if (host._apfHeaderRO) host._apfHeaderRO.disconnect();
+
+		const apply = () => {
+			const h = Math.round(band.getBoundingClientRect().height);
+			// 0 while the tab is hidden (Job Opening mounts this behind one) — keep
+			// the CSS fallback; the observer re-measures on reveal.
+			if (h) table.style.setProperty("--apf-group-h", h + "px");
+		};
+
+		apply();
+		if (window.ResizeObserver) {
+			host._apfHeaderRO = new ResizeObserver(apply);
+			host._apfHeaderRO.observe(band);
+		}
+	};
+
+	/**
+	 * Same measure as freezeHeader, for a docked child panel: park the child's
+	 * column row directly beneath its channel band instead of on top of it.
+	 *
+	 * Measured on reveal, not at render time — a docked panel is hidden until its
+	 * Child Fields button is clicked, and a hidden box measures 0.
+	 */
+	AFU.freezeChildHeader = function (panel) {
+		const table = panel && panel.querySelector(".apf-child-table");
+		const band = table && table.querySelector("thead .apf-child-group-row");
+		if (!band) return;
+		// ceil, not round: half a pixel short and a sliver of the row scrolling
+		// underneath shows through the seam between the two frozen rows.
+		const h = Math.ceil(band.getBoundingClientRect().height);
+		if (h) table.style.setProperty("--apf-child-group-h", h + "px");
 	};
 
 	/**
@@ -621,6 +1225,66 @@ frappe.provide("recruitment.applicant_fields_ui");
 			panel.hidden = true;
 			dock.appendChild(panel);
 		});
+
+		// Every panel is closed on a fresh render, so the grid gets its full height
+		// back — otherwise a section switched away from while a panel was open would
+		// hand its shortened pane to the next section.
+		AFU.anchorDock(host);
+	};
+
+	/* The grid never collapses below this while a panel is anchored to a row near
+	   the top — a 100px sliver of table reads as broken, and the two frozen header
+	   rows would take most of it. */
+	AFU.DOCK_MIN_H = 200;
+
+	/**
+	 * End the grid just below the row whose panel is open.
+	 *
+	 * The panel is docked beneath the whole scroller (see dockChildPanels), which is
+	 * what keeps its FIELD column frozen — but it also meant a table field sitting
+	 * eighth in a section of twenty opened its config below all twenty, with no
+	 * visible connection to the row that owns it.
+	 *
+	 * Rather than move the panel back inside the horizontal scrollport, the grid is
+	 * ended where the panel should start: the pane is capped so the owning row is its
+	 * last visible row, and scrolled so that row sits against the bottom edge. The
+	 * panel then reads as belonging to the row directly above it, wherever in the
+	 * section that row happens to be, and the rows below stay reachable by scrolling
+	 * the (now shorter) pane.
+	 *
+	 * Reads its state from the DOM rather than taking arguments, so every caller —
+	 * the expand toggle, a re-render, the search filter — can just call it and get
+	 * the right answer, including "nothing is open, put the grid back".
+	 */
+	AFU.anchorDock = function (host) {
+		const pane = host && host.querySelector(".apf-scroll");
+		if (!pane) return;
+
+		const panel = host.querySelector(".apf-child-dock > .apf-child-container:not([hidden])");
+		const ref = panel && panel.getAttribute("data-parent-ref");
+		const childRow = ref && host.querySelector(`.apf-child-row[data-parent-ref="${ref}"]`);
+		// The marker row is display:none, so it has no box to measure — the field row
+		// that owns it is the one immediately before it (see renderRow).
+		const fieldRow = childRow && childRow.previousElementSibling;
+
+		// Nothing open, or nothing measurable: the grid goes back to its full height.
+		if (!fieldRow) {
+			pane.style.maxHeight = "";
+			return;
+		}
+
+		pane.style.maxHeight = "";                       // measure at natural height
+		const full = pane.clientHeight;
+		const rowBottom = Math.round(
+			fieldRow.getBoundingClientRect().bottom
+			- pane.getBoundingClientRect().top
+			+ pane.scrollTop
+		);
+		if (!full || rowBottom <= 0) return;             // hidden tab: leave it alone
+
+		const height = Math.max(AFU.DOCK_MIN_H, Math.min(full, rowBottom));
+		pane.style.maxHeight = height + "px";
+		pane.scrollTop = Math.max(0, rowBottom - height);
 	};
 
 	/**
@@ -638,18 +1302,31 @@ frappe.provide("recruitment.applicant_fields_ui");
 			const btn = e.target.closest && e.target.closest(".apf-expand");
 			if (!btn) return;
 			const ref = btn.getAttribute("data-ref");
-			const row = host.querySelector(`.apf-child-row[data-parent-ref="${ref}"]`);
 			const panel = host.querySelector(`.apf-child-dock > [data-parent-ref="${ref}"]`);
 			if (!panel) return;
-			const open = row && row.style.display !== "none";
+
+			// The panel's own visibility IS the state. This used to read the marker
+			// row's inline display, on the assumption that the screen toggled it —
+			// which only job_opening.js ever did. Here nothing did, so `open` was
+			// permanently false: the panel could never be shown, and anchorDock was
+			// always told nothing was open.
+			const open = panel.hidden;
+
 			// One panel at a time — two docked panels would push the grid off-screen.
 			host.querySelectorAll(".apf-child-dock > .apf-child-container").forEach((p) => {
 				p.hidden = p !== panel || !open;
 			});
+			host.querySelectorAll(".apf-expand").forEach((b) => {
+				const shown = b === btn && open;
+				b.textContent = `${shown ? "▼" : "▶"} ${__("Child Fields")}`;
+			});
+			if (!panel.hidden) AFU.freezeChildHeader(panel);
+			// ...and end the grid just above whichever one is now showing.
+			AFU.anchorDock(host);
 		});
 	};
 
-	AFU.renderChildConfigRow = function (row) {
+	AFU.renderChildConfigRow = function (row, frozen, opts) {
 		const ref = row.reference_name || "";
 		let config = {};
 		try { config = JSON.parse(row.child_field_config || "{}"); } catch (e) { /* ignore */ }
@@ -662,20 +1339,21 @@ frappe.provide("recruitment.applicant_fields_ui");
 						<div class="apf-child-field-label">${esc(cfc.label || cfn)}</div>
 						<div class="apf-child-field-ref">${esc(cfn)}</div>
 					</td>
-					${AFU.CHILD_CHANNEL_GROUPS.map((g) => g.cols.map((c) =>
-						`<td>${AFU.renderChildToggle(ref, cfn, c.col, cfc[c.col], g.cls)}</td>`
-					).join("")).join("")}
+					${AFU.CHILD_CHANNEL_GROUPS.map((g) => g.cols.map((c) => {
+						const t = AFU.renderChildToggle(ref, cfn, c.col, cfc[c.col], g.cls);
+						return `<td>${frozen ? t.replace("<input ", "<input disabled ") : t}</td>`;
+					}).join("")).join("")}
 				</tr>`
 			).join("")
 			: `<tr><td colspan="${AFU.CHILD_TOTAL_COLS}" class="apf-child-empty">No configurable child fields.</td></tr>`;
 
-		const groupHeaderRow = `<tr>
+		const groupHeaderRow = `<tr class="apf-child-group-row">
 			<th class="apf-child-col-field"></th>
 			${AFU.CHILD_CHANNEL_GROUPS.map((g) =>
 				`<th colspan="${g.cols.length}" class="apf-child-group-header apf-g-${g.cls}">${g.label}</th>`
 			).join("")}
 		</tr>`;
-		const colHeaderRow = `<tr>
+		const colHeaderRow = `<tr class="apf-child-col-row">
 			<th class="apf-child-col-field">FIELD</th>
 			${AFU.CHILD_CHANNEL_GROUPS.map((g) => g.cols.map((c) =>
 				`<th>${c.label}</th>`
@@ -687,7 +1365,7 @@ frappe.provide("recruitment.applicant_fields_ui");
 		// content inside the parent's 1922px row, so scrolling to reach a channel
 		// drags the child's field names off-screen with it.
 		return `<tr class="apf-child-row" data-parent-ref="${esc(ref)}" style="display:none">
-			<td colspan="${AFU.TOTAL_COLS}">
+			<td colspan="${AFU.totalCols(opts)}">
 				<div class="apf-child-container">
 					<div class="apf-child-header">Child Fields — ${esc(row.display_name || ref)}</div>
 					<div class="apf-child-scroll">
@@ -702,41 +1380,198 @@ frappe.provide("recruitment.applicant_fields_ui");
 	};
 
 	// ----------------------------------------------------------------- rows --
-	AFU.renderRow = function (row, idx) {
+	// Inline SVG icons; currentColor so they take the chip's colour.
+	const ICON = {
+		company: '<svg class="apf-appl-ico" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="2" width="10" height="12" rx="1"/><path d="M6 5h1M9 5h1M6 8h1M9 8h1M7 14v-2.5h2V14"/></svg>',
+		assignment: '<svg class="apf-appl-ico" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="6" cy="5.5" r="2.3"/><path d="M1.8 13.5c.5-2.4 2.2-3.7 4.2-3.7s3.7 1.3 4.2 3.7"/><circle cx="11.3" cy="6.3" r="1.8"/><path d="M11.6 9.9c1.4.2 2.4 1.3 2.7 3.1"/></svg>',
+		all: '<svg class="apf-appl-ico" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><path d="M2 8h12M8 2c1.8 2 1.8 10 0 12M8 2c-1.8 2-1.8 10 0 12"/></svg>',
+		lock: '<svg class="apf-appl-ico" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3.5" y="7" width="9" height="7" rx="1.2"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/></svg>',
+		warn: '<svg class="apf-appl-ico" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M8 2.5 14 13H2z"/><path d="M8 6.5v3M8 11.2v.3"/></svg>',
+		eye: '<svg class="apf-appl-ico" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M1.5 8S4 3.5 8 3.5 14.5 8 14.5 8 12 12.5 8 12.5 1.5 8 1.5 8z"/><circle cx="8" cy="8" r="2"/></svg>',
+		eyeOff: '<svg class="apf-appl-ico" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 2l12 12M6.4 6.5A2 2 0 0 0 9.5 9.6M4.2 4.6C2.6 5.8 1.5 8 1.5 8S4 12.5 8 12.5c1.3 0 2.4-.4 3.4-1M7 3.6c.3 0 .7-.1 1-.1 4 0 6.5 4.5 6.5 4.5s-.5 1-1.4 2"/></svg>',
+	};
+	AFU.APPL_ICON = ICON;
+
+	/**
+	 * Applicability cell. States: excluded → green "Always shown" (no switch);
+	 * off → "All openings"; on but empty → amber "Choose who"; on → blue Company /
+	 * violet Assignment chips. A value missing from `opts.applicabilityLabels` no
+	 * longer exists and renders struck through.
+	 */
+	AFU.renderApplicabilityCells = function (row, opts) {
+		const ref = row.reference_name || "";
+		const excluded = opts.applicabilityExcluded && opts.applicabilityExcluded.has(ref);
+
+		if (excluded) {
+			return `
+				<td class="apf-col-appl apf-appl-start">
+					<div class="apf-appl-cell"><span class="apf-appl-always" title="${__(
+						"Listed in Job Applicant Applicability Configuration — this field is shown on every opening and cannot be narrowed."
+					)}">${ICON.lock}${__("Always shown")}</span></div>
+				</td>`;
+		}
+
+		const on = !!cintjs(row.applicable_enabled);
+		const entries = parseApplicability(row.applicability_config);
+
+		// The extra class lets the settings page bind it to a redraw.
+		const toggle = AFU.renderToggle(ref, "applicable_enabled", on, "applicability")
+			.replace("<input ", `<input class="apf-appl-toggle" title="${__(
+				"Show this field only on openings of chosen companies or assignments"
+			)}" `);
+
+		let body;
+		if (!on) {
+			body = `<span class="apf-appl-all">${ICON.all}${__("All openings")}</span>`;
+		} else if (!entries.length) {
+			body = `<button class="apf-appl-edit apf-appl-edit-warn" data-ref="${esc(ref)}" title="${__(
+				"Applicable To is on but nothing is chosen — the field is still shown on every opening. Click to choose."
+			)}">${ICON.warn}${__("Choose who")}</button>`;
+		} else {
+			const labels = opts.applicabilityLabels || {};
+			const chip = (type, list) => {
+				if (!list.length) return "";
+				const map = labels[type] || {};
+				const first = list[0];
+				const missing = list.some((v) => !map[v]);
+				const more = list.length > 1 ? `<span class="apf-appl-chip-more">+${list.length - 1}</span>` : "";
+				return `<span class="apf-appl-chip is-${type.toLowerCase()}${missing ? " is-missing" : ""}">
+					${type === "Company" ? ICON.company : ICON.assignment}
+					<span class="apf-appl-chip-text">${esc(map[first] || first)}</span>${more}
+				</span>`;
+			};
+			const companies = entries.filter((e) => e.type === "Company").map((e) => e.value);
+			const assignments = entries.filter((e) => e.type === "Assignment").map((e) => e.value);
+			const nameOf = (type) => (v) => ((labels[type] || {})[v]) || `${v} (${__("deleted")})`;
+			const tooltip = [
+				__("Shown only on openings matching ANY of:"),
+				...companies.map((v) => `  • ${__("Company")}: ${nameOf("Company")(v)}`),
+				...assignments.map((v) => `  • ${__("Assignment")}: ${nameOf("Assignment")(v)}`),
+				"",
+				__("Click to edit"),
+			].join("\n");
+			body = `<button class="apf-appl-summary" data-ref="${esc(ref)}" title="${esc(tooltip)}">
+				${chip("Company", companies)}${chip("Assignment", assignments)}
+			</button>`;
+		}
+
+		return `
+			<td class="apf-col-appl apf-appl-start">
+				<div class="apf-appl-cell">${toggle}${body}</div>
+			</td>`;
+	};
+
+	/** Job Opening badge: does this opening's company / assignment admit the field? */
+	AFU.renderOpeningApplicabilityBadge = function (info) {
+		if (!info) return "";
+		return info.applicable
+			? `<span class="apf-appl-badge is-shown" title="${esc(info.reason || "")}">${ICON.eye}${__("Scoped · shown here")}</span>`
+			: `<span class="apf-appl-badge is-hidden" title="${esc(info.reason || "")}">${ICON.eyeOff}${__("Not for this opening")}</span>`;
+	};
+
+	/** Tolerant parse of a row's stored config — mirrors field_applicability.parse_config. */
+	function parseApplicability(raw) {
+		if (!raw) return [];
+		let parsed = raw;
+		if (typeof raw === "string") {
+			try { parsed = JSON.parse(raw); } catch (e) { return []; }
+		}
+		if (!Array.isArray(parsed)) return [];
+		return parsed.filter(
+			(e) => e && (e.type === "Company" || e.type === "Assignment") && e.value
+		);
+	}
+	AFU.parseApplicability = parseApplicability;
+
+	function cintjs(v) { return v ? 1 : 0; }
+
+	/**
+	 * One field's row. `opts.lockable`: this page may change the lock (settings
+	 * only). Disabled controls are presentation only — enforce_locked_fields is
+	 * the actual rule.
+	 */
+	AFU.renderRow = function (row, idx, opts) {
+		opts = opts || {};
 		const ref = row.reference_name || "";
 		const isTable = row.fieldtype === "Table" || row.fieldtype === "Table MultiSelect";
-		const groupCells = AFU.COLUMN_GROUPS.map((g) => g.cols.map((c, ci) => {
-			const cls = [
-				c.type === "toggle" ? "apf-col-toggle" : "apf-col-select",
-				"apf-band", `apf-g-${g.cls}`,
-				ci === 0 ? "apf-gstart" : "",
-			].filter(Boolean).join(" ");
-			if (c.type === "toggle") {
-				// A MANDATORY switch is only meaningful while its channel's VIEW is on.
-				const viewCol = g.cols[0].col;
-				const conflict = c.col !== viewCol && row[c.col] && !row[viewCol];
-				const toggle = AFU.renderToggle(ref, c.col, row[c.col], g.cls);
+		// Frozen only where the lock cannot be lifted — on the settings page the
+		// admin has to be able to untick it, so the row stays live there.
+		const frozen = !!row.locked && !opts.lockable;
+		// Search results span every section, so a row's position in the list means
+		// nothing; dragging it would reorder against rows that are not on screen.
+		const searching = !!opts.searching;
+		// Job Opening only: whether this opening's company / assignments admit the
+		// field. Absent for unscoped fields and on the settings page.
+		const applInfo = (opts.openingApplicability || {})[ref] || null;
+		const dis = frozen ? " disabled" : "";
+		const groupCells = AFU.groupsFor(opts).map((g) => {
+			// GENERAL / PRE-OFFER RULES stay live on a locked row (editableWhenLocked).
+			const cellsFrozen = frozen && !g.editableWhenLocked;
+			// A rule the field's own sources make unreachable — see `gateCols`.
+			const gated = !AFU.gateOpen(g, row);
+			return g.cols.map((c, ci) => {
+				const cls = [
+					c.type === "toggle" ? "apf-col-toggle" : "apf-col-select",
+					"apf-band", `apf-g-${g.cls}`,
+					ci === 0 ? "apf-gstart" : "",
+				].filter(Boolean).join(" ");
+				if (c.type === "toggle") {
+					// A MANDATORY switch is only meaningful while its channel's VIEW is on.
+					const viewCol = g.cols[0].col;
+					const conflict = c.col !== viewCol && row[c.col] && !row[viewCol];
+					let toggle = AFU.renderToggle(ref, c.col, row[c.col], g.cls);
+					if (conflict) toggle = toggle.replace("apf-toggle ", "apf-toggle apf-conflict ");
+					if (cellsFrozen) toggle = toggle.replace("<input ", "<input disabled ");
+					return `<td class="${cls}">${toggle}</td>`;
+				}
+				if (c.type === "roles") {
+					let btn = AFU.renderRoles(ref, c.col, row[c.col], g.cls, c.hint);
+					if (gated) btn = AFU.gateRoleButton(btn, g.gateHint);
+					return `<td class="${cls}">${
+						cellsFrozen ? btn.replace("<button ", "<button disabled ") : btn
+					}</td>`;
+				}
+				const select = AFU.renderSelect(ref, c.col, row[c.col] || c.options[0], c.options);
 				return `<td class="${cls}">${
-					conflict ? toggle.replace("apf-toggle ", "apf-toggle apf-conflict ") : toggle
+					cellsFrozen ? select.replace("<select ", "<select disabled ") : select
 				}</td>`;
-			}
-			return `<td class="${cls}">${AFU.renderSelect(ref, c.col, row[c.col] || c.options[0], c.options)}</td>`;
-		}).join("")).join("");
+			}).join("");
+		}).join("");
 
 		const tableBadge = isTable ? `<span class="apf-table-badge">TABLE</span>` : "";
+
+		// The lock itself: a live checkbox on the settings page, a padlock badge on
+		// the Job Opening. Same `data-col` either way, so the settings page needs no
+		// handler of its own — the existing [data-ref][data-col] binding picks it up.
+		const lockCell = opts.lockable
+			? `<label class="apf-lock" title="${__("Lock this field — every Job Opening shows it read-only")}">
+					<input type="checkbox" data-ref="${esc(ref)}" data-col="locked"${row.locked ? " checked" : ""}/>
+					<span>${__("Lock")}</span>
+				</label>`
+			: (row.locked
+				? `<span class="apf-lock-badge" title="${__("Locked in Job Applicant Profile Settings — configure it there")}">🔒 ${__("Locked")}</span>`
+				: "");
 		const expandBtn = isTable
 			? `<button class="apf-expand" data-ref="${esc(ref)}" title="Configure child table fields">▶ Child Fields</button>`
 			: "";
 
 		const mainRow = `
-			<tr data-ref="${esc(ref)}" data-search="${esc(
+			<tr data-ref="${esc(ref)}" class="${[
+				frozen ? "apf-frozen" : "",
+				(applInfo && !applInfo.applicable) ? "apf-appl-offrow" : "",
+			].filter(Boolean).join(" ")}" data-search="${esc(
 				`${row.display_name || ""} ${ref}`.toLowerCase()
 			)}">
-				<td class="apf-col-check"><input type="checkbox" class="apf-row-check" data-ref="${esc(ref)}"/></td>
+				<td class="apf-col-check"><input type="checkbox" class="apf-row-check" data-ref="${esc(ref)}"${dis}/></td>
 				<td class="apf-col-no apf-no">
 					<div class="apf-no-cell">
-						<span class="apf-grip" draggable="true" data-ref="${esc(ref)}"
-							title="${__("Drag to reposition · click to move to another section")}">⠿</span>
+						${(frozen || searching) ? `<span class="apf-grip apf-grip-off" title="${
+							searching
+								? __("Clear the search to reorder fields")
+								: __("Locked — placement is set in Job Applicant Profile Settings")
+						}">⠿</span>`
+							: `<span class="apf-grip" draggable="true" data-ref="${esc(ref)}"
+							title="${__("Drag to reposition · click to move to another section")}">⠿</span>`}
 						<span class="apf-no-num">${idx + 1}</span>
 					</div>
 				</td>
@@ -745,27 +1580,55 @@ frappe.provide("recruitment.applicant_fields_ui");
 						<input class="apf-label-input" type="text"
 							data-ref="${esc(ref)}"
 							value="${esc(row.display_name || ref)}"
-							title="Click to edit label"/>
+							title="Click to edit label"${dis}/>
 						${tableBadge}
+						${lockCell}
 					</div>
 					<div class="apf-ref">${esc(ref)}</div>
+					${searching
+						? `<span class="apf-row-section" title="${__("Section")}">${esc(row.section || "General")}</span>`
+						: ""}
+					${AFU.renderOpeningApplicabilityBadge(applInfo)}
 					${expandBtn}
 				</td>
+				${opts.applicability ? AFU.renderApplicabilityCells(row, opts) : ""}
 				${groupCells}
-				<td class="apf-col-actions"><button class="apf-delete" data-ref="${esc(ref)}" title="Remove">×</button></td>
+				<td class="apf-col-actions">${frozen ? ""
+					: `<button class="apf-delete" data-ref="${esc(ref)}" title="Remove">×</button>`}</td>
 			</tr>`;
 
-		return mainRow + (isTable ? AFU.renderChildConfigRow(row) : "");
+		return mainRow + (isTable ? AFU.renderChildConfigRow(row, frozen, opts) : "");
 	};
 
 	// --------------------------------------------------------------- header --
-	AFU.headerRows = function () {
+	AFU.headerRows = function (opts) {
+		opts = opts || {};
+		const applGroupTh = opts.applicability
+			? `<th colspan="${AFU.APPLICABILITY_COLS.length}" class="apf-band apf-appl-start apf-appl-w apf-g-applicability">
+					<span class="apf-appl-head">
+						<span class="apf-group-label">${__("APPLICABILITY")}</span>
+						<span class="apf-appl-info" title="${esc(__(
+							"Switch on to show a field only on Job Openings of chosen Companies, or openings an Assignment admits. Off = every opening. Applies on every source (Careers, IJP, Refer, Campus, Pre-offer) — the field is left out of the form, and out of validation, everywhere else."
+						))}">i</span>
+					</span>
+					<a class="apf-appl-cfg-link" href="${esc(opts.applicabilityConfigRoute || "/app/job-applicant-applicability-configuration")}"
+						target="_blank" title="${esc(__("Fields listed there are always shown and get no switch"))}">${
+						__("Manage always-shown fields")} ↗</a>
+				</th>`
+			: "";
+		const applColTh = opts.applicability
+			? AFU.APPLICABILITY_COLS.map((c, ci) =>
+					`<th class="apf-col-appl${ci === 0 ? " apf-appl-start" : ""}">${c.label}</th>`
+				).join("")
+			: "";
+
 		const groupRow = `
 			<tr class="apf-group-row">
 				<th class="apf-col-check"></th>
 				<th class="apf-col-no"></th>
 				<th class="apf-col-field"></th>
-				${AFU.COLUMN_GROUPS.map((g) => `<th colspan="${g.cols.length}" class="apf-band apf-gstart apf-g-${g.cls}">
+				${applGroupTh}
+				${AFU.groupsFor(opts).map((g) => `<th colspan="${g.cols.length}" class="apf-band apf-gstart apf-g-${g.cls}">
 					<span class="apf-group-label">${g.label}</span>
 					${g.cols[0].type === "toggle"
 						? `<span class="apf-group-count" data-count-group="${g.key}">—</span>` : ""}
@@ -778,7 +1641,8 @@ frappe.provide("recruitment.applicant_fields_ui");
 				<th class="apf-col-check"><input type="checkbox" class="apf-select-all" title="Select all rows"/></th>
 				<th class="apf-col-no">NO.</th>
 				<th class="apf-col-field">FIELD</th>
-				${AFU.COLUMN_GROUPS.map((g) => g.cols.map((c, ci) => {
+				${applColTh}
+				${AFU.groupsFor(opts).map((g) => g.cols.map((c, ci) => {
 					const cls = [
 						c.type === "toggle" ? "apf-col-toggle" : "apf-col-select",
 						`apf-g-${g.cls}`, ci === 0 ? "apf-gstart" : "",
@@ -797,7 +1661,8 @@ frappe.provide("recruitment.applicant_fields_ui");
 	 * @param {string[]} [sections]  section names offered in the bulk "Move to"
 	 *                               picker. Omit it and the picker is left out.
 	 */
-	AFU.toolbarHtml = function (sections) {
+	AFU.toolbarHtml = function (sections, opts) {
+		opts = opts || {};
 		const bulkOptions = AFU.TOGGLE_GROUPS.map((g) =>
 			g.cols.map((c) => `<option value="${c.col}">${g.label} · ${c.label}</option>`).join("")
 		).join("");
@@ -815,7 +1680,8 @@ frappe.provide("recruitment.applicant_fields_ui");
 		return `
 			<div class="apf-toolbar">
 				<div class="apf-search-wrap">
-					<input type="text" class="apf-search" placeholder="${__("Search field or fieldname…")}"/>
+					<input type="text" class="apf-search" value="${esc(opts.search || "")}"
+						placeholder="${__("Search every section…")}"/>
 				</div>
 				<span class="apf-showing"></span>
 				<span class="apf-toolbar-spacer"></span>
@@ -931,7 +1797,11 @@ frappe.provide("recruitment.applicant_fields_ui");
 			return (e.clientY - rect.top) > rect.height / 2 ? "after" : "before";
 		}
 
-		const gripOf = (e) => e.target.closest && e.target.closest(".apf-grip");
+		// Inert grips (locked rows, search results) have no data-ref — ignore them.
+		const gripOf = (e) => {
+			const grip = e.target.closest && e.target.closest(".apf-grip");
+			return grip && grip.getAttribute("data-ref") ? grip : null;
+		};
 		const rowOf = (e) => e.target.closest && e.target.closest("tr[data-ref]");
 
 		tbody.addEventListener("dragstart", (e) => {
@@ -1057,6 +1927,9 @@ frappe.provide("recruitment.applicant_fields_ui");
 	AFU.bindToolbar = function (host, opts) {
 		AFU.dockChildPanels(host);
 		AFU.bindChildDock(host);
+		// After the docking moves, so the band is measured once against a settled
+		// DOM rather than being read and then invalidated.
+		AFU.freezeHeader(host);
 
 		const search = host.querySelector(".apf-search");
 		const bulk = host.querySelector(".apf-bulk");
@@ -1082,6 +1955,18 @@ frappe.provide("recruitment.applicant_fields_ui");
 
 		function applyFilter() {
 			const q = (search ? search.value : "").trim().toLowerCase();
+			// The page already rendered only the matches; just update the count.
+			if (opts.onSearch) {
+				const showing = host.querySelector(".apf-showing");
+				if (showing) {
+					const total = opts.totalFields || mainRows().length;
+					showing.textContent = q
+						? __("{0} of {1} fields · all sections", [mainRows().length, total])
+						: __("{0} fields", [total]);
+				}
+				syncSelection();
+				return;
+			}
 			let shown = 0;
 			mainRows().forEach((tr) => {
 				const hit = !q || (tr.getAttribute("data-search") || "").includes(q);
@@ -1095,6 +1980,9 @@ frappe.provide("recruitment.applicant_fields_ui");
 				if (panel && !hit) panel.hidden = true;
 				if (hit) shown += 1;
 			});
+			// A filter that hid the open panel's own row leaves the grid capped just
+			// below a row that is no longer there — re-anchor against what's left.
+			AFU.anchorDock(host);
 			const showing = host.querySelector(".apf-showing");
 			if (showing) {
 				const total = mainRows().length;
@@ -1105,7 +1993,25 @@ frappe.provide("recruitment.applicant_fields_ui");
 			syncSelection();
 		}
 
-		if (search) search.addEventListener("input", applyFilter);
+		if (search && opts.onSearch) {
+			// Debounced: each keystroke re-renders the whole grid, and doing that
+			// synchronously per character makes typing feel like it is dragging.
+			let timer = null;
+			search.addEventListener("input", () => {
+				clearTimeout(timer);
+				timer = setTimeout(() => opts.onSearch(search.value), 140);
+			});
+			// The re-render replaced the input the user was typing in, so put the
+			// caret back where it was rather than at the start.
+			if (opts.searchActive) {
+				search.focus();
+				const end = search.value.length;
+				try { search.setSelectionRange(end, end); } catch (e) { /* not a text input */ }
+			}
+			applyFilter();
+		} else if (search) {
+			search.addEventListener("input", applyFilter);
+		}
 
 		if (selectAll) {
 			selectAll.addEventListener("change", () => {
@@ -1181,6 +2087,10 @@ frappe.provide("recruitment.applicant_fields_ui");
 	 */
 	AFU.refreshCounts = function (host) {
 		const total = host.querySelectorAll("tbody tr[data-ref]").length;
+
+		// A VIEW switch is also what opens or closes the GENERAL / PRE-OFFER RULES
+		// cells beside it, and every caller of this function has just moved one.
+		AFU.refreshRuleGates(host);
 
 		AFU.TOGGLE_GROUPS.forEach((g) => {
 			const viewCol = g.cols[0].col;

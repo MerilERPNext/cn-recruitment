@@ -15,26 +15,26 @@ interface OverviewStatsProps {
 
 const OverviewStats: React.FC<OverviewStatsProps> = ({ isCompact, stats }) => {
   return (
-    <section className={`grid ${isCompact ? "grid-cols-2 sm:grid-cols-3" : "grid-cols-2 sm:grid-cols-3 lg:grid-cols-6"} gap-3 sm:gap-4`}>
+    <section className={`grid ${isCompact ? "grid-cols-2 sm:grid-cols-3" : "grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 lg:grid-cols-5"} gap-2.5 sm:gap-4`}>
       {stats.map((stat, idx) => (
         <div
           key={idx}
-          className="flex min-h-[96px] min-w-0 flex-col justify-between rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:min-h-[104px] sm:p-5"
+          className="flex min-h-[92px] sm:min-h-[100px] min-w-0 flex-col justify-between rounded-xl border border-slate-200 bg-white p-3 sm:p-4 shadow-sm hover:border-slate-300 transition-all duration-150"
         >
           <Typography
             variant="caption"
-            className="mb-2 block break-words text-[10px] font-semibold uppercase text-slate-400"
+            className="mb-1.5 block break-words text-[10px] sm:text-[11px] font-semibold uppercase text-slate-400 leading-tight tracking-wider"
           >
             {stat.label}
           </Typography>
-          <div>
+          <div className="mt-auto">
             <Typography
               variant="h2"
-              className={`text-blue-600 mb-1 text-2xl font-bold leading-none`}
+              className="text-slate-900 mb-0.5 text-lg sm:text-xl font-bold leading-none tracking-tight"
             >
               {stat.value}
             </Typography>
-            <Typography variant="caption" className="break-words text-slate-500">
+            <Typography variant="caption" className="block break-words text-[11px] sm:text-xs font-medium text-slate-500 leading-tight">
               {stat.sub}
             </Typography>
           </div>

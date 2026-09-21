@@ -140,6 +140,7 @@ frappe.ui.form.on("Campus Drive Institute", {
 		// _validate_participating_institutes; caught here for instant feedback.
 		const row = locals[cdt][cdn];
 		if (!row.institute) {
+			frappe.model.set_value(cdt, cdn, "tpo_name", null);
 			return;
 		}
 		const dupe = (frm.doc.participating_institutes || []).find(
@@ -153,7 +154,22 @@ frappe.ui.form.on("Campus Drive Institute", {
 				message: __("Institute {0} is already on this drive.", [value]),
 				indicator: "orange",
 			});
+			return;
 		}
+
+		// The Primary TPO lives in the Institute's own TPO Contacts table, which
+		// fetch_from cannot reach — look it up. The server re-stamps it on save.
+		const institute = row.institute;
+		frappe.call({
+			method: "recruitment.recruitment.doctype.campus_drive.campus_drive.get_primary_tpo_name",
+			args: { institute: institute },
+			callback: function (r) {
+				// The row may have been re-pointed while the call was in flight.
+				if (locals[cdt][cdn] && locals[cdt][cdn].institute === institute) {
+					frappe.model.set_value(cdt, cdn, "tpo_name", r.message || null);
+				}
+			},
+		});
 	},
 });
 

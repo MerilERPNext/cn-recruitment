@@ -2,13 +2,13 @@
 // For license information, please see license.txt
 
 /**
- * Restrict "Applicable To" to Dynamic User Assignments that are explicitly
- * marked applicable for the hiring-workflow process — i.e. assignments whose
- * `applicable_for_process` includes "TA Interview Strategy Template". Catch-all
- * Default assignments are excluded; other assignments cannot be selected here.
+ * Restrict "Applicable To" to Dynamic User Assignments of purpose **Attributes**
+ * — the only kind that can restrict which Job Openings a template covers. An
+ * assignment is on offer when it is tagged for the "Job Opening" (or legacy
+ * "TA Interview Strategy Template") process, or carries no process tags at all.
  *
  * Matching against a Job Opening is driven by each chosen assignment's
- * `assignment_conditions` — see get_hiring_stages_for_job_opening (server).
+ * `assignment_attributes` — see get_hiring_stages_for_job_opening (server).
  */
 
 // A round whose Step Type is "Interview" names a real interview round — the
@@ -55,6 +55,12 @@ frappe.ui.form.on("TA Interview Strategy Template", {
 		// set on the field directly (2-arg form) — NOT the grid/child form.
 		frm.set_query("applicable_to", () => ({
 			query: "recruitment.recruitment.doctype.ta_interview_strategy_template.ta_interview_strategy_template.get_hiring_workflow_user_assignments",
+		}));
+
+		// The panel picker is the mirror image — People assignments, not
+		// Attributes ones. Three-arg form: this field lives in a child grid.
+		frm.set_query("interviewer_pool", "interview_rounds", () => ({
+			query: "recruitment.recruitment.doctype.ta_interview_strategy_template.ta_interview_strategy_template.get_interviewer_user_assignments",
 		}));
 	},
 });

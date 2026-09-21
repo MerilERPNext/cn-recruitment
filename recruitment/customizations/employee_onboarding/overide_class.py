@@ -96,18 +96,90 @@ class CustomEmployeeOnboarding(EmployeeOnboarding):
             )
 
     def validate_employee_creation(self):
+        """The one gate an onboarding must clear before it becomes an Employee.
+
+        Onboarding is finished when BOTH halves of it are: the tasks HR owns, and
+        the form the candidate filled. HRMS only ever checked the tasks, so an
+        Employee could be created — and be Active in payroll — while portal
+        fields were still awaiting approval or had been rejected outright.
+
+        Everything that creates an Employee comes through here, so this is the
+        single place the rule has to hold: the "Create Employee" button, the
+        DOJ-outcome automation, and HRMS's own mapper (redirected onto ours in
+        hooks.py).
+        """
         if self.docstatus != 1:
             frappe.throw(_("Submit this to create the Employee record"))
-        else:
-            for activity in self.activities:
-                if not activity.required_for_employee_creation:
-                    continue
-                task_status = frappe.db.get_value("Task", activity.task, "status")
-                if task_status not in ["Completed", "Cancelled"]:
-                    frappe.throw(
-                        _("All the mandatory tasks for employee creation are not completed yet."),
-                        IncompleteTaskError,
-                    )
+
+        self._assert_required_tasks_done()
+        self._assert_portal_fields_approved()
+
+    def _assert_required_tasks_done(self):
+        required = [a for a in self.activities if a.required_for_employee_creation]
+        if not required:
+            return
+
+        # One read for every task, not one per activity. Tasks are created on
+        # demand here (see on_submit), so an activity may not have one yet — that
+        # counts as still open, exactly as it did when each was looked up singly.
+        task_names = [a.task for a in required if a.task]
+        statuses = dict(
+            frappe.get_all(
+                "Task",
+                filters={"name": ["in", task_names]},
+                fields=["name", "status"],
+                as_list=True,
+            )
+        ) if task_names else {}
+
+        pending = [
+            (a.activity_name or a.task)
+            for a in required
+            if statuses.get(a.task) not in ("Completed", "Cancelled")
+        ]
+
+        if pending:
+            frappe.throw(
+                _("These onboarding tasks are still open: {0}").format(
+                    "<br>• " + "<br>• ".join(frappe.utils.escape_html(p) for p in pending)
+                ),
+                IncompleteTaskError,
+                title=_("Onboarding tasks not complete"),
+            )
+
+    def _assert_portal_fields_approved(self):
+        """Every visible portal field must be Approved.
+
+        Counted from the same child table the approval screens write to, via the
+        shared helper — so this can never drift from what HR sees there. Skipped
+        when the onboarding has no visible portal fields at all: there is nothing
+        to approve, and blocking would strand every onboarding created before the
+        candidate portal existed.
+        """
+        from recruitment.api.field_level_approval import get_field_status_counts
+
+        counts = get_field_status_counts(self)
+        if not counts.get("total"):
+            return
+        if counts.get("approved") == counts["total"]:
+            return
+
+        outstanding = []
+        for label, key in (
+            (_("awaiting the candidate"), "pending"),
+            (_("submitted, not yet approved"), "filled"),
+            (_("rejected"), "rejected"),
+        ):
+            if counts.get(key):
+                outstanding.append(f"{counts[key]} {label}")
+
+        frappe.throw(
+            _("The onboarding form is not fully approved yet — {0}.").format(
+                ", ".join(outstanding)
+            ),
+            IncompleteTaskError,
+            title=_("Onboarding form not approved"),
+        )
 
     def on_submit(self):
         # Project and Tasks are intentionally NOT created on submit.
@@ -125,6 +197,25 @@ class CustomEmployeeOnboarding(EmployeeOnboarding):
     def on_cancel(self):
         super().on_cancel()
 
+    def get_project_start_date(self):
+        """Earliest date any task of this onboarding can start.
+
+        Tasks are dated `boarding_begins_on + activity.begin_on`, and
+        pre-joining activities use a negative `begin_on`, so they fall before
+        the date of joining. Task.validate_parent_project_dates rejects a task
+        that starts before its project, so the project must start no later
+        than the earliest task. Falls back to the date of joining whenever the
+        activity dates cannot be worked out.
+        """
+        candidates = [self.date_of_joining]
+
+        offsets = [a.begin_on for a in self.activities if a.begin_on is not None]
+        if offsets and self.boarding_begins_on:
+            candidates.append(frappe.utils.add_days(self.boarding_begins_on, min(offsets)))
+
+        dates = [frappe.utils.getdate(d) for d in candidates if d]
+        return min(dates) if dates else None
+
     def create_onboarding_tasks(self):
         """Create the Project and Tasks for this onboarding on demand.
 
@@ -141,7 +232,7 @@ class CustomEmployeeOnboarding(EmployeeOnboarding):
             project = frappe.get_doc({
                 "doctype": "Project",
                 "project_name": project_name,
-                "expected_start_date": self.date_of_joining,
+                "expected_start_date": self.get_project_start_date(),
                 "department": self.department,
                 "company": self.company,
             }).insert(ignore_permissions=True, ignore_mandatory=True)

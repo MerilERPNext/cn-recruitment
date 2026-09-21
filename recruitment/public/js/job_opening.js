@@ -32,15 +32,37 @@
 		"view_preoffer", "mandatory_preoffer",
 		"ctq_flag",
 	];
-	const OVERRIDE_SELECT_COLS = {
-		visibility: "All",
-		editability: "Editable",
-		preoffer_visibility: "Same as visibility",
-		preoffer_edit_approve: "Editable",
+	// GENERAL / PRE-OFFER RULES role lists (see field_role_permissions.py).
+	const OVERRIDE_ROLE_COLS = {
+		visibility: '["All"]',
+		editability: '["All"]',
+		preoffer_visibility: '["All"]',
+		preoffer_edit_approve: '["All"]',
 	};
 
-	/** The opening's own row for `ref`, created from the merged template if absent. */
-	function upsertOpeningRow(frm, ref, state) {
+	// The only columns an opening may still write on a locked field.
+	const RULE_COLS = new Set(Object.keys(OVERRIDE_ROLE_COLS));
+
+	/** Whether `ref` is locked in Job Applicant Profile Settings. */
+	function isLocked(state, ref) {
+		const tpl = (state.rows || []).find((r) => r.reference_name === ref);
+		return !!(tpl && tpl.locked);
+	}
+
+	/**
+	 * The opening's own row for `ref`, created from the merged template if absent.
+	 *
+	 * Returns a throwaway object for a locked field so every caller can go on
+	 * assigning to it without a guard of its own, while nothing reaches the
+	 * document. The controls for such a row are rendered disabled, so this is the
+	 * belt to that braces — and `enforce_locked_fields` on the server is the rule
+	 * neither of them can be.
+	 *
+	 * `col` is the column being written; a locked field accepts only RULE_COLS.
+	 */
+	function upsertOpeningRow(frm, ref, state, col) {
+		if (isLocked(state, ref) && !RULE_COLS.has(col)) return {};
+
 		let docRow = (frm.doc.custom_application_fields || []).find((r) => r.reference_name === ref);
 		if (docRow) return docRow;
 
@@ -52,9 +74,9 @@
 			fieldtype: tpl.fieldtype || "",
 			child_field_config: tpl.child_field_config || "",
 		};
-		OVERRIDE_CHECK_COLS.forEach((col) => { values[col] = tpl[col] ? 1 : 0; });
-		Object.keys(OVERRIDE_SELECT_COLS).forEach((col) => {
-			values[col] = tpl[col] || OVERRIDE_SELECT_COLS[col];
+		OVERRIDE_CHECK_COLS.forEach((c) => { values[c] = tpl[c] ? 1 : 0; });
+		Object.keys(OVERRIDE_ROLE_COLS).forEach((c) => {
+			values[c] = tpl[c] || OVERRIDE_ROLE_COLS[c];
 		});
 		return frm.add_child("custom_application_fields", values);
 	}
@@ -112,6 +134,7 @@
 	 * the merged template reads back in preference to the settings placement.
 	 */
 	function moveRows(host, state, frm, refs, dest) {
+		if (!refs.length) return;   // every selected row was locked
 		const result = AFU.applyMove(
 			state.rows || [], refs, dest,
 			(r) => r.section || "General",
@@ -127,7 +150,7 @@
 		state.activeSection = result.section;
 		renderUI(host, state, frm);
 		frappe.show_alert({
-			message: __("{0} field(s) moved to {1}", [refs.length, result.section]),
+			message: __("{0} field(s) moved to {1}", [refs.length, escapeHtml(result.section)]),
 			indicator: "green",
 		});
 	}
@@ -171,10 +194,26 @@
 			__("Drag a field's ⠿ handle onto a section to move it there, or drop it between rows to reorder. Placement applies to this opening only.")
 		}</div>`;
 
-		const sectionRows = rows.filter((r) => (r.section || "General") === active);
+		// Search spans every section; an empty query shows the active section.
+		const q = (state.search || "").trim().toLowerCase();
+		const sectionRows = q
+			? rows.filter((r) => `${r.display_name || ""} ${r.reference_name || ""}`.toLowerCase().includes(q))
+			: rows.filter((r) => (r.section || "General") === active);
+		// Not lockable here: locked fields render frozen with a padlock badge.
+		const rowOptions = {
+			lockable: false,
+			searching: !!q,
+			// Applicability badges for scoped fields.
+			openingApplicability: state.appl || {},
+		};
+		const offNames = (state.rows || [])
+			.filter((r) => (state.appl || {})[r.reference_name] && !state.appl[r.reference_name].applicable)
+			.map((r) => r.display_name || r.reference_name);
 		const bodyHtml = sectionRows.length
-			? sectionRows.map((r, i) => AFU.renderRow(r, i)).join("")
-			: `<tr><td colspan="${AFU.TOTAL_COLS}">${AFU.emptyState(__("No fields in this section."))}</td></tr>`;
+			? sectionRows.map((r, i) => AFU.renderRow(r, i, rowOptions)).join("")
+			: `<tr><td colspan="${AFU.totalCols(rowOptions)}">${AFU.emptyState(
+					q ? __("No field matches “{0}”.", [state.search]) : __("No fields in this section.")
+				)}</td></tr>`;
 
 		host.innerHTML = `
 			<div class="apf-container">
@@ -183,13 +222,19 @@
 					<div class="apf-head">
 						<div>
 							<div class="apf-head-sub">${__("Application Fields")}</div>
-							<div class="apf-head-title">${escapeHtml(active)}</div>
+							<div class="apf-head-title">${
+								q ? __("Search results") : escapeHtml(active)
+							}</div>
+							${offNames.length ? `<div class="apf-appl-note">${__(
+								"Not shown on this opening: {0}. Their Applicability rule in Job Applicant Profile Settings doesn't include this company or assignment, so candidates here never see them.",
+								[`<b>${offNames.map(escapeHtml).join(", ")}</b>`]
+							)}</div>` : ""}
 						</div>
 					</div>
-					${AFU.toolbarHtml(sectionsList)}
+					${AFU.toolbarHtml(sectionsList, { search: state.search || "" })}
 					<div class="apf-scroll">
 						<table class="apf-table">
-							<thead>${AFU.headerRows()}</thead>
+							<thead>${AFU.headerRows(rowOptions)}</thead>
 							<tbody>${bodyHtml}</tbody>
 						</table>
 					</div>
@@ -204,6 +249,8 @@
 		host.querySelectorAll(".apf-side-item").forEach((el) => {
 			el.addEventListener("click", () => {
 				state.activeSection = el.getAttribute("data-section");
+				// Picking a section clears the search.
+				state.search = "";
 				renderUI(host, state, frm);
 			});
 		});
@@ -232,7 +279,7 @@
 				const checked = cb.checked ? 1 : 0;
 				const stateRow = state.rows.find((r) => r.reference_name === ref);
 				if (stateRow) stateRow[col] = checked;
-				const docRow = upsertOpeningRow(frm, ref, state);
+				const docRow = upsertOpeningRow(frm, ref, state, col);
 				docRow[col] = checked;
 				frm.refresh_field("custom_application_fields");
 				frm.dirty();
@@ -247,12 +294,28 @@
 				const col = sel.getAttribute("data-col");
 				const stateRow = state.rows.find((r) => r.reference_name === ref);
 				if (stateRow) stateRow[col] = sel.value;
-				const docRow = upsertOpeningRow(frm, ref, state);
+				const docRow = upsertOpeningRow(frm, ref, state, col);
 				docRow[col] = sel.value;
 				frm.refresh_field("custom_application_fields");
 				frm.dirty();
 			});
 		});
+
+		// Role pickers — live even on a locked row (see RULE_COLS).
+		AFU.bindRoleCells(
+			host,
+			(ref, col) => {
+				const stateRow = state.rows.find((r) => r.reference_name === ref);
+				return stateRow ? stateRow[col] : "";
+			},
+			(ref, col, json) => {
+				const stateRow = state.rows.find((r) => r.reference_name === ref);
+				if (stateRow) stateRow[col] = json;
+				upsertOpeningRow(frm, ref, state, col)[col] = json;
+				frm.refresh_field("custom_application_fields");
+				frm.dirty();
+			}
+		);
 
 		// Child table field visibility toggles
 		host.querySelectorAll("input.apf-child-toggle").forEach((cb) => {
@@ -299,6 +362,7 @@
 		host.querySelectorAll(".apf-delete").forEach((btn) => {
 			btn.addEventListener("click", () => {
 				const ref = btn.getAttribute("data-ref");
+				if (isLocked(state, ref)) return;
 				frappe.confirm(`Remove ${ref}?`, () => {
 					state.rows = state.rows.filter((r) => r.reference_name !== ref);
 					const idx = (frm.doc.custom_application_fields || []).findIndex((r) => r.reference_name === ref);
@@ -316,12 +380,20 @@
 		// and `moveRows` are the only per-page parts: they upsert each change as a
 		// per-opening override.
 		AFU.bindToolbar(host, {
-			moveRows(refs, dest) { moveRows(host, state, frm, refs, dest); },
+			totalFields: (state.rows || []).length,
+			searchActive: !!(state.search || "").trim(),
+			onSearch(value) {
+				state.search = value;
+				renderUI(host, state, frm);
+			},
+			moveRows(refs, dest) {
+				moveRows(host, state, frm, refs.filter((ref) => !isLocked(state, ref)), dest);
+			},
 			applyBulk(col, value, refs) {
-				refs.forEach((ref) => {
+				refs.filter((ref) => !isLocked(state, ref)).forEach((ref) => {
 					const stateRow = state.rows.find((r) => r.reference_name === ref);
 					if (stateRow) stateRow[col] = value;
-					upsertOpeningRow(frm, ref, state)[col] = value;
+					upsertOpeningRow(frm, ref, state, col)[col] = value;
 				});
 				frm.refresh_field("custom_application_fields");
 				frm.dirty();
@@ -380,7 +452,7 @@
 				const stateRow = byRef.get(docRow.reference_name);
 				if (!stateRow) return;
 				OVERRIDE_CHECK_COLS.forEach((col) => { stateRow[col] = docRow[col] ? 1 : 0; });
-				Object.keys(OVERRIDE_SELECT_COLS).forEach((col) => {
+				Object.keys(OVERRIDE_ROLE_COLS).forEach((col) => {
 					if (docRow[col]) stateRow[col] = docRow[col];
 				});
 				if (docRow.child_field_config) stateRow.child_field_config = docRow.child_field_config;
@@ -398,12 +470,48 @@
 				.map((x) => x.row);
 
 			renderUI(host, state, frm);
+			// Paint first; the applicability badges arrive after.
+			frm._apf_state = state;
+			frm._apf_host = host;
+			refreshApplicability(frm);
 		}
 	}
 
-	frappe.ui.form.on("Job Opening", {
-		refresh(frm) { mountUI(frm); },
-	});
+	// Changing one of these re-checks the badges against the unsaved form values.
+	const APPL_WATCH = ["company", "department", "designation", "location", "employment_type"];
+
+	function openingLinkValues(frm) {
+		const out = {};
+		(frm.meta.fields || []).forEach((df) => {
+			if ((df.fieldtype === "Link" || df.fieldtype === "Dynamic Link") && frm.doc[df.fieldname]) {
+				out[df.fieldname] = frm.doc[df.fieldname];
+			}
+		});
+		return out;
+	}
+
+	function refreshApplicability(frm) {
+		const state = frm._apf_state, host = frm._apf_host;
+		if (!state || !host) return;
+		const values = openingLinkValues(frm);
+		const key = JSON.stringify(values);
+		if (state.applKey === key) return; // nothing that matters changed
+		state.applKey = key;
+		frappe.xcall("recruitment.recruitment.field_applicability.get_opening_applicability", { values })
+			.then((map) => {
+				if (state.applKey !== key || frm._apf_state !== state) return; // superseded
+				const next = map || {};
+				// Redraw only if a badge changed.
+				if (JSON.stringify(next) === JSON.stringify(state.appl || {})) return;
+				state.appl = next;
+				renderUI(host, state, frm);
+			})
+			.catch(() => { /* badges are advisory; the grid works without them */ });
+	}
+
+	const handlers = { refresh(frm) { mountUI(frm); } };
+	APPL_WATCH.forEach((f) => { handlers[f] = (frm) => refreshApplicability(frm); });
+	frappe.ui.form.on("Job Opening", handlers);
 })();
 
 // Recruitment Settings → "Allow creation of Position(s) at jobs directly".

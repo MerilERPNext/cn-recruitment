@@ -10,13 +10,14 @@
   "education_stages_section",
   "education_stages_block",
   "required_education_stages",
-  "synced_field_refs"
+  "synced_field_refs",
+  "profile_permission_sync"
  ],
  "fields": [
   {
    "fieldname": "description_block",
    "fieldtype": "HTML",
-   "options": "<div style='padding:8px;color:#4B5563;font-size:13px;'>Configure the <b>default Job Applicant profile setup</b> that every new Job Opening inherits. Admins can override these per-opening on the Job Opening's <i>Job application</i> tab. This is a <b>curated list</b> \u2014 internal-process fields (the Job Applicant <i>Feedback</i> tab: PIP, induction/onboarding feedback, goals) are intentionally excluded. New Job Applicant fields are <b>not</b> added automatically; add the ones you want with <i>Add Row</i>.</div>"
+   "options": "<div style='padding:8px;color:#4B5563;font-size:13px;'>Configure the <b>default Job Applicant profile setup</b> that every new Job Opening inherits. Admins can override these per-opening on the Job Opening's <i>Job application</i> tab. This is a <b>curated list</b> — internal-process fields (the Job Applicant <i>Feedback</i> tab: PIP, induction/onboarding feedback, goals) are intentionally excluded. New Job Applicant fields are <b>not</b> added automatically; add the ones you want with <i>Add Row</i>.<br/><br/><b>Profile view permissions</b> (last column) decide which roles may see a field on the <b>Employee</b> profile. They are written to the Employee <i>DocType Permission</i> record and enforced there (fields Employee doesn't have are skipped); System Managers see everything. The <i>General</i> and <i>Pre-offer rules</i> columns are per-opening and live on the Job Opening, where a locked field keeps them editable.</div>"
   },
   {
    "fieldname": "default_fields_ui",
@@ -52,13 +53,21 @@
    "label": "Synced field refs (internal)",
    "hidden": 1,
    "read_only": 1,
-   "description": "Newline-separated list of Job Applicant field refs already seen by the reconcile (imported, deleted, or deliberately kept out). Anything in this list is never auto-added \u2014 this is what keeps manual deletes sticky and stops the curated list from being flooded by the rest of the doctype."
+   "description": "Newline-separated list of Job Applicant field refs already seen by the reconcile (imported, deleted, or deliberately kept out). Anything in this list is never auto-added — this is what keeps manual deletes sticky and stops the curated list from being flooded by the rest of the doctype."
+  },
+  {
+   "fieldname": "profile_permission_sync",
+   "fieldtype": "Long Text",
+   "label": "Profile permission sync (internal)",
+   "hidden": 1,
+   "read_only": 1,
+   "description": "DocType Permission rows written from Profile View Permissions — see profile_permission_sync.py."
   }
  ],
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2026-05-28 12:00:00.000000",
+ "modified": "2026-09-11 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "Job Applicant Profile Settings",

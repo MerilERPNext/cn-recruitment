@@ -201,13 +201,21 @@ def candidate_registration_query(user):
     one TPO must never see another's registrations. Privileged roles (System
     Manager / HR Manager / HR User / Recruiter Admin / Management) stay unrestricted,
     so nothing changes for HR. Only users carrying the TPO role *without* a
-    privileged role are scoped down."""
+    privileged role are scoped down.
+
+    Administrator and System Manager are answered first and unconditionally —
+    an admin locked out of a list by a scoping rule has no way to see what is
+    wrong with it. A scoped TPO always keeps their own records (owner), so no
+    user can be filtered away from what they created."""
     if not user:
         user = frappe.session.user
     if user == "Administrator":
         return "1 = 1"
 
     roles = set(frappe.get_roles(user))
+    if {"Administrator", "System Manager"} & roles:
+        return "1 = 1"
+
     if TPO_ROLE in roles and not (CANDIDATE_REGISTRATION_PRIVILEGED & roles):
         return f"`tabCandidate Registration`.owner = {frappe.db.escape(user, percent=False)}"
 
@@ -218,16 +226,26 @@ def candidate_registration_has_permission(doc, ptype, user):
     """Document-level mirror of ``candidate_registration_query`` so a TPO cannot open
     another TPO's Candidate Registration via a direct link. Creating is always
     allowed (the new doc's owner is the TPO); other actions require ownership.
-    Returns None (defer to standard perms) for Administrator and every non-TPO /
-    privileged user, so no other role is affected."""
+
+    Returns True — never None — for everyone this rule does not scope
+    (Administrator, System Manager, non-TPO / privileged users).
+    ``frappe.permissions.has_controller_permissions`` denies on any falsy return
+    (``if not controller_permission: return bool(controller_permission)``), so a
+    None meant to say "no opinion" reads as "deny" and locks every role out of
+    the document. True is the safe no-op here: a controller hook can only deny,
+    it cannot grant a permission the role perms have not already given.
+    """
     if not user:
         user = frappe.session.user
     if user == "Administrator":
-        return None
+        return True
 
     roles = set(frappe.get_roles(user))
+    # Same first answer as the query: an admin is never scoped out of a document.
+    if {"Administrator", "System Manager"} & roles:
+        return True
     if TPO_ROLE not in roles or (CANDIDATE_REGISTRATION_PRIVILEGED & roles):
-        return None
+        return True
 
     if ptype == "create":
         return True
@@ -298,3 +316,70 @@ def interview_query(user):
               AND id.interviewer = {frappe.db.escape(user)}
         )
     """
+
+
+# ---------------------------------------------------------------------------
+# Group Discussion — a panel sees their own GDs, and nothing else
+# ---------------------------------------------------------------------------
+# The whole point of the doctype: an interviewer conducting one group used to need
+# the entire Campus Drive to mark it — every college, every role, every other panel's
+# candidates, and write access to the schedule. Now they get one document per group
+# they are on, and these two functions are what keep it to that.
+#
+# Both are needed, and they do different jobs:
+#   * the query condition scopes the LIST (and any report / count / link search);
+#   * has_permission scopes a SINGLE document, which the query never sees — without
+#     it, an interviewer who guessed a name could open somebody else's GD by URL.
+GROUP_DISCUSSION_FULL_ROLES = (
+    "HR User",
+    "HR Manager",
+    "Recruiter Admin",
+    "System Manager",
+    "Management",
+    "Hiring Lead",
+)
+
+
+def _runs_recruitment(user):
+    return bool(set(frappe.get_roles(user)) & set(GROUP_DISCUSSION_FULL_ROLES))
+
+
+def group_discussion_query(user):
+    if not user:
+        user = frappe.session.user
+    if user == "Administrator" or _runs_recruitment(user):
+        return "1=1"
+
+    return f"""
+        `tabGroup Discussion`.owner = {frappe.db.escape(user)}
+        OR EXISTS (
+            SELECT 1
+            FROM `tabGroup Discussion Interviewer` AS gdi
+            WHERE gdi.parent = `tabGroup Discussion`.name
+              AND gdi.parenttype = 'Group Discussion'
+              AND gdi.interviewer = {frappe.db.escape(user)}
+        )
+    """
+
+
+def group_discussion_has_permission(doc, ptype, user=None):
+    """True = defer to the standard checks (role perms, then the share the panel is
+    given); False = this user is not on the panel and never sees it.
+
+    True rather than None for the "no opinion" answer: has_controller_permissions
+    denies on any falsy return, so None would lock everyone out. Returning True
+    grants nothing on its own — role permissions still decide."""
+    if not user:
+        user = frappe.session.user
+    if user == "Administrator" or _runs_recruitment(user):
+        return True
+    if (doc.get("owner") or "") == user:
+        return True
+    # Queried rather than read off doc.interviewers: a permission check must not pull
+    # every child table of the document in to answer one question.
+    return bool(
+        frappe.db.exists(
+            "Group Discussion Interviewer",
+            {"parent": doc.name, "parenttype": "Group Discussion", "interviewer": user},
+        )
+    )

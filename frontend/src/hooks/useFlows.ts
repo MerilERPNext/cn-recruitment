@@ -9,8 +9,11 @@ import {
   getFlowConfigSelfTriggerList,
   getFlowConfigOthersTriggerList,
   getFlowRequests,
+  getFlowRequestsForEmployee,
   getSeparationFunnelData,
+  getSeparationFunnelDataForEmployee,
   getSeparationWorkflow,
+  getSeparationWorkflowForEmployee,
   getShouldShowConfirmationButton,
   getShouldShowSeparationButton,
   postSelectEventFromOptions,
@@ -22,6 +25,7 @@ import {
   reinitiateFlow,
   retriggerApprovalFlowEvent,
   revokeFlow,
+  startRevokeFlow,
 } from "../services/flowsService";
 import { AssistantTriggerResponse } from "../types/chatnextApiResponses";
 import { SeparationFunnelDataResponse, SeparationWorkflowResponse } from "../types/separation";
@@ -137,6 +141,28 @@ export const useGetSeparationWorkflow = (
   });
 };
 
+export const useGetSeparationWorkflowForEmployee = (
+  employeeId: string | undefined,
+  reference_doctype: string,
+  reference_docname: string
+) => {
+  return useQuery<SeparationWorkflowResponse>({
+    queryKey: [
+      "get-separation-workflow-for-employee",
+      employeeId,
+      reference_doctype,
+      reference_docname,
+    ],
+    queryFn: () =>
+      getSeparationWorkflowForEmployee(
+        employeeId,
+        reference_doctype,
+        reference_docname
+      ),
+    enabled: !!reference_doctype && !!reference_docname,
+  });
+};
+
 export const useGetSeparationFunnelData = (
   docname: string
 ) => {
@@ -149,6 +175,24 @@ export const useGetSeparationFunnelData = (
       docname
     ),
     enabled: !!docname
+  });
+};
+
+export const useGetSeparationFunnelDataForEmployee = (
+  employeeId: string | undefined,
+  docname: string,
+  doctype = "Employee"
+) => {
+  return useQuery<SeparationFunnelDataResponse>({
+    queryKey: [
+      "get-separation-funnel-for-employee",
+      employeeId,
+      docname,
+      doctype,
+    ],
+    queryFn: () =>
+      getSeparationFunnelDataForEmployee(employeeId, docname, doctype),
+    enabled: !!docname,
   });
 };
 
@@ -210,6 +254,19 @@ export const useGetFlowRequests = (
       "employee-flow-requests"
     ],
     queryFn: () => getFlowRequests(),
+  });
+};
+
+export const useGetFlowRequestsForEmployee = (
+  employeeId?: string
+) => {
+  return useQuery<FlowRequestResponse>({
+    queryKey: [
+      "employee-flow-requests-for-employee",
+      employeeId,
+    ],
+    queryFn: () => getFlowRequestsForEmployee(employeeId),
+    enabled: !!employeeId,
   });
 };
 
@@ -416,3 +473,21 @@ export const useRevokeFlow = () => {
     },
   });
 };
+
+export const useStartRevokeFlow = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ funnel_activity }: { funnel_activity: string }) =>
+      startRevokeFlow(funnel_activity),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["employee-flow-requests"] });
+      queryClient.invalidateQueries({ queryKey: ["employee-flow-request-details"] });
+      queryClient.invalidateQueries({ queryKey: ["separation-employee"] });
+      queryClient.invalidateQueries({ queryKey: ["separation-workflow"] });
+      queryClient.invalidateQueries({ queryKey: ["get-separation-workflow"] });
+      queryClient.invalidateQueries({ queryKey: ["get-separation-funnel"] });
+    },
+  });
+};
+

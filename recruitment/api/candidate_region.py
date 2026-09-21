@@ -75,6 +75,36 @@ def _apply(job_applicant, region, note):
 	frappe.db.set_value("Job Applicant", job_applicant, "custom_interview_region", region)
 	frappe.get_doc("Job Applicant", job_applicant).add_comment("Info", note)
 	frappe.db.commit()
+	_warn_if_no_panel(job_applicant, region)
+
+
+def _warn_if_no_panel(job_applicant, region):
+	"""Tell HR straight away when the drive has no panel for the region they have
+	just moved this candidate into.
+
+	Moving them is legitimate and is not blocked — the region may well be right and
+	the panelist a minute's work. But only that region's panel may now interview
+	them, so without this the consequence surfaces much later, as a refusal when
+	somebody clicks Schedule on a round they had no reason to connect with this
+	change.
+	"""
+	if not region:
+		return
+	drive = frappe.db.get_value("Job Applicant", job_applicant, "custom_campus_drive")
+	if not drive:
+		return
+	# Local import: campus_drive reads this module's helpers, and the drive is only
+	# ever involved for a campus candidate.
+	from recruitment.recruitment.doctype.campus_drive.campus_drive import region_panel_gap
+
+	if not region_panel_gap(drive, region):
+		return
+	frappe.msgprint(
+		_("No panel on campus drive {0} covers {1}, so this candidate's interviews "
+		  "cannot be created yet. Add a Round Panelist with Region = {1} to the round "
+		  "that will take them.").format(frappe.bold(drive), frappe.bold(_region_label(region))),
+		title=_("This region has no panel on the drive"), indicator="orange",
+	)
 
 
 @frappe.whitelist()

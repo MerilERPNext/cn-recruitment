@@ -1,4 +1,4 @@
-import { Bot, FileText } from "lucide-react";
+import { FileText } from "lucide-react";
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { useCarouselCards } from "../../hooks/useCarousel";
@@ -8,11 +8,26 @@ interface RecommendationsForYouProps {
   isMobile?: boolean;
 }
 
+const resolveImageUrl = (url?: string | null): string | undefined => {
+  if (!url) return undefined;
+  if (/^(https?:|\/\/|data:)/i.test(url)) return url;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const baseUrl =
+    (import.meta as any).env?.VITE_API_BASE_URL ||
+    (import.meta as any).env?.VITE_API_DOMAIN ||
+    "";
+  if (baseUrl && url.startsWith("/")) {
+    return `${baseUrl.replace(/\/+$/, "")}${url}`;
+  }
+  return url;
+};
+
 export const RecommendationsForYou: React.FC<RecommendationsForYouProps> = ({
   isMobile = false,
 }) => {
   const { data: cards, isLoading } = useCarouselCards();
   const navigate = useNavigate();
+  const [failedIcons, setFailedIcons] = React.useState<Record<string, boolean>>({});
 
   const displayCards = React.useMemo(() => {
     if (!cards) return [];
@@ -32,9 +47,6 @@ export const RecommendationsForYou: React.FC<RecommendationsForYouProps> = ({
       <div
         className={`flex-shrink-0 ${isMobile ? "w-32 p-2" : "w-48 p-4"} rounded-xl flex flex-col justify-center items-start bg-blue-50 border border-blue-100 relative`}
       >
-        <Bot
-          className={`${isMobile ? "w-8 h-8" : "w-10 h-10"} text-primary-500 mb-2 relative z-10`}
-        />
         <Typography
           variant={isMobile ? "bodyMedium" : "subheading"}
           className="font-bold text-gray-800 relative z-10 w-fit"
@@ -54,48 +66,58 @@ export const RecommendationsForYou: React.FC<RecommendationsForYouProps> = ({
       </div>
 
       {/* Cards list */}
-      {displayCards.map((card, idx) => (
-        <div
-          key={card.card_type || card.card_label || idx}
-          onClick={() => {
-            if (card.redirect_url) {
-              // Determine if it's an absolute url or route
-              if (card.redirect_url.startsWith("http")) {
-                window.open(card.redirect_url, "_blank", "noopener,noreferrer");
-              } else {
-                navigate(`/${card.redirect_url.replace(/^\/+/, "")}`);
+      {displayCards.map((card, idx) => {
+        const cardKey = card.card_type || card.card_label || String(idx);
+        const cardIcon = card.module_icon || card.icon;
+        const iconUrl = resolveImageUrl(cardIcon);
+        const hasIconError = Boolean(failedIcons[cardKey]);
+
+        return (
+          <div
+            key={cardKey}
+            onClick={() => {
+              if (card.redirect_url) {
+                // Determine if it's an absolute url or route
+                if (card.redirect_url.startsWith("http")) {
+                  window.open(card.redirect_url, "_blank", "noopener,noreferrer");
+                } else {
+                  navigate(`/${card.redirect_url.replace(/^\/+/, "")}`);
+                }
               }
-            }
-          }}
-          className={`${isMobile ? "w-40 p-3" : "w-56 p-4"} flex-shrink-0 rounded-xl border border-primary-200 hover:border-primary-400 transition-all cursor-pointer bg-white hover:shadow-md flex flex-col justify-between group`}
-        >
-          <div>
-            <div className="flex items-start justify-between">
-              {card.icon ? (
-                <img
-                  src={card.icon}
-                  alt={card.card_label}
-                  className="w-6 h-6 object-contain mb-2 rounded-full"
-                />
-              ) : (
-                <FileText className="w-5 h-5 text-primary-500 mb-2" />
-              )}
+            }}
+            className={`${isMobile ? "w-40 p-3" : "w-56 p-4"} flex-shrink-0 rounded-xl border border-primary-200 hover:border-primary-400 transition-all cursor-pointer bg-white hover:shadow-md flex flex-col justify-between group`}
+          >
+            <div>
+              <div className="flex items-start justify-between">
+                {iconUrl && !hasIconError ? (
+                  <img
+                    src={iconUrl}
+                    alt={card.module_title || card.card_label || "Module icon"}
+                    className="w-6 h-6 object-contain mb-2 rounded-md"
+                    onError={() =>
+                      setFailedIcons((prev) => ({ ...prev, [cardKey]: true }))
+                    }
+                  />
+                ) : (
+                  <FileText className="w-5 h-5 text-primary-500 mb-2" />
+                )}
+              </div>
+              <Typography
+                variant={isMobile ? "bodySmall" : "bodyMedium"}
+                className="font-bold text-gray-800 mb-2 leading-tight group-hover:text-primary-600 transition-colors"
+              >
+                {card.slogan || card.card_label}
+              </Typography>
+              <Typography
+                variant="label"
+                className="text-gray-500 line-clamp-3 leading-relaxed"
+              >
+                {card.description}
+              </Typography>
             </div>
-            <Typography
-              variant={isMobile ? "bodySmall" : "bodyMedium"}
-              className="font-bold text-gray-800 mb-2 leading-tight group-hover:text-primary-600 transition-colors"
-            >
-              {card.slogan || card.card_label}
-            </Typography>
-            <Typography
-              variant="label"
-              className="text-gray-500 line-clamp-3 leading-relaxed"
-            >
-              {card.description}
-            </Typography>
           </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 };

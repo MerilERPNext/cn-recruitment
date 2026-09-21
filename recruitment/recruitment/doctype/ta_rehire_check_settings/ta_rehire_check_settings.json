@@ -6,6 +6,7 @@
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
+  "deprecation_note",
   "basic_info_section",
   "naming_series",
   "rehire_check_setting_name",
@@ -13,9 +14,21 @@
   "created_on",
   "rehire_check_fields_section",
   "applicable_to",
-  "select_rehire_check_fields"
+  "select_rehire_check_fields",
+  "enforcement_section",
+  "block_active_employee",
+  "block_do_not_rehire",
+  "enforcement_column",
+  "min_months_before_rehire",
+  "allow_override_by_admins_and_roles"
  ],
  "fields": [
+  {
+   "fieldname": "deprecation_note",
+   "fieldtype": "HTML",
+   "label": "Deprecation Note",
+   "options": "<div class=\"alert alert-warning\" style=\"margin-bottom:0\"><b>This configuration has moved.</b><br>Employee-pool rules — matches with an active employee, Do Not Rehire, and the minimum gap after exit — are now configured on <b>TA Duplicity Check Settings</b>, under “Duplicity Check with Employee Pool”, and are applied at the Job Offer.<br>Nothing on this form is read any more. It is kept so existing records stay readable; the detection that powers the Job Applicant’s <b>Employee Record</b> tab still runs, driven by the duplicity check fields.</div>"
+  },
   {
    "fieldname": "basic_info_section",
    "fieldtype": "Section Break",
@@ -51,27 +64,87 @@
   {
    "fieldname": "rehire_check_fields_section",
    "fieldtype": "Section Break",
-   "label": "Rehire Check Configuration"
+   "label": "Rehire Check Configuration",
+   "hidden": 1,
+   "read_only": 1,
+   "description": "Retired — configured on TA Duplicity Check Settings instead."
   },
   {
-   "description": "Pick one or more companies this setting should apply to.",
+   "description": "Retired — configured on TA Duplicity Check Settings instead.",
    "fieldname": "applicable_to",
    "fieldtype": "Table MultiSelect",
    "label": "Applicable To",
    "options": "TA Rehire Check Company",
-   "reqd": 1
+   "hidden": 1,
+   "read_only": 1
   },
   {
-   "description": "Pick the Job Applicant fields that should be checked when determining rehire eligibility.",
+   "description": "Retired — configured on TA Duplicity Check Settings instead.",
    "fieldname": "select_rehire_check_fields",
    "fieldtype": "Table",
    "label": "Select Re-Hire Check Fields",
-   "options": "TA Rehire Check Field"
+   "options": "TA Rehire Check Field",
+   "hidden": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "enforcement_section",
+   "fieldtype": "Section Break",
+   "label": "Rehire Restrictions",
+   "options": null,
+   "description": "Retired — configured on TA Duplicity Check Settings instead.",
+   "hidden": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "block_active_employee",
+   "fieldtype": "Check",
+   "label": "Block applications from current employees",
+   "options": null,
+   "description": "Retired — configured on TA Duplicity Check Settings instead.",
+   "hidden": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "block_do_not_rehire",
+   "fieldtype": "Check",
+   "label": "Block candidates flagged Do Not Rehire",
+   "options": null,
+   "description": "Retired — configured on TA Duplicity Check Settings instead.",
+   "hidden": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "enforcement_column",
+   "fieldtype": "Column Break",
+   "label": null,
+   "options": null,
+   "description": "Retired — configured on TA Duplicity Check Settings instead.",
+   "hidden": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "min_months_before_rehire",
+   "fieldtype": "Int",
+   "label": "Minimum months since leaving",
+   "options": null,
+   "description": "Retired — configured on TA Duplicity Check Settings instead.",
+   "hidden": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "allow_override_by_admins_and_roles",
+   "fieldtype": "Check",
+   "label": "Allow Super Admins, Hiring Leads and Permission Role Holders to Override Rehire Check Settings",
+   "options": null,
+   "description": "Retired — configured on TA Duplicity Check Settings instead.",
+   "hidden": 1,
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-05-19 00:00:00.000000",
+ "modified": "2026-08-24 10:00:00.000000",
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "TA Rehire Check Settings",

@@ -69,6 +69,7 @@ import InitiateFlow from "./Flows/Initiate/InitiateFlow";
 import RequestIssueModal from "./HelpDesk/RequestIssueModal";
 import { useRequestLeaveModal } from "./Leaves/RequestLeaveModalContext";
 import NotificationBell from "./Notification/NotificationBell";
+import RedeemablePointsBadge from "./Notification/RedeemablePointsBadge";
 import Button from "./shared/atoms/Button";
 import { Card } from "./shared/atoms/Card";
 import { Typography } from "./shared/atoms/Typography";
@@ -77,7 +78,7 @@ import Badge from "./shared/Badge";
 import CollapsibleSidebar from "./shared/CollapsibleSidebar";
 import Carousel, { CarouselSlide } from "./shared/molecules/Carousel";
 import { NoticeSlide } from "./shared/molecules/NoticeSlide";
-import SearchMembers from "./shared/SearchMembers";
+import CommandSearchBar from "./shared/CommandSearchBar";
 import ShiftRequestFormModal from "./ShiftRequest/ShiftRequestFormModal";
 import ViewingAsBanner from "./ViewingAsBanner";
 import formatToIndianDate from "../utils/formatToIndianDate";
@@ -90,6 +91,7 @@ export default function DesktopDashboard() {
   const [isSidebarExpanded, setIsSidebarExpanded] = useState(false);
   const navigate = useNavigate();
   const { mutateAsync: logout } = useLogout();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const employeeState = useEmployeeWithFallback();
   const profileDropdownRef = useRef<HTMLDivElement>(null);
   const [showAttendanceRequest, setShowAttendanceRequest] = useState(false);
@@ -181,16 +183,17 @@ export default function DesktopDashboard() {
   const { data: currentUser } = useCurrentUser();
 
   const logoutHandler = async () => {
+    setIsLoggingOut(true);
     try {
       if (window.isApp) {
-        window.nativeInterface.execute("logout").then(() => {
-          alert("Logged out");
-        });
+        await window.nativeInterface.execute("logout");
+        alert("Logged out");
       } else {
         await logout();
       }
     } catch (error) {
       console.error("Logout failed:", error);
+      setIsLoggingOut(false);
     }
   };
 
@@ -562,7 +565,7 @@ export default function DesktopDashboard() {
         className={`flex-1 ${contentMarginLeft} flex flex-col min-h-screen transition-all duration-300 ease-in-out min-w-0`}
       >
         {/* Header */}
-        <div className="bg-gradient-to-r from-primary-500 via-primary-400 to-primary-500 border-b border-gray-200 px-6 py-[0.3rem] flex items-center sticky top-0 z-10 gap-4">
+        <div className="bg-gradient-to-r from-primary-500 via-primary-400 to-primary-500 border-b border-gray-200 px-6 py-[0.3rem] flex items-center sticky top-0 z-[40] gap-4">
           <div className="flex flex-col min-w-0">
             {currentEmployee?.employee_name || currentUserIsAdmin ? (
               <>
@@ -591,10 +594,12 @@ export default function DesktopDashboard() {
             )}
           </div>
           <div className="flex-1 min-w-0 flex justify-center">
-            <SearchMembers />
+            <CommandSearchBar />
           </div>
 
           <div className="flex items-center gap-4 flex-shrink-0">
+            <RedeemablePointsBadge className="text-white" />
+
             <button
               onClick={() => navigate("/webapp/notification-log")}
               className="relative p-2 hover:bg-primary-400/20 rounded-lg transition-colors"
@@ -831,19 +836,20 @@ export default function DesktopDashboard() {
                     </Button>
                     <hr className="my-2 border-gray-100" />
                     <Button
-                      variant="subtle"
+                      variant={isLoggingOut ? "contain" : "subtle"}
                       size="md"
                       fullWidth
                       contentAlign="start"
                       bgColor="error"
+                      loading={isLoggingOut}
+                      icon={isLoggingOut ? undefined : <LogOut className="w-4 h-4" />}
                       onClick={async () => {
                         await logoutHandler();
                         sessionStorage.removeItem("viewed_employee_id");
                         setShowProfileDropdown(false);
                       }}
                     >
-                      <LogOut className="w-4 h-4" />
-                      Logout
+                      {isLoggingOut ? "Logging out..." : "Logout"}
                     </Button>
                   </div>
                 </div>

@@ -147,21 +147,20 @@ export const attendanceService = {
     }
   },
   getUserMicroApps: async (
-    filters?: string
+    web_disabled_filter: boolean = true
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ): Promise<any> => {
     try {
       const response = await FrappeAPI.getMethod(
         "nextai.api.microapps.user_preferences.get_user_microapps",
         {
-          filters: filters || "",
-          limit: 100,
+          web_disabled_filter
         }
       );
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       return response as any;
     } catch (error) {
-      console.error("📡 Error marking notice as read:", error);
+      console.error("📡 Error fetching user microapps:", error);
       throw error;
     }
   },
@@ -546,7 +545,11 @@ export const attendanceService = {
 
   // Attendance Settings resource API fetcher
   getAttendanceSettings: async (
-  ): Promise<{ enable_approval_confirm_modal: number, enable_rejection_confirm_modal: number } | null> => {
+  ): Promise<{
+    enable_approval_confirm_modal: number;
+    enable_rejection_confirm_modal: number;
+    show_all_employees_by_default_in_directory?: number;
+  } | null> => {
     try {
       const res = (await FrappeAPI.getDocument(
         "Attendance Settings",
@@ -554,8 +557,13 @@ export const attendanceService = {
         [
           "enable_approval_confirm_modal",
           "enable_rejection_confirm_modal",
+          "show_all_employees_by_default_in_directory",
         ]
-      )) as { enable_approval_confirm_modal: number, enable_rejection_confirm_modal: number } | undefined;
+      )) as {
+        enable_approval_confirm_modal: number;
+        enable_rejection_confirm_modal: number;
+        show_all_employees_by_default_in_directory?: number;
+      } | undefined;
       return res || null;
     } catch (error) {
       console.error("📡 Error while reading Attendance Settings:", error);

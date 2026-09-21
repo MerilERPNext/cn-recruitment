@@ -414,7 +414,12 @@ const AssignmentDetailDrawer = ({
                   <div className="rounded-xl border border-green-100 bg-green-50/60 p-3">
                     <p className="text-xs text-gray-500 mb-0.5">Net Pay</p>
                     <p className="font-bold text-green-700">
-                      {fmtMoney(slip.net_pay, currency)}
+                      {fmtMoney(
+                        typeof slip.net_pay === "number"
+                          ? slip.net_pay
+                          : slip.net_pay?.[0]?.annual_amount,
+                        currency
+                      )}
                     </p>
                   </div>
                 </div>

@@ -2,6 +2,7 @@ import { AlertCircle, Calendar, Download, FileText } from "lucide-react";
 import React from "react";
 import { Link } from "react-router-dom";
 import { useEmployeeByUserId } from "../../hooks/useEmployee";
+import { hasErrorFile } from "../../types/scheduledImports";
 import type { ScheduledDataImport } from "../../types/scheduledImports";
 import { formatToIndianDateWithTime } from "../../utils/formatToIndianDate";
 import Button from "../shared/atoms/Button";
@@ -142,7 +143,7 @@ const ImportMobileCard: React.FC<ImportMobileCardProps> = ({
 
         {/* Actions */}
         <div className="flex gap-2 pt-1">
-          {item.failed_records_count > 0 && (
+          {hasErrorFile(item) && (
             <Button
               size="sm"
               variant="outline"

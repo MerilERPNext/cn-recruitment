@@ -2,6 +2,7 @@ import {
   ArrowUpDown,
   Award,
   BadgeIndianRupee,
+  Link2,
   BriefcaseBusiness,
   Calculator,
   Calendar,
@@ -21,6 +22,7 @@ import {
   HelpCircle,
   Home,
   IndianRupee,
+  LayoutDashboard,
   ListTodo,
   ReceiptIndianRupee,
   SeparatorHorizontal,
@@ -31,6 +33,7 @@ import {
   SquarePlus,
   Telescope,
   Timer,
+  TrendingUp,
   Upload,
   User,
   UserPlus,
@@ -50,6 +53,9 @@ import { useCurrentEmployeeDetails } from "../../hooks/useEmployee";
 import { useGetUiPermission } from "../../hooks/userUiPermission";
 import { useRecognitionFlags } from "../../services/recognitionService";
 import { useTodoPendingCount } from "../../hooks/useTodo";
+import { useOptionalTargetEmployeeId } from "../../context/ViewedUserContext";
+import { useImpersonationSettings } from "../../hooks/useImpersonationSettings";
+import { getImpersonationFallbackRoute } from "../../utils/impersonationUtils";
 import Avatar from "./Avatar";
 import { Typography } from "./atoms/Typography";
 import SidebarSkeleton from "./molecules/Skeletons/SidebarSkeleton";
@@ -122,8 +128,32 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
   };
 
   const companyName = getTruncatedCompanyName(originalCompanyName);
+  // `custom_logo_has_company_name` on Company drives the header layout: checked
+  // pairs a circular logo with the company name, unchecked shows the logo on its
+  // own, rendered wide so a wordmark isn't cropped into a circle. Until the
+  // Company doc loads — or when there is no logo to stand on its own — we keep the
+  // named layout so the header never renders empty.
+  const showCompanyName =
+    !singleCompanyLogo ||
+    !logoToShow ||
+    !!singleCompanyLogo.custom_logo_has_company_name;
   const { getCount, getSubModuleCount } = useAppNotificationCounts();
   const { data: todoPendingCount = 0 } = useTodoPendingCount();
+  const { data: impersonationSettings } = useImpersonationSettings();
+  const targetEmployeeId = useOptionalTargetEmployeeId();
+
+  const isImpersonating =
+    !!targetEmployeeId &&
+    !!currentEmployee?.name &&
+    targetEmployeeId !== currentEmployee.name;
+
+  // When show_todo is not enabled, hide Todo during impersonation
+  const isTodoHiddenBySettings =
+    isImpersonating && !impersonationSettings?.show_todo;
+
+  // When show_dashboard is not enabled, hide Dashboard during impersonation
+  const isDashboardHiddenBySettings =
+    isImpersonating && !impersonationSettings?.show_dashboard;
 
   // Returns the badge count for a nav item — todo uses its own API, others use notification counts
   const getNavItemCount = (label: string): number => {
@@ -446,6 +476,18 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
           permissionKey: "Separation",
         },
         {
+          name: "Exit Page",
+          icon: LayoutDashboard,
+          href: "/webapp/flow-app/separation-dashboard",
+          permissionKey: "Exit Page",
+        },
+        {
+          name: "Performance Improvement",
+          icon: TrendingUp,
+          href: "/webapp/flow-app/performance-improvement",
+          permissionKey: "Performance Improvement",
+        },
+        {
           name: "Confirmation",
           icon: CircleCheckBig,
           href: "/webapp/flow-app/confirmation",
@@ -600,7 +642,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
           permissionKey: "Dashboard",
         },
         {
-          name: "History",
+          name: "Recognition History",
           icon: FileText,
           href: "/webapp/recognition/vibe/history",
           permissionKey: "History",
@@ -659,10 +701,22 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
       permissionKey: "Scheduled Imports",
     },
     {
+      icon: Link2,
+      label: "Integrations",
+      path: "/webapp/integrations",
+      permissionKey: "Integrations",
+    },
+    {
       icon: HelpCircle,
       label: "Help Desk",
       path: "/webapp/helpdesk",
       permissionKey: "Help Desk",
+    },
+    {
+      icon: FileText,
+      label: "PDF Form Template",
+      path: "/webapp/pdf-form-template",
+      permissionKey: "PDF Form Template",
     },
     {
       icon: Share2,
@@ -683,7 +737,28 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
           (perm) => perm.app_name === item.permissionKey,
         );
 
+        // Keep top-level Integrations visible if not explicitly disabled in DB
+        if (item.permissionKey === "Integrations") {
+          if (appPermission && !appPermission.enabled) {
+            return null;
+          }
+          return item;
+        }
+
         if (!appPermission || !appPermission.enabled) {
+          return null;
+        }
+
+        // Hide Dashboard when impersonating and show_dashboard is not enabled
+        if (
+          (item.label === "Dashboard" || item.path === "/webapp/") &&
+          isDashboardHiddenBySettings
+        ) {
+          return null;
+        }
+
+        // Hide Todo when impersonating and show_todo is not enabled
+        if (item.permissionKey === "Todo" && isTodoHiddenBySettings) {
           return null;
         }
 
@@ -761,7 +836,12 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
       })
       .filter((item): item is NavigationItem => item !== null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [uiPermissions, recognitionFlags.hideRewardsPointSummary]);
+  }, [
+    uiPermissions,
+    recognitionFlags.hideRewardsPointSummary,
+    isTodoHiddenBySettings,
+    isDashboardHiddenBySettings,
+  ]);
 
   const isSubSubItemActive = (subSubItem: SubSubMenuItem) => {
     if (location.pathname === subSubItem.href) {
@@ -938,38 +1018,50 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
             className="px-4 bg-white py-3 border-b border-gray-200"
             style={{ height: "73px" }}
           >
-            <Link to="/webapp/">
-              <div className="flex items-center  gap-3 h-full">
-                <div className="flex-shrink-0">
-                  <Avatar
-                    src={logoToShow || undefined}
-                    name={originalCompanyName}
-                    size="h-12 w-12"
-                    avatarBgColor="bg-primary-50"
-                    avatarTextColor="text-primary-600"
+            <Link to={isDashboardHiddenBySettings ? getImpersonationFallbackRoute(uiPermissions) : "/webapp/"}>
+              {showCompanyName ? (
+                <div className="flex items-center  gap-3 h-full">
+                  <div className="flex-shrink-0">
+                    <Avatar
+                      src={logoToShow || undefined}
+                      name={originalCompanyName}
+                      size="h-12 w-12"
+                      avatarBgColor="bg-primary-50"
+                      avatarTextColor="text-primary-600"
+                    />
+                  </div>
+                  <div
+                    className={`transition-all duration-300 flex flex-col justify-center ${isExpanded ? "opacity-100" : "opacity-0 -translate-x-2"
+                      }`}
+                  >
+                    <Typography
+                      variant="subheading"
+                      color="title"
+                      className="whitespace-nowrap leading-tight"
+                      title={originalCompanyName}
+                    >
+                      {companyName}
+                    </Typography>
+                    <Typography
+                      variant="bodySmall"
+                      color="body2"
+                      className="whitespace-nowrap"
+                    >
+                      Employee Portal
+                    </Typography>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center h-full">
+                  <img
+                    src={logoToShow}
+                    alt={originalCompanyName}
+                    title={originalCompanyName}
+                    className={`object-contain object-left transition-all duration-300 ${isExpanded ? "h-12 max-w-full" : "h-10 w-12"
+                      }`}
                   />
                 </div>
-                <div
-                  className={`transition-all duration-300 flex flex-col justify-center ${isExpanded ? "opacity-100" : "opacity-0 -translate-x-2"
-                    }`}
-                >
-                  <Typography
-                    variant="subheading"
-                    color="title"
-                    className="whitespace-nowrap leading-tight"
-                    title={originalCompanyName}
-                  >
-                    {companyName}
-                  </Typography>
-                  <Typography
-                    variant="bodySmall"
-                    color="body2"
-                    className="whitespace-nowrap"
-                  >
-                    Employee Portal
-                  </Typography>
-                </div>
-              </div>
+              )}
             </Link>
           </div>
           <div className="flex-1 p-4 space-y-1">

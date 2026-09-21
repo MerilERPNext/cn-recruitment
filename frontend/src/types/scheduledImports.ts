@@ -5,12 +5,29 @@ export type ImportStatus =
   | "Scheduled"
   | "Processing"
   | "Completed"
+  | "Partially Successful"
   | "Failed"
   | "Cancelled";
 
 export type ImportOperation = "Insert" | "Overwrite";
 export type ImportSchedule = "Immediate" | "Custom";
 export type ImportDelimiter = "Comma" | "Tab" | "Semicolon" | "Pipe";
+
+// Imports that didn't come through clean: the annotated error file is
+// offered for these, plus for anything carrying a per-row failure or skip.
+export const ERROR_FILE_STATUSES: ImportStatus[] = [
+  "Failed",
+  "Partially Successful",
+];
+
+export const hasErrorFile = (item: {
+  status?: string;
+  failed_records_count?: number;
+  skipped_records_count?: number;
+}): boolean =>
+  (item.failed_records_count ?? 0) > 0 ||
+  (item.skipped_records_count ?? 0) > 0 ||
+  ERROR_FILE_STATUSES.includes(item.status as ImportStatus);
 
 export interface ScheduledDataImport {
   name: string;
@@ -37,6 +54,7 @@ export interface ScheduledDataImport {
   completed_at: string | null;
   imported_records_count: number;
   failed_records_count: number;
+  skipped_records_count: number;
   error_log: string | null;
   import_log: string | null;
 }
@@ -47,5 +65,6 @@ export interface ImportStatusSummary {
   pendingScheduled: number;
   processing: number;
   processed: number;
+  partiallySuccessful: number;
   failedCancelled: number;
 }

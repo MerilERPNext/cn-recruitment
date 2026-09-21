@@ -714,6 +714,8 @@ export type AwardEmployeePointsResponse = {
 };
 
 // ─── Appreciation Leaderboard (get_appreciation_leaderboard) ──────────────────
+export type LeaderboardSpan = "organization" | "hod" | "cxo" | "hrbp";
+
 export type AppreciationLeaderboardParams = {
   tab?: "receivers" | "recognizers";
   program?: string;
@@ -723,7 +725,38 @@ export type AppreciationLeaderboardParams = {
   search?: string;
   start?: number;
   page_length?: number;
+  /** Scope the ranked list to a CXO's/HRBP's/HOD's team instead of the whole
+   * organization. Defaults to "organization" server-side. */
+  span?: LeaderboardSpan;
+  /** The User id of the specific CXO/HRBP/HOD picked from the "CXO: <name>" /
+   * "HRBP: <name>" dropdown (options from `useLeaderboardRelationOptions`).
+   * Omitted (dropdown left on "All") falls back to the viewer's own team. */
+  scope_person?: string;
 };
+
+export type LeaderboardRelationOption = { value: string; label: string };
+
+export type LeaderboardRelationOptionsResponse = {
+  success: boolean;
+  cxo: LeaderboardRelationOption[];
+  hod: LeaderboardRelationOption[];
+};
+
+/** The real CXO/HOD people for the Leaderboard's "CXO: <name>" / "HOD: <name>"
+ * dropdowns -- built the same way as the Work Connect feed's CXO/HRBP
+ * dropdowns (`get_relation_feed_options`), just scoped to CXO/HOD instead. */
+export const useLeaderboardRelationOptions = () =>
+  useQuery<LeaderboardRelationOptionsResponse>({
+    queryKey: ["recognition", "leaderboard-relation-options"],
+    queryFn: async () => {
+      const response = await FrappeAPI.callMethod(
+        "chatnext_work_connect.chatnext_work_connect.api.recognition_points.get_leaderboard_relation_options",
+        {},
+      );
+      return response as LeaderboardRelationOptionsResponse;
+    },
+    staleTime: 10 * 60 * 1000,
+  });
 
 export type LeaderboardPersonEntry = {
   rank: number;
@@ -744,6 +777,9 @@ export type AppreciationLeaderboardResponse = {
   total_count: number;
   /** Whether ranks/scores are driven by total points or appreciation count. */
   ranking_basis?: "points" | "count";
+  /** The span actually applied — falls back to "organization" server-side
+   * when the viewer has no HOD/CXO configured. */
+  span?: LeaderboardSpan;
   filter_options: { programs: { value: string; label: string }[] };
 };
 
@@ -1310,6 +1346,17 @@ export const useNominationDetail = (name?: string) => {
   });
 };
 
+/** What publishing actually did, beyond flipping the flag. */
+export type PublishNominationResult = {
+  success: boolean;
+  updated: string[];
+  published: number;
+  announced_on_vibe?: string[];
+  certificate_emailed?: string[];
+  /** nomination name -> why no certificate was mailed. Publishing still stood. */
+  certificate_errors?: Record<string, string>;
+};
+
 export const useNominationActions = () => {
   const queryClient = useQueryClient();
   const refresh = () =>
@@ -1355,17 +1402,21 @@ export const useNominationActions = () => {
         );
       }
 
-      return FrappeAPI.callMethod(`${RECOGNITION_API}.set_nomination_published_status`, {
-        names: opts.name,
-        published: 1,
-        ...(opts.certificateTemplate
-          ? { certificate_template: opts.certificateTemplate }
-          : {}),
-        ...(opts.ccEmployees?.length
-          ? { cc_employees: JSON.stringify(opts.ccEmployees) }
-          : {}),
-        ...(opts.ccEmails?.length ? { cc_email_ids: JSON.stringify(opts.ccEmails) } : {}),
-      });
+      const response = await FrappeAPI.callMethod(
+        `${RECOGNITION_API}.set_nomination_published_status`,
+        {
+          names: opts.name,
+          published: 1,
+          ...(opts.certificateTemplate
+            ? { certificate_template: opts.certificateTemplate }
+            : {}),
+          ...(opts.ccEmployees?.length
+            ? { cc_employees: JSON.stringify(opts.ccEmployees) }
+            : {}),
+          ...(opts.ccEmails?.length ? { cc_email_ids: JSON.stringify(opts.ccEmails) } : {}),
+        },
+      );
+      return response as PublishNominationResult;
     },
     onSuccess: refresh,
   });
@@ -1422,6 +1473,50 @@ export const useAwardEmployeePoints = (params: AwardEmployeePointsParams = {}) =
         { time_period, sort },
       );
       return response as AwardEmployeePointsResponse;
+    },
+  });
+};
+
+// ── Vibe Feed (real Work Connect feed, embedded in the Recognition > Vibe tab) ─
+
+export type WorkConnectPostAuthor = {
+  id: string;
+  name: string;
+  image?: string | null;
+};
+
+export type WorkConnectPost = {
+  id: string;
+  post_type: string;
+  content: string;
+  author: WorkConnectPostAuthor;
+  published_at?: string | null;
+  created: string;
+  is_award?: boolean;
+  banner_html?: string | null;
+  reaction_count: number;
+  comment_count: number;
+};
+
+export type VibeFeedResponse = {
+  posts: WorkConnectPost[];
+  has_more: boolean;
+  total: number;
+};
+
+// Wraps chatnext_work_connect's real feed listing endpoint so the Vibe tab's
+// Feed can show real posts (including Award announcements) instead of mock
+// data. Same direct-call convention as every other hook in this file.
+export const useVibeFeed = (page = 1, limit = 20) => {
+  return useQuery<VibeFeedResponse>({
+    queryKey: ["recognition", "vibe-feed", page, limit],
+    queryFn: async () => {
+      const response = await FrappeAPI.callMethod(
+        "chatnext_work_connect.chatnext_work_connect.api.post.get_feed",
+        { feed_type: "home", page, limit },
+      );
+      const data = (response as { data?: VibeFeedResponse } | null)?.data;
+      return data ?? { posts: [], has_more: false, total: 0 };
     },
   });
 };

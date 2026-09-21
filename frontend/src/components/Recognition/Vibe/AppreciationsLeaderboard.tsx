@@ -11,7 +11,9 @@ import { useTargetUser } from "../../../context/ViewedUserContext";
 import {
   useAppreciationLeaderboard,
   useAppreciationPrograms,
+  useLeaderboardRelationOptions,
   LeaderboardPersonEntry,
+  LeaderboardSpan,
   AppreciationApiItem,
 } from "../../../services/recognitionService";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
@@ -124,12 +126,30 @@ const AppreciationsLeaderboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState<"Receivers" | "Recognizers">("Receivers");
   const [appreciationTab, setAppreciationTab] = useState<"Received" | "Given">("Received");
   const [query, setQuery] = useState("");
+  // CXO / HOD dropdowns — same visual/interaction pattern as the Work Connect
+  // feed's "CXO: All" / "HRBP: All" selectors: empty value = "All" (unscoped),
+  // picking a person in one clears the other so only one scope is ever active
+  // at a time.
+  const [cxoPerson, setCxoPerson] = useState("");
+  const [hodPerson, setHodPerson] = useState("");
+  const { data: relationOptions } = useLeaderboardRelationOptions();
+  const cxoOptions = relationOptions?.cxo ?? [];
+  const hodOptions = relationOptions?.hod ?? [];
+
+  const span: LeaderboardSpan = cxoPerson ? "cxo" : hodPerson ? "hod" : "organization";
+  const scopePerson = cxoPerson || hodPerson || undefined;
 
   // ── Left: leaderboard (Receivers / Recognizers) ──────────────────────────────
   const { data: lbResp, isLoading: lbLoading } = useAppreciationLeaderboard({
     tab: activeTab === "Receivers" ? "receivers" : "recognizers",
     page_length: 100,
+    span,
+    scope_person: scopePerson,
   });
+  // The backend falls back to "organization" when the picked person couldn't
+  // be resolved (rather than returning an empty leaderboard) — surfaced here
+  // so the list's own label never silently disagrees with what's shown.
+  const appliedSpan = lbResp?.span ?? span;
   const entries = lbResp?.data ?? [];
   const top3 = entries.slice(0, 3);
   const rest = entries.slice(3);
@@ -214,6 +234,38 @@ const AppreciationsLeaderboard: React.FC = () => {
                 ))}
               </div>
               <div className="flex items-center gap-2">
+                <select
+                  value={cxoPerson}
+                  onChange={(e) => {
+                    setCxoPerson(e.target.value);
+                    setHodPerson("");
+                  }}
+                  aria-label="Filter leaderboard by CXO"
+                  className="rounded-lg border border-gray-200 py-1.5 pl-3 pr-8 text-xs font-medium text-gray-700 outline-none focus:border-primary focus:ring-1 focus:ring-primary/30"
+                >
+                  <option value="">CXO: All</option>
+                  {cxoOptions.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      CXO: {opt.label}
+                    </option>
+                  ))}
+                </select>
+                <select
+                  value={hodPerson}
+                  onChange={(e) => {
+                    setHodPerson(e.target.value);
+                    setCxoPerson("");
+                  }}
+                  aria-label="Filter leaderboard by HOD"
+                  className="rounded-lg border border-gray-200 py-1.5 pl-3 pr-8 text-xs font-medium text-gray-700 outline-none focus:border-primary focus:ring-1 focus:ring-primary/30"
+                >
+                  <option value="">HOD: All</option>
+                  {hodOptions.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      HOD: {opt.label}
+                    </option>
+                  ))}
+                </select>
                 <div className="relative w-44 sm:w-56">
                   <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-gray-400" />
                   <input
@@ -226,6 +278,15 @@ const AppreciationsLeaderboard: React.FC = () => {
                 </div>
               </div>
             </div>
+
+            {/* Only shown when the backend couldn't resolve the picked CXO/HOD
+                and silently fell back to organization-wide. */}
+            {!lbLoading && appliedSpan !== span && (
+              <p className="-mt-3 mb-4 text-xs text-amber-600">
+                That {span === "cxo" ? "CXO" : "HOD"} selection couldn't be applied —
+                showing the whole organization instead.
+              </p>
+            )}
 
             {lbLoading ? (
               <div className="py-16 text-center text-sm text-gray-400">Loading leaderboard…</div>

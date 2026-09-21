@@ -6,6 +6,13 @@ export interface GenderResponse {
   data: Genders[];
 }
 
+export interface RelationshipType {
+  value: string;
+  code: string;
+  alias: string;
+}
+
+
 export interface Address {
   name: string;
   address_title: string;

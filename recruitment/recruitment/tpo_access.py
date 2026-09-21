@@ -10,6 +10,8 @@ with nothing else visible.
 import frappe
 from frappe import _
 
+from recruitment.recruitment.communication_log import sendmail_with_log
+
 TPO_ROLE = "TPO"
 
 # The only Institute TPO Contact role that gets a portal user + invite email. An
@@ -196,7 +198,7 @@ def _send_set_password_email(user, display_name=None, override_template=None):
 		from frappe.email.doctype.email_template.email_template import get_email_template
 
 		rendered = get_email_template(template_name, context)
-		frappe.sendmail(
+		sendmail_with_log(
 			recipients=[user.email],
 			subject=rendered.get("subject") or _("Set your password - TPO access"),
 			message=rendered.get("message"),

@@ -126,7 +126,6 @@ class TestCampusInstituteLock(FrappeTestCase):
 			"drive_owner": "Administrator",
 			"drive_start_date": start,
 			"drive_end_date": add_days(start, 20),
-			"fixed_pay": 500000, "variable_pay": 0,
 			"campus_invites": [{"campus_invite": self.invite}],
 			"participating_institutes": [{"institute": i} for i in institutes],
 		})
@@ -260,7 +259,6 @@ class TestCampusInstituteLock(FrappeTestCase):
 			"drive_owner": "Administrator",
 			"drive_start_date": add_days(nowdate(), 7),
 			"drive_end_date": add_days(nowdate(), 20),
-			"fixed_pay": 500000, "variable_pay": 0,
 			"campus_invites": [{"campus_invite": self.invite}],
 		})
 		doc.flags.ignore_mandatory = True

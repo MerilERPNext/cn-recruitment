@@ -4,25 +4,26 @@ import { Employee } from "../../types/employee";
 
 interface SearchCardProps {
   employees?: Employee[];
-
   onRemove: (idx: number) => void;
   showRemove?: boolean;
+  activeIdx?: number;
 }
 
 const SearchCard: React.FC<SearchCardProps> = ({
   employees,
-
   onRemove,
   showRemove = false,
+  activeIdx,
 }) => {
   return (
-    <div className="w-full   min-w-3xl mx-auto  px-0 sm:px-0 ">
+    <div className="w-full min-w-0 mx-auto px-0">
       {employees?.map((emp, idx) => (
         <EmployeeRow
           idx={idx}
           onRemove={onRemove}
           showRemove={showRemove}
-          key={emp.name}
+          isActive={activeIdx === idx}
+          key={emp.name || emp.employee_id || idx}
           emp={emp}
         />
       ))}

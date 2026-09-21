@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import toast from "react-hot-toast";
 import {
   ChevronLeft,
   ChevronRight,
@@ -183,8 +184,25 @@ const AwardProgramDetail: React.FC = () => {
     if (!confirm) return;
     setActionError("");
     try {
-      await publish.mutateAsync({ name: confirm.row.nomination_id, ...payload });
+      const result = await publish.mutateAsync({
+        name: confirm.row.nomination_id,
+        ...payload,
+      });
       setConfirm(null);
+
+      // The nomination is published either way; the certificate is a separate
+      // step that can fail on its own (no template, no address on the employee,
+      // no outgoing email account). Say so instead of reporting a flat success.
+      const certificateError = Object.values(result?.certificate_errors ?? {})[0];
+      if (certificateError) {
+        toast.error(`Published, but no certificate was emailed: ${certificateError}`, {
+          duration: 8000,
+        });
+      } else if (result?.certificate_emailed?.length) {
+        toast.success("Published. Certificate emailed to the nominee.");
+      } else {
+        toast.success("Nomination published.");
+      }
     } catch (e) {
       setActionError((e as Error)?.message || "Publish failed. Please try again.");
     }

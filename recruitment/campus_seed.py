@@ -120,7 +120,7 @@ def _ensure_campus_field():
             "fieldtype": "Float",
             "view_campus": 1, "mandatory_campus": 0,
             "view_careers": 0, "view_ijp": 0, "view_refer": 0, "view_preoffer": 0,
-            "visibility": "All", "editability": "Editable",
+            "visibility": '["All"]', "editability": '["All"]',
         })
         settings.save(ignore_permissions=True)
 
@@ -132,6 +132,72 @@ def _aggregate_for(gi, c, oi=0):
     if (c * 3 + gi + oi * 4) % 10 < 3:
         return 50 + ((c + gi + oi) % 9)             # 50-58  -> knocked out (Hold)
     return AGG_PASS_MARK + 2 + ((c * 7 + gi + oi * 5) % 34)  # 62-95 -> passes numeric rule
+
+
+# Education rows a campus application must carry, cached per opening. HR can demand
+# Education Stages (Job Applicant Profile Settings -> Required Education Stages) and
+# mandatory columns inside the grid; both are enforced on submit, so the seed has to
+# supply them exactly as a real candidate would.
+_EDU_RULE_CACHE = {}
+
+
+def _edu_rule_for(opening):
+    """``(fieldname, stage_requirement, mandatory columns)`` for `opening`, or None."""
+    if opening not in _EDU_RULE_CACHE:
+        from recruitment.api.channels._common import get_application_fields_for_channel
+
+        found = None
+        for f in get_application_fields_for_channel(opening, "campus"):
+            if f.get("stage_requirement"):
+                found = (
+                    f["reference_name"],
+                    f["stage_requirement"],
+                    [c for c in (f.get("table_fields") or []) if c.get("reqd_channel")],
+                )
+                break
+        _EDU_RULE_CACHE[opening] = found
+    return _EDU_RULE_CACHE[opening]
+
+
+def _column_value(column, year):
+    """A value the seed can put in a mandatory education column."""
+    fieldtype, options = column["fieldtype"], (column.get("options") or "")
+    if column["fieldname"] in ("year_of_passing", "custom_passing_year"):
+        return year
+    if fieldtype == "Select":
+        return next((o for o in options.split("\n") if o.strip()), "")
+    if fieldtype == "Link":
+        picked = frappe.get_all(options, pluck="name", limit=1) if options else []
+        return picked[0] if picked else None
+    if fieldtype in ("Int", "Float", "Percent", "Currency"):
+        return year
+    if fieldtype in ("Date", "Datetime"):
+        return today()
+    if fieldtype == "Check":
+        return 0
+    return "-"
+
+
+def _education_for(opening, seed):
+    """``{grid fieldname: [row per demanded stage]}`` — merged into the form data. The
+    passing years walk backwards from the most recent stage so a candidate's history
+    reads in order."""
+    rule = _edu_rule_for(opening)
+    if not rule:
+        return {}
+    fieldname, requirement, mandatory_columns = rule
+    stages = requirement["required_stages"]
+    base_year = 2018 + (seed % 4)
+    rows = []
+    for i, stage in enumerate(stages):
+        year = base_year + i * 2
+        row = {requirement["fieldname"]: stage}
+        for column in mandatory_columns:
+            if column["fieldname"] == requirement["fieldname"]:
+                continue
+            row[column["fieldname"]] = _column_value(column, year)
+        rows.append(row)
+    return {fieldname: rows}
 
 
 def _application_field_rows():
@@ -148,8 +214,8 @@ def _application_field_rows():
             "view_campus": 1,
             "mandatory_campus": 0,
             "view_careers": 1, "view_ijp": 0, "view_refer": 0, "view_preoffer": 0,
-            "visibility": "All",
-            "editability": "Editable",
+            "visibility": '["All"]',
+            "editability": '["All"]',
         })
     return rows
 
@@ -391,6 +457,7 @@ def run(regions_to_use=4, total_institutes=10, candidates_per_institute=50, appl
                             "custom_applicant_last_name": ln,
                             "phone_number": phone,
                             AGG_FIELD: _aggregate_for(gi_, c_, oi),
+                            **_education_for(opening, c_ + gi_),
                         }
                         if gender in allowed_ja_genders:
                             form_data["custom_gender"] = gender
@@ -1801,7 +1868,11 @@ def create_ready_mini_drives(count=3, per=10):
                 ln = LAST_NAMES[gnum % len(LAST_NAMES)]
                 op = openings[c % len(openings)]
                 ja = frappe.new_doc("Job Applicant")
-                ja.applicant_name = f"{fn} {ln}"
+                # First name in the first-name box, surname in the surname box. The
+                # whole name is derived into custom_full_name on validate — seeding a
+                # merged "Fn Ln" here is what the split_applicant_name_parts patch
+                # exists to undo.
+                ja.applicant_name = fn
                 if ja.meta.has_field("custom_applicant_last_name"):
                     ja.custom_applicant_last_name = ln
                 ja.email_id = f"{CAND_PREFIX}m{idx + 1}.{c + 1:03d}{TPO_DOMAIN}"
@@ -1913,7 +1984,8 @@ def create_gd_test_drive(drive_name="TEST Drive - GD Grouping", colleges=3,
                     fn = FIRST_NAMES[made % len(FIRST_NAMES)]
                     ln = LAST_NAMES[made % len(LAST_NAMES)]
                     ja = frappe.new_doc("Job Applicant")
-                    ja.applicant_name = f"{fn} {ln}"
+                    # Name parts stay separate — see the note in the mixed-drive seed.
+                    ja.applicant_name = fn
                     if ja.meta.has_field("custom_applicant_last_name"):
                         ja.custom_applicant_last_name = ln
                     ja.email_id = f"{CAND_PREFIX}gd{ci}{oi}.{c + 1:03d}{TPO_DOMAIN}"
@@ -1952,10 +2024,15 @@ def create_gd_test_drive(drive_name="TEST Drive - GD Grouping", colleges=3,
         offer.hiring_stage = next((s for s in ("Pre Job Offer", "Job Offer") if s in stages),
                                   offer.hiring_stage)
 
-    # The campus package, so an offer raised off this drive comes out prefilled.
-    if doc.meta.get_field("fixed_pay"):
-        doc.fixed_pay = fixed_pay
-        doc.variable_pay = variable_pay
+    # The package now lives on the Job Opening, not the drive — an offer reads it
+    # from the opening the candidate applied to (job_offer._job_opening_pay), and the
+    # drive's own rows mirror it. Written here so an offer raised off this seeded
+    # drive still comes out prefilled.
+    if frappe.db.has_column("Job Opening", "fixed_pay"):
+        for op in openings:
+            frappe.db.set_value("Job Opening", op.name,
+                                {"fixed_pay": fixed_pay, "variable_pay": variable_pay},
+                                update_modified=False)
 
     gd = next((r for r in doc.rounds if r.requires_gd_grouping), None)
     emps = frappe.get_all("Employee", filters={"user_id": ["!=", ""], "status": "Active"},
@@ -2089,7 +2166,7 @@ def create_offer_test_drive(drive_name="TEST Drive - Offer Flow", colleges=2,
 
     _log("=" * 72)
     _log(f"OFFER TEST DRIVE: {drive}  ({drive_name})")
-    _log(f"  package: fixed {fixed_pay} · variable {variable_pay}  (Offer Package section)")
+    _log(f"  package: fixed {fixed_pay} · variable {variable_pay}  (on each Job Opening)")
     _log(f"  requisition {requisition} linked to {', '.join(built['openings'])}")
     _log(f"  GD pushed: advanced={pushed['advanced']} rejected={pushed['rejected']}")
     _log(f"  {moved} candidate(s) now waiting at the Offer round stage “{stage}”")

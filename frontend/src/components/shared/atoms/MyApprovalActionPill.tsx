@@ -1,14 +1,18 @@
 "use client";
 
 import { useState } from "react";
-import { Repeat1, SquarePen, Trash2, Wallet, X, BellRing } from "lucide-react";
+import { createPortal } from "react-dom";
+import { Repeat1, SquarePen, Trash2, Wallet, X, BellRing, UserCheck } from "lucide-react";
 import type { JSX } from "react";
 import Tooltip from "../Tooltip";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import { useGetUiPermission } from "../../../hooks/userUiPermission";
 import { getActionsEnabled } from "../../../utils/uiPermission";
 import { useNudge } from "../../../hooks/useNudge";
-
+import useCurrentUser, { isAdminUser } from "../../../hooks/useCurrentUser";
+import { useActButtonSetting } from "../../../hooks/useActButtonSetting";
+import { isTaskAssigned, extractRequestItemData } from "../../../utils/taskAssignmentUtils";
+import MyRequestActModal from "../molecules/MyRequestActModal";
 
 type MyApprovalActionPillProps = {
   /** to inforce ui permission to show hide action buttons
@@ -22,7 +26,7 @@ type MyApprovalActionPillProps = {
       replace?: string;
       pay?: string;
       nudge?: string;
-    }
+    };
   };
   canRevoke?: boolean;
   canEdit?: boolean;
@@ -40,10 +44,18 @@ type MyApprovalActionPillProps = {
   isResubmit?: boolean;
   todoId?: string | string[];
   isPendingStatus?: boolean;
+  canNudge?: boolean;
+
+  // Props for global Act button functionality
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  requestItem?: any;
+  actions?: string[];
+  onActionComplete?: () => void;
+  onAct?: () => void;
 };
 
 type ActionItem = {
-  key: "revoke" | "edit" | "replace" | "pay" | "nudge";
+  key: "revoke" | "edit" | "replace" | "pay" | "nudge" | "act";
   tooltip: string;
   icon: JSX.Element;
   onClick?: () => void;
@@ -65,16 +77,51 @@ const MyApprovalActionPill = ({
   payLoading = false,
   isResubmit = false,
   todoId,
-  isPendingStatus
+  isPendingStatus,
+  canNudge = true,
+  requestItem,
+  actions: propActions,
+  onActionComplete,
+  onAct,
 }: MyApprovalActionPillProps) => {
-
   const [showRevokeConfirm, setShowRevokeConfirm] = useState(false);
+  const [showActModal, setShowActModal] = useState(false);
   const { isDesktop } = useScreenSize();
   const { mutate: sendNudge, isPending: nudging } = useNudge();
 
+  const { data: currentUser } = useCurrentUser();
+  const isSystemManager = isAdminUser(currentUser || null);
+  const { data: showActOnAllTasks = false } = useActButtonSetting();
+
+  // Extract task assignment and actions
+  const itemData = requestItem ? extractRequestItemData(requestItem) : null;
+  const effectiveTodoId = todoId || itemData?.todoId;
+  const effectiveActions = propActions ?? itemData?.actions ?? [];
+  const effectiveStatus = (itemData?.status || "").toLowerCase();
+
+  const isActionableStatus =
+    isPendingStatus ||
+    effectiveStatus === "pending" ||
+    effectiveStatus === "open" ||
+    effectiveStatus === "draft" ||
+    effectiveStatus === "on hold";
+
+  const isAssigned = isTaskAssigned(requestItem);
+
+  const canShowAct =
+    isSystemManager &&
+    !!requestItem &&
+    effectiveActions.length > 0 &&
+    isActionableStatus &&
+    (showActOnAllTasks || !isAssigned);
+
   const { data: uiPermissionData } = useGetUiPermission(uiPermission?.app);
   const actionsEnabledFromKeys = Object.values(uiPermission?.actionKeysMap ?? []);
-  const actionsEnabled = getActionsEnabled(uiPermissionData, actionsEnabledFromKeys, uiPermission?.page);
+  const actionsEnabled = getActionsEnabled(
+    uiPermissionData,
+    actionsEnabledFromKeys,
+    uiPermission?.page
+  );
 
   const revokeAllowed =
     !!canRevoke &&
@@ -97,12 +144,20 @@ const MyApprovalActionPill = ({
       actionsEnabled[uiPermission?.actionKeysMap?.pay]);
 
   const nudgeAllowed =
-    !!todoId &&
+    canNudge &&
+    !!effectiveTodoId &&
     !!isPendingStatus &&
     (!uiPermission?.actionKeysMap?.nudge ||
       actionsEnabled[uiPermission?.actionKeysMap?.nudge]);
 
-  const hasActions = revokeAllowed || editAllowed || replaceAllowed || payAllowed || nudgeAllowed;
+  const hasActions =
+    revokeAllowed ||
+    editAllowed ||
+    replaceAllowed ||
+    payAllowed ||
+    nudgeAllowed ||
+    canShowAct;
+
   if (!hasActions) {
     if (variant === "buttons") return null;
 
@@ -123,6 +178,21 @@ const MyApprovalActionPill = ({
   };
 
   const actions: ActionItem[] = [];
+
+  if (canShowAct) {
+    actions.push({
+      key: "act",
+      tooltip: "Act",
+      onClick: () => {
+        if (onAct) {
+          onAct();
+        } else {
+          setShowActModal(true);
+        }
+      },
+      icon: <UserCheck className="w-4 h-4 text-white md:text-indigo-600" />,
+    });
+  }
 
   if (revokeAllowed && onRevoke) {
     actions.push({
@@ -158,30 +228,31 @@ const MyApprovalActionPill = ({
       tooltip: "Pay",
       loading: payLoading,
       onClick: onPay,
-      icon: <Wallet className={"w-4 h-4 text-white md:text-secondary"} />,
+      icon: <Wallet className="w-4 h-4 text-white md:text-secondary" />,
     });
   }
 
-  if (nudgeAllowed && todoId) {
+  if (nudgeAllowed && effectiveTodoId) {
     actions.push({
       key: "nudge",
       tooltip: "Nudge",
       loading: nudging,
-      onClick: () => sendNudge(todoId),
+      onClick: () => sendNudge(effectiveTodoId),
       icon: <BellRing className="w-4 h-4 text-white md:text-blue-500" />,
     });
   }
 
-  const revokeConfirmModal = showRevokeConfirm ? (
+  const revokeConfirmModalContent = showRevokeConfirm ? (
     <div
       className="fixed inset-0 z-[9999] flex items-end md:items-center justify-center bg-black bg-opacity-50 md:backdrop-blur-sm"
       onClick={() => setShowRevokeConfirm(false)}
     >
       <div
-        className={`bg-white w-full ${isDesktop
-          ? "max-w-sm rounded-lg shadow-xl"
-          : "rounded-t-2xl shadow-2xl"
-          }`}
+        className={`bg-white w-full ${
+          isDesktop
+            ? "max-w-sm rounded-lg shadow-xl"
+            : "rounded-t-2xl shadow-2xl"
+        }`}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -227,6 +298,21 @@ const MyApprovalActionPill = ({
     </div>
   ) : null;
 
+  const revokeConfirmModal =
+    revokeConfirmModalContent && typeof document !== "undefined"
+      ? createPortal(revokeConfirmModalContent, document.body)
+      : revokeConfirmModalContent;
+
+  const actModal =
+    showActModal && requestItem ? (
+      <MyRequestActModal
+        isOpen={showActModal}
+        onClose={() => setShowActModal(false)}
+        requestItem={requestItem}
+        onActionComplete={onActionComplete}
+      />
+    ) : null;
+
   // ✅ MOBILE BUTTON VARIANT
   if (variant === "buttons") {
     return (
@@ -241,7 +327,9 @@ const MyApprovalActionPill = ({
                 action.onClick?.();
               }}
               disabled={action.loading}
-              className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-primary text-white text-sm"
+              className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-white text-sm ${
+                action.key === "act" ? "bg-indigo-600 hover:bg-indigo-700" : "bg-primary"
+              }`}
             >
               {action.loading ? (
                 <span className="w-4 h-4 border border-white border-t-transparent rounded-full animate-spin" />
@@ -251,6 +339,8 @@ const MyApprovalActionPill = ({
                   <span className="capitalize">
                     {action.key === "edit" && isResubmit
                       ? "Resubmit"
+                      : action.key === "act"
+                      ? "Act"
                       : action.key}
                   </span>
                 </>
@@ -259,6 +349,7 @@ const MyApprovalActionPill = ({
           ))}
         </div>
         {revokeConfirmModal}
+        {actModal}
       </>
     );
   }
@@ -293,6 +384,7 @@ const MyApprovalActionPill = ({
         ))}
       </div>
       {revokeConfirmModal}
+      {actModal}
     </>
   );
 };

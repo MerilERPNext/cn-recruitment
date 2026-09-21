@@ -1,8 +1,14 @@
 {
+ "app": "recruitment",
  "charts": [],
- "content": "[{\"id\": \"er_head\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>External Recruiter</b></span>\", \"col\": 12}}, {\"id\": \"er_so\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Job Openings\", \"col\": 4}}, {\"id\": \"er_sa\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Job Applicants\", \"col\": 4}}]",
+ "content": "[{\"id\": \"er_head\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>External Recruiter</b></span>\", \"col\": 12}}, {\"id\": \"er_so\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Job Openings\", \"col\": 4}}, {\"id\": \"er_sa\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Job Applicants\", \"col\": 4}}, {\"id\": \"er_openings_block\", \"type\": \"custom_block\", \"data\": {\"custom_block_name\": \"External Recruiter Openings\", \"col\": 12}}]",
  "creation": "2026-06-23 12:31:24.381684",
- "custom_blocks": [],
+ "custom_blocks": [
+  {
+   "custom_block_name": "External Recruiter Openings",
+   "label": "External Recruiter Openings"
+  }
+ ],
  "docstatus": 0,
  "doctype": "Workspace",
  "hide_custom": 0,
@@ -12,7 +18,7 @@
  "is_hidden": 0,
  "label": "External Recruiter",
  "links": [],
- "modified": "2026-06-24 13:25:55.009948",
+ "modified": "2026-09-08 13:33:36.201679",
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "External Recruiter",
@@ -42,5 +48,6 @@
    "type": "DocType"
   }
  ],
- "title": "External Recruiter"
+ "title": "External Recruiter",
+ "type": "Workspace"
 }

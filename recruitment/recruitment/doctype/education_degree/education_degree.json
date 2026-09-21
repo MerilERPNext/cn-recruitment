@@ -6,7 +6,8 @@
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
-  "degree"
+  "degree",
+  "education_stage"
  ],
  "fields": [
   {
@@ -16,6 +17,14 @@
    "label": "Degree",
    "reqd": 1,
    "unique": 1
+  },
+  {
+   "fieldname": "education_stage",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Education Stage",
+   "options": "Education Stage"
   }
  ],
  "grid_page_length": 50,

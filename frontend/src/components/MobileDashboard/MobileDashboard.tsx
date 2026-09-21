@@ -34,6 +34,7 @@ import {
 import TasksAwaiting from "../../components/DashboardComponent/TasksAwaiting";
 import EmployeeFallback from "../../components/EmployeeFallback";
 import NotificationBell from "../../components/Notification/NotificationBell";
+import RedeemablePointsBadge from "../../components/Notification/RedeemablePointsBadge";
 import Requests from "../../components/Requests";
 import Button from "../../components/shared/atoms/Button";
 import { Typography } from "../../components/shared/atoms/Typography";
@@ -42,7 +43,7 @@ import Badge from "../../components/shared/Badge";
 import Carousel, { CarouselSlide } from "../../components/shared/molecules/Carousel";
 import { NoticeSlide } from "../../components/shared/molecules/NoticeSlide";
 import MobileDashboardSkeleton from "../../components/shared/molecules/Skeletons/MobileDashboardSkeletom";
-import SearchMembers from "../../components/shared/SearchMembers";
+import CommandSearchBar from "../../components/shared/CommandSearchBar";
 import SideDrawer from "../../components/shared/SideDrawer";
 import ViewingAsBanner from "../../components/ViewingAsBanner";
 import MicroAppInDashboard from "../../components/DashboardComponent/MicroAppInDashboard";
@@ -141,7 +142,7 @@ const MobileDashboard: React.FC = () => {
       CompanyLogo.length > 0 &&
       currentEmployeeCompany
       ? CompanyLogo.find(
-        (company) => company.company_name === currentEmployeeCompany,
+        (company) => company.name === currentEmployeeCompany,
       )
       : CompanyLogo?.[0];
 
@@ -376,7 +377,9 @@ const MobileDashboard: React.FC = () => {
             </Typography>
           </Button>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <RedeemablePointsBadge variant="light" />
+
             <button
               onClick={() => navigate("/webapp/notification-log")}
               className="relative p-2 hover:bg-primary-400/20 rounded-lg transition-colors"
@@ -733,8 +736,8 @@ const MobileDashboard: React.FC = () => {
         showBackButton
         className="px-0"
       >
-        <div className="py-4">
-          <SearchMembers />
+        <div className="py-4 px-3 w-full flex justify-center">
+          <CommandSearchBar />
         </div>
       </SideDrawer>
       <GeoLocationModal

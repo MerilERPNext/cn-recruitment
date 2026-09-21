@@ -52,14 +52,10 @@ const NotificationList = () => {
 
   const LIMIT = 20;
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageCache, setPageCache] = useState<Record<number, NotificationLog[]>>({});
 
   const { data: currentUser } = useCurrentUser();
 
-
-  const effectiveUser = currentUser?.name;
-
-
+  const effectiveUser = currentUser?.email || currentUser?.name;
 
   // ✅ Pass readFilter to API — server-side filtering
   const readFilter = TAB_FILTER[activeTab];
@@ -97,21 +93,12 @@ const NotificationList = () => {
   const markAsRead = useMarkAsRead();
   const markAllAsRead = useMarkAllAsRead();
 
-  // ✅ Reset page + cache when tab changes
+  // ✅ Reset page when tab changes
   useEffect(() => {
     setCurrentPage(1);
-    setPageCache({});
   }, [activeTab]);
 
-  useEffect(() => {
-    if (!apiNotifications.length) return;
-    setPageCache((prev) => ({
-      ...prev,
-      [currentPage]: apiNotifications,
-    }));
-  }, [apiNotifications, currentPage]);
-
-  const currentNotifications: NotificationLog[] = pageCache[currentPage] ?? [];
+  const currentNotifications: NotificationLog[] = apiNotifications;
 
   // ✅ No client-side filter needed — API already filtered
   const filteredNotifications = currentNotifications;
@@ -120,11 +107,24 @@ const NotificationList = () => {
   const hasNextPage = apiNotifications.length === LIMIT;
   const totalPages = hasNextPage ? currentPage + 1 : currentPage;
 
-  // ✅ Unread IDs in current page (for Mark All as Read scope)
+  // ✅ Fetch unread record from API to check if any unread notifications exist globally
+  const { data: unreadApiData } = useNotifications(
+    effectiveUser,
+    1,
+    0,
+    0
+  );
+  const hasUnreadApiRecord = (unreadApiData?.length ?? 0) > 0;
+
+  // ✅ Unread IDs in current page (for unread tab scope)
   const unreadIds = useMemo(
     () => currentNotifications.filter((n) => n.read === 0).map((n) => n.name),
     [currentNotifications]
   );
+
+  const hasUnread =
+    activeTab === "all" ? hasUnreadApiRecord : unreadIds.length > 0;
+  const isMarkAllDisabled = !hasUnread || markAllAsRead.isPending;
 
   // ✅ Handlers
   const handleItemClick = async (item: NotificationLog) => {
@@ -139,26 +139,12 @@ const NotificationList = () => {
   };
 
   const handleDrawerClose = () => {
-    if (selectedNotification && selectedNotification.read === 0) {
-      setPageCache((prev) => ({
-        ...prev,
-        [currentPage]: (prev[currentPage] ?? []).map((n) =>
-          n.name === selectedNotification.name ? { ...n, read: 1 } : n
-        ),
-      }));
-    }
     setSelectedNotification(null);
   };
 
   const handleMarkAllAsRead = async () => {
-    if (!unreadIds.length) return;
     try {
-      await markAllAsRead.mutateAsync(unreadIds);
-      // Optimistically update cache
-      setPageCache((prev) => ({
-        ...prev,
-        [currentPage]: (prev[currentPage] ?? []).map((n) => ({ ...n, read: 1 })),
-      }));
+      await markAllAsRead.mutateAsync(effectiveUser);
     } catch (err) {
       console.error(err);
     }
@@ -244,11 +230,13 @@ const NotificationList = () => {
   };
 
   const layout = (
-    <div className="flex flex-col h-screen overflow-hidden">
-      {/* Sticky Header */}
-      <div className="flex-shrink-0">
-        <HeaderBar title="Notification Log" />
-      </div>
+    <div className={`flex flex-col ${isDesktop ? "h-full" : "h-screen"} overflow-hidden`}>
+      {/* Sticky Header - Mobile Only */}
+      {!isDesktop && (
+        <div className="flex-shrink-0">
+          <HeaderBar title="Notification Log" />
+        </div>
+      )}
 
       {/* ✅ Sticky Tabs + Mark All as Read */}
       <div className="flex-shrink-0 flex items-center justify-between border-b bg-white pr-3">
@@ -269,18 +257,20 @@ const NotificationList = () => {
           ))}
         </div>
 
-        {/* ✅ Mark All as Read — right side */}
-        <button
-          onClick={handleMarkAllAsRead}
-          disabled={unreadIds.length === 0 || markAllAsRead.isPending}
-          className={`text-xs  font-medium whitespace-nowrap transition-colors
-            ${unreadIds.length === 0 || markAllAsRead.isPending
-              ? "text-gray-300 border border-gray-400 py-1 px-2 rounded hover:bg-gray-100 cursor-not-allowed"
-              : "text-primary border border-primary-400 py-1 px-2 rounded hover:bg-primary-100 cursor-pointer"
-            }`}
-        >
-          {markAllAsRead.isPending ? "Marking..." : "Mark all as read"}
-        </button>
+        {/* ✅ Mark All as Read — right side (hidden on 'read' tab) */}
+        {activeTab !== "read" && (
+          <button
+            onClick={handleMarkAllAsRead}
+            disabled={isMarkAllDisabled}
+            className={`text-xs font-medium whitespace-nowrap transition-colors
+              ${isMarkAllDisabled
+                ? "text-gray-300 border border-gray-400 py-1 px-2 rounded hover:bg-gray-100 cursor-not-allowed"
+                : "text-primary border border-primary-400 py-1 px-2 rounded hover:bg-primary-100 cursor-pointer"
+              }`}
+          >
+            {markAllAsRead.isPending ? "Marking..." : "Mark all as read"}
+          </button>
+        )}
       </div>
 
       {/* Scrollable List */}

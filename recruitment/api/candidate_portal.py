@@ -319,13 +319,24 @@ def _apply_onboarding_automation_fields(doc, applicant, job_offer_name=None):
         if not doc.get("custom_onboarding_recruiter") and applicant.get("custom_recruiter"):
             doc.custom_onboarding_recruiter = applicant.get("custom_recruiter")
 
+        # SPOCs: the Onboarding Settings list; with none configured, the user who
+        # created the Job Offer (else whoever is creating this onboarding).
+        from recruitment.recruitment.onboarding_spocs import (
+            set_onboarding_spocs,
+            settings_spocs,
+        )
+
         if not doc.get("custom_onboarding_spoc"):
-            spoc = None
-            if job_offer_name:
-                spoc = frappe.db.get_value("Job Offer", job_offer_name, "owner")
-            spoc = spoc or frappe.session.user
-            if spoc and spoc != "Guest" and frappe.db.exists("User", spoc):
-                doc.custom_onboarding_spoc = spoc
+            spocs = settings_spocs()
+            if not spocs:
+                spoc = None
+                if job_offer_name:
+                    spoc = frappe.db.get_value("Job Offer", job_offer_name, "owner")
+                spoc = spoc or frappe.session.user
+                if spoc and spoc != "Guest" and frappe.db.exists("User", spoc):
+                    spocs = [spoc]
+            if spocs:
+                set_onboarding_spocs(doc, spocs)
 
         # Rule-based multi assignments (lists of users) + single Manager.
         try:
@@ -353,6 +364,115 @@ def _apply_onboarding_automation_fields(doc, applicant, job_offer_name=None):
                 doc.custom_manager = manager
     except Exception:
         frappe.log_error(frappe.get_traceback(), "materialize_onboarding: apply automation fields failed")
+
+
+ONBOARDING_TEMPLATE = "Employee Onboarding Template"
+# Optional per-activity Email Template (recruitment/custom/employee_boarding_activity.json).
+ACTIVITY_TEMPLATE_FIELD = "custom_email_template"
+
+
+def _default_onboarding_template():
+    """The Employee Onboarding Template flagged as the default, or None.
+
+    Guarded by ``has_column``: the flag is a custom field created by
+    sync_customizations, so a site mid-migrate simply has no default and the
+    onboarding is created without a template, exactly as before.
+
+    Marking two templates is a misconfiguration rather than a supported state;
+    the most recently edited one wins so that re-flagging a template is what
+    takes effect, instead of whichever happens to sort first.
+    """
+    if not frappe.db.has_column(ONBOARDING_TEMPLATE, "custom_is_default"):
+        return None
+    return frappe.db.get_value(
+        ONBOARDING_TEMPLATE, {"custom_is_default": 1}, "name", order_by="modified desc"
+    )
+
+
+def _apply_default_onboarding_template(doc):
+    """Put the default template — and its activities — on a new onboarding.
+
+    The activities have to be copied here, not just the link. HRMS fills that
+    table from a handler on the Desk form only (employee_onboarding.js reacting
+    to the field being changed by hand), so an onboarding created in code with
+    only the link set would name a template and carry NO tasks — worse than the
+    blank one it replaced, and silently so.
+
+    The rows are read with permissions IGNORED, and that is the point of
+    ``_template_activities``: the onboarding is materialised by whoever triggered
+    it, and when the candidate accepts their offer from the public portal link
+    that is **Guest**. Frappe's read then checks Guest's permission on
+    "Employee Boarding Activity", finds none, and raises — so every
+    candidate-accepted onboarding was created with no template and no activities,
+    silently, because this function swallows its own errors. Copying a template
+    onto an onboarding the system is already creating is a system action; it is
+    not the candidate's read.
+
+    The ACTIVITIES are what this is for, so a named template is not a reason to
+    skip: an onboarding that already carries a template but an empty table is
+    exactly the broken state this fixes (a template with no tasks behind it), and
+    it is filled from that template rather than from the default. Only a table
+    that already has rows is left alone — those rows are HR's.
+
+    Never raises. A missing or misconfigured template must not stop a candidate's
+    onboarding from being created — the field stays empty and HR picks one, which
+    is the behaviour this feature replaces.
+    """
+    try:
+        if doc.get("activities"):
+            return
+
+        # Whatever the doc already names wins: this fills its missing tasks, it
+        # does not re-point the onboarding at the default template.
+        template = doc.get("employee_onboarding_template") or _default_onboarding_template()
+        if not template:
+            return
+
+        # Read BEFORE the link is written, so a failed read cannot leave the
+        # onboarding naming a template with nothing under it.
+        activities = _template_activities(template)
+
+        doc.employee_onboarding_template = template
+        for activity in activities:
+            doc.append("activities", activity)
+    except Exception:
+        frappe.log_error(
+            frappe.get_traceback(),
+            "materialize_onboarding: default onboarding template failed",
+        )
+
+
+def _template_activities(template):
+    """The template's activities, read as a system action.
+
+    Same rows, same order and same fields as HRMS's own
+    ``get_onboarding_details`` — which the Desk form handler uses — but with
+    ``ignore_permissions``, so it works whoever the session user happens to be.
+    A candidate accepting an offer from the portal is Guest, and Guest has no
+    permission on this doctype.
+    """
+    fields = [
+        "activity_name",
+        "role",
+        "user",
+        "required_for_employee_creation",
+        "description",
+        "task_weight",
+        "begin_on",
+        "duration",
+    ]
+    # The activity's optional Email Template travels with it, so the task
+    # created from this row knows which mail to send.
+    if frappe.get_meta("Employee Boarding Activity").has_field(ACTIVITY_TEMPLATE_FIELD):
+        fields.append(ACTIVITY_TEMPLATE_FIELD)
+
+    return frappe.get_all(
+        "Employee Boarding Activity",
+        fields=fields,
+        filters={"parent": template, "parenttype": ONBOARDING_TEMPLATE},
+        order_by="idx",
+        ignore_permissions=True,
+    )
 
 
 # Employee Onboarding fields that materialize_onboarding_from_applicant manages
@@ -587,7 +707,23 @@ def materialize_onboarding_from_applicant(job_applicant_id, prefill=None):
     )
     if doj:
         doc.date_of_joining = doj
-    bbo = prefill.get("boarding_begins_on") or doc.date_of_joining
+    # Onboarding begins the day the candidate accepted, not the day they join:
+    # that is when the joining formalities actually start, and it is usually weeks
+    # earlier than the DOJ this used to copy.
+    #
+    # Read from the offer's stamped acceptance date rather than from "today",
+    # because the onboarding is not always created at the moment of acceptance —
+    # it is deferred behind DPDP consent, and can be raised by hand from the
+    # Action Center days later (see job_offer.stamp_offer_accepted_on).
+    #
+    # The DOJ stays as the last fallback, so an offer accepted before that stamp
+    # existed produces exactly the date it produces today.
+    bbo = (
+        prefill.get("boarding_begins_on")
+        or (frappe.db.get_value("Job Offer", job_offer, "custom_offer_accepted_on")
+            if job_offer else None)
+        or doc.date_of_joining
+    )
     if bbo:
         doc.boarding_begins_on = bbo
 
@@ -598,6 +734,11 @@ def materialize_onboarding_from_applicant(job_applicant_id, prefill=None):
 
     # Onboarding Automation tab — Recruiter / SPOC / Buddy-Manager links.
     _apply_onboarding_automation_fields(doc, applicant, job_offer)
+
+    # The onboarding template marked as the default, with its activities, so the
+    # draft opens with its task list already on it rather than waiting for HR to
+    # pick the same template every time.
+    _apply_default_onboarding_template(doc)
 
     doc.insert(ignore_permissions=True)
 
@@ -895,6 +1036,27 @@ def _link_title(doctype, name):
         return name
 
 
+def _logo_includes_company_name(company):
+    """Whether this Company's logo already spells out the company name, so the UI
+    should render the logo alone instead of printing the name beside it.
+
+    Backed by an OPTIONAL Company field (`custom_logo_has_company_name`, added by
+    homefirst_customs). Read exactly as defensively as `company_logo` is below:
+    no company, no such field, or any read failure all return False — which is
+    the behaviour every site has today.
+    """
+    from frappe.utils import cint
+
+    if not company:
+        return False
+    try:
+        if not frappe.get_meta("Company").get_field("custom_logo_has_company_name"):
+            return False
+        return bool(cint(frappe.db.get_value("Company", company, "custom_logo_has_company_name")))
+    except Exception:
+        return False
+
+
 def _get_branding(eo_doc, applicant_doc):
     """Company badge shown atop the candidate portal. Sourced from the Employee
     Onboarding company, falling back to the Job Applicant's finalized company."""
@@ -902,7 +1064,10 @@ def _get_branding(eo_doc, applicant_doc):
     if not company and applicant_doc is not None:
         company = applicant_doc.get("custom_company_finalized") or applicant_doc.get("company")
     if not company:
-        return {"company": None, "company_name": None, "logo": None, "badge_label": None}
+        return {
+            "company": None, "company_name": None, "logo": None, "badge_label": None,
+            "logo_includes_company_name": False,
+        }
 
     name = frappe.db.get_value("Company", company, "company_name") or company
     # Company logo is optional / site-specific — read it defensively.
@@ -917,7 +1082,22 @@ def _get_branding(eo_doc, applicant_doc):
         "company_name": name,
         "logo": logo,
         "badge_label": f"{name} Candidate".upper(),
+        # Additive: company_name is still returned unchanged. This only tells the
+        # UI it may show the logo on its own.
+        "logo_includes_company_name": _logo_includes_company_name(company),
     }
+
+
+def _offer_expected_doj(eo_doc):
+    """The onboarding's Job Offer Expected DOJ, or None. Never raises."""
+    try:
+        offer = eo_doc.get("job_offer")
+        if not offer or not frappe.get_meta("Job Offer").has_field("custom_expected_doj"):
+            return None
+        return frappe.db.get_value("Job Offer", offer, "custom_expected_doj")
+    except Exception:
+        frappe.log_error(frappe.get_traceback(), "Candidate portal: offer expected DOJ lookup failed")
+        return None
 
 
 def _get_joining_info(eo_doc, applicant_doc):
@@ -928,6 +1108,39 @@ def _get_joining_info(eo_doc, applicant_doc):
     bbo = eo_doc.get("boarding_begins_on") if eo_doc is not None else None
     if not doj and applicant_doc is not None:
         doj = applicant_doc.get("custom_date_of_joining")
+
+    # A Trainee starts twice: the traineeship on this date, the permanent role on
+    # date_of_joining. Read from the onboarding, falling back to the accepted offer
+    # so the date is there before onboarding is materialized (Scenario B, where
+    # eo_doc is None). Stays null for everyone else — a non-null value is the
+    # signal to show it, and it is never filled in from date_of_joining, which
+    # would tell the candidate the two are the same day.
+    if eo_doc is not None:
+        # The onboarding is the authority once it exists: the auto-map fills this at
+        # creation and `fetch_from` keeps it current, so asking the offer as well
+        # would be a query per portal load that can only ever confirm what is here.
+        trainee_doj = eo_doc.get("custom_trainee_doj")
+    elif applicant_doc is not None:
+        trainee_doj = frappe.db.get_value(
+            "Job Offer",
+            {"job_applicant": applicant_doc.name, "status": "Accepted", "docstatus": ("<", 2)},
+            "custom_trainee_doj",
+            order_by="creation desc",
+        )
+    else:
+        trainee_doj = None
+    trainee_days = date_diff(getdate(trainee_doj), getdate(nowdate())) if trainee_doj else None
+
+    # `date_of_joining` here is the permanent-role date. A project may move the
+    # onboarding's own date_of_joining to the traineeship start (to plan tasks
+    # around it), which made both rows show the trainee date. So, for a trainee
+    # only, the permanent date is read from the offer. No trainee date, no offer
+    # date, or any error: the value above stands.
+    if trainee_doj and eo_doc is not None:
+        permanent_doj = _offer_expected_doj(eo_doc)
+        if permanent_doj:
+            doj = permanent_doj
+
     days = date_diff(getdate(doj), getdate(nowdate())) if doj else None
 
     # Role (Designation) and Department — Employee Onboarding wins, falling back
@@ -944,6 +1157,10 @@ def _get_joining_info(eo_doc, applicant_doc):
         "boarding_begins_on": bbo,
         "days_to_joining": days,
         "is_set": bool(doj),
+        # Additive: date_of_joining and days_to_joining keep meaning exactly what
+        # they did, so the existing header is unaffected.
+        "trainee_doj": trainee_doj,
+        "days_to_trainee_joining": trainee_days,
         "role": role,
         "role_name": _link_title("Designation", role),
         "department": department,
@@ -1787,8 +2004,19 @@ def get_link_field_options(doctype, search_text=None, query=None, txt=None, limi
 
 @frappe.whitelist(allow_guest=True)
 def get_website_branding():
+    # Website Settings carries no company, so the flag is read off the site's
+    # default Company. Wrapped because Global Defaults may carry none — that,
+    # like a missing field, simply means False.
+    try:
+        default_company = frappe.db.get_single_value("Global Defaults", "default_company")
+    except Exception:
+        default_company = None
+
     settings = frappe.get_single("Website Settings")
     return {
         "title_prefix": settings.title_prefix,
         "app_logo": settings.app_logo,
+        # Additive: both keys above are unchanged. True only when the company's
+        # logo already spells out its name, so the UI can drop the text.
+        "logo_includes_company_name": _logo_includes_company_name(default_company),
     }

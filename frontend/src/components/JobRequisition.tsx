@@ -18,8 +18,6 @@ const getStatusColor = (status: string): string => {
     case "approved draft":
     case "approved active":
       return "bg-green-100 text-green-800";
-    case "approval pending":
-      return "bg-blue-100 text-blue-800";
     case "rejected":
     case "cancelled":
       return "bg-red-100 text-red-800";
@@ -38,7 +36,6 @@ const getPriorityInfo = (status: string): { label: string; color: string } => {
     case "approved draft":
     case "approved active":
       return { label: "Urgent", color: "text-red-500" };
-    case "approval pending":
     case "on hold":
     case "auto archived":
       return { label: "Normal Priority", color: "text-yellow-600" };

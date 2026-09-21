@@ -101,7 +101,7 @@ class TestCampusOfferAndRegion(FrappeTestCase):
 		doc = frappe.get_doc({
 			"doctype": "Campus Drive", "drive_name": f"{PREFIX} Drive",
 			"drive_owner": "Administrator", "drive_start_date": nowdate(),
-			"drive_end_date": add_days(nowdate(), 7), "fixed_pay": 500000, "variable_pay": 50000,
+			"drive_end_date": add_days(nowdate(), 7),
 			"campus_invites": [{"campus_invite": cls.invite}],
 			"rounds": [{"round_name": "Technical Round 1", "round_type": "Technical",
 			            "hiring_stage": "Technical Round 1"}],
@@ -130,22 +130,11 @@ class TestCampusOfferAndRegion(FrappeTestCase):
 	def tearDown(self):
 		frappe.db.rollback()
 
-	# ── 1. the drive's package is mandatory ──
-
-	def test_pay_is_mandatory_on_a_drive(self):
-		meta = frappe.get_meta("Campus Drive")
-		self.assertTrue(meta.get_field("fixed_pay").reqd)
-		self.assertTrue(meta.get_field("variable_pay").reqd)
-
-	def test_a_drive_without_pay_is_refused(self):
-		doc = frappe.get_doc({
-			"doctype": "Campus Drive", "drive_name": f"{PREFIX} No Pay",
-			"drive_owner": "Administrator", "drive_start_date": nowdate(),
-			"drive_end_date": add_days(nowdate(), 7)})
-		with self.assertRaises(frappe.MandatoryError):
-			doc.insert(ignore_permissions=True)
-
-	# ── 2. the offer stage ──
+	# ── 1. the offer stage ──
+	#
+	# The drive's own Fixed / Variable Pay used to be checked here. The package moved
+	# to the Job Opening (see test_campus_offer_package), so a drive no longer states
+	# one and there is nothing mandatory about it left to assert.
 
 	def test_hired_is_a_real_status(self):
 		"""The offer stage the app writes has to exist on the Select, or the field

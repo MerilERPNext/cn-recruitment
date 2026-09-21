@@ -4,6 +4,8 @@ import { errorResponseFormater } from "../utils/errorResponseFormater";
 import toast from "react-hot-toast";
 import { useLoadingOverlay } from "../context/OverlayContext";
 import { useCallback } from "react";
+import { useNavigate } from "react-router-dom";
+import { PDF_SUBMISSION_ROUTE } from "../services/pdfFormsService";
 
 export function useApprovalListActions() {
   const queryClient = useQueryClient();
@@ -61,7 +63,7 @@ export type handleActionType = (action: string, data: {
 }, custom_action_message?: string | undefined) => Promise<void>;
 
 export function useApprovalAction(triggerRefetch?: () => void) {
-
+  const navigate = useNavigate();
   const loading = useLoadingOverlay();
   const mutation = useApprovalListActions();
   const handleAction = useCallback(
@@ -88,6 +90,12 @@ export function useApprovalAction(triggerRefetch?: () => void) {
             action,
             name: data?.todo_id || "",
           });
+
+          const pdfResponse = response as unknown as { pdf_form_submission?: string };
+          if (pdfResponse?.pdf_form_submission) {
+            navigate(`${PDF_SUBMISSION_ROUTE}?name=${encodeURIComponent(pdfResponse.pdf_form_submission)}`);
+            return;
+          }
 
           console.log("Action response:", response);
           // eslint-disable-next-line @typescript-eslint/no-explicit-any -- reason for using any
@@ -142,7 +150,7 @@ export function useApprovalAction(triggerRefetch?: () => void) {
         }
       }, actionLoadingShow);
     },
-    [mutation, loading, triggerRefetch],
+    [mutation, loading, triggerRefetch, navigate],
   );
 
   return { handleAction };

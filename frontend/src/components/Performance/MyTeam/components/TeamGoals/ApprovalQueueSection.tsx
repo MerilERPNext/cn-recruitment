@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { AlertCircle } from "lucide-react";
 import toast from "react-hot-toast";
 import Button from "../../../../shared/atoms/Button";
@@ -22,7 +22,7 @@ interface ApprovalQueueSectionProps {
   onGoalClick: (employee: string, goalKey: string) => void;
 }
 
-export const ApprovalQueueSection: React.FC<ApprovalQueueSectionProps> = ({
+export const ApprovalQueueSection: React.FC<ApprovalQueueSectionProps> = memo(({
   onGoalClick,
 }) => {
   const { isMobile, isTablet } = useScreenSize();
@@ -144,20 +144,20 @@ export const ApprovalQueueSection: React.FC<ApprovalQueueSectionProps> = ({
     <section className="overflow-hidden rounded-xl border border-amber-100 bg-white shadow-sm">
       <div
         className={`flex ${
-          isCompact ? "flex-col gap-3" : "items-center justify-between"
+          isCompact ? "flex-col gap-3" : "flex-wrap items-center justify-between gap-3"
         } border-b border-amber-100 bg-amber-50 px-4 py-3 sm:px-5`}
       >
-        <div className="flex min-w-0 items-start gap-3 sm:items-center">
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 min-w-0">
           <Typography
             variant="bodySmall"
-            className="min-w-0 font-semibold text-amber-900"
+            className="font-semibold text-amber-900 shrink-0"
           >
             Approval Queue — {count} goals awaiting you
           </Typography>
           {!isMobile && autoApproveNote && autoApproveNote !== "-" && (
             <Typography
               variant="caption"
-              className="shrink-0 text-amber-800"
+              className="text-amber-800 shrink-0"
             >
               - {autoApproveNote}
             </Typography>
@@ -165,8 +165,8 @@ export const ApprovalQueueSection: React.FC<ApprovalQueueSectionProps> = ({
         </div>
 
         <div
-          className={`flex gap-3 ${
-            isCompact ? "w-full flex-col sm:w-auto sm:flex-row sm:items-center" : "items-center"
+          className={`flex flex-wrap items-center gap-2 sm:gap-3 ${
+            isCompact ? "w-full flex-col sm:w-auto sm:flex-row sm:items-center" : ""
           }`}
         >
           {filterOptions.length > 0 && (
@@ -177,7 +177,7 @@ export const ApprovalQueueSection: React.FC<ApprovalQueueSectionProps> = ({
                 setStatus(selectedOption.value);
                 setStart(0);
               }}
-              className="w-36"
+              className="w-36 shrink-0"
             />
           )}
 
@@ -200,7 +200,7 @@ export const ApprovalQueueSection: React.FC<ApprovalQueueSectionProps> = ({
                 }
                 setIsRejectModalOpen(true);
               }}
-              className={isCompact ? "w-full sm:w-fit" : ""}
+              className={isCompact ? "w-full sm:w-fit" : "shrink-0"}
             >
               {rejectGoalLoading
                 ? "Rejecting selected..."
@@ -216,7 +216,7 @@ export const ApprovalQueueSection: React.FC<ApprovalQueueSectionProps> = ({
               size="sm"
               disabled={isPending}
               onClick={approveAllSelectedGoals}
-              className={isCompact ? "w-full sm:w-fit" : ""}
+              className={isCompact ? "w-full sm:w-fit" : "shrink-0"}
             >
               {isPending
                 ? "Approving selected..."
@@ -226,7 +226,7 @@ export const ApprovalQueueSection: React.FC<ApprovalQueueSectionProps> = ({
             </Button>
           )}
           {!hasBulkAction && (
-            <Typography variant="caption" className="text-amber-800 font-medium italic">
+            <Typography variant="caption" className="text-amber-800 font-medium italic shrink-0">
               No action
             </Typography>
           )}
@@ -394,6 +394,6 @@ export const ApprovalQueueSection: React.FC<ApprovalQueueSectionProps> = ({
       />
     </section>
   );
-};
+});
 
 export default ApprovalQueueSection;

@@ -165,12 +165,10 @@ export const LoanRow = ({
     );
   };
   return (
-    <div
-      onClick={onToggle}
-      className="hover:bg-primary/10 cursor-pointer"
-    >
+    <div>
       {/* Row */}
       <div
+        onClick={onToggle}
         className="grid items-center gap-4 px-6 h-16 border-b border-gray-50 transition-colors cursor-pointer hover:bg-primary/10"
         style={{
           gridTemplateColumns: columnWidths.join(" "),
@@ -180,7 +178,10 @@ export const LoanRow = ({
         {/* Expand Button */}
         <div className="flex items-center justify-center">
           <button
-            onClick={onToggle}
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggle();
+            }}
             className="w-8 h-8 flex items-center justify-center hover:bg-primary/10 rounded transition-colors text-gray-600"
           >
             {expanded ? <IoIosArrowUp /> : <IoIosArrowDown />}
@@ -274,15 +275,23 @@ export const LoanRow = ({
             onRevoke={handleRevokeClick}
             onEdit={() => handleEdit(loan.name)}
             isResubmit={canEdit}
+            requestItem={loan}
           />
         </div>
       </div>
 
       {expanded && (
-        <div className="bg-app px-6 py-4 border-t border-gray-200">
+        <div
+          onClick={(e) => e.stopPropagation()}
+          className="bg-app px-6 py-4 border-t border-gray-200 cursor-default"
+        >
           <div className="space-y-4">
             <LoanDetails loan={loan} />
-            <LoanInstallments installments={loan.repayment_schedule} standardInterest={loan.standard_interest} />
+            <LoanInstallments
+              installments={loan.repayment_schedule}
+              standardInterest={loan.standard_interest}
+              docId={loan.name}
+            />
           </div>
         </div>
       )}

@@ -83,6 +83,7 @@
    "ignore_user_permissions": 1,
    "in_list_view": 1,
    "label": "Employee Type",
+   "mandatory_depends_on": "doc.custom_type_of_position==\"Replacement\"",
    "options": "Employment Type",
    "read_only_depends_on": "doc.custom_type_of_position==\"New\""
   },
@@ -120,7 +121,7 @@
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2026-06-15 10:00:00.000000",
+ "modified": "2026-09-03 10:00:00.000000",
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "Position Details",

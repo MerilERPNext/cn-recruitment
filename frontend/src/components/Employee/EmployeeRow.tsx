@@ -1,8 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { ChevronRightIcon } from "lucide-react";
 
-import Tooltip from "../shared/Tooltip";
-import Badge from "../shared/Badge";
 import { Employee } from "../../types/employee";
 import { useTargetUser } from "../../context/ViewedUserContext";
 import { useCurrentEmployeeDetails } from "../../hooks/useEmployee";
@@ -53,10 +51,10 @@ const Avatar: React.FC<AvatarProps> = ({ name, src }) => {
 
 interface EmployeeRowProps {
   emp: Employee;
-
   onRemove: (id: number) => void;
   showRemove?: boolean;
   idx: number;
+  isActive?: boolean;
 }
 
 const EmployeeRow: React.FC<EmployeeRowProps> = ({
@@ -64,6 +62,7 @@ const EmployeeRow: React.FC<EmployeeRowProps> = ({
   onRemove,
   showRemove,
   idx,
+  isActive = false,
 }) => {
   const { setTargetEmployee } = useTargetUser();
 
@@ -80,7 +79,7 @@ const EmployeeRow: React.FC<EmployeeRowProps> = ({
 
     let filterData = searches.filter(
       (data) =>
-        data.employee_name.toLowerCase() !== emp.employee_name.toLowerCase(),
+        data.employee_name?.toLowerCase() !== emp.employee_name?.toLowerCase(),
     );
 
     filterData.unshift(emp);
@@ -92,6 +91,21 @@ const EmployeeRow: React.FC<EmployeeRowProps> = ({
 
   const { data: currentEmployee } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
   const navigate = useNavigate();
+
+  // Whatever an admin added to Employee Search Settings rides along with each
+  // search result, so a row can show the field someone actually searched on.
+  const details = Array.from(
+    new Set(
+      [
+        emp.designation,
+        emp.department_display,
+        emp.branch_display,
+        ...(emp.search_fields ?? []).map((field) =>
+          field.value == null ? "" : String(field.value),
+        ),
+      ].filter(Boolean) as string[],
+    ),
+  );
   const { isDesktop } = useScreenSize();
 
   const handleonClick = (emp: Employee) => () => {
@@ -112,7 +126,7 @@ const EmployeeRow: React.FC<EmployeeRowProps> = ({
 
   return (
     <div
-      className="w-full cursor-pointer"
+      className="w-full min-w-0 cursor-pointer"
       style={{ touchAction: "manipulation" }}
       onClick={handleonClick(emp)}
       role="button"
@@ -121,58 +135,35 @@ const EmployeeRow: React.FC<EmployeeRowProps> = ({
         if (e.key === "Enter" || e.key === " ") handleonClick(emp)();
       }}
     >
-      <div className="flex items-center sm:items-center justify-between gap-3 rounded-md  px-4 py-3 bg-white hover:bg-primary-100 border-b ">
+      <div
+        className={`flex items-center justify-between gap-3 rounded-lg px-3 py-2 transition-colors border-b border-gray-100 last:border-b-0 ${
+          isActive ? "bg-primary-50 text-primary-700" : "bg-white hover:bg-primary-50"
+        }`}
+      >
         <Avatar name={emp.employee_name} src={emp.image} />
-        <div className="flex items-start sm:items-center gap-3 sm:gap-4 min-w-0 w-full">
-          <div className="flex flex-col min-w-0 w-full">
-            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 min-w-0">
-              <div className="flex flex-row">
-
-                <p className="text-sm mr-2 font-semibold text-gray-900 truncate">
-                  {emp.employee_name}
-                </p>
-                <Badge
-                  label={emp.employee_id || "—"}
-                  backgroundColor="bg-gray-50/70"
-                  textColor="text-black"
-                  size="sm"
-                />
-              </div>
-
-            </div>
-
-            <div className="mt-1 flex flex-wrap items-center gap-x-2 sm:gap-y-2 text-xs text-gray-600 min-w-0">
-              <span className="sm:inline min-w-0">
-                <Tooltip
-                  content={emp.branch_display || "—"}
-                  position="top"
-                >
-                  <span className="inline-block text-xs  max-w-[20ch] truncate align-bottom">
-                    {emp.branch_display || "—"}
-                  </span>
-                </Tooltip>
-              </span>
-
-              {emp.branch_display && emp.department_display && (
-                <span className="sm:mx-3  hidden   mx-1 sm:block text-md text-gray-300">
-                  •
+        <div className="flex items-center gap-2 min-w-0 flex-1">
+          <div className="flex flex-col min-w-0 flex-1">
+            <div className="flex items-center gap-2 min-w-0">
+              <p className="text-sm font-medium text-gray-900 truncate">
+                {emp.employee_name}
+              </p>
+              {emp.employee_id && (
+                <span className="text-[11px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-600 font-mono flex-shrink-0">
+                  {emp.employee_id}
                 </span>
               )}
-
-              <span className="sm:inline min-w-0">
-                <Tooltip content={emp.department_display || "—"} position="top">
-                  <span className="inline-block text-xs  max-w-[20ch] truncate align-bottom">
-                    {emp.department_display || "—"}
-                  </span>
-                </Tooltip>
-              </span>
             </div>
+            {details.length > 0 && (
+              <p className="text-xs text-gray-500 truncate mt-0.5">
+                {details.join(" • ")}
+              </p>
+            )}
           </div>
         </div>
 
         {!showRemove ? (
           <ChevronRightIcon
-            className="shrink-0 text-gray-400 mt-1 sm:mt-0"
+            className="shrink-0 text-gray-400 w-4 h-4"
             aria-hidden
           />
         ) : (
@@ -183,9 +174,9 @@ const EmployeeRow: React.FC<EmployeeRowProps> = ({
               onRemove(idx);
             }}
             aria-label={`Remove ${emp.employee_name} from recent searches`}
-            className="ml-0 sm:ml-2 rounded-full p-2 h-10 w-10 flex justify-center items-center text-xl hover:bg-gray-100 active:bg-gray-200 cursor-pointer mt-1 sm:mt-0"
+            className="shrink-0 rounded-full p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
           >
-            <span aria-hidden>&times;</span>
+            <span aria-hidden className="text-sm font-semibold">&times;</span>
           </button>
         )}
       </div>

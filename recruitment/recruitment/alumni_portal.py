@@ -53,10 +53,18 @@ def employee_is_alumni(employee: str | None) -> int:
     """
     if not employee:
         return 0
-    user_id = frappe.db.get_value("Employee", employee, "user_id", cache=True)
-    if not user_id:
-        return 0
-    return 1 if frappe.db.get_value("User", user_id, ALUMNI_FLAG, cache=True) else 0
+    # Check the flag on either linked User: the company `user_id` (still-active
+    # employees) or the personal-email `custom_alumni_user` (after the alumni
+    # switch, when the company account is disabled and the flag lives on the
+    # personal one). Either being set means the person has alumni access.
+    fields = ["user_id"]
+    if frappe.get_meta("Employee").get_field("custom_alumni_user"):
+        fields.append("custom_alumni_user")
+    row = frappe.db.get_value("Employee", employee, fields, as_dict=True) or {}
+    for linked_user in (row.get("user_id"), row.get("custom_alumni_user")):
+        if linked_user and frappe.db.get_value("User", linked_user, ALUMNI_FLAG, cache=True):
+            return 1
+    return 0
 
 
 @frappe.whitelist(allow_guest=True, methods=["POST"])
@@ -1736,14 +1744,6 @@ def _alumni_referrer_employee(user: str) -> "frappe._dict":
     return emp
 
 
-def _ensure_referral_source() -> None:
-    """Idempotently create the 'Employee Referral' Job Applicant Source master."""
-    if not frappe.db.exists("Job Applicant Source", _REFERRAL_SOURCE):
-        frappe.get_doc(
-            {"doctype": "Job Applicant Source", "source_name": _REFERRAL_SOURCE}
-        ).insert(ignore_permissions=True, ignore_if_duplicate=True)
-
-
 # ── Refer & Earn banner stats ─────────────────────────────────────────────────
 _DEFAULT_REFERRAL_BONUS = 25000.0
 
@@ -1868,43 +1868,6 @@ def get_alumni_referral_stats() -> dict:
     }
 
 
-def _attach_referral_resume(resume_file, applicant_name: str) -> str | None:
-    """Attach an optional {"filename", "content"} resume to the Job Applicant.
-
-    Mirrors the existing employee-referral upload contract (base64 ``content``).
-    Any failure is logged and swallowed so it never blocks the referral itself.
-    """
-    if not resume_file:
-        return None
-    if isinstance(resume_file, str):
-        try:
-            resume_file = frappe.parse_json(resume_file)
-        except Exception:
-            return None
-    if not isinstance(resume_file, dict):
-        return None
-    filename = resume_file.get("filename")
-    content = resume_file.get("content")
-    if not filename or not content:
-        return None
-    try:
-        file_doc = frappe.get_doc(
-            {
-                "doctype": "File",
-                "file_name": filename,
-                "attached_to_doctype": "Job Applicant",
-                "attached_to_name": applicant_name,
-                "is_private": 1,
-                "content": content,
-            }
-        )
-        file_doc.insert(ignore_permissions=True)
-        return file_doc.file_url
-    except Exception:
-        frappe.log_error(frappe.get_traceback(), "Alumni referral resume upload failed")
-        return None
-
-
 # Supported resume/document types + max size for the pre-upload endpoint.
 _REFERRAL_ALLOWED_EXTS = {"pdf", "jpg", "jpeg", "png", "doc", "docx"}
 _REFERRAL_MAX_BYTES = 5 * 1024 * 1024  # 5 MB
@@ -1973,39 +1936,6 @@ def upload_alumni_referral_document() -> dict:
     }
 
 
-def _link_referral_resume_url(file_url: str, applicant_name: str) -> str | None:
-    """Link a previously-uploaded File (by ``file_url``) to the Job Applicant.
-
-    Only links a File owned by the current alumnus (so a URL can't be used to
-    attach someone else's private file). Returns the ``file_url`` on success, else
-    ``None``. Never raises.
-    """
-    file_url = (file_url or "").strip()
-    if not file_url:
-        return None
-    try:
-        f = frappe.db.get_value(
-            "File", {"file_url": file_url},
-            ["name", "owner", "attached_to_name"], as_dict=True,
-        )
-        if not f:
-            return None
-        if f.owner != frappe.session.user:
-            return None  # not this alumnus's upload — refuse to attach
-        # Link via db.set_value (no File hooks) — avoids triggering resume parsing
-        # and never blocks the referral. Only attach an as-yet-unattached file.
-        if not f.attached_to_name:
-            frappe.db.set_value(
-                "File", f.name,
-                {"attached_to_doctype": "Job Applicant", "attached_to_name": applicant_name},
-                update_modified=False,
-            )
-        return file_url
-    except Exception:
-        frappe.log_error(frappe.get_traceback(), "Alumni referral resume link failed")
-        return None
-
-
 @frappe.whitelist(methods=["GET"])
 def get_alumni_referral_jobs(search: str = None, limit=200, start=0) -> dict:
     """Open jobs an alumnus can refer a friend to (the 'Department / role area'
@@ -2069,53 +1999,121 @@ def get_alumni_referral_jobs(search: str = None, limit=200, start=0) -> dict:
     return {"success": True, "jobs": jobs, "count": len(jobs)}
 
 
-@frappe.whitelist(methods=["POST"])
-def submit_alumni_referral(
-    job_opening: str,
-    full_name: str,
-    email: str,
-    phone: str = None,
-    linkedin: str = None,
-    note: str = None,
-    resume_file=None,
-    resume: str = None,
+def _require_open_referral_opening(opening: str) -> None:
+    """Throw 404/400 unless `opening` is an existing, 'Open' Job Opening."""
+    status = frappe.db.get_value("Job Opening", opening, "status")
+    if not status:
+        frappe.local.response["http_status_code"] = 404
+        frappe.throw(_("The selected job opening was not found."))
+    if status.lower() != "open":
+        frappe.local.response["http_status_code"] = 400
+        frappe.throw(_("This opening is no longer accepting referrals."))
+
+
+@frappe.whitelist(methods=["GET"])
+def get_alumni_referral_fields(opening: str) -> list:
+    """The dynamic application field set for `opening` — identical to the ESS
+    Refer channel's (`recruitment.api.channels.refer.get_application_fields`):
+    whatever fields/sections/child tables an admin configured as `view_refer`
+    on the opening's `custom_application_fields` (or the Job Applicant Profile
+    Settings default). Alumni sessions can't reach that endpoint directly
+    (locked to the alumni_portal namespace — see `alumni_guard.ALUMNI_NAMESPACES`),
+    so this wraps the same shared engine.
+
+    Unlike the ESS endpoint, this does NOT require `opening` to have an active
+    "Refer" Posting Option — alumni are intentionally allowed to refer into any
+    'Open' role, published or not (see `get_alumni_referral_jobs`).
+    """
+    if not opening:
+        frappe.throw(_("opening is required"))
+
+    user = _require_alumni_session()
+    _alumni_referrer_employee(user)
+    _require_open_referral_opening(opening)
+
+    from recruitment.api.channels import _common
+
+    return _common.get_application_fields_for_channel(opening, "refer")
+
+
+@frappe.whitelist(methods=["GET"])
+def get_alumni_link_options(
+    opening: str, doctype: str, search_text: str = None, limit=20, skip=0, include=None
 ) -> dict:
+    """Master-data lookup for the referral form's Link-field dropdowns
+    (Company, Department, Designation, Country, ...).
+
+    `job_requisition.get_link_field_options` — what the ESS referral form
+    uses for these — is unreachable from an alumni session (locked to the
+    alumni_portal namespace) and, more importantly, applies NO permission
+    check of its own: it will query whatever `doctype` it's given for any
+    authenticated user. Allowlisting it directly would let an alumnus
+    enumerate Employee, User, Salary Structure, etc. — exactly the employee
+    directory `alumni_guard` otherwise keeps closed.
+
+    So `doctype` is validated here first, against the Link-field `options`
+    actually configured (`view_refer=1`) on `opening`'s own referral field
+    set — the same set `get_alumni_referral_fields` advertises, including
+    Link columns nested inside child tables. Anything not on that set is a
+    403 and no query ever runs. Only then does this delegate to the ESS
+    implementation for the actual search/pagination, returning its result
+    UNCHANGED — the Form.io schema reads `message.results` / `id` directly.
+    """
+    if not opening:
+        frappe.throw(_("opening is required"))
+    if not doctype:
+        frappe.throw(_("doctype is required"))
+
+    user = _require_alumni_session()
+    _alumni_referrer_employee(user)
+    _require_open_referral_opening(opening)
+
+    from recruitment.api.channels import _common
+
+    fields = _common.get_application_fields_for_channel(opening, "refer")
+    allowed_doctypes = set()
+    for f in fields:
+        if f.get("fieldtype") == "Link" and f.get("options"):
+            allowed_doctypes.add(f["options"])
+        for sub in f.get("table_fields") or []:
+            if sub.get("fieldtype") == "Link" and sub.get("options"):
+                allowed_doctypes.add(sub["options"])
+
+    if doctype not in allowed_doctypes:
+        frappe.local.response["http_status_code"] = 403
+        frappe.throw(
+            _("'{0}' is not a lookup available on this referral form.").format(doctype),
+            frappe.PermissionError,
+        )
+
+    from recruitment.api.job_requisition import get_link_field_options
+
+    return get_link_field_options(
+        doctype=doctype, search_text=search_text, limit=limit, skip=skip, include=include,
+    )
+
+
+@frappe.whitelist(methods=["POST"])
+def submit_alumni_referral(job_opening: str, data) -> dict:
     """Refer a friend against a specific open job.
 
-    Creates a Job Applicant (source = "Employee Referral") linked to
-    ``job_opening`` and attributed to the logged-in alumnus. Returns the created
-    applicant's name.
-
-    Resume (optional) — two supported ways:
-    * ``resume`` — a ``file_url`` from :func:`upload_alumni_referral_document`
-      (the recommended pre-upload flow), or
-    * ``resume_file`` — a legacy ``{"filename", "content"}`` base64 blob.
+    Validates `data` against the same dynamic field set `get_alumni_referral_fields`
+    advertised — same engine, same rules as the ESS Refer channel
+    (`recruitment.api.channels.refer.submit_referral`) — then creates a Job
+    Applicant (source = "Employee Referral") attributed to the logged-in
+    alumnus. `data` is a JSON object keyed by each field's `reference_name`,
+    built from `get_alumni_referral_fields` exactly like the ESS referral form.
     """
+    import json as _json
+
+    if isinstance(data, str):
+        data = _json.loads(data or "{}")
+
     user = _require_alumni_session()
     referrer = _alumni_referrer_employee(user)
 
-    full_name = (full_name or "").strip()
-    email = (email or "").strip()
-    if not full_name:
-        frappe.local.response["http_status_code"] = 400
-        return {"success": False, "message": _("Candidate name is required.")}
-    if not email:
-        frappe.local.response["http_status_code"] = 400
-        return {"success": False, "message": _("Candidate email is required.")}
-
-    from frappe.utils import validate_email_address
-
-    if not validate_email_address(email):  # "" when invalid
-        frappe.local.response["http_status_code"] = 400
-        return {
-            "success": False,
-            "message": _("{0} is not a valid email address.").format(email),
-        }
-
     opening = frappe.db.get_value(
-        "Job Opening", job_opening,
-        ["name", "status", "designation", "department", "job_title"],
-        as_dict=True,
+        "Job Opening", job_opening, ["name", "status"], as_dict=True
     )
     if not opening:
         frappe.local.response["http_status_code"] = 404
@@ -2124,39 +2122,48 @@ def submit_alumni_referral(
         frappe.local.response["http_status_code"] = 400
         return {"success": False, "message": _("This opening is no longer accepting referrals.")}
 
-    # Don't let the same candidate be referred to the same opening twice.
-    existing = frappe.db.exists(
-        "Job Applicant", {"email_id": email, "job_title": opening.name}
-    )
-    if existing:
-        frappe.local.response["http_status_code"] = 409
-        return {
-            "success": False,
-            "name": existing,
-            "message": _("You have already referred this candidate for this role."),
-        }
+    from recruitment.api.channels import _common
 
-    _ensure_referral_source()
+    try:
+        cleaned = _common.assert_field_set_for_channel(opening.name, "refer", data)
+    except frappe.ValidationError as e:
+        frappe.local.response["http_status_code"] = 400
+        return {"success": False, "message": str(e)}
 
-    has = {df.fieldname for df in frappe.get_meta("Job Applicant").fields}
+    # Best-effort duplicate guard when the configured field set includes the
+    # candidate's email — same candidate can't be referred to the same opening twice.
+    email = cleaned.get("email_id")
+    email = email.strip() if isinstance(email, str) else ""
+    if email:
+        existing = frappe.db.exists(
+            "Job Applicant", {"email_id": email, "job_title": opening.name}
+        )
+        if existing:
+            frappe.local.response["http_status_code"] = 409
+            return {
+                "success": False,
+                "name": existing,
+                "message": _("You have already referred this candidate for this role."),
+            }
+
+    source = _common.source_value_for("refer") or _REFERRAL_SOURCE
 
     applicant = frappe.new_doc("Job Applicant")
-    applicant.applicant_name = full_name
-    applicant.email_id = email
     applicant.job_title = opening.name
-    applicant.source = _REFERRAL_SOURCE
-    if opening.get("designation") and "designation" in has:
-        applicant.designation = opening.get("designation")
-    if phone and "phone_number" in has:
-        applicant.phone_number = phone
-    if linkedin and "custom_linkedin_url" in has:
-        applicant.custom_linkedin_url = linkedin
-    if note and "cover_letter" in has:
-        applicant.cover_letter = note
-    if "custom_referred_by" in has:
+    applicant.source = source
+
+    meta = frappe.get_meta("Job Applicant")
+    field_map = {df.fieldname: df for df in meta.fields}
+    emp_ref = field_map.get("employee_referral")
+    if emp_ref and emp_ref.fieldtype == "Link" and emp_ref.options == "Employee":
+        applicant.employee_referral = referrer.name
+    if "custom_referred_by" in field_map:
         applicant.custom_referred_by = referrer.name
-    if "custom_referred_employee_name" in has:
+    if "custom_referred_employee_name" in field_map:
         applicant.custom_referred_employee_name = referrer.employee_name
+
+    for k, v in cleaned.items():
+        applicant.set(k, v)
 
     try:
         applicant.insert(ignore_permissions=True)
@@ -2165,22 +2172,13 @@ def submit_alumni_referral(
         frappe.local.response["http_status_code"] = 409
         return {"success": False, "message": _("This candidate has already been submitted.")}
 
-    # Prefer a pre-uploaded file (`resume` = file_url); fall back to a legacy
-    # base64 blob (`resume_file`).
-    resume_url = _link_referral_resume_url(resume, applicant.name)
-    if not resume_url:
-        resume_url = _attach_referral_resume(resume_file, applicant.name)
-    if resume_url and "resume_attachment" in has:
-        applicant.db_set("resume_attachment", resume_url, update_modified=False)
-
     frappe.db.commit()
 
     return {
         "success": True,
         "name": applicant.name,
         "job_opening": opening.name,
-        "job_title": opening.get("job_title") or opening.name,
-        "resume_url": resume_url or "",
+        "source": source,
         "message": _("Referral submitted. Recruiting will reach out within 5 days."),
     }
 
@@ -2467,13 +2465,21 @@ def get_alumni_company() -> dict:
 # `download_alumni_document` — keeps that blanket block intact and makes the
 # ownership rule explicit here rather than relying on a framework hook.
 
-# Fields an alumnus may change on their own ToDo. `allocated_to` is deliberately
-# absent: reassigning work to another user is not an alumni capability.
-_ALUMNI_TODO_WRITABLE_FIELDS = ("status", "priority", "date")
+# Fields an alumnus may change on their own ToDo. Delegated assignment and
+# category changes are allowed only to values permitted for this alumnus.
+_ALUMNI_TODO_WRITABLE_FIELDS = (
+    "status",
+    "priority",
+    "date",
+    "custom_todo_type",
+    "allocated_to",
+)
 
 # Only the flags the portal UI actually reads. ToDo Settings grants write access
 # to role "All" with no controller check, so it is never exposed for writing.
 _ALUMNI_TODO_SETTINGS_FIELDS = (
+    "allow_to_create_task",
+    "disable_edit_due_date",
     "enable_pagination",
     "default_page_size",
     "max_page_size",
@@ -2558,7 +2564,14 @@ def get_alumni_todo_settings() -> dict:
 
 
 @frappe.whitelist(methods=["POST"])
-def update_alumni_todo(name: str, status=None, priority=None, date=None) -> dict:
+def update_alumni_todo(
+    name: str,
+    status=None,
+    priority=None,
+    date=None,
+    custom_todo_type=None,
+    allocated_to=None,
+) -> dict:
     """Update one of the caller's own ToDos.
 
     Backs the inline status / priority / due-date controls. Only a ToDo the
@@ -2567,18 +2580,49 @@ def update_alumni_todo(name: str, status=None, priority=None, date=None) -> dict
     does not depend on the request arriving through the resource API.
     """
     _require_own_todo(name)
+    current_user = _require_alumni_session()
 
-    incoming = {"status": status, "priority": priority, "date": date}
+    incoming = {
+        "status": status,
+        "priority": priority,
+        "date": date,
+        "custom_todo_type": custom_todo_type,
+        "allocated_to": allocated_to,
+    }
     patch = {f: incoming[f] for f in _ALUMNI_TODO_WRITABLE_FIELDS if incoming[f] is not None}
     if not patch:
         frappe.local.response["http_status_code"] = 400
         frappe.throw(_("Nothing to update."))
 
+    if "custom_todo_type" in patch:
+        todo_type = str(patch.get("custom_todo_type") or "").strip()
+        if not todo_type:
+            frappe.local.response["http_status_code"] = 400
+            frappe.throw(_("Todo Type is mandatory."))
+        if not frappe.db.exists("Todo Type", todo_type):
+            frappe.local.response["http_status_code"] = 400
+            frappe.throw(_("That todo type does not exist."))
+        allowed_types = set(_alumni_visible_todo_types())
+        if todo_type not in allowed_types:
+            frappe.local.response["http_status_code"] = 403
+            frappe.throw(_("That todo type is not available."), frappe.PermissionError)
+
+    if "allocated_to" in patch:
+        allocated_user = str(patch.get("allocated_to") or "").strip()
+        if allocated_user:
+            summary = _get_alumni_todo_delegation_summary(current_user)
+            if allocated_user not in set(summary.get("allowed_delegates") or []):
+                frappe.local.response["http_status_code"] = 403
+                frappe.throw(_("That assignee is not available."), frappe.PermissionError)
+
     # Through the document API, not frappe.db.set_value: ToDo.on_update keeps the
     # referenced document's `_assign` in step, which a direct DB write skips.
     doc = frappe.get_doc("ToDo", name)
     for field, value in patch.items():
-        doc.set(field, value)
+        if field == "custom_todo_type":
+            doc.set("custom_todo_type", value)
+        else:
+            doc.set(field, value)
 
     # Frappe only builds this list when the flag is unset, and _save() does not
     # clear it — so seeding it with the loadable alerts keeps this single save
@@ -2644,9 +2688,25 @@ def _require_own_todo(name: str) -> tuple[str, dict]:
         frappe.throw(_("A todo is required."))
 
     row = frappe.db.get_value(
-        "ToDo", name, ["name", "allocated_to", "assigned_by"], as_dict=True
+        "ToDo",
+        name,
+        [
+            "name",
+            "allocated_to",
+            "assigned_by",
+            "owner",
+            "reference_type",
+            "reference_name",
+        ],
+        as_dict=True,
     )
-    if not row or user not in (row.get("allocated_to"), row.get("assigned_by")):
+    if not row or not _user_owns_todo(user, name, row):
+        frappe.local.response["http_status_code"] = 403
+        frappe.throw(_("Not authorized for this todo."), frappe.PermissionError)
+
+    # Same gate as the list: a todo the portal would not show must not open
+    # either, or the category filter is bypassable by guessing a name.
+    if not _todo_type_visible_to_alumni(name):
         frappe.local.response["http_status_code"] = 403
         frappe.throw(_("Not authorized for this todo."), frappe.PermissionError)
 
@@ -2728,19 +2788,101 @@ def add_alumni_todo_comment(name: str, content: str) -> dict:
 
 @frappe.whitelist(methods=["GET", "POST"])
 def get_alumni_todo_attachments(name: str) -> dict:
-    """Files attached to a ToDo. Replaces a File list query."""
-    _require_own_todo(name)
+    """Files attached to the permission-checked ToDo's reference document."""
+    _user, todo = _require_own_todo(name)
+    reference_type = todo.get("reference_type")
+    reference_name = todo.get("reference_name")
 
-    rows = frappe.get_all(
-        "File",
-        filters={"attached_to_doctype": "ToDo", "attached_to_name": name},
-        fields=["name", "file_name", "file_url", "file_size", "is_private", "creation"],
-        order_by="creation desc",
-    )
+    rows = []
+    if reference_type and reference_name:
+        rows = frappe.get_all(
+            "File",
+            filters={
+                "attached_to_doctype": reference_type,
+                "attached_to_name": reference_name,
+            },
+            fields=[
+                "name",
+                "file_name",
+                "file_url",
+                "file_type",
+                "file_size",
+                "is_private",
+                "creation",
+            ],
+            order_by="creation desc",
+        )
     for row in rows:
         row["creation"] = _d(row.get("creation"))
 
-    return {"success": True, "attachments": rows}
+    return {
+        "success": True,
+        "reference_attachments": rows,
+        "reference_type": reference_type,
+        "reference_name": reference_name,
+    }
+
+
+@frappe.whitelist(methods=["GET", "POST"])
+def get_alumni_todo_print_preview(name: str) -> dict:
+    """Render the configured print view for an accessible ToDo's reference."""
+    _user, todo = _require_own_todo(name)
+    reference_type = todo.get("reference_type")
+    reference_name = todo.get("reference_name")
+    unavailable = {
+        "available": False,
+        "html": None,
+        "style": None,
+        "reference_type": reference_type,
+        "reference_name": reference_name,
+    }
+    if not reference_type or not reference_name:
+        return unavailable
+
+    settings = frappe.get_cached_doc("ToDo Settings", "ToDo Settings")
+    allocation = next(
+        (
+            row
+            for row in (settings.get("format_allocations") or [])
+            if row.get("doctype_name") == reference_type and row.get("print_format")
+        ),
+        None,
+    )
+    if not allocation:
+        return unavailable
+
+    # The Todo ownership/category check above is the authorization boundary.
+    # Render internally so a Website User does not need generic read/resource
+    # permission for the referenced document.
+    from frappe.www.printview import (
+        get_print_format_doc,
+        get_print_style,
+        get_rendered_template,
+        set_link_titles,
+    )
+
+    reference_doc = frappe.get_doc(reference_type, reference_name)
+    print_format = get_print_format_doc(allocation.get("print_format"), meta=reference_doc.meta)
+    set_link_titles(reference_doc)
+    print_result = {
+        "html": get_rendered_template(
+            doc=reference_doc,
+            print_format=print_format,
+            meta=reference_doc.meta,
+            no_letterhead=1,
+            letterhead=None,
+            trigger_print=False,
+            settings={},
+        ),
+        "style": get_print_style(print_format=print_format),
+    }
+    return {
+        "available": True,
+        "html": print_result["html"],
+        "style": print_result["style"],
+        "reference_type": reference_type,
+        "reference_name": reference_name,
+    }
 
 
 @frappe.whitelist(methods=["POST"])
@@ -2848,41 +2990,62 @@ def get_alumni_todo_activity(name: str) -> dict:
 
 @frappe.whitelist(methods=["POST"])
 def create_alumni_todo(
-    subject: str, description=None, priority=None, date=None
+    custom_subject: str = "",
+    description=None,
+    custom_todo_type=None,
+    date=None,
+    allocated_to=None,
+    status="Open",
 ) -> dict:
-    """Create a personal todo for the caller.
-
-    Backs the inline "type a title and press enter" create in the search bar.
-    Replaces ``POST /api/resource/ToDo``, which alumni_guard blocks.
-
-    The new ToDo is always allocated to the caller and carries no
-    reference_type/reference_name — an alumnus can only raise work for
-    themselves, never assign it to another user or attach it to an arbitrary
-    document.
-    """
+    """Create a personal todo for the caller using the task-manager payload."""
     user = _require_alumni_session()
 
-    subject = (subject or "").strip()
-    if not subject:
-        frappe.local.response["http_status_code"] = 400
-        frappe.throw(_("A title is required."))
+    if not frappe.utils.cint(
+        frappe.db.get_single_value("ToDo Settings", "allow_to_create_task")
+    ):
+        frappe.local.response["http_status_code"] = 403
+        frappe.throw(_("Task creation is disabled."), frappe.PermissionError)
 
-    if priority and priority not in ("Low", "Medium", "High"):
-        priority = None
+    custom_subject = (custom_subject or "").strip()
+    description_value = (description or "").strip()
+    if not description_value:
+        frappe.local.response["http_status_code"] = 400
+        frappe.throw(_("Description is mandatory."))
+    # Rich-text editors can send blank placeholders such as <p><br></p>.
+    normalized_description = html.unescape(
+        __import__("re").sub(r"<[^>]+>", "", description_value)
+    ).strip()
+    if not normalized_description:
+        frappe.local.response["http_status_code"] = 400
+        frappe.throw(_("Description is mandatory."))
+
+    custom_todo_type = (custom_todo_type or "").strip()
+    if not custom_todo_type:
+        frappe.local.response["http_status_code"] = 400
+        frappe.throw(_("Todo Type is mandatory."))
+
+    allowed = set(_alumni_visible_todo_types())
+    if custom_todo_type not in allowed:
+        frappe.local.response["http_status_code"] = 403
+        frappe.throw(_("That todo type is not available."), frappe.PermissionError)
+
+    allocated_user = (allocated_to or user).strip() if allocated_to else user
+    if allocated_user != user:
+        summary = _get_alumni_todo_delegation_summary(user)
+        if allocated_user not in set(summary.get("allowed_delegates") or []):
+            frappe.local.response["http_status_code"] = 403
+            frappe.throw(_("That assignee is not available."), frappe.PermissionError)
 
     doc = frappe.get_doc(
         {
             "doctype": "ToDo",
-            "custom_subject": subject,
-            # The reference app stores the title as Quill markup so the editor
-            # round-trips it; matched here so both apps render identically.
-            "description": (description or "").strip()
-            or f'<div class="ql-editor"><p>{frappe.utils.escape_html(subject)}</p></div>',
-            "allocated_to": user,
+            "custom_subject": custom_subject,
+            "description": description_value,
+            "custom_todo_type": custom_todo_type,
+            "allocated_to": allocated_user,
             "assigned_by": user,
             "status": "Open",
-            "priority": priority or "Medium",
-            "date": date or frappe.utils.nowdate(),
+            "date": date or None,
         }
     )
     doc.flags.notifications = _loadable_todo_notifications()
@@ -2892,6 +3055,777 @@ def create_alumni_todo(
     return {
         "success": True,
         "todo": frappe.db.get_value("ToDo", doc.name, _existing_todo_fields(), as_dict=True),
+    }
+
+
+# ── Alumni Todo list / types / actions ───────────────────────────────────────
+# Ported from 84a537d4: dev-microapps never received this work, so the portal
+# was calling endpoints that did not exist on this branch.
+
+
+# ── Alumni Todo: Todo Type visibility gate ───────────────────────────────────
+# `Todo Type.custom_show_in_alumni_portal` decides which categories the Alumni
+# Portal may see. Enforcement lives here, not in the frontend: the portal used
+# to call cn_todo_manager's `get_todo_list` directly, and anything the client
+# passes it can equally be left out.
+#
+# Opt-in: a type is invisible until ticked, so a Todo Type added by another team
+# cannot leak into the portal by default. Todos with no type ("Uncategorized")
+# have no flag to tick and are therefore not shown.
+
+ALUMNI_TODO_TYPE_FLAG = "custom_show_in_alumni_portal"
+
+
+def _alumni_visible_todo_types() -> list[str]:
+    """Todo Type names the Alumni Portal is allowed to show."""
+    if not frappe.db.has_column("Todo Type", ALUMNI_TODO_TYPE_FLAG):
+        return []
+    return frappe.get_all("Todo Type", filters={ALUMNI_TODO_TYPE_FLAG: 1}, pluck="name")
+
+
+def _get_alumni_todo_delegation_summary(user: str) -> dict:
+    """Task-manager policy summary, narrowed to Alumni Portal categories/users."""
+    from cn_todo_manager.chatnext_todo_manager.doctype.delegation_policy.delegation_policy import (
+        get_user_delegation_summary,
+    )
+
+    result = get_user_delegation_summary(user=user) or {}
+    visible = set(_alumni_visible_todo_types())
+    result["applicable_policies"] = list(result.get("applicable_policies") or [])
+    result["allow_delegation_of_below_tasks"] = sorted(
+        visible.intersection(result.get("allow_delegation_of_below_tasks") or [])
+    )
+    result["allowed_delegates"] = sorted(
+        {value.strip() for value in (result.get("allowed_delegates") or [])
+         if isinstance(value, str) and value.strip() and value.strip() != user}
+    )
+    return result
+
+
+@frappe.whitelist(methods=["GET", "POST"])
+def get_alumni_todo_delegation_summary() -> dict:
+    """Return only the current alumnus's delegation policy summary."""
+    return _get_alumni_todo_delegation_summary(_require_alumni_session())
+
+
+@frappe.whitelist(methods=["GET", "POST"])
+def get_alumni_todo_delegation_history(todo_reference: str) -> list[dict]:
+    """Return delegation history only for a ToDo accessible to the alumnus."""
+    _require_own_todo(todo_reference)
+
+    from cn_todo_manager.chatnext_todo_manager.api.delegation_api import (
+        get_delegation_history,
+    )
+
+    return get_delegation_history(todo_reference)
+
+
+def _parse_alumni_list(value, fieldname: str) -> list:
+    if value in (None, ""):
+        return []
+    if isinstance(value, str):
+        try:
+            value = frappe.parse_json(value)
+        except Exception:
+            frappe.throw(_("{0} must be a JSON array.").format(fieldname))
+    if not isinstance(value, list):
+        frappe.throw(_("{0} must be an array.").format(fieldname))
+    return value
+
+
+@frappe.whitelist(methods=["POST"])
+def create_alumni_category_rule(rule_data) -> dict:
+    """Create a policy-authorized category delegation rule for this alumnus."""
+    user = _require_alumni_session()
+    if isinstance(rule_data, str):
+        try:
+            rule_data = frappe.parse_json(rule_data)
+        except Exception:
+            frappe.throw(_("rule_data must be valid JSON."))
+    if not isinstance(rule_data, dict):
+        frappe.throw(_("rule_data must be an object."))
+
+    rule_name = str(rule_data.get("rule_name") or "").strip()
+    categories = _parse_alumni_list(rule_data.get("categories"), "categories")
+    categories = list(dict.fromkeys(str(v).strip() for v in categories if str(v).strip()))
+    delegated_to = str(rule_data.get("delegated_to") or "").strip()
+    if not rule_name or not categories or not delegated_to:
+        frappe.throw(_("Rule name, categories, and delegated user are required."))
+
+    summary = _get_alumni_todo_delegation_summary(user)
+    permitted_categories = set(summary.get("allow_delegation_of_below_tasks") or [])
+    permitted_delegates = set(summary.get("allowed_delegates") or [])
+    if any(category not in permitted_categories for category in categories):
+        frappe.throw(_("One or more categories cannot be delegated."), frappe.PermissionError)
+    if delegated_to == user or delegated_to not in permitted_delegates:
+        frappe.throw(_("That delegate is not permitted."), frappe.PermissionError)
+
+    alternative = str(rule_data.get("alternative_delegate") or "").strip()
+    if alternative and (alternative == user or alternative not in permitted_delegates):
+        frappe.throw(_("That alternative delegate is not permitted."), frappe.PermissionError)
+    priority_filter = str(rule_data.get("priority_filter") or "").strip()
+    if priority_filter not in ("", "Low", "Medium", "High"):
+        frappe.throw(_("Priority filter must be Low, Medium, High, or empty."))
+    try:
+        priority = int(rule_data.get("priority", 1))
+    except (TypeError, ValueError):
+        frappe.throw(_("Priority must be a whole number."))
+
+    permissions = _parse_alumni_list(
+        rule_data.get("delegation_permissions", ["view", "edit", "complete"]),
+        "delegation_permissions",
+    )
+    if any(p not in {"view", "edit", "complete"} for p in permissions):
+        frappe.throw(_("Delegation permissions contain an unsupported value."))
+
+    effective_from = rule_data.get("effective_from") or None
+    effective_to = rule_data.get("effective_to") or None
+    if effective_from and effective_to:
+        from frappe.utils import getdate
+        if getdate(effective_from) > getdate(effective_to):
+            frappe.throw(_("Effective To cannot be before Effective From."))
+
+    doc_data = {
+        "doctype": "Category Delegation Rule", "rule_name": rule_name,
+        "delegated_to": delegated_to, "is_active": frappe.utils.cint(rule_data.get("is_active", 1)),
+        "priority": priority, "delegation_type": rule_data.get("delegation_type") or "Direct Assignment",
+        "notes": rule_data.get("notes") or "", "created_by": user,
+        "delegation_permissions": frappe.as_json(permissions),
+    }
+    for field, value in (("effective_from", effective_from), ("effective_to", effective_to),
+                         ("priority_filter", priority_filter), ("alternative_delegate", alternative)):
+        if value:
+            doc_data[field] = value
+    rule = frappe.get_doc(doc_data)
+    for category in categories:
+        rule.append("categories", {"todo_type": category})
+    rule.insert(ignore_permissions=True)
+    frappe.db.commit()
+    return {"success": True, "rule_name": rule.name, "message": _("Delegation rule created successfully.")}
+
+
+# Reference doctypes whose ToDos are always exposed to the portal, regardless
+# of `Todo Type.custom_show_in_alumni_portal`. These are ToDos the Alumni
+# Portal has its own dedicated screen/button for (e.g. the Separation status
+# page's "Act" button) and that HR did not create through the normal
+# category-tagged ToDo flow -- e.g. the Separation engine's own ToDos
+# (`customizations/employee_separation/employee_separation.py`) are plain
+# `ToDo`s with no `custom_todo_type` set at all, so the opt-in Todo Type flag
+# can never be ticked for them without a code change wiring one in. Until/
+# unless that happens, gate on the reference instead of the (absent) category.
+_ALUMNI_ALWAYS_VISIBLE_REFERENCE_TYPES = {"Employee Separation"}
+
+
+def _todo_type_visible_to_alumni(todo: str) -> bool:
+    """Whether this ToDo's category is exposed to the portal."""
+    todo_type, reference_type = frappe.db.get_value(
+        "ToDo", todo, ["custom_todo_type", "reference_type"]
+    )
+    if reference_type in _ALUMNI_ALWAYS_VISIBLE_REFERENCE_TYPES:
+        return True
+    if not todo_type:
+        return False
+    return bool(
+        frappe.db.get_value("Todo Type", todo_type, ALUMNI_TODO_TYPE_FLAG)
+    )
+
+
+def _user_owns_todo(user: str, name: str, row: dict) -> bool:
+    """Whether ``user`` may act on ToDo ``name``.
+
+    A ToDo can reach a user through four mechanisms, not one. Funnel-created
+    ToDos in particular leave `allocated_to` NULL and assign through child
+    tables — nextai's own code notes this ("users assigned via child tables
+    won't pass standard checks"). Checking only `allocated_to`/`assigned_by`
+    therefore rejected todos the list had just shown, giving a 403 the moment a
+    user opened one.
+
+    Membership is resolved by cn_todo_manager's OWN resolver so the detail
+    endpoints and `get_todo_list` can never disagree: a user may open exactly
+    what the list showed them, by construction. Nothing in cn_todo_manager is
+    modified — this only calls it.
+
+    Note this is membership, not a role grant: for a genuine alumnus (a
+    role-less Website User) the role-based arms of that query match nothing, so
+    it reduces to direct assignment.
+    """
+    # An alumnus may still own ToDos allocated to their pre-switch company
+    # email (see `recruitment.recruitment.alumni_user_switch`) — resolve every
+    # identity `user` is known by before checking any allocation mechanism, so
+    # ownership here agrees with cn_todo_manager's own `get_todo_list` (which
+    # resolves the same way). A plain, non-alumni caller just gets back
+    # `[user]` unchanged.
+    try:
+        from cn_todo_manager.chatnext_todo_manager.utils.user_utils import (
+            _todo_identity_users,
+        )
+
+        identity_users = _todo_identity_users(user)
+    except Exception:
+        identity_users = [user]
+
+    # Cheap direct checks first — the common case, and no query needed.
+    # `owner` is included because the Team Todo scope lists by owner
+    # (`owner = user AND allocated_to != user`), i.e. work the user raised for
+    # someone else. Without it, opening a row from that tab 403s.
+    if any(
+        identity in (row.get("allocated_to"), row.get("assigned_by"), row.get("owner"))
+        for identity in identity_users
+    ):
+        return True
+
+    try:
+        from cn_todo_manager.chatnext_todo_manager.api.todo_api import (
+            OptimizedTodoQueryBuilder,
+        )
+
+        builder = OptimizedTodoQueryBuilder.__new__(OptimizedTodoQueryBuilder)
+        builder.user = user
+        return name in (builder.get_todo_names_for_users(identity_users) or [])
+    except Exception:
+        # If that resolver is unavailable or changes shape, fall back to the
+        # two child-table mechanisms rather than silently granting access.
+        frappe.logger("alumni_portal").warning(
+            "todo ownership: cn_todo_manager resolver unavailable, using fallback"
+        )
+
+    if frappe.db.exists(
+        "Nextai User Select",
+        {"parent": name, "parenttype": "ToDo", "user": ["in", identity_users]},
+    ):
+        return True
+
+    roles = [r for r in (frappe.get_roles(user) or []) if r]
+    if not roles:
+        return False
+    if frappe.db.get_value("ToDo", name, "role") in roles:
+        return True
+    return bool(
+        frappe.db.exists(
+            "Nextai Role Select",
+            {"parent": name, "parenttype": "ToDo", "role": ["in", roles]},
+        )
+    )
+
+
+def _todo_declared_actions(todo: str) -> list[str]:
+    """The action labels a ToDo itself declares, from `custom_doctype_actions`.
+
+    Entries are plain strings or ``{label, value}`` objects, the same two shapes
+    the ESS SmartActions parser accepts.
+    """
+    raw = frappe.db.get_value("ToDo", todo, "custom_doctype_actions")
+    if not raw:
+        return []
+    try:
+        parsed = frappe.parse_json(raw)
+    except Exception:
+        return []
+    if not isinstance(parsed, list):
+        return []
+
+    actions = []
+    for item in parsed:
+        if isinstance(item, str):
+            actions.append(item)
+        elif isinstance(item, dict):
+            value = item.get("value") or item.get("label")
+            if value:
+                actions.append(value)
+    return actions
+
+
+def _assert_todo_actionable(name: str) -> None:
+    """Fail early, and specifically, when a todo cannot be actioned.
+
+    Without this the nextai handler raises deep inside — "Funnel Task None not
+    found", "Approval Log Entry not found" — and the caller only sees the
+    generic wrapper message. These are configuration problems, so they deserve
+    a message that says which piece is missing.
+    """
+    todo = frappe.db.get_value(
+        "ToDo", name, ["custom_approval_type", "custom_funnel_task"], as_dict=True
+    ) or {}
+
+    if todo.get("custom_approval_type") == "Approval Matrix":
+        log = frappe.db.get_value(
+            "Approval Log Entry", {"todo_reference": name},
+            ["name", "form_for_approval"], as_dict=True,
+        )
+        if not log:
+            frappe.local.response["http_status_code"] = 409
+            frappe.throw(
+                _("This todo has no approval record, so it cannot be actioned yet.")
+            )
+        # The handler only needs the Funnel Task when a form has to be shown.
+        if log.get("form_for_approval") and not todo.get("custom_funnel_task"):
+            frappe.local.response["http_status_code"] = 409
+            frappe.throw(
+                _("This todo has an approval form but no linked task, so the form cannot be opened.")
+            )
+
+    if todo.get("custom_funnel_task") and not frappe.db.exists(
+        "Funnel Task", todo["custom_funnel_task"]
+    ):
+        frappe.local.response["http_status_code"] = 409
+        frappe.throw(_("The task behind this todo no longer exists."))
+
+
+def _alumni_visible_stage_names(user: str, todo_id: str) -> set | None:
+    """Approval stage names ``user`` may see the form for, or None if unknown.
+
+    Stage rows and log rows are positional siblings on the Approval Tracker, so
+    they are zipped by index — the same way the ESS reader indexes them.
+    Returning None means "could not resolve", and the caller then leaves the
+    ESS result untouched rather than hiding everything.
+    """
+    parent = frappe.db.get_value("Approval Log Entry", {"todo_reference": todo_id}, "parent")
+    if not parent:
+        return None
+    try:
+        tracker = frappe.get_doc("Approval Tracker", parent)
+    except Exception:
+        return None
+
+    stages = tracker.get("approval_stages") or []
+    logs = tracker.get("approval_logs") or []
+    if not stages:
+        return None
+
+    visible = set()
+    for idx, stage in enumerate(stages):
+        name = stage.get("approval_name")
+        if not name or idx >= len(logs):
+            continue
+        if _alumni_stage_is_mine(user, logs[idx].as_dict()):
+            visible.add(name)
+    return visible
+
+
+def _alumni_stage_is_mine(user: str, log_row: dict) -> bool:
+    """Whether ``user`` is an approver for this Approval Log Entry.
+
+    Explicit `show_to_users` / `show_to_roles` win when set — they are the
+    author's deliberate override. Otherwise the approver fields decide.
+    """
+    roles = set(frappe.get_roles(user) or [])
+
+    def _split(value):
+        return {v.strip() for v in (value or "").split(",") if v.strip()}
+
+    show_users = _split(log_row.get("show_to_users"))
+    show_roles = _split(log_row.get("show_to_roles"))
+    if show_users or show_roles:
+        return user in show_users or bool(roles & show_roles)
+
+    if user in _split(log_row.get("user")) or user in _split(
+        log_row.get("custom_allocated_to_users")
+    ):
+        return True
+    return bool(
+        roles & (_split(log_row.get("role")) | _split(log_row.get("custom_assigned_to_roles")))
+    )
+
+
+@frappe.whitelist(methods=["POST"])
+def get_alumni_todo_list(**kwargs) -> dict:
+    """Paginated todo list, restricted to portal-visible Todo Types.
+
+    Delegates to cn_todo_manager's `get_todo_list` so paging, search, sorting,
+    `list_view_fields` and `reference_data` all behave identically — only the
+    category scope is narrowed. `todo_type_filter` is overwritten rather than
+    merged, so a caller cannot widen it.
+    """
+    _require_alumni_session()
+
+    allowed = _alumni_visible_todo_types()
+    if not allowed:
+        # Nothing is opted in yet — return an empty page rather than everything.
+        return {
+            "message": [],
+            "total_count": 0,
+            "total_pages": 0,
+            "current_page": frappe.utils.cint(kwargs.get("page") or 1),
+            "list_view_fields": [],
+        }
+
+    from cn_todo_manager.chatnext_todo_manager.api import todo_api
+
+    params = {k: v for k, v in kwargs.items() if k != "cmd"}
+
+    sort_by = str(params.get("sort_by") or "modified").strip()
+    sort_order = str(params.get("sort_order") or "desc").strip().lower()
+    allowed_sort_fields = {
+        "modified",
+        "creation",
+        "date",
+        "priority",
+        "allocated_to",
+        "assigned_by",
+        "custom_subject",
+        "status",
+    }
+    if sort_by.lower() in allowed_sort_fields:
+        params["sort_by"] = sort_by.lower()
+    else:
+        params["sort_by"] = "modified"
+    if sort_order not in {"asc", "desc"}:
+        params["sort_order"] = "desc"
+    else:
+        params["sort_order"] = sort_order
+
+    # A supplied category selection may narrow the server scope, never widen it.
+    if params.get("todo_type_filter") not in (None, ""):
+        requested = _parse_alumni_list(params["todo_type_filter"], "todo_type_filter")
+        selected = [name for name in requested if name in set(allowed)]
+        if not selected:
+            return {"message": [], "total_count": 0, "total_pages": 0,
+                    "current_page": frappe.utils.cint(params.get("page") or 1), "list_view_fields": []}
+        params["todo_type_filter"] = frappe.as_json(selected)
+    else:
+        params["todo_type_filter"] = frappe.as_json(allowed)
+    if params.get("category_filter") and params["category_filter"] not in allowed:
+        frappe.local.response["http_status_code"] = 403
+        frappe.throw(_("That category is not available."), frappe.PermissionError)
+
+    return todo_api.get_todo_list(**params)
+
+
+@frappe.whitelist(methods=["GET", "POST"])
+def get_alumni_todo_filter_options(type: str = "My Todo") -> dict:
+    """Return task filters derived only from people in the caller's task scope."""
+    user = _require_alumni_session()
+    if type not in ("My Todo", "Team Todo"):
+        frappe.throw(_("Type must be My Todo or Team Todo."))
+    visible_types = _alumni_visible_todo_types()
+    rows = []
+    try:
+        from cn_todo_manager.chatnext_todo_manager.api.todo_api import OptimizedTodoQueryBuilder
+
+        if visible_types:
+            builder = OptimizedTodoQueryBuilder(user, type)
+            builder.apply_filters(todo_type_filter=frappe.as_json(visible_types))
+            rows = (builder.get_paginated_results(1, 100000, "modified", "desc") or {}).get(
+                "message", []
+            )
+    except Exception:
+        names = frappe.get_all(
+            "ToDo",
+            filters={"allocated_to": user, "custom_todo_type": ["in", visible_types]},
+            pluck="name",
+        ) if visible_types else []
+        rows = (
+            frappe.get_all(
+                "ToDo",
+                filters={"name": ["in", names]},
+                fields=["allocated_to", "assigned_by", "owner"],
+            )
+            if names
+            else []
+        )
+    involved = {user}
+    for row in rows:
+        involved.update(v for v in (row.get("allocated_to"), row.get("assigned_by"), row.get("owner")) if v)
+    involved.update(_get_alumni_todo_delegation_summary(user).get("allowed_delegates") or [])
+    user_rows = frappe.get_all("User", filters={"name": ["in", sorted(involved)], "enabled": 1},
+                               fields=["name", "full_name"])
+    users = [{"value": row.name, "label": row.full_name or row.name} for row in user_rows if row.name in involved]
+
+    involved_list = sorted(involved)
+    _emp_fields = ["name", "user_id", "company", "branch", "employment_type", "employee_name"]
+    _has_alumni_link = bool(frappe.get_meta("Employee").get_field("custom_alumni_user"))
+    if _has_alumni_link:
+        _emp_fields.append("custom_alumni_user")
+    employees = frappe.get_all(
+        "Employee", filters={"user_id": ["in", involved_list]}, fields=_emp_fields
+    )
+    # Alumni sign in with their personal email (Employee.custom_alumni_user), not
+    # Employee.user_id, so also pull employees linked to an involved alumni User
+    # and merge them in (deduped) — otherwise alumni are missing from the options.
+    if _has_alumni_link:
+        seen_emp = {e.name for e in employees}
+        for e in frappe.get_all(
+            "Employee",
+            filters={"custom_alumni_user": ["in", involved_list]},
+            fields=_emp_fields,
+        ):
+            if e.name not in seen_emp:
+                employees.append(e)
+                seen_emp.add(e.name)
+
+    company_names = sorted({row.company for row in employees if row.company})
+    company_rows = (
+        frappe.get_all("Company", filters={"name": ["in", company_names]}, fields=["name", "company_name"])
+        if company_names
+        else []
+    )
+    company_lookup = {row.name: row.company_name or row.name for row in company_rows}
+
+    branch_names = sorted({row.branch for row in employees if row.branch})
+    branch_rows = (
+        frappe.get_all("Branch", filters={"name": ["in", branch_names]}, fields=["name", "branch"])
+        if branch_names
+        else []
+    )
+    branch_lookup = {row.name: row.branch or row.name for row in branch_rows}
+
+    employment_type_names = sorted({row.employment_type for row in employees if row.employment_type})
+    employment_type_rows = (
+        frappe.get_all(
+            "Employment Type",
+            filters={"name": ["in", employment_type_names]},
+            fields=["name", "employee_type_name"],
+        )
+        if employment_type_names
+        else []
+    )
+    employment_type_lookup = {
+        row.name: row.employee_type_name or row.name for row in employment_type_rows
+    }
+
+    employee_options = []
+    for row in employees:
+        label = row.employee_name and f"{row.employee_name.strip()} ({row.name})" or row.name
+        option = {"value": row.name, "label": label}
+        # Show the address the person actually signs in with: for an alumnus that
+        # is the personal-email (custom_alumni_user), not the company user_id.
+        login = row.get("custom_alumni_user") or row.user_id
+        if login:
+            option["secondary"] = login
+        employee_options.append(option)
+
+    return {
+        "users": users,
+        "companies": [
+            {"value": company_name, "label": company_lookup.get(company_name, company_name)}
+            for company_name in company_names
+        ],
+        "locations": [
+            {"value": branch_name, "label": branch_lookup.get(branch_name, branch_name)}
+            for branch_name in branch_names
+        ],
+        "employee_types": [
+            {
+                "value": employment_type_name,
+                "label": employment_type_lookup.get(employment_type_name, employment_type_name),
+            }
+            for employment_type_name in employment_type_names
+        ],
+        "employees": employee_options,
+        # Alumni resolve to their Employee via custom_alumni_user, not user_id.
+        "current_employee": alumni_employee_name(user)
+        or next((row.name for row in employees if row.user_id == user), None),
+    }
+
+
+@frappe.whitelist(methods=["POST"])
+def get_alumni_todo_categories(type: str = "My Todo") -> dict:
+    """Sidebar categories, narrowed to the portal-visible Todo Types."""
+    _require_alumni_session()
+
+    allowed = set(_alumni_visible_todo_types())
+    if not allowed:
+        return {"message": []}
+
+    from cn_todo_manager.chatnext_todo_manager.api import todo_api
+
+    result = todo_api.get_todo_categories(type=type) or {}
+    rows = result.get("message") or []
+    return {"message": [r for r in rows if r.get("name") in allowed]}
+
+
+@frappe.whitelist(methods=["GET", "POST"])
+def get_alumni_todo_types() -> dict:
+    """The Todo Types visible in the portal, for the UI to reason about."""
+    _require_alumni_session()
+    return {"success": True, "todo_types": _alumni_visible_todo_types()}
+
+
+@frappe.whitelist(methods=["GET", "POST"])
+def get_alumni_todo_form(name: str) -> dict:
+    """The form configured for this todo's category, as a form.io schema.
+
+    Read from `Todo Type.custom_alumni_form`. The ChatNext form is resolved from
+    the Funnel node instead, which the portal cannot reach — this is the portal's
+    own, directly renderable equivalent.
+
+    Returns `form: None` when the category has no form configured, which the UI
+    treats as "no form", not as an error.
+    """
+    _require_own_todo(name)
+
+    todo_type = frappe.db.get_value("ToDo", name, "custom_todo_type")
+    widget = (
+        frappe.db.get_value("Todo Type", todo_type, "custom_alumni_form")
+        if todo_type
+        else None
+    )
+    if not widget:
+        return {"success": True, "form": None}
+
+    row = frappe.db.get_value(
+        "Microapp Form Widget", widget, ["name", "label", "custom_form_data"], as_dict=True
+    ) or {}
+
+    schema = None
+    raw = row.get("custom_form_data")
+    if raw:
+        try:
+            schema = frappe.parse_json(raw) if isinstance(raw, str) else raw
+        except Exception:
+            frappe.logger("alumni_portal").warning(
+                f"Todo form {widget!r} has unparseable custom_form_data"
+            )
+
+    return {
+        "success": True,
+        "form": {
+            "widget": row.get("name"),
+            "label": row.get("label") or row.get("name"),
+            "schema": schema,
+        },
+    }
+
+
+@frappe.whitelist(methods=["POST"])
+def get_alumni_todo_activity_forms(todo_id: str) -> dict:
+    """Initiator / workflow / approval forms recorded against one of the
+    caller's own todos.
+
+    ESS reference: `cn_hrms_core…funnel_activity.get_forms_by_todo`.
+
+    That function is NOT exposed to alumni directly, for two reasons:
+
+      * it performs no ownership check — any todo_id returns its forms;
+      * it accepts a `session_user` argument and filters on
+        ``session_user or frappe.session.user``, so a caller can ask for the
+        view of a different user.
+
+    This wrapper checks ownership first (which also applies the Todo Type
+    portal gate) and calls through WITHOUT `session_user`, so the result is
+    always resolved against the real session. Nothing in cn_hrms_core changes.
+    """
+    _require_own_todo(todo_id)
+
+    try:
+        from cn_hrms_core.cn_hrms_core.apis.funnel_activity import get_forms_by_todo
+
+        # session_user deliberately omitted — never let the caller pick an identity.
+        result = get_forms_by_todo(todo_id=todo_id)
+    except Exception:
+        frappe.logger("alumni_portal").warning(
+            f"todo activity forms failed for {todo_id}"
+        )
+        frappe.log_error(
+            frappe.get_traceback(), f"Alumni todo activity forms failed: {todo_id}"
+        )
+        frappe.local.response["http_status_code"] = 500
+        frappe.throw(_("Could not load the forms for this todo."))
+
+    data = (result or {}).get("data") or {}
+    approval_stages = data.get("approval_stages") or []
+
+    # ESS returns every stage's form to everyone: its `can_view_form` check only
+    # bites when show_to_users/show_to_roles are set, and in practice they almost
+    # never are (3 of 887 rows on this site). In the portal one signed-in user
+    # would therefore see the HRBP form AND the final-approver form. Narrow it to
+    # the stages this user is actually an approver for.
+    caller = frappe.session.user
+    visible = _alumni_visible_stage_names(caller, todo_id)
+    if visible is not None:
+        approval_stages = [
+            s for s in approval_stages if s.get("stage_name") in visible
+        ]
+
+    return {
+        "success": True,
+        "initiator_forms": data.get("initiator_forms") or [],
+        "workflow_stages": data.get("workflow_stages") or [],
+        "approval_stages": approval_stages,
+    }
+
+
+@frappe.whitelist(methods=["POST"])
+def submit_alumni_todo_action(name: str, action: str) -> dict:
+    """Run a workflow action on one of the caller's own ToDos.
+
+    Returns the ChatNext ``session`` when the ToDo is configured to open the
+    assistant, so the portal can hand it to `trigger_chatnext_assistant` exactly
+    as ESS does. ``session`` is None when no assistant step is configured — the
+    action still runs.
+    """
+    _require_own_todo(name)
+
+    action = (action or "").strip()
+    if not action:
+        frappe.local.response["http_status_code"] = 400
+        frappe.throw(_("An action is required."))
+
+    # The ToDo's own declared actions are the allowlist — an alumnus cannot
+    # invent an option the workflow never offered them.
+    allowed = _todo_declared_actions(name)
+    if not allowed:
+        frappe.local.response["http_status_code"] = 400
+        frappe.throw(_("This todo has no actions."))
+    if action not in allowed:
+        frappe.local.response["http_status_code"] = 403
+        frappe.throw(_("That action is not available on this todo."), frappe.PermissionError)
+
+    if frappe.db.get_value("ToDo", name, "status") == "Closed":
+        frappe.local.response["http_status_code"] = 409
+        frappe.throw(_("This todo is already closed."))
+
+    _assert_todo_actionable(name)
+
+    # `select_event_from_options` reassigns frappe.session.user via
+    # set_funnel_user(). Capture and restore it so the rest of the request — and
+    # anything the portal does next — still runs as the alumnus.
+    original_user = frappe.session.user
+    try:
+        from nextai.funnel.doctype.funnel_task.awaiting_actions import (
+            chatnext_assistant_multi_actions as multi_actions,
+        )
+
+        result = multi_actions.select_event_from_options(
+            selected_option=action,
+            data=frappe.as_json({"name": name}),
+        )
+    except Exception as exc:
+        frappe.set_user(original_user)
+        frappe.logger("alumni_portal").warning(
+            f"Alumni todo action failed: todo={name} action={action}"
+        )
+        frappe.log_error(
+            frappe.get_traceback(), f"Alumni todo action failed: {name} / {action}"
+        )
+        frappe.local.response["http_status_code"] = 500
+        # Carry the underlying reason through. Flattening every failure to one
+        # string hid "Funnel Task None not found" behind "Could not complete
+        # that action", which is unactionable for whoever has to fix it.
+        reason = str(exc).strip()
+        frappe.throw(
+            _("Could not complete that action: {0}").format(reason)
+            if reason
+            else _("Could not complete that action.")
+        )
+    finally:
+        frappe.set_user(original_user)
+
+    session = (result or {}).get("session") if isinstance(result, dict) else None
+
+    return {
+        "success": True,
+        "action": action,
+        # Mirrors the ESS trigger condition so the portal can decide whether to
+        # open the assistant without re-reading the ToDo.
+        "session": session,
+        "open_assistant": bool(
+            session
+            and frappe.db.get_value("ToDo", name, "custom_open_chatnext_assistant_on_action")
+        ),
+        "todo": frappe.db.get_value(
+            "ToDo", name, ["name", "status", "custom_approval_type"], as_dict=True
+        ),
     }
 
 
@@ -3673,8 +4607,17 @@ def _alumni_suggestion_fallback(user: str, need: int, seen: set) -> list[dict]:
 
     out = []
     for row in candidates:
-        employee = frappe.db.get_value(
-            "Employee", {"user_id": row.name}, ["designation", "department"], as_dict=True
+        # Alumni sign in with their personal email, so Employee.user_id (the
+        # company address) never matches. Resolve via the alumni-aware mapping
+        # (custom_alumni_user -> user_id -> personal_email) so designation and
+        # department are populated for alumni suggestions.
+        emp_name = alumni_employee_name(row.name)
+        employee = (
+            frappe.db.get_value(
+                "Employee", emp_name, ["designation", "department"], as_dict=True
+            )
+            if emp_name
+            else None
         ) or frappe._dict()
         out.append(
             {
@@ -3986,6 +4929,19 @@ def get_alumni_celebrations(days: int = 30, days_in_advance: int = None) -> dict
     result = celebrations_api.get_upcoming_celebrations(
         days=days, days_in_advance=days_in_advance
     ) or {}
+    # The delegate is guarded by Work Connect's role gate, which an alumnus (a
+    # role-less Website User) does not pass. This wrapper is itself an authorised,
+    # alumni-only entry point and re-filters the (read-only, workforce-wide)
+    # result to fellow alumni below, so run the delegate in a privileged context
+    # and always restore the original session user.
+    original_user = frappe.session.user
+    try:
+        frappe.set_user("Administrator")
+        result = celebrations_api.get_upcoming_celebrations(
+            days=days, days_in_advance=days_in_advance
+        ) or {}
+    finally:
+        frappe.set_user(original_user)
     data = result.get("data") or {}
 
     def _mine(rows):
@@ -4006,3 +4962,113 @@ def get_alumni_celebrations(days: int = 30, days_in_advance: int = None) -> dict
 
     result["data"] = data
     return result
+
+
+# ── Alumni feed permission model ──────────────────────────────────────────────
+# The portal's feed actions are switchable per site (e.g. commenting, saving).
+# The switches live on the "Alumni Portal Settings" single doctype, following
+# chatnext_work_connect's "Work Connect Settings" precedent -- the client is
+# never trusted, the server decides.
+#
+# Why wrappers rather than guarding the Work Connect methods directly: those
+# live in chatnext_work_connect, which ESS shares and which must not be edited.
+# So the direct methods come OFF the alumni allowlist and the portal calls these
+# wrappers instead, which check the setting and then delegate to the very same
+# functions. Response envelopes are passed through untouched.
+#
+# Note these wrappers need no allowlist entry: `alumni_guard.ALUMNI_NAMESPACES`
+# already admits everything under `recruitment.recruitment.alumni_portal.`.
+
+_ALUMNI_ACTION_SETTINGS = {
+    "comment": ("allow_alumni_comment", "Commenting is currently disabled for alumni users."),
+    "reaction": ("allow_alumni_reaction", "Reactions are currently disabled for alumni users."),
+    "save": ("allow_alumni_save", "Saving posts is currently disabled for alumni users."),
+}
+
+
+def alumni_action_allowed(action: str) -> tuple[bool, str]:
+    """(allowed, denial message) for one feed action.
+
+    Non-alumni are always allowed: this gate exists only to restrain the Alumni
+    Portal and must never change ESS behaviour, so it returns early before
+    reading any setting.
+
+    Fails OPEN on an unreadable setting -- a missing doctype or a transient DB
+    error must not silently strip permissions that default to on.
+    """
+    from recruitment.recruitment.alumni_guard import is_alumni_user
+
+    if not is_alumni_user():
+        return True, ""
+
+    field, message = _ALUMNI_ACTION_SETTINGS.get(action, (None, ""))
+    if not field:
+        return False, _("Unknown action.")
+
+    try:
+        from frappe.utils import cint
+
+        # Read tabSingles with raw SQL, deliberately, on two counts:
+        #   * db.get_single_value casts through cast_fieldtype, which turns a
+        #     missing row into 0 for a Check field -- making "never configured"
+        #     look identical to "switched off". Every flag defaults to 1, so a
+        #     freshly migrated site would then deny the entire feed.
+        #   * db.get_value("Singles", ...) appends ORDER BY `modified`, a column
+        #     tabSingles does not have, and raises OperationalError 1054.
+        row = frappe.db.sql(
+            "select value from tabSingles where doctype=%s and field=%s limit 1",
+            ("Alumni Portal Settings", field),
+        )
+        stored = row[0][0] if row else None
+    except Exception:
+        frappe.log_error(frappe.get_traceback(), "Alumni Portal Settings unreadable")
+        return True, ""
+
+    if stored is None:
+        return True, ""
+
+    return (True, "") if cint(stored) else (False, _(message))
+
+
+def _require_alumni_action(action: str) -> None:
+    """Throw 403 with the configured message when `action` is switched off."""
+    allowed, message = alumni_action_allowed(action)
+    if not allowed:
+        frappe.local.response["http_status_code"] = 403
+        frappe.throw(message, frappe.PermissionError)
+
+
+# ── Comment wrappers ──────────────────────────────────────────────────────────
+@frappe.whitelist(methods=["POST"])
+def add_alumni_comment(post: str, content: str, parent_comment: str | None = None) -> dict:
+    """Comment on a feed post, subject to `allow_alumni_comment`."""
+    _require_alumni_session()
+    _require_alumni_action("comment")
+
+    from chatnext_work_connect.chatnext_work_connect.api import comment as comment_api
+
+    return comment_api.add_comment(post=post, content=content, parent_comment=parent_comment)
+
+
+# ── Reaction wrappers ─────────────────────────────────────────────────────────
+@frappe.whitelist(methods=["POST"])
+def add_alumni_reaction(post: str, reaction_type: str) -> dict:
+    """React to a feed post, subject to `allow_alumni_reaction`."""
+    _require_alumni_session()
+    _require_alumni_action("reaction")
+
+    from chatnext_work_connect.chatnext_work_connect.api import reaction as reaction_api
+
+    return reaction_api.add_reaction(post=post, reaction_type=reaction_type)
+
+
+# ── Saved post wrappers ───────────────────────────────────────────────────────
+@frappe.whitelist(methods=["POST"])
+def save_alumni_post(post_id: str) -> dict:
+    """Bookmark a feed post, subject to `allow_alumni_save`."""
+    _require_alumni_session()
+    _require_alumni_action("save")
+
+    from chatnext_work_connect.chatnext_work_connect.api import saved_post as saved_post_api
+
+    return saved_post_api.save_post(post_id=post_id)

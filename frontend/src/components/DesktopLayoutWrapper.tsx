@@ -6,6 +6,7 @@ import { LogOut, ChevronDown, User, Dock, RotateCcwKey } from "lucide-react";
 import defaultProfile from "../assets/face-rec.png";
 import CollapsibleSidebar from "./shared/CollapsibleSidebar";
 import NotificationBell from "./Notification/NotificationBell";
+import RedeemablePointsBadge from "./Notification/RedeemablePointsBadge";
 
 import { useCurrentEmployee, useCurrentEmployeeDetails } from "../hooks/useEmployee";
 import { ROUTES } from "../constants/routes";
@@ -14,7 +15,7 @@ import useLogout from "../hooks/useLogout";
 import ChangePassword from "./ChangePassword/ChangePassword";
 import ViewingAsBanner from "./ViewingAsBanner";
 import { useTargetUser } from "../context/ViewedUserContext";
-import SearchMembers from "./shared/SearchMembers";
+import CommandSearchBar from "./shared/CommandSearchBar";
 import Button from "./shared/atoms/Button";
 import { Typography } from "./shared/atoms/Typography";
 import { useGetUiPermission } from "../hooks/userUiPermission";
@@ -35,6 +36,7 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
   const location = useLocation();
   const navigate = useNavigate();
   const { mutateAsync: logout } = useLogout();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   // Force static badge count for UI demo
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   const [isSidebarExpanded, setIsSidebarExpanded] = useState(false);
@@ -63,10 +65,12 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
     ) || isActionEnabled(layoutPermission, "switch_to_admin", "Header");
   // logout logic
   const logoutHandler = async () => {
+    setIsLoggingOut(true);
     try {
       await logout();
     } catch (error) {
       console.error("Logout failed:", error);
+      setIsLoggingOut(false);
     }
   };
   // Change password — self-service modal (current / new / confirm) that calls
@@ -174,7 +178,7 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
       >
         {/* Header */}
         <div
-          className="bg-gradient-to-r from-primary-500 via-primary-400 to-primary-500 border-b border-gray-200 px-8 py-[0.3rem] flex items-center justify-between sticky top-0 z-[11] flex-shrink-0"
+          className="bg-gradient-to-r from-primary-500 via-primary-400 to-primary-500 border-b border-gray-200 px-8 py-[0.3rem] flex items-center justify-between sticky top-0 z-[40] flex-shrink-0"
           style={{ height: "73px", maxHeight: "73px" }}
         >
           <div>
@@ -191,10 +195,12 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
           </div>
           {location.pathname !== ROUTES.SEARCH_MEMBERS && (
             <div className="flex-1 min-w-0 flex justify-center">
-              <SearchMembers />
+              <CommandSearchBar />
             </div>
           )}
           <div className="flex items-center gap-4 flex-shrink-0">
+            <RedeemablePointsBadge className="text-white" />
+
             <button
               onClick={handleNotificationClick}
               className="relative p-2 hover:bg-primary-400/20 rounded-lg transition-colors"
@@ -355,19 +361,20 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
 
                     <hr className="my-2 border-gray-100" />
                     <Button
-                      variant="subtle"
+                      variant={isLoggingOut ? "contain" : "subtle"}
                       size="md"
                       fullWidth
                       contentAlign="start"
+                      bgColor="error"
+                      loading={isLoggingOut}
+                      icon={isLoggingOut ? undefined : <LogOut className="w-4 h-4" />}
                       onClick={async () => {
                         await logoutHandler();
                         sessionStorage.removeItem("viewed_employee_id");
                         setShowProfileDropdown(false);
                       }}
-                      bgColor="error"
                     >
-                      <LogOut className="w-4 h-4" />
-                      Logout
+                      {isLoggingOut ? "Logging out..." : "Logout"}
                     </Button>
                   </div>
                 </div>

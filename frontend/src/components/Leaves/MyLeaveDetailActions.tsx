@@ -170,6 +170,7 @@ const MyLeaveDetailActions = ({
         onRevoke={executeRevoke}
         onEdit={handleEditClick}
         onReplace={handleReplaceClick}
+        requestItem={data}
       />
     </div>
   );

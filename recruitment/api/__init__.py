@@ -667,7 +667,26 @@ def get_ticket_list_data(
                 for row in user_rows
             }
 
+        # Remaining Escalation Business Time. Computed, not stored: it counts
+        # down to the next SLA escalation level in the SLA's working hours.
+        escalation_map = {}
+        try:
+            from helpdesk.escalation import get_escalation_status_map
+
+            escalation_map = get_escalation_status_map(data)
+        except Exception:
+            frappe.log_error(
+                frappe.get_traceback(), "Ticket list escalation status failed"
+            )
+
+        # One clock for the whole page: the UI runs its countdowns against the
+        # server's time rather than the browser's, so a skewed or differently
+        # zoned machine still hits zero when the target actually lapses.
+        server_now = frappe.utils.now_datetime()
+
         for tic in data:
+            tic["server_now"] = server_now
+            tic["escalation"] = escalation_map.get(tic.get("name"))
             raised_by = tic.get("raised_by")
             if raised_by in employee_names:
                 tic["raise_by_name"] = employee_names[raised_by]

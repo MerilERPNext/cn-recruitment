@@ -1,5 +1,5 @@
 import { memo } from "react";
-import { Check, Eye, FileCheck, Plus } from "lucide-react";
+import { Check} from "lucide-react";
 import Avatar from "../../../../shared/Avatar";
 import Badge from "../../../../shared/Badge";
 import { Typography } from "../../../../shared/atoms/Typography";
@@ -13,7 +13,7 @@ export const TEAM_TABLE_COLUMN_WIDTHS = [
   "minmax(130px, 1fr)",
   "minmax(140px, 1fr)",
   "minmax(140px, 1fr)",
-  "minmax(130px, 0.9fr)",
+  // "minmax(130px, 0.9fr)",
 ];
 
 const getProgressColor = (progress: number) => {
@@ -45,54 +45,54 @@ const ToneBadge = ({ label, tone }: { label: string; tone?: string }) => {
   );
 };
 
-const ActionButton = ({ actions }: { actions?: string[] }) => {
-  if (!actions || actions.length === 0) return null;
+// const ActionButton = ({ actions }: { actions?: string[] }) => {
+//   if (!actions || actions.length === 0) return null;
 
-  return (
-    <div className="flex items-center justify-center gap-1.5">
-      {actions.map((act) => {
-        if (act === "approve_goals") {
-          return (
-            <button
-              key={act}
-              type="button"
-              title="Review & Approve Goals"
-              className="inline-flex items-center justify-center h-8 w-8 rounded-lg bg-blue-600 text-white shadow-sm transition-all hover:bg-blue-700 active:scale-95"
-            >
-              <FileCheck className="h-4 w-4" />
-            </button>
-          );
-        }
+//   return (
+//     <div className="flex items-center justify-center gap-1.5">
+//       {actions.map((act) => {
+//         if (act === "approve_goals") {
+//           return (
+//             <button
+//               key={act}
+//               type="button"
+//               title="Review & Approve Goals"
+//               className="inline-flex items-center justify-center h-8 w-8 rounded-lg bg-blue-600 text-white shadow-sm transition-all hover:bg-blue-700 active:scale-95"
+//             >
+//               <FileCheck className="h-4 w-4" />
+//             </button>
+//           );
+//         }
       
-        if (act === "create_plan" || act === "add_goals") {
-          return (
-            <button
-              key={act}
-              type="button"
-              title="Create Goal Plan"
-              className="inline-flex items-center justify-center h-8 w-8 rounded-lg bg-emerald-600 text-white shadow-sm transition-all hover:bg-emerald-700 active:scale-95"
-            >
-              <Plus className="h-4 w-4" />
-            </button>
-          );
-        }
-        if (act === "view_goals") {
-          return (
-            <button
-              key={act}
-              type="button"
-              title="View Goals"
-              className="inline-flex items-center justify-center h-8 w-8 rounded-lg border border-slate-200 bg-white text-slate-600 shadow-sm transition-all hover:border-slate-300 hover:bg-slate-100 hover:text-slate-900 active:scale-95"
-            >
-              <Eye className="h-4 w-4" />
-            </button>
-          );
-        }
-        return null;
-      })}
-    </div>
-  );
-};
+//         if (act === "create_plan" || act === "add_goals") {
+//           return (
+//             <button
+//               key={act}
+//               type="button"
+//               title="Create Goal Plan"
+//               className="inline-flex items-center justify-center h-8 w-8 rounded-lg bg-emerald-600 text-white shadow-sm transition-all hover:bg-emerald-700 active:scale-95"
+//             >
+//               <Plus className="h-4 w-4" />
+//             </button>
+//           );
+//         }
+//         if (act === "view_goals") {
+//           return (
+//             <button
+//               key={act}
+//               type="button"
+//               title="View Goals"
+//               className="inline-flex items-center justify-center h-8 w-8 rounded-lg border border-slate-200 bg-white text-slate-600 shadow-sm transition-all hover:border-slate-300 hover:bg-slate-100 hover:text-slate-900 active:scale-95"
+//             >
+//               <Eye className="h-4 w-4" />
+//             </button>
+//           );
+//         }
+//         return null;
+//       })}
+//     </div>
+//   );
+// };
 
 export const TeamMemberItem = memo(({ item: m }: { item: TeamMemberItemType }) => {
   const { isDesktop } = useScreenSize();
@@ -182,9 +182,9 @@ export const TeamMemberItem = memo(({ item: m }: { item: TeamMemberItemType }) =
               </Typography>
             )}
           </div>
-          <div className="w-28 shrink-0">
+          {/* <div className="w-28 shrink-0">
             <ActionButton actions={m.actions} />
-          </div>
+          </div> */}
         </div>
       </article>
     );
@@ -255,11 +255,11 @@ export const TeamMemberItem = memo(({ item: m }: { item: TeamMemberItemType }) =
           </Typography>
         )}
       </div>
-      <div className="whitespace-nowrap text-center">
+      {/* <div className="whitespace-nowrap text-center">
         <div className="flex justify-center">
           <ActionButton actions={m.actions} />
         </div>
-      </div>
+      </div> */}
     </div>
   );
 });

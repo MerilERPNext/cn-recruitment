@@ -41,6 +41,16 @@ from frappe import _
 ALUMNI_NAMESPACES = (
     "recruitment.recruitment.alumni_portal.",
     "recruitment.recruitment.alumni_helpdesk.",
+    # Separation/Confirmation history (read-only) + the self-contained staged
+    # Alumni Request engine. Deliberately NOT `alumni_request_admin` -- those
+    # are staff-only stage actions and must stay unreachable from an alumni
+    # session; see that module's docstring.
+    "recruitment.recruitment.alumni_separation.",
+    # Pending-ToDo detection for the Separation "Act" button. Acting on the
+    # ToDo itself goes through alumni_portal's own existing ToDo endpoints
+    # (already in the namespace above) -- this module only detects whether
+    # one exists.
+    "recruitment.recruitment.alumni_todo.",
 )
 
 # Framework commands an alumni session may still hit (kept intentionally tiny).

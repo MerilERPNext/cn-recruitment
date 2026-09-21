@@ -13,7 +13,7 @@ type TabName =
   | "Refer"
   | "My Referrals"
   | "IJP Openings"
-  | "IJP Jobs Applied"
+  | "IJP Jobs Applied";
 
 
 const tabRoutes: Record<TabName, string> = {
@@ -101,7 +101,7 @@ const RecruitmentApp: React.FC = () => {
 
   const getActionButtonText = () => {
     if (location.pathname === "/webapp/recruitment/requisition") {
-      return "+ Raise Requisition Request";
+      return "+ Raise Requisition";
     }
     if (location.pathname === "/webapp/recruitment/referrals") {
       return "+ Refer Candidate";

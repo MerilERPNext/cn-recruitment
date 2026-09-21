@@ -231,11 +231,16 @@ export function useApprovalActions(
     try {
       await bulkUpdateApprovalStatus(onboardingName, "Approved");
 
+      // Mirror the backend rule: every field that is not already Approved or
+      // Rejected gets approved (the API acts on both "Pending" and "Filled"
+      // rows, so keying off "Pending" alone left candidate-filled fields
+      // looking unchanged until a page refresh).
       setFieldStates((prev) => {
         const next = { ...prev };
         Object.keys(next).forEach((fn) => {
-          if (next[fn].status === "Pending") {
-            next[fn] = { ...next[fn], status: "Approved" };
+          const status = next[fn]?.status;
+          if (status !== "Approved" && status !== "Rejected") {
+            next[fn] = { ...next[fn], status: "Approved", loading: false };
           }
         });
         return next;

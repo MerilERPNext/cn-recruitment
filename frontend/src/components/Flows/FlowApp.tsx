@@ -9,12 +9,14 @@ import Button from "../shared/atoms/Button";
 import { useGetUiPermission } from "../../hooks/userUiPermission";
 import { isActionEnabled } from "../../utils/uiPermission";
 
-type TabName = "Flow Requests" | "Onboarding" | "Confirmation" | "Separation";
+type TabName = "Flow Requests" | "Onboarding" | "Confirmation" | "Separation" | "Separation Dashboard" | "Performance Improvement";
 
 const tabRoutes: Record<TabName, string> = {
   "Flow Requests": "/webapp/flow-app/flow-requests",
   Onboarding: "/webapp/flow-app/onboarding",
   Confirmation: "/webapp/flow-app/confirmation",
+  "Separation Dashboard": "/webapp/flow-app/separation-dashboard",
+  "Performance Improvement": "/webapp/flow-app/performance-improvement",
   Separation: "/webapp/flow-app/separation",
 };
 
@@ -51,7 +53,15 @@ const FlowApp: React.FC = () => {
         key: "Separation",
         label: "Separation",
         permissionKey: "Separation",
-      },
+      }, {
+        key: "Separation Dashboard",
+        label: "Exit Page",
+        permissionKey: "Exit Page",
+      }, {
+        key: "Performance Improvement",
+        label: "Performance Improvement",
+        permissionKey: "Performance Improvement",
+      }
     ];
 
     if (!userUiPermission || userUiPermission.length === 0) {

@@ -1,6 +1,7 @@
 export interface TimesheetDetail {
   activity_type: string;
   project?: string;
+  custom_parent_task?: string;
   task?: string;
   expected_hours?: number;
   from_time: string;
@@ -74,7 +75,10 @@ export interface WeeklyTimesheetTimeLog {
   project_name: string;
   project_id: string | null;
   task_name: string;
-  task_id: string | null;
+  task?: string;
+  task_id?: string | null;
+  custom_parent_task_name?: string | null;
+  custom_parent_task_id?: string | null;
 }
 
 export type TimesheetApprovalStatus = "Draft" | "Pending for Approval" | "Approved" | "Rejected";
@@ -126,7 +130,8 @@ export interface WeeklyTimesheetResponse {
 
 export interface TimesheetEntryRow {
   project: string;
-  task: string;
+  task?: string;
+  custom_parent_task?: string;
   comment: string;
   hrs: number;
 }
@@ -135,3 +140,11 @@ export type TimesheetEntryPayload = Record<string, {
   status: string;
   rows?: TimesheetEntryRow[];
 }>;
+
+export interface TimesheetSettings {
+  show_subtask?: number | boolean;
+  hide_holiday_timesheet?: number | boolean;
+  allow_weekoff_timesheet?: number | boolean;
+  show_select_days_to_submit?: number | boolean;
+  [key: string]: unknown;
+}

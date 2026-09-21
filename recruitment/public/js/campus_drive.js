@@ -12,47 +12,12 @@
  * names open their forms.
  */
 
-const CD_STATUS_COLORS = {
-	Draft: "#6B7280",
-	Open: "#0EA5E9",
-	Shortlisted: "#3B82F6",
-	Interview: "#8B5CF6",
-	Hold: "#F59E0B",
-	Approvals: "#F97316",
-	Accepted: "#10B981",
-	Rejected: "#EF4444",
-};
-const CD_FALLBACK = ["#3B82F6", "#8B5CF6", "#EC4899", "#14B8A6", "#F97316", "#0EA5E9", "#84CC16", "#EAB308"];
-
-function cdHash(s) {
-	let h = 0;
-	for (let i = 0; i < String(s).length; i++) h = (h * 31 + String(s).charCodeAt(i)) >>> 0;
-	return h;
-}
-function cdStatusColor(s) {
-	if (!s) return "#9CA3AF";
-	return CD_STATUS_COLORS[s] || CD_FALLBACK[cdHash(s) % CD_FALLBACK.length];
-}
-function cdTint(hex, alpha) {
-	const h = String(hex).replace("#", "");
-	const n = parseInt(h.length === 3 ? h.split("").map((c) => c + c).join("") : h, 16);
-	return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${alpha})`;
-}
-// A stable colour for any label (role, group, institute) so the same thing is
-// always the same colour across every panel.
-function cdColorFor(key) {
-	return CD_FALLBACK[cdHash(String(key || "")) % CD_FALLBACK.length];
-}
-function cdInitials(name) {
-	const parts = String(name || "").trim().split(/\s+/).filter(Boolean);
-	if (!parts.length) return "?";
-	return ((parts[0][0] || "") + (parts[1] ? parts[1][0] : "")).toUpperCase();
-}
-function cdAvatar(name, color) {
-	return `<span class="cd-avatar" style="background:${cdTint(color, 0.18)};color:${color}">${frappe.utils.escape_html(
-		cdInitials(name)
-	)}</span>`;
-}
+// Colour, avatar and style primitives — and the group board itself — now live in
+// campus_gd_board.js (hooks.app_include_js). The Group Discussion doctype renders the
+// identical cards for the panel conducting ONE group, and a second copy of them here
+// is a second thing to keep in step. They are globals, so everything below still
+// refers to CD_FALLBACK / cdStatusColor / cdTint / cdColorFor / cdAvatar /
+// cdInjectStyles by name.
 
 frappe.ui.form.on("Campus Drive", {
 	setup(frm) {
@@ -270,6 +235,66 @@ function cdApplyStageOptions(frm, m) {
 
 let cdRoundsData = { rounds: [], invites: [] };
 
+// The three regions a campus candidate can be pulled between, as table cells.
+//
+//   Applied      the region of the invite they came in on
+//   Recommended  what an interview panel argued for — still waiting on HR, so it
+//                changes nothing yet, which is exactly why it has to be visible
+//   Requested    where HR actually moved them; only this region's panel may take them
+//
+// Tinted rather than plain text: the whole point of the columns is that a mismatch
+// is spotted before someone clicks Schedule and the round refuses.
+function cdRegionCells(c, esc) {
+	const chip = (label, tone, title) =>
+		label
+			? `<span class="cd-region cd-region-${tone}"${
+					title ? ` title="${esc(title)}"` : ""
+			  }>${esc(label)}</span>`
+			: `<span class="text-muted">—</span>`;
+	const why = c.recommendation_reason
+		? __("Panel's reason: {0}", [c.recommendation_reason])
+		: __("Recommended by an interview panel — awaiting HR, so they are still interviewed by their own region.");
+	return (
+		`<td class="text-muted">${chip(c.applied_region_name, "home")}</td>` +
+		`<td>${chip(c.recommended_region_name, "rec", why)}</td>` +
+		`<td>${chip(
+			c.requested_region_name,
+			"req",
+			__("HR moved this candidate — only this region's panel can interview them.")
+		)}</td>`
+	);
+}
+
+// The same three regions, squeezed into ONE cell — for lists that are already wide
+// (the panel view). The region that owns the interview reads first; a pending
+// recommendation follows it as an arrow, because that is the thing nobody sees
+// otherwise: it is written by the feedback on these very interviews.
+function cdRegionSummary(c, esc) {
+	const parts = [];
+	const current = c.region_name || c.applied_region_name;
+	if (current) {
+		const moved = !!c.requested_region_name;
+		parts.push(
+			`<span class="cd-region cd-region-${moved ? "req" : "home"}"${
+				moved
+					? ` title="${esc(__("HR moved this candidate — only this region's panel can interview them."))}"`
+					: ""
+			}>${esc(current)}</span>`
+		);
+	}
+	if (c.recommended_region_name) {
+		const why = c.recommendation_reason
+			? __("Panel's reason: {0}", [c.recommendation_reason])
+			: __("Recommended by an interview panel — awaiting HR.");
+		parts.push(
+			`<span class="cd-region cd-region-rec" title="${esc(why)}">→ ${esc(
+				c.recommended_region_name
+			)}</span>`
+		);
+	}
+	return parts.join(" ") || "—";
+}
+
 function cdScheduleRound(frm, roundCode, done) {
 	// Load the eligible pool first so HR can pick who to schedule (e.g. 30 today,
 	// the rest tomorrow) instead of being forced into all-or-nothing.
@@ -303,11 +328,7 @@ function cdScheduleDialog(frm, roundCode, poolData, done) {
 			<td class="cd-pick-name">${esc(c.applicant_name || c.name)}</td>
 			<td class="text-muted">${esc(c.institute || "—")}</td>
 			<td class="text-muted">${esc(roleTitle(c.job_opening))}</td>
-			<td class="text-muted">${esc(c.region_name || c.region || "—")}${
-				// Flag candidates being interviewed by a region other than their own,
-				// so it is visible BEFORE scheduling rather than discovered after.
-				c.transferred ? ` <span class="cd-xfer" title="${__("Transferred from another region")}">⇄</span>` : ""
-			}</td>
+			${cdRegionCells(c, esc)}
 		</tr>`
 		)
 		.join("");
@@ -347,7 +368,8 @@ function cdScheduleDialog(frm, roundCode, poolData, done) {
 					<div class="cd-picker-scroll"><table class="cd-table cd-picker-table">
 						<thead><tr><th></th><th class="cd-inst-col">${__("Candidate")}</th>
 						<th class="cd-inst-col">${__("Institute")}</th><th class="cd-inst-col">${__("Role")}</th>
-						<th class="cd-inst-col">${__("Region")}</th></tr></thead>
+						<th>${__("Applied")}</th><th>${__("Recommended")}</th>
+						<th>${__("Requested")}</th></tr></thead>
 						<tbody>${rows}</tbody>
 					</table></div>
 				</div>`,
@@ -438,12 +460,22 @@ function cdExtraDialog(frm, roundCode, round, options, done) {
 	const panels = options.panels || [];
 
 	if (!candidates.length) {
+		// Two different reasons, and telling them apart is the whole message: "nobody
+		// has cleared it yet" is a wait, "everyone has moved on" is a closed round.
+		const movedOn = options.moved_on || 0;
 		frappe.msgprint({
-			title: __("Nobody has cleared this round yet"),
+			title: movedOn
+				? __("This round is behind its candidates")
+				: __("Nobody has cleared this round yet"),
 			indicator: "orange",
-			message: __("An additional round is a second look at a candidate who has finished {0}. Once someone clears it, they can be given one here.", [
-				roundLabel,
-			]),
+			message: movedOn
+				? __("{0} candidate(s) cleared {1}, but every one of them has already moved on to the next round. An additional round is a second look at the round a candidate is sitting at now, so it can only be added while they are still on it — add it on the round they are at instead.", [
+						movedOn,
+						`<b>${roundLabel}</b>`,
+				  ])
+				: __("An additional round is a second look at a candidate who has finished {0}. Once someone clears it, they can be given one here.", [
+						roundLabel,
+				  ]),
 		});
 		return;
 	}
@@ -482,7 +514,18 @@ function cdExtraDialog(frm, roundCode, round, options, done) {
 	const panelOptions = panels.map((p) => ({
 		value: `${p.round_code}${KEY}${p.panel}`,
 		label: `${p.panel}${p.interviewers.length ? " — " + p.interviewers.join(", ") : ""}`,
+		panel: p.panel,
 	}));
+	// A candidate may be given several additional rounds, but never twice in front of
+	// the same panel — a second look from the same interviewers is the first look
+	// again. The server refuses it either way; hiding those panels here means HR picks
+	// from what is actually allowed instead of being turned back on submit.
+	const blockedFor = (ja) => (options.blocked_panels || {})[ja] || [];
+	const extraCode = options.extra_panel_round_code || `${roundCode}-EXTRA`;
+	const panelDesc = __("Panels rostered for the Additional Round on {0} (Round Code {1}).", [
+		roundLabel,
+		extraCode,
+	]);
 
 	const d = new frappe.ui.Dialog({
 		title: __("Additional Round — {0}", [roundLabel]),
@@ -494,15 +537,15 @@ function cdExtraDialog(frm, roundCode, round, options, done) {
 					label: [c.applicant_name, c.job_title, c.institute].filter(Boolean).join(" · "),
 				})),
 				default: candidates[0].name,
-				description: __("Candidates who cleared {0}.", [roundLabel]),
+				description: __("Candidates who cleared {0} and are still sitting at it.", [
+					roundLabel,
+				]),
+				onchange: () => syncPanels(),
 			},
 			{
 				fieldname: "panel", label: __("Panel"), fieldtype: "Select", reqd: 1,
 				options: panelOptions, default: panelOptions[0].value,
-				description: __("Panels rostered for the Additional Round on {0} (Round Code {1}).", [
-					roundLabel,
-					options.extra_panel_round_code || `${roundCode}-EXTRA`,
-				]),
+				description: panelDesc,
 			},
 			{
 				fieldname: "reason", label: __("Reason"), fieldtype: "Small Text", reqd: 1,
@@ -535,7 +578,35 @@ function cdExtraDialog(frm, roundCode, round, options, done) {
 			});
 		},
 	});
+
+	// Offer only the panels that have not already judged the chosen candidate, and say
+	// what to do when that leaves none — rostering another panel, not picking one of
+	// these again, is the way forward.
+	function syncPanels() {
+		const used = blockedFor(d.get_value("job_applicant"));
+		const avail = panelOptions.filter((o) => !used.includes(o.panel));
+		d.set_df_property("panel", "options",
+			avail.length ? avail : [{ value: "", label: __("No panel left") }]);
+		d.set_value("panel", avail.length ? avail[0].value : "");
+		d.set_df_property("panel", "description",
+			avail.length
+				? panelDesc +
+					(used.length
+						? " " +
+						  __("{0} panel(s) hidden — they have already given this candidate an additional round.", [
+								used.length,
+						  ])
+						: "")
+				: __("Every panel on {0} has already given this candidate an additional round. A second look needs interviewers who have not judged them before — add another panel in <b>Round Panelists</b> under Round Code {1}, save the drive, then try again.", [
+						`<b>${roundLabel}</b>`,
+						`<b>${extraCode}</b>`,
+				  ]));
+		if (avail.length) d.enable_primary_action();
+		else d.disable_primary_action();
+	}
+
 	d.show();
+	syncPanels();
 }
 
 function cdReconcileRound(frm, roundCode, done) {
@@ -618,6 +689,15 @@ function cdDrawRounds($root, frm, data) {
 					"Set a Hiring Stage on this round so candidates can flow into it."
 			  )}</div>`
 			: "";
+		// A region an interviewer recommended on THIS round, with no panel able to take
+		// the candidate for it. Said here rather than in the banner above the board:
+		// the Additional Round that answers it hangs off this round and is staffed from
+		// this round's own extra roster.
+		const regionNotes = (r.region_notes || [])
+			.map(
+				(n) => `<div class="cd-rd-warn"><b>${esc(n.title)}</b><br>${esc(n.detail)}</div>`
+			)
+			.join("");
 
 		// Terminal rounds ("offer" / "pre_offer") are resolved server-side from the
 		// stage the round maps to — the Job Opening's pre-offer checkbox is what
@@ -691,7 +771,7 @@ function cdDrawRounds($root, frm, data) {
 					${headActions}
 				</span>
 			</div>
-			${noStage}${warn}
+			${noStage}${warn}${regionNotes}
 			<div class="cd-rd-meta">
 				<span class="cd-pill">${__("Stage")}: ${esc(r.hiring_stage || "—")}</span>
 				${r.scheduled_at ? `<span class="cd-pill">${esc(r.scheduled_at)}</span>` : ""}
@@ -707,6 +787,11 @@ function cdDrawRounds($root, frm, data) {
 	// Always rendered (empty = one line), because a hidden action is one nobody finds.
 	function cdExtraCard(r, accent, esc) {
 		const extras = r.extras || [];
+		// Cleared this round and not yet scheduled for a later one. Zero means the
+		// round is behind every candidate on it, so the action is disabled rather than
+		// opening a dialog with an empty picker — Technical Round 1 stops offering a
+		// second look the moment its candidates are put into Technical Round 2.
+		const eligible = r.extra_eligible || 0;
 		const verdict = (e) => {
 			const map = { Cleared: "#10B981", Rejected: "#EF4444", Pending: "#6B7280" };
 			const c = map[e.status] || "#F59E0B";
@@ -743,9 +828,12 @@ function cdDrawRounds($root, frm, data) {
 						"candidate(s)"
 					)}</span>` : ""}
 					<button class="btn btn-xs btn-default cd-rd-btn" data-rd-extra="${esc(r.round_code)}"
-						title="${__("Give one candidate another round on top of this one")}">${__(
-						"Add candidate"
-					)}</button>
+						${eligible ? "" : "disabled"}
+						title="${
+							eligible
+								? __("Give one candidate another round on top of this one")
+								: __("Nobody is sitting at this round right now — everyone who cleared it has already moved on to the next round. An additional round is added on the round a candidate is currently at.")
+						}">${__("Add candidate")}</button>
 				</span>
 			</div>
 			${
@@ -1013,7 +1101,7 @@ function cdManualDialog(frm, roundCode, opts, done) {
 			(c) => `<tr>
 				<td class="cd-gd-cand">${cdAvatar(c.applicant_name || c.name, cdColorFor(c.name))}
 					<span>${esc(c.applicant_name || c.name)}</span></td>
-				<td class="text-muted">${esc(c.region_name || c.region || "")}</td>
+				${cdRegionCells(c, esc)}
 				<td><select class="cd-input cd-ma-pick" data-ma-applicant="${esc(
 					c.name
 				)}">${options}</select></td>
@@ -1096,7 +1184,8 @@ function cdManualDialog(frm, roundCode, opts, done) {
 		)}</div>
 		<table class="table table-sm cd-ma-table">
 			<thead><tr>
-				<th>${__("Candidate")}</th><th>${__("Region")}</th><th>${__("Interviewer")}</th>
+				<th>${__("Candidate")}</th><th>${__("Applied")}</th><th>${__("Recommended")}</th>
+				<th>${__("Requested")}</th><th>${__("Interviewer")}</th>
 			</tr></thead>
 			<tbody>${rows}</tbody>
 		</table>`);
@@ -1157,7 +1246,20 @@ function cdTakeCandidates(frm, roundCode, done) {
 						get_data: () =>
 							candidates.map((c) => ({
 								value: c.name,
-								description: c.applicant_name || c.name,
+								// The region rides along: an interviewer taking candidates
+								// is taking them onto their OWN panel, and a candidate
+								// moved to another region is not theirs to take.
+								description: [
+									c.applicant_name || c.name,
+									c.requested_region_name
+										? __("moved to {0}", [c.requested_region_name])
+										: c.applied_region_name,
+									c.recommended_region_name
+										? __("recommended for {0}", [c.recommended_region_name])
+										: "",
+								]
+									.filter(Boolean)
+									.join(" · "),
 							})),
 					},
 				],
@@ -1268,6 +1370,7 @@ function cdOpenPanelsDialog(frm, roundCode) {
 							<span class="cd-link" data-pv-applicant="${esc(c.job_applicant)}">${esc(
 						c.applicant_name || c.job_applicant
 					)}</span></td>
+						<td class="text-muted">${cdRegionSummary(c, esc)}</td>
 						<td class="text-muted">${esc(c.interviewer_name || c.interviewer || "—")}</td>
 						<td><span class="cd-badge" style="background:${cdTint(col, 0.15)};color:${col}">${esc(
 						c.status
@@ -1286,7 +1389,8 @@ function cdOpenPanelsDialog(frm, roundCode) {
 					<span class="cd-rd-who">${who}</span>
 				</div>
 				${p.candidates.length ? `<div class="cd-table-wrap"><table class="cd-table cd-gd-table">
-					<thead><tr><th class="cd-inst-col">${__("Candidate")}</th><th>${__("Interviewer")}</th>
+					<thead><tr><th class="cd-inst-col">${__("Candidate")}</th><th>${__("Region")}</th>
+					<th>${__("Interviewer")}</th>
 					<th>${__("Interview Status")}</th><th>${__("Mode")}</th>
 					<th>${__("Feedback")}</th><th>${__("Interview")}</th><th></th></tr></thead>
 					<tbody>${rows}</tbody></table></div>`
@@ -1927,145 +2031,31 @@ function cdGdDraw($root, frm) {
 }
 
 function cdGdList(frm, allGroups, members, instColor, esc) {
-	const badge = (s) => {
-		const map = { Planned: "#6B7280", Scheduled: "#0EA5E9", "In Progress": "#F59E0B", Completed: "#10B981" };
-		const c = map[s] || "#6B7280";
-		return `<span class="cd-badge" style="color:${c};background:${cdTint(c, 0.14)}">${esc(s || "Planned")}</span>`;
-	};
-
-	// Indexed once: a big drive has hundreds of members and dozens of groups, and every
-	// card would otherwise re-scan the whole list.
-	const byGroup = {};
-	members.forEach((m) => (byGroup[m.group_name] = byGroup[m.group_name] || []).push(m));
-	const membersOf = (g) => byGroup[g.group_name] || [];
-
-	const card = (g, accent) => {
-		const mem = membersOf(g);
-		const present = mem.filter((m) => m.attendance === "Present").length;
-		const passed = mem.filter((m) => m.result === "Pass").length;
-		const failed = mem.filter((m) => m.result === "Fail").length;
-		const faces = mem
-			.slice(0, 6)
-			.map((m) => cdAvatar(m.applicant_name || m.job_applicant, instColor[m.institute] || "#9CA3AF"))
-			.join("");
-		const more = mem.length > 6 ? `<span class="cd-avatar cd-avatar-more">+${mem.length - 6}</span>` : "";
-
-		// Merged groups hold several roles — show the split (e.g. RSM 3 · CSM 3).
-		let mix = "";
-		if (!g.job_opening) {
-			const counts = {};
-			mem.forEach((m) => {
-				const k = m.job_opening || "";
-				counts[k] = (counts[k] || 0) + 1;
-			});
-			mix = `<div class="cd-gd-mix">${Object.keys(counts)
-				.map((k) => {
-					const c = cdColorFor(k);
-					return `<span class="cd-pill" style="background:${cdTint(c, 0.16)};color:${c}">${esc(
-						cdRoleTitle(frm, k)
-					)} ${counts[k]}</span>`;
-				})
-				.join("")}</div>`;
-		}
-
-		return `<div class="cd-gd-card cd-gd-clickable cd-card-accent" style="--cd-accent:${accent}"
-			data-gd-open="${esc(g.group_name)}">
-			<div class="cd-gd-head">
-				<span class="cd-gd-title"><span class="cd-role-dot" style="background:${accent}"></span>${esc(
-			g.group_name
-		)}</span>
-				${badge(g.group_status)}
-			</div>
-			${cdGdPanelChip(g, esc)}
-			${mix}
-			<div class="cd-gd-faces">${faces}${more}</div>
-			<div class="cd-gd-meta">
-				<span class="cd-pill cd-pill-blue">${mem.length} ${__("candidates")}</span>
-				<span class="cd-pill cd-pill-green">${present} ${__("present")}</span>
-				<span class="cd-pill cd-pill-pass">✓ ${passed} ${__("pass")}</span>
-				<span class="cd-pill cd-pill-fail">✕ ${failed} ${__("fail")}</span>
-				${
-					mem.length - passed - failed
-						? `<span class="cd-pill cd-pill-amber">${
-								mem.length - passed - failed
-						  } ${__("to mark")}</span>`
-						: ""
-				}
-			</div>
-			<div class="cd-gd-openhint">${__("Open group →")}</div>
-		</div>`;
-	};
-
-	const legend = `<div class="cd-gd-legend">${Object.keys(instColor)
-		.map(
-			(i) =>
-				`<span class="cd-gd-legend-item"><span class="cd-gd-dot" style="background:${instColor[i]}"></span>${esc(
-					cdInstituteName(frm, i)
-				)}</span>`
-		)
-		.join("")}</div>`;
-	const grid = (gs, accent) =>
-		`<div class="cd-gd-grid">${gs
-			.map((g) => card(g, accent || cdColorFor(g.group_name)))
-			.join("")}</div>`;
-
-	// A group carries the dimensions it was split by — its role and/or its institute.
-	// Bucket by whichever are set, so HR sees per college / per role how many groups
-	// there are and who sits under them. A drive-wide split has neither: one flat grid.
-	if (!allGroups.some((g) => g.job_opening || g.institute)) return legend + grid(allGroups);
-
-	const order = [];
-	const buckets = {};
-	allGroups.forEach((g) => {
-		const key = `${g.institute || ""}||${g.job_opening || ""}`;
-		if (!buckets[key]) {
-			buckets[key] = {
-				title:
-					[cdInstituteName(frm, g.institute), g.job_opening ? g.job_title || g.job_opening : ""]
-						.filter(Boolean)
-						.join(" · ") || __("Unassigned"),
-				groups: [],
-			};
-			order.push(key);
-		}
-		buckets[key].groups.push(g);
-	});
-
-	const sections = order
-		.map((key) => {
-			const b = buckets[key];
-			const accent = cdColorFor(key);
-			const headcount = b.groups.reduce((n, g) => n + membersOf(g).length, 0);
-			return `<div class="cd-gd-role-block">
-				<div class="cd-gd-role-head">
-					<span class="cd-role-dot" style="background:${accent}"></span>
-					<span class="cd-gd-role-title">${esc(b.title)}</span>
-					<span class="cd-pill" style="background:${cdTint(accent, 0.16)};color:${accent}">${
-				b.groups.length
-			} ${b.groups.length === 1 ? __("group") : __("groups")}</span>
-					<span class="cd-pill">${headcount} ${__("candidates")}</span>
-				</div>
-				${grid(b.groups, accent)}
-			</div>`;
-		})
-		.join("");
-
-	return legend + sections;
+	return gdbList(cdGdCtx(frm), allGroups, members, instColor);
 }
 
-// The panel conducting a group, with its interviewers — the whole point of assigning
-// one, so it's on the card as well as inside the group.
-function cdGdPanelChip(g, esc) {
-	if (!g.panel_name) {
-		return `<div class="cd-gd-mix"><span class="cd-pill cd-pill-amber">${__(
-			"no panel yet"
-		)}</span></div>`;
-	}
-	const who = cdGdPanelWho(g.round_code, g.panel_name);
-	return `<div class="cd-gd-mix">
-		<span class="cd-pill cd-pill-blue">${esc(g.panel_name)}</span>
-		${who.map((n) => `<span class="cd-pill">${esc(n)}</span>`).join("")}
-	</div>`;
+// The adapter the shared board reads a Campus Drive through: readable names for the
+// ids on a group row, and who conducts each group.
+function cdGdCtx(frm) {
+	return {
+		esc: (v) => frappe.utils.escape_html(String(v == null ? "" : v)),
+		roleTitle: (opening) => cdRoleTitle(frm, opening),
+		instituteName: (institute) => cdInstituteName(frm, institute),
+		panelWho: (g) => (g.panel_name ? cdGdPanelWho(g.round_code, g.panel_name) : []),
+		// "Group 3 - MP hiring" is stored, but you are already looking at MP hiring:
+		// drop the drive half so the card title is the group and nothing else. Only
+		// the LABEL is trimmed — every data-gd-* attribute still carries the full
+		// stored name, which is the key the server joins on.
+		groupLabel: (g) => cdGdShortName(g.group_name, frm.doc.drive_name),
+	};
+}
+
+// "Group 3 - MP hiring" -> "Group 3", but only when the tail really is this drive's
+// name. A group named something else by hand is left exactly as it is.
+function cdGdShortName(groupName, driveName) {
+	const name = String(groupName || "");
+	const tail = " - " + String(driveName || "");
+	return driveName && name.endsWith(tail) ? name.slice(0, -tail.length) : name;
 }
 
 function cdGdDetail(frm, g, allGroups, allMembers, instColor, esc) {
@@ -2077,73 +2067,37 @@ function cdGdDetail(frm, g, allGroups, allMembers, instColor, esc) {
 			(x.job_opening || "") === (g.job_opening || "") &&
 			(x.institute || "") === (g.institute || "")
 	);
+	// A completed group is history — its results are pushed and its candidates have
+	// moved on. Show its marks read-only rather than as buttons the server would only
+	// refuse (`_assert_group_open`).
+	const frozen = g.group_status === "Completed";
 
-	const seg = (row, field, value, label, color) => {
-		const active = (row[field] || "Pending") === value;
-		return `<button class="cd-mini ${active ? "active" : ""}" data-gd-set="${field}"
-			data-gd-row="${esc(row.name)}" data-gd-value="${value}"
-			${active ? `style="background:${cdTint(color, 0.16)};color:${color};border-color:${cdTint(color, 0.4)}"` : ""}
-			>${esc(label)}</button>`;
-	};
-
-	const rows = members
-		.map((m) => {
-			const moveOpts = siblings
-				.map(
-					(s) =>
-						`<option value="${esc(s.group_name)}" ${
-							s.group_name === m.group_name ? "selected" : ""
-						}>${esc(s.group_name)}</option>`
-				)
-				.join("");
-			const ic = instColor[m.institute] || "#9CA3AF";
-			return `<tr>
-				<td class="cd-gd-cand">
-					${cdAvatar(m.applicant_name || m.job_applicant, ic)}
-					<span class="cd-link" data-gd-applicant="${esc(m.job_applicant)}">${esc(
-				m.applicant_name || m.job_applicant
-			)}</span>
-				</td>
-				<td class="cd-gd-inst-cell"><span class="cd-pill" style="background:${cdTint(
-					ic,
-					0.14
-				)};color:${ic}">${esc(cdInstituteName(frm, m.institute) || "—")}</span></td>
-				<td class="cd-gd-inst-cell"><span class="cd-pill" style="background:${cdTint(
-					cdColorFor(m.job_opening || ""),
-					0.16
-				)};color:${cdColorFor(m.job_opening || "")}">${esc(
-				cdRoleTitle(frm, m.job_opening)
-			)}</span></td>
-				<td><div class="cd-mini-grp">
-					${seg(m, "attendance", "Present", __("Present"), "#10B981")}
-					${seg(m, "attendance", "Absent", __("Absent"), "#EF4444")}
-				</div></td>
-				<td><div class="cd-mini-grp">
-					${seg(m, "result", "Pass", __("Pass"), "#10B981")}
-					${seg(m, "result", "Fail", __("Fail"), "#EF4444")}
-				</div></td>
-				<td><select class="cd-input cd-input-sm" data-gd-move="${esc(m.name)}">${moveOpts}</select></td>
-			</tr>`;
-		})
-		.join("");
-
-	const statuses = ["Planned", "Scheduled", "In Progress", "Completed"]
+	const statusControl = `<select class="cd-input" data-gd-status>${[
+		"Planned",
+		"Scheduled",
+		"In Progress",
+		"Completed",
+	]
 		.map(
-			(s) => `<option value="${s}" ${(g.group_status || "Planned") === s ? "selected" : ""}>${s}</option>`
+			(st) =>
+				`<option value="${esc(st)}" ${(g.group_status || "Planned") === st ? "selected" : ""}>${esc(
+					st
+				)}</option>`
 		)
-		.join("");
-	// How many here still lack a verdict — this group can be pushed on its own once
-	// that is zero, whatever the rest of the hall is doing.
-	const open = members.filter((m) => m.result !== "Pass" && m.result !== "Fail").length;
+		.join("")}</select>`;
 
 	// Who takes this GD: any panel standing on the round, changeable per group.
 	const panelOpts = [`<option value="">${__("No panel")}</option>`]
 		.concat(
 			cdGdPanels(g.round_code).map(
-				(p) =>
-					`<option value="${esc(p.panel)}" ${p.panel === g.panel_name ? "selected" : ""}>${esc(
-						p.panel
-					)}${p.interviewers.length ? " — " + esc(p.interviewers.map((i) => i.name).join(", ")) : ""}</option>`
+				(pnl) =>
+					`<option value="${esc(pnl.panel)}" ${pnl.panel === g.panel_name ? "selected" : ""}>${esc(
+						pnl.panel
+					)}${
+						pnl.interviewers.length
+							? " — " + esc(pnl.interviewers.map((i) => i.name).join(", "))
+							: ""
+					}</option>`
 			)
 		)
 		.join("");
@@ -2151,55 +2105,29 @@ function cdGdDetail(frm, g, allGroups, allMembers, instColor, esc) {
 	// A panel the roster no longer has (renamed / removed) would otherwise vanish
 	// silently from the picker, leaving the group looking unassigned.
 	const staleP =
-		g.panel_name && !cdGdPanels(g.round_code).some((p) => p.panel === g.panel_name)
+		g.panel_name && !cdGdPanels(g.round_code).some((pnl) => pnl.panel === g.panel_name)
 			? `<option value="${esc(g.panel_name)}" selected>${esc(g.panel_name)} — ${__(
 					"not on the roster"
 			  )}</option>`
 			: "";
 
-	return `<div class="cd-card">
-		<div class="cd-gd-detail-head">
-			<div>
-				<span class="cd-link cd-gd-back" data-gd-back>← ${__("All groups")}</span>
-				<div class="cd-gd-detail-title">${esc(g.group_name)}
-					<span class="cd-chip">${members.length} ${__("candidates")}</span>
-				</div>
-				<div class="cd-gd-role">${esc(
-					[cdInstituteName(frm, g.institute), g.job_title || g.job_opening]
-						.filter(Boolean)
-						.join(" · ")
-				)}</div>
-			</div>
-			<div class="cd-gd-detail-actions">
-				<label class="cd-gd-lbl">${__("Panel")}</label>
-				<select class="cd-input" data-gd-panel title="${__(
-					"Interviewers who conduct this group's GD"
-				)}">${staleP}${panelOpts}</select>
-				<select class="cd-input" data-gd-status>${statuses}</select>
-				<button class="btn btn-default btn-sm" data-gd-bulk="Present">${__("All Present")}</button>
-				<button class="btn btn-default btn-sm" data-gd-bulk="Pending">${__("Reset")}</button>
-				<button class="btn btn-sm ${open ? "btn-default" : "btn-primary"}" data-gd-push-group
-					title="${
-						open
-							? __("{0} candidate(s) here still need a Pass or Fail", [open])
-							: __("Send this group's results on — passers to the next round, fails rejected")
-					}">${__("Push this group →")}${open ? ` (${open} ${__("to mark")})` : ""}</button>
-			</div>
-		</div>
-		<div class="cd-table-wrap">
-			<table class="cd-table cd-gd-table">
-				<thead><tr>
-					<th class="cd-inst-col">${__("Candidate")}</th>
-					<th class="cd-inst-col">${__("Institute")}</th>
-					<th class="cd-inst-col">${__("Role")}</th>
-					<th>${__("Attendance")}</th>
-					<th>${__("GD Result")}</th>
-					<th>${__("Group")}</th>
-				</tr></thead>
-				<tbody>${rows}</tbody>
-			</table>
-		</div>
-	</div>`;
+	const panelControl = `<label class="cd-gd-lbl">${__("Panel")}</label>
+		<select class="cd-input" data-gd-panel title="${__(
+			"Interviewers who conduct this group's GD"
+		)}">${staleP}${panelOpts}</select>`;
+
+	return gdbDetail(cdGdCtx(frm), g, members, {
+		instColor,
+		siblings,
+		panelControl,
+		statusControl,
+		canMark: !frozen,
+		// HR can open the candidate; a panel member (on the Group Discussion) cannot,
+		// and would only get a permission error for their trouble.
+		applicantLinks: true,
+		back: true,
+		pushLabel: __("Push this group →"),
+	});
 }
 
 // ---------------------------------------------------------------------------
@@ -2405,160 +2333,4 @@ function cdDraw($root, data, mode) {
 	};
 
 	$root.html(toolbar + summary + driveStrip + openings.map(roleCard).join(""));
-}
-
-function cdInjectStyles() {
-	if (document.getElementById("campus-dash-styles")) return;
-	const css = `
-.campus-dash{padding:4px 0 8px}
-.cd-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px}
-.cd-toolbar-title{font-size:15px;font-weight:700;color:var(--heading-color,var(--text-color))}
-.cd-hint{font-size:12px;font-weight:400;margin-left:8px}
-.cd-seg{display:inline-flex;background:var(--control-bg,rgba(0,0,0,.05));border-radius:8px;padding:3px;gap:2px}
-.cd-seg-btn{border:none;background:transparent;font-size:12px;font-weight:600;padding:6px 14px;border-radius:6px;cursor:pointer;color:var(--text-muted)}
-.cd-seg-btn:hover{color:var(--text-color)}
-.cd-seg-btn.active{background:var(--card-bg,#fff);color:var(--heading-color,var(--text-color));box-shadow:0 1px 3px rgba(0,0,0,.12)}
-.cd-summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:16px}
-.cd-stat{border:1px solid transparent;border-radius:14px;padding:14px 16px;position:relative;overflow:hidden}
-.cd-stat::before{content:"";position:absolute;left:0;top:0;bottom:0;width:5px;background:var(--cd-c,#6366f1)}
-.cd-stat-val{font-size:26px;font-weight:800;line-height:1.1;color:var(--cd-c,#6366f1)}
-.cd-stat-label{margin-top:4px;font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;font-weight:600}
-.cd-stat-inv{--cd-c:#0ea5e9;background:linear-gradient(135deg,rgba(14,165,233,.16),rgba(14,165,233,.04));border-color:rgba(14,165,233,.25)}
-.cd-stat-ins{--cd-c:#8b5cf6;background:linear-gradient(135deg,rgba(139,92,246,.16),rgba(139,92,246,.04));border-color:rgba(139,92,246,.25)}
-.cd-stat-op{--cd-c:#0d9488;background:linear-gradient(135deg,rgba(13,148,136,.16),rgba(13,148,136,.04));border-color:rgba(13,148,136,.25)}
-.cd-stat-tot{--cd-c:#6366f1;background:linear-gradient(135deg,rgba(99,102,241,.16),rgba(99,102,241,.04));border-color:rgba(99,102,241,.25)}
-.cd-card-accent{border-left:4px solid var(--cd-accent,var(--border-color))}
-.cd-role-dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:8px;vertical-align:middle}
-.cd-avatar{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;font-size:10px;font-weight:800;flex:0 0 26px;letter-spacing:.02em}
-.cd-avatar-more{background:var(--control-bg,rgba(0,0,0,.06));color:var(--text-muted)}
-.cd-pill{display:inline-block;font-size:10px;font-weight:700;padding:3px 9px;border-radius:999px;background:var(--control-bg,rgba(0,0,0,.05));color:var(--text-muted)}
-.cd-pill-blue{background:rgba(59,130,246,.14);color:#3B82F6}
-.cd-pill-green{background:rgba(16,185,129,.14);color:#10B981}
-.cd-pill-amber{background:rgba(245,158,11,.16);color:#D97706}
-.cd-pill-pass{background:rgba(16,185,129,.16);color:#059669}
-.cd-pill-fail{background:rgba(239,68,68,.14);color:#DC2626}
-/* An interviewer with nothing pending — the one HR is looking for. */
-.cd-pill-free{background:rgba(16,185,129,.16);color:#059669}
-.cd-roster-bar{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-bottom:10px;padding:8px 10px;border:1px solid var(--border-color);border-radius:8px;background:var(--control-bg,rgba(0,0,0,.03))}
-.cd-meta-label{font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--text-muted);margin-right:4px}
-.cd-pv-move{margin-left:4px}
-.cd-card{background:var(--card-bg,var(--fg-color));border:1px solid var(--border-color);border-radius:14px;padding:16px 18px;margin-bottom:14px}
-.cd-drive-strip{border-style:dashed}
-.cd-card-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:12px}
-.cd-card-title{font-size:15px;font-weight:700;color:var(--heading-color,var(--text-color))}
-.cd-chip{font-size:12px;font-weight:600;padding:4px 10px;border-radius:8px;color:var(--text-muted);background:var(--control-bg,rgba(0,0,0,.04))}
-.cd-badge{font-size:10px;font-weight:700;padding:3px 9px;border-radius:999px;white-space:nowrap;letter-spacing:.02em}
-.cd-chip-tot{cursor:pointer}
-.cd-chip-tot:hover{color:var(--text-color);text-decoration:underline}
-.cd-tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(96px,1fr));gap:8px}
-.cd-tile{cursor:pointer;border-radius:10px;padding:12px 6px;text-align:center;transition:transform .12s ease,box-shadow .12s ease,filter .12s ease;user-select:none}
-.cd-tile:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,.12);filter:saturate(1.15)}
-.cd-tile-val{font-size:22px;font-weight:700;line-height:1}
-.cd-tile-lbl{margin-top:5px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.03em;opacity:.85}
-.cd-table-wrap{overflow-x:auto}
-.cd-table{width:100%;border-collapse:collapse;font-size:13px}
-.cd-table thead th{text-align:center;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;color:var(--text-muted);padding:9px 6px;border-bottom:2px solid var(--border-color);white-space:nowrap;background:var(--control-bg,rgba(0,0,0,.03))}
-.cd-table tbody tr:hover{background:var(--control-bg,rgba(0,0,0,.02))}
-.cd-table thead th.cd-inst-col{text-align:left}
-.cd-table tbody td{padding:10px 6px;border-bottom:1px solid var(--border-color);text-align:center}
-.cd-table tbody tr:last-child td{border-bottom:none}
-.cd-inst-cell{text-align:left!important;font-weight:600;min-width:180px}
-.cd-num{color:var(--text-muted);font-weight:600}
-.cd-num-on{cursor:pointer;font-weight:700}
-.cd-num-on:hover{text-decoration:underline}
-.cd-num-total{font-weight:700;color:var(--heading-color,var(--text-color));cursor:pointer}
-.cd-num-total:hover{text-decoration:underline}
-.cd-empty-row{text-align:center!important;padding:16px}
-.cd-link{cursor:pointer}
-.cd-link:hover{text-decoration:underline;color:var(--primary,#2563eb)}
-.cd-empty{padding:24px;text-align:center;font-size:13px}
-.cd-loading{padding:32px;text-align:center}
-.cd-gd-legend{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:12px}
-.cd-gd-legend-item{display:inline-flex;align-items:center;gap:6px;font-size:11px;color:var(--text-muted)}
-.cd-gd-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px}
-.cd-gd-role-block{margin-bottom:18px}
-.cd-gd-role-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--border-color)}
-.cd-gd-role-title{font-size:13px;font-weight:700;color:var(--heading-color,var(--text-color))}
-.cd-gd-card{border:1px solid var(--border-color);border-radius:12px;padding:12px 14px;background:var(--card-bg,var(--fg-color))}
-.cd-gd-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
-.cd-gd-title{font-size:14px;font-weight:700;color:var(--heading-color,var(--text-color))}
-.cd-gd-role{font-size:11px;color:var(--text-muted);margin:2px 0 10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.cd-gd-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
-.cd-gd-member{display:flex;align-items:center;gap:8px;font-size:12px;cursor:pointer;padding:4px 6px;border-radius:6px}
-.cd-gd-member:hover{background:var(--control-bg,rgba(0,0,0,.04))}
-.cd-gd-dot{width:8px;height:8px;border-radius:50%;flex:0 0 8px}
-.cd-gd-name{font-weight:600;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.cd-gd-inst{font-size:10px;color:var(--text-muted);max-width:90px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.cd-gd-create{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-.cd-gd-lbl{font-size:12px;color:var(--text-muted);margin:0}
-.cd-input{border:1px solid var(--border-color);border-radius:6px;padding:5px 8px;font-size:12px;background:var(--control-bg,var(--card-bg));color:var(--text-color)}
-.cd-input-num{width:72px}
-.cd-input-sm{font-size:11px;padding:3px 6px}
-.cd-gd-clickable{cursor:pointer;transition:transform .12s ease,box-shadow .12s ease}
-.cd-gd-clickable:hover{transform:translateY(-2px);box-shadow:0 6px 16px rgba(0,0,0,.12)}
-.cd-gd-dots{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px;min-height:8px}
-.cd-gd-faces{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px;min-height:26px}
-.cd-gd-mix{display:flex;flex-wrap:wrap;gap:4px;margin:2px 0 10px}
-.cd-rd-meta{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
-.cd-rd-panels{display:flex;flex-direction:column;gap:6px;margin-bottom:12px;padding:10px;border-radius:10px;background:var(--control-bg,rgba(0,0,0,.03))}
-.cd-rd-panel{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:12px}
-.cd-rd-role{font-size:11px;color:var(--text-muted);min-width:120px}
-.cd-rd-who{display:flex;gap:4px;flex-wrap:wrap}
-.cd-rd-warn{font-size:11px;color:#B45309;background:rgba(245,158,11,.13);border-radius:8px;padding:7px 10px;margin-bottom:10px}
-.cd-rd-btn{margin-left:6px}
-.cd-row-blocked{opacity:.62}
-.cd-pill-link{cursor:pointer;text-decoration:none}
-.cd-pill-link:hover{filter:brightness(.94);text-decoration:underline}
-.cd-ma-hint{margin-bottom:8px;font-size:12px}
-.cd-ma-table td{vertical-align:middle}
-.cd-ma-table .cd-input{width:100%}
-.cd-gd-check{display:inline-flex;align-items:center;gap:5px;cursor:pointer;white-space:nowrap}
-.cd-gd-check input{margin:0}
-.cd-rd-extra{margin-top:-6px;margin-left:22px;border-style:dashed}
-.cd-rd-extra-title{font-size:13px}
-.cd-rd-extra-list{display:flex;flex-direction:column;gap:6px}
-.cd-rd-extra-row{display:grid;grid-template-columns:minmax(120px,1.2fr) auto minmax(90px,1fr) 90px 80px minmax(120px,1.4fr);
-	align-items:center;gap:8px;font-size:12px;padding:6px 8px;border-radius:8px;background:var(--control-bg,rgba(0,0,0,.03))}
-.cd-rd-extra-name{font-weight:600}
-.cd-rd-extra-who,.cd-rd-extra-when,.cd-rd-extra-why{color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.cd-rd-extra-empty{font-size:11px;padding:4px 2px}
-.cd-rd-batch{margin-top:10px;padding:10px 12px;border-radius:10px;background:var(--control-bg,rgba(0,0,0,.03));border:1px solid var(--border-color)}
-.cd-rd-batch-head{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:8px}
-.cd-rd-batch-title{font-size:12px;font-weight:700;color:var(--heading-color,var(--text-color));margin-right:4px}
-.cd-rd-batch-actions{display:flex;gap:8px;flex-wrap:wrap}
-.cd-health{margin-bottom:14px;display:flex;flex-direction:column;gap:8px}
-.cd-health-ok{padding:10px 12px;border-radius:10px;font-size:12px;font-weight:600;color:#15803d;background:rgba(22,163,74,.12);border:1px solid rgba(22,163,74,.25)}
-.cd-health-item{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border-radius:10px;font-size:12px;line-height:1.5}
-.cd-health-err{color:#b42318;background:rgba(239,68,68,.10);border:1px solid rgba(239,68,68,.28)}
-.cd-health-warn{color:#b45309;background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.3)}
-.cd-health-icon{flex:0 0 auto;font-size:14px}
-.cd-health-text{color:var(--text-color)}
-.cd-health-err .cd-health-text b{color:#b42318}
-.cd-health-warn .cd-health-text b{color:#b45309}
-.cd-offer-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px}
-.cd-offer-count{font-size:12px;color:var(--text-muted);font-weight:600;margin-right:auto}
-.cd-picker-bar{display:flex;align-items:center;gap:8px;margin-bottom:8px}
-.cd-picker-count{font-size:12px;color:var(--text-muted);font-weight:600}
-.cd-picker-scroll{max-height:320px;overflow-y:auto;border:1px solid var(--border-color);border-radius:8px}
-.cd-picker-table thead th{position:sticky;top:0;z-index:1}
-.cd-picker-table tbody td{text-align:left;padding:7px 8px;font-size:12px}
-.cd-pick-name{font-weight:600}
-.cd-gd-meta{display:flex;gap:6px;flex-wrap:wrap}
-.cd-gd-openhint{margin-top:10px;font-size:11px;font-weight:600;color:var(--primary,#2563eb)}
-.cd-gd-detail-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px}
-.cd-gd-back{font-size:12px;font-weight:600}
-.cd-gd-detail-title{font-size:16px;font-weight:700;margin-top:4px;display:flex;align-items:center;gap:8px}
-.cd-gd-detail-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-.cd-gd-table tbody td{text-align:center;vertical-align:middle}
-.cd-gd-cand{text-align:left!important;display:flex;align-items:center;gap:8px;font-weight:600}
-.cd-gd-inst-cell{text-align:left!important;font-size:12px;color:var(--text-muted)}
-.cd-mini-grp{display:inline-flex;gap:4px}
-.cd-mini{border:1px solid var(--border-color);background:transparent;color:var(--text-muted);font-size:11px;font-weight:600;padding:4px 10px;border-radius:6px;cursor:pointer}
-.cd-mini:hover{color:var(--text-color);background:var(--control-bg,rgba(0,0,0,.04))}
-.cd-mini.active{font-weight:700}
-`;
-	const style = document.createElement("style");
-	style.id = "campus-dash-styles";
-	style.textContent = css;
-	document.head.appendChild(style);
 }

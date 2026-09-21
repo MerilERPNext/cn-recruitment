@@ -226,7 +226,7 @@ const AdvanceDetailsModal = ({
               <StatusBadge status={ref?.status || data?.status} />
           </div>
 
-          <div className="px-4 py-2 m-4 rounded border border-gray-200 bg-gray-50 px-4 py-3">
+          <div className="px-4 py-3 m-4 rounded border border-gray-200 bg-gray-50">
             <Typography variant="bodySmall" className="mb-1 font-medium text-gray-700">
               Sendback Comment
             </Typography>

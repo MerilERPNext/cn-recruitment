@@ -71,10 +71,19 @@ def get_dashboard(email):
         # same token-gated URL the post-login router builds. Only when DPDP applies;
         # None everywhere else. Guarded so it can never break the dashboard.
         dpdp_consent_url = None
+        # Which collection mode this site runs — "Internal Form" (our own consent
+        # page) or "External Portal" (the candidate is handed to the partner portal).
+        # The UI needs it to decide whether the URL opens in-app or leaves the site.
+        dpdp_consent_mode = None
         if dpdp_required:
             try:
                 from recruitment.api.candidate_portal_survey import _dpdp_consent_url
+                from recruitment.dpdp_external_consent import is_external_consent_mode
+
                 dpdp_consent_url = _dpdp_consent_url(email)
+                dpdp_consent_mode = (
+                    "External Portal" if is_external_consent_mode() else "Internal Form"
+                )
             except Exception:
                 dpdp_consent_url = None
 
@@ -104,6 +113,7 @@ def get_dashboard(email):
                         "dpdp_consent_required": dpdp_required,
                         "dpdp_consent_submitted": dpdp_submitted,
                         "dpdp_consent_url": dpdp_consent_url,
+                        "dpdp_consent_mode": dpdp_consent_mode,
                         "form_completion": {
                             "total_fields": 0,
                             "filled_fields": 0,
@@ -127,6 +137,7 @@ def get_dashboard(email):
                     "dpdp_consent_required": dpdp_required,
                     "dpdp_consent_submitted": dpdp_submitted,
                     "dpdp_consent_url": dpdp_consent_url,
+                    "dpdp_consent_mode": dpdp_consent_mode,
                     "form_completion": {
                         "total_fields": 0,
                         "filled_fields": 0,
@@ -244,6 +255,7 @@ def get_dashboard(email):
             "dpdp_consent_required": dpdp_required,
             "dpdp_consent_submitted": dpdp_submitted,
             "dpdp_consent_url": dpdp_consent_url,
+            "dpdp_consent_mode": dpdp_consent_mode,
             "form_completion": form_completion,
             "onboarding_stage": onboarding_stage,
         }

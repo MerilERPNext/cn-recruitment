@@ -28,6 +28,8 @@ import frappe
 from frappe import _
 from frappe.utils import flt, get_url, now_datetime, today
 
+from recruitment.recruitment.communication_log import sendmail_with_log
+
 # Custom fields added on Job Applicant (see recruitment/custom/job_applicant.json)
 STAGE_FIELD = "custom_current_stage"
 HISTORY_FIELD = "custom_stage_history"
@@ -74,8 +76,9 @@ def get_opening_stages(job_opening):
 			"parentfield": STAGES_FIELD,
 		},
 		fields=[
-			"stage_name", "stage_type", "sla", "sla_unit",
-			"owner_role", "notify", "auto", "notes", "idx",
+			"stage_name", "stage_type", "is_mandatory",
+			"interviewer_pool", "interviewer_role",
+			"sla", "sla_unit", "owner_role", "notify", "auto", "notes", "idx",
 		],
 		order_by="idx asc",
 	)
@@ -87,6 +90,11 @@ def get_opening_stages(job_opening):
 def _terminal_stage(name, stage_type, idx):
 	return {
 		"stage_name": name, "stage_type": stage_type,
+		# The virtual offer stages are part of every workflow and are never
+		# configured, so nothing marks them mandatory; the key is present so
+		# callers can read it off any stage without a default.
+		"is_mandatory": 0,
+		"interviewer_pool": None, "interviewer_role": None,
 		"sla": 0, "sla_unit": "d", "owner_role": "HR",
 		"notify": 0, "auto": 0, "notes": "", "idx": idx,
 	}
@@ -138,8 +146,9 @@ def get_openings_stages(job_openings):
 			"parentfield": STAGES_FIELD,
 		},
 		fields=[
-			"parent", "stage_name", "stage_type", "sla", "sla_unit",
-			"owner_role", "notify", "auto", "notes", "idx",
+			"parent", "stage_name", "stage_type", "is_mandatory",
+			"interviewer_pool", "interviewer_role",
+			"sla", "sla_unit", "owner_role", "notify", "auto", "notes", "idx",
 		],
 		order_by="parent asc, idx asc",
 	)
@@ -160,6 +169,51 @@ def get_openings_stages(job_openings):
 		o: (_append_offer_stages(o, stages, enable_pre=pre_flags.get(o)) if stages else stages)
 		for o, stages in grouped.items()
 	}
+
+
+# Job Applicant field naming a hiring workflow that replaces the opening's stages
+# for that one candidate. Stamped by the duplicity check when "Allow Hiring Even
+# Though It Matches" lets a match through (customizations.ta_duplicity_check).
+WORKFLOW_OVERRIDE_FIELD = "custom_duplicity_hiring_workflow"
+
+
+def get_applicant_stages(applicant):
+	"""The ordered hiring stages THIS candidate follows — a doc or a dict carrying
+	``job_title`` and ``custom_duplicity_hiring_workflow``.
+
+	Normally the opening's. A candidate let through a duplicity match runs on the
+	hiring workflow named on their application instead: the rounds of that TA
+	Interview Strategy Template, mapped exactly as a Job Opening is prefilled
+	from it, with the opening's virtual offer stages appended — so every consumer
+	below treats the two alike. Falls back to the opening's stages when the
+	template is gone or has no rounds, rather than leave the candidate stranded.
+	"""
+	opening = applicant.get("job_title")
+	template = applicant.get(WORKFLOW_OVERRIDE_FIELD)
+	if template:
+		rows = _template_stages(template)
+		if rows:
+			return _append_offer_stages(opening, rows)
+	return get_opening_stages(opening)
+
+
+def _template_stages(template):
+	"""A TA Interview Strategy Template's rounds, shaped like the opening's rows."""
+	from recruitment.recruitment.doctype.ta_interview_strategy_template.ta_interview_strategy_template import (
+		_map_rounds_to_stages,
+	)
+
+	try:
+		doc = frappe.get_doc("TA Interview Strategy Template", template)
+	except frappe.DoesNotExistError:
+		return []
+
+	rows = _map_rounds_to_stages(doc)
+	for idx, row in enumerate(rows, start=1):
+		row.setdefault("owner_role", None)
+		row.setdefault("notes", "")
+		row["idx"] = idx
+	return rows
 
 
 def _require_applicant_write(job_applicant):
@@ -185,6 +239,48 @@ def _find_stage(stages, stage_name):
 		if (s.get("stage_name") or "") == (stage_name or ""):
 			return i
 	return -1
+
+
+# --------------------------------------------------------------------------- #
+# Mandatory stages
+# --------------------------------------------------------------------------- #
+# A round ticked "Mandatory" on the TA Interview Strategy Template (or one whose
+# "Allow skipping" is No) becomes a stage nobody may step around: it can be
+# cleared or it can be rejected, but it cannot be marked Not Required and the
+# candidate cannot be jumped past it. The rule lives here rather than in the UI
+# because both skip paths are whitelisted endpoints — hiding a button only hides
+# the button.
+def _is_mandatory(stage):
+	return bool((stage or {}).get("is_mandatory"))
+
+
+def _assert_skippable(stage):
+	"""Refuse to skip a stage the workflow marks mandatory."""
+	if not _is_mandatory(stage):
+		return
+	frappe.throw(
+		_("<b>{0}</b> is a mandatory stage — it can't be marked Not Required. "
+		  "Complete it or reject the candidate.").format(stage.get("stage_name") or "")
+	)
+
+
+def _assert_no_mandatory_skipped(stages, from_idx, to_idx):
+	"""Refuse a jump that would step over a mandatory stage.
+
+	``from_idx`` is where the candidate stands (its own stage counts as completed
+	by the move, exactly as ``move_to_next_stage`` treats it); everything strictly
+	between it and ``to_idx`` would be left with no outcome at all.
+	"""
+	skipped = [
+		s.get("stage_name") for s in stages[from_idx + 1:to_idx] if _is_mandatory(s)
+	]
+	if not skipped:
+		return
+	frappe.throw(
+		_("This move would skip the mandatory stage(s) {0}. Complete them in order first.").format(
+			", ".join(frappe.bold(n or "") for n in skipped)
+		)
+	)
 
 
 # --------------------------------------------------------------------------- #
@@ -325,9 +421,25 @@ def _campus_stage_mail_allowed(doc):
 	                                       "notify_campus_candidates_on_stage_change"))
 
 
+def _stage_mail_disabled_site_wide():
+	"""Recruitment Settings -> Disable Stage-Change Email to Candidates.
+
+	A "disable" switch on purpose: a Single's checkbox reads 0 until someone
+	saves it, so an untouched site keeps sending exactly as before. Checked
+	against the meta first so code deployed ahead of `bench migrate` does not
+	fail on a field that is not there yet.
+	"""
+	fieldname = "disable_stage_change_email"
+	if not frappe.get_meta("Recruitment Settings").has_field(fieldname):
+		return False
+	return bool(frappe.db.get_single_value("Recruitment Settings", fieldname))
+
+
 def _notify_stage_entry(doc, stage):
 	"""Best-effort candidate email on stage entry. Never blocks the transition."""
 	try:
+		if _stage_mail_disabled_site_wide():
+			return
 		if not _campus_stage_mail_allowed(doc):
 			return
 		recipient = doc.get("email_id")
@@ -345,7 +457,7 @@ def _notify_stage_entry(doc, stage):
 				"stage": stage.get("stage_name") or "",
 			},
 		)
-		frappe.sendmail(
+		sendmail_with_log(
 			recipients=[recipient],
 			subject=subject,
 			message=message,
@@ -366,7 +478,7 @@ def seed_first_stage(doc, method=None):
 			return
 		if doc.get(STAGE_FIELD):
 			return
-		stages = get_opening_stages(doc.get("job_title"))
+		stages = get_applicant_stages(doc)
 		if not stages:
 			return
 		_enter_stage(
@@ -386,7 +498,7 @@ def get_stage_options(job_applicant):
 		return {"enabled": False, "stages": []}
 
 	doc = frappe.get_doc("Job Applicant", job_applicant)
-	stages = get_opening_stages(doc.get("job_title"))
+	stages = get_applicant_stages(doc)
 	current = doc.get(STAGE_FIELD)
 	idx = _find_stage(stages, current) if current else -1
 	current_type = stages[idx].get("stage_type") if idx >= 0 else None
@@ -402,7 +514,7 @@ def get_stage_options(job_applicant):
 @frappe.whitelist()
 def move_to_next_stage(job_applicant):
 	doc = frappe.get_doc("Job Applicant", job_applicant)
-	stages = get_opening_stages(doc.get("job_title"))
+	stages = get_applicant_stages(doc)
 	if not stages:
 		frappe.throw(_("No hiring stages are defined on the linked Job Opening."))
 
@@ -419,16 +531,18 @@ def move_to_next_stage(job_applicant):
 @frappe.whitelist()
 def set_stage(job_applicant, stage_name):
 	doc = frappe.get_doc("Job Applicant", job_applicant)
-	stages = get_opening_stages(doc.get("job_title"))
+	stages = get_applicant_stages(doc)
 	idx = _find_stage(stages, stage_name)
 	if idx < 0:
-		frappe.throw(_("Stage {0} is not part of this Job Opening's workflow.").format(stage_name))
+		frappe.throw(_("Stage {0} is not part of this candidate's hiring workflow.").format(stage_name))
 
 	# Forward-only: a completed / current stage can't be revisited.
 	current = doc.get(STAGE_FIELD)
 	cur_idx = _find_stage(stages, current) if current else -1
 	if idx <= cur_idx:
 		frappe.throw(_("The hiring workflow moves forward only — you can't return to a completed or the current stage."))
+
+	_assert_no_mandatory_skipped(stages, cur_idx, idx)
 
 	_enter_stage(doc, stages[idx], result="Set")
 	return {"current_stage": stage_name}
@@ -437,7 +551,7 @@ def set_stage(job_applicant, stage_name):
 @frappe.whitelist()
 def reject_at_current_stage(job_applicant, reason=None):
 	doc = frappe.get_doc("Job Applicant", job_applicant)
-	stages = get_opening_stages(doc.get("job_title"))
+	stages = get_applicant_stages(doc)
 	current = doc.get(STAGE_FIELD)
 	idx = _find_stage(stages, current) if current else -1
 	stage = stages[idx] if idx >= 0 else {"stage_name": current or "—", "stage_type": ""}
@@ -602,7 +716,7 @@ def prepare_interview(job_applicant, stage_name=None):
 	stage (the "+" on that stage node); when omitted we use the current stage.
 	"""
 	doc = frappe.get_doc("Job Applicant", job_applicant)
-	stages = get_opening_stages(doc.get("job_title"))
+	stages = get_applicant_stages(doc)
 	target = stage_name or doc.get(STAGE_FIELD)
 	idx = _find_stage(stages, target) if target else -1
 	if idx < 0:
@@ -613,9 +727,28 @@ def prepare_interview(job_applicant, stage_name=None):
 	return {
 		"job_applicant": doc.name,
 		"interview_round": interview_round,
+		# Named, not assumed: v15 links the round through `interview_round`, v16
+		# through `interview_type`. The client sets whichever this site has.
+		"interview_round_field": get_interview_round_field() or "interview_round",
 		"designation": doc.get("designation"),
 		"job_opening": doc.get("job_title"),
+		"interviewers": stage_interviewers(stage),
 	}
+
+
+def stage_interviewers(stage):
+	"""The panel a stage's interviews are scheduled with — never raises.
+
+	An unresolvable panel must not stop anybody scheduling an interview; an empty
+	list simply means the recruiter picks, which is the pre-feature behaviour.
+	"""
+	try:
+		from recruitment.recruitment.interview_panel import interviewers_for_stage
+
+		return interviewers_for_stage(stage)
+	except Exception:
+		frappe.log_error(frappe.get_traceback(), "Hiring Workflow: interviewer panel resolution failed")
+		return []
 
 
 # --------------------------------------------------------------------------- #
@@ -667,7 +800,7 @@ def advance_on_interview_result(interview_name):
 			return
 
 		doc = frappe.get_doc("Job Applicant", applicant)
-		stages = get_opening_stages(doc.get("job_title"))
+		stages = get_applicant_stages(doc)
 		current = doc.get(STAGE_FIELD)
 		idx = _find_stage(stages, current) if current else -1
 		if idx < 0:
@@ -709,7 +842,7 @@ def advance_on_screening_result(job_applicant, passed):
 		if not is_hiring_workflow_enabled():
 			return
 		doc = frappe.get_doc("Job Applicant", job_applicant)
-		stages = get_opening_stages(doc.get("job_title"))
+		stages = get_applicant_stages(doc)
 		current = doc.get(STAGE_FIELD)
 		idx = _find_stage(stages, current) if current else -1
 		if idx < 0:
@@ -739,7 +872,7 @@ def advance_on_pre_offer_approved(job_applicant):
 		if not is_hiring_workflow_enabled():
 			return
 		doc = frappe.get_doc("Job Applicant", job_applicant)
-		stages = get_opening_stages(doc.get("job_title"))
+		stages = get_applicant_stages(doc)
 		current = doc.get(STAGE_FIELD)
 		idx = _find_stage(stages, current) if current else -1
 		if idx < 0:
@@ -775,7 +908,7 @@ def advance_on_job_offer_outcome(doc, method=None):
 		if not applicant:
 			return
 		ja = frappe.get_doc("Job Applicant", applicant)
-		stages = get_opening_stages(ja.get("job_title"))
+		stages = get_applicant_stages(ja)
 		current = ja.get(STAGE_FIELD)
 		idx = _find_stage(stages, current) if current else -1
 		if idx < 0:
@@ -867,17 +1000,40 @@ def complete_review(job_applicant, action, comment=None, tags=None):
 # --------------------------------------------------------------------------- #
 # Interview completion ("Mark as Completed" → Interview Feedback)
 # --------------------------------------------------------------------------- #
+def _find_stage_interview(job_applicant, round_name):
+	"""The live Interview scheduled for ``round_name``, or None.
+
+	Resolved, not named: v16 dropped ``interview_round`` for ``interview_type``,
+	and the old column survives the upgrade — so filtering on the literal matched
+	nothing there and a fresh interview was created on every click.
+	"""
+	round_field = get_interview_round_field()
+	return frappe.db.get_value(
+		"Interview",
+		{"job_applicant": job_applicant, **({round_field: round_name} if round_field else {}),
+		 "docstatus": ["<", 2]},
+		"name",
+	)
+
+
 @frappe.whitelist()
 def complete_interview(job_applicant, rating, comments=None, assessment=None, stage_name=None):
-	"""Create (and submit) an Interview Feedback for the candidate's current (or
-	given) Interview stage, then let the auto-advance hook move them on.
+	"""Submit an Interview Feedback for the candidate's current (or given)
+	Interview stage, then let the auto-advance hook move them on.
 
 	``assessment`` is "Candidate Selected" (→ Cleared → advance) or
 	"Candidate Rejected" (→ Rejected → reject). ``rating`` is 1–5.
+
+	**An Interview must already exist for the stage.** This used to create one on
+	the spot, which meant "Mark as Completed" quietly manufactured an interview
+	that was never scheduled, never had real interviewers on it and never
+	happened — feedback filed against a record invented one second earlier. The
+	stage is completed against the interview that was actually held, or not at all:
+	schedule it first.
 	"""
 	_require_applicant_write(job_applicant)
 	doc = frappe.get_doc("Job Applicant", job_applicant)
-	stages = get_opening_stages(doc.get("job_title"))
+	stages = get_applicant_stages(doc)
 	target = stage_name or doc.get(STAGE_FIELD)
 	idx = _find_stage(stages, target) if target else -1
 	if idx < 0:
@@ -885,35 +1041,14 @@ def complete_interview(job_applicant, rating, comments=None, assessment=None, st
 	stage = stages[idx]
 	round_name = _ensure_interview_round(stage.get("stage_name"), doc.get("designation"))
 
-	# Reuse an interview scheduled for this stage, else create one now.
-	# Resolved, not named: v16 dropped `interview_round` for `interview_type`, and
-	# the old column survives the upgrade — so filtering on the literal matched
-	# nothing there and a fresh interview was created on every click.
-	round_field = get_interview_round_field()
-	interview = frappe.db.get_value(
-		"Interview",
-		{"job_applicant": doc.name, **({round_field: round_name} if round_field else {}),
-		 "docstatus": ["<", 2]},
-		"name",
-	)
+	interview = _find_stage_interview(doc.name, round_name)
 	if not interview:
-		iv = frappe.new_doc("Interview")
-		iv.job_applicant = doc.name
-		if round_field:
-			iv.set(round_field, round_name)
-		iv.job_opening = doc.get("job_title")
-		if doc.get("designation"):
-			iv.designation = doc.get("designation")
-		iv.scheduled_on = today()
-		# At least one interviewer is mandatory (the feedback's on_submit re-saves
-		# the Interview, re-running validation) — use the acting HR user.
-		iv.append("interview_details", {"interviewer": frappe.session.user})
-		iv.flags.ignore_mandatory = True
-		# Rounds are shared by stage name across designations; skip HRMS's
-		# round↔designation validation so completing feedback never gets blocked.
-		iv.flags.ignore_validate = True
-		iv.insert(ignore_permissions=True)
-		interview = iv.name
+		frappe.throw(
+			_("No interview has been scheduled for <b>{0}</b> yet. "
+			  "Schedule the interview before marking this stage as completed.").format(
+				stage.get("stage_name") or ""
+			)
+		)
 
 	cleared = (assessment or "") == "Candidate Selected"
 	result = "Cleared" if cleared else "Rejected"
@@ -945,7 +1080,7 @@ def complete_interview(job_applicant, rating, comments=None, assessment=None, st
 
 
 def _stage_or_throw(doc, stage_name):
-	stages = get_opening_stages(doc.get("job_title"))
+	stages = get_applicant_stages(doc)
 	target = stage_name or doc.get(STAGE_FIELD)
 	idx = _find_stage(stages, target) if target else -1
 	if idx < 0:
@@ -956,10 +1091,14 @@ def _stage_or_throw(doc, stage_name):
 @frappe.whitelist()
 def mark_stage_not_required(job_applicant, stage_name=None, comment=None):
 	"""Skip the current (or given) stage — record 'Not Required' (with the HR's
-	comment) and advance to the next stage without any action."""
+	comment) and advance to the next stage without any action.
+
+	Refused for a stage the workflow marks mandatory; see :func:`_assert_skippable`.
+	"""
 	_require_applicant_write(job_applicant)
 	doc = frappe.get_doc("Job Applicant", job_applicant)
 	stages, idx = _stage_or_throw(doc, stage_name)
+	_assert_skippable(stages[idx])
 	_append_history(doc, stages[idx], "Not Required", notes=comment)
 	if comment:
 		try:
@@ -987,16 +1126,8 @@ def send_interview_feedback_form(job_applicant, stage_name=None):
 	stage = stages[idx]
 	round_name = _ensure_interview_round(stage.get("stage_name"), doc.get("designation"))
 
-	# Resolved, not named: v16 dropped `interview_round` for `interview_type`, and
-	# the old column survives the upgrade — so filtering on the literal matched
-	# nothing there and a fresh interview was created on every click.
 	round_field = get_interview_round_field()
-	interview = frappe.db.get_value(
-		"Interview",
-		{"job_applicant": doc.name, **({round_field: round_name} if round_field else {}),
-		 "docstatus": ["<", 2]},
-		"name",
-	)
+	interview = _find_stage_interview(doc.name, round_name)
 	if not interview:
 		iv = frappe.new_doc("Interview")
 		iv.job_applicant = doc.name
@@ -1004,7 +1135,13 @@ def send_interview_feedback_form(job_applicant, stage_name=None):
 			iv.set(round_field, round_name)
 		iv.job_opening = doc.get("job_title")
 		iv.scheduled_on = today()
-		iv.append("interview_details", {"interviewer": frappe.session.user})
+		# The stage's configured panel, falling back to the acting user: at least
+		# one interviewer is mandatory (the feedback's on_submit re-saves the
+		# Interview, re-running validation), and this endpoint exists to mail
+		# them — an interview created here with nobody on it could not be sent.
+		panel = stage_interviewers(stage) or [frappe.session.user]
+		for interviewer in panel:
+			iv.append("interview_details", {"interviewer": interviewer})
 		iv.flags.ignore_mandatory = True
 		iv.flags.ignore_validate = True
 		iv.insert(ignore_permissions=True)
@@ -1026,7 +1163,7 @@ def send_interview_feedback_form(job_applicant, stage_name=None):
 	)
 	emailed = True
 	try:
-		frappe.sendmail(
+		sendmail_with_log(
 			recipients=interviewers,
 			subject=_("Interview feedback requested — {0}").format(doc.get("applicant_name") or doc.name),
 			message=message,
@@ -1057,6 +1194,87 @@ def _latest_history_by_stage(doc):
 	return latest
 
 
+# An interview is still waiting on its interviewers while it sits in one of
+# these; anything else (Cleared / Rejected) has been decided.
+_OPEN_INTERVIEW_STATUSES = ("Pending", "Under Review")
+
+
+def _user_names(users):
+	"""[{user, full_name}] for the given user ids, in the order given, resolved in
+	one query. An id with no User record still comes back (named after itself)
+	rather than vanishing from the list."""
+	users = [u for u in dict.fromkeys(users) if u]
+	if not users:
+		return []
+	names = dict(frappe.get_all(
+		"User", filters={"name": ["in", users]}, fields=["name", "full_name"], as_list=True
+	))
+	return [{"user": u, "full_name": names.get(u) or u} for u in users]
+
+
+def _annotate_interview_owners(interviews_by_stage):
+	"""Add `interviewers` and `pending_with` to every interview in place.
+
+	`pending_with` answers "whose action is this waiting on?" — the interviewers
+	who have not submitted their Interview Feedback yet, and only while the
+	interview itself is still open. A decided interview reports nobody pending
+	and keeps `interviewers` so the card can say who gave the feedback.
+
+	Three bulk queries for the whole view (rows, feedback, user names) rather
+	than any per-interview lookup, so a long pipeline costs the same as a short
+	one."""
+	rows = [iv for group in interviews_by_stage.values() for iv in group]
+	if not rows:
+		return
+	names = [iv.get("name") for iv in rows]
+
+	panel = {}
+	for d in frappe.get_all(
+		"Interview Detail",
+		filters={"parenttype": "Interview", "parent": ["in", names]},
+		fields=["parent", "interviewer"],
+		order_by="idx asc",
+	):
+		if d.get("interviewer"):
+			panel.setdefault(d["parent"], []).append(d["interviewer"])
+
+	# Only a submitted feedback counts as "done" — a draft is still pending.
+	submitted = {}
+	for f in frappe.get_all(
+		"Interview Feedback",
+		filters={"interview": ["in", names], "docstatus": 1},
+		fields=["interview", "interviewer"],
+	):
+		submitted.setdefault(f["interview"], set()).add(f.get("interviewer"))
+
+	# One lookup for every interviewer across the whole pipeline.
+	lookup = {u["user"]: u for u in _user_names([i for ids in panel.values() for i in ids])}
+
+	for iv in rows:
+		interviewers = panel.get(iv.get("name"), [])
+		done = submitted.get(iv.get("name"), set())
+		iv["interviewers"] = [lookup[u] for u in interviewers if u in lookup]
+		iv["pending_with"] = (
+			[lookup[u] for u in interviewers if u not in done and u in lookup]
+			if (iv.get("status") or "Pending") in _OPEN_INTERVIEW_STATUSES
+			else []
+		)
+
+
+def _stage_pending_owner(doc):
+	"""Who an Interview stage with nothing scheduled is waiting on: the recruiter
+	who owns the linked Job Opening. Empty when the opening names none — better
+	to say nothing than to name the wrong person."""
+	opening = doc.get("job_title")
+	if not opening:
+		return []
+	try:
+		recruiter = frappe.db.get_value("Job Opening", opening, "custom_recruiter")
+	except Exception:
+		return []
+	return _user_names([recruiter]) if recruiter else []
+
+
 @frappe.whitelist()
 def get_workflow_view(job_applicant):
 	"""Everything the visual stepper needs in one round-trip: the ordered stages
@@ -1066,7 +1284,7 @@ def get_workflow_view(job_applicant):
 		return {"enabled": False, "stages": []}
 
 	doc = frappe.get_doc("Job Applicant", job_applicant)
-	stages = get_opening_stages(doc.get("job_title"))
+	stages = get_applicant_stages(doc)
 	current = doc.get(STAGE_FIELD)
 	idx = _find_stage(stages, current) if current else -1
 
@@ -1080,13 +1298,20 @@ def get_workflow_view(job_applicant):
 	round_field = get_interview_round_field()
 	for iv in frappe.get_all(
 		"Interview",
-		filters={"job_applicant": doc.name},
+		# `docstatus < 2` so a cancelled interview does not make a stage look
+		# completable — complete_interview ignores those, and the flow's
+		# "Mark as Completed" button is enabled off exactly this list.
+		filters={"job_applicant": doc.name, "docstatus": ["<", 2]},
 		fields=["name", "scheduled_on", "status", "average_rating"]
 		       + ([round_field] if round_field else []),
 		order_by="scheduled_on asc, creation asc",
 	):
 		interviews_by_stage.setdefault(
 			(iv.get(round_field) if round_field else "") or "", []).append(iv)
+
+	_annotate_interview_owners(interviews_by_stage)
+	# Who a stage with no interview yet is waiting on — the opening's recruiter.
+	stage_owner = _stage_pending_owner(doc)
 
 	out_stages = []
 	for i, s in enumerate(stages):
@@ -1100,10 +1325,21 @@ def get_workflow_view(job_applicant):
 		out_stages.append({
 			"stage_name": s.get("stage_name"),
 			"stage_type": s.get("stage_type"),
+			"is_mandatory": 1 if _is_mandatory(s) else 0,
 			"state": state,
 			"entered_on": info.get("entered_on"),
 			"result": info.get("result"),
 			"interviews": interviews_by_stage.get(s.get("stage_name"), []),
+			# Named only where the answer is "nobody has been asked yet": an
+			# Interview stage still to come/in play with no interview scheduled.
+			# Once interviews exist, each one carries its own `pending_with`.
+			"pending_with": (
+				stage_owner
+				if state != "done"
+				and (s.get("stage_type") or "") == "Interview"
+				and not interviews_by_stage.get(s.get("stage_name"))
+				else []
+			),
 		})
 
 	# Pre-offer round + approval snapshot (fields exist once fixtures are applied).
@@ -1139,4 +1375,43 @@ def get_workflow_view(job_applicant):
 		"stages": out_stages,
 		"pre_offer": pre_offer,
 		"job_offer": offer,
+	}
+
+
+@frappe.whitelist()
+def get_pre_offer_form_preview(job_applicant):
+	"""The pre-offer form as the candidate will receive it, before it is sent.
+
+	Backs the "Preview" button on the Pre Job Offer stage. The stage's existing
+	"View Pre Offer Form" opens the approval panel, which is built from the rows
+	the candidate's *submission* creates — so before sharing there is nothing to
+	look at. This answers the other question: which fields is this opening going
+	to ask for?
+
+	Read-only, and deliberately built by the very same function that renders the
+	real form (`get_application_fields_for_channel(..., "preoffer")`), so the
+	preview cannot drift from what is actually sent. No applicant is passed to
+	it: a preview shows the form, not this candidate's answers.
+	"""
+	if not job_applicant:
+		frappe.throw(_("job_applicant is required"))
+	frappe.has_permission("Job Applicant", "read", doc=job_applicant, throw=True)
+
+	opening = frappe.db.get_value("Job Applicant", job_applicant, "job_title")
+
+	from recruitment.api.channels import _common
+
+	fields = _common.get_application_fields_for_channel(opening, "preoffer") or []
+	return {
+		"job_opening": opening,
+		"fields": [
+			{
+				"section": f.get("section") or _("General"),
+				"display_name": f.get("display_name"),
+				"reference_name": f.get("reference_name"),
+				"fieldtype": f.get("fieldtype"),
+				"reqd": 1 if f.get("reqd") else 0,
+			}
+			for f in fields
+		],
 	}

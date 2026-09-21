@@ -1,5 +1,6 @@
 import { HDTicket } from "../../hooks/useHelpDeskTickets";
-import { useCountdown } from "../../hooks/Helpdesk/useCountdown";
+import { useEscalationCountdown } from "../../hooks/Helpdesk/useEscalationCountdown";
+import { useSlaCountdown } from "../../hooks/Helpdesk/useSlaCountdown";
 import { Typography } from "../shared/atoms/Typography";
 import WrapperHoverCard from "../shared/WrapperHoverCard";
 import Badge from "../shared/Badge";
@@ -22,7 +23,6 @@ interface TicketTableRowProps {
         userLookup?: Map<string, string>,
     ) => string;
     getCategoryName: (categoryId: string | undefined) => string;
-    formateDateDiff: (date1: string, date2: string) => string;
     onReply: (ticket: HDTicket) => void;
     onClose: (ticket: HDTicket) => void;
     onRevoke: (ticket: HDTicket) => void;
@@ -43,7 +43,6 @@ const TicketTableRow = ({
     getAssignedEmail,
     getAssignedName,
     getCategoryName,
-    formateDateDiff,
     onReply,
     onClose,
     onRevoke,
@@ -54,15 +53,31 @@ const TicketTableRow = ({
     permReply = true,
     permReopen = true,
 }: TicketTableRowProps) => {
-    const creationTime = new Date(ticket.creation);
-    const delayHours = ticket.custom_second_level_escalation_delay_hours;
+    const escalation = useEscalationCountdown(ticket.escalation);
+    // FRT and TAT run down to the SLA's own targets, which the SLA already
+    // calculated in its working hours.
+    const frt = useSlaCountdown({
+        dueOn: ticket.response_by,
+        metOn: ticket.first_responded_on,
+        serverNow: ticket.server_now,
+    });
+    const tat = useSlaCountdown({
+        dueOn: ticket.resolution_by,
+        metOn: ticket.resolution_date,
+        serverNow: ticket.server_now,
+        paused: Boolean(ticket.escalation?.sla_paused),
+    });
 
-    // target = creation + delay
-    const targetTime = new Date(
-        creationTime.getTime() + delayHours * 60 * 60 * 1000
-    );
-
-    const { hours, minutes, seconds, isExpired } = useCountdown(targetTime);
+    const slaToneClass = (tone: string) =>
+        tone === "breached"
+            ? "text-red-600 font-semibold"
+            : tone === "fulfilled"
+                ? "text-emerald-600"
+                : tone === "paused"
+                    ? "text-blue-600"
+                    : tone === "pending"
+                        ? "text-amber-600"
+                        : "";
     return (
         <tr
             key={ticket.name}
@@ -85,6 +100,11 @@ const TicketTableRow = ({
                     {getCategoryName(ticket.custom_category)}
                 </Typography>
             </td>
+            <td className="px-4 py-3">
+                <Typography variant="bodySmall" color="body1">
+                    {getCategoryName(ticket.custom_sub_category_name || ticket.custom_sub_category)}
+                </Typography>
+            </td>
             <td className="px-4 py-3 flex justify-center">
                 {(() => {
                     const badgeConfig = getStatusBadgeConfig(ticket.status);
@@ -100,11 +120,6 @@ const TicketTableRow = ({
             </td>
             <td className="px-4 py-3">
                 <Typography variant="bodySmall" color="body1">
-                    {getCategoryName(ticket.custom_sub_category_name || ticket.custom_sub_category)}
-                </Typography>
-            </td>
-            <td className="px-4 py-3">
-                <Typography variant="bodySmall" color="body1">
                     {ticket.no_of_comments}
                 </Typography>
             </td>
@@ -115,12 +130,16 @@ const TicketTableRow = ({
             </td>
             <td className="px-4 py-3">
                 <Typography variant="bodySmall" color="body1">
-                    {formateDateDiff(ticket.resolution_by, ticket.creation)}
+                    <span title={frt.tooltip} className={slaToneClass(frt.tone)}>
+                        {frt.text}
+                    </span>
                 </Typography>
             </td>
             <td className="px-4 py-3">
                 <Typography variant="bodySmall" color="body1">
-                    {formateDateDiff(ticket.response_by, ticket.creation)}
+                    <span title={tat.tooltip} className={slaToneClass(tat.tone)}>
+                        {tat.text}
+                    </span>
                 </Typography>
             </td>
             <td className="px-4 py-3">
@@ -140,13 +159,26 @@ const TicketTableRow = ({
                     color="body1"
                 >
                     {<div>
-                        {isExpired ? (
-                            <span>Escalated</span>
-                        ) : (
-                            <span>
-                                {hours}h {minutes}m {seconds}s
-                            </span>
-                        )}
+                        <span
+                            title={
+                                ticket.escalation?.status === "pending" && ticket.escalation?.due_on
+                                    ? `${ticket.escalation.next_level_name} due ${ticket.escalation.due_on}`
+                                        + (escalation.businessText ? ` — ${escalation.businessText} of shift time left` : "")
+                                        + (ticket.escalation.is_working_now ? "" : " (desk currently closed)")
+                                    : undefined
+                            }
+                            className={
+                                escalation.tone === "breached"
+                                    ? "text-red-600 font-semibold"
+                                    : escalation.tone === "paused"
+                                        ? "text-blue-600"
+                                        : escalation.tone === "pending"
+                                            ? "text-amber-600"
+                                            : ""
+                            }
+                        >
+                            {escalation.text}
+                        </span>
                     </div>}
                 </Typography>
             </td>

@@ -23,8 +23,7 @@ const TeamGoals: React.FC = () => {
   }, [navigate]);
   return (
     <main
-      className={`min-h-full overflow-y-auto overflow-x-hidden bg-[#f6f8fb] font-sans ${isMobile ? "px-3 py-4" : "p-1"
-        }`}
+      className={`min-h-full overflow-y-auto overflow-x-hidden bg-[#f6f8fb] font-sans ${isMobile ? "px-3 py-4" : "p-1"}`}
     >
       <div className="mx-auto w-full space-y-4 sm:space-y-5">
         <GoalHeader />

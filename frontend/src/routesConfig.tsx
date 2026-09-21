@@ -8,6 +8,8 @@ import { useScreenSize } from "./hooks/useScreenSize";
 import { Expense, ExpenseClaim } from "./types/expenseAdvance";
 import { lazyWithRetry } from "./utils/lazyWithRetry";
 
+const PDFFormsPage = lazyWithRetry(() => import("./components/PDFForms/PDFFormsPage"));
+
 // Keep critical components as static imports for better UX
 import TeamAdvanceRequest from "./components/Compansation/Advances/ApprovalAdvanceRquest";
 import ExtraPayment from "./components/Compansation/Extrapayment/ExtraPayment";
@@ -372,6 +374,14 @@ const EmployeesDirectory = lazyWithRetry(
   () => import("./components/EmployeesDirectory/EmployeeDirectoryLayout"),
   "EmployeesDirectory",
 );
+const AddEmployee = lazyWithRetry(
+  () => import("./components/EmployeesDirectory/AddEmployee/AddEmployee"),
+  "AddEmployee",
+);
+const NewHiresList = lazyWithRetry(
+  () => import("./components/EmployeesDirectory/NewHires/NewHiresList"),
+  "NewHiresList",
+);
 const AllShiftsDashboardRoute = lazyWithRetry(
   () =>
     import("./components/ShiftRequest/ShiftDynamicRoute").then((module) => ({
@@ -474,6 +484,16 @@ const SeparationWorkflow = lazyWithRetry(
 const SeparationRecord = lazyWithRetry(
   () => import("./components/Flows/SparationRecord/SeparationRecord"),
   "SeparationRecord",
+);
+
+const ExitPage = lazyWithRetry(
+  () => import("./components/Flows/Separation/ExitPage/ExitPage.tsx"),
+  "ExitPage",
+);
+
+const PerformanceImprovement = lazyWithRetry(
+  () => import("./components/Flows/Separation/PIP/PIP"),
+  "PerformanceImprovement",
 );
 
 const Confirmation = lazyWithRetry(
@@ -602,6 +622,10 @@ const ConfigureJobBoards = lazyWithRetry(
   () => import("./components/Recruitment/ConfigureJobBoards"),
   "ConfigureJobBoards",
 );
+const IntegrationsApp = lazyWithRetry(
+  () => import("./components/Integrations/IntegrationsApp"),
+  "IntegrationsApp",
+);
 const RecognitionAdminDashboard = lazyWithRetry(
   () => import("./components/Recognition/Vibe/RecognitionAdminDashboard"),
   "RecognitionAdminDashboard",
@@ -654,6 +678,11 @@ const ScheduledImportsPage = lazyWithRetry(
 const AssignmentDetailsPage = lazyWithRetry(
   () => import("./components/EmployeeProfile/AssignmentDetailsPage"),
   "AssignmentDetailsPage",
+);
+
+const TasksPage = lazyWithRetry(
+  () => import("./components/Tasks/TasksPage"),
+  "TasksPage",
 );
 
 const EmployeeDocumentsPage = lazyWithRetry(
@@ -807,6 +836,16 @@ const ShiftRequestDefaultRoute = () => {
 };
 
 export const routesConfig: AppRoute[] = [
+  {
+    path: "/webapp/pdf-form-template",
+    element: <Suspense fallback={<div className="p-6">Loading PDF forms…</div>}><PDFFormsPage /></Suspense>,
+    permissionKey: "PDF Form Template",
+  },
+  {
+    path: "/webapp/pdf-form-submission",
+    element: <Suspense fallback={<div className="p-6">Loading PDF form…</div>}><PDFFormsPage /></Suspense>,
+    permissionKey: "PDF Form Submission",
+  },
   // notification page route
   {
     path: "/webapp/notification-log",
@@ -824,6 +863,11 @@ export const routesConfig: AppRoute[] = [
     path: "/webapp/requests",
     element: <Requests />,
     permissionKey: "Dashboard",
+  },
+  {
+    path: "/webapp/tasks",
+    element: <TasksPage />,
+    permissionKey: "Tasks",
   },
   {
     path: "/webapp/timesheet/timesheet-create",
@@ -1090,6 +1134,7 @@ export const routesConfig: AppRoute[] = [
         path: "all",
         element: <NoticesTab tab="all" />,
         permissionKey: "Notices Dashboard",
+
       },
       {
         path: "unread",
@@ -1270,6 +1315,16 @@ export const routesConfig: AppRoute[] = [
   {
     path: "/webapp/employees-directory",
     element: <EmployeesDirectory />,
+    permissionKey: "Employee Directory",
+  },
+  {
+    path: "/webapp/employees-directory/add-employee",
+    element: <AddEmployee />,
+    permissionKey: "Employee Directory",
+  },
+  {
+    path: "/webapp/employees-directory/new-hires",
+    element: <NewHiresList />,
     permissionKey: "Employee Directory",
   },
   //Leaves routes
@@ -1490,6 +1545,16 @@ export const routesConfig: AppRoute[] = [
         permissionKey: "Separation",
       },
       {
+        path: "separation-dashboard",
+        element: <ExitPage />,
+        permissionKey: "Exit Page",
+      },
+      {
+        path: "performance-improvement",
+        element: <PerformanceImprovement />,
+        permissionKey: "Performance Improvement",
+      },
+      {
         path: "confirmation",
         element: <Confirmation />,
         permissionKey: "Confirmation",
@@ -1553,7 +1618,7 @@ export const routesConfig: AppRoute[] = [
             element: <Feedback />,
             permissionKey: "Feedback",
           },
-         
+
           {
             path: "skills",
             element: <SkillsAndProficiency />,
@@ -1766,6 +1831,11 @@ export const routesConfig: AppRoute[] = [
     path: "/webapp/scheduled-imports",
     element: <ScheduledImportsPage />,
     permissionKey: "Scheduled Imports",
+  },
+  {
+    path: "/webapp/integrations",
+    element: <IntegrationsApp />,
+    permissionKey: "Integrations",
   },
   {
     path: "/webapp/recognition/vibe",

@@ -4,8 +4,15 @@ configuration that every new Job Opening inherits."""
 import json
 
 import frappe
+from frappe import _
 from frappe.model.document import Document
 from frappe.utils import cint
+
+from recruitment.recruitment.field_role_permissions import (
+	OPENING_RULE_COLS,
+	is_everyone,
+	serialize_roles,
+)
 
 
 # Job Applicant field types we DON'T want to expose in the applicant profile
@@ -35,6 +42,8 @@ TABLE_FIELDTYPES = {"Table", "Table MultiSelect"}
 # `display_order`. The gaps are what a Job Opening drops a repositioned field
 # into (see public/js/job_opening.js) — keep it in step with ORDER_STEP there.
 ORDER_STEP = 1000
+
+ALL_ROLES = serialize_roles(["All"])
 
 
 def _init_child_field_config(child_doctype):
@@ -213,16 +222,22 @@ def build_default_row(reference_name, display_name, fieldtype, section, child_fi
 		"display_name": display_name or reference_name,
 		"fieldtype": fieldtype or "",
 		"child_field_config": child_field_config or "",
+		"locked": 0,
+		"applicable_enabled": 0,
+		"applicability_config": "",
 		"view_careers": 0, "mandatory_careers": 0,
 		"view_ijp": 0, "mandatory_ijp": 0,
 		"view_refer": 0, "mandatory_refer": 0,
 		"view_campus": 0, "mandatory_campus": 0,
 		"view_preoffer": 0, "mandatory_preoffer": 0,
 		"ctq_flag": 0,
-		"visibility": "All",
-		"editability": "Editable",
-		"preoffer_visibility": "Same as visibility",
-		"preoffer_edit_approve": "Editable",
+		# Role lists (see field_role_permissions). Unrestricted: the View switches
+		# above already keep a new field off every form.
+		"profile_view_roles": ALL_ROLES,
+		"visibility": ALL_ROLES,
+		"editability": ALL_ROLES,
+		"preoffer_visibility": ALL_ROLES,
+		"preoffer_edit_approve": ALL_ROLES,
 	}
 
 
@@ -236,8 +251,10 @@ def ensure_fields_in_section(fieldnames, section):
 	section, that choice is honoured directly here — assigning the row's section
 	rather than recomputing it from meta (which may not even contain that label).
 
-	Fields are also recorded in ``synced_field_refs`` so ``_auto_sync`` treats
-	them as already handled and never adds a second, meta-grouped row.
+	Only fields actually placed are recorded in ``synced_field_refs``, which is
+	what tells ``_auto_sync`` to leave them alone. Recording one this ran past
+	would bury it for good: it never reaches the table, and every later load then
+	skips it as "already seen".
 	"""
 	section = (section or "").strip() or "General"
 	fieldnames = [fn for fn in fieldnames if fn]
@@ -246,12 +263,31 @@ def ensure_fields_in_section(fieldnames, section):
 
 	settings = frappe.get_single("Job Applicant Profile Settings")
 	meta = frappe.get_meta("Job Applicant")
+
+	# Fields created moments ago in this same request are not on the cached meta
+	# yet, and that stale read is what used to drop them. Fetch just those from the
+	# Custom Field table — one query, against the eight a full meta rebuild costs,
+	# and none at all once the cache has caught up.
+	unseen = [fn for fn in fieldnames if not meta.get_field(fn)]
+	fresh = {}
+	if unseen:
+		fresh = {
+			r.fieldname: r
+			for r in frappe.get_all(
+				"Custom Field",
+				filters={"dt": "Job Applicant", "fieldname": ["in", unseen]},
+				fields=["fieldname", "label", "fieldtype", "options"],
+			)
+		}
+
 	by_ref = {r.reference_name: r for r in settings.default_application_fields if r.reference_name}
 
+	placed = []
 	for fn in fieldnames:
-		df = meta.get_field(fn)
+		df = meta.get_field(fn) or fresh.get(fn)
 		if not df:
 			continue
+		placed.append(fn)
 		child_cfg = _init_child_field_config(df.options) if df.fieldtype in TABLE_FIELDTYPES else ""
 		row = by_ref.get(fn)
 		if row:
@@ -268,8 +304,20 @@ def ensure_fields_in_section(fieldnames, section):
 				build_default_row(fn, df.label or fn, df.fieldtype, section, child_cfg),
 			)
 
+	missing = set(fieldnames) - set(placed)
+	if missing:
+		# Left unrecorded on purpose, so the next _auto_sync still surfaces them.
+		frappe.log_error(
+			"Not on Job Applicant: " + ", ".join(sorted(missing)),
+			"Job Applicant Profile Settings: field placement skipped",
+		)
+	if not placed:
+		# Saving here would only bump `modified` under an open form and cost the
+		# admin a version conflict on their next save.
+		return
+
 	synced = {r.strip() for r in (settings.synced_field_refs or "").split("\n") if r.strip()}
-	synced |= set(fieldnames)
+	synced |= set(placed)
 	settings.synced_field_refs = "\n".join(sorted(synced))
 	settings.save(ignore_permissions=True)
 
@@ -284,6 +332,34 @@ class JobApplicantProfileSettings(Document):
 
 	def onload(self):
 		self._auto_sync()
+
+	def validate(self):
+		self._normalise_applicability()
+
+	def on_update(self):
+		from recruitment.recruitment.profile_permission_sync import sync
+
+		# Warn rather than block: settings also save themselves on load (_auto_sync).
+		try:
+			sync(self)
+		except Exception:
+			frappe.log_error(title="Profile View Permissions: DocType Permission sync failed")
+			frappe.msgprint(
+				_("Profile View Permissions were saved but could not be applied to DocType Permission. See Error Log."),
+				indicator="orange",
+				alert=True,
+			)
+
+	def _normalise_applicability(self):
+		"""Store each applicability rule in canonical form (imports and hand edits can
+		put anything in it). A rule is kept while the switch is off, so turning it
+		back on restores the previous scope."""
+		from recruitment.recruitment.field_applicability import serialize_config
+
+		for row in self.default_application_fields or []:
+			canonical = serialize_config(row.get("applicability_config"))
+			if canonical != (row.get("applicability_config") or ""):
+				row.applicability_config = canonical
 
 	def _auto_sync(self):
 		"""Idempotently reconcile the table with the Job Applicant doctype.
@@ -425,6 +501,106 @@ class JobApplicantProfileSettings(Document):
 			self.save(ignore_permissions=True)
 
 
+def locked_field_refs():
+	"""``{reference_name}`` frozen in Job Applicant Profile Settings.
+
+	A locked field is configured once, centrally: every Job Opening shows it
+	read-only and cannot override, reposition or remove it. The point is the
+	mistake it prevents — a field that must be collected on every opening
+	(Applicant Name, say) being switched off on one of them by accident.
+
+	Read straight off the child table rather than through the Single: this runs on
+	every Job Opening save and ``get_single`` would pull the whole settings
+	document, including the education-stages table nothing here looks at.
+	"""
+	return set(frappe.get_all(
+		"Job Opening Application Field",
+		filters={
+			"parenttype": "Job Applicant Profile Settings",
+			"parentfield": "default_application_fields",
+			"locked": 1,
+		},
+		pluck="reference_name",
+		limit_page_length=0,
+	))
+
+
+def enforce_locked_fields(doc, method=None):
+	"""Job Opening ``validate``: a locked field's override row is reset to the
+	settings row, except the four GENERAL / PRE-OFFER RULES columns — who may see,
+	edit and approve the value is each opening's own call. A row left with
+	"everyone" on all four says nothing and is dropped. Enforced here, not just in
+	the UI, because the API and Data Import can write this table too.
+	"""
+	rows = doc.get("custom_application_fields") or []
+	if not rows:
+		return
+
+	locked = locked_field_refs()
+	if not locked:
+		return
+
+	touched = [r for r in rows if r.reference_name in locked]
+	if not touched:
+		return
+
+	defaults = {
+		row.reference_name: row
+		for row in frappe.get_all(
+			"Job Opening Application Field",
+			filters={
+				"parenttype": "Job Applicant Profile Settings",
+				"parentfield": "default_application_fields",
+				"reference_name": ["in", sorted({r.reference_name for r in touched})],
+			},
+			fields=["*"],
+		)
+		if row.reference_name
+	}
+
+	# Everything except the four rule columns — read from meta so a column added
+	# later is frozen by default.
+	shape_cols = [
+		df.fieldname
+		for df in frappe.get_meta("Job Opening Application Field").fields
+		if df.fieldname
+		and df.fieldname not in OPENING_RULE_COLS
+		and df.fieldname != "reference_name"
+	]
+
+	keep, reset, dropped = [], [], []
+	for row in rows:
+		if row.reference_name not in locked:
+			keep.append(row)
+			continue
+		rules = {c: row.get(c) for c in OPENING_RULE_COLS}
+		if all(is_everyone(v) for v in rules.values()):
+			dropped.append(row.reference_name)
+			continue
+		default = defaults.get(row.reference_name)
+		if default:
+			for key in shape_cols:
+				row.set(key, default.get(key))
+		for col, value in rules.items():
+			row.set(col, value)
+		row.display_order = 0
+		reset.append(row.reference_name)
+		keep.append(row)
+
+	if not reset and not dropped:
+		return
+
+	doc.set("custom_application_fields", keep)
+	parts = []
+	if reset:
+		parts.append(f"reset to the central definition (rules kept): {', '.join(sorted(set(reset)))}")
+	if dropped:
+		parts.append(f"discarded: {', '.join(sorted(set(dropped)))}")
+	frappe.logger("recruitment").info(
+		f"Job Opening {doc.name or '(new)'}: locked application field(s) " + "; ".join(parts) + "."
+	)
+
+
 @frappe.whitelist()
 def get_job_applicant_profile_template(opening=None):
 	"""Return the merged template the Job Opening form UI renders.
@@ -476,6 +652,13 @@ def get_job_applicant_profile_template(opening=None):
 		row = overrides.get(ref) or defaults.get(ref)
 		return row.get(attr) if row else fallback
 
+	def pick_shape(ref, attr, fallback=0):
+		"""``pick``, except a locked field always answers from the settings row."""
+		def_row = defaults.get(ref)
+		if def_row is not None and cint(def_row.get("locked")):
+			return def_row.get(attr)
+		return pick(ref, attr, fallback)
+
 	rows = []
 	for ref, def_row in defaults.items():
 		override_row = overrides.get(ref)
@@ -483,8 +666,9 @@ def get_job_applicant_profile_template(opening=None):
 		# dragged into and its position within that section. Neither is set until
 		# someone moves the field on this opening, so the settings placement is what
 		# every untouched field keeps.
+		locked = cint(def_row.get("locked"))
 		section = (
-			(override_row.get("section") if override_row else None)
+			(override_row.get("section") if override_row and not locked else None)
 			or def_row.section
 			or "General"
 		)
@@ -492,13 +676,15 @@ def get_job_applicant_profile_template(opening=None):
 		# moved on this opening can be given a value BETWEEN two others — that is
 		# what lets an opening reposition one field without having to restate the
 		# position (and therefore the whole configuration) of every other field.
-		override_order = cint(override_row.get("display_order")) if override_row else 0
+		override_order = (
+			cint(override_row.get("display_order")) if override_row and not locked else 0
+		)
 		rows.append({
 			"display_order": override_order or (cint(def_row.idx) * ORDER_STEP),
 			"_default_order": cint(def_row.idx),
 			"section": section,
 			"reference_name": ref,
-			"display_name": pick(ref, "display_name") or ref,
+			"display_name": pick_shape(ref, "display_name") or ref,
 			"fieldtype": def_row.get("fieldtype") or "",
 			"child_field_config": _reconciled_child_config(
 				applicant_meta,
@@ -508,21 +694,30 @@ def get_job_applicant_profile_template(opening=None):
 				or def_row.get("child_field_config")
 				or "",
 			),
-			"view_careers": pick(ref, "view_careers"),
-			"mandatory_careers": pick(ref, "mandatory_careers"),
-			"view_ijp": pick(ref, "view_ijp"),
-			"mandatory_ijp": pick(ref, "mandatory_ijp"),
-			"view_refer": pick(ref, "view_refer"),
-			"mandatory_refer": pick(ref, "mandatory_refer"),
-			"view_campus": pick(ref, "view_campus"),
-			"mandatory_campus": pick(ref, "mandatory_campus"),
-			"view_preoffer": pick(ref, "view_preoffer"),
-			"mandatory_preoffer": pick(ref, "mandatory_preoffer"),
-			"ctq_flag": pick(ref, "ctq_flag"),
-			"visibility": pick(ref, "visibility", "All") or "All",
-			"editability": pick(ref, "editability", "Editable") or "Editable",
-			"preoffer_visibility": pick(ref, "preoffer_visibility", "Same as visibility") or "Same as visibility",
-			"preoffer_edit_approve": pick(ref, "preoffer_edit_approve", "Editable") or "Editable",
+			# Deliberately `def_row`, not `pick`: locking is a settings decision and
+			# an opening must not be able to unlock itself by carrying its own row.
+			"locked": 1 if def_row.get("locked") else 0,
+			# Settings-only too: an opening must not be able to re-admit itself.
+			"applicable_enabled": 1 if def_row.get("applicable_enabled") else 0,
+			"applicability_config": def_row.get("applicability_config") or "",
+			"view_careers": pick_shape(ref, "view_careers"),
+			"mandatory_careers": pick_shape(ref, "mandatory_careers"),
+			"view_ijp": pick_shape(ref, "view_ijp"),
+			"mandatory_ijp": pick_shape(ref, "mandatory_ijp"),
+			"view_refer": pick_shape(ref, "view_refer"),
+			"mandatory_refer": pick_shape(ref, "mandatory_refer"),
+			"view_campus": pick_shape(ref, "view_campus"),
+			"mandatory_campus": pick_shape(ref, "mandatory_campus"),
+			"view_preoffer": pick_shape(ref, "view_preoffer"),
+			"mandatory_preoffer": pick_shape(ref, "mandatory_preoffer"),
+			"ctq_flag": pick_shape(ref, "ctq_flag"),
+			# Settings-only: an opening's row can never widen it.
+			"profile_view_roles": serialize_roles(def_row.get("profile_view_roles")),
+			# Per-opening, locked or not.
+			"visibility": serialize_roles(pick(ref, "visibility", ALL_ROLES)),
+			"editability": serialize_roles(pick(ref, "editability", ALL_ROLES)),
+			"preoffer_visibility": serialize_roles(pick(ref, "preoffer_visibility", ALL_ROLES)),
+			"preoffer_edit_approve": serialize_roles(pick(ref, "preoffer_edit_approve", ALL_ROLES)),
 		})
 
 	# Row order IS the render order — the channel forms lay fields out in the order

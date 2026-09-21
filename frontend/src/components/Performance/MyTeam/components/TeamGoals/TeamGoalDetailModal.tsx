@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { X } from "lucide-react";
 import { useScreenSize } from "../../../../../hooks/useScreenSize";
 import { Typography } from "../../../../shared/atoms/Typography";
@@ -8,6 +8,7 @@ import Avatar from "../../../../shared/Avatar";
 import { getInitials } from "../../../../../utils/helperUtils";
 import type { TeamGoalItem, TeamGoalKeyResult } from "../../../../../types/goal";
 import { GoalActionButtons } from "./GoalActionButtons";
+import GoalCommentBox from "./GoalCommentBox";
 
 export interface SelectedGoalDetail extends TeamGoalItem {
   employee?: string;
@@ -34,6 +35,7 @@ export const TeamGoalDetailModal: React.FC<TeamGoalDetailModalProps> = ({
   onClose,
   onApprove,
 }) => {
+  const [comment, setComment] = useState("");
   const { isMobile } = useScreenSize();
 
   const keyResults: TeamGoalKeyResult[] = goal.key_results || [];
@@ -68,9 +70,7 @@ export const TeamGoalDetailModal: React.FC<TeamGoalDetailModalProps> = ({
           </button>
         </div>
 
-        {/* Scrollable Body */}
         <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-6">
-          {/* Goal Title & Employee Info */}
           <div>
             <Typography variant="h3" className="font-bold text-slate-950 mb-2 break-words">
               {goal.title}
@@ -90,7 +90,6 @@ export const TeamGoalDetailModal: React.FC<TeamGoalDetailModalProps> = ({
             </div>
           </div>
 
-          {/* Meta Cards / Details Grid */}
           <div className={`grid ${isMobile ? "grid-cols-2" : "grid-cols-4"} gap-4 rounded-xl bg-slate-50 p-4 border border-slate-100`}>
             <div>
               <Typography variant="caption" className="block text-[11px] font-semibold tracking-wider text-slate-400 uppercase mb-1">
@@ -126,7 +125,6 @@ export const TeamGoalDetailModal: React.FC<TeamGoalDetailModalProps> = ({
             </div>
           </div>
 
-          {/* Description */}
           {goal.description && (
             <div>
               <Typography variant="bodySmall" className="font-semibold text-slate-900 mb-1.5 block">
@@ -140,7 +138,6 @@ export const TeamGoalDetailModal: React.FC<TeamGoalDetailModalProps> = ({
             </div>
           )}
 
-          {/* Key Results */}
           <div>
             <div className="flex items-center justify-between mb-3">
               <Typography variant="bodySmall" className="font-semibold text-slate-900">
@@ -190,6 +187,14 @@ export const TeamGoalDetailModal: React.FC<TeamGoalDetailModalProps> = ({
               </div>
             )}
           </div>
+
+          <GoalCommentBox
+            employee={goal.employee || ""}
+            goalKey={goal.goal_key || ""}
+            employeeName={goal.employeeName}
+            comment={comment}
+            onCommentChange={setComment}
+          />
         </div>
 
         {/* Footer */}
@@ -202,6 +207,7 @@ export const TeamGoalDetailModal: React.FC<TeamGoalDetailModalProps> = ({
               employee: goal.employee || "",
               goal_key: goal.goal_key || "",
             }}
+            note={comment}
             onApprove={onApprove}
             onClose={onClose}
           />

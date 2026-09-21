@@ -27,6 +27,8 @@ outage must never roll back the institute or the invite that triggered it.
 import frappe
 from frappe import _
 
+from recruitment.recruitment.communication_log import sendmail_with_log
+
 WELCOME_TEMPLATE = "TPO Welcome"
 INVITE_TEMPLATE = "Campus Invite"
 PRIMARY_TPO_ROLE = "Primary TPO"
@@ -70,15 +72,61 @@ def _render(template, context, subject_fallback):
 	return rendered.get("subject") or subject_fallback, rendered.get("message")
 
 
-def _send(recipients, rendered, reference_doctype, reference_name):
+def _send(recipients, rendered, reference_doctype, reference_name, attachments=None):
 	subject, message = rendered
-	frappe.sendmail(
+	sendmail_with_log(
 		recipients=recipients,
 		subject=subject,
 		message=message,
 		reference_doctype=reference_doctype,
 		reference_name=reference_name,
+		attachments=attachments or None,
 	)
+
+
+def _invite_attachments(invite):
+	"""The JD files of this invite's job openings, as sendmail attachments.
+
+	One mail goes to each TPO listing every opening on the invite, so every
+	opening's JD rides along on that one mail. Deduped by URL — the same JD used
+	on two openings is attached once.
+
+	Each URL is checked against the File table first. The email queue resolves an
+	attachment at SEND time with ``frappe.get_doc("File", {"file_url": ...})``, so
+	a URL with no File row behind it would fail the whole invite email inside a
+	background worker, silently. Skipping it here means a broken JD costs its
+	attachment, never the invitation.
+	"""
+	urls = []
+	for row in (invite.get("job_openings") or []):
+		# The row's own fetched copy, falling back to the opening itself for rows
+		# added before this field existed (fetch_from only fills on save).
+		url = (row.get("job_description_file") or "").strip()
+		if not url and row.get("job_opening"):
+			url = (
+				frappe.db.get_value(
+					"Job Opening", row.get("job_opening"), "custom_job_description_file"
+				)
+				or ""
+			).strip()
+		if url and url not in urls:
+			urls.append(url)
+
+	if not urls:
+		return []
+
+	known = set(
+		frappe.get_all("File", filters={"file_url": ["in", urls]}, pluck="file_url")
+	)
+	missing = [u for u in urls if u not in known]
+	if missing:
+		frappe.log_error(
+			"Campus Invite {0}: JD file(s) not found, sent without them: {1}".format(
+				invite.name, ", ".join(missing)
+			),
+			"Campus invite JD attachment missing",
+		)
+	return [{"file_url": u} for u in urls if u in known]
 
 
 # ---------------------------------------------------------------------------
@@ -209,6 +257,8 @@ def send_campus_invite(invite):
 		# Built once: it runs a query for the opening titles, and none of it varies
 		# by recipient.
 		base = _invite_context(invite)
+		# Built once as well: the same JD set goes to every contact.
+		attachments = _invite_attachments(invite)
 		fallback = _("Campus drive — {0}").format(
 			invite.get("campus_invite_name") or invite.name)
 
@@ -217,7 +267,7 @@ def send_campus_invite(invite):
 			rendered = _render(template, dict(base, tpo_name=name, email=email), fallback)
 			if not rendered:
 				return sent  # template gone: logged once, don't retry per contact
-			_send([email], rendered, "Campus Invite", invite.name)
+			_send([email], rendered, "Campus Invite", invite.name, attachments=attachments)
 			sent += 1
 		return sent
 	except Exception:

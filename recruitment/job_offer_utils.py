@@ -5,9 +5,14 @@ from frappe import _
 from  hrms.payroll.doctype.salary_slip import salary_slip
 from frappe.model.mapper import get_mapped_doc
 from frappe.utils import cint
-from frappe.utils import escape_html, formatdate, now_datetime, time_diff_in_hours, flt, fmt_money
+from frappe.utils import escape_html, formatdate, now_datetime, time_diff_in_hours, flt
 
 from recruitment.recruitment.link_token import OFFER_SCOPE, offer_token, require_token
+from recruitment.recruitment.offer_document_template import (
+    get_offer_document_template,
+    is_document_template_offer_enabled,
+    template_unavailable_html,
+)
 from recruitment.recruitment.utils import as_administrator
 
 
@@ -176,18 +181,37 @@ def get_job_offer_document_template(job_offer=None):
 
     Returns a Document Template name ONLY when the master toggle
     ``send_offer_via_document_template`` is ON in Recruitment Settings and a
-    template is configured. Selection mirrors ``get_job_offer_print_format``:
-    the template mapped to the applicant's Employment Type
-    (``job_offer_document_template_mapping``) wins, otherwise the single
-    ``job_offer_document_template`` default is used.
+    template admits this offer.
 
-    Returns None whenever the toggle is off or nothing is configured, so every
-    caller cleanly falls back to the existing Print Format path. Never raises —
-    any unexpected error degrades to None (Print Format path).
+    Selection is *attribute-driven* and lives on the Document Template itself —
+    its Company, or the attributes on the Dynamic User Assignments in its User
+    Assignment table. See :mod:`recruitment.recruitment.offer_document_template`
+    for the full contract. The old Recruitment Settings pair (a single default
+    plus a per-Employment-Type mapping table) is gone: an Employment Type is now
+    just one attribute among the many a template can be scoped by.
+
+    Returns None when the toggle is off, or when nothing admits this offer. The
+    second case is deliberate and is **not** a fallback to the Print Format path
+    for the offer letter — the callers that show or send a letter surface
+    ``no_template_message()`` instead, and ``validate_offer_document_template``
+    blocks the send at submit. Never raises.
 
     ``job_offer`` may be a Job Offer name (str) or a Job Offer doc.
     """
-    # A template explicitly picked on the Job Offer form wins over everything.
+    # The toggle is checked FIRST, before anything else, and it is the only gate
+    # that matters: off means this whole path does not exist and every caller
+    # renders from a Print Format exactly as it did before the feature shipped.
+    #
+    # It used to be checked *after* the hand-picked template below, which let a
+    # value on one Job Offer form switch that offer onto the Document Template
+    # path while the site-wide toggle said Print Format. That is not what the
+    # toggle reads as, so the order is now the other way round.
+    if not is_document_template_offer_enabled():
+        return None
+
+    # With the path on, a template picked by hand on the form wins over the
+    # attribute match: the picker already offered only templates that admit this
+    # offer, so a value there is HR choosing between them on purpose.
     try:
         if job_offer:
             picked = (
@@ -201,30 +225,12 @@ def get_job_offer_document_template(job_offer=None):
         pass
 
     try:
-        settings = frappe.get_cached_doc("Recruitment Settings")
+        return get_offer_document_template(job_offer)
     except Exception:
+        frappe.log_error(
+            frappe.get_traceback(), "Job Offer Document Template: resolution failed"
+        )
         return None
-
-    if not settings or not settings.get("send_offer_via_document_template"):
-        return None
-
-    default_tmpl = settings.get("job_offer_document_template") or None
-
-    if not job_offer:
-        return default_tmpl
-
-    try:
-        employment_type = _resolve_offer_employment_type(job_offer)
-        if not employment_type:
-            return default_tmpl
-
-        for row in (settings.get("job_offer_document_template_mapping") or []):
-            if row.employment_type == employment_type and row.document_template:
-                return row.document_template
-    except Exception:
-        pass
-
-    return default_tmpl
 
 
 def render_job_offer_via_document_template(job_offer, template_name):
@@ -578,6 +584,10 @@ def preview_job_offer_html(appl, token=None):
                     f'border:1px solid #ddd;" title="Offer Letter"></iframe>'
                 )
                 return {"html": html, "jo_id": jo_id}
+        elif is_document_template_offer_enabled():
+            # Same call as the desk preview: no template admits this offer, so
+            # there is no letter to show the candidate either.
+            return {"html": template_unavailable_html(), "jo_id": jo_id, "available": False}
 
         formats = get_job_offer_print_formats(jo_id)
 
@@ -596,6 +606,120 @@ def preview_job_offer_html(appl, token=None):
 
         html = render_job_offer_html(jo_id, formats[0] if formats else None)
         return {"html": html, "jo_id": jo_id}
+
+# ---------------------------------------------------------------------------
+# Culture Book — an optional company PDF, attached to every offer email and
+# previewable from the candidate portal.
+#
+# Entirely driven by one setting (Recruitment Settings -> `culture_book`). With
+# it blank the feature does not exist: the endpoint reports it as unavailable
+# and the email attaches nothing. Every helper here is non-throwing for exactly
+# that reason — a missing, deleted or unreadable file must never break an offer
+# email or a portal page.
+# ---------------------------------------------------------------------------
+
+def get_culture_book_file_url():
+    """The configured Culture Book's file URL, or None when not set up.
+
+    Never raises — a site that has not migrated the field yet simply has no
+    Culture Book.
+    """
+    try:
+        return frappe.db.get_single_value("Recruitment Settings", "culture_book") or None
+    except Exception:
+        return None
+
+
+def get_culture_book():
+    """Return ``(pdf_bytes, filename)`` for the configured Culture Book.
+
+    ``(None, None)`` when nothing is configured, or when the file it points at
+    can no longer be read (deleted from disk, File doc removed). Callers treat
+    that as "no culture book" and carry on.
+    """
+    file_url = get_culture_book_file_url()
+    if not file_url:
+        return None, None
+
+    try:
+        # The attachment is usually private, and the candidate reading it is a
+        # guest — same reason every other candidate-facing read in this module
+        # runs elevated.
+        with as_administrator():
+            content = _read_template_file_bytes(file_url)
+        if not content:
+            frappe.log_error(
+                f"Culture Book file not readable: {file_url}", "Culture Book unavailable"
+            )
+            return None, None
+
+        filename = (
+            frappe.db.get_value("File", {"file_url": file_url}, "file_name")
+            or file_url.rsplit("/", 1)[-1]
+            or "Culture Book.pdf"
+        )
+        return content, filename
+    except Exception:
+        frappe.log_error(frappe.get_traceback(), "Culture Book read failed")
+        return None, None
+
+
+def get_culture_book_attachment():
+    """The Culture Book as a ``frappe.sendmail`` attachment dict, or None.
+
+    Used to append the document to offer emails. None whenever there is nothing
+    to attach, so callers can simply skip it.
+    """
+    content, filename = get_culture_book()
+    if not content:
+        return None
+    return {
+        "fname": filename,
+        "fcontent": content,
+        "content_type": "application/pdf",
+    }
+
+
+@frappe.whitelist(allow_guest=True)
+def preview_culture_book(appl, token=None):
+    """Stream the Culture Book PDF to the candidate — guest, token-gated.
+
+    Mirrors `download_job_offer_pdf`: a logged-in candidate viewing THEIR OWN
+    applicant needs no link token, anyone else needs the token (or Job Offer
+    permission). Streams the file rather than returning base64, since the
+    document can be large.
+
+    When no Culture Book is configured (or its file cannot be read) this returns
+    ``{"available": False}`` as JSON instead of throwing, so a portal that calls
+    it unconditionally simply gets "nothing to show" and can hide the button.
+    """
+    if not appl:
+        frappe.throw("Missing applicant parameter")
+    if not _candidate_owns_applicant(appl):
+        _authorize_offer(appl, token, "read")
+
+    content, filename = get_culture_book()
+    if not content:
+        return {"available": False}
+
+    frappe.local.response.filename = filename
+    frappe.local.response.filecontent = content
+    frappe.local.response.type = "pdf"
+
+
+@frappe.whitelist(allow_guest=True)
+def has_culture_book(appl=None, token=None):
+    """Whether a Culture Book is configured — for showing/hiding the portal button
+    without downloading the document.
+
+    ``appl``/``token`` are accepted and honoured when given, so the portal can call
+    it with the same arguments as the preview. Only ever reports the presence of a
+    site-wide setting, never candidate data.
+    """
+    if appl and not _candidate_owns_applicant(appl):
+        _authorize_offer(appl, token, "read")
+    return {"available": bool(get_culture_book_file_url())}
+
 
 @frappe.whitelist(allow_guest=True)
 def get_job_offer_status(appl, token=None):
@@ -669,11 +793,45 @@ def job_offer_update(status, appl, token=None, reason=None, message=None):
         # shown before onboarding. False (default) => behaves exactly as before.
         dpdp_consent_required = is_dpdp_consent_enabled() if status == "Accepted" else False
 
-        return {
+        result = {
             "jo_id": jo_id,
             "webform": webform,
             "dpdp_consent_required": dpdp_consent_required,
         }
+
+        # External consent mode: the notices live on a partner portal, so acceptance
+        # is also where we start the consent session and hand the frontend the link
+        # to redirect the candidate to. Internal-form sites get nothing extra here
+        # and keep using their own consent page. Best-effort — a partner outage must
+        # not undo an acceptance the candidate has already made; the candidate can be
+        # re-issued a link from the action center (start_consent_session).
+        if dpdp_consent_required:
+            from recruitment.dpdp_external_consent import (
+                get_or_start_session,
+                is_external_consent_mode,
+            )
+
+            if is_external_consent_mode():
+                result["dpdp_consent_mode"] = "External Portal"
+                try:
+                    session = get_or_start_session(appl)
+                    result["dpdp_consent_url"] = session["short_url"]
+                    result["dpdp_consent_session"] = session["session_id"]
+                except Exception:
+                    frappe.log_error(
+                        frappe.get_traceback(),
+                        "job_offer_update: DPDP consent session start failed",
+                    )
+                    # The acceptance itself stands. Drop the queued failure message so
+                    # the candidate is not shown an error for a step that runs behind
+                    # the scenes — the null URL tells the frontend to retry via
+                    # start_consent_session instead.
+                    frappe.clear_messages()
+                    result["dpdp_consent_url"] = None
+            else:
+                result["dpdp_consent_mode"] = "Internal Form"
+
+        return result
     finally:
         frappe.flags.ignore_permissions = original_ignore
 
@@ -692,6 +850,12 @@ def get_job_offer_summary(appl, token=None):
 
         duration = jo.get("custom_duration")
         expected_doj = jo.get("custom_expected_doj")
+        # A Trainee is sent two letters that start on different days: the traineeship
+        # begins on this date, the permanent role on Expected DOJ. Only Trainee offers
+        # carry it, so it stays None everywhere else rather than repeating the other
+        # date and implying the two are the same
+        # (recruitment.patches.add_trainee_joining_date).
+        trainee_doj = jo.get("custom_trainee_doj")
         stipend = jo.get("custom_stipend")
         expiry_date = jo.get("custom_jo_expiry_date")
 
@@ -715,7 +879,7 @@ def get_job_offer_summary(appl, token=None):
         # Resolve the Designation link to its title (falls back to the id).
         designation_name = None
         if jo.designation:
-            designation_name = frappe.db.get_value("Designation", jo.designation, "custom_designation_title") or jo.designation
+            designation_name = frappe.get_cached_value("Designation", jo.designation, "custom_designation_title") or jo.designation
 
         # --- Compensation: dynamic by Employment Type -----------------------
         # Employment Type (custom_employment_type -> Employment Type Link) is read
@@ -727,7 +891,7 @@ def get_job_offer_summary(appl, token=None):
         employment_type = None
         et_id = _resolve_offer_employment_type(jo)
         if et_id:
-            employment_type = frappe.db.get_value("Employment Type", et_id, "employee_type_name") or et_id
+            employment_type = frappe.get_cached_value("Employment Type", et_id, "employee_type_name") or et_id
 
         is_intern = (employment_type or "").strip().lower() == "intern"
 
@@ -736,14 +900,6 @@ def get_job_offer_summary(appl, token=None):
             (38000.0 -> 38000), real decimals are kept (2000.5 -> 2000.5)."""
             v = flt(value)
             return int(v) if v == int(v) else v
-
-        def fmt(value):
-            """Comma-grouped string matching how the document displays the amount
-            (uses the site Number Format setting, e.g. "3,500,000"). No currency
-            symbol; no decimals for whole numbers."""
-            v = flt(value)
-            precision = 0 if v == int(v) else 2
-            return fmt_money(v, precision=precision)
 
         # --- Compensation: driven by what's actually on the offer ---------------
         # Populate the stipend and/or the fixed/variable/total fields based on which
@@ -755,46 +911,58 @@ def get_job_offer_summary(appl, token=None):
         stipend_val = flt(stipend)
         fixed_val = flt(jo.get("custom_total_fixed_pay") or jo.get("custom_base_salary"))
         variable_val = flt(jo.get("custom_variable_incentive"))
+        # Location Allowance defaults from the offer's Location master and is
+        # editable per offer; it is part of CTC (Total Fixed Pay + Incentive +
+        # Location Allowance) but was missing here, so the total came out short
+        # whenever it was filled.
+        location_val = flt(jo.get("custom_location_allowance"))
+        # The offer's own stored CTC. Preferred for the total so the portal shows
+        # exactly the figure on the letter rather than re-deriving it. Blank on
+        # offers that never went through the CTC computation, hence the fallback.
+        ctc_val = flt(jo.get("custom_ctc"))
         has_stipend = stipend_val > 0
-        has_fixed = fixed_val > 0 or variable_val > 0
+        has_fixed = fixed_val > 0 or variable_val > 0 or location_val > 0 or ctc_val > 0
+
+        total_val = ctc_val if ctc_val > 0 else (fixed_val + variable_val + location_val)
 
         compensation = {
             "compensation_type": None,
             "stipend": None,
             "fixed": None,
             "variable": None,
+            # Null when the offer carries no location allowance, so the UI can
+            # simply skip the row — same convention as every other field here.
+            "location_allowance": None,
+            # Fixed pay with the location allowance folded in — the single
+            # "Total Fixed Pay" line the portal shows. `fixed` and
+            # `location_allowance` stay as they were for any other consumer.
+            "total_fixed": None,
             "total": None,
-            # Comma-grouped display strings (match the doc); UI may use these directly.
-            "stipend_formatted": None,
-            "fixed_formatted": None,
-            "variable_formatted": None,
-            "total_formatted": None,
         }
 
+        # Raw amounts only — the portal formats them itself.
         if has_stipend:
             compensation["stipend"] = num(stipend_val)
-            compensation["stipend_formatted"] = fmt(stipend_val)
         if has_fixed:
             compensation["fixed"] = num(fixed_val)
             compensation["variable"] = num(variable_val)
-            compensation["total"] = num(fixed_val + variable_val)
-            compensation["fixed_formatted"] = fmt(fixed_val)
-            compensation["variable_formatted"] = fmt(variable_val)
-            compensation["total_formatted"] = fmt(fixed_val + variable_val)
+            compensation["total"] = num(total_val)
+        if location_val > 0:
+            compensation["location_allowance"] = num(location_val)
 
         # Nothing filled -> fall back to the original role-based default so the
         # response shape and values are unchanged for those offers.
         if not has_stipend and not has_fixed:
             if is_intern:
                 compensation["stipend"] = num(stipend_val)
-                compensation["stipend_formatted"] = fmt(stipend_val)
             else:
                 compensation["fixed"] = num(fixed_val)
                 compensation["variable"] = num(variable_val)
-                compensation["total"] = num(fixed_val + variable_val)
-                compensation["fixed_formatted"] = fmt(fixed_val)
-                compensation["variable_formatted"] = fmt(variable_val)
-                compensation["total_formatted"] = fmt(fixed_val + variable_val)
+                compensation["total"] = num(total_val)
+
+        # Filled wherever `fixed` is, so the UI can rely on one field for the row.
+        if compensation["fixed"] is not None:
+            compensation["total_fixed"] = num(fixed_val + location_val)
 
         # Hint for the UI: "both" when a stipend AND fixed pay are present (the
         # trainee dual-letter case), else the single kind as before.
@@ -816,6 +984,9 @@ def get_job_offer_summary(appl, token=None):
             "designation": designation_name or "Intern",
             "duration_display": duration_display,
             "expected_doj_display": formatdate(expected_doj) if expected_doj else None,
+            # Always present, null when the offer has no traineeship date, so the
+            # response shape does not change between offers.
+            "trainee_doj_display": formatdate(trainee_doj) if trainee_doj else None,
             "expiry_display": expiry_display,
             "employment_type": employment_type,
             **compensation,
@@ -866,7 +1037,33 @@ def get_offer_template_raw_html(template=None, job_offer=None):
     if not template and job_offer:
         template = get_job_offer_document_template(job_offer)
     if not template:
-        return {"html": "<div style='padding:32px;text-align:center;color:#888;'>No offer letter template selected. Pick one in <b>Offer Letter Template</b>, or configure a default in Recruitment Settings.</div>"}
+        # With the Document Template path switched on, "nothing resolved" means no
+        # template's assignment admits this offer — a configuration gap HR has to
+        # close, not something the recruiter can fix on the form. Say so in the
+        # same words every other surface uses. Off, the old hint still applies:
+        # the letter comes from a Print Format and the picker is optional.
+        if is_document_template_offer_enabled():
+            return {"html": template_unavailable_html(), "available": False}
+        # The path is switched off site-wide, so this tab has nothing to show and
+        # the Offer Letter Template field is inert — the letter comes from a Print
+        # Format, which the Preview tab beside this one renders. Say which of the
+        # two is in force rather than implying a template is missing.
+        return {
+            "html": (
+                "<div style='padding:40px 32px;text-align:center;color:#8d99a6;"
+                "font-size:13px;line-height:1.7;'>"
+                + frappe.utils.escape_html(
+                    _("Job Offers are rendered from a Print Format on this site.")
+                )
+                + "<br>"
+                + frappe.utils.escape_html(
+                    _("Turn on 'Send Job Offer via Document Template' in Recruitment "
+                      "Settings to use offer letter templates.")
+                )
+                + "</div>"
+            ),
+            "enabled": False,
+        }
     try:
         tdoc = frappe.get_doc("Document Template", template)
         if not tdoc.template_file:
@@ -893,9 +1090,13 @@ def get_offer_template_raw_html(template=None, job_offer=None):
 @frappe.whitelist()
 def get_offer_letter_preview_html(job_offer):
     """Offer letter rendered with THIS Job Offer's data — for the 'Preview' tab.
-    Uses the resolved Document Template (embedded PDF) or the Print Format.
+
+    Uses the resolved Document Template (embedded PDF), or the Print Format when
+    the Document Template path is switched off. With it ON and no template
+    admitting this offer there is no preview at all — see the branch below.
     """
     frappe.has_permission("Job Offer", "read", doc=job_offer, throw=True)
+
     template_name = get_job_offer_document_template(job_offer)
     if template_name:
         pdf_bytes, _fn = render_job_offer_via_document_template(job_offer, template_name)
@@ -906,6 +1107,13 @@ def get_offer_letter_preview_html(job_offer):
                 "html": f'<iframe src="{data_uri}" style="width:100%;height:78vh;border:1px solid #e0e0e0;border-radius:6px;" title="Offer Letter Preview"></iframe>',
                 "source": "template",
             }
+    elif is_document_template_offer_enabled():
+        # The letter is meant to come from a Document Template and none admits
+        # this offer. Falling through to a Print Format here would show a letter
+        # the candidate will never be sent, which is worse than showing nothing —
+        # so the preview is withheld and the gap is named instead. The send is
+        # blocked at submit by validate_offer_document_template.
+        return {"html": template_unavailable_html(), "source": "unavailable", "available": False}
     # Fall back to the Print Format preview.  An Employment Type mapped to several
     # letters gets one pane per letter rather than a single merged document: a
     # Management Trainee is sent the trainee letter AND the permanent offer letter
