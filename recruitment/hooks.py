@@ -787,7 +787,15 @@ override_doctype_class = {
 
 # Request Events
 # ----------------
-# before_request = ["recruitment.utils.before_request"]
+before_request = [
+	# Hides Todo Type rows opted out of the ESS Portal (Alumni Portal on, ESS
+	# off) from cn_todo_manager's own get_todo_list -- every caller (the ESS
+	# dashboard widget, the embedded task-manager app, plain Desk access)
+	# funnels through the same query builder, so this is patched there rather
+	# than duplicated per caller. Alumni Portal sessions are exempted; see
+	# overrides/todo_ess_visibility.py for the full rationale.
+	"recruitment.recruitment.overrides.todo_ess_visibility.apply_patch",
+]
 # after_request = ["recruitment.utils.after_request"]
 
 # Job Events
