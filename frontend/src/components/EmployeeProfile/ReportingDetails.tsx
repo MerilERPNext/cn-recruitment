@@ -23,6 +23,7 @@ import { useLoadingOverlay } from "../../context/OverlayContext";
 import { computeAddSlideBounds, computeSlideDateBounds } from "../../utils/slideDateBounds";
 import { errorResponseFormater } from "../../utils/errorResponseFormater";
 import toast from "react-hot-toast";
+import { useScreenSize } from "../../hooks/useScreenSize";
 
 // Sort a reporting category's items current-first, then newest start_date first
 // (same order the cards render in and the order computeSlideDateBounds expects).
@@ -62,6 +63,7 @@ interface ReportingDetailsProps {
 }
 
 const ReportingDetails = ({ onActionSuccess }: ReportingDetailsProps) => {
+  const { isDesktop } = useScreenSize();
   const { data: currentEmployee } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
 
   const { data: hierarchyData, isLoading: employeeHierarchyHistoryPending } =
@@ -323,12 +325,13 @@ const ReportingDetails = ({ onActionSuccess }: ReportingDetailsProps) => {
                 <Typography variant="h4" className="font-bold text-gray-900 text-lg">
                   {getCategoryLabel(category)}
                 </Typography>
-                {canAddReportingDetails && (
+                {isDesktop && canAddReportingDetails && (
                   <Button
                     onClick={() => openAddModal(category)}
                     icon={<PlusIcon className="h-4 w-4" />}
                     variant="contain"
                     size="md"
+                    className="!hidden md:!inline-flex"
                   >
                     Add
                   </Button>

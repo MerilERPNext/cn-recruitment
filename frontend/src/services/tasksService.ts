@@ -32,6 +32,7 @@ export const tasksService = {
     return tasksService.getMyPendingCount("Attendance Request", employeeId, {
       custom_status: "Pending",
       filters: JSON.stringify({ custom_status: "Pending" }),
+      order_by: "creation desc",
       todo_status: ["in", ["Open", "Closed"]],
     });
   },
@@ -40,6 +41,7 @@ export const tasksService = {
     return tasksService.getMyPendingCount("Leave Application", employeeId, {
       status: "Open",
       filters: JSON.stringify({ status: "Open" }),
+      order_by: "creation desc",
       todo_status: ["in", ["Open", "Closed"]],
     });
   },
@@ -49,7 +51,7 @@ export const tasksService = {
       approval_status: "Pending",
       filters: JSON.stringify({ approval_status: "Pending" }),
       order_by: "creation desc",
-      todo_status: "Open",
+      todo_status: ["in", ["Open", "Closed"]],
     });
   },
 };

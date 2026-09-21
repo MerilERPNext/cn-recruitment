@@ -10,13 +10,15 @@ export const useEmployeeDocument = (
   employeeId: string,
   page: number = 1,
   pageSize: number = PAGE_SIZE,
-  extraFilters: FilterCondition[] = []
+  extraFilters: FilterCondition[] = [],
+  enabled: boolean = true
 ) => {
   const limitStart = (page - 1) * pageSize;
   return useQuery<DocumentItem[]>({
     queryKey: ["employee-documents", employeeId, page, pageSize, extraFilters],
     queryFn: () =>
       EmployeeDocumentService.getDraftEmployeeDocument(employeeId, pageSize, limitStart, extraFilters),
+    enabled: Boolean(employeeId) && enabled,
   });
 };
 
