@@ -88,8 +88,50 @@ const ExitPage: React.FC = () => {
   const navigate = useNavigate();
   const [showPolicyModal, setShowPolicyModal] = useState<boolean>(false);
 
+  // 1. Separation Funnel Details & Timeline Stages
+  const { data: separationFunnelDetails, isLoading: isLoadingFunnel } = useGetSeparationFunnelDetails();
+  const funnelItem = separationFunnelDetails?.data?.[0];
+  const extendedFunnel = funnelItem as ExtendedFunnelFields | undefined;
+
+  // Identify if separation is initiated by checking approval_stages:
+  // custom_status != "Rejected" && docstatus < 2
+  const isSeparationInitiated = useMemo(() => {
+    if (!funnelItem || !funnelItem.approval_stages || funnelItem.approval_stages.length === 0) {
+      return false;
+    }
+
+    if (funnelItem.approval_status === "Rejected" || funnelItem.approval_status === "Revoked") {
+      return false;
+    }
+
+    return funnelItem.approval_stages.some((stage) => {
+      const refDoc = stage?.todo?.reference_document as Record<string, any> | undefined;
+      const customStatus =
+        refDoc?.custom_status ??
+        (stage as any)?.custom_status ??
+        (stage?.todo as any)?.custom_status ??
+        funnelItem.approval_status;
+      const docstatus =
+        refDoc?.docstatus ??
+        (stage as any)?.docstatus ??
+        (stage?.todo as any)?.docstatus;
+
+      const isNotRejected =
+        customStatus !== "Rejected" &&
+        customStatus !== "Revoked";
+      const isDocstatusValid =
+        docstatus === undefined ||
+        docstatus === null ||
+        Number(docstatus) < 2;
+
+      return isNotRejected && isDocstatusValid;
+    });
+  }, [funnelItem]);
+
+  const hasSeparation = isSeparationInitiated;
+
   // Todo Categories & Navigation
-  const { data: todoCategories = [], isLoading: isLoadingTodoCategories } = useTodoCategories();
+  const { data: todoCategories = [], isLoading: isLoadingTodoCategories } = useTodoCategories(hasSeparation);
 
   const totalPendingTasks = useMemo(
     () => todoCategories.reduce((sum, cat) => sum + (cat.count || 0), 0),
@@ -100,7 +142,7 @@ const ExitPage: React.FC = () => {
     return [...todoCategories].sort((a, b) => (b.count || 0) - (a.count || 0));
   }, [todoCategories]);
 
-  // 1. Effective Employee Data
+  // 2. Effective Employee Data
   const { isViewingOtherUser, targetEmployeeId } = useTargetUser();
 
   const handleCategoryClick = (categoryName: string) => {
@@ -145,18 +187,6 @@ const ExitPage: React.FC = () => {
 
   // Support Contacts & Relieving Date (from Employee resource API)
   const { data: supportContacts } = useEmployeeSupportContacts(effectiveEmployeeId);
-
-  // 2. Separation Funnel Details & Timeline Stages
-  const { data: separationFunnelDetails } = useGetSeparationFunnelDetails();
-  const funnelItem = separationFunnelDetails?.data?.[0];
-  const extendedFunnel = funnelItem as ExtendedFunnelFields | undefined;
-
-  const isRevoked =
-    funnelItem?.approval_status === "Revoked" ||
-    funnelItem?.approval_stages?.some(
-      (stage) => stage?.todo?.reference_document?.custom_status === "Revoked"
-    );
-  const hasSeparation = !!funnelItem && !isRevoked;
 
   const relievingDate: string | null =
     supportContacts?.relieving_date ||
@@ -289,7 +319,7 @@ const ExitPage: React.FC = () => {
     isLoading: isLoadingReportees,
     isError: isReporteesError,
     refetch: refetchReportees,
-  } = useActiveReportees(effectiveEmployeeId);
+  } = useActiveReportees(effectiveEmployeeId, hasSeparation);
 
   // Manager Change Flow for Reportees
   const [selectedReporteeForChange, setSelectedReporteeForChange] = useState<{
@@ -409,7 +439,7 @@ const ExitPage: React.FC = () => {
     isLoading: isLoadingOpenItems,
     isError: isOpenItemsError,
     refetch: refetchOpenItems,
-  } = useGetSeparationOpenItems(effectiveEmployeeId);
+  } = useGetSeparationOpenItems(effectiveEmployeeId, hasSeparation);
 
   const openTasksCount = openItemsData?.open_tasks?.open_tasks ?? 0;
   const attendanceFlagsCount = openItemsData?.attendance_flags?.total_flags ?? 0;
@@ -455,7 +485,7 @@ const ExitPage: React.FC = () => {
     isLoading: isLoadingStages,
     isError: isStagesError,
     refetch: refetchStages,
-  } = useGetSeparationWorkflowStages(effectiveEmployeeId);
+  } = useGetSeparationWorkflowStages(effectiveEmployeeId, hasSeparation);
 
   const workflowStages = workflowStagesData?.workflow_stages || [];
 
@@ -466,7 +496,7 @@ const ExitPage: React.FC = () => {
     isError: isFnfError,
     error: fnfError,
     refetch: refetchFnf,
-  } = useGetFullAndFinalEstimate(effectiveEmployeeId);
+  } = useGetFullAndFinalEstimate(effectiveEmployeeId, hasSeparation);
 
   const [isEarningsExpanded, setIsEarningsExpanded] = useState<boolean>(true);
   const [isDeductionsExpanded, setIsDeductionsExpanded] = useState<boolean>(true);
@@ -630,7 +660,11 @@ const ExitPage: React.FC = () => {
         </div>
 
         {/* Stepper Timeline (Active Separation) or Not Started Banner */}
-        {hasSeparation ? (
+        {isLoadingFunnel ? (
+          <div className="mt-4 sm:mt-5 pt-3 sm:pt-4 border-t border-gray-100">
+            <div className="h-14 bg-gray-50 rounded-xl animate-pulse" />
+          </div>
+        ) : hasSeparation ? (
           <div className="mt-4 sm:mt-5 pt-3 sm:pt-4 border-t border-gray-100">
             <Typography
               variant="caption"
@@ -782,8 +816,9 @@ const ExitPage: React.FC = () => {
         )}
       </div>
 
-      {/* Main Content Grid: 2 Columns */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-5 items-start">
+      {/* Main Content Grid: 2 Columns - Only shown when separation is initiated */}
+      {!isLoadingFunnel && hasSeparation && (
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-5 items-start">
         {/* Left Column (7 cols) */}
         <div className="lg:col-span-7 space-y-4 sm:space-y-5">
           {/* Full and Final Settlement (FnF) */}
@@ -1528,6 +1563,7 @@ const ExitPage: React.FC = () => {
           </div>
         </div>
       </div>
+    )}
 
       {/* Separation Policy Modal */}
       {showPolicyModal &&
