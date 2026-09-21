@@ -382,6 +382,10 @@ const NewHiresList = lazyWithRetry(
   () => import("./components/EmployeesDirectory/NewHires/NewHiresList"),
   "NewHiresList",
 );
+const InitiateOnboarding = lazyWithRetry(
+  () => import("./components/EmployeesDirectory/InitiateOnboarding/InitiateOnboarding.tsx"),
+  "InitiateOnboarding",
+);
 const AllShiftsDashboardRoute = lazyWithRetry(
   () =>
     import("./components/ShiftRequest/ShiftDynamicRoute").then((module) => ({
@@ -1325,6 +1329,11 @@ export const routesConfig: AppRoute[] = [
   {
     path: "/webapp/employees-directory/new-hires",
     element: <NewHiresList />,
+    permissionKey: "Employee Directory",
+  },
+  {
+    path: "/webapp/employees-directory/initiate-onboarding",
+    element: <InitiateOnboarding />,
     permissionKey: "Employee Directory",
   },
   //Leaves routes
