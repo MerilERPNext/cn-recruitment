@@ -6,7 +6,13 @@
 
 [post_model_sync]
 # Patches added in this section will be executed after doctypes are migrated
-recruitment.patches.interviewfeedback_funnel
+# recruitment.patches.interviewfeedback_funnel
+# Removed: it seeded the "Interview Feedback" Funnel from
+# patches/json_files/interview_feedback_funnel.json, and that file (with every
+# other funnel seed) was deleted in 43a35180 when funnel seeding was dropped —
+# its sibling patches/funnel.py was commented out in the same move, this one was
+# missed. On any site that has not already recorded it in Patch Log (a fresh
+# install, a fresh DB) it raised FileNotFoundError and stopped `bench migrate`.
 recruitment.patches.add_client_script
 recruitment.patches.candidate_portal_auth_defaults
 recruitment.patches.candidate_portal_feature_flag_defaults

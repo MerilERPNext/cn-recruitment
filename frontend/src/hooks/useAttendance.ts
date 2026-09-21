@@ -143,11 +143,11 @@ export const useAttendanceSettings = (
 };
 
 export const useUserMicroApps = (
-  filters?: string
+  web_disabled_filter: boolean = true
 ): UseQueryResult<any, Error> => {
   return useQuery<any, Error>({
-    queryKey: ["user-microapps", filters],
-    queryFn: () => attendanceService.getUserMicroApps(filters),
+    queryKey: ["user-microapps", web_disabled_filter],
+    queryFn: () => attendanceService.getUserMicroApps(web_disabled_filter),
     refetchOnWindowFocus: true,
     ...defaultQueryOptions,
   });

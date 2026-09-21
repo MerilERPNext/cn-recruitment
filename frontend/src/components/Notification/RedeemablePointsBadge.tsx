@@ -9,6 +9,7 @@ import {
 
 interface RedeemablePointsBadgeProps {
   className?: string;
+  variant?: "dark" | "light";
 }
 
 /**
@@ -22,6 +23,7 @@ interface RedeemablePointsBadgeProps {
  */
 export default function RedeemablePointsBadge({
   className = "",
+  variant = "dark",
 }: RedeemablePointsBadgeProps) {
   const navigate = useNavigate();
   const flags = useRecognitionFlags();
@@ -38,17 +40,22 @@ export default function RedeemablePointsBadge({
   if (!flags.loaded || flags.hideRewardsPointSummary) return null;
   if (!employeeId || availablePoints <= 0) return null;
 
+  const baseTheme =
+    variant === "light"
+      ? "bg-primary-50 text-primary-700 hover:bg-primary-100 border border-primary-200/60 shadow-xs"
+      : "bg-white/15 hover:bg-white/25 text-white";
+
   return (
     <button
       type="button"
       onClick={() => navigate("/webapp/recognition/vibe/earned-points")}
-      title="Redeemable points"
-      className={`flex items-center gap-1.5 rounded-xl bg-white/15 hover:bg-white/25 px-3 py-1.5 transition-colors ${className}`}
+      title="Points Summary"
+      className={`flex items-center gap-1.5 rounded-xl px-2.5 py-1 sm:px-3 sm:py-1.5 text-xs sm:text-sm font-semibold transition-colors flex-shrink-0 ${baseTheme} ${className}`}
     >
-      <Coins className="size-4" />
-      <span className="text-sm font-semibold">
-        {availablePoints.toLocaleString("en-IN")}
-      </span> Points
+      <Coins className={variant === "light" ? "size-3.5 sm:size-4 text-primary-600" : "size-3.5 sm:size-4"} />
+      <span>
+        {availablePoints.toLocaleString("en-IN")} Points
+      </span>
     </button>
   );
 }

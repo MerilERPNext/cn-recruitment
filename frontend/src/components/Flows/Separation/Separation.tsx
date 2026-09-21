@@ -30,7 +30,6 @@ import { useGetEmployeeSeparationType, useGetSeparationFunnelDetails, useGetNoti
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 import { FlowRequestItem } from "../../../types/flows";
 import ActivityLogDrawer from "../../shared/ActivityLogDrawer";
-import Tooltip from "../../shared/Tooltip";
 import DropdownMenu from "../../shared/DropDownMenu";
 import ActionConfirmationModal from "../../shared/ActionConfirmationModal";
 import { errorResponseFormater } from "../../../utils/errorResponseFormater";
@@ -44,11 +43,15 @@ type cardDataType = {
 
 const SeparationCard = ({ data }: { data: cardDataType }) => {
   return (
-    <div className="w-full sm:max-w-[250px] items-center border-1 hover:bg-gray-10 cursor-pointer  p-4 rounded-lg flex">
+    <div className="w-full sm:max-w-[250px] items-center border-1 hover:bg-gray-10 cursor-pointer p-4 rounded-lg flex">
       <div className="shrink-0">{data.icon}</div>
-      <div>
+      <div className="min-w-0 flex-1">
         <Typography variant="body">{data.label}</Typography>
-        <Typography variant="bodySmall" color="body2">
+        <Typography
+          variant="bodySmall"
+          color="body2"
+          className="break-words [overflow-wrap:anywhere]"
+        >
           {data.value}
         </Typography>
       </div>
@@ -210,7 +213,9 @@ const Separation = () => {
   ];
 
   const separationPolicyLabel = policyData?.separation_policy ? "Separation Policy" : "Final Settlement";
-  const separationPolicyValue = policyData?.separation_policy || `We'll process your full & final settlement soon`;
+  const separationPolicyValue = policyData?.separation_policy
+    ? policyData.separation_policy.replace(/_/g, " ")
+    : `We'll process your full & final settlement soon`;
 
   useEffect(() => {
     const handleChatClose = () => {
@@ -401,23 +406,13 @@ const Separation = () => {
                     <div className="shrink-0">{SeparationSvgs[1]}</div>
                     <div className="min-w-0 flex-1">
                       <Typography variant="body">{separationPolicyLabel}</Typography>
-                      {policyData?.separation_policy ? (
-                        <Tooltip content={policyData?.separation_policy} position="bottom"
-                          triggerClassName="truncate line-clamp-1"
-                        >
-                          <Typography
-                            variant="bodySmall"
-                            color="body2"
-                            className="truncate block w-full line-clamp-1"
-                          >
-                            {policyData?.separation_policy}
-                          </Typography>
-                        </Tooltip>
-                      ) : (
-                        <Typography variant="bodySmall" color="body2">
-                          {separationPolicyValue}
-                        </Typography>
-                      )}
+                      <Typography
+                        variant="bodySmall"
+                        color="body2"
+                        className="break-words [overflow-wrap:anywhere]"
+                      >
+                        {separationPolicyValue}
+                      </Typography>
                     </div>
                   </div>
                 </div>
