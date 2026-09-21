@@ -10,7 +10,7 @@ import {
 import { Employee } from "../../types/employee";
 import HeaderBar from "../HeaderBar";
 
-import { Building, History, IdCard, Mail, MapPin, Pencil } from "lucide-react";
+import { Building, History, IdCard, Mail, MapPin, Pencil, Search } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import DesktopLayoutWrapper from "../DesktopLayoutWrapper";
@@ -19,6 +19,7 @@ import { Tab } from "../NavigationTab";
 import Button from "../shared/atoms/Button";
 import SideDrawer from "../shared/SideDrawer";
 import FutureTransactionsTable from "./FutureTransactionsTable";
+import EmployeeProfileSearch from "./EmployeeProfileSearch";
 // import AttendanceAssignments from "../Attendance/AttendanceAssignments";
 // import ShowHolidays from "./ShowHolidays";
 
@@ -116,6 +117,20 @@ const EmployeeProfile: React.FC = () => {
   const [isFutureTransactionsOpen, setIsFutureTransactionsOpen] =
     useState(false);
   const [imageLoadError, setImageLoadError] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const profileContentRef = useRef<HTMLDivElement | null>(null);
+
+  // Global shortcut for Ctrl+F / Cmd+F to open profile search
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "f") {
+        e.preventDefault();
+        setIsSearchOpen(true);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   useEffect(() => {
     setImageLoadError(false);
@@ -366,7 +381,7 @@ const EmployeeProfile: React.FC = () => {
     );
   };
   const mobileLayout = (
-    <div className="bg-white font-sans scroll-smooth">
+    <div ref={profileContentRef} className="bg-white font-sans scroll-smooth">
       {/* Sticky Header - always on top */}
       <HeaderBar
         title="Profile"
@@ -376,6 +391,27 @@ const EmployeeProfile: React.FC = () => {
           }
           navigateBack();
         }}
+        rightSlot={
+          <button
+            onClick={() => setIsSearchOpen((prev) => !prev)}
+            className={`p-2 rounded-full transition-all ${
+              isSearchOpen
+                ? "text-primary-600 bg-primary-50"
+                : "text-gray-600 hover:text-primary-600 hover:bg-gray-100"
+            }`}
+            aria-label="Search in profile"
+            title="Search profile"
+          >
+            <Search size={20} />
+          </button>
+        }
+      />
+      {/* Search Toolbar for Mobile */}
+      <EmployeeProfileSearch
+        containerRef={profileContentRef}
+        isOpen={isSearchOpen}
+        onClose={() => setIsSearchOpen(false)}
+        isMobile={true}
       />
       <div className="bg-white shadow">
         {userIsLoading ? (
@@ -552,7 +588,18 @@ const EmployeeProfile: React.FC = () => {
 
   const desktopLayout = (
     <DesktopLayoutWrapper title="Profile">
-      <div className="flex flex-col h-full p-6 gap-4 w-full overflow-hidden">
+      <div
+        ref={profileContentRef}
+        className="flex flex-col h-full p-6 gap-4 w-full overflow-hidden relative"
+      >
+        {/* Floating Search Bar for Desktop */}
+        <EmployeeProfileSearch
+          containerRef={profileContentRef}
+          scrollContainerRef={scrollContainerRef}
+          isOpen={isSearchOpen}
+          onClose={() => setIsSearchOpen(false)}
+          isMobile={false}
+        />
         {/* Profile Header */}
 
         {/* All Sections Rendered */}
@@ -728,17 +775,28 @@ const EmployeeProfile: React.FC = () => {
                     </button>
                   ))}
                 </div>
-                {canShowFutureTransactions && hasFutureTransactions && (
+                <div className="flex items-center gap-2">
                   <Button
-                    icon={<History size={14} />}
+                    icon={<Search size={14} />}
                     size="sm"
-                    variant="soft"
-                    onClick={() => setIsFutureTransactionsOpen(true)}
-                    className="uppercase tracking-wider shrink-0 px-4 py-2 font-medium"
+                    variant={isSearchOpen ? "contain" : "subtle"}
+                    onClick={() => setIsSearchOpen((prev) => !prev)}
+                    className="text-xs font-semibold px-3 py-2"
                   >
-                    Future Transactions
+                    Find in Profile
                   </Button>
-                )}
+                  {canShowFutureTransactions && hasFutureTransactions && (
+                    <Button
+                      icon={<History size={14} />}
+                      size="sm"
+                      variant="soft"
+                      onClick={() => setIsFutureTransactionsOpen(true)}
+                      className="uppercase tracking-wider shrink-0 px-4 py-2 font-medium"
+                    >
+                      Future Transactions
+                    </Button>
+                  )}
+                </div>
               </div>
             </div>
 
