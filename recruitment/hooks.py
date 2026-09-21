@@ -568,6 +568,9 @@ doc_events = {
         ],
         "before_save": "recruitment.recruitment.employee_confirmation_hooks.calculate_final_confirmation_date",
         "validate": [
+            # Auto-fill Relieving Date ("Last Working Day") with today on the
+            # real transition to Left/Inactive, if HR left it blank.
+            "recruitment.recruitment.alumni_user_switch.auto_set_relieving_date",
             # Block converting an employee to alumni (status -> Left/Inactive)
             # without a usable personal_email, BEFORE the company-email User is
             # disabled — so the alumnus is never left with no working login.

@@ -330,11 +330,18 @@ def ensure_alumni_employee_employee_field():
     from frappe.utils import cint
 
     # Editable + stored: undo the old virtual / read-only / getter definition.
+    # Also only ever meaningful for someone who has actually left -- an Active
+    # employee can't be alumni -- so it's hidden on the form until status says
+    # otherwise, and shown as an Employee-list column so HR can see it at a
+    # glance without opening each record.
+    depends_on = 'eval:doc.status != "Active"'
     desired = {
         "is_virtual": 0,
         "read_only": 0,
         "options": "",
         "no_copy": 1,
+        "depends_on": depends_on,
+        "in_list_view": 1,
     }
     try:
         existing = frappe.get_meta("Employee").get_field("custom_is_alumni_employee")
@@ -345,7 +352,13 @@ def ensure_alumni_employee_employee_field():
             )
             if cf_name:
                 cf = frappe.get_doc("Custom Field", cf_name)
-                if cint(cf.is_virtual) or cint(cf.read_only) or (cf.options or ""):
+                if (
+                    cint(cf.is_virtual)
+                    or cint(cf.read_only)
+                    or (cf.options or "")
+                    or (cf.depends_on or "") != depends_on
+                    or not cint(cf.in_list_view)
+                ):
                     cf.update(desired)
                     cf.save(ignore_permissions=True)
                     frappe.clear_cache(doctype="Employee")
@@ -361,10 +374,13 @@ def ensure_alumni_employee_employee_field():
                 "fieldtype": "Check",
                 "insert_after": "user_id",
                 "no_copy": 1,
+                "depends_on": depends_on,
+                "in_list_view": 1,
                 "description": (
                     "Grants access to the Alumni Portal. Editable — checking or "
                     "unchecking here grants or revokes portal access for the linked "
-                    "User. New exits (status = 'Left') default to granted."
+                    "User. New exits (status = 'Left') default to granted. Only "
+                    "shown once the employee is no longer Active."
                 ),
                 "module": "Recruitment",
             },

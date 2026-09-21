@@ -15,7 +15,7 @@ created. Nothing here changes any existing HRMS behaviour (it never touches
 Employee.status or User.enabled).
 
 Endpoints (call as `recruitment.recruitment.alumni_portal.<fn>`):
-    portal_login, get_alumni_context, portal_logout,
+    portal_login, portal_login_with_employee_code, get_alumni_context, portal_logout,
     request_password_otp, verify_password_otp, reset_password_with_otp,
     get_alumni_tickets
 """
@@ -187,6 +187,63 @@ def get_alumni_public_stats(refresh: int = 0) -> dict:
 
 
 # ── Login / session ───────────────────────────────────────────────────────────
+def _authenticate_and_start_alumni_session(user: str, password: str, invalid_message: str) -> dict:
+    """Shared tail of every alumni login method: authenticate the resolved
+    Frappe username, gate on alumni eligibility, start the session.
+
+    `user` here is always a real Frappe User id (an email) — the two public
+    entry points (`portal_login`, `portal_login_with_employee_code`) differ
+    only in HOW they resolve that id before calling this. `invalid_message`
+    lets each caller phrase the "wrong credentials" error in terms of what the
+    visitor actually typed (email vs employee code) without leaking which
+    part was wrong (unknown identifier vs wrong password both land here).
+    """
+    login_manager = LoginManager()
+    try:
+        login_manager.authenticate(user=user, pwd=password)
+    except frappe.AuthenticationError:
+        frappe.logger("alumni_portal").warning(
+            f"_authenticate_and_start_alumni_session DEBUG: authenticate() raised "
+            f"AuthenticationError for resolved_user={user!r} -- wrong password for "
+            f"THIS resolved user, or the account failed one of LoginManager's own "
+            f"checks (disabled/locked)."
+        )
+        frappe.local.response["http_status_code"] = 401
+        return {"success": False, "message": invalid_message}
+
+    authenticated_user = login_manager.user
+    if not is_alumni_employee(authenticated_user):
+        frappe.logger("alumni_portal").warning(
+            f"_authenticate_and_start_alumni_session DEBUG: authenticated as "
+            f"{authenticated_user!r} but is_alumni_employee() is False -- blocked "
+            f"with 403, not 401."
+        )
+        frappe.local.response["http_status_code"] = 403
+        return {
+            "success": False,
+            "message": _("Only Alumni employees can access this portal."),
+        }
+
+    frappe.logger("alumni_portal").warning(
+        f"_authenticate_and_start_alumni_session DEBUG: success, "
+        f"authenticated_user={authenticated_user!r}, session.user={frappe.session.user!r}"
+    )
+
+    login_manager.post_login()
+    frappe.local.response["http_status_code"] = 200
+    return {
+        "success": True,
+        "message": _("Login successful."),
+        "user": authenticated_user,
+        "full_name": frappe.db.get_value("User", authenticated_user, "full_name"),
+        # The frontend forwards this in place of the `sid` cookie on every
+        # later request (see apiClient.ts / captureSid) — a SameSite=Lax
+        # cookie set here is never sent back on a cross-origin fetch/XHR, so
+        # a genuinely cross-origin deployment needs the value out-of-band.
+        "sid": frappe.session.sid,
+    }
+
+
 @frappe.whitelist(allow_guest=True, methods=["POST"])
 def portal_login(email: str, password: str) -> dict:
     """Authenticate an alumni employee into the Alumni Portal.
@@ -199,29 +256,109 @@ def portal_login(email: str, password: str) -> dict:
         frappe.local.response["http_status_code"] = 400
         return {"success": False, "message": _("Email and password are required.")}
 
-    login_manager = LoginManager()
-    try:
-        login_manager.authenticate(user=email, pwd=password)
-    except frappe.AuthenticationError:
-        frappe.local.response["http_status_code"] = 401
-        return {"success": False, "message": _("Invalid email or password.")}
+    return _authenticate_and_start_alumni_session(
+        email, password, _("Invalid email or password.")
+    )
 
-    user = login_manager.user
-    if not is_alumni_employee(user):
-        frappe.local.response["http_status_code"] = 403
+
+def _resolve_employee_for_code(employee_code: str) -> str | None:
+    """The Employee docname for a login-facing "Employee Code", or None.
+
+    Checked in this order:
+      1. `Employee.group_employee_code` — the actual, product-facing "Employee
+         Code" (label "Group Employee Code", e.g. "GC00019") populated on
+         every Employee on this site. This is THE code an alumnus is given
+         and expected to log in with, so it's checked first.
+      2. `Employee.name` (the docname, e.g. "PW1571") — sites/records where
+         the docname itself doubles as the code, or for anyone typing the
+         internal id directly.
+      3. `Employee.employee_number` — a second, less commonly populated
+         "employee code" field some sites run through this field instead.
+
+    None of these three fields carries a uniqueness constraint at the schema
+    level, so a code matching more than one Employee on any of them is
+    treated as unresolved rather than guessing — silently logging someone in
+    as a different, ambiguously matched identity would be a real bug, not a
+    convenience.
+    """
+    employee_code = (employee_code or "").strip()
+    if not employee_code:
+        return None
+
+    for fieldname in ("group_employee_code", "employee_number"):
+        matches = frappe.get_all(
+            "Employee", filters={fieldname: employee_code}, pluck="name", limit=2
+        )
+        if len(matches) == 1:
+            return matches[0]
+        if len(matches) > 1:
+            return None
+
+    if frappe.db.exists("Employee", employee_code):
+        return employee_code
+
+    return None
+
+
+def _resolve_login_user_for_employee_code(employee_code: str) -> str | None:
+    """The Frappe username an alumnus with this Employee Code actually logs
+    in with, or None if the code doesn't resolve to anyone.
+
+    Same priority order `alumni_employee_name()` uses in the other direction
+    (user -> employee), just entered from the Employee side: prefer the
+    personal-email account the switch provisioned
+    (`recruitment.recruitment.alumni_user_switch`), fall back to `user_id` for
+    an alumnus who never had the switch run, then `personal_email` for
+    records from before `custom_alumni_user` existed.
+    """
+    employee = _resolve_employee_for_code(employee_code)
+    if not employee:
+        return None
+
+    alumni_user, user_id, personal_email = frappe.db.get_value(
+        "Employee", employee, ["custom_alumni_user", "user_id", "personal_email"]
+    ) or (None, None, None)
+
+    for candidate in (alumni_user, user_id, personal_email):
+        if candidate and frappe.db.exists("User", candidate):
+            return candidate
+    return None
+
+
+@frappe.whitelist(allow_guest=True, methods=["POST"])
+def portal_login_with_employee_code(employee_code: str = None, password: str = None) -> dict:
+    """Authenticate into the Alumni Portal with Employee Code + password,
+    instead of email + password — for an alumnus who remembers their
+    Employee Code (`Employee.group_employee_code`, e.g. "GC00019") more
+    readily than whichever email address the portal has on file for them.
+
+    Resolves the code to the same login identity `portal_login` would need
+    (see `_resolve_login_user_for_employee_code`), then shares the exact same
+    authenticate -> alumni-eligibility-gate -> session flow as `portal_login`.
+    An unrecognised Employee Code returns the same generic "invalid" message
+    as a wrong password would, rather than a distinct error, so this can't be
+    used to probe which Employee Codes exist.
+    """
+    if not employee_code or not password:
+        frappe.local.response["http_status_code"] = 400
         return {
             "success": False,
-            "message": _("Only Alumni employees can access this portal."),
+            "message": _("Employee Code and password are required."),
         }
 
-    login_manager.post_login()
-    frappe.local.response["http_status_code"] = 200
-    return {
-        "success": True,
-        "message": _("Login successful."),
-        "user": user,
-        "full_name": frappe.db.get_value("User", user, "full_name"),
-    }
+    invalid_message = _("Invalid Employee Code or password.")
+    resolved_employee = _resolve_employee_for_code(employee_code)
+    user = _resolve_login_user_for_employee_code(employee_code)
+    frappe.logger("alumni_portal").warning(
+        f"portal_login_with_employee_code DEBUG: employee_code={employee_code!r} "
+        f"resolved_employee_name={resolved_employee!r} resolved_user={user!r} "
+        f"session.user_before_auth={frappe.session.user!r}"
+    )
+    if not user:
+        frappe.local.response["http_status_code"] = 401
+        return {"success": False, "message": invalid_message}
+
+    return _authenticate_and_start_alumni_session(user, password, invalid_message)
 
 
 @frappe.whitelist(allow_guest=True, methods=["GET"])
@@ -569,6 +706,7 @@ _ALUMNI_LINK_TITLE_FIELDS = (
     "department",
     "branch",
     "employment_type",
+    "company",
 )
 
 
@@ -592,6 +730,150 @@ def _resolve_link_title(doctype: str, fieldname: str, value: str) -> str:
         return frappe.db.get_value(target, value, title_field) or value
     except Exception:
         return value
+
+
+# On this site, core `qualification` is NOT free text: a Property Setter
+# turned it into a Link to "Education Stage" (a short, curated list -- "10th",
+# "Graduation", ... -- labelled "Education Stage" in the UI). The portal's
+# Qualification field is a free-text input ("e.g. MBA"), so writing it into
+# `qualification` directly throws LinkValidationError for almost any real
+# value. `custom_education_degree` (plain Data) is the actual free-text home
+# for it -- read/write goes there, and the Link field is left untouched.
+#
+# Similarly, the core columns have no home for a from/to date range -- only
+# `school_univ`/`qualification`/`level`/`year_of_passing`/`maj_opt_subj`. This
+# site's `custom_start_date`/`custom_completion_date` (real Date columns,
+# unlike the several text-typed `custom_*_date*` Naukri-import fields also on
+# this child table) are the closest fit. Both are guarded by `has_column` so a
+# site without them still returns/accepts the row, just without that value.
+def _alumni_education_row(row: dict) -> dict:
+    year_of_passing = row.get("year_of_passing")
+    return {
+        "qualification": row.get("custom_education_degree") or row.get("qualification") or "",
+        "specialization": row.get("maj_opt_subj") or "",
+        "institution": row.get("school_univ") or "",
+        "level": row.get("level") or "",
+        "year_of_passing": str(year_of_passing) if year_of_passing else "",
+        "from_date": _d(row.get("custom_start_date")) or "",
+        "to_date": _d(row.get("custom_completion_date")) or "",
+    }
+
+
+def _get_alumni_education_rows(emp_name: str) -> list[dict]:
+    fields = ["qualification", "maj_opt_subj", "school_univ", "level", "year_of_passing"]
+    for fld in ("custom_education_degree", "custom_start_date", "custom_completion_date"):
+        if frappe.db.has_column("Employee Education", fld):
+            fields.append(fld)
+    rows = frappe.get_all(
+        "Employee Education", filters={"parent": emp_name}, fields=fields, order_by="idx asc"
+    )
+    return [_alumni_education_row(r) for r in rows]
+
+
+# Same story for Employee External Work History: core has no from/to date
+# columns either. `custom_from_datee`/`custom_to_datee` are plain text fields
+# (not Date), so they round-trip as-is with no formatting.
+def _alumni_work_history_row(row: dict) -> dict:
+    return {
+        "company_name": row.get("company_name") or "",
+        "designation": row.get("designation") or "",
+        "total_experience": row.get("total_experience") or "",
+        "from_date": row.get("custom_from_datee") or "",
+        "to_date": row.get("custom_to_datee") or "",
+    }
+
+
+def _get_alumni_work_history_rows(emp_name: str) -> list[dict]:
+    fields = ["company_name", "designation", "total_experience"]
+    for fld in ("custom_from_datee", "custom_to_datee"):
+        if frappe.db.has_column("Employee External Work History", fld):
+            fields.append(fld)
+    # Newest first -- the most recently added row (highest idx) is what the
+    # portal card shows without the client having to sort.
+    rows = frappe.get_all(
+        "Employee External Work History",
+        filters={"parent": emp_name},
+        fields=fields,
+        order_by="idx desc",
+    )
+    return [_alumni_work_history_row(r) for r in rows]
+
+
+def _resolve_history_record_title(doctype_name: str | None, records: str | None) -> str:
+    """Human-readable value for one Internal Work History row's Dynamic Link.
+
+    `records` is a raw docname (e.g. a Designation id) in `doctype_name` (e.g.
+    "Designation"); this resolves it through that doctype's own title field,
+    same idea as `_resolve_link_title` but starting from a doctype+docname
+    pair instead of a Link field, which is what a Dynamic Link row gives us.
+    """
+    if not records:
+        return ""
+    if not doctype_name:
+        return records
+    try:
+        title_field = frappe.get_meta(doctype_name).get_title_field()
+        if not title_field or title_field == "name":
+            return records
+        return frappe.db.get_value(doctype_name, records, title_field) or records
+    except Exception:
+        return records
+
+
+def _get_alumni_role_history(emp_name: str) -> list[dict]:
+    """The alumnus's own internal role history: every Company / Designation /
+    Department / Branch / Band / ... change on their Employee record over
+    their tenure, sourced from the `custom_work_history` child table (Internal
+    Work History) -- HR's own automatic change-tracking, not something a
+    portal user adds to, so this only surfaces it, read-only.
+
+    Several fields can change together as one event (e.g. a promotion moving
+    Designation + Band + Department in one save); those rows share a
+    `history_group` and are folded into a single entry here rather than shown
+    as separate, seemingly-unrelated rows. Most recent event first.
+    """
+    # A Table field (child table) never has a physical column on the parent
+    # doctype's own row -- `has_column` would always be False for it -- so
+    # existence is checked through the meta instead.
+    if not frappe.get_meta("Employee").has_field("custom_work_history"):
+        return []
+
+    rows = frappe.get_all(
+        "Internal Work History",
+        filters={"parent": emp_name, "parentfield": "custom_work_history"},
+        fields=[
+            "history_group",
+            "name",
+            "is_promotion",
+            "doctype_name",
+            "records",
+            "field_label",
+            "start_date",
+            "end_date",
+        ],
+        order_by="start_date desc, idx desc",
+    )
+
+    entries: list[dict] = []
+    index_by_group: dict[str, int] = {}
+    for row in rows:
+        key = row.get("history_group") or row.get("name")
+        if key not in index_by_group:
+            index_by_group[key] = len(entries)
+            entries.append(
+                {
+                    "start_date": _d(row.get("start_date")) or "",
+                    "end_date": _d(row.get("end_date")) or "",
+                    "is_promotion": bool(row.get("is_promotion")),
+                    "changes": {},
+                }
+            )
+        label = row.get("field_label") or row.get("doctype_name") or ""
+        entries[index_by_group[key]]["changes"][label] = _resolve_history_record_title(
+            row.get("doctype_name"), row.get("records")
+        )
+
+    return entries
 
 
 @frappe.whitelist(methods=["GET"])
@@ -670,6 +952,10 @@ def get_alumni_profile() -> dict:
         # original key so existing callers are unaffected.
         for fld in _ALUMNI_LINK_TITLE_FIELDS:
             emp[f"{fld}_title"] = _resolve_link_title("Employee", fld, emp.get(fld) or "")
+
+        emp["education"] = _get_alumni_education_rows(emp_name)
+        emp["work_history"] = _get_alumni_work_history_rows(emp_name)
+        emp["role_history"] = _get_alumni_role_history(emp_name)
 
         profile["employee"] = emp
 
@@ -752,6 +1038,141 @@ def update_alumni_profile(**kwargs) -> dict:
         "success": True,
         "updated": updated_keys,
         "message": _("Your profile has been updated."),
+    }
+
+
+def _next_child_idx(child_doctype: str, parent: str) -> int:
+    return frappe.db.count(child_doctype, {"parent": parent}) + 1
+
+
+@frappe.whitelist(methods=["POST"])
+def add_alumni_education(data=None, **kwargs) -> dict:
+    """Appends one Employee Education row to the caller's own Employee.
+
+    Their own only: the Employee is derived from the session, exactly like
+    `update_alumni_profile` -- there is no employee id to send and none is
+    accepted. Inserted directly as a child-table document (parent/parenttype/
+    parentfield set explicitly) rather than through `Employee.save()`, so this
+    stays what it looks like from the portal's side -- an additive, side-effect
+    -free append -- instead of re-running every Employee validate/on_update
+    hook (role grants, status sync, ...) for a row on an unrelated child table.
+    """
+    user = _require_alumni_session()
+    emp_name = alumni_employee_name(user)
+    if not emp_name:
+        frappe.local.response["http_status_code"] = 400
+        return {"success": False, "message": _("No employee record is linked to your account.")}
+
+    incoming = data if isinstance(data, dict) else kwargs
+    if isinstance(incoming, str):
+        try:
+            incoming = frappe.parse_json(incoming)
+        except Exception:
+            incoming = {}
+    if not isinstance(incoming, dict):
+        incoming = {}
+
+    qualification = (incoming.get("qualification") or "").strip()
+    institution = (incoming.get("institution") or "").strip()
+    if not qualification or not institution:
+        frappe.local.response["http_status_code"] = 400
+        return {
+            "success": False,
+            "message": _("Qualification and institution are required."),
+        }
+
+    from frappe.utils import cint
+
+    row = frappe.get_doc(
+        {
+            "doctype": "Employee Education",
+            "parent": emp_name,
+            "parenttype": "Employee",
+            "parentfield": "education",
+            "idx": _next_child_idx("Employee Education", emp_name),
+            "school_univ": institution,
+            "maj_opt_subj": (incoming.get("specialization") or "").strip(),
+        }
+    )
+    # NOT `row.qualification` -- that field is a Link to "Education Stage" on
+    # this site (see the comment on `_alumni_education_row`) and would reject
+    # a freely-typed value like "MBA" with LinkValidationError.
+    if frappe.db.has_column("Employee Education", "custom_education_degree"):
+        row.custom_education_degree = qualification
+    else:
+        row.qualification = qualification
+    if incoming.get("year_of_passing"):
+        row.year_of_passing = cint(incoming["year_of_passing"])
+    if incoming.get("from_date") and frappe.db.has_column("Employee Education", "custom_start_date"):
+        row.custom_start_date = incoming["from_date"]
+    if incoming.get("to_date") and frappe.db.has_column("Employee Education", "custom_completion_date"):
+        row.custom_completion_date = incoming["to_date"]
+
+    row.insert(ignore_permissions=True)
+    frappe.db.commit()
+
+    return {
+        "success": True,
+        "message": _("Education added."),
+        "education": _alumni_education_row(row.as_dict()),
+    }
+
+
+@frappe.whitelist(methods=["POST"])
+def add_alumni_work_history(data=None, **kwargs) -> dict:
+    """Appends one Employee External Work History row. Same ownership rule
+    and insert-as-child-document approach as `add_alumni_education` above."""
+    user = _require_alumni_session()
+    emp_name = alumni_employee_name(user)
+    if not emp_name:
+        frappe.local.response["http_status_code"] = 400
+        return {"success": False, "message": _("No employee record is linked to your account.")}
+
+    incoming = data if isinstance(data, dict) else kwargs
+    if isinstance(incoming, str):
+        try:
+            incoming = frappe.parse_json(incoming)
+        except Exception:
+            incoming = {}
+    if not isinstance(incoming, dict):
+        incoming = {}
+
+    company_name = (incoming.get("company_name") or "").strip()
+    designation = (incoming.get("designation") or "").strip()
+    if not company_name or not designation:
+        frappe.local.response["http_status_code"] = 400
+        return {
+            "success": False,
+            "message": _("Company name and designation are required."),
+        }
+
+    row = frappe.get_doc(
+        {
+            "doctype": "Employee External Work History",
+            "parent": emp_name,
+            "parenttype": "Employee",
+            "parentfield": "external_work_history",
+            "idx": _next_child_idx("Employee External Work History", emp_name),
+            "company_name": company_name,
+            "designation": designation,
+        }
+    )
+    if incoming.get("from_date") and frappe.db.has_column(
+        "Employee External Work History", "custom_from_datee"
+    ):
+        row.custom_from_datee = incoming["from_date"]
+    if incoming.get("to_date") and frappe.db.has_column(
+        "Employee External Work History", "custom_to_datee"
+    ):
+        row.custom_to_datee = incoming["to_date"]
+
+    row.insert(ignore_permissions=True)
+    frappe.db.commit()
+
+    return {
+        "success": True,
+        "message": _("Employer added."),
+        "work_history": _alumni_work_history_row(row.as_dict()),
     }
 
 
