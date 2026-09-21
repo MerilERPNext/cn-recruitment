@@ -1046,10 +1046,8 @@ def _apply_alumni_category_filter(filters: dict) -> None:
 
 
 def _ticket_status_label(status: str) -> str:
-    if status in _TICKET_RESOLVED_STATUSES:
-        return "Resolved"
-    if status in _TICKET_OPEN_STATUSES:
-        return "Open"
+    if status in ("Replied", "Awaiting User Response"):
+        return "Awaiting User Response"
     return status or ""
 
 
@@ -1394,14 +1392,18 @@ def add_alumni_ticket_comment(ticket_id: str | None = None, comment: str | None 
 def get_alumni_tickets(status=None, category=None, limit=50, start=0) -> dict:
     """The alumnus's support tickets (HD Ticket) with stats + category flags.
 
-    `status`: "open" | "resolved" (tab). `category`: an HD Ticket Type (chip).
+    `status`: exact HD Ticket status string —
+        "Open" | "Closed" | "Replied" | "Reopened" | "Not Assigned" |
+        "Archived" | "Requested Closure" | "Resolved"
+        Omit (or pass "all") to return tickets of every status.
+    `category`: an HD Ticket Type (chip). Omit for all categories.
     Stats are always computed across ALL of the user's tickets, not the filter.
     """
     user = _require_alumni_session()
     email = _alumni_email(user)
 
     filters = {"raised_by": email}
-    if category:
+    if category and str(category).strip().lower() != "all":
         # A specific category chip was picked (chips only list alumni-portal
         # categories, so this is always within the allowed set).
         if frappe.db.has_column("HD Ticket", "custom_category"):
@@ -1411,10 +1413,36 @@ def get_alumni_tickets(status=None, category=None, limit=50, start=0) -> dict:
     else:
         # No specific chip → restrict to all Alumni-Portal categories only.
         _apply_alumni_category_filter(filters)
-    if status == "open":
-        filters["status"] = ["in", _TICKET_OPEN_STATUSES]
-    elif status == "resolved":
-        filters["status"] = ["in", _TICKET_RESOLVED_STATUSES]
+
+    if status and str(status).strip().lower() not in ("all", "all statuses", "all_statuses", "none", ""):
+        if isinstance(status, list):
+            # List of statuses → use `in` filter
+            expanded = []
+            for s in status:
+                s_str = str(s).strip()
+                if s_str.lower() in ("awaiting user response", "awaiting_user_response", "replied"):
+                    expanded.extend(["Replied", "Awaiting User Response"])
+                else:
+                    expanded.append(s_str)
+            filters["status"] = ["in", list(dict.fromkeys(expanded))]
+        elif isinstance(status, str) and "," in status:
+            # Comma-separated → split into list
+            expanded = []
+            for s in status.split(","):
+                s_str = s.strip()
+                if not s_str:
+                    continue
+                if s_str.lower() in ("awaiting user response", "awaiting_user_response", "replied"):
+                    expanded.extend(["Replied", "Awaiting User Response"])
+                else:
+                    expanded.append(s_str)
+            filters["status"] = ["in", list(dict.fromkeys(expanded))]
+        else:
+            st = str(status).strip()
+            if st.lower() in ("awaiting user response", "awaiting_user_response", "replied"):
+                filters["status"] = ["in", ["Replied", "Awaiting User Response"]]
+            else:
+                filters["status"] = st
 
     fields = [
         "name", "subject", "ticket_type", "status", "agent_group",
@@ -1462,6 +1490,16 @@ def get_alumni_tickets(status=None, category=None, limit=50, start=0) -> dict:
     open_count = sum(1 for x in all_t if x.status in _TICKET_OPEN_STATUSES)
     resolved_count = sum(1 for x in all_t if x.status in _TICKET_RESOLVED_STATUSES)
 
+    status_counts = {}
+    for x in all_t:
+        st = x.status or "Open"
+        status_counts[st] = status_counts.get(st, 0) + 1
+
+    awaiting_count = status_counts.get("Replied", 0) + status_counts.get("Awaiting User Response", 0)
+    if awaiting_count > 0:
+        status_counts["Replied"] = awaiting_count
+        status_counts["Awaiting User Response"] = awaiting_count
+
     from frappe.utils import add_days, get_datetime, now_datetime, time_diff_in_seconds
 
     cutoff = add_days(now_datetime(), -30)
@@ -1486,10 +1524,22 @@ def get_alumni_tickets(status=None, category=None, limit=50, start=0) -> dict:
             "open_tickets": open_count,
             "resolved_tickets": resolved_count,
             "total": len(all_t),
+            "status_counts": status_counts,
             "avg_response_hours": avg_response_hours,
             "satisfaction_percent": satisfaction_percent,
         },
-        "filter_options": {"categories": hd_categories_res.get("categories", [])},
+        "filter_options": {
+            "categories": hd_categories_res.get("categories", []),
+            "statuses": [
+                {"label": "Open", "value": "Open"},
+                {"label": "Awaiting User Response", "value": "Replied"},
+                {"label": "Closed", "value": "Closed"},
+                {"label": "Reopened", "value": "Reopened"},
+                {"label": "Not Assigned", "value": "Not Assigned"},
+                {"label": "Archived", "value": "Archived"},
+                {"label": "Requested Closure", "value": "Requested Closure"},
+            ],
+        },
         "tickets": tickets,
     }
 
@@ -1513,6 +1563,7 @@ def raise_alumni_ticket(subject, description=None, category=None, priority=None)
             "subject": subject,
             "description": description or "",
             "raised_by": _alumni_email(user),
+            "via_customer_portal": 1,
         }
     )
     if category and frappe.db.exists("HD Ticket Type", category):
