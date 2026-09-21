@@ -1530,130 +1530,6 @@ const ExitPage: React.FC = () => {
               )}
             </div>
 
-            {/* Your Reportees */}
-            <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-5 shadow-xs">
-              <div className="flex items-center gap-2 pb-3 mb-2 border-b border-gray-100">
-                <div className="p-1.5 rounded-full bg-primary-50 text-primary-700 border border-primary-100 flex items-center justify-center shrink-0">
-                  <Users className="w-4 h-4" />
-                </div>
-                <div>
-                  <Typography
-                    variant="subheading"
-                    className="text-gray-900 block"
-                  >
-                    Your Reportees
-                  </Typography>
-                  <Typography
-                    variant="caption"
-                    className="text-gray-500 font-medium block"
-                  >
-                    Handover and manager reassignment
-                  </Typography>
-                </div>
-              </div>
-
-              {isLoadingReportees ? (
-                <div className="py-2">
-                  <TableSkeleton columns={2} rows={3} />
-                </div>
-              ) : isReporteesError ? (
-                <div className="py-4 text-center">
-                  <Typography
-                    variant="caption"
-                    className="text-rose-600 font-medium mb-2 block"
-                  >
-                    Failed to load reportees
-                  </Typography>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => refetchReportees()}
-                  >
-                    Try Again
-                  </Button>
-                </div>
-              ) : reportees.length === 0 ? (
-                <div className="py-2">
-                  <NoDataFound
-                    title="No Reportees Found"
-                    subtitle="No active direct reportees assigned to this employee."
-                  />
-                </div>
-              ) : (
-                <>
-                  <div className="divide-y divide-gray-100 text-xs">
-                    {reportees.map((r, i) => {
-                      const repDesignation =
-                        r.designation_name || r.custom_designation_title || "";
-                      return (
-                        <div
-                          key={r.name || i}
-                          className="py-2.5 flex items-center justify-between gap-4"
-                        >
-                          <WrapperHoverCard employeeId={r.name}>
-                            <div className="cursor-pointer hover:opacity-80 transition-opacity">
-                              <div className="flex items-center gap-1.5 flex-wrap">
-                                <Typography
-                                  variant="bodySmall"
-                                  className="font-bold text-gray-900"
-                                >
-                                  {r.employee_name || r.name}
-                                </Typography>
-                                {repDesignation && (
-                                  <Typography
-                                    variant="caption"
-                                    className="text-gray-500 font-medium ml-1.5"
-                                  >
-                                    ({repDesignation})
-                                  </Typography>
-                                )}
-                              </div>
-                              <Typography
-                                variant="caption"
-                                className="text-gray-400 font-medium block mt-0.5"
-                              >
-                                reporting manager pending
-                              </Typography>
-                            </div>
-                          </WrapperHoverCard>
-                          <div className="flex items-center gap-2.5 shrink-0">
-                            <Typography
-                              variant="caption"
-                              className="text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-md font-semibold border border-emerald-200"
-                            >
-                              {r.status || "Active"}
-                            </Typography>
-                            <button
-                              type="button"
-                              disabled={isLoadingTriggerForEmployee === r.name}
-                              onClick={() =>
-                                handleOpenManagerChangeModal({
-                                  name: r.name,
-                                  employee_name: r.employee_name || r.name,
-                                })
-                              }
-                              className="text-xs font-semibold text-primary-700 hover:text-primary-800 hover:underline flex items-center gap-1 transition-colors disabled:opacity-50"
-                            >
-                              {isLoadingTriggerForEmployee === r.name
-                                ? "Loading..."
-                                : "Change manager \u2192"}
-                            </button>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-
-                  <Typography
-                    variant="caption"
-                    className="text-primary-950 bg-primary-50/80 p-2.5 rounded-lg border border-primary-200 font-medium mt-3.5 block"
-                  >
-                    {`Recommended manager: ${reportingManagerName}, awaiting approval.`}
-                  </Typography>
-                </>
-              )}
-            </div>
-
             {/* Documents, since you joined Card */}
             <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-5 shadow-xs">
               <div className="flex items-center justify-between pb-3 mb-2 border-b border-gray-100">
@@ -1949,6 +1825,8 @@ const ExitPage: React.FC = () => {
               )}
             </div>
 
+           
+
             {/* Task Box Card */}
             <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-5 shadow-xs">
               <div className="flex items-center justify-between pb-3 mb-3 border-b border-gray-100">
@@ -2077,6 +1955,130 @@ const ExitPage: React.FC = () => {
                   </div>
                 ))}
               </div>
+            </div>
+
+             {/* Your Reportees */}
+            <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-5 shadow-xs">
+              <div className="flex items-center gap-2 pb-3 mb-2 border-b border-gray-100">
+                <div className="p-1.5 rounded-full bg-primary-50 text-primary-700 border border-primary-100 flex items-center justify-center shrink-0">
+                  <Users className="w-4 h-4" />
+                </div>
+                <div>
+                  <Typography
+                    variant="subheading"
+                    className="text-gray-900 block font-bold"
+                  >
+                    Your Reportees
+                  </Typography>
+                  <Typography
+                    variant="caption"
+                    className="text-gray-500 font-medium block mt-0.5"
+                  >
+                    Handover and manager reassignment
+                  </Typography>
+                </div>
+              </div>
+
+              {isLoadingReportees ? (
+                <div className="py-2">
+                  <TableSkeleton columns={2} rows={3} />
+                </div>
+              ) : isReporteesError ? (
+                <div className="py-4 text-center">
+                  <Typography
+                    variant="caption"
+                    className="text-rose-600 font-medium mb-2 block"
+                  >
+                    Failed to load reportees
+                  </Typography>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => refetchReportees()}
+                  >
+                    Try Again
+                  </Button>
+                </div>
+              ) : reportees.length === 0 ? (
+                <div className="py-2">
+                  <NoDataFound
+                    title="No Reportees Found"
+                    subtitle="No active direct reportees assigned to this employee."
+                  />
+                </div>
+              ) : (
+                <>
+                  <div className="divide-y divide-gray-100 text-xs">
+                    {reportees.map((r, i) => {
+                      const repDesignation =
+                        r.designation_name || r.custom_designation_title || "";
+                      return (
+                        <div
+                          key={r.name || i}
+                          className="py-2.5 flex items-center justify-between gap-4"
+                        >
+                          <WrapperHoverCard employeeId={r.name}>
+                            <div className="cursor-pointer hover:opacity-80 transition-opacity">
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <Typography
+                                  variant="bodySmall"
+                                  className="font-bold text-gray-900"
+                                >
+                                  {r.employee_name || r.name}
+                                </Typography>
+                                {repDesignation && (
+                                  <Typography
+                                    variant="caption"
+                                    className="text-gray-500 font-medium ml-1.5"
+                                  >
+                                    ({repDesignation})
+                                  </Typography>
+                                )}
+                              </div>
+                              <Typography
+                                variant="caption"
+                                className="text-gray-400 font-medium block mt-0.5"
+                              >
+                                reporting manager pending
+                              </Typography>
+                            </div>
+                          </WrapperHoverCard>
+                          <div className="flex items-center gap-2.5 shrink-0">
+                            <Typography
+                              variant="caption"
+                              className="text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-md font-semibold border border-emerald-200"
+                            >
+                              {r.status || "Active"}
+                            </Typography>
+                            <button
+                              type="button"
+                              disabled={isLoadingTriggerForEmployee === r.name}
+                              onClick={() =>
+                                handleOpenManagerChangeModal({
+                                  name: r.name,
+                                  employee_name: r.employee_name || r.name,
+                                })
+                              }
+                              className="text-xs font-semibold text-primary-700 hover:text-primary-800 hover:underline flex items-center gap-1 transition-colors disabled:opacity-50"
+                            >
+                              {isLoadingTriggerForEmployee === r.name
+                                ? "Loading..."
+                                : "Change manager \u2192"}
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  <Typography
+                    variant="caption"
+                    className="text-primary-950 bg-primary-50/80 p-2.5 rounded-lg border border-primary-200 font-medium mt-3.5 block"
+                  >
+                    {`Recommended manager: ${reportingManagerName}, awaiting approval.`}
+                  </Typography>
+                </>
+              )}
             </div>
           </div>
         </div>
