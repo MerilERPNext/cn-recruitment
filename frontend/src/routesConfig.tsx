@@ -680,6 +680,11 @@ const AssignmentDetailsPage = lazyWithRetry(
   "AssignmentDetailsPage",
 );
 
+const TasksPage = lazyWithRetry(
+  () => import("./components/Tasks/TasksPage"),
+  "TasksPage",
+);
+
 const EmployeeDocumentsPage = lazyWithRetry(
   () => import("./components/EmployeeDocuments/EmployeeDocumentsPage"),
   "EmployeeDocumentsPage",
@@ -858,6 +863,11 @@ export const routesConfig: AppRoute[] = [
     path: "/webapp/requests",
     element: <Requests />,
     permissionKey: "Dashboard",
+  },
+  {
+    path: "/webapp/tasks",
+    element: <TasksPage />,
+    permissionKey: "Tasks",
   },
   {
     path: "/webapp/timesheet/timesheet-create",
@@ -1124,6 +1134,7 @@ export const routesConfig: AppRoute[] = [
         path: "all",
         element: <NoticesTab tab="all" />,
         permissionKey: "Notices Dashboard",
+
       },
       {
         path: "unread",
