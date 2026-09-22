@@ -5,7 +5,6 @@ import {
   ArrowLeft,
   UserPlus,
   Search,
-  PlayCircle,
   Eye,
   Edit,
   AlertTriangle,
@@ -17,7 +16,6 @@ import toast from "react-hot-toast";
 
 import {
   useNewHiresList,
-  useInitiateOnboardingMutation,
   useActivateEmployeeMutation,
   useNewHireDetail,
   useUpdateNewHireMutation,
@@ -33,7 +31,6 @@ import { Typography } from "../../shared/atoms/Typography";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 import { formatCurrency } from "../../../utils/currency";
 import { errorResponseFormater } from "../../../utils/errorResponseFormater";
-import ConfirmationModal from "../../shared/atoms/ConfirmationModal";
 
 const getStageBadgeColor = (stage?: string) => {
   switch (stage) {
@@ -74,13 +71,12 @@ const NewHiresList: React.FC = () => {
   });
 
   // Mutations
-  const { mutateAsync: initiateOnboarding, isPending: isInitiating } = useInitiateOnboardingMutation();
   const { mutateAsync: activateEmployee, isPending: isActivating } = useActivateEmployeeMutation();
   const { mutateAsync: updateNewHire, isPending: isUpdating } = useUpdateNewHireMutation();
 
   // Modals state
-  const [candidateToInitiate, setCandidateToInitiate] = useState<NewHireRow | null>(null);
   const [candidateToActivate, setCandidateToActivate] = useState<NewHireRow | null>(null);
+  const [activationEmail, setActivationEmail] = useState<string>("");
   const [selectedCandidateName, setSelectedCandidateName] = useState<string | null>(null);
   const [editingCandidate, setEditingCandidate] = useState<NewHireRow | null>(null);
   const [editFields, setEditFields] = useState<Record<string, string>>({});
@@ -130,33 +126,39 @@ const NewHiresList: React.FC = () => {
   };
 
   // Actions
-  const handleInitiate = async () => {
-    if (!candidateToInitiate) return;
-    try {
-      const res = await initiateOnboarding(candidateToInitiate.name);
-      toast.success(
-        res?.data?.already_initiated
-          ? `Onboarding was already initiated (${res?.data?.employee_onboarding}).`
-          : `Onboarding initiated for ${candidateToInitiate.employee_name}!`
-      );
-      setCandidateToInitiate(null);
-      refetch();
-    } catch (err) {
-      toast.error(errorResponseFormater(err, "Failed to initiate onboarding."));
-    }
+  const openActivate = (row: NewHireRow) => {
+    setCandidateToActivate(row);
+    setActivationEmail(String(row.company_email || ""));
   };
 
+  const closeActivate = () => {
+    setCandidateToActivate(null);
+    setActivationEmail("");
+  };
+
+  const isActivationEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(activationEmail.trim());
+
   const handleActivate = async () => {
-    if (!candidateToActivate) return;
+    // Enter in the email field submits the form even while the button is loading.
+    if (!candidateToActivate || isActivating) return;
+    const companyEmail = activationEmail.trim();
+    if (!companyEmail) {
+      toast.error("Please enter the company email.");
+      return;
+    }
+    if (!isActivationEmailValid) {
+      toast.error("Please enter a valid company email.");
+      return;
+    }
     try {
-      const res = await activateEmployee(candidateToActivate.name);
+      const res = await activateEmployee({ name: candidateToActivate.name, companyEmail });
       const newName = res?.data?.name || candidateToActivate.name;
       toast.success(
         res?.data?.renamed
           ? `Employee activated successfully! Renamed to ${newName}.`
           : `Employee ${newName} is now active.`
       );
-      setCandidateToActivate(null);
+      closeActivate();
       refetch();
     } catch (err) {
       toast.error(errorResponseFormater(err, "Failed to activate employee."));
@@ -204,7 +206,7 @@ const NewHiresList: React.FC = () => {
             </span>
           </div>
           <Typography variant="bodySmall" color="secondary">
-            Review pending new hire records, initiate onboarding workflows, and activate joining employees.
+            Review pending new hire records and activate joining employees with their company email.
           </Typography>
         </div>
       </div>
@@ -300,8 +302,7 @@ const NewHiresList: React.FC = () => {
             <tbody className="divide-y divide-gray-100">
               {rows.map((row) => {
                 const stage = row.custom_new_hire_stage || "Draft";
-                const isApproved = stage === "Approved" || row.can_initiate_onboarding;
-                const isOnboardingInitiated = stage === "Onboarding Initiated";
+                const canActivate = Boolean(row.can_activate);
                 const isEditable = stage === "Draft" || stage === "Rejected";
 
                 return (
@@ -338,35 +339,21 @@ const NewHiresList: React.FC = () => {
                       onClick={(e) => e.stopPropagation()}
                     >
                       <div className="flex items-center justify-end gap-2">
-                        {/* 1. Initiate Onboarding (when Approved) */}
-                        {isApproved && (
-                          <Button
-                            variant="contain"
-                            size="md"
-                            className="bg-purple-600 hover:bg-purple-700 text-white shadow-xs text-xs"
-                            icon={<PlayCircle className="w-3.5 h-3.5" />}
-                            onClick={() => setCandidateToInitiate(row)}
-                            loading={isInitiating && candidateToInitiate?.name === row.name}
-                          >
-                            Initiate Onboarding
-                          </Button>
-                        )}
-
-                        {/* 2. Activate Employee (when Onboarding Initiated) */}
-                        {isOnboardingInitiated && (
+                        {/* 1. Activate Employee (once submitted) */}
+                        {canActivate && (
                           <Button
                             variant="contain"
                             size="md"
                             className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs text-xs"
                             icon={<UserCheck className="w-3.5 h-3.5" />}
-                            onClick={() => setCandidateToActivate(row)}
+                            onClick={() => openActivate(row)}
                             loading={isActivating && candidateToActivate?.name === row.name}
                           >
                             Activate Employee
                           </Button>
                         )}
 
-                        {/* 3. Edit (when Draft or Rejected) */}
+                        {/* 2. Edit (when Draft or Rejected) */}
                         {isEditable && (
                           <Button
                             variant="subtle"
@@ -378,7 +365,7 @@ const NewHiresList: React.FC = () => {
                           </Button>
                         )}
 
-                        {/* 4. View Details */}
+                        {/* 3. View Details */}
                         <button
                           onClick={() => setSelectedCandidateName(row.name)}
                           className="p-1.5 text-gray-500 hover:text-primary hover:bg-primary-50 rounded-lg transition-colors"
@@ -482,29 +469,81 @@ const NewHiresList: React.FC = () => {
         </div>
       )}
 
-      {/* Confirmation Modal: Initiate Onboarding */}
-      {candidateToInitiate && (
-        <ConfirmationModal
-          message={`Are you sure you want to initiate onboarding for ${candidateToInitiate.employee_name} (${candidateToInitiate.name})? This will create a Job Applicant and start the Employee Onboarding workflow.`}
-          confirmLabel="Initiate Onboarding"
-          cancelLabel="Cancel"
-          isLoading={isInitiating}
-          onConfirm={handleInitiate}
-          onCancel={() => setCandidateToInitiate(null)}
-        />
-      )}
+      {/* Activate Employee: asks for the company email */}
+      {candidateToActivate &&
+        createPortal(
+          <div
+            className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-xs p-4"
+            onMouseDown={(e) => {
+              if (e.target === e.currentTarget && !isActivating) closeActivate();
+            }}
+          >
+            <form
+              className="bg-white rounded-xl shadow-lg w-full max-w-md p-6 flex flex-col gap-4"
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleActivate();
+              }}
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <Typography variant="h3" color="title">
+                    Activate Employee
+                  </Typography>
+                  <Typography variant="bodySmall" color="secondary">
+                    {candidateToActivate.employee_name} ({candidateToActivate.name})
+                  </Typography>
+                </div>
+                <button
+                  type="button"
+                  onClick={closeActivate}
+                  disabled={isActivating}
+                  className="p-1.5 rounded-full hover:bg-gray-100 transition-colors shrink-0"
+                  aria-label="Close"
+                >
+                  <X className="h-4 w-4 text-gray-500" />
+                </button>
+              </div>
 
-      {/* Confirmation Modal: Activate Employee */}
-      {candidateToActivate && (
-        <ConfirmationModal
-          message={`Are you sure you want to activate ${candidateToActivate.employee_name} (${candidateToActivate.name})? This will assign an official employee code and mark the employee status as Active.`}
-          confirmLabel="Activate Employee"
-          cancelLabel="Cancel"
-          isLoading={isActivating}
-          onConfirm={handleActivate}
-          onCancel={() => setCandidateToActivate(null)}
-        />
-      )}
+              <div className="flex flex-col">
+                <label htmlFor="activation-company-email" className="text-xs font-bold text-gray-700 mb-1">
+                  Company Email <span className="text-red-500">*</span>
+                </label>
+                <input
+                  id="activation-company-email"
+                  type="email"
+                  autoFocus
+                  required
+                  placeholder="name@company.com"
+                  value={activationEmail}
+                  onChange={(e) => setActivationEmail(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-hidden"
+                />
+                <p className="text-xs text-gray-500 mt-2">
+                  This assigns the official employee code and marks the employee as Active.
+                </p>
+              </div>
+
+              <div className="flex gap-3 justify-end">
+                <Button type="button" variant="subtle" size="md" onClick={closeActivate} disabled={isActivating}>
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  variant="contain"
+                  size="md"
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                  icon={<UserCheck className="w-4 h-4" />}
+                  loading={isActivating}
+                  disabled={!isActivationEmailValid}
+                >
+                  Activate Employee
+                </Button>
+              </div>
+            </form>
+          </div>,
+          document.body
+        )}
 
       {/* Detail View Drawer / Modal */}
       {selectedCandidateName && (
@@ -594,29 +633,14 @@ const NewHiresList: React.FC = () => {
 
                 {/* Action in Modal */}
                 <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-100">
-                  {detailData?.data?.can_initiate_onboarding && (
-                    <Button
-                      variant="contain"
-                      size="md"
-                      className="bg-purple-600 hover:bg-purple-700 text-white"
-                      icon={<PlayCircle className="w-4 h-4" />}
-                      onClick={() => {
-                        setCandidateToInitiate(detailData.data);
-                        setSelectedCandidateName(null);
-                      }}
-                    >
-                      Initiate Onboarding
-                    </Button>
-                  )}
-
-                  {detailData?.data?.custom_new_hire_stage === "Onboarding Initiated" && (
+                  {detailData?.data?.can_activate && (
                     <Button
                       variant="contain"
                       size="md"
                       className="bg-emerald-600 hover:bg-emerald-700 text-white"
                       icon={<UserCheck className="w-4 h-4" />}
                       onClick={() => {
-                        setCandidateToActivate(detailData.data);
+                        openActivate(detailData.data);
                         setSelectedCandidateName(null);
                       }}
                     >

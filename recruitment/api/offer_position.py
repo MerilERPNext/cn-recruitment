@@ -87,6 +87,7 @@ def _positions_held_by_other_offers(requisition, exclude_offer=None):
 
 POSITION_FIELDS = (
     "name", "position_no", "status", "location", "functional_area", "candidate",
+    "candidate_status",
 )
 
 
@@ -283,8 +284,10 @@ def _release(offer_name, row_name, requisition, rows=None, req_status=None):
         {"status": POSITION_OPEN, "candidate": None, "candidate_status": None},
         update_modified=False,
     )
+    # Remember the seat, so "Resend Job Offer" can take the same one back.
     frappe.db.set_value(
-        JOB_OFFER, offer_name, {POSITION_FIELD: None, POSITION_LABEL_FIELD: None},
+        JOB_OFFER, offer_name,
+        {POSITION_FIELD: None, POSITION_LABEL_FIELD: None, "custom_released_position": row_name},
         update_modified=False,
     )
     # Reflect the release locally so the rollup needs no re-read.
@@ -403,7 +406,14 @@ def sync_offer_position(doc, method=None):
             frappe.db.set_value(JOB_OFFER, doc.name, POSITION_FIELD, row_name, update_modified=False)
 
         if row.status == POSITION_FILLED and row.candidate == applicant:
-            return  # already correct — skip the writes and the rollup
+            # Already claimed — only keep the offer's status mirrored on the row
+            # (Draft -> Awaiting Response -> Accepted). No rollup needed.
+            if row.candidate_status != doc.get("status"):
+                frappe.db.set_value(
+                    JOB_REQUISITION_POSITION, row_name, "candidate_status", doc.get("status"),
+                    update_modified=False,
+                )
+            return
 
         frappe.db.set_value(
             JOB_REQUISITION_POSITION,
@@ -481,10 +491,13 @@ def withdraw_offer(job_offer, reason=None):
             _("This offer has already been accepted. Cancel the onboarding instead of withdrawing.")
         )
 
-    # Recruitment Settings -> Allow Withdraw Offer Only After It Is Sent.
-    from recruitment.recruitment.offer_send_rules import validate_withdraw
+    # Only a sent offer can be withdrawn; honours Recruitment Settings ->
+    # Allow Withdraw Offer Only After It Is Sent as well.
+    from recruitment.api.offer_lifecycle import _withdraw_rule
 
-    validate_withdraw(doc)
+    rule = _withdraw_rule(doc)
+    if not rule["allowed"]:
+        frappe.throw(rule["reason"], title=_("Cannot Withdraw Offer"))
 
     row_name = doc.get(POSITION_FIELD)
     requisition = _requisition_of(doc)
@@ -492,6 +505,18 @@ def withdraw_offer(job_offer, reason=None):
     # Submitted offers only accept allow-on-submit writes, so go through the db.
     frappe.db.set_value(JOB_OFFER, job_offer, "status", "Withdrawn")
     _release(job_offer, row_name, requisition)
+
+    # The raw write above fires no doc_events: close the candidate's Action
+    # Center item and put the withdrawal on their hiring workflow here.
+    doc.status = "Withdrawn"
+    from recruitment.api.action_center import sync_job_offer_action_item
+    from recruitment.api.hiring_stage import record_offer_event
+
+    try:
+        sync_job_offer_action_item(doc)
+    except Exception:
+        frappe.log_error(frappe.get_traceback(), "Job Offer: action item close on withdraw failed")
+    record_offer_event(doc, "Offer Withdrawn")
 
     actor = (
         frappe.db.get_value("Employee", {"user_id": frappe.session.user}, "employee_name")

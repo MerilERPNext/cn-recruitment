@@ -9,14 +9,19 @@ record.
 
 Naming
 ------
-A new hire is named by Employee's own ``naming_series:`` autoname, exactly like
-any other employee — ``cn_hrms_core``'s ``before_insert`` stamps the company
-series onto ``naming_series`` and Frappe names the record from it. The employee
-code is therefore issued at intake, not at activation, and never changes;
-``activate_employee`` only flips the status.
+A pending Employee is inserted with an explicit ``PEND-#####`` name
+(``insert(set_name=...)``), which bypasses autoname — so a new hire who never
+joins does not burn a real employee code. ``activate_employee`` renames it into
+the site's real series (the one ``cn_hrms_core``'s ``before_insert`` already
+stamped onto ``naming_series``) and flips the status to Active. Records raised
+while intake used the real series keep their name; activation only flips them.
 
-Records raised before this (named out of a ``PEND-#####`` series) are still
-renamed into the real series on activation — see :func:`activate_employee`.
+Company email
+-------------
+Asked at activation, not at intake — the person has no mailbox until they are
+actually joining. It is therefore left off the intake form, and Employee's own
+``reqd`` on it (a cn_hrms_core Property Setter) is deferred for as long as the
+record has never been Active — see :func:`defer_activation_fields`.
 
 Response envelope
 -----------------
@@ -37,16 +42,21 @@ to quote instead.
 
 Lifecycle
 ---------
-``status`` stays "Pending" for the whole intake; the intake's own progress lives
-on ``custom_new_hire_stage``, so the approval matrix has something to drive that
-is not the person's employment status:
+HR fills the form and submits; the Employee is created Pending under a ``PEND-``
+code. HR then activates it, entering the company email, and it becomes Active
+under its real code. ``status`` stays "Pending" until then; the intake's own
+progress lives on ``custom_new_hire_stage``, so the approval matrix has
+something to drive that is not the person's employment status:
 
-    Draft -> Pending Approval -> Approved -> Onboarding Initiated -> Completed
-                              -> Rejected            (Cancelled before onboarding)
+    Draft -> Pending Approval -> Approved -> Completed (activated)
+                              -> Rejected            (Cancelled before activation)
 
-Onboarding can be initiated from Pending Approval as well as Approved: HR runs
-step 2 (Assign & Initiate Onboarding) straight after intake, so an approval
-matrix — where one is configured — runs alongside onboarding, not in front of it.
+Activation is allowed from Pending Approval as well as Approved: an approval
+matrix — where one is configured — runs alongside, not in front of it.
+
+Step 2 (Assign & Initiate Onboarding, stage "Onboarding Initiated") is no longer
+part of the flow and nothing in the UI calls it. Its endpoints and the
+auto-initiate hook are kept intact so it can be switched back on.
 
 A New Hire Form record configures which Employee fields the form shows, in what
 order, under which tab and section, and which are mandatory. A field with no
@@ -60,7 +70,7 @@ from contextlib import contextmanager
 import frappe
 from frappe import _
 from frappe.custom.doctype.custom_field.custom_field import create_custom_field
-from frappe.model.naming import make_autoname
+from frappe.model.naming import make_autoname, set_new_name
 from frappe.model.rename_doc import rename_doc
 
 DOCTYPE = "Employee"
@@ -73,7 +83,7 @@ EMPLOYEE_ONBOARDING = "Employee Onboarding"
 PENDING_STATUS = "Pending"
 ACTIVE_STATUS = "Active"
 
-# Only for the legacy records raised before intake used the standard series.
+PENDING_SERIES = "PEND-.#####"
 PENDING_PREFIX = "PEND-"
 
 STAGE_FIELD = "custom_new_hire_stage"
@@ -84,6 +94,13 @@ STAGES = (
 )
 EDITABLE_STAGES = frozenset({"Draft", "Rejected"})
 INITIABLE_STAGES = frozenset({"Pending Approval", "Approved"})
+# Everything a submitted intake can be in. "Onboarding Initiated" and "Completed"
+# are there for records raised while step 2 was still part of the flow.
+ACTIVATABLE_STAGES = frozenset({"Pending Approval", "Approved", "Onboarding Initiated", "Completed"})
+
+# Employee fields HR supplies at activation rather than at intake. They are kept
+# off the intake form, and their Employee-level `reqd` is deferred until then.
+ACTIVATION_FIELDS = ("company_email",)
 
 _LAYOUT_TYPES = frozenset({
     "Column Break", "Tab Break", "Section Break", "HTML", "HTML Editor",
@@ -96,7 +113,7 @@ _LAYOUT_TYPES = frozenset({
 # to the reporting-hierarchy nested set.
 _SKIP_FIELDNAMES = frozenset({
     "naming_series", "amended_from", "employee", "employee_name", "status",
-    "lft", "rgt", "old_parent", STAGE_FIELD, FORM_FIELD,
+    "lft", "rgt", "old_parent", STAGE_FIELD, FORM_FIELD, *ACTIVATION_FIELDS,
 })
 
 _FRAPPE_MANAGED = frozenset({
@@ -108,13 +125,14 @@ _FRAPPE_MANAGED = frozenset({
 _NO_EXPLICIT_ORDER = 10_000
 
 # What a blank form starts with. Employee marks `first_name`, `gender`,
-# `date_of_joining`, `company` and `company_email` mandatory, and this site
+# `date_of_joining` and `company` mandatory (`company_email` too, but that one is
+# asked at activation — see ACTIVATION_FIELDS), and this site
 # additionally refuses an Employee with no Department or Designation through a
 # custom validation that `reqd` does not expose — so a form built without them
 # looks fine and then fails at the far end.
 _CORE_FORM_FIELDS = (
     "first_name", "middle_name", "last_name", "gender", "date_of_birth",
-    "personal_email", "cell_number", "company_email",
+    "personal_email", "cell_number",
     "company", "department", "designation", "employment_type", "grade",
     "branch", "reports_to", "date_of_joining", "ctc",
 )
@@ -879,11 +897,11 @@ def _validate_mandatory(doc, form_doc, employment_type=None, config=None):
 def create_new_hire(payload=None, form=None, submit=1):
     """Create the new hire as a pending Employee.
 
-    Named by Employee's own autoname, so the code matches every other employee
-    from the moment the intake is raised. `status` is Pending, which is what keeps
-    the record out of payroll and attendance (both filter `status == "Active"`)
-    and out of the role grants in `cn_hrms_core`, which fire on the transition TO
-    Active — the status carries the whole separation, not the name.
+    Named out of the `PEND-` series via `insert(set_name=...)`, which bypasses
+    autoname — so no real employee code is consumed until activation. `status` is
+    Pending, which keeps the record out of payroll and attendance (both filter
+    `status == "Active"`) and out of the role grants in `cn_hrms_core`, which
+    fire on the transition TO Active.
 
     `submit=1` (default) sets the stage to Pending Approval, which is what the
     approval matrix's Flow Config fires on. Nothing here starts it.
@@ -914,7 +932,7 @@ def create_new_hire(payload=None, form=None, submit=1):
             )
 
         with _atomic("new_hire_create"):
-            doc.insert()
+            doc.insert(set_name=make_autoname(PENDING_SERIES))
 
         return _ok(_("New hire {0} created.").format(doc.name), {
             "name": doc.name,
@@ -1004,7 +1022,7 @@ _DEFAULT_LIST_COLUMNS = (
     "name", "employee_name", "designation", "department", "company",
     "employment_type", "date_of_joining", STAGE_FIELD,
 )
-_LIST_COLUMN_LABEL_OVERRIDES = {"name": "Employee ID"}
+_LIST_COLUMN_LABEL_OVERRIDES = {"name": "Pending ID"}
 _SORTABLE = frozenset({
     "creation", "modified", "name", "employee_name", "date_of_joining",
     "company", "designation", "department", STAGE_FIELD,
@@ -1040,6 +1058,13 @@ def _can_initiate(row):
     return row.get(STAGE_FIELD) in INITIABLE_STAGES
 
 
+def _can_activate(row):
+    """Pending and submitted. A blank stage is a Pending Employee raised outside
+    intake (the desk, an import) — nothing to wait for, so it may be activated."""
+    stage = row.get(STAGE_FIELD)
+    return row.get("status") == PENDING_STATUS and (not stage or stage in ACTIVATABLE_STAGES)
+
+
 @frappe.whitelist()
 def get_new_hire(name=None, filters=None, stage=None, search=None,
                  start=0, page_length=20, order_by=None):
@@ -1047,8 +1072,9 @@ def get_new_hire(name=None, filters=None, stage=None, search=None,
 
     The list is always scoped to `status = "Pending"`, so it can never show the
     site's real staff. Pass `stage="Approved"` for the ones waiting to be
-    onboarded. Every row carries `can_initiate_onboarding`, so the button's
-    enabled state is a server decision.
+    onboarded. Every row carries `can_activate` (and the dormant
+    `can_initiate_onboarding`), so the button's enabled state is a server
+    decision.
     """
     try:
         frappe.has_permission(DOCTYPE, "read", throw=True)
@@ -1064,6 +1090,7 @@ def get_new_hire(name=None, filters=None, stage=None, search=None,
             doc.apply_fieldlevel_read_permissions()
             data = doc.as_dict()
             data["can_initiate_onboarding"] = _can_initiate(data)
+            data["can_activate"] = _can_activate(data)
             return _ok(_("New hire fetched."), data)
 
         query_filters = {}
@@ -1091,7 +1118,9 @@ def get_new_hire(name=None, filters=None, stage=None, search=None,
         query_filters["status"] = PENDING_STATUS
 
         columns = _list_columns()
-        fields = list({c["fieldname"] for c in columns} | {"name", STAGE_FIELD, "status"})
+        # company_email rides along so the activation dialog opens prefilled.
+        fields = list({c["fieldname"] for c in columns}
+                      | {"name", STAGE_FIELD, "status", "company_email"})
 
         rows = frappe.get_list(
             DOCTYPE, filters=query_filters, fields=fields,
@@ -1101,6 +1130,7 @@ def get_new_hire(name=None, filters=None, stage=None, search=None,
         )
         for row in rows:
             row["can_initiate_onboarding"] = _can_initiate(row)
+            row["can_activate"] = _can_activate(row)
 
         # Counted through get_list so the total honours the same permissions and
         # filters as the page above — a total larger than the rows the caller can
@@ -1994,24 +2024,71 @@ def initiate_onboarding(name=None, payload=None):
         return _fail(_("Onboarding could not be initiated."), "initiate_onboarding failed")
 
 
+def _company_email_problem(email, name):
+    """Why `email` cannot be this new hire's company email, or None."""
+    # `validate_email_address` splits on commas and returns only the valid parts,
+    # so "a@x.com, junk" would pass as "a@x.com" — insist on exactly one address.
+    if "," in email or frappe.utils.validate_email_address(email) != email:
+        return _("{0} is not a valid email address.").format(email), 400
+    # Another current employee on the same address would share its login. Only
+    # people who have left (or a withdrawn intake, which is Inactive) free it up.
+    clash = frappe.db.get_value(
+        DOCTYPE,
+        {"company_email": email, "name": ("!=", name),
+         "status": ("not in", ("Left", "Inactive"))},
+        "name")
+    if clash:
+        return _("{0} is already the company email of {1}.").format(email, clash), 409
+    return None
+
+
+def _real_employee_code(doc):
+    """The code Employee would have given `doc` had it not been named `PEND-`.
+
+    Runs Frappe's own naming pipeline on a throwaway copy, so a Document Naming
+    Rule (which on this site turns "PW-" into PW30037), the controller's
+    autoname and the naming series are applied in the same order as for any
+    other insert — rebuilding the name from `naming_series` alone skips the rule
+    and issues codes in a different format from every other employee. Consumes
+    the next number, so call it inside the activation transaction.
+    """
+    probe = frappe.get_doc(doc.as_dict())
+    set_new_name(probe)
+    return probe.name
+
+
 @frappe.whitelist()
-def activate_employee(name=None):
-    """Turn a completed pending Employee into a real one.
+def activate_employee(name=None, company_email=None):
+    """Turn a pending Employee into a real one.
 
-    `status = "Active"` is the whole of it: that transition releases the
-    hierarchy role grants in `cn_hrms_core` and lets payroll and attendance see
-    the person. The employee code was issued at intake and does not change.
+    HR supplies the company email here — it is not asked at intake. Without one
+    (passed now, or already on the record) the employee is not activated.
 
-    The one exception is a record raised before intake used the standard series:
-    it still carries a `PEND-` name, so it is renamed into the real series first,
-    and only then activated — that way the role grants and every downstream hook
-    fire against the final name, leaving nothing pointing at a `PEND-` id.
+    Two steps, in this order:
+
+      1. rename out of `PEND-` into the site's real series — named exactly as
+         a fresh Employee would be (see :func:`_real_employee_code`), so the
+         code matches every other employee. Frappe's rename updates every
+         inbound link, and Employee's `after_rename` re-stamps its own
+         `employee` field. A record raised while intake used the real series
+         has nothing to rename.
+      2. `status = "Active"` with the company email, saved through the document —
+         that transition releases the hierarchy role grants in `cn_hrms_core`
+         and lets payroll and attendance see the person.
+
+    Renaming first means the role grants and every downstream hook fire against
+    the final name, so nothing is left pointing at a `PEND-` id.
     """
     try:
         if not name:
             return _err(_("Employee is required."))
-        if not frappe.db.exists(DOCTYPE, name):
-            return _err(_("Employee not found: {0}").format(name), http=404)
+        # A double click sends two of these. Lock the row so the second waits for
+        # the first to commit; the locking read also sees that commit (a plain
+        # read would use this transaction's older snapshot), and after a rename
+        # the PEND- row is simply gone.
+        if not frappe.db.get_value(DOCTYPE, name, "name", for_update=True):
+            return _err(_("Employee not found: {0}. It may have just been activated.").format(name),
+                        http=404)
 
         doc = frappe.get_doc(DOCTYPE, name)
         doc.check_permission("write")
@@ -2022,33 +2099,34 @@ def activate_employee(name=None):
                 "previous_name": None,
                 "status": doc.status,
                 "stage": doc.get(STAGE_FIELD),
+                "company_email": doc.get("company_email"),
                 "renamed": False,
             })
         if doc.status != PENDING_STATUS:
             return _err(
                 _("{0} is {1}, not Pending, so it cannot be activated.").format(name, doc.status),
                 http=409)
+        if not _can_activate(doc):
+            return _err(
+                _("{0} is {1}. Only a submitted new hire can be activated.").format(
+                    name, doc.get(STAGE_FIELD)),
+                http=409)
+
+        company_email = (company_email or doc.get("company_email") or "").strip()
+        if not company_email:
+            return _err(_("Company email is required to activate {0}.").format(name))
+        problem = _company_email_problem(company_email, name)
+        if problem:
+            return _err(problem[0], http=problem[1])
 
         final = doc.name
         renamed = False
-        # Legacy only: intake names new hires out of the real series now, so
-        # there is nothing to rename for anything raised since that change.
-        pattern = None
-        if doc.name.startswith(PENDING_PREFIX):
-            series = (doc.get("naming_series") or "").strip()
-            if not series:
-                return _err(
-                    _("{0} has no naming series, so a real employee code cannot be issued.").format(name),
-                    http=409)
-            # The series is stored as a prefix ("HomeFirst-"); make_autoname wants
-            # the hash placeholders that decide the number width.
-            pattern = series if "#" in series else series + ".#####"
 
         # Rename and activation are one unit: a rename that lands and an
         # activation that then fails would leave a renamed record still Pending.
         with _atomic("new_hire_activate"):
-            if pattern:
-                final = rename_doc(DOCTYPE, doc.name, make_autoname(pattern),
+            if doc.name.startswith(PENDING_PREFIX):
+                final = rename_doc(DOCTYPE, doc.name, _real_employee_code(doc),
                                    force=True, ignore_permissions=True, show_alert=False)
                 renamed = True
 
@@ -2057,6 +2135,7 @@ def activate_employee(name=None):
             # writes straight to SQL without firing a single document event — so
             # activating that way granted the new employee nothing.
             active = frappe.get_doc(DOCTYPE, final)
+            active.company_email = company_email
             active.status = ACTIVE_STATUS
             active.set(STAGE_FIELD, "Completed")
             active.save(ignore_permissions=True)
@@ -2066,10 +2145,15 @@ def activate_employee(name=None):
             "previous_name": name if renamed else None,
             "status": ACTIVE_STATUS,
             "stage": "Completed",
+            "company_email": company_email,
             "renamed": renamed,
         })
     except frappe.PermissionError as exc:
         return _err(str(exc) or _("Not permitted."), http=403)
+    except frappe.NameError as exc:
+        return _err(_name_error_message(exc), http=400)
+    except frappe.ValidationError as exc:
+        return _err(frappe.utils.strip_html(str(exc)), http=400)
     except Exception:
         return _fail(_("The employee could not be activated."), "activate_employee failed")
 
@@ -2121,6 +2205,58 @@ def cancel_new_hire(name=None, reason=None):
 # ---------------------------------------------------------------------------
 # Hook handlers
 # ---------------------------------------------------------------------------
+
+
+def _never_active(doc):
+    """Whether this Employee has only ever been Pending — a new hire not yet
+    activated (or one withdrawn before activation). Read off the saved copy, so
+    an activation in progress (Pending -> Active) does NOT count."""
+    before = doc.get_doc_before_save()
+    if before is None:
+        return doc.status == PENDING_STATUS
+    return before.status == PENDING_STATUS and doc.status in (PENDING_STATUS, "Inactive")
+
+
+def defer_activation_fields(doc, method=None):
+    """`Employee.before_validate`: let a not-yet-activated new hire save without
+    the fields HR only supplies at activation (the company email).
+
+    Frappe can only switch its mandatory check off wholesale, so switch it off
+    here and let :func:`check_deferred_mandatory` redo it minus those fields —
+    every other required field is still enforced. This covers every save path a
+    pending hire goes through (intake, the approval matrix, cancel, the desk),
+    not just this module's endpoints.
+    """
+    # The flags live on the document object, so clear what a previous save of
+    # this same object left behind before deciding again. Left set, a record
+    # saved again after activation would skip the mandatory check entirely.
+    if doc.flags.pop("new_hire_deferred_mandatory", None):
+        doc.flags.ignore_mandatory = False
+    if doc.flags.ignore_mandatory or doc.flags.ignore_validate:
+        return
+    if not _never_active(doc):
+        return
+    if all(doc.get(f) for f in ACTIVATION_FIELDS):
+        return
+    doc.flags.ignore_mandatory = True
+    doc.flags.new_hire_deferred_mandatory = True
+
+
+def check_deferred_mandatory(doc, method=None):
+    """`Employee.before_save`: the mandatory check `defer_activation_fields`
+    switched off, minus the activation fields. Runs after every validate hook,
+    so a field a hook fills in (naming_series, say) is not reported missing."""
+    if not doc.flags.get("new_hire_deferred_mandatory"):
+        return
+    missing = [m for m in doc._get_missing_mandatory_fields() if m[0] not in ACTIVATION_FIELDS]
+    for child in doc.get_all_children():
+        missing.extend(child._get_missing_mandatory_fields())
+    if not missing:
+        return
+    for _fieldname, message in missing:
+        frappe.msgprint(message)
+    raise frappe.MandatoryError(
+        "[{0}, {1}]: {2}".format(doc.doctype, doc.name, ", ".join(m[0] for m in missing)))
 
 
 def auto_initiate_on_approval(doc, method=None):

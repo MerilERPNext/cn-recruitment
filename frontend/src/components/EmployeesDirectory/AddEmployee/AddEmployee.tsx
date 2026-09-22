@@ -28,7 +28,6 @@ import NoDataFound from "../../shared/atoms/NoDataFound";
 import Button from "../../shared/atoms/Button";
 import { Typography } from "../../shared/atoms/Typography";
 import { errorResponseFormater } from "../../../utils/errorResponseFormater";
-import { ROUTES } from "../../../constants/routes";
 
 const AddEmployee: React.FC = () => {
   const { isDesktop } = useScreenSize();
@@ -196,7 +195,7 @@ const AddEmployee: React.FC = () => {
   };
 
   // Submit new hire
-  const handleSave = async (redirectRoute = "/webapp/employees-directory") => {
+  const handleSave = async (redirectRoute = "/webapp/employees-directory/new-hires") => {
     const validation = validateAllTabs();
     if (!validation.isValid) {
       if (validation.tabIndex !== undefined && validation.tabIndex !== activeTabIndex) {
@@ -215,7 +214,7 @@ const AddEmployee: React.FC = () => {
       });
 
       const hireName = res?.data?.name || "New Recruit";
-      toast.success(`New recruit ${hireName} created successfully!`);
+      toast.success(`New recruit ${hireName} created in Pending status. Activate it from New Hires.`);
       navigate(redirectRoute, {
         state: {
           recruit: res?.data,
@@ -251,29 +250,18 @@ const AddEmployee: React.FC = () => {
             )}
           </div>
           <Typography variant="bodySmall" color="secondary">
-            Fill out employee intake details to initiate the onboarding process.
+            Fill out the new hire's details and submit. The employee is created in Pending status and activated later from New Hires.
           </Typography>
         </div>
       </div>
       <div className="flex flex-wrap items-center gap-2">
         <Button
-          variant="outline"
-          size="md"
-          onClick={() => handleSave("/webapp/employees-directory")}
-          loading={isSubmitting}
-        >
-          ASSIGN/SKIP
-        </Button>
-        <Button
           variant="contain"
           size="md"
-          onClick={() =>
-            navigate(ROUTES.EMPLOYEES_DIRECTORY_INITIATE_ONBOARDING, {
-              state: { formData: formDataRef.current },
-            })
-          }
+          onClick={() => handleSave()}
+          loading={isSubmitting}
         >
-          ASSIGN AND INITIATE ONBOARDING
+          SUBMIT
         </Button>
       </div>
     </div>
@@ -438,26 +426,14 @@ const AddEmployee: React.FC = () => {
           {/* Bottom Row: Action Buttons on Same Row */}
           <div className="border-t border-gray-100 pt-3 flex flex-row items-center justify-end gap-3 w-full">
             <Button
-              variant="outline"
-              size="md"
-              onClick={() => handleSave("/webapp/employees-directory")}
-              loading={isSubmitting}
-              className="flex-1 sm:flex-initial"
-            >
-              ASSIGN/SKIP
-            </Button>
-            <Button
               variant="contain"
               size="md"
               icon={<CheckCircle2 className="w-4 h-4" />}
-              onClick={() =>
-                navigate(ROUTES.EMPLOYEES_DIRECTORY_INITIATE_ONBOARDING, {
-                  state: { formData: formDataRef.current },
-                })
-              }
+              onClick={() => handleSave()}
+              loading={isSubmitting}
               className="flex-1 sm:flex-initial"
             >
-              ASSIGN AND INITIATE ONBOARDING
+              SUBMIT
             </Button>
           </div>
         </div>

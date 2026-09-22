@@ -654,7 +654,7 @@ def sync_job_offer_action_item(doc, method=None):
         return
 
     offer_status = (getattr(doc, "status", "") or "").strip().lower()
-    is_closed = doc.docstatus == 2 or offer_status in {"accepted", "cancelled", "rejected"}
+    is_closed = doc.docstatus == 2 or offer_status in {"accepted", "cancelled", "rejected", "withdrawn"}
 
     if is_closed:
         mark_item_completed(

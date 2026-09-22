@@ -338,7 +338,8 @@ def _application_card(row):
 
 	# Offer lookup — drives the "View Offer Letter" affordance (built later).
 	offer = frappe.db.get_value(
-		"Job Offer", {"job_applicant": row.name, "docstatus": ["!=", 2]}, "name"
+		"Job Offer", {"job_applicant": row.name, "docstatus": ["!=", 2]}, "name",
+		order_by="creation desc",
 	)
 
 	if row.status == "Rejected":
