@@ -32,8 +32,10 @@ def get_default_eligibility_rules():
 			"match_field": row.match_field or "",
 			"match_operator": row.match_operator or "=",
 			"match_value": row.match_value or "",
+			"match_value_to": row.match_value_to or "",
 			"operator": row.operator or "=",
 			"value": row.value or "",
+			"value_to": row.value_to or "",
 			"action": row.action or "Knock out",
 		}
 		for row in (settings.eligibility_rules or [])

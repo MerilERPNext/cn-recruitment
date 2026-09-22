@@ -10,8 +10,10 @@
   "match_field",
   "match_operator",
   "match_value",
+  "match_value_to",
   "operator",
   "value",
+  "value_to",
   "action"
  ],
  "fields": [
@@ -41,7 +43,7 @@
    "fieldname": "match_operator",
    "fieldtype": "Select",
    "label": "Match Operator",
-   "options": "=\n\u2265\n\u2264\n>\n<\n\u2260\none of\nnot one of\ncontains\ndoes not contain"
+   "options": "=\n\u2265\n\u2264\n>\n<\n\u2260\none of\nnot one of\ncontains\ndoes not contain\nIn Between"
   },
   {
    "fieldname": "match_value",
@@ -50,7 +52,15 @@
    "in_list_view": 1,
    "columns": 1,
    "depends_on": "eval:doc.field_name && doc.field_name.indexOf('::')>-1",
-   "description": "The value that identifies the row (e.g. 10th, Graduate)."
+   "description": "The value that identifies the row (e.g. 10th, Graduate). With \"In Between\" it is the range's lower bound."
+  },
+  {
+   "fieldname": "match_value_to",
+   "fieldtype": "Data",
+   "label": "Match Value To",
+   "columns": 1,
+   "depends_on": "eval:doc.match_operator==\"In Between\"",
+   "description": "Upper bound of the row filter's range \u2014 only used when Match Operator is \"In Between\"."
   },
   {
    "columns": 1,
@@ -58,7 +68,7 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Operator",
-   "options": "=\n\u2265\n\u2264\n>\n<\n\u2260\none of\nnot one of\ncontains\ndoes not contain",
+   "options": "=\n\u2265\n\u2264\n>\n<\n\u2260\none of\nnot one of\ncontains\ndoes not contain\nIn Between",
    "reqd": 1
   },
   {
@@ -67,6 +77,15 @@
    "fieldtype": "Data",
    "in_list_view": 1,
    "label": "Value"
+  },
+  {
+   "columns": 1,
+   "fieldname": "value_to",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Value To",
+   "depends_on": "eval:doc.operator==\"In Between\"",
+   "description": "Upper bound \u2014 only used when Operator is \"In Between\"."
   },
   {
    "columns": 1,
