@@ -891,7 +891,7 @@ const Requisition = () => {
                           <tr key={idx} className="hover:bg-gray-50/50">
                             <td className="px-4 py-2 font-medium">{idx+1}</td>
                             <td className="px-4 py-2">{pos.vacancy_type}</td>
-                            <td className="px-4 py-2">{pos.location_title || "—"}</td>
+                            <td className="px-4 py-2">{pos.custom_location_title || pos.location_title || pos.location || "—"}</td>
                             <td className="px-4 py-2">
                               {pos.reporting_manager ? (
                                 <WrapperHoverCard employeeId={String(pos.reporting_manager)}>

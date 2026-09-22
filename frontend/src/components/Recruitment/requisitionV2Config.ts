@@ -407,6 +407,7 @@ export function clampAllocationPercentages(
 /** "Position 2 (Bangalore)" — enough detail to find the offending row. */
 export function positionRowLabel(position: any, index: number): string {
   const detail =
+    position?.custom_location_title ||
     position?.location_title ||
     position?.location ||
     position?.designation_title ||
