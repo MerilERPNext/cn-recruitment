@@ -398,7 +398,7 @@ def change_password(current_password, new_password, confirm_password=None):
     new_password = new_password or ""
     confirm_password = new_password if confirm_password is None else confirm_password
 
-    if not current_password:
+    if not current_password and not cint(candidate.require_password_reset):
         frappe.throw(_("Current password is required."))
     if not new_password:
         frappe.throw(_("New password is required."))
