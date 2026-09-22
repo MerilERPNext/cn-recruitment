@@ -54,7 +54,7 @@ def _entry(value, label, df=None, fieldtype=None, options=None):
 
 
 OPERATORS = {
-	"number": ["≥", "≤", "=", "≠", ">", "<"],
+	"number": ["≥", "≤", "=", "≠", ">", "<", "In Between"],
 	"choice": ["=", "≠", "one of", "not one of"],
 	"text": ["=", "≠", "contains", "does not contain", "one of", "not one of"],
 	"date": ["=", "≠", "≥", "≤", ">", "<"],
@@ -150,10 +150,22 @@ def _as_list(v):
 	return [p.strip() for p in cstr(v).replace("\n", ",").split(",") if p.strip()]
 
 
-def _passes(actual, operator, expected):
-	"""Compare one value. True when `actual <operator> expected` holds."""
+def _passes(actual, operator, expected, expected_to=None):
+	"""Compare one value. True when `actual <operator> expected` holds.
+
+	`expected_to` is only read for "In Between" — the range's upper bound. Every
+	other operator ignores it, so existing rules (which never set it) are
+	unaffected.
+	"""
 	op = (operator or "=").strip()
 	a_num, e_num = _to_float(actual), _to_float(expected)
+
+	if op == "In Between":
+		hi_num = _to_float(expected_to)
+		if a_num is None or e_num is None or hi_num is None:
+			return False
+		lo, hi = (e_num, hi_num) if e_num <= hi_num else (hi_num, e_num)
+		return lo <= a_num <= hi
 
 	if op in ("≥", ">=", "≤", "<=", ">", "<"):
 		if a_num is None or e_num is None:
@@ -201,15 +213,25 @@ def _child_field_label(table, fieldname):
 	return fieldname
 
 
+def _comparison_label(operator, value, value_to=None):
+	"""One comparison in words. Used for both sides of a rule — the condition
+	itself and the row filter — so "In Between" reads as a range wherever it is
+	used instead of dropping its upper bound."""
+	op = (operator or "=").strip() or "="
+	val = cstr(value or "")
+	if op == "In Between":
+		return "between {0} and {1}".format(val, cstr(value_to or ""))
+	return "{0} {1}".format(op, val)
+
+
 def _rule_label(r):
 	"""Plain-English rule for the timeline comment (e.g. 'Graduation GPA/Percentage ≥ 65')."""
 	fn = r.get("field_name") or ""
-	op = r.get("operator") or "="
-	val = r.get("value") or ""
+	comp = _comparison_label(r.get("operator"), r.get("value"), r.get("value_to"))
 	if "::" in fn:
 		table, target = fn.split("::", 1)
 		check = _child_field_label(table, target)
-		test = "{0} {1} {2}".format(check, op, val).strip()
+		test = "{0} {1}".format(check, comp).strip()
 
 		match_value = cstr(r.get("match_value") or "").strip()
 		if not match_value:
@@ -221,7 +243,8 @@ def _rule_label(r):
 			return "{0} {1}".format(match_value, test)
 		mf = r.get("match_field") or ""
 		match_label = _child_field_label(table, mf.split("::", 1)[1] if "::" in mf else mf)
-		return "{0} (in rows where {1} {2} {3})".format(test, match_label, match_op, match_value)
+		match_comp = _comparison_label(match_op, match_value, r.get("match_value_to"))
+		return "{0} (in rows where {1} {2})".format(test, match_label, match_comp)
 	# Scalar field — show the label the admin picked it by, not the fieldname.
 	try:
 		df = frappe.get_meta("Job Applicant").get_field(fn)
@@ -229,7 +252,7 @@ def _rule_label(r):
 			fn = df.label
 	except Exception:
 		pass
-	return "{0} {1} {2}".format(fn, op, val)
+	return "{0} {1}".format(fn, comp)
 
 
 def _rule_matches(doc, r):
@@ -241,14 +264,15 @@ def _rule_matches(doc, r):
 	no such row there is nothing for the rule to be true of, so it does not fire.
 
 	The row filter is a full comparison of its own — ``match_field``
-	``match_operator`` ``match_value`` — so rows can be narrowed by "Education Stage
-	= Graduation" or just as well by "GPA/Percentage ≥ 60". It runs through the same
-	``_passes`` as everything else; an older rule with no stored operator keeps its
-	original equality behaviour.
+	``match_operator`` ``match_value`` (plus ``match_value_to`` for "In Between") —
+	so rows can be narrowed by "Education Stage = Graduation" or just as well by
+	"GPA/Percentage between 11 and 54.99". It runs through the same ``_passes`` as
+	everything else, with the same operators available on both sides; an older rule
+	with no stored operator keeps its original equality behaviour.
 	"""
 	fn = r.get("field_name") or ""
 	if "::" not in fn:
-		return _passes(doc.get(fn), r.get("operator"), r.get("value"))
+		return _passes(doc.get(fn), r.get("operator"), r.get("value"), r.get("value_to"))
 
 	table, target = fn.split("::", 1)
 	# A table picked in the builder but no column chosen yet. There is nothing to
@@ -260,6 +284,7 @@ def _rule_matches(doc, r):
 	mf = r.get("match_field") or ""
 	match_field = mf.split("::", 1)[1] if "::" in mf else mf
 	match_value = cstr(r.get("match_value") or "").strip()
+	match_value_to = cstr(r.get("match_value_to") or "").strip()
 	match_operator = (r.get("match_operator") or "=").strip() or "="
 	rows = doc.get(table) or []
 
@@ -267,12 +292,12 @@ def _rule_matches(doc, r):
 		# No filter, or a filter nobody finished — every row is in scope.
 		if not match_field or not match_value:
 			return True
-		return _passes(row.get(match_field), match_operator, match_value)
+		return _passes(row.get(match_field), match_operator, match_value, match_value_to)
 
 	matched = [row for row in rows if _matches(row)]
 	if not matched:
 		return False
-	return any(_passes(row.get(target), r.get("operator"), r.get("value")) for row in matched)
+	return any(_passes(row.get(target), r.get("operator"), r.get("value"), r.get("value_to")) for row in matched)
 
 
 SETTINGS_DOCTYPE = "Campus Eligibility Settings"
@@ -319,8 +344,10 @@ def apply_default_eligibility_rules(doc, method=None):
 					"match_field": row.match_field or "",
 					"match_operator": row.match_operator or "=",
 					"match_value": row.match_value or "",
+					"match_value_to": row.match_value_to or "",
 					"operator": row.operator or "=",
 					"value": row.value or "",
+					"value_to": row.value_to or "",
 					"action": row.action or "Knock out",
 				})
 
@@ -350,8 +377,8 @@ def evaluate_eligibility(job_applicant):
 		rules = frappe.get_all(
 			"Job Opening Eligibility Rule",
 			filters={"parent": opening, "parenttype": "Job Opening", "parentfield": RULES_FIELD},
-			fields=["field_name", "match_field", "match_operator", "match_value",
-			        "operator", "value", "action"],
+			fields=["field_name", "match_field", "match_operator", "match_value", "match_value_to",
+			        "operator", "value", "value_to", "action"],
 			order_by="idx asc",
 		)
 		if not rules:

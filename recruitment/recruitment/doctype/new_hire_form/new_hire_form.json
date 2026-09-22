@@ -20,13 +20,19 @@
   "restrict_to_configured",
   "basis_employment_type",
   "col_break_options",
-  "onboarding_portal_form",
   "auto_initiate_onboarding",
   "builder_section",
-  "sync_html",
   "builder_html",
+  "initiation_section",
+  "onboarding_portal_form",
+  "send_portal_invite",
+  "col_break_initiation_2",
+  "portal_invite_template",
+  "initiation_builder_section",
+  "initiation_builder_html",
   "overrides_section",
-  "field_overrides"
+  "field_overrides",
+  "initiation_fields"
  ],
  "fields": [
   {
@@ -37,7 +43,7 @@
   {
    "fieldname": "help_html",
    "fieldtype": "HTML",
-   "options": "<div class=\"alert alert-info\" style=\"padding:12px 16px;border-radius:6px;\">\n  <strong>\ud83e\uddd1\u200d\ud83d\udcbc New Hire Form</strong><br>\n  <ul style=\"margin-top:8px;margin-bottom:0;\">\n    <li>The New Hire form renders from the <strong>Employee</strong> DocType \u2014 the record it creates IS the Employee, held at <code>status = Pending</code> until onboarding completes.</li>\n    <li>Use the <strong>Form Builder</strong> below to choose which Employee fields appear, in which tab and section, and which are mandatory. Every Employee field is available.</li>\n    <li>A field with no row in <strong>Configured Fields</strong> follows the Employee DocType exactly. Employee\u2019s own mandatory fields always render \u2014 the record cannot be saved without them.</li>\n    <li>Nothing is mapped or copied: a value captured here is already on the person\u2019s Employee record.</li>\n  </ul>\n</div>"
+   "options": "<div class=\"alert alert-info\" style=\"padding:12px 16px;border-radius:6px;\">\n  <strong>🧑‍💼 New Hire Form</strong><br>\n  <ul style=\"margin-top:8px;margin-bottom:0;\">\n    <li>The New Hire form renders from the <strong>Employee</strong> DocType — the record it creates IS the Employee, held at <code>status = Pending</code> until onboarding completes.</li>\n    <li>Use the <strong>Form Builder</strong> below to choose which Employee fields appear, in which tab and section, and which are mandatory. Every Employee field is available.</li>\n    <li>A field with no row in <strong>Configured Fields</strong> follows the Employee DocType exactly. Employee’s own mandatory fields always render — the record cannot be saved without them.</li>\n    <li>Nothing is mapped or copied: a value captured here is already on the person’s Employee record.</li>\n  </ul>\n</div>"
   },
   {
    "fieldname": "identity_section",
@@ -88,11 +94,11 @@
   {
    "fieldname": "options_section",
    "fieldtype": "Section Break",
-   "label": "Visibility"
+   "label": "Settings"
   },
   {
    "default": "1",
-   "description": "On (default) = render ONLY the fields listed below. Off = render every Employee field, minus any marked Hide \u2014 rarely what you want on a 405-field doctype.",
+   "description": "On (default) = render ONLY the fields listed below. Off = render every Employee field, minus any marked Hide — rarely what you want on a 405-field doctype.",
    "fieldname": "restrict_to_configured",
    "fieldtype": "Check",
    "label": "Show Only Configured Fields"
@@ -109,13 +115,6 @@
    "fieldtype": "Column Break"
   },
   {
-   "description": "The Onboarding Portal Form released to the candidate when onboarding is initiated for a new hire raised on this form.",
-   "fieldname": "onboarding_portal_form",
-   "fieldtype": "Link",
-   "label": "Onboarding Portal Form",
-   "options": "Onboarding Portal Forms"
-  },
-  {
    "default": "0",
    "description": "On = onboarding is initiated the moment the approval matrix clears the new hire, with no second click. Off (default) = it waits in the pending list for HR to press Initiate Onboarding.",
    "fieldname": "auto_initiate_onboarding",
@@ -125,35 +124,79 @@
   {
    "fieldname": "builder_section",
    "fieldtype": "Section Break",
-   "label": "Form Builder"
-  },
-  {
-   "fieldname": "sync_html",
-   "fieldtype": "HTML",
-   "label": "Sync"
+   "label": "Step 1 — New Hire Form (Employee fields)",
+   "collapsible": 1,
+   "description": "The intake form HR fills to raise a new hire. Drag Employee fields into tabs and sections."
   },
   {
    "fieldname": "builder_html",
    "fieldtype": "HTML",
-   "label": "Form Builder"
+   "label": "New Hire Form Builder"
+  },
+  {
+   "description": "The fields HR fills when initiating onboarding. Leave the builder empty to use the standard set: Onboarding Portal Form, Onboarding Begins On, Onboarding Template, SPOC, Manager and Onboarding Buddy. The Onboarding Portal Form is always included, as Required — the candidate cannot open the portal without it.",
+   "fieldname": "initiation_section",
+   "fieldtype": "Section Break",
+   "label": "Step 2 — Initiate Onboarding Form (Employee Onboarding fields)",
+   "collapsible": 1
+  },
+  {
+   "description": "The Onboarding Portal Form released to the candidate when onboarding is initiated for a new hire raised on this form.",
+   "fieldname": "onboarding_portal_form",
+   "fieldtype": "Link",
+   "label": "Onboarding Portal Form",
+   "options": "Onboarding Portal Forms"
+  },
+  {
+   "default": "1",
+   "description": "On initiation, create the candidate's portal login (if it doesn't already exist) and email them a link to the onboarding form.",
+   "fieldname": "send_portal_invite",
+   "fieldtype": "Check",
+   "label": "Email Candidate Portal Invite"
+  },
+  {
+   "fieldname": "col_break_initiation_2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "send_portal_invite",
+   "description": "Optional. Context: applicant_name, employee, employee_onboarding, portal_url, company. Blank = a built-in message.",
+   "fieldname": "portal_invite_template",
+   "fieldtype": "Link",
+   "label": "Invite Email Template",
+   "options": "Email Template"
+  },
+  {
+   "fieldname": "initiation_builder_section",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "initiation_builder_html",
+   "fieldtype": "HTML",
+   "label": "Initiate Onboarding Form Builder"
   },
   {
    "collapsible": 1,
-   "collapsible_depends_on": "eval:false",
    "fieldname": "overrides_section",
    "fieldtype": "Section Break",
-   "label": "Configured Fields"
+   "label": "Advanced — raw configuration tables"
   },
   {
    "fieldname": "field_overrides",
    "fieldtype": "Table",
-   "label": "Configured Fields",
+   "label": "Step 1 Configured Fields",
    "options": "New Hire Form Field"
+  },
+  {
+   "fieldname": "initiation_fields",
+   "fieldtype": "Table",
+   "label": "Step 2 Initiation Fields",
+   "options": "New Hire Initiation Field"
   }
  ],
  "index_web_pages_for_search": 0,
  "links": [],
- "modified": "2026-09-01 10:00:00.000000",
+ "modified": "2026-09-21 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "New Hire Form",

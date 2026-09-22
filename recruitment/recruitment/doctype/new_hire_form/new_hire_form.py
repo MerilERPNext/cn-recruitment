@@ -23,6 +23,7 @@ class NewHireForm(Document):
 	def validate(self):
 		self.validate_single_default()
 		self.validate_fields_exist()
+		self.validate_initiation_fields()
 		self.apply_source_mandatory_fields()
 
 	def apply_source_mandatory_fields(self):
@@ -72,3 +73,22 @@ class NewHireForm(Document):
 						row.idx, frappe.bold(fieldname)
 					)
 				)
+
+	def validate_initiation_fields(self):
+		"""Reject a step-2 row HR could not fill: a field Employee Onboarding does
+		not have, one the server sets itself, or a grid it cannot render."""
+		from recruitment.api.new_hire import initiation_field_problem
+
+		seen = set()
+		for row in self.initiation_fields or []:
+			fieldname = (row.fieldname or "").strip()
+			if not fieldname:
+				continue
+			if fieldname in seen:
+				frappe.throw(
+					_("Initiation Fields row {0}: {1} is listed twice.").format(row.idx, frappe.bold(fieldname))
+				)
+			seen.add(fieldname)
+			problem = initiation_field_problem(fieldname)
+			if problem:
+				frappe.throw(_("Initiation Fields row {0}: {1}").format(row.idx, problem))

@@ -382,6 +382,10 @@ const NewHiresList = lazyWithRetry(
   () => import("./components/EmployeesDirectory/NewHires/NewHiresList"),
   "NewHiresList",
 );
+const InitiateOnboarding = lazyWithRetry(
+  () => import("./components/EmployeesDirectory/InitiateOnboarding/InitiateOnboarding.tsx"),
+  "InitiateOnboarding",
+);
 const AllShiftsDashboardRoute = lazyWithRetry(
   () =>
     import("./components/ShiftRequest/ShiftDynamicRoute").then((module) => ({
@@ -680,6 +684,11 @@ const AssignmentDetailsPage = lazyWithRetry(
   "AssignmentDetailsPage",
 );
 
+const TasksPage = lazyWithRetry(
+  () => import("./components/Tasks/TasksPage"),
+  "TasksPage",
+);
+
 const EmployeeDocumentsPage = lazyWithRetry(
   () => import("./components/EmployeeDocuments/EmployeeDocumentsPage"),
   "EmployeeDocumentsPage",
@@ -858,6 +867,11 @@ export const routesConfig: AppRoute[] = [
     path: "/webapp/requests",
     element: <Requests />,
     permissionKey: "Dashboard",
+  },
+  {
+    path: "/webapp/tasks",
+    element: <TasksPage />,
+    permissionKey: "Tasks",
   },
   {
     path: "/webapp/timesheet/timesheet-create",
@@ -1124,6 +1138,7 @@ export const routesConfig: AppRoute[] = [
         path: "all",
         element: <NoticesTab tab="all" />,
         permissionKey: "Notices Dashboard",
+
       },
       {
         path: "unread",
@@ -1314,6 +1329,11 @@ export const routesConfig: AppRoute[] = [
   {
     path: "/webapp/employees-directory/new-hires",
     element: <NewHiresList />,
+    permissionKey: "Employee Directory",
+  },
+  {
+    path: "/webapp/employees-directory/initiate-onboarding",
+    element: <InitiateOnboarding />,
     permissionKey: "Employee Directory",
   },
   //Leaves routes
