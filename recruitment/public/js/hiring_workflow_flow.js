@@ -52,9 +52,30 @@
     // falls through to Application Details instead of opening an empty stepper.
     function hideTab(frm) {
         try {
-            (frm.layout && frm.layout.tabs || []).forEach((t) => {
-                if (t.df && t.df.fieldname === TAB) { t.df.hidden = 1; t.toggle(false); }
+            const tabs = (frm.layout && frm.layout.tabs) || [];
+            let hidden_tab = null;
+            tabs.forEach((t) => {
+                if (t.df && t.df.fieldname === TAB) {
+                    t.df.hidden = 1;
+                    t.toggle(false);
+                    hidden_tab = t;
+                }
             });
+
+            // `Tab.toggle(false)` only adds the `hide` class to the link and the
+            // wrapper -- it does NOT hand the active state to another tab. Frappe
+            // has already opened this one (it is the first tab), so hiding it here
+            // left the form with an active-but-hidden pane and no visible content:
+            // a brand new applicant opened on a blank page.
+            //
+            // Pass the active state to the first tab still visible, the way
+            // Frappe's own Layout.set_tab_as_active() does. Only when the tab we
+            // just hid was the active one, so a user who has already clicked
+            // another tab is not yanked back on the next refresh.
+            if (hidden_tab && hidden_tab.is_active()) {
+                const first_visible_tab = tabs.find((t) => !t.is_hidden());
+                first_visible_tab && first_visible_tab.set_active();
+            }
         } catch (e) { /* non-fatal */ }
     }
 
