@@ -306,6 +306,11 @@ def validate_position_choice(doc, method=None):
     requisition = _requisition_of(doc)
     row_name = doc.get(POSITION_FIELD)
 
+    # A withdrawn / rejected offer has handed its position back (and had the
+    # field cleared); it must still save, e.g. to record a note.
+    if not _offer_holds_position(doc):
+        return
+
     if not row_name:
         # Lateral itemises headcount, so an unpicked offer cannot say what it
         # consumes. Campus has nothing to pick — offer_validation guards it.
@@ -472,6 +477,26 @@ def release_offer_position(doc, method=None):
         frappe.log_error(frappe.get_traceback(), "Job Offer: position release on delete failed")
 
 
+def _run_withdraw_notifications(doc):
+    """Fire the Job Offer Notifications the raw status write skipped.
+
+    Configure either as a Notification on Job Offer:
+      - Send Alert On "Value Change", Value Changed "status", with
+        Condition ``doc.status == "Withdrawn"``, or
+      - Send Alert On "Method", Trigger Method "on_offer_withdrawn".
+    A broken notification template must not undo the withdrawal.
+    """
+    for method in ("on_change", "on_offer_withdrawn"):
+        logged = len(frappe.local.message_log)
+        try:
+            doc.run_notifications(method)
+        except Exception:
+            # frappe.throw already queued the traceback for the user; the
+            # withdrawal succeeded, so keep it in the Error Log only.
+            del frappe.local.message_log[logged:]
+            frappe.log_error(frappe.get_traceback(), "Job Offer: withdraw notification failed")
+
+
 @frappe.whitelist()
 def withdraw_offer(job_offer, reason=None):
     """Withdraw an offer and return its position to Open.
@@ -499,8 +524,28 @@ def withdraw_offer(job_offer, reason=None):
     if not rule["allowed"]:
         frappe.throw(rule["reason"], title=_("Cannot Withdraw Offer"))
 
+    actor = (
+        frappe.db.get_value("Employee", {"user_id": frappe.session.user}, "employee_name")
+        or frappe.session.user
+    )
+    content = _("{0} withdrew this offer.").format(actor)
+    if reason:
+        content += " " + _("Reason: {0}").format(reason)
+    return apply_withdrawal(doc, content)
+
+
+def apply_withdrawal(doc, comment):
+    """Mark the offer Withdrawn and do everything that goes with it: hand the
+    position back, close the candidate's Action Center item, record the event on
+    their hiring workflow, fire the withdraw notifications and leave `comment`
+    on the offer. Callers do their own permission / eligibility checks."""
+    job_offer = doc.name
     row_name = doc.get(POSITION_FIELD)
     requisition = _requisition_of(doc)
+
+    # Snapshot the pre-withdrawal state so a Value Change notification on
+    # `status` sees Awaiting Response -> Withdrawn.
+    doc.load_doc_before_save()
 
     # Submitted offers only accept allow-on-submit writes, so go through the db.
     frappe.db.set_value(JOB_OFFER, job_offer, "status", "Withdrawn")
@@ -517,15 +562,8 @@ def withdraw_offer(job_offer, reason=None):
     except Exception:
         frappe.log_error(frappe.get_traceback(), "Job Offer: action item close on withdraw failed")
     record_offer_event(doc, "Offer Withdrawn")
-
-    actor = (
-        frappe.db.get_value("Employee", {"user_id": frappe.session.user}, "employee_name")
-        or frappe.session.user
-    )
-    content = _("{0} withdrew this offer.").format(actor)
-    if reason:
-        content += " " + _("Reason: {0}").format(reason)
-    doc.add_comment("Comment", content)
+    _run_withdraw_notifications(doc)
+    doc.add_comment("Comment", comment)
 
     return {
         "job_offer": job_offer,

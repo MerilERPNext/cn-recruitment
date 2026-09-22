@@ -47,6 +47,9 @@ function fla_skey(str) {
 // ─────────────────────────────────────────────────────────────────────────────
 // Child-table expandable rows
 // ─────────────────────────────────────────────────────────────────────────────
+// View / Download for Attach values — see approval_file_cells.js.
+const FLA_FILES = window.recruitment_approval_files;
+
 function fla_buildChildParts(entry) {
     const rows        = Array.isArray(entry.current_value) ? entry.current_value : [];
     const childFields = Array.isArray(entry.child_fields)  ? entry.child_fields  : [];
@@ -68,7 +71,10 @@ function fla_buildChildParts(entry) {
     const tbRows = rows.map((row, ri) => {
         const cells = childFields.map(f => {
             const v = row[f.fieldname] != null ? String(row[f.fieldname]) : "";
-            return `<td style="font-size:0.73rem;padding:4px 8px;white-space:nowrap;">${frappe.utils.escape_html(v)}</td>`;
+            const cell = v.trim() && FLA_FILES.isFile(f.fieldtype, v)
+                ? FLA_FILES.cellHTML(v, { compact: true })
+                : frappe.utils.escape_html(v);
+            return `<td style="font-size:0.73rem;padding:4px 8px;white-space:nowrap;">${cell}</td>`;
         }).join("");
         return `<tr style="${ri % 2 !== 0 ? "background:#f9fafb;" : ""}">${cells}</tr>`;
     }).join("");
@@ -263,9 +269,13 @@ function fla_render(frm, filterStatus, filterText) {
                 }
             } else {
                 const raw  = entry.current_value != null ? String(entry.current_value) : "";
-                valueCell  = raw.trim()
-                    ? `<span style="font-size:0.83rem;word-break:break-word;">${frappe.utils.escape_html(raw)}</span>`
-                    : `<span class="text-muted" style="font-style:italic;font-size:0.81rem;">—</span>`;
+                if (!raw.trim()) {
+                    valueCell = `<span class="text-muted" style="font-style:italic;font-size:0.81rem;">—</span>`;
+                } else if (FLA_FILES.isFile(entry.fieldtype, raw)) {
+                    valueCell = FLA_FILES.cellHTML(raw);
+                } else {
+                    valueCell = `<span style="font-size:0.83rem;word-break:break-word;">${frappe.utils.escape_html(raw)}</span>`;
+                }
             }
 
             rowsHTML += `
@@ -397,6 +407,8 @@ function fla_render(frm, filterStatus, filterText) {
     $wrapper.find(".fla-reject-all").on("click",  () => {
         fla_promptComment(comment => fla_bulkUpdate(frm, "Rejected", comment));
     });
+
+    FLA_FILES.bind($wrapper);
 
     // Child table toggle
     $wrapper.find(".fla-toggle-child").on("click", function () {

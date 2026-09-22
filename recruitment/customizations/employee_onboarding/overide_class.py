@@ -195,7 +195,12 @@ class CustomEmployeeOnboarding(EmployeeOnboarding):
         pass
 
     def on_cancel(self):
-        super().on_cancel()
+        # HRMS deletes the Tasks of `self.project`. Tasks are only created by
+        # "Create Onboarding Tasks", so without a project there is nothing to
+        # remove — and HRMS's `{"project": ""}` filter would match (and
+        # force-delete) every standalone Task on the site.
+        if self.project:
+            super().on_cancel()
 
     def get_project_start_date(self):
         """Earliest date any task of this onboarding can start.

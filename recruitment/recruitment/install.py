@@ -606,7 +606,7 @@ def ensure_job_offer_salary_period():
 
     Drives whether percentage-based salary components compute on a monthly or
     annual basis (see recruitment.customizations.job_offer). Idempotent —
-    created once, defaults to Monthly so existing offers are unaffected."""
+    created once, defaults to Annual; offers already saved keep their value."""
     if frappe.get_meta("Job Offer").get_field("custom_salary_period"):
         return
     try:
@@ -619,7 +619,7 @@ def ensure_job_offer_salary_period():
                 "label": "Salary Component Period",
                 "fieldtype": "Select",
                 "options": "Monthly\nAnnual",
-                "default": "Monthly",
+                "default": "Annual",
                 "insert_after": "custom_base_salary",
                 "description": (
                     "Compute percentage components on a Monthly or Annual basis. "

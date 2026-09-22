@@ -257,6 +257,136 @@ def _revoke_running_approval(name):
     return {"trackers": revoked, "workflows": workflows}
 
 
+# ---------------------------------------------------------------------------
+# Archived requisitions must leave nothing to act on
+# ---------------------------------------------------------------------------
+#
+# However a requisition reaches Archived — the Archive button, a status changed
+# by hand on the form, or a raw write from the backend — every open ToDo on it is
+# cancelled and any approval in flight revoked, so it disappears from the To-Do
+# lists. Three entry points share `close_archived_requisition_tasks`:
+#
+#   archive_requisition           the button
+#   close_tasks_when_archived     Job Requisition on_update (manual status change)
+#   sweep_archived_requisitions   scheduler, for writes no hook can see
+#
+# and `block_approval_on_archived` refuses an approval action that slips through
+# in the meantime.
+
+def close_archived_requisition_tasks(name):
+    """Revoke the approval in flight and cancel every open ToDo on `name`.
+
+    The tracker's own ToDos are cancelled by the revoke; the rest (row-level
+    approval tasks, manual assignments) here. Written with db.set_value, as the
+    revoke does: saving a ToDo as Cancelled runs nextai's hooks, which would
+    read it as the approver choosing "Reject".
+    """
+    open_filters = {"reference_type": JOB_REQUISITION, "reference_name": name, "status": "Open"}
+    todos = frappe.get_all("ToDo", filters=open_filters, pluck="name")  # before the revoke closes some
+    revoked = _revoke_running_approval(name)
+    for todo in frappe.get_all("ToDo", filters=open_filters, pluck="name"):
+        frappe.db.set_value("ToDo", todo, "status", "Cancelled", update_modified=False)
+    if todos:
+        # Refresh the requisition's "Assigned To" from the ToDos still open.
+        frappe.get_doc("ToDo", todos[0]).update_in_reference()
+    return {"revoked": revoked, "todos_cancelled": todos}
+
+
+def guard_manual_archive(doc, method=None):
+    """Job Requisition `validate`: archiving by hand (form, API, import) needs the
+    same role and the same action-matrix state as the Archive button — else a
+    raiser with plain write access could revoke the approval in flight."""
+    if doc.get("status") != ARCHIVED_STATUS or doc.is_new() or not doc.has_value_changed("status"):
+        return
+    if frappe.flags.in_patch or frappe.flags.in_install or frappe.flags.in_migrate:
+        return
+    _ensure_can_change_status(doc.name)
+    before = doc.get_doc_before_save()
+    previous = before.get("status") if before else None
+    position_status = _aggregate_position_status(doc.name)
+    if not _allowed_actions(previous, position_status)[ARCHIVE]:
+        frappe.throw(_denial_reason(ARCHIVE, previous, position_status), title=_("Action Not Allowed"))
+
+
+def close_tasks_when_archived(doc, method=None):
+    """Job Requisition `on_update`: a status set to Archived by hand (form, API,
+    import) closes the requisition's tasks and archives its positions exactly as
+    the Archive button does."""
+    if doc.get("status") != ARCHIVED_STATUS or not doc.has_value_changed("status"):
+        return
+    _set_position_statuses(doc.name, POSITION_ARCHIVED)
+    result = close_archived_requisition_tasks(doc.name)
+    if result["todos_cancelled"] or result["revoked"]["trackers"]:
+        doc.add_comment(
+            "Comment",
+            _("Archived: {0} open task(s) cancelled{1}.").format(
+                len(result["todos_cancelled"]),
+                _(" and the approval in progress revoked") if result["revoked"]["trackers"] else "",
+            ),
+        )
+
+
+def _archived_with_open_work():
+    """Archived requisitions that still have an open ToDo or a live approval."""
+    return frappe.db.sql_list(
+        """
+        select r.name from `tabJob Requisition` r
+        where r.status = %(archived)s
+          and (
+            exists (select 1 from `tabToDo` t
+                    where t.reference_type = %(dt)s and t.reference_name = r.name
+                      and t.status = 'Open')
+            or exists (select 1 from `tabApproval Tracker` a
+                       where a.doc_type = %(dt)s and a.doc_name = r.name
+                         and a.status in %(live)s)
+          )
+        """,
+        {"archived": ARCHIVED_STATUS, "dt": JOB_REQUISITION, "live": LIVE_TRACKER_STATUSES},
+    )
+
+
+def sweep_archived_requisitions(names=None):
+    """Scheduler: close the tasks of requisitions archived with a raw database
+    write, which no doc_event sees. Each requisition in its own savepoint, so one
+    failure does not strand the rest."""
+    for name in names or _archived_with_open_work():
+        frappe.db.savepoint("archived_sweep")
+        try:
+            if frappe.db.get_value(JOB_REQUISITION, name, "status") == ARCHIVED_STATUS:
+                close_archived_requisition_tasks(name)
+        except Exception:
+            frappe.db.rollback(save_point="archived_sweep")
+            frappe.log_error(frappe.get_traceback(), "Archived requisition: task cleanup failed")
+    frappe.db.commit()
+
+
+def block_approval_on_archived(doc, method=None):
+    """Approval Tracker `validate`: no approval moves on an archived requisition.
+
+    Every Approve / Reject / Send Back from a ToDo saves the tracker, so this is
+    the one place all of them pass. Revoking (the cleanup itself) stays allowed.
+    A refused action also queues the cleanup, so the stale task disappears.
+    """
+    if doc.get("doc_type") != JOB_REQUISITION or doc.get("status") in ("Revoked", "Cancelled"):
+        return
+    if frappe.db.get_value(JOB_REQUISITION, doc.get("doc_name"), "status") != ARCHIVED_STATUS:
+        return
+    try:
+        frappe.enqueue(
+            "recruitment.api.requisition_status.sweep_archived_requisitions",
+            names=[doc.doc_name],
+            queue="short",
+        )
+    except Exception:
+        pass
+    frappe.throw(
+        _("Job Requisition {0} has been archived, so its approval can no longer be acted on. The task has been cancelled.").format(
+            frappe.bold(doc.doc_name)
+        ),
+        title=_("Requisition Archived"),
+    )
+
+
 def _fallback_revoke(trackers):
     """Used only if nextai is unavailable: close approver ToDos, mark Revoked."""
     revoked = []
@@ -447,7 +577,9 @@ def archive_requisition(job_requisition, reason=None):
     _ensure_can_change_status(job_requisition)
     state = _require_action(job_requisition, ARCHIVE)
 
-    revoked = _revoke_running_approval(job_requisition)
+    # Every open task goes, not only the approval's — nothing is left to act on.
+    closed = close_archived_requisition_tasks(job_requisition)
+    revoked = closed["revoked"]
     frappe.db.set_value(JOB_REQUISITION, job_requisition, "status", ARCHIVED_STATUS)
     positions = _set_position_statuses(job_requisition, POSITION_ARCHIVED)
 
