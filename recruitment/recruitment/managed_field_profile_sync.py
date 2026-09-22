@@ -73,9 +73,8 @@ def sync_managed_field_placement(doc, method=None):
 			if df.fieldname in managed:
 				by_section.setdefault(section_label, []).append(df.fieldname)
 
-		# Every managed field was skipped by iter_profile_fields (all hidden,
-		# read-only, or in a hidden section). Nothing to place, so do not pay for
-		# the settings read below.
+		# Every managed field was skipped by iter_profile_fields (all hidden or
+		# read-only). Nothing to place, so do not pay for the settings read below.
 		if not by_section:
 			return
 
@@ -91,9 +90,8 @@ def sync_managed_field_placement(doc, method=None):
 		}
 
 		# A managed field missing from by_section was skipped by
-		# iter_profile_fields — hidden, read-only, or inside a hidden section.
-		# Those are deliberately not application fields, so leave them out rather
-		# than forcing a row.
+		# iter_profile_fields — it is hidden or read-only. Those are deliberately
+		# not application fields, so leave them out rather than forcing a row.
 		for section_label, fieldnames in by_section.items():
 			if any(current.get(fn) != section_label for fn in fieldnames):
 				ensure_fields_in_section(fieldnames, section_label)

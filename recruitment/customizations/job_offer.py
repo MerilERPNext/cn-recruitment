@@ -187,6 +187,35 @@ class CustomJobOffer(JobOffer):
     def on_change(self):
         pass
 
+    def validate(self):
+        """HRMS refuses a second offer while any other one is uncancelled — even a
+        withdrawn or declined one — which leaves no way to resend. Only a LIVE
+        offer blocks here; withdrawn / rejected ones are history, and "Resend Job
+        Offer" raises the next version against them. Recruitment Settings ->
+        Allow Multiple Job Offers lifts the check entirely, as offer_validation
+        already does on insert.
+        """
+        from recruitment.api.offer_lifecycle import CLOSED_STATUSES
+
+        self.validate_vacancies()
+        if cint(frappe.db.get_single_value("Recruitment Settings", "allow_multiple_job_offers")):
+            return
+        job_offer = frappe.db.exists(
+            "Job Offer",
+            {
+                "job_applicant": self.job_applicant,
+                "docstatus": ["!=", 2],
+                "status": ["not in", CLOSED_STATUSES],
+                "name": ["!=", self.name],
+            },
+        )
+        if job_offer and self.status not in CLOSED_STATUSES:
+            frappe.throw(
+                _("Job Offer: {0} is already for Job Applicant: {1}").format(
+                    frappe.bold(job_offer), frappe.bold(self.job_applicant)
+                )
+            )
+
 
 # --- Job Requisition behind the offer ---------------------------------------
 # An offer always draws its headcount from a requisition (offer_validation refuses

@@ -460,6 +460,8 @@ doc_events = {
         ],
         "on_cancel": [
             "recruitment.api.offer_position.sync_offer_position",
+            # "Offer Cancelled" on the candidate's hiring workflow (newest version only).
+            "recruitment.api.offer_lifecycle.on_offer_cancel",
             "recruitment.api.requisition_pipeline.refresh_from_job_offer",
             "recruitment.recruitment.hr_ops_offer_review.close_hr_ops_todos",
         ],
@@ -603,8 +605,18 @@ doc_events = {
             # On hire of a referred candidate, generate the Referral Reward + payout schedule.
             "recruitment.recruitment.referral_reward_engine.generate_referral_reward_on_employee",
         ],
-        "before_save": "recruitment.recruitment.employee_confirmation_hooks.calculate_final_confirmation_date",
+        # New Hire: a pending hire's company email is asked at activation, so
+        # its Employee-level `reqd` is deferred until then (every other
+        # mandatory field is still checked, in before_save).
+        "before_validate": "recruitment.api.new_hire.defer_activation_fields",
+        "before_save": [
+            "recruitment.recruitment.employee_confirmation_hooks.calculate_final_confirmation_date",
+            "recruitment.api.new_hire.check_deferred_mandatory",
+        ],
         "validate": [
+            # Auto-fill Relieving Date ("Last Working Day") with today on the
+            # real transition to Left/Inactive, if HR left it blank.
+            "recruitment.recruitment.alumni_user_switch.auto_set_relieving_date",
             # Block converting an employee to alumni (status -> Left/Inactive)
             # without a usable personal_email, BEFORE the company-email User is
             # disabled — so the alumnus is never left with no working login.
@@ -857,7 +869,15 @@ override_doctype_class = {
 
 # Request Events
 # ----------------
-# before_request = ["recruitment.utils.before_request"]
+before_request = [
+	# Hides Todo Type rows opted out of the ESS Portal (Alumni Portal on, ESS
+	# off) from cn_todo_manager's own get_todo_list -- every caller (the ESS
+	# dashboard widget, the embedded task-manager app, plain Desk access)
+	# funnels through the same query builder, so this is patched there rather
+	# than duplicated per caller. Alumni Portal sessions are exempted; see
+	# overrides/todo_ess_visibility.py for the full rationale.
+	"recruitment.recruitment.overrides.todo_ess_visibility.apply_patch",
+]
 # after_request = ["recruitment.utils.after_request"]
 
 # Job Events

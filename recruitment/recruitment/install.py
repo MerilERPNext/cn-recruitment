@@ -48,6 +48,7 @@ def after_migrate():
     ensure_alumni_employee_employee_field()
     ensure_alumni_user_link_field()
     ensure_alumni_todo_type_field()
+    ensure_ess_todo_type_field()
     ensure_alumni_todo_form_field()
     backfill_alumni_flag()
     backfill_employee_alumni_mirror()
@@ -134,6 +135,72 @@ def ensure_alumni_todo_type_field():
         frappe.clear_cache(doctype="Todo Type")
     except Exception:
         frappe.logger("recruitment").warning("ensure_alumni_todo_type_field: skipped")
+
+
+def ensure_ess_todo_type_field():
+    """Add `Todo Type.custom_show_in_ess_portal` — the ESS Portal gate.
+
+    Sibling of `custom_show_in_alumni_portal` (same Custom Field ownership
+    rationale: cn_todo_manager stays untouched). Together the two flags
+    follow the same visibility matrix already shipped for
+    `Notice.show_in_ess_portal` / `Notice.show_in_alumni_portal` -- see
+    `recruitment.recruitment.notice_visibility.visible_in_portal`, reused
+    (not reimplemented) by `overrides.todo_ess_visibility` for this field
+    pair too:
+
+        ESS on  / Alumni off -> ESS only
+        ESS off / Alumni on  -> Alumni only
+        ESS on  / Alumni on  -> both
+        ESS off / Alumni off -> ESS only (legacy default -- unchanged)
+
+    Idempotent -- and the one-time backfill below is tied to the same
+    "field doesn't exist yet" guard so it runs exactly once, at the moment
+    the field is created, never again. That matters here specifically:
+    ESS previously had NO Todo-Type gating at all, so any Todo Type already
+    carrying `custom_show_in_alumni_portal = 1` before this field existed
+    (e.g. "Helpdesk", which had 56 open ToDos in ESS at the time this was
+    written) was already visible in both portals. Without this backfill,
+    those rows would default to `custom_show_in_ess_portal = 0` the instant
+    this field is created and silently vanish from ESS for everyone --
+    existing behaviour must not change for a Todo Type nobody has touched.
+    Running it only at creation time (not on every migrate) is what lets an
+    admin later deliberately set up a genuinely ESS-excluded, Alumni-only
+    Todo Type without this backfill re-forcing it back on.
+    """
+    if frappe.get_meta("Todo Type").get_field("custom_show_in_ess_portal"):
+        return
+    try:
+        from frappe.custom.doctype.custom_field.custom_field import create_custom_field
+
+        create_custom_field(
+            "Todo Type",
+            {
+                "fieldname": "custom_show_in_ess_portal",
+                "label": "Show in ESS Portal",
+                "fieldtype": "Check",
+                "default": "0",
+                "insert_after": "custom_show_in_alumni_portal",
+                "description": (
+                    "Show todos of this type in the ESS Portal. If both portal "
+                    "checkboxes are unticked, todos of this type stay visible in "
+                    "the ESS Portal (legacy default)."
+                ),
+                "module": "Recruitment",
+            },
+            ignore_validate=True,
+        )
+        frappe.db.sql(
+            """
+            UPDATE `tabTodo Type`
+            SET custom_show_in_ess_portal = 1
+            WHERE custom_show_in_alumni_portal = 1
+            """
+        )
+        frappe.db.commit()
+        frappe.clear_cache(doctype="Todo Type")
+    except Exception:
+        frappe.logger("recruitment").warning("ensure_ess_todo_type_field: skipped")
+
 
 def ensure_tpo_email_templates():
     """Ship the TPO welcome / campus invite Email Templates.
@@ -360,11 +427,18 @@ def ensure_alumni_employee_employee_field():
     from frappe.utils import cint
 
     # Editable + stored: undo the old virtual / read-only / getter definition.
+    # Also only ever meaningful for someone who has actually left -- an Active
+    # employee can't be alumni -- so it's hidden on the form until status says
+    # otherwise, and shown as an Employee-list column so HR can see it at a
+    # glance without opening each record.
+    depends_on = 'eval:doc.status != "Active"'
     desired = {
         "is_virtual": 0,
         "read_only": 0,
         "options": "",
         "no_copy": 1,
+        "depends_on": depends_on,
+        "in_list_view": 1,
     }
     try:
         existing = frappe.get_meta("Employee").get_field("custom_is_alumni_employee")
@@ -375,7 +449,13 @@ def ensure_alumni_employee_employee_field():
             )
             if cf_name:
                 cf = frappe.get_doc("Custom Field", cf_name)
-                if cint(cf.is_virtual) or cint(cf.read_only) or (cf.options or ""):
+                if (
+                    cint(cf.is_virtual)
+                    or cint(cf.read_only)
+                    or (cf.options or "")
+                    or (cf.depends_on or "") != depends_on
+                    or not cint(cf.in_list_view)
+                ):
                     cf.update(desired)
                     cf.save(ignore_permissions=True)
                     frappe.clear_cache(doctype="Employee")
@@ -391,10 +471,13 @@ def ensure_alumni_employee_employee_field():
                 "fieldtype": "Check",
                 "insert_after": "user_id",
                 "no_copy": 1,
+                "depends_on": depends_on,
+                "in_list_view": 1,
                 "description": (
                     "Grants access to the Alumni Portal. Editable — checking or "
                     "unchecking here grants or revokes portal access for the linked "
-                    "User. New exits (status = 'Left') default to granted."
+                    "User. New exits (status = 'Left') default to granted. Only "
+                    "shown once the employee is no longer Active."
                 ),
                 "module": "Recruitment",
             },

@@ -38,7 +38,7 @@ from __future__ import annotations
 
 import frappe
 from frappe import _
-from frappe.utils import cint, validate_email_address
+from frappe.utils import cint, getdate, today, validate_email_address
 
 from recruitment.recruitment.alumni_portal import ALUMNI_FLAG
 
@@ -222,6 +222,31 @@ def _is_conversion_to_alumni(doc) -> bool:
     before = doc.get_doc_before_save()
     old_status = (before.status if before else None) or ""
     return old_status not in EXITED_STATUSES
+
+
+def auto_set_relieving_date(doc, method: str | None = None) -> None:
+    """Employee ``validate`` hook: auto-fill ``relieving_date`` ("Last Working
+    Day") with today's date on the real transition into Left/Inactive, if HR
+    hasn't already set one on the form.
+
+    ERPNext already makes ``relieving_date`` mandatory once status is "Left"
+    (see ``employee.json``'s ``mandatory_depends_on``), but never fills it in
+    for you, and applies no such rule at all for "Inactive". This does the
+    filling, for both.
+
+    Never overwrites an explicitly-set date — if HR already picked a real last
+    working day (e.g. backdated, or a future one), that stays authoritative.
+    Only fires on the real transition (same gate as
+    ``validate_alumni_personal_email``); saves of an already-exited record are
+    untouched. The Employee Separation submit path
+    (``update_employee_relieving_date``) sets this via a raw ``db.set_value``
+    outside the doc lifecycle, so it never reaches this hook at all — the two
+    don't conflict.
+    """
+    if not _is_conversion_to_alumni(doc):
+        return
+    if not doc.get("relieving_date"):
+        doc.relieving_date = getdate(today())
 
 
 def validate_alumni_personal_email(doc, method: str | None = None) -> None:

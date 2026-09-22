@@ -20,8 +20,13 @@ Policy
 * An **alumni** session (``Employee.status == "Left"`` OR
   ``User.custom_is_alumni_employee``) may ONLY hit the Alumni Portal namespace
   ``recruitment.recruitment.alumni_portal.*`` (plus a tiny framework allowlist).
-  Everything else — ESS RPC, ``/api/resource/*``, the desk, the standard ESS
-  login — is rejected with **403**.
+  A blocked **API/RPC call** (``/api/method/*``, ``/api/resource/*``) gets a
+  **403** with a clear message. A blocked **plain page load** (Desk, the ESS
+  shell, or anything else that isn't an API call) instead logs the session out
+  and falls through as Guest, so the page's own existing guest-redirect
+  (``frappe.www.app`` / ``recruitment.www.webapp``) sends it to ``/login``
+  instead of rendering a dead-end 403 page — this is what actually happens
+  right after an admin impersonates an alumni user and the page reloads.
 * **Everyone else** (current employees, admins, guests) is untouched: the hook
   returns immediately, so **ESS behaves exactly as before**.
 
@@ -277,8 +282,32 @@ def enforce_alumni_isolation() -> None:
     if _is_allowed_for_alumni(kind, command):
         return
 
-    # Blocked. If the alumnus just authenticated through the ESS login, kill the
-    # session that init_request() created so no usable ESS session lingers.
+    if kind == "other":
+        # A blocked plain page load -- Desk `/app/*`, the ESS `/webapp` shell,
+        # or any other full navigation -- most commonly hit right after an
+        # admin impersonates an alumni user and the page reloads under the
+        # new identity. Throwing the framework's generic 403 website page
+        # here traps the browser: `/`, `/login` and `/app` are ALL "other"
+        # too, so they are blocked exactly the same way -- "Home" and any
+        # further navigation just re-triggers this same block, and Desk's own
+        # `session_last_route` replay can turn it into a permanent loop with
+        # no way back short of clearing cookies.
+        #
+        # Log the alumni session out right now instead -- the same real
+        # logout Frappe itself uses (ends the session, clears the sid cookie,
+        # flips frappe.session.user to Guest for the rest of THIS request)
+        # -- and let the request fall through rather than throwing. The
+        # page's own controller then takes over exactly as it does for any
+        # expired session: frappe.www.app.get_context and
+        # recruitment.www.webapp.get_context both already redirect a Guest
+        # straight to `/login`, so this reuses that existing, correct path
+        # instead of re-implementing a redirect here.
+        frappe.local.login_manager.logout()
+        return
+
+    # Blocked API/RPC call. If the alumnus just authenticated through the ESS
+    # login, kill the session that init_request() created so no usable ESS
+    # session lingers.
     is_login = kind == "method" and command == "login"
     if is_login:
         _kill_current_session()

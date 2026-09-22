@@ -513,11 +513,13 @@ def download_job_offer_pdf(appl, token=None, separate=None):
     want_separate = cint(separate) if separate is not None else 0
 
     with as_administrator():
+        # Newest first: once an offer has been resent, the older versions must
+        # not be the letter the candidate is shown.
         jo_id = frappe.db.get_value("Job Offer", {
             "job_applicant": appl,
             "docstatus": ["!=", 2],
-            "status": ["in", ["Awaiting Response", "Accepted", "Rejected"]]
-        })
+            "status": ["in", ["Draft", "Awaiting Response", "Accepted", "Rejected"]]
+        }, order_by="creation desc")
         if not jo_id:
             frappe.throw("No active Job Offer found")
 
@@ -563,11 +565,13 @@ def preview_job_offer_html(appl, token=None):
     _authorize_offer(appl, token, "read")
 
     with as_administrator():
+        # Newest first: once an offer has been resent, the older versions must
+        # not be the letter the candidate is shown.
         jo_id = frappe.db.get_value("Job Offer", {
             "job_applicant": appl,
             "docstatus": ["!=", 2],
-            "status": ["in", ["Awaiting Response", "Accepted", "Rejected"]]
-        })
+            "status": ["in", ["Draft", "Awaiting Response", "Accepted", "Rejected"]]
+        }, order_by="creation desc")
         if not jo_id:
             frappe.throw("No active Job Offer found")
 
@@ -724,7 +728,8 @@ def has_culture_book(appl=None, token=None):
 @frappe.whitelist(allow_guest=True)
 def get_job_offer_status(appl, token=None):
     _authorize_offer(appl, token, "read")
-    jo_id = frappe.db.get_value("Job Offer", {"job_applicant": appl})
+    from recruitment.api.offer_lifecycle import current_offer_name
+    jo_id = current_offer_name(appl)
     if not jo_id:
         return {"status": None}
     status = frappe.db.get_value("Job Offer", jo_id, "status")
@@ -736,7 +741,9 @@ def job_offer_update(status, appl, token=None, reason=None, message=None):
     original_ignore = frappe.flags.ignore_permissions
     frappe.flags.ignore_permissions = True
     try:
-        jo_id = frappe.db.get_value("Job Offer", {"job_applicant": appl})
+        # The version in play, not an older withdrawn / declined one.
+        from recruitment.api.offer_lifecycle import current_offer_name
+        jo_id = current_offer_name(appl)
         if status == "Accepted":
             offer_doc = frappe.get_doc("Job Offer", jo_id)
             offer_doc.status = "Accepted"
@@ -753,6 +760,20 @@ def job_offer_update(status, appl, token=None, reason=None, message=None):
                 frappe.db.set_value("Job Offer", jo_id, "custom_rejection_reason", reason)
             if message:
                 frappe.db.set_value("Job Offer", jo_id, "custom_rejection_message", message)
+
+            # The raw status write above fires no doc_events, so the requisition
+            # position this offer was holding would stay Filled. Reopen it now —
+            # same routine the hooks run. Best-effort: must never block the rejection.
+            try:
+                from recruitment.api.offer_position import sync_offer_position
+                from recruitment.api.hiring_stage import record_offer_event
+                offer_doc = frappe.get_doc("Job Offer", jo_id)
+                sync_offer_position(offer_doc)
+                # Same history row advance_on_job_offer_outcome writes for a
+                # rejection saved on the form, which this raw write bypasses.
+                record_offer_event(offer_doc, "Rejected", notes="Job Offer declined")
+            except Exception:
+                frappe.log_error(frappe.get_traceback(), "job_offer_update: position release failed")
         frappe.db.set_value("Job Offer", jo_id, "docstatus", 1)
 
         if status in ("Accepted", "Rejected"):
@@ -842,7 +863,8 @@ def get_job_offer_summary(appl, token=None):
     original_ignore = frappe.flags.ignore_permissions
     frappe.flags.ignore_permissions = True
     try:
-        jo_id = frappe.db.get_value("Job Offer", {"job_applicant": appl})
+        from recruitment.api.offer_lifecycle import current_offer_name
+        jo_id = current_offer_name(appl)
         if not jo_id:
             return {}
 
