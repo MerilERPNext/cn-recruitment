@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useState, useMemo, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState, useMemo, useRef, useEffect } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import {
   ArrowLeft,
   AlertTriangle,
@@ -12,7 +12,10 @@ import {
 import { Form } from "@tsed/react-formio";
 import toast from "react-hot-toast";
 
-import { useNewHireFormConfig, useCreateNewHireMutation } from "../../../hooks/useNewHire";
+import {
+  useNewHireFormConfig,
+  useCreateNewHireMutation,
+} from "../../../hooks/useNewHire";
 import {
   compileTabSchema,
   sanitizeNewHirePayload,
@@ -28,14 +31,24 @@ import NoDataFound from "../../shared/atoms/NoDataFound";
 import Button from "../../shared/atoms/Button";
 import { Typography } from "../../shared/atoms/Typography";
 import { errorResponseFormater } from "../../../utils/errorResponseFormater";
-import { ROUTES } from "../../../constants/routes";
 
 const AddEmployee: React.FC = () => {
   const { isDesktop } = useScreenSize();
   const navigate = useNavigate();
+  const { id } = useParams<{ id?: string }>();
 
-  const { data: configResponse, isLoading, isError, error, refetch } = useNewHireFormConfig();
-  const { mutateAsync: createNewHire, isPending: isSubmitting } = useCreateNewHireMutation();
+  const {
+    data: configResponse,
+    isLoading,
+    isError,
+    error,
+    refetch,
+  } = useNewHireFormConfig(id ? { name: id } : undefined);
+  const { mutateAsync: createNewHire, isPending: isSubmitting } =
+    useCreateNewHireMutation();
+
+  const isReadOnlyForm = Boolean(id);
+
 
   const configData = configResponse?.data;
   const tabs = configData?.tabs || [];
@@ -45,12 +58,39 @@ const AddEmployee: React.FC = () => {
   const formDataRef = useRef<Record<string, any>>({});
   const formInstancesRef = useRef<Record<number, any>>({});
 
+  // Auto-fill form data from API response (when editing/viewing with :id or when values are present)
+  useEffect(() => {
+    if (configData?.tabs) {
+      const initialData: Record<string, any> = { ...formDataRef.current };
+      let hasNewData = false;
+      configData.tabs.forEach((tab) => {
+        tab.sections.forEach((sec) => {
+          sec.fields.forEach((f) => {
+            if (
+              f.value !== undefined &&
+              f.value !== null &&
+              f.value !== "" &&
+              initialData[f.fieldname] === undefined
+            ) {
+              initialData[f.fieldname] = f.value;
+              hasNewData = true;
+            }
+          });
+        });
+      });
+      if (hasNewData) {
+        formDataRef.current = initialData;
+        setFormSyncTick((tick) => tick + 1);
+      }
+    }
+  }, [configData]);
+
   // Active tab schema
   const currentTab = tabs[activeTabIndex];
   const activeTabSchema = useMemo(() => {
     if (!currentTab) return null;
-    return compileTabSchema(currentTab);
-  }, [currentTab]);
+    return compileTabSchema(currentTab, isReadOnlyForm);
+  }, [currentTab, isReadOnlyForm]);
 
   // Memoize form submission per tab and on explicit sync ticks so typing does not trigger submission re-pushes
   const formSubmission = useMemo(
@@ -64,6 +104,8 @@ const AddEmployee: React.FC = () => {
 
   // Handle form field changes without triggering full form re-renders on each keystroke
   const handleChange = (submission: any) => {
+    if (isReadOnlyForm) return;
+
     const prevData: any = formDataRef.current;
     const newData = { ...prevData, ...(submission?.data || {}) };
     const changedKey = submission?.changed?.component?.key;
@@ -110,7 +152,7 @@ const AddEmployee: React.FC = () => {
 
   // Validate current tab before advancing
   const validateCurrentTab = (): string[] => {
-    if (!currentTab) return [];
+    if (!currentTab || isReadOnlyForm) return [];
     const errors: string[] = [];
     const data = formDataRef.current;
 
@@ -140,23 +182,25 @@ const AddEmployee: React.FC = () => {
   };
 
   const handleNext = async () => {
-    const errors = validateCurrentTab();
-    const instance = formInstancesRef.current[activeTabIndex];
-    if (instance) {
-      instance.checkValidity(formDataRef.current, true, formDataRef.current);
-    }
+    if (!isReadOnlyForm) {
+      const errors = validateCurrentTab();
+      const instance = formInstancesRef.current[activeTabIndex];
+      if (instance) {
+        instance.checkValidity(formDataRef.current, true, formDataRef.current);
+      }
 
-    if (errors.length > 0) {
-      toast.error(errors[0]);
-      setTimeout(() => {
-        const firstError = document.querySelector(
-          ".formio-error-wrapper, .has-error, .required-field"
-        );
-        if (firstError) {
-          firstError.scrollIntoView({ behavior: "smooth", block: "center" });
-        }
-      }, 50);
-      return;
+      if (errors.length > 0) {
+        toast.error(errors[0]);
+        setTimeout(() => {
+          const firstError = document.querySelector(
+            ".formio-error-wrapper, .has-error, .required-field"
+          );
+          if (firstError) {
+            firstError.scrollIntoView({ behavior: "smooth", block: "center" });
+          }
+        }, 50);
+        return;
+      }
     }
 
     if (activeTabIndex < tabs.length - 1) {
@@ -167,6 +211,7 @@ const AddEmployee: React.FC = () => {
 
   // Validate all mandatory fields across all tabs
   const validateAllTabs = (): { isValid: boolean; missingLabel?: string; tabIndex?: number } => {
+    if (isReadOnlyForm) return { isValid: true };
     const data = formDataRef.current;
     for (let tIdx = 0; tIdx < tabs.length; tIdx++) {
       const tab = tabs[tIdx];
@@ -195,8 +240,8 @@ const AddEmployee: React.FC = () => {
     return { isValid: true };
   };
 
-  // Submit new hire
-  const handleSave = async (redirectRoute = "/webapp/employees-directory") => {
+  // Save new hire (Assign/Skip)
+  const handleAssignSkip = async () => {
     const validation = validateAllTabs();
     if (!validation.isValid) {
       if (validation.tabIndex !== undefined && validation.tabIndex !== activeTabIndex) {
@@ -216,10 +261,55 @@ const AddEmployee: React.FC = () => {
 
       const hireName = res?.data?.name || "New Recruit";
       toast.success(`New recruit ${hireName} created successfully!`);
-      navigate(redirectRoute, {
+      navigate("/webapp/employees-directory");
+    } catch (err) {
+      const msg = errorResponseFormater(err, "Failed to create new recruit.");
+      toast.error(msg);
+    }
+  };
+
+  // Initiate Onboarding action
+  const handleInitiateOnboardingAction = async () => {
+    if (id) {
+      // Auto-filled employee: navigate directly to initiate onboarding
+      navigate(`/webapp/employees-directory/initiate-onboarding/${id}`, {
+        state: {
+          employeeId: id,
+          formData: formDataRef.current,
+        },
+      });
+      return;
+    }
+
+    const validation = validateAllTabs();
+    if (!validation.isValid) {
+      if (validation.tabIndex !== undefined && validation.tabIndex !== activeTabIndex) {
+        setActiveTabIndex(validation.tabIndex);
+      }
+      toast.error(`Required: ${validation.missingLabel}`);
+      return;
+    }
+
+    try {
+      const sanitizedPayload = sanitizeNewHirePayload(formDataRef.current, tabs);
+      // Creating new employee: first submit the current form, on success navigate to /initiate-onboarding/:id
+      const res = await createNewHire({
+        payload: sanitizedPayload,
+        form: configData?.form,
+        submit: 1,
+      });
+
+      const newEmployeeId = res?.data?.name;
+      if (!newEmployeeId) {
+        throw new Error("Failed to retrieve created employee identifier.");
+      }
+
+      toast.success(`New recruit ${newEmployeeId} created successfully!`);
+      navigate(`/webapp/employees-directory/initiate-onboarding/${newEmployeeId}`, {
         state: {
           recruit: res?.data,
           formData: formDataRef.current,
+          employeeId: newEmployeeId,
         },
       });
     } catch (err) {
@@ -227,6 +317,7 @@ const AddEmployee: React.FC = () => {
       toast.error(msg);
     }
   };
+
 
   // Header & back control (Desktop)
   const headerContent = (
@@ -242,7 +333,7 @@ const AddEmployee: React.FC = () => {
         <div>
           <div className="flex items-center gap-2">
             <Typography variant="h3" color="title">
-              New Recruit
+              {id ? `Initiate Onboarding: ${id}` : "New Recruit"}
             </Typography>
             {configData?.form && (
               <span className="px-2.5 py-0.5 text-xs font-semibold rounded-lg bg-primary-50 text-primary border border-primary-200">
@@ -251,33 +342,36 @@ const AddEmployee: React.FC = () => {
             )}
           </div>
           <Typography variant="bodySmall" color="secondary">
-            Fill out employee intake details to initiate the onboarding process.
+            {id
+              ? "Review and complete employee intake details before initiating onboarding."
+              : "Fill out employee intake details to initiate the onboarding process."}
           </Typography>
         </div>
       </div>
       <div className="flex flex-wrap items-center gap-2">
-        <Button
-          variant="outline"
-          size="md"
-          onClick={() => handleSave("/webapp/employees-directory")}
-          loading={isSubmitting}
-        >
-          ASSIGN/SKIP
-        </Button>
+        {!id && (
+          <Button
+            variant="outline"
+            size="md"
+            onClick={handleAssignSkip}
+            loading={isSubmitting}
+          >
+            ASSIGN/SKIP
+          </Button>
+        )}
         <Button
           variant="contain"
           size="md"
-          onClick={() =>
-            navigate(ROUTES.EMPLOYEES_DIRECTORY_INITIATE_ONBOARDING, {
-              state: { formData: formDataRef.current },
-            })
-          }
+          icon={<CheckCircle2 className="w-4 h-4" />}
+          onClick={handleInitiateOnboardingAction}
+          loading={isSubmitting}
         >
-          ASSIGN AND INITIATE ONBOARDING
+          {id ? "INITIATE ONBOARDING" : "ASSIGN AND INITIATE ONBOARDING"}
         </Button>
       </div>
     </div>
   );
+
 
   // Content rendering based on API state
   const renderContent = () => {
@@ -389,6 +483,7 @@ const AddEmployee: React.FC = () => {
                 formInstancesRef.current[activeTabIndex] = instance;
               }}
               options={{
+                readOnly: isReadOnlyForm,
                 noAlerts: true,
                 validateOnInit: false,
                 validateOnBlur: true,
@@ -396,12 +491,14 @@ const AddEmployee: React.FC = () => {
                 submitButton: false,
                 rowClass: "flex flex-col space-y-4",
                 labelClass: "mb-1.5 text-sm font-semibold text-gray-700",
-                inputClass:
-                  "w-full border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all px-3 py-2 text-sm",
+                inputClass: `w-full border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all px-3 py-2 text-sm ${
+                  isReadOnlyForm ? "bg-gray-100 text-gray-700 cursor-not-allowed" : ""
+                }`,
               }}
             />
           )}
         </div>
+
 
         {/* Navigation & Action Footer */}
         <div className="flex flex-col gap-3 p-4 bg-white rounded-xl border border-gray-200 shadow-sm">
@@ -437,27 +534,26 @@ const AddEmployee: React.FC = () => {
 
           {/* Bottom Row: Action Buttons on Same Row */}
           <div className="border-t border-gray-100 pt-3 flex flex-row items-center justify-end gap-3 w-full">
-            <Button
-              variant="outline"
-              size="md"
-              onClick={() => handleSave("/webapp/employees-directory")}
-              loading={isSubmitting}
-              className="flex-1 sm:flex-initial"
-            >
-              ASSIGN/SKIP
-            </Button>
+            {!id && (
+              <Button
+                variant="outline"
+                size="md"
+                onClick={handleAssignSkip}
+                loading={isSubmitting}
+                className="flex-1 sm:flex-initial"
+              >
+                ASSIGN/SKIP
+              </Button>
+            )}
             <Button
               variant="contain"
               size="md"
               icon={<CheckCircle2 className="w-4 h-4" />}
-              onClick={() =>
-                navigate(ROUTES.EMPLOYEES_DIRECTORY_INITIATE_ONBOARDING, {
-                  state: { formData: formDataRef.current },
-                })
-              }
+              onClick={handleInitiateOnboardingAction}
+              loading={isSubmitting}
               className="flex-1 sm:flex-initial"
             >
-              ASSIGN AND INITIATE ONBOARDING
+              {id ? "INITIATE ONBOARDING" : "ASSIGN AND INITIATE ONBOARDING"}
             </Button>
           </div>
         </div>
@@ -465,9 +561,11 @@ const AddEmployee: React.FC = () => {
     );
   };
 
+  const pageTitle = id ? `Initiate Onboarding: ${id}` : "New Recruit";
+
   if (isDesktop) {
     return (
-      <DesktopLayoutWrapper title="New Recruit">
+      <DesktopLayoutWrapper title={pageTitle}>
         <div className="max-w-5xl mx-auto w-full p-6">
           {headerContent}
           {renderContent()}
@@ -479,7 +577,7 @@ const AddEmployee: React.FC = () => {
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
       <HeaderBar
-        title="New Recruit"
+        title={pageTitle}
         showBackButton={true}
         onBack={() => navigate("/webapp/employees-directory")}
       />
@@ -501,3 +599,4 @@ const AddEmployee: React.FC = () => {
 };
 
 export default AddEmployee;
+

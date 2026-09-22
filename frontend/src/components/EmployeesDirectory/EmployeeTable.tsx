@@ -6,7 +6,7 @@ import {
   EllipsisVertical,
 } from "lucide-react";
 import React, { useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useGetUiPermission } from "../../hooks/userUiPermission";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import { Employee } from "../../types/employee";
@@ -34,6 +34,7 @@ const EmployeeTable = ({
   setSelectedEmployees: React.Dispatch<React.SetStateAction<Employee[]>>;
   activeTab?: "directory" | "my_reportees";
 }) => {
+  const navigate = useNavigate();
   const { data: userUiPermission } = useGetUiPermission("Employee Directory");
 
   const canChangeWeeklyOff = isActionEnabled(
@@ -253,7 +254,11 @@ const EmployeeTable = ({
                               (canChangeWeeklyOff ||
                                 canResetPassword ||
                                 canResetOtpAuthLimit ||
-                                canChangePlatformAccess) && (
+                                canChangePlatformAccess ||
+                                canActivateEmployee ||
+                                canDeleteEmployee ||
+                                canUndoDeactivation ||
+                                item.status === "Pending") && (
                                 <Button
                                   ref={(el) => {
                                     actionButtonRefs.current[item.name] = el;
@@ -283,6 +288,22 @@ const EmployeeTable = ({
                               className="mt-1"
                             >
                               <div className="flex flex-col p-1 min-w-[160px]">
+                                {item.status === "Pending" && (
+                                  <Button
+                                    variant="subtle"
+                                    contentAlign="start"
+                                    fullWidth
+                                    size="md"
+                                    onClick={() => {
+                                      setOpenPopupId(null);
+                                      navigate(
+                                        `/webapp/employees-directory/add-employee/${item.employee || item.name}`,
+                                      );
+                                    }}
+                                  >
+                                    Initiate Onboarding
+                                  </Button>
+                                )}
                                 {canChangeWeeklyOff &&
                                   (item.status === "Active" ||
                                     item.status === "Pending") && (
@@ -404,6 +425,7 @@ const EmployeeTable = ({
                           </div>
                         </div>
                       </td>
+
                       <td className="whitespace-nowrap border-r px-5 py-2.5 text-sm text-gray-700 font-medium border-b border-gray-100">
                         {item.employee}
                       </td>
@@ -564,7 +586,11 @@ const EmployeeTable = ({
                       (canChangeWeeklyOff ||
                         canResetPassword ||
                         canResetOtpAuthLimit ||
-                        canChangePlatformAccess) && (
+                        canChangePlatformAccess ||
+                        canActivateEmployee ||
+                        canDeleteEmployee ||
+                        canUndoDeactivation ||
+                        item.status === "Pending") && (
                         <Button
                           ref={(el) => {
                             actionButtonRefs.current[item.name] = el;
@@ -595,6 +621,23 @@ const EmployeeTable = ({
                       className="mt-1 right-0"
                     >
                       <div className="flex flex-col p-1.5 min-w-[170px]">
+                        {item.status === "Pending" && (
+                          <Button
+                            variant="subtle"
+                            size="sm"
+                            contentAlign="start"
+                            fullWidth
+                            onClick={() => {
+                              setOpenPopupId(null);
+                              navigate(
+                                `/webapp/employees-directory/add-employee/${item.employee || item.name}`,
+                              );
+                            }}
+                            className="text-xs py-2 px-3 hover:bg-primary-50"
+                          >
+                            Initiate Onboarding
+                          </Button>
+                        )}
                         {canChangeWeeklyOff &&
                           (item.status === "Active" ||
                             item.status === "Pending") && (
@@ -614,6 +657,7 @@ const EmployeeTable = ({
                               Assign Weekly Off
                             </Button>
                           )}
+
                         {canResetPassword && item.status === "Active" && (
                           <Button
                             variant="subtle"

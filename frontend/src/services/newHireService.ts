@@ -7,6 +7,9 @@ import type {
   UpdateNewHireResponse,
   InitiateOnboardingResponse,
   ActivateEmployeeResponse,
+  InitiationFieldsResponse,
+  SaveInitiationFieldsParams,
+  OnboardingInitiationConfigResponse,
 } from "../types/newHire";
 
 export interface GetNewHireFormConfigParams {
@@ -102,14 +105,61 @@ export async function updateNewHire(
 }
 
 /**
+ * Fetch the saved step-2 configuration of a New Hire Form.
+ */
+export async function getInitiationFields(
+  form?: string
+): Promise<InitiationFieldsResponse> {
+  const res = await FrappeAPI.callMethod(
+    "recruitment.api.new_hire.get_initiation_fields",
+    form ? { form } : {}
+  );
+  return res as InitiationFieldsResponse;
+}
+
+/**
+ * Save / replace a New Hire Form's step-2 configuration.
+ */
+export async function saveInitiationFields(
+  params: SaveInitiationFieldsParams
+): Promise<InitiationFieldsResponse> {
+  const res = await FrappeAPI.callMethod(
+    "recruitment.api.new_hire.save_initiation_fields",
+    {
+      ...(params.form ? { form: params.form } : {}),
+      ...(params.fields !== undefined ? { fields: params.fields } : {}),
+      ...(params.settings !== undefined ? { settings: params.settings } : {}),
+    }
+  );
+  return res as InitiationFieldsResponse;
+}
+
+/**
+ * Render config for step 2 (Onboarding Initiation) with prefilled values for a pending Employee.
+ */
+export async function getOnboardingInitiationConfig(
+  name: string
+): Promise<OnboardingInitiationConfigResponse> {
+  const res = await FrappeAPI.callMethod(
+    "recruitment.api.new_hire.get_onboarding_initiation_config",
+    { name }
+  );
+  return res as OnboardingInitiationConfigResponse;
+}
+
+/**
  * Hand an approved pending Employee to the existing onboarding process.
  */
 export async function initiateOnboarding(
-  name: string
+  name: string,
+  payload?: Record<string, unknown>
 ): Promise<InitiateOnboardingResponse> {
   const res = await FrappeAPI.callMethod(
     "recruitment.api.new_hire.initiate_onboarding",
-    { name }
+    {
+      name,
+      ...(payload ? { payload } : {}),
+    }
   );
   return res as InitiateOnboardingResponse;
 }
@@ -126,3 +176,4 @@ export async function activateEmployee(
   );
   return res as ActivateEmployeeResponse;
 }
+

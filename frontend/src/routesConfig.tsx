@@ -1327,6 +1327,11 @@ export const routesConfig: AppRoute[] = [
     permissionKey: "Employee Directory",
   },
   {
+    path: "/webapp/employees-directory/add-employee/:id",
+    element: <AddEmployee />,
+    permissionKey: "Employee Directory",
+  },
+  {
     path: "/webapp/employees-directory/new-hires",
     element: <NewHiresList />,
     permissionKey: "Employee Directory",
@@ -1336,6 +1341,12 @@ export const routesConfig: AppRoute[] = [
     element: <InitiateOnboarding />,
     permissionKey: "Employee Directory",
   },
+  {
+    path: "/webapp/employees-directory/initiate-onboarding/:id",
+    element: <InitiateOnboarding />,
+    permissionKey: "Employee Directory",
+  },
+
   //Leaves routes
   {
     path: "/webapp/leave-app",

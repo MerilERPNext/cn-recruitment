@@ -7,9 +7,13 @@ import {
   updateNewHire,
   initiateOnboarding,
   activateEmployee,
+  getInitiationFields,
+  saveInitiationFields,
+  getOnboardingInitiationConfig,
   GetNewHireFormConfigParams,
   GetNewHiresListParams,
 } from "../services/newHireService";
+import type { SaveInitiationFieldsParams } from "../types/newHire";
 
 export const NEW_HIRE_KEYS = {
   all: ["new-hire"] as const,
@@ -19,6 +23,10 @@ export const NEW_HIRE_KEYS = {
     [...NEW_HIRE_KEYS.all, "list", params] as const,
   detail: (name?: string) =>
     [...NEW_HIRE_KEYS.all, "detail", name] as const,
+  initiationFields: (form?: string) =>
+    [...NEW_HIRE_KEYS.all, "initiation-fields", form] as const,
+  onboardingConfig: (name?: string) =>
+    [...NEW_HIRE_KEYS.all, "onboarding-config", name] as const,
 };
 
 /**
@@ -103,22 +111,73 @@ export const useUpdateNewHireMutation = () => {
 };
 
 /**
+ * Hook to fetch initiation fields configuration of a New Hire Form.
+ */
+export const useInitiationFields = (form?: string) => {
+  return useQuery({
+    queryKey: NEW_HIRE_KEYS.initiationFields(form),
+    queryFn: () => getInitiationFields(form),
+    staleTime: 5 * 60 * 1000,
+    retry: 1,
+  });
+};
+
+/**
+ * Hook to save initiation fields configuration.
+ */
+export const useSaveInitiationFieldsMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (params: SaveInitiationFieldsParams) =>
+      saveInitiationFields(params),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: NEW_HIRE_KEYS.initiationFields(variables.form),
+      });
+      queryClient.invalidateQueries({ queryKey: NEW_HIRE_KEYS.all });
+    },
+  });
+};
+
+/**
+ * Hook to fetch onboarding initiation render config with prefilled values for a pending Employee.
+ */
+export const useOnboardingInitiationConfig = (name?: string) => {
+  return useQuery({
+    queryKey: NEW_HIRE_KEYS.onboardingConfig(name),
+    queryFn: () => getOnboardingInitiationConfig(name!),
+    enabled: Boolean(name),
+    staleTime: 60 * 1000,
+  });
+};
+
+/**
  * Hook to initiate onboarding for an approved pending employee.
  */
 export const useInitiateOnboardingMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (name: string) => initiateOnboarding(name),
-    onSuccess: (_, name) => {
+    mutationFn: (args: string | { name: string; payload?: Record<string, unknown> }) => {
+      if (typeof args === "string") {
+        return initiateOnboarding(args);
+      }
+      return initiateOnboarding(args.name, args.payload);
+    },
+    onSuccess: (_, variables) => {
+      const name = typeof variables === "string" ? variables : variables.name;
       queryClient.invalidateQueries({ queryKey: NEW_HIRE_KEYS.all });
       queryClient.invalidateQueries({ queryKey: NEW_HIRE_KEYS.detail(name) });
+      queryClient.invalidateQueries({ queryKey: NEW_HIRE_KEYS.onboardingConfig(name) });
+      queryClient.invalidateQueries({ queryKey: ["employee"] });
+      queryClient.invalidateQueries({ queryKey: ["employees"] });
     },
   });
 };
 
 /**
- * Hook to activate an employee whose onboarding is initiated.
+ * Activate an employee whose onboarding is initiated.
  */
 export const useActivateEmployeeMutation = () => {
   const queryClient = useQueryClient();
@@ -132,3 +191,4 @@ export const useActivateEmployeeMutation = () => {
     },
   });
 };
+

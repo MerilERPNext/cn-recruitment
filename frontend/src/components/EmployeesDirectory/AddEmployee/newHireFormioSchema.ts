@@ -114,9 +114,12 @@ export function buildSelectData(data: Record<string, any>): Record<string, any> 
 /**
  * Build a single Form.io component from a Frappe NewHireField.
  */
-export const buildFormField = (field: NewHireField): FormioComponent => {
-  const isRequired = field.is_mandatory === 1;
-  const isReadOnly = field.read_only === 1;
+export const buildFormField = (
+  field: NewHireField,
+  readOnlyAll: boolean = false
+): FormioComponent => {
+  const isRequired = !readOnlyAll && field.is_mandatory === 1;
+  const isReadOnly = readOnlyAll || field.read_only === 1;
 
   const base: FormioComponent = {
     type: "textfield",
@@ -134,6 +137,7 @@ export const buildFormField = (field: NewHireField): FormioComponent => {
     validateOn: "blur",
     ...(field.description ? { description: field.description, tooltip: field.description } : {}),
   };
+
 
   if (field.depends_on) {
     base.customConditional = `show = (${translateDependsOn(field.depends_on)});`;
@@ -379,7 +383,8 @@ const isFullWidthField = (field: NewHireField): boolean => {
  */
 export const layoutFieldsInColumns = (
   fields: NewHireField[],
-  sectionKey: string
+  sectionKey: string,
+  readOnlyAll: boolean = false
 ): FormioComponent[] => {
   const components: FormioComponent[] = [];
   let currentPair: FormioComponent[] = [];
@@ -415,7 +420,7 @@ export const layoutFieldsInColumns = (
 
   let rowIndex = 0;
   for (const field of fields) {
-    const comp = buildFormField(field);
+    const comp = buildFormField(field, readOnlyAll);
     if (isFullWidthField(field)) {
       flushPair(rowIndex++);
       components.push({
@@ -446,7 +451,8 @@ export const layoutFieldsInColumns = (
  */
 export const buildSectionPanel = (
   section: NewHireSection,
-  defaultTitle: string = "Details"
+  defaultTitle: string = "Details",
+  readOnlyAll: boolean = false
 ): FormioComponent => {
   const panelTitle = section.section || defaultTitle;
   const sectionKey = (section.section || defaultTitle)
@@ -459,16 +465,19 @@ export const buildSectionPanel = (
     label: section.section ? panelTitle : "",
     key: `${sectionKey}_panel`,
     customClass: "py-4 px-5 bg-white border border-gray-200 rounded-xl mb-5 shadow-sm formio-section-panel",
-    components: layoutFieldsInColumns(section.fields, sectionKey),
+    components: layoutFieldsInColumns(section.fields, sectionKey, readOnlyAll),
   };
 };
 
 /**
  * Build a Form.io schema for a single tab.
  */
-export const compileTabSchema = (tab: NewHireTab): FormioSchema => {
+export const compileTabSchema = (
+  tab: NewHireTab,
+  readOnlyAll: boolean = false
+): FormioSchema => {
   const components: FormioComponent[] = tab.sections.map((section) =>
-    buildSectionPanel(section, tab.tab)
+    buildSectionPanel(section, tab.tab, readOnlyAll)
   );
   return {
     display: "form",
@@ -479,7 +488,10 @@ export const compileTabSchema = (tab: NewHireTab): FormioSchema => {
 /**
  * Build a complete unified Form.io schema with tabs layout.
  */
-export const compileFullFormioSchema = (tabs: NewHireTab[]): FormioSchema => {
+export const compileFullFormioSchema = (
+  tabs: NewHireTab[],
+  readOnlyAll: boolean = false
+): FormioSchema => {
   const tabComponents: FormioComponent[] = tabs.map((t) => {
     const tabKey = t.tab.toLowerCase().replace(/[^a-z0-9]/g, "_") + "_tab";
     return {
@@ -487,7 +499,9 @@ export const compileFullFormioSchema = (tabs: NewHireTab[]): FormioSchema => {
       key: tabKey,
       label: t.tab,
       title: t.tab,
-      components: t.sections.map((section) => buildSectionPanel(section, t.tab)),
+      components: t.sections.map((section) =>
+        buildSectionPanel(section, t.tab, readOnlyAll)
+      ),
     };
   });
 
@@ -502,6 +516,7 @@ export const compileFullFormioSchema = (tabs: NewHireTab[]): FormioSchema => {
     ],
   };
 };
+
 
 /**
  * Sanitizes form submission values before sending to Frappe backend:

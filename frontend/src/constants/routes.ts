@@ -8,9 +8,12 @@ export const ROUTES = {
   HELP_DESK_INTERNAL: "/webapp/helpdesk",
   EMPLOYEE_DOCUMENTS: "/webapp/employee-documents",
   EMPLOYEES_DIRECTORY_ADD: "/webapp/employees-directory/add-employee",
+  EMPLOYEES_DIRECTORY_ADD_ID: "/webapp/employees-directory/add-employee/:id",
   EMPLOYEES_DIRECTORY_NEW_HIRES: "/webapp/employees-directory/new-hires",
   EMPLOYEES_DIRECTORY_INITIATE_ONBOARDING: "/webapp/employees-directory/initiate-onboarding",
+  EMPLOYEES_DIRECTORY_INITIATE_ONBOARDING_ID: "/webapp/employees-directory/initiate-onboarding/:id",
   SEPARATION: "/webapp/flow-app/separation",
   SEPARATION_DASHBOARD: "/webapp/flow-app/separation-dashboard",
   PERFORMANCE_IMPROVEMENT: "/webapp/flow-app/performance-improvement",
 };
+

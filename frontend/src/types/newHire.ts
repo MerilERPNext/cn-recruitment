@@ -136,3 +136,59 @@ export interface UpdateNewHireResponse {
     [key: string]: unknown;
   };
 }
+
+export interface InitiationFieldRow {
+  fieldname: string;
+  label_override?: string | null;
+  mandatory_override?: string | null;
+  read_only_override?: string | null;
+  section_override?: string | null;
+  order?: number | null;
+  default_value?: string | null;
+}
+
+export interface InitiationSettings {
+  form: string;
+  uses_default_fields: boolean;
+  initiation_fields: InitiationFieldRow[];
+  effective_fields: string[];
+  send_portal_invite?: number;
+  portal_invite_template?: string | null;
+  onboarding_portal_form?: string | null;
+}
+
+export interface InitiationFieldsResponse {
+  success: boolean;
+  message: string;
+  data: InitiationSettings;
+}
+
+export interface SaveInitiationFieldsParams {
+  form?: string;
+  fields?: (string | InitiationFieldRow)[];
+  settings?: {
+    send_portal_invite?: number;
+    portal_invite_template?: string;
+    onboarding_portal_form?: string;
+  };
+}
+
+export interface OnboardingInitiationConfigData {
+  doctype: string;
+  form: string;
+  employee: string;
+  employee_name: string;
+  email?: string;
+  send_portal_invite: number;
+  stage?: string;
+  can_initiate?: boolean;
+  employee_onboarding?: string | null;
+  tabs: NewHireTab[];
+}
+
+export interface OnboardingInitiationConfigResponse {
+  success: boolean;
+  message: string;
+  data: OnboardingInitiationConfigData;
+}
+
