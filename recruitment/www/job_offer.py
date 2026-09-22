@@ -33,8 +33,12 @@ def get_context(context):
                 filters=[
                     ["Job Offer", "job_applicant", "=", appl],
                     ["Job Offer", "docstatus", "!=", 2],
-                    ["Job Offer", "status", "=", "Awaiting Response"]],
-                order_by='modified desc',
+                    # Draft too: until the Draft status existed an unsent offer read
+                    # "Awaiting Response", and the Action Center (Recruitment
+                    # Settings -> Create Candidate Action Item) decides when the
+                    # candidate is pointed here.
+                    ["Job Offer", "status", "in", ["Draft", "Awaiting Response"]]],
+                order_by='creation desc',
                 limit=1
             )
 

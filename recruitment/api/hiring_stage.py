@@ -287,7 +287,7 @@ def _assert_no_mandatory_skipped(stages, from_idx, to_idx):
 # Transition primitives
 # --------------------------------------------------------------------------- #
 def _append_history(doc, stage, result, interview=None, notes=None):
-	doc.append(HISTORY_FIELD, {
+	return doc.append(HISTORY_FIELD, {
 		"stage_name": stage.get("stage_name"),
 		"stage_type": stage.get("stage_type"),
 		"entered_on": now_datetime(),
@@ -928,6 +928,62 @@ def advance_on_job_offer_outcome(doc, method=None):
 		frappe.log_error(frappe.get_traceback(), "Hiring Workflow: job offer outcome failed")
 
 
+# What each offer event does to the candidate's sub-status. "Offer Revised" (a new
+# version raised by Resend) reopens a candidate who declined — the new letter is
+# on its way, exactly as when the first offer was raised.
+_OFFER_EVENT_SUBSTATUS = {
+	"Offer Withdrawn": "Offer Withdrawn",
+	"Offer Cancelled": "Offer Cancelled",
+}
+
+
+def record_offer_event(offer, event, notes=None):
+	"""Reflect an offer event (Offer Sent / Withdrawn / Cancelled / Revised,
+	Rejected) on the candidate: a history row on the Offer stage, and the
+	sub-status that says where the offer stands.
+
+	Written straight to the database, like `bulk_job_offer._mark_offer_stage`:
+	these events come from raw status writes and bulk loops, and must not run the
+	Job Applicant's save hooks. Never raises; skipped for a candidate who has
+	already accepted.
+	"""
+	try:
+		applicant = offer.get("job_applicant")
+		if not applicant:
+			return
+		ja = frappe.get_doc("Job Applicant", applicant)
+		if ja.status == "Accepted":
+			return
+
+		note = notes or _("{0} (version {1})").format(
+			offer.get("name"), int(offer.get("custom_offer_version") or 1)
+		)
+
+		if is_hiring_workflow_enabled():
+			stages = get_applicant_stages(ja)
+			current = ja.get(STAGE_FIELD)
+			idx = _find_stage(stages, current) if current else -1
+			if idx >= 0 and (stages[idx].get("stage_type") or "") == "Offer":
+				history = ja.get(HISTORY_FIELD) or []
+				last = history[-1] if history else None
+				# Desk and portal can report the same outcome twice.
+				if not (last and last.result == event and (last.notes or "") == note):
+					_append_history(ja, stages[idx], event, notes=note).db_insert()
+
+		if event == "Offer Revised":
+			from recruitment.api.bulk_job_offer import OFFER_STATUS, SUB_STATUS_TO_SEND
+
+			updates = {"status": OFFER_STATUS, "custom_substatus": SUB_STATUS_TO_SEND}
+		elif event in _OFFER_EVENT_SUBSTATUS and ja.status != "Rejected":
+			updates = {"custom_substatus": _OFFER_EVENT_SUBSTATUS[event]}
+		else:
+			return
+		_ensure_sub_status_option(updates.get("status") or ja.status, updates["custom_substatus"])
+		frappe.db.set_value("Job Applicant", applicant, updates, update_modified=False)
+	except Exception:
+		frappe.log_error(frappe.get_traceback(), "Hiring Workflow: offer event failed")
+
+
 # --------------------------------------------------------------------------- #
 # Candidate review (Screening / Shortlist dialogs)
 # --------------------------------------------------------------------------- #
@@ -1357,12 +1413,21 @@ def get_workflow_view(job_applicant):
 		"has_rejections": approval_counts["Rejected"] > 0,
 	}
 
-	offer = frappe.db.get_value(
-		"Job Offer",
-		{"job_applicant": doc.name, "docstatus": ["!=", 2]},
-		["name", "status", "docstatus"],
-		as_dict=True,
+	# Newest version first. A cancelled one still counts — it is what "Resend Job
+	# Offer" copies — and the older versions are listed beneath it as history.
+	from recruitment.api.offer_lifecycle import offer_actions, offers_of
+
+	versions = offers_of(
+		doc.name,
+		fields=("name", "status", "docstatus", "email_status", "custom_offer_version", "creation"),
 	)
+	offer = versions[0] if versions else None
+	offer_action_map = None
+	if offer:
+		offer["version"] = int(offer.get("custom_offer_version") or 1)
+		for v in versions[1:]:
+			v["version"] = int(v.get("custom_offer_version") or 1)
+		offer_action_map = offer_actions(frappe.get_doc("Job Offer", offer.name))
 
 	return {
 		"enabled": True,
@@ -1375,6 +1440,8 @@ def get_workflow_view(job_applicant):
 		"stages": out_stages,
 		"pre_offer": pre_offer,
 		"job_offer": offer,
+		"job_offer_actions": offer_action_map,
+		"previous_offers": versions[1:],
 	}
 
 

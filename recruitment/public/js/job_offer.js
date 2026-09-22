@@ -755,6 +755,9 @@ function recruitment_offer_letter_styles() {
 
                     if (frm.doc.docstatus !== 1) return;
                     if (!enabled) return;
+                    // A withdrawn / declined letter is resent as a new version,
+                    // never mailed again (the server refuses it too).
+                    if (["Withdrawn", "Rejected"].includes(frm.doc.status)) return;
                     // Recruitment Settings -> Hide Send Job Offer Once Sent.
                     if (hide_once_sent && frm.doc.email_status === "Sent") return;
                     // Nothing goes to the candidate before HR Ops has seen it. The
@@ -967,25 +970,70 @@ frappe.ui.form.on("Job Offer", {
 });
 
 // ---------------------------------------------------------------------------
-// Withdraw — pulls the offer back and releases its position to Open, which is
+// Withdraw — pulls a SENT offer back and releases its position to Open, which is
 // what lets a Filled requisition be archived again. Distinct from Rejected,
 // which means the candidate refused.
+//
+// Resend — once an offer is withdrawn, rejected or cancelled, raises the next
+// version as a new Draft (position re-claimed automatically) for HR to edit,
+// submit and send.
+//
+// Both are decided server-side (offer_lifecycle.get_offer_actions), which also
+// reads the Recruitment Settings -> Job Offer Rules, so the form, the hiring
+// workflow and the endpoints cannot disagree.
 // ---------------------------------------------------------------------------
 frappe.ui.form.on("Job Offer", {
     refresh(frm) {
-        if (frm.is_new() || frm.doc.docstatus === 2) return;
-        if (["Withdrawn", "Accepted"].includes(frm.doc.status)) return;
-
-        // Recruitment Settings -> Allow Withdraw Offer Only After It Is Sent:
-        // then only a submitted offer whose email went out can be withdrawn.
-        frappe.db.get_single_value("Recruitment Settings", "withdraw_offer_only_after_sent")
-            .then((only_after_sent) => {
-                const sent = frm.doc.docstatus === 1 && frm.doc.email_status === "Sent";
-                if (only_after_sent && !sent) return;
-                add_withdraw_offer_button(frm);
-            });
+        if (frm.is_new()) return;
+        if (frm.doc.custom_previous_offer) {
+            frm.set_intro(
+                __("Version {0} of this offer — resent from {1}.", [
+                    frm.doc.custom_offer_version || 2,
+                    `<a href="/app/job-offer/${encodeURIComponent(frm.doc.custom_previous_offer)}">${frappe.utils.escape_html(frm.doc.custom_previous_offer)}</a>`,
+                ]),
+                "blue"
+            );
+        }
+        frappe.call({
+            method: "recruitment.api.offer_lifecycle.get_offer_actions",
+            args: { job_offer: frm.doc.name },
+            callback: (r) => {
+                const a = (r && r.message) || {};
+                if (a.withdraw && a.withdraw.allowed) add_withdraw_offer_button(frm);
+                if (a.resend && a.resend.allowed) add_resend_offer_button(frm);
+            },
+        });
     },
 });
+
+function add_resend_offer_button(frm) {
+    frm.add_custom_button(__("Resend Job Offer"), () => {
+        frappe.confirm(
+            __("Create version {0} of this offer as a new Draft? You can edit it, then submit and send it.", [
+                (frm.doc.custom_offer_version || 1) + 1,
+            ]),
+            () => {
+                frappe.call({
+                    method: "recruitment.api.offer_lifecycle.resend_job_offer",
+                    args: { job_offer: frm.doc.name },
+                    freeze: true,
+                    freeze_message: __("Creating new version…"),
+                    callback: (r) => {
+                        const m = (r && r.message) || {};
+                        if (!m.job_offer) return;
+                        frappe.show_alert({
+                            message: m.position_label
+                                ? __("Version {0} created against {1}.", [m.version, m.position_label])
+                                : __("Version {0} created.", [m.version]),
+                            indicator: "green",
+                        });
+                        frappe.set_route("Form", "Job Offer", m.job_offer);
+                    },
+                });
+            }
+        );
+    }).addClass("btn-primary");
+}
 
 function add_withdraw_offer_button(frm) {
     frm.add_custom_button(__("Withdraw Offer"), () => {

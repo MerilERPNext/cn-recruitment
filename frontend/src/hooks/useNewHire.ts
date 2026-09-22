@@ -118,13 +118,14 @@ export const useInitiateOnboardingMutation = () => {
 };
 
 /**
- * Hook to activate an employee whose onboarding is initiated.
+ * Hook to activate a pending employee, with the company email HR enters.
  */
 export const useActivateEmployeeMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (name: string) => activateEmployee(name),
+    mutationFn: ({ name, companyEmail }: { name: string; companyEmail: string }) =>
+      activateEmployee(name, companyEmail),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: NEW_HIRE_KEYS.all });
       queryClient.invalidateQueries({ queryKey: ["employee"] });
