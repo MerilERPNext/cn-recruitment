@@ -35,11 +35,11 @@ from recruitment.recruitment.utils import as_administrator
 
 @frappe.whitelist(methods=["GET"])
 def get_alumni_hd_categories() -> dict:
-    """Return all top-level HD Category records for the ticket-creation form.
+    """Return parent HD Category records for the ticket-creation form.
 
-    Only categories that have ``is_group = 1`` (top-level parents) are returned.
-    If the doctype lacks an ``is_group`` column (older Helpdesk versions), every
-    record is returned instead.
+    A category is a *parent* when at least one other HD Category has
+    ``is_sub_category = 1`` and its ``parent_category`` set to it. If those
+    columns don't exist (older Helpdesk versions), every record is returned.
     """
     _require_alumni_session()
 
@@ -59,8 +59,16 @@ def get_alumni_hd_categories() -> dict:
             fields.append(f)
 
     filters: dict = {}
-    if frappe.db.has_column("HD Category", "is_group"):
-        filters["is_group"] = 1
+    if frappe.db.has_column("HD Category", "is_sub_category") and frappe.db.has_column(
+        "HD Category", "parent_category"
+    ):
+        parents = frappe.get_all(
+            "HD Category",
+            filters={"is_sub_category": 1},
+            pluck="parent_category",
+            distinct=True,
+        )
+        filters["name"] = ("in", [p for p in parents if p])
     # Only categories explicitly flagged to appear in the Alumni Portal.
     if frappe.db.has_column("HD Category", ALUMNI_CATEGORY_FLAG):
         filters[ALUMNI_CATEGORY_FLAG] = 1
@@ -77,18 +85,20 @@ def get_alumni_hd_categories() -> dict:
 
 @frappe.whitelist(methods=["GET"])
 def get_alumni_hd_subcategories(parent_category: str | None = None) -> dict:
-    """Return subcategories (``is_group = 0``) under *parent_category*.
+    """Return subcategories (``is_sub_category = 1``) under *parent_category*.
 
-    ``parent_category`` is the ``name`` of an HD Category where ``is_group = 1``.
-    If ``is_group`` / ``parent_category`` columns don't exist, an empty list is
-    returned gracefully.
+    ``parent_category`` is the ``name`` of a parent HD Category. If the
+    ``is_sub_category`` / ``parent_category`` columns don't exist, an empty
+    list is returned gracefully.
     """
     _require_alumni_session()
 
     if not parent_category:
         return {"success": True, "subcategories": []}
 
-    if not frappe.db.has_column("HD Category", "parent_category"):
+    if not frappe.db.has_column("HD Category", "parent_category") or not frappe.db.has_column(
+        "HD Category", "is_sub_category"
+    ):
         return {"success": True, "subcategories": []}
 
     fields = [
@@ -104,16 +114,17 @@ def get_alumni_hd_subcategories(parent_category: str | None = None) -> dict:
         if frappe.db.has_column("HD Category", f):
             fields.append(f)
 
-    filters: dict = {"parent_category": parent_category}
-    if frappe.db.has_column("HD Category", "is_group"):
-        filters["is_group"] = 0
-    # Only subcategories explicitly flagged to appear in the Alumni Portal.
+    flag_filter: dict = {}
     if frappe.db.has_column("HD Category", ALUMNI_CATEGORY_FLAG):
-        filters[ALUMNI_CATEGORY_FLAG] = 1
+        flag_filter[ALUMNI_CATEGORY_FLAG] = 1
 
     subcategories = frappe.get_all(
         "HD Category",
-        filters=filters,
+        filters={
+            "parent_category": parent_category,
+            "is_sub_category": 1,
+            **flag_filter,
+        },
         fields=fields,
         order_by="category_name asc",
     )
