@@ -25,6 +25,7 @@ import Button from "../../shared/atoms/Button";
 import { errorResponseFormater } from "../../../utils/errorResponseFormater";
 import { useFileUploader } from "../../../hooks/useFileUploader";
 import { useRequiredFields } from "../../../hooks/useRequiredFields";
+import { AttachmentPreviewVanillaV2 } from "../../Expenses-App/ExpenseClaim/AttachmentPreview";
 import {
   FormSchema,
   SchemaComponent,
@@ -284,6 +285,25 @@ const AdvanceForm: React.FC<AdvanceFormProps> = ({
     }
   };
 
+  /**
+   * Removing a file: click Form.io's own native remove control for that row
+   * first (so its internal component state/validation stay in sync exactly
+   * as if the user had used the native UI), then mirror the same removal
+   * into local `attachments` state, which is what actually gets uploaded on
+   * submit.
+   */
+  const removeAttachment = useCallback((index: number) => {
+    const container = document.querySelector(".formio-component-attachments");
+    if (container) {
+      const removeButtons = container.querySelectorAll(
+        'i[ref="fileStatusRemove"], i[ref="removeLink"], button[ref="removeLink"], i.fa-times',
+      );
+      const target = removeButtons[index];
+      if (target) (target as HTMLElement).click();
+    }
+    setAttachments((prev) => prev.filter((_, i) => i !== index));
+  }, []);
+
   const handleCancel = useCallback(() => {
     if (formAdvanceInstance.current) {
       formAdvanceInstance.current.resetValue();
@@ -358,6 +378,16 @@ const AdvanceForm: React.FC<AdvanceFormProps> = ({
               if (submission?.changed?.component?.key === "attachments")
                 setAttachments((submission?.data?.attachments as any) || []);
             }}
+          />
+
+          {/* Lets an uploaded file be opened/previewed without submitting the
+              form — same reusable panel the Expense Request form uses,
+              injected right under Form.io's own "attachments" file widget. */}
+          <AttachmentPreviewVanillaV2
+            currentAttachments={attachments}
+            onRemove={removeAttachment}
+            compKey="attachments"
+            heading="Attachments Preview"
           />
         </div>
       </div>
