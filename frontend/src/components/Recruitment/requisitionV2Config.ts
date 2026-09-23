@@ -39,9 +39,12 @@ export interface BackendTab {
   sections: BackendSection[];
 }
 
-// Configured salary bounds for one timeframe. A null/absent bound is open on
-// that side.
+// Configured salary bounds for one timeframe, as digit counts on the whole
+// part of the amount (`min`/`max` are the equivalent amounts). A null/absent
+// bound is open on that side.
 export interface SalaryLimit {
+  min_digits?: number | null;
+  max_digits?: number | null;
   min?: number | null;
   max?: number | null;
 }
@@ -52,7 +55,7 @@ export interface FormConfig {
   // "Max number of positions per requisition" from Recruitment Settings. 0 or
   // absent means no limit — the same reading the server's own check uses.
   max_positions_per_requisition?: number;
-  // Allowed salary band per timeframe, e.g. { Annual: { min, max }, Monthly: ... }.
+  // Allowed salary digits per timeframe, e.g. { Annual: { min_digits, max_digits }, ... }.
   // Timeframes missing from the map are unrestricted.
   salary_limits?: Record<string, SalaryLimit>;
   tabs: BackendTab[];
@@ -204,8 +207,18 @@ export function formatSalaryAmount(value: number): string {
   return new Intl.NumberFormat("en-IN", { maximumFractionDigits: 2 }).format(value);
 }
 
+/** Digits in the whole part of a salary: 4500.75 → 4. */
+export function salaryDigitCount(amount: number): number {
+  return String(Math.trunc(Math.abs(amount))).length;
+}
+
+function toDigitLimit(value: any): number | null {
+  const digits = Number(value);
+  return Number.isInteger(digits) && digits > 0 ? digits : null;
+}
+
 /**
- * The bounds configured for `timeframe`, or null when that timeframe is
+ * The digit bounds configured for `timeframe`, or null when that timeframe is
  * unrestricted (absent from the map, or open on both sides).
  */
 export function getSalaryLimit(
@@ -216,20 +229,29 @@ export function getSalaryLimit(
   const configured = config.salary_limits[String(timeframe)];
   if (!configured) return null;
 
-  const min = toSalaryAmount(configured.min);
-  const max = toSalaryAmount(configured.max);
-  return min === null && max === null ? null : { min, max };
+  const minDigits = toDigitLimit(configured.min_digits);
+  const maxDigits = toDigitLimit(configured.max_digits);
+  return minDigits === null && maxDigits === null
+    ? null
+    : { min_digits: minDigits, max_digits: maxDigits };
 }
 
-/** "between 1,00,000 and 5,00,000" / "at least 1,00,000" / "at most 5,00,000". */
+/**
+ * "4 to 6 digits (1,000 – 9,99,999)" / "at least 4 digits (1,000 or more)" /
+ * "at most 6 digits (up to 9,99,999)".
+ */
 export function describeSalaryLimit(limit: SalaryLimit): string {
-  const min = toSalaryAmount(limit.min);
-  const max = toSalaryAmount(limit.max);
-  if (min !== null && max !== null) {
-    return `between ${formatSalaryAmount(min)} and ${formatSalaryAmount(max)}`;
+  const minDigits = toDigitLimit(limit.min_digits);
+  const maxDigits = toDigitLimit(limit.max_digits);
+  const lowest = minDigits !== null ? formatSalaryAmount(10 ** (minDigits - 1)) : "";
+  const highest = maxDigits !== null ? formatSalaryAmount(10 ** maxDigits - 1) : "";
+  if (minDigits !== null && maxDigits !== null) {
+    return minDigits === maxDigits
+      ? `exactly ${minDigits} digits (${lowest} – ${highest})`
+      : `${minDigits} to ${maxDigits} digits (${lowest} – ${highest})`;
   }
-  if (min !== null) return `at least ${formatSalaryAmount(min)}`;
-  return `at most ${formatSalaryAmount(max as number)}`;
+  if (minDigits !== null) return `at least ${minDigits} digits (${lowest} or more)`;
+  return `at most ${maxDigits} digits (up to ${highest})`;
 }
 
 /**
@@ -259,8 +281,9 @@ export function validateSalaryRange(
     [SALARY_MAX_LABEL, max],
   ] as [string, number | null][]).forEach(([label, value]) => {
     if (value === null) return;
-    const belowFloor = limit.min !== null && limit.min !== undefined && value < limit.min;
-    const aboveCeiling = limit.max !== null && limit.max !== undefined && value > limit.max;
+    const digits = salaryDigitCount(value);
+    const belowFloor = limit.min_digits != null && digits < limit.min_digits;
+    const aboveCeiling = limit.max_digits != null && digits > limit.max_digits;
     if (belowFloor || aboveCeiling) {
       errors.push(`${timeframe} ${label} must be ${allowed}.`);
     }
@@ -384,6 +407,7 @@ export function clampAllocationPercentages(
 /** "Position 2 (Bangalore)" — enough detail to find the offending row. */
 export function positionRowLabel(position: any, index: number): string {
   const detail =
+    position?.custom_location_title ||
     position?.location_title ||
     position?.location ||
     position?.designation_title ||

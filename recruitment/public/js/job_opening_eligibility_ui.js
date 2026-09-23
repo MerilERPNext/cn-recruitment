@@ -61,6 +61,7 @@
 		"not one of": "is not one of",
 		"contains": "contains",
 		"does not contain": "does not contain",
+		"In Between": "is between",
 	};
 
 	// What the operator list is derived from, said in the user's words — a "6"
@@ -145,6 +146,12 @@
 		.elig-op{flex:0 0 auto;min-width:152px;}
 		.elig-op[disabled]{opacity:.55;cursor:not-allowed;}
 		.elig-val-mount{flex:1 1 160px;min-width:140px;}
+		.elig-val-mount:has(.elig-range-from),
+		.elig-filter-mount:has(.elig-range-from){display:flex;align-items:center;gap:6px;
+			flex-basis:230px;min-width:200px;}
+		.elig-val-mount .elig-val-mount,
+		.elig-filter-mount .elig-val-mount{flex:1 1 90px;min-width:80px;}
+		.elig-range-and{flex:none;font-size:.78rem;color:var(--e-dim);}
 		.elig-val-mount .form-group{margin:0;}
 		.elig-val-mount .control-input-wrapper .control-input{margin:0;}
 		.elig-val-mount input,.elig-val-mount .awesomplete{width:100%;}
@@ -249,25 +256,32 @@
 				filterCol: mf.indexOf("::") > -1 ? mf.split("::")[1] : "",
 				filterOp: row.match_operator || "=",
 				filterVal: row.match_value || "",
+				filterValTo: row.match_value_to || "",
 			};
 		}
-		return { field: fn, column: "", filterCol: "", filterOp: "=", filterVal: "" };
+		return { field: fn, column: "", filterCol: "", filterOp: "=", filterVal: "", filterValTo: "" };
 	}
 
 	function write(row, st) {
 		const entry = FLAT[st.field];
+		const clear = () => {
+			row.match_field = ""; row.match_operator = ""; row.match_value = ""; row.match_value_to = "";
+		};
 		if (!st.field) {
-			row.field_name = ""; row.match_field = ""; row.match_operator = ""; row.match_value = "";
+			row.field_name = ""; clear();
 			return;
 		}
 		if (!entry || !entry.is_table) {
-			row.field_name = st.field; row.match_field = ""; row.match_operator = ""; row.match_value = "";
+			row.field_name = st.field; clear();
 			return;
 		}
 		row.field_name = `${st.field}::${st.column || ""}`;
 		row.match_field = st.filterCol ? `${st.field}::${st.filterCol}` : "";
 		row.match_operator = st.filterCol ? (st.filterOp || "=") : "";
 		row.match_value = st.filterCol ? (st.filterVal || "") : "";
+		// The upper bound only means anything for a range filter — a filter that is
+		// not "In Between" must not leave one stored behind a single-value operator.
+		row.match_value_to = (st.filterCol && st.filterOp === "In Between") ? (st.filterValTo || "") : "";
 	}
 
 	const colsOf = (st) => {
@@ -329,24 +343,33 @@
 		if (entry.is_table && !target) {
 			return `<b>${esc(entry.label)}</b> — <i>${__("choose which column to check")}</i>`;
 		}
-		const op = OP_LABEL[row.operator] || row.operator || "is";
-		const val = (row.value === 0 || row.value) ? String(row.value) : "…";
 		const act = (row.action || "Knock out") === "Knock out" ? __("Reject") : __("Hold");
-		const test = `<b>${esc(target.label)}</b> ${esc(op)} <b>${esc(val)}</b>`;
+		const test = comparisonText(target.label, row.operator, row.value, row.value_to);
 
 		// A table condition is about the candidate's ROWS, and says so — otherwise
 		// "Highest Qualification of 10th" reads like two different questions.
 		let clause = test;
 		if (entry.is_table) {
 			const filterCol = colsOf(st).find((c) => c.value === st.filterCol);
-			const filterOp = OP_LABEL[st.filterOp] || st.filterOp || "is";
 			clause = filterCol
-				? __("any {0} row whose {1} {2} {3} has {4}", [
-					`<b>${esc(entry.label)}</b>`, esc(filterCol.label), esc(filterOp),
-					`<b>${esc(st.filterVal || "…")}</b>`, test])
+				? __("any {0} row whose {1} has {2}", [
+					`<b>${esc(entry.label)}</b>`,
+					comparisonText(filterCol.label, st.filterOp, st.filterVal, st.filterValTo),
+					test])
 				: __("any {0} row has {1}", [`<b>${esc(entry.label)}</b>`, test]);
 		}
 		return `${__("When")} ${clause} → <span class="v">${act}</span>`;
+	}
+
+	/** "<b>GPA</b> is between <b>11</b> and <b>54.99</b>" — one comparison in words,
+	 *  for either side of a rule. Mirrors `_comparison_label` in the engine. */
+	function comparisonText(label, operator, value, valueTo) {
+		const op = OP_LABEL[operator] || operator || "is";
+		const show = (v) => `<b>${esc((v === 0 || v) ? String(v) : "…")}</b>`;
+		if (operator === "In Between") {
+			return `<b>${esc(label)}</b> ${esc(op)} ${show(value)} ${__("and")} ${show(valueTo)}`;
+		}
+		return `<b>${esc(label)}</b> ${esc(op)} ${show(value)}`;
 	}
 
 	function fieldSelect(st, i) {
@@ -370,8 +393,14 @@
 		const ko = (row.action || "Knock out") === "Knock out";
 		// A filter with no value narrows nothing — the engine ignores it. Say so on
 		// the card rather than letting it sit there looking like a live restriction.
-		const danglingFilter = !!(st.filterCol && !String(st.filterVal || "").trim());
-		const incomplete = !entry || (isTable && !target) || danglingFilter;
+		// A range missing a bound is worse than dangling: the engine can't compare
+		// it, so the whole condition silently never fires. Both get flagged here.
+		const danglingFilter = !!(st.filterCol && (!String(st.filterVal || "").trim()
+			|| (st.filterOp === "In Between" && !String(st.filterValTo || "").trim())));
+		const halfRange = row.operator === "In Between"
+			&& (!String(row.value == null ? "" : row.value).trim()
+				|| !String(row.value_to == null ? "" : row.value_to).trim());
+		const incomplete = !entry || (isTable && !target) || danglingFilter || halfRange;
 
 		// The row filter never offers the column being tested — narrowing to
 		// "rows where Highest Qualification = 10th" and then testing Highest
@@ -393,7 +422,10 @@
 				<span class="elig-filter-mount" data-i="${i}"></span>
 				<button class="elig-filter-x" data-role="filter-clear" data-i="${i}"
 					title="${__("Check every row instead")}">✕</button>
-				${danglingFilter ? `<span class="elig-warn">${__("needs a value, or remove it")}</span>` : ""}
+				${danglingFilter ? `<span class="elig-warn">${
+					st.filterOp === "In Between"
+						? __("needs both ends of the range, or remove it")
+						: __("needs a value, or remove it")}</span>` : ""}
 			</div>` : (filterCols.length ? `
 			<div class="elig-line">
 				<span class="elig-kw"></span>
@@ -543,22 +575,45 @@
 		}
 	}
 
-	function mountValue(frm, row, $mount) {
-		mountControl($mount, targetEntry(parse(row)), row.value, row.operator || "=", (v) => {
-			row.value = v;
-			markAndRerender(frm, cfgFor(frm));
-		});
+	/**
+	 * One value box, or — for "In Between" — the two ends of a range with an "and"
+	 * between them. Shared by the condition's value and the row filter's value, so
+	 * a range is built the same way on both sides of a rule.
+	 */
+	function mountComparisonValue($mount, entry, op, from, to, onFrom, onTo) {
+		if (op !== "In Between") {
+			mountControl($mount, entry, from, op || "=", onFrom);
+			return;
+		}
+		$mount.empty();
+		const $from = $(`<span class="elig-val-mount elig-range-from"></span>`).appendTo($mount);
+		$mount.append(`<span class="elig-range-and">${__("and")}</span>`);
+		const $to = $(`<span class="elig-val-mount elig-range-to"></span>`).appendTo($mount);
+		mountControl($from, entry, from, op, onFrom);
+		mountControl($to, entry, to, op, onTo);
 	}
 
-	/** The row filter's value — same treatment, always an equality match. */
+	function mountValue(frm, row, $mount) {
+		const target = targetEntry(parse(row));
+		const set = (key) => (v) => {
+			row[key] = v;
+			markAndRerender(frm, cfgFor(frm));
+		};
+		mountComparisonValue($mount, target, row.operator, row.value, row.value_to,
+			set("value"), set("value_to"));
+	}
+
+	/** The row filter's value — the same control, typed by the filter's own column. */
 	function mountFilterValue(frm, row, $mount) {
 		const st = parse(row);
 		const entry = colsOf(st).find((c) => c.value === st.filterCol);
-		mountControl($mount, entry, st.filterVal, st.filterOp || "=", (v) => {
-			st.filterVal = v;
+		const set = (key) => (v) => {
+			st[key] = v;
 			write(row, st);
 			markAndRerender(frm, cfgFor(frm));
-		});
+		};
+		mountComparisonValue($mount, entry, st.filterOp || "=", st.filterVal, st.filterValTo,
+			set("filterVal"), set("filterValTo"));
 	}
 
 	/** Pull the Campus Eligibility Settings defaults onto this opening. */
@@ -668,13 +723,23 @@
 		$w.find('[data-role="filter-op"]').on("change", function () {
 			const row = rowOf(this); if (!row) return;
 			const st = parse(row);
-			st.filterOp = $(this).val();
+			const newOp = $(this).val();
+			// Leaving "In Between" drops the now-meaningless upper bound (write()
+			// clears the stored one; this keeps the box from repainting with it).
+			if (st.filterOp === "In Between" && newOp !== "In Between") st.filterValTo = "";
+			st.filterOp = newOp;
 			write(row, st);
 			markAndRerender(frm, cfg);
 		});
 
 		$w.find('[data-role="operator"]').on("change", function () {
-			const row = rowOf(this); if (row) { row.operator = $(this).val(); markAndRerender(frm, cfg); }
+			const row = rowOf(this); if (!row) return;
+			const newOp = $(this).val();
+			// Leaving "In Between" drops the now-meaningless upper bound instead of
+			// leaving it stored invisibly behind a single-value operator.
+			if (row.operator === "In Between" && newOp !== "In Between") row.value_to = "";
+			row.operator = newOp;
+			markAndRerender(frm, cfg);
 		});
 
 		$w.find('[data-role="action"]').on("click", function () {

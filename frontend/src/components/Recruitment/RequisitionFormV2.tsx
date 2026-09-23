@@ -1,10 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Form } from "@tsed/react-formio";
 import FrappeAPI from "../../utils/frappeAPI";
 import Button from "../shared/atoms/Button";
 import { useCreateJobRequisition } from "../../hooks/useRecruitment";
+import { requisitionDraftService } from "../../services/requisitionDraftService";
 import {
   useCurrentEmployeeDetails,
   useFileUpload,
@@ -879,6 +880,7 @@ function buildTabSchemas(config: FormConfig) {
 // ---------------------------------------------------------------------------
 const RequisitionFormV2 = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const createJobRequisition = useCreateJobRequisition();
   const { data: currentEmployee } = useCurrentEmployeeDetails({
     logged_in_employee_details: true,
@@ -902,6 +904,15 @@ const RequisitionFormV2 = () => {
   const [formData, setFormData] = useState<Record<string, any>>({});
   const formDataRef = useRef(formData);
   formDataRef.current = formData;
+
+  // "Save as Draft": the draft this form is working on, so repeated saves
+  // update one draft rather than piling up new ones. Set when the form is
+  // opened from a draft (?draft=…) and when a first save creates one.
+  const [draftName, setDraftName] = useState<string | null>(
+    () => searchParams.get("draft"),
+  );
+  const [draftLoading, setDraftLoading] = useState(() => Boolean(searchParams.get("draft")));
+  const [draftSaving, setDraftSaving] = useState(false);
 
   const [formSyncTick, setFormSyncTick] = useState(0);
   const [positionCountDrafts, setPositionCountDrafts] = useState<
@@ -2114,7 +2125,10 @@ const RequisitionFormV2 = () => {
         }),
       );
 
-      const response = await createJobRequisition.mutateAsync(payload as any);
+      const response = await createJobRequisition.mutateAsync({
+        payload: payload as any,
+        draft: draftName,
+      });
       // Longer than the default: the toast now carries a row per requisition,
       // and it has to survive the navigation to the list.
       toast.success(createdRequisitionsToast(response), { duration: 8000 });
@@ -2138,6 +2152,63 @@ const RequisitionFormV2 = () => {
     }
   };
 
+  // Reopening a saved draft: restore the wizard's own state, hiring type
+  // included — the config effect re-fetches for that type on its own.
+  useEffect(() => {
+    const name = searchParams.get("draft");
+    if (!name) return;
+    let cancelled = false;
+    setDraftLoading(true);
+    requisitionDraftService
+      .get(name)
+      .then((draft) => {
+        if (cancelled) return;
+        const state = draft?.state || {};
+        const { __hiring_type: savedHiringType, ...data } = state as Record<string, any>;
+        setFormData(data);
+        if (savedHiringType) setHiringType(String(savedHiringType));
+        setDraftName(draft.name);
+        setFormSyncTick((tick) => tick + 1);
+        toast.success(`Draft "${draft.title}" reopened.`);
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        toast.error(errorResponseFormater(err, "This draft could not be opened."));
+      })
+      .finally(() => {
+        if (!cancelled) setDraftLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+    // Once per mount: the draft is the form's starting point, not a live source.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Save whatever is filled in so far — no validation, nothing created. The
+  // hiring type rides along so reopening restores the same set of steps.
+  const handleSaveDraft = useCallback(async () => {
+    const data = formDataRef.current || {};
+    if (!Object.keys(data).length) {
+      toast.error("Fill something in first, then save it as a draft.");
+      return;
+    }
+    setDraftSaving(true);
+    try {
+      const saved = await requisitionDraftService.save(
+        { ...data, __hiring_type: hiringType },
+        draftName,
+      );
+      setDraftName(saved.name);
+      toast.success("Saved as draft. You can finish it from Requisitions › Drafts.");
+      navigate("/webapp/recruitment/requisition");
+    } catch (err: any) {
+      toast.error(errorResponseFormater(err, "Could not save this draft."));
+    } finally {
+      setDraftSaving(false);
+    }
+  }, [draftName, hiringType, navigate]);
+
   useEffect(() => {
     if (!tabBarRef.current) return;
     const activeBtn = tabBarRef.current.querySelector('[data-active="true"]');
@@ -2149,12 +2220,12 @@ const RequisitionFormV2 = () => {
       });
   }, [currentTab]);
 
-  if (configLoading) {
+  if (configLoading || draftLoading) {
     return (
       <div className="min-h-[60vh] flex flex-col items-center justify-center gap-3">
         <Loader2 size={32} className="animate-spin text-primary-500" />
         <span className="text-sm text-gray-500">
-          Loading form configuration...
+          {draftLoading ? "Opening your draft..." : "Loading form configuration..."}
         </span>
       </div>
     );
@@ -2281,8 +2352,7 @@ const RequisitionFormV2 = () => {
                 <div className="alert alert-info mt-4 mb-2 rounded-md">
                   <i className="fa fa-info-circle mr-2" />
                   <strong>{String(formData.salary_timeframe)}</strong> salary
-                  must be {describeSalaryLimit(activeSalaryLimit)}
-                  {formData.salary_currency ? ` ${formData.salary_currency}` : ""}.
+                  must be {describeSalaryLimit(activeSalaryLimit)}.
                 </div>
               )}
               {/position/i.test(steps[currentTab] || "") &&
@@ -2807,14 +2877,28 @@ const RequisitionFormV2 = () => {
 
           {!isReviewStep && (
             <div className="flex justify-between mt-8 pt-6 border-t border-gray-100">
-              <Button
-                variant="outline"
-                onClick={handlePrevious}
-                disabled={currentTab === 0}
-                size="md"
-              >
-                Previous
-              </Button>
+              <div className="flex items-center gap-3">
+                <Button
+                  variant="outline"
+                  onClick={handlePrevious}
+                  disabled={currentTab === 0}
+                  size="md"
+                >
+                  Previous
+                </Button>
+                {/* Available from the first step on: a draft is saved as it
+                    stands, with nothing validated and no requisition created. */}
+                <Button
+                  variant="outline"
+                  size="md"
+                  onClick={handleSaveDraft}
+                  loading={draftSaving}
+                  disabled={draftSaving || isBusy}
+                  className="px-4 md:px-6"
+                >
+                  Save as Draft
+                </Button>
+              </div>
               {isLastStep ? (
                 <Button
                   size="md"

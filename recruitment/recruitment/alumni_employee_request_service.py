@@ -27,7 +27,7 @@ from __future__ import annotations
 
 import frappe
 from frappe import _
-from frappe.utils import cint, getdate, now_datetime
+from frappe.utils import cint, getdate, now_datetime, validate_email_address
 
 from recruitment.recruitment.alumni_portal import ALUMNI_FLAG, employee_is_alumni
 
@@ -59,7 +59,19 @@ _logger = frappe.logger("recruitment", allow_site=True)
 
 
 class AlumniRequestError(frappe.ValidationError):
-    """Raised when an Alumni Employee Request cannot be accepted."""
+    """Raised when an Alumni Employee Request cannot be accepted.
+
+    ``error_code`` is optional and machine-readable, for the handful of cases
+    where a caller (the Alumni Portal frontend) needs to branch on WHICH rule
+    failed rather than just display the message — e.g. offering a fix instead
+    of a dead end when Personal Email is missing. Every other raise site leaves
+    it unset, and the API layer only includes the field in the JSON response
+    when it is present, so this is additive: an unset code changes nothing.
+    """
+
+    def __init__(self, message, error_code: str | None = None):
+        super().__init__(message)
+        self.error_code = error_code
 
 
 # ── Input hygiene ─────────────────────────────────────────────────────────────
@@ -89,12 +101,16 @@ def validate_alumni_request(employee_id: str, email: str, *, ignore_request=None
     scripted caller behave identically:
 
     * the Employee must exist,
-    * be Active (not already Left / Inactive / Suspended),
+    * be Active OR Inactive (not Suspended or other statuses),
     * not already be an alumni (flag not already set),
     * have a linked User,
     * the supplied ``email`` must match one of the Employee's known emails
       (identity check for the unauthenticated Guest path), and
     * have no other open (Draft / Pending / HR-approved) request.
+
+    Inactive Employees are valid alumni candidates — they represent employees who
+    have already left or are in the process of leaving the company and should be
+    eligible to become Alumni Employees.
 
     Returns the resolved Employee row (as ``frappe._dict``) on success; raises
     :class:`AlumniRequestError` with a user-safe message otherwise. ``ignore_request``
@@ -119,9 +135,11 @@ def validate_alumni_request(employee_id: str, email: str, *, ignore_request=None
     if not emp:
         raise AlumniRequestError(_("No employee found for {0}.").format(employee_id))
 
-    if emp.status != ACTIVE_STATUS:
+    # Allow both Active and Inactive employees to request alumni status.
+    # Inactive employees are former employees who are valid alumni candidates.
+    if emp.status not in (ACTIVE_STATUS, "Inactive"):
         raise AlumniRequestError(
-            _("Employee {0} is not Active (current status: {1}).").format(
+            _("Employee {0} cannot request alumni status with status '{1}'.").format(
                 emp.employee_name or employee_id, emp.status or _("Unknown")
             )
         )
@@ -135,6 +153,16 @@ def validate_alumni_request(employee_id: str, email: str, *, ignore_request=None
     if is_already_alumni(emp):
         raise AlumniRequestError(_("Employee is already an Alumni Employee."))
 
+    # Personal Email is required for Alumni Portal access after approval.
+    # This is validated upfront so the requestor knows they need to add it before proceeding.
+    personal_email = (emp.get("personal_email") or "").strip()
+    if not personal_email:
+        raise AlumniRequestError(
+            _("Personal Email is required for Alumni Portal request. "
+              "Please add a Personal Email to the Employee record before creating the request."),
+            error_code="PERSONAL_EMAIL_REQUIRED",
+        )
+
     # Identity check — the requester must know an email tied to the Employee.
     if email and email not in _employee_emails(emp):
         raise AlumniRequestError(
@@ -146,6 +174,131 @@ def validate_alumni_request(employee_id: str, email: str, *, ignore_request=None
             _("A pending Alumni Employee Request already exists for this employee.")
         )
 
+    return emp
+
+
+# ── Personal Email (the PERSONAL_EMAIL_REQUIRED recovery step) ────────────────
+# Signed-in roles that may fill in another Employee's Personal Email.
+_PERSONAL_EMAIL_ADMIN_ROLES = {"System Manager", "HR Manager", "HR User"}
+
+
+def _may_set_personal_email(emp: "frappe._dict", identity_email: str) -> bool:
+    """True if the caller has proven they may write this Employee's Personal Email.
+
+    Accepts either proof, matching the two ways the portal reaches this step:
+
+    * a signed-in session that is the Employee's own linked User, or carries an
+      HR / System Manager role, and
+    * the Guest proof ``create_alumni_employee_request`` already relies on —
+      Employee ID plus an email that is *already* on the Employee record.
+    """
+    session_user = getattr(frappe.session, "user", None)
+    if session_user and session_user != "Guest":
+        if session_user == emp.get("user_id"):
+            return True
+        if _PERSONAL_EMAIL_ADMIN_ROLES & set(frappe.get_roles(session_user)):
+            return True
+
+    return bool(identity_email) and identity_email in _employee_emails(emp)
+
+
+def update_employee_personal_email(
+    employee_id: str, personal_email: str, *, identity_email: str = ""
+) -> "frappe._dict":
+    """Fill in a missing ``Employee.personal_email`` so an Alumni Request can proceed.
+
+    The recovery half of the ``PERSONAL_EMAIL_REQUIRED`` failure that
+    :func:`validate_alumni_request` raises: the portal collects the address, calls
+    here, then re-submits the request. Writes that ONE field and nothing else.
+
+    Deliberately narrow:
+
+    * the write goes through ``frappe.db.set_value`` — the same way
+      ``alumni_portal.update_alumni_profile`` writes Employee fields — so no
+      Employee ``validate`` / ``on_update`` hook fires. It therefore never creates
+      a User, never touches ``custom_is_alumni_employee``, never changes
+      ``Employee.status``, and never enables or disables an account.
+    * it only fills a BLANK. An Employee that already has a Personal Email is left
+      untouched, so this can't be used to redirect an existing alumni identity to
+      somebody else's address.
+    * ``Inactive`` Employees are accepted — they are the expected alumni candidates,
+      so status is never a reason to refuse.
+
+    Returns the Employee row carrying the saved address; raises
+    :class:`AlumniRequestError` with a machine-readable ``error_code`` otherwise.
+    """
+    employee_id = _clean(employee_id)
+    personal_email = _clean(personal_email)
+    identity_email = _clean(identity_email).lower()
+
+    if not employee_id:
+        raise AlumniRequestError(_("Employee is required."))
+
+    emp = frappe.db.get_value(
+        "Employee",
+        employee_id,
+        [
+            "name", "employee_name", "status", "user_id",
+            "company_email", "personal_email", "prefered_email",
+        ],
+        as_dict=True,
+    )
+    if not emp:
+        raise AlumniRequestError(_("No employee found for {0}.").format(employee_id))
+
+    if not _may_set_personal_email(emp, identity_email):
+        # Same wording as the create endpoint's identity failure, so a caller can't
+        # tell "wrong email" apart from "no such employee".
+        raise AlumniRequestError(
+            _("The email provided does not match our records for this employee."),
+            error_code="NOT_AUTHORIZED",
+        )
+
+    if (emp.get("personal_email") or "").strip():
+        raise AlumniRequestError(
+            _("This employee already has a Personal Email on record. "
+              "Please contact HR to change it."),
+            error_code="PERSONAL_EMAIL_ALREADY_SET",
+        )
+
+    if not personal_email:
+        raise AlumniRequestError(
+            _("Personal Email is required."),
+            error_code="INVALID_PERSONAL_EMAIL",
+        )
+
+    if not validate_email_address(personal_email):  # "" when it doesn't parse
+        raise AlumniRequestError(
+            _("'{0}' is not a valid email address.").format(personal_email),
+            error_code="INVALID_PERSONAL_EMAIL",
+        )
+
+    # The alumni account has to be independent of the company login — the checkbox
+    # handler enforces that at switch time, so reject the clash now instead, while
+    # the portal can still ask for a different address.
+    company_addresses = {
+        (emp.get("company_email") or "").strip().lower(),
+        (emp.get("user_id") or "").strip().lower(),
+    } - {""}
+    if personal_email.lower() in company_addresses:
+        raise AlumniRequestError(
+            _("Personal Email must be different from the company email so the "
+              "alumni account is independent."),
+            error_code="INVALID_PERSONAL_EMAIL",
+        )
+
+    frappe.db.set_value("Employee", emp.name, "personal_email", personal_email)
+    frappe.db.commit()
+
+    # Report success only once the row actually carries the new address.
+    saved = (frappe.db.get_value("Employee", emp.name, "personal_email") or "").strip()
+    if saved != personal_email:
+        raise AlumniRequestError(
+            _("Could not save the Personal Email. Please try again.")
+        )
+
+    _logger.info(f"Personal Email set on Employee {emp.name} via the alumni request flow.")
+    emp.personal_email = saved
     return emp
 
 
@@ -584,6 +737,9 @@ def mark_employee_as_alumni(employee_id: str) -> dict:
     already an alumnus this is a no-op. Never modifies ``Employee.status`` or
     ``User.enabled``.
 
+    Called by the Alumni Request approval workflow. Bypasses the Personal Email
+    validation that applies only to manual user-initiated checkbox changes.
+
     Returns ``{"success": bool, "already": bool, "employee": id}``.
     """
     employee_id = _clean(employee_id)
@@ -597,8 +753,15 @@ def mark_employee_as_alumni(employee_id: str) -> dict:
     emp.set(ALUMNI_FLAG, 1)
     # Save through the ORM so the existing sync_alumni_flag hook mirrors the flag
     # onto the linked User — that is what actually grants Alumni Portal access.
-    emp.save(ignore_permissions=True)
-    frappe.db.commit()
+    # Signal the checkbox validation hook to skip Personal Email requirement, since
+    # this is being set by the approval workflow, not a manual user action.
+    frappe.local.flags._alumni_checkbox_from_approval_workflow = True
+    try:
+        emp.save(ignore_permissions=True)
+        frappe.db.commit()
+    finally:
+        # Clean up the flag
+        frappe.local.flags.pop("_alumni_checkbox_from_approval_workflow", None)
 
     _logger.info(f"Employee {employee_id} marked as alumni employee.")
     return {"success": True, "already": False, "employee": employee_id}

@@ -73,6 +73,28 @@ const mapFieldToFormio = (field: FieldConfig, ctx: MapperContext) => {
           : {}),
       };
 
+    case "Datetime":
+      return {
+        type: "datetime",
+        key: field.fieldname,
+        label,
+        input: true,
+        enableDate: true,
+        enableTime: true,
+        format: "dd-MM-yyyy HH:mm",
+        placeholder: "dd-mm-yyyy hh:mm",
+        widget: {
+          type: "calendar",
+          displayInTimezone: "viewer",
+          locale: "en",
+          enableTime: true,
+          time_24hr: true,
+        },
+        validate: buildValidation(field.label, required),
+        validateOn: "blur",
+        html: true,
+      };
+
     case "Currency":
       return {
         type: "number",

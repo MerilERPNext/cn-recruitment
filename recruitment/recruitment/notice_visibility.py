@@ -31,18 +31,27 @@ def flags_available() -> bool:
     )
 
 
-def visible_in_portal(ess_flag, alumni_flag, portal: str) -> bool:
-    """Apply the visibility matrix for one notice.
+def visible_in_portal(
+    ess_flag, alumni_flag, portal: str, *, legacy_default_ess: bool = True
+) -> bool:
+    """Apply the visibility matrix for one notice (or, via `legacy_default_ess`,
+    any other doctype reusing this same ESS/Alumni flag pair -- see
+    `recruitment.recruitment.overrides.todo_ess_visibility` for Todo Type).
 
-    ``portal`` is ``"ess"`` or ``"alumni"``. ESS also shows the legacy default
-    (both unchecked); Alumni shows only explicitly-flagged notices.
+    ``portal`` is ``"ess"`` or ``"alumni"``. Alumni always shows only
+    explicitly-flagged rows. ESS additionally shows the "neither set" legacy
+    default when ``legacy_default_ess`` is True (Notice's behaviour, and the
+    default here so every existing call site is unaffected); pass False for a
+    strict-opt-in caller where "neither set" must mean hidden everywhere.
     """
     ess = cint(ess_flag)
     alumni = cint(alumni_flag)
     if portal == "alumni":
         return alumni == 1
-    # ESS: flagged for ESS, or the legacy "neither set" default.
-    return ess == 1 or (ess == 0 and alumni == 0)
+    if legacy_default_ess:
+        # ESS: flagged for ESS, or the legacy "neither set" default.
+        return ess == 1 or (ess == 0 and alumni == 0)
+    return ess == 1
 
 
 def filter_notices_by_portal(notices: list, portal: str) -> list:

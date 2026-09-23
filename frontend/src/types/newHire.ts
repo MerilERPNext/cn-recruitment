@@ -63,7 +63,9 @@ export interface NewHireRow {
   date_of_joining?: string;
   custom_new_hire_stage?: string;
   status?: string;
+  company_email?: string;
   can_initiate_onboarding?: boolean;
+  can_activate?: boolean;
   [key: string]: unknown;
 }
 
@@ -122,6 +124,7 @@ export interface ActivateEmployeeResponse {
     name: string;
     previous_name?: string | null;
     status: string;
+    company_email?: string;
     renamed: boolean;
   };
 }

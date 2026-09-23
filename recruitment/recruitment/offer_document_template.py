@@ -447,9 +447,9 @@ def validate_offer_document_template(doc, method=None):
 	template while the draft sits there. What must not happen is the candidate
 	receiving an offer mail with no letter attached.
 
-	A template picked by hand on the form is taken at its word — that is HR
-	overriding the rules deliberately, and the picker already filtered the list
-	it was chosen from.
+	The template must be picked by hand: a blank field used to resolve silently to
+	whichever template admitted the offer first, so HR never saw which letter the
+	candidate was sent. The picker still filters the list it is chosen from.
 	"""
 	# Toggle first: with the path off there is no letter to be missing, and an
 	# offer that has always been sent as a Print Format must keep submitting.
@@ -457,8 +457,15 @@ def validate_offer_document_template(doc, method=None):
 		return
 	if doc.get("custom_offer_letter_template"):
 		return
+
 	if resolve_offer_document_templates(doc):
-		return
+		frappe.throw(
+			_("Select the {0} for this offer. It is no longer filled in automatically, "
+			  "so the letter the candidate receives is the one you picked.").format(
+				frappe.bold(_("Offer Letter Template"))
+			),
+			title=_("Offer letter template required"),
+		)
 
 	frappe.throw(
 		_("{0}<br><br>The offer letter is built from a Document Template whose "

@@ -1,6 +1,6 @@
 import React, { ReactNode, useState, useRef, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
-import { User, Shield } from "lucide-react";
+import { User, Shield, Loader2 } from "lucide-react";
 import { allocatedToType } from "../../types/allocatedToTooltip";
 import { RoleAssignedUsersType } from "../../types/flows";
 import RoleUsersModal from "./RoleUsersModal";
@@ -18,6 +18,8 @@ interface AllocatedToTooltipProps {
     showUserRoleLables?: boolean;
     RoleAssignedUsers?: RoleAssignedUsersType[];
     overrideDesignation?: string;
+    /** Data is still being fetched — show a loader instead of "Not Allocated". */
+    loading?: boolean;
 }
 
 type NormalizedUser = {
@@ -39,6 +41,7 @@ const AllocatedToTooltip: React.FC<AllocatedToTooltipProps> = ({
     showUserRoleLables = false,
     RoleAssignedUsers,
     overrideDesignation,
+    loading = false,
 }) => {
     const [selectedRoleData, setSelectedRoleData] = useState<RoleAssignedUsersType | null>(null);
     const [isRoleModalOpen, setIsRoleModalOpen] = useState(false);
@@ -289,7 +292,16 @@ const AllocatedToTooltip: React.FC<AllocatedToTooltipProps> = ({
                 </div>
 
                 <div className="flex flex-col gap-2.5 p-3.5">
-                    {!hasContent && (
+                    {!hasContent && loading && (
+                        <div className="flex items-center gap-2">
+                            <Loader2 className="w-3.5 h-3.5 animate-spin text-primary-600" />
+                            <span className="text-[11px] font-brand font-medium text-gray-500">
+                                Fetching approvers...
+                            </span>
+                        </div>
+                    )}
+
+                    {!hasContent && !loading && (
                         <div className="flex items-center gap-2.5">
                             <span className="text-[11px] font-brand font-medium italic text-gray-500">
                                 Not Allocated

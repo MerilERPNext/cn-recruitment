@@ -182,10 +182,125 @@ def make_salary_slip(
         return doc
 
 
+# --- Salary amounts in words --------------------------------------------------
+# Every salary figure on the offer is also stated in words, beside the figure.
+# Worded from the site's number format (Indian: "Twelve Lakh, Fifty Thousand"), in
+# the company's currency. Stored, so offer letters and reports can print them.
+
+# salary field -> its "(In Words)" field
+SALARY_WORDS_FIELDS = {
+    "custom_base_salary": "custom_fixed_ctc_in_words",
+    "custom_ctc": "custom_ctc_in_words",
+    "custom_total_fixed_pay": "custom_total_fixed_pay_in_words",
+    "custom_variable_incentive": "custom_variable_incentive_in_words",
+    "custom_location_allowance": "custom_location_allowance_in_words",
+    # Free text, fetched from the Job Applicant ("12,50,000", "12 LPA").
+    "custom_current_salary": "custom_current_salary_in_words",
+    "custom_expected_salary": "custom_expected_salary_in_words",
+}
+
+# Kept for the Fixed CTC patch that shipped first.
+FIXED_CTC_FIELD = "custom_base_salary"
+FIXED_CTC_WORDS_FIELD = SALARY_WORDS_FIELDS[FIXED_CTC_FIELD]
+
+# "12 LPA", "1.5 Cr" — the shorthand recruiters type into the free-text fields.
+_SALARY_UNITS = {
+    "l": 100000, "lpa": 100000, "lac": 100000, "lacs": 100000, "lakh": 100000, "lakhs": 100000,
+    "cr": 10000000, "crore": 10000000, "crores": 10000000,
+}
+
+
+def _salary_amount(value):
+    """The number a salary value stands for, or None when it is not one.
+
+    Numbers pass through; text is read as digits (Indian or Western grouping,
+    optional currency) with an optional lakh / crore unit. Anything else — "5
+    years", "negotiable" — is None rather than a guess.
+    """
+    import re
+
+    if value in (None, ""):
+        return None
+    if isinstance(value, (int, float)):
+        return flt(value)
+    text = re.sub(r"(?i)^\s*(inr|rs\.?|₹)\s*", "", str(value)).strip().lower()
+    match = re.fullmatch(r"([\d,]*\.?\d+)\s*([a-z]*)", text)
+    if not match:
+        return None
+    number, unit = match.groups()
+    if unit and unit not in _SALARY_UNITS:
+        return None
+    return flt(number.replace(",", "")) * _SALARY_UNITS.get(unit, 1)
+
+
+def _offer_currency(company=None):
+    return (
+        (company and frappe.get_cached_value("Company", company, "default_currency"))
+        or frappe.db.get_default("currency")
+        or "INR"
+    )
+
+
+def salary_words(value, company=None):
+    from frappe.utils import money_in_words
+
+    amount = _salary_amount(value)
+    return money_in_words(amount, _offer_currency(company)) if amount else ""
+
+
+def fixed_ctc_words(amount, company=None):
+    return salary_words(amount, company)
+
+
+def set_salary_in_words(doc, method=None):
+    """`validate` and `before_save`: keep every "(In Words)" field in step with its
+    figure. Runs in both because CTC (Total) is only computed in before_save
+    (offer_compensation), after validate — and submit runs validate alone."""
+    company = doc.get("company")
+    for source, words_field in SALARY_WORDS_FIELDS.items():
+        if doc.meta.has_field(words_field):
+            doc.set(words_field, salary_words(doc.get(source), company))
+
+
+@frappe.whitelist()
+def get_salary_in_words(amount, company=None):
+    """Live preview for the form, before the offer is saved."""
+    return salary_words(amount, company)
+
+
 # recruitment.customizations.job_offer.CustomJobOffer
 class CustomJobOffer(JobOffer):
     def on_change(self):
         pass
+
+    def validate(self):
+        """HRMS refuses a second offer while any other one is uncancelled — even a
+        withdrawn or declined one — which leaves no way to resend. Only a LIVE
+        offer blocks here; withdrawn / rejected ones are history, and "Resend Job
+        Offer" raises the next version against them. Recruitment Settings ->
+        Allow Multiple Job Offers lifts the check entirely, as offer_validation
+        already does on insert.
+        """
+        from recruitment.api.offer_lifecycle import CLOSED_STATUSES
+
+        self.validate_vacancies()
+        if cint(frappe.db.get_single_value("Recruitment Settings", "allow_multiple_job_offers")):
+            return
+        job_offer = frappe.db.exists(
+            "Job Offer",
+            {
+                "job_applicant": self.job_applicant,
+                "docstatus": ["!=", 2],
+                "status": ["not in", CLOSED_STATUSES],
+                "name": ["!=", self.name],
+            },
+        )
+        if job_offer and self.status not in CLOSED_STATUSES:
+            frappe.throw(
+                _("Job Offer: {0} is already for Job Applicant: {1}").format(
+                    frappe.bold(job_offer), frappe.bold(self.job_applicant)
+                )
+            )
 
 
 # --- Job Requisition behind the offer ---------------------------------------

@@ -32,6 +32,7 @@ Each row in custom_position_details requires:
 """
 
 import json
+import math
 
 import frappe
 from frappe import _
@@ -111,6 +112,10 @@ PARENT_READONLY_FIELDS = (
     "custom_active_requisitions",
     "custom_active_openings",
     "custom_headcount_last_updated",
+    # How many of this requisition's own Vacancy Details rows were Approved /
+    # Rejected. Stored on the doc by recruitment.api.requisition_pipeline.
+    "custom_approved_positions",
+    "custom_rejected_positions",
     # Set by recruitment.api.requisition_budget when the Department / Cost Center
     # budget left no longer covers this live requisition.
     "custom_over_budget",
@@ -1406,28 +1411,42 @@ def _to_amount(value):
     if value in (None, ""):
         return None
     try:
-        return float(str(value).replace(",", "").strip())
+        amount = float(str(value).replace(",", "").strip())
     except (TypeError, ValueError):
         return None
+    # "inf" / "nan" parse as floats but are not salaries.
+    return amount if math.isfinite(amount) else None
+
+
+def _salary_digits(amount):
+    """Number of digits in the whole-rupee part of a salary: 4500.75 -> 4."""
+    return len(str(int(abs(amount))))
 
 
 def _limits_from_rows(rows):
     """Recruitment Settings -> Salary Range Limits rows as
-    `{timeframe: {"min": x|None, "max": y|None}}`.
+    `{timeframe: {"min_digits": m|None, "max_digits": n|None, "min": x|None, "max": y|None}}`.
 
-    A blank (or zero) end means that end is unrestricted, and a timeframe with
-    no row is simply absent from the map — so an unconfigured site gets `{}` and
-    neither the form config nor the save-time check changes anything."""
+    The limits are digit counts on the whole part of the salary; `min`/`max`
+    are the equivalent amounts (4 digits -> 1000, 6 digits -> 999999), sent for
+    display. A blank (or zero) end means that end is unrestricted, and a
+    timeframe with no row is simply absent from the map — so an unconfigured
+    site gets `{}` and neither the form config nor the save-time check changes
+    anything."""
     limits = {}
     for row in rows or []:
         timeframe = (row.get("salary_timeframe") or "").strip()
         if not timeframe:
             continue
-        low = frappe.utils.flt(row.get("min_amount"))
-        high = frappe.utils.flt(row.get("max_amount"))
+        low = frappe.utils.cint(row.get("min_digits"))
+        high = frappe.utils.cint(row.get("max_digits"))
+        low = low if low > 0 else None
+        high = high if high > 0 else None
         limits[timeframe] = {
-            "min": low if low > 0 else None,
-            "max": high if high > 0 else None,
+            "min_digits": low,
+            "max_digits": high,
+            "min": 10 ** (low - 1) if low else None,
+            "max": 10 ** high - 1 if high else None,
         }
     return limits
 
@@ -1761,6 +1780,9 @@ def get_available_job_requisition_fields():
 _DEFAULT_REQUISITION_COLUMNS = [
     "name", "designation", "department", "company",
     "status", "no_of_positions",
+    # Of those positions, how many the approvers passed / turned down — stored on
+    # the requisition by requisition_pipeline, so no extra query either.
+    "custom_approved_positions", "custom_rejected_positions",
     # The ask is only meaningful next to what already exists: how many of this
     # designation are on the rolls in this region, and how many are already being
     # hired there. Both are stored on the requisition, so this costs no extra query.
@@ -1999,7 +2021,7 @@ def load_current_form_into_settings(overwrite=0):
 
 
 @frappe.whitelist()
-def create_job_requisition(payload=None):
+def create_job_requisition(payload=None, draft=None):
     """
     Submit a Job Requisition.
 
@@ -2009,6 +2031,11 @@ def create_job_requisition(payload=None):
     Fresher creates exactly ONE requisition holding every region it hires in, as
     one `custom_regions` row per unique region. Each submission is independent —
     nothing is merged into requisitions created by an earlier submission.
+
+    `draft` names the Job Requisition Draft this submission came from (see
+    recruitment.api.requisition_draft). It is discarded once the requisition(s)
+    exist — the form is submitted, so the working copy has served its purpose.
+    Submitting is otherwise untouched by the draft feature.
 
     Returns:
         {
@@ -2080,6 +2107,12 @@ def create_job_requisition(payload=None):
             raise
 
         frappe.db.commit()
+
+        if draft:
+            # After the commit: the requisitions are real whatever happens here.
+            from recruitment.api.requisition_draft import discard_on_submit
+
+            discard_on_submit(draft)
 
         created_count = len(results)
         return _ok(
@@ -3623,7 +3656,8 @@ def validate_requisition_settings(doc, method=None):
 
 def _enforce_salary_range(doc, settings):
     """Block a salary outside the range configured for the requisition's Salary
-    Timeframe (Recruitment Settings -> Salary Range Limits).
+    Timeframe (Recruitment Settings -> Salary Range Limits). The limits are
+    digit counts on the whole part of the amount.
 
     No row for the timeframe, a blank end, or a blank/non-numeric salary means
     nothing is checked — so this is a no-op on every site until HR configures
@@ -3636,24 +3670,27 @@ def _enforce_salary_range(doc, settings):
     if not bounds:
         return
 
-    low, high = bounds.get("min"), bounds.get("max")
+    low, high = bounds.get("min_digits"), bounds.get("max_digits")
     for fieldname in (SALARY_MIN_FIELD, SALARY_MAX_FIELD):
         amount = _to_amount(doc.get(fieldname))
         if amount is None:
             continue
         df = doc.meta.get_field(fieldname)
         label = _(df.label) if df and df.label else fieldname
-        if low is not None and amount < low:
+        if amount < 0:
+            frappe.throw(_("{0} cannot be negative.").format(label))
+        digits = _salary_digits(amount)
+        if low is not None and digits < low:
             frappe.throw(
-                _("{0} ({1}) is below the minimum of {2} allowed for {3} salaries. "
+                _("{0} ({1}) has {2} digits, below the minimum of {3} digits allowed for {4} salaries. "
                   "Change the amount or update the limit in Recruitment Settings.")
-                .format(label, frappe.utils.fmt_money(amount), frappe.utils.fmt_money(low), timeframe)
+                .format(label, frappe.utils.fmt_money(amount), digits, low, timeframe)
             )
-        if high is not None and amount > high:
+        if high is not None and digits > high:
             frappe.throw(
-                _("{0} ({1}) exceeds the maximum of {2} allowed for {3} salaries. "
+                _("{0} ({1}) has {2} digits, above the maximum of {3} digits allowed for {4} salaries. "
                   "Change the amount or update the limit in Recruitment Settings.")
-                .format(label, frappe.utils.fmt_money(amount), frappe.utils.fmt_money(high), timeframe)
+                .format(label, frappe.utils.fmt_money(amount), digits, high, timeframe)
             )
 
 
@@ -3790,6 +3827,10 @@ _EDIT_AFTER_APPROVAL_IGNORE = {
     # from the stored value without anyone having edited the requisition.
     "custom_active_employees", "custom_active_requisitions", "custom_active_openings",
     "custom_headcount_last_updated",
+    # Approved / Rejected Positions — recounted when a Vacancy Details row's
+    # approval status is stamped (requisition_pipeline.refresh_position_approvals),
+    # without a save, so an open form may legitimately hold an older number.
+    "custom_approved_positions", "custom_rejected_positions",
     # Parent mirrors of where the requisition hires — the Regions table's region
     # and the Position Details table's location (see
     # recruitment.customizations.job_requisition_region). Derived, never typed —

@@ -20,8 +20,18 @@ Policy
 * An **alumni** session (``Employee.status == "Left"`` OR
   ``User.custom_is_alumni_employee``) may ONLY hit the Alumni Portal namespace
   ``recruitment.recruitment.alumni_portal.*`` (plus a tiny framework allowlist).
-  Everything else — ESS RPC, ``/api/resource/*``, the desk, the standard ESS
-  login — is rejected with **403**.
+  A blocked **API/RPC call** (``/api/method/*``, ``/api/resource/*``, and any
+  non-API "other" path that isn't one of the page shells below — favicons,
+  manifests, 404s, static assets, ...) gets a **403** with a clear message,
+  same as before. A blocked **page-shell load** — exactly ``/``, ``/app*``
+  (Desk), ``/webapp*`` (the ESS shell) or ``/login*`` — instead logs the
+  session out and falls through as Guest, so the page's own existing
+  guest-redirect (``frappe.www.app`` / ``recruitment.www.webapp``) sends it to
+  ``/login`` instead of rendering a dead-end 403 page — this is what actually
+  happens right after an admin impersonates an alumni user and the page
+  reloads. Scoped to just those shells (see ``_is_page_shell``) so that an
+  unrelated blocked "other" request never silently kills an otherwise-working
+  alumni session.
 * **Everyone else** (current employees, admins, guests) is untouched: the hook
   returns immediately, so **ESS behaves exactly as before**.
 
@@ -59,6 +69,16 @@ _ALUMNI_GLOBAL_ALLOWLIST = {
     "frappe.ping",
 }
 
+# The Desk/ESS/login page SHELLS -- the only "other"-kind (non-API) paths for
+# which a block should log the session out (see `_is_page_shell`). Deliberately
+# NOT every blocked "other" path: a stray favicon/manifest/404/static-asset
+# request from a perfectly legitimate alumni session (e.g. the Alumni Portal
+# frontend itself) is also "other" and also blocked, but logging out on THOSE
+# would silently kill a working alumni session over a single harmless 403 --
+# which is exactly what happened before this allowlist was added (see
+# `enforce_alumni_isolation`'s docstring note below).
+_PAGE_SHELL_PREFIXES = ("/app", "/webapp", "/login")
+
 # Individual methods that live OUTSIDE the alumni namespaces but which the Alumni
 # Portal legitimately calls.
 #
@@ -73,6 +93,13 @@ _ALUMNI_METHOD_ALLOWLIST = {
     # without this.
     "recruitment.api.alumni_request.create_alumni_employee_request",
     "recruitment.api.alumni_request.get_alumni_request_status",
+    # Recovery step for a PERSONAL_EMAIL_REQUIRED failure above. Guest-callable,
+    # but not guest-authorized — it re-checks the same employee/email identity
+    # pair before writing anything (see `_may_set_personal_email`), so listing
+    # it here only restores reachability for an alumni session in the same
+    # browser; it grants no additional capability over what the function
+    # itself already allows a Guest to do.
+    "recruitment.api.alumni_request.update_employee_personal_email",
     # Alumni Todo manager. Work for an alumnus is raised against the alumni User
     # through the normal Manager + Workflow flow; assignments that already
     # belonged to the company account are deliberately left there. All three
@@ -97,62 +124,48 @@ _ALUMNI_METHOD_ALLOWLIST = {
     "chatnext_work_connect.chatnext_work_connect.api.reaction.get_reactions",
     "chatnext_work_connect.chatnext_work_connect.api.saved_post.get_saved_posts",
     "chatnext_work_connect.chatnext_work_connect.api.saved_post.is_post_saved",
-    "chatnext_work_connect.chatnext_work_connect.api.follow.get_follow_suggestions",
     "chatnext_work_connect.chatnext_work_connect.api.follow.get_followers",
     "chatnext_work_connect.chatnext_work_connect.api.follow.get_following",
-    "chatnext_work_connect.chatnext_work_connect.api.celebrations.get_upcoming_celebrations",
+    # celebrations.get_upcoming_celebrations is NOT here: it covers the whole
+    # workforce. The portal uses alumni_portal.get_alumni_celebrations, which
+    # filters the result to fellow alumni.
     "chatnext_work_connect.chatnext_work_connect.api.announcement.get_announcements",
     "chatnext_work_connect.chatnext_work_connect.api.announcement.get_announcement_details",
     "chatnext_work_connect.chatnext_work_connect.api.event.get_upcoming_events",
     "chatnext_work_connect.chatnext_work_connect.api.event.get_event_details",
-    "chatnext_work_connect.chatnext_work_connect.api.recognition_points.get_top_winners",
-    "chatnext_work_connect.chatnext_work_connect.api.recognition_points.get_award_winners",
-    "chatnext_work_connect.chatnext_work_connect.api.recognition_points.get_award_winner_list",
     "chatnext_work_connect.chatnext_work_connect.api.work_connect_settings.get_app_identity",
     "chatnext_work_connect.chatnext_work_connect.api.work_connect_settings.get_content_control_settings",
     "chatnext_work_connect.chatnext_work_connect.api.notification.get_notifications",
     "chatnext_work_connect.chatnext_work_connect.api.notification.get_unread_count",
     # ── Feed interactions (writes) ───────────────────────────────────────────
-    # Each of these drives a control the portal's Feed actually renders, so
-    # blocking them left those buttons throwing 403 rather than being hidden.
+    # Comment, reaction and saved-post writes are NOT listed here any more.
+    # They are switchable per site via "Alumni Portal Settings", and that switch
+    # cannot be enforced inside chatnext_work_connect without editing an app ESS
+    # shares. So the portal calls wrappers instead --
+    #   alumni_portal.add_alumni_comment / update_alumni_comment /
+    #   delete_alumni_comment / add_alumni_reaction / remove_alumni_reaction /
+    #   save_alumni_post / unsave_alumni_post
+    # -- which consult alumni_action_allowed() and then delegate to these very
+    # functions. Re-adding the direct methods here would make that gate
+    # bypassable in one call, exactly as it would for create_post.
     #
-    # They are safe to expose for the same reason the reads are: every one calls
-    # require_work_connect_access(), and every one derives the actor from
-    # frappe.session.user -- never from a caller-supplied parameter. An alumnus
-    # can therefore only ever act as themselves:
-    #   * remove_reaction, unsave_post  re-check ownership before deleting.
-    #   * follow_user     resolves the follower from the session, refuses self.
+    # follow.get_follow_suggestions is likewise absent: it suggests by
+    # department with no alumni filter, so the portal uses
+    # alumni_portal.get_alumni_follow_suggestions, which restricts the result to
+    # other alumni. follow_user / unfollow_user stay direct -- they name a
+    # target the caller already chose, and carry no site-level switch.
     #
-    # post.create_post is deliberately NOT here, even though the portal creates
-    # posts. It accepts a caller-supplied `visibility` and trusts
-    # `attachments[].file` without checking who owns the file, so reaching it
-    # directly would let an alumnus target an internal audience by id and
-    # attach any file_url on the site. The portal goes through
-    # alumni_portal.create_alumni_post, which normalises the payload and then
-    # calls it. Allowlisting it here would make that wrapper bypassable.
+    # post.create_post is deliberately NOT here either. It accepts a
+    # caller-supplied `visibility` and trusts `attachments[].file` without
+    # checking who owns the file, so reaching it directly would let an alumnus
+    # target an internal audience by id and attach any file_url on the site.
+    # Alumni may not publish to the feed at all -- alumni_portal's own
+    # create_alumni_post refuses them too, so neither route works.
     #
-    # Comment writes ARE here now -- the portal's Feed renders a composer under
-    # each post (see the alumni portal's `CommentsSection`). They meet the same
-    # bar as the reaction and follow writes above, so they need no wrapper:
-    #   * add_comment     takes the author from frappe.session.user, and gates
-    #                     on check_post_visibility() -- an alumnus can only
-    #                     comment on a post they can already read. A
-    #                     parent_comment is verified to belong to the same post.
-    #   * update_comment  refuses unless comment.author == session user.
-    #   * delete_comment  refuses unless the caller wrote the comment, wrote the
-    #                     post, or holds delete permission on Post Comment.
-    # None of the three accepts a caller-supplied actor, and none takes a
-    # visibility or a file reference -- which is what forced the post writes
-    # through wrappers instead.
+    # What remains below is safe for the same reason the reads are: each calls
+    # require_work_connect_access() and derives the actor from
+    # frappe.session.user, never from a parameter.
     #
-    # Caveat worth knowing: add_comment does NOT check post.allow_comments, so
-    # a post with comments switched off can still be commented on by calling it
-    # directly. That is pre-existing Work Connect behaviour -- ESS relies on its
-    # UI disabling the box -- and the alumni portal disables its composer the
-    # same way. Enforcing it server-side belongs in chatnext_work_connect.
-    "chatnext_work_connect.chatnext_work_connect.api.comment.add_comment",
-    "chatnext_work_connect.chatnext_work_connect.api.comment.update_comment",
-    "chatnext_work_connect.chatnext_work_connect.api.comment.delete_comment",
     # Poll voting. Same bar as the reaction and comment writes:
     #   * voter comes from frappe.session.user, never a parameter;
     #   * check_post_visibility() gates it, so an alumnus can only vote on a
@@ -163,10 +176,6 @@ _ALUMNI_METHOD_ALLOWLIST = {
     # It returns the refreshed counts and the caller's vote, which is what lets
     # the card reconcile against the server instead of guessing.
     "chatnext_work_connect.chatnext_work_connect.api.post.vote_poll",
-    "chatnext_work_connect.chatnext_work_connect.api.reaction.add_reaction",
-    "chatnext_work_connect.chatnext_work_connect.api.reaction.remove_reaction",
-    "chatnext_work_connect.chatnext_work_connect.api.saved_post.save_post",
-    "chatnext_work_connect.chatnext_work_connect.api.saved_post.unsave_post",
     "chatnext_work_connect.chatnext_work_connect.api.follow.follow_user",
     "chatnext_work_connect.chatnext_work_connect.api.follow.unfollow_user",
     # ── Groups ───────────────────────────────────────────────────────────────
@@ -281,6 +290,17 @@ def _is_allowed_for_alumni(kind: str, command: str) -> bool:
     return command in _ALUMNI_GLOBAL_ALLOWLIST or command in _ALUMNI_METHOD_ALLOWLIST
 
 
+def _is_page_shell(path: str) -> bool:
+    """True for exactly the Desk/ESS/login page shells -- ``/``, ``/app`` (+
+    subpaths), ``/webapp`` (+ subpaths), ``/login`` (+ query string). NOT true
+    for every other "other"-kind path (favicons, manifests, 404s, static
+    assets, ...) -- see `_PAGE_SHELL_PREFIXES`.
+    """
+    if path in ("", "/"):
+        return True
+    return any(path == p or path.startswith(p + "/") for p in _PAGE_SHELL_PREFIXES)
+
+
 # ── The hook ──────────────────────────────────────────────────────────────────
 def enforce_alumni_isolation() -> None:
     """auth_hook: confine alumni sessions to the Alumni Portal namespace."""
@@ -295,8 +315,43 @@ def enforce_alumni_isolation() -> None:
     if _is_allowed_for_alumni(kind, command):
         return
 
-    # Blocked. If the alumnus just authenticated through the ESS login, kill the
-    # session that init_request() created so no usable ESS session lingers.
+    if kind == "other" and _is_page_shell(getattr(frappe.local.request, "path", "") or ""):
+        # A blocked Desk/ESS/login page-shell load (`/`, `/app*`, `/webapp*`,
+        # `/login*`) -- most commonly hit right after an admin impersonates an
+        # alumni user and the page reloads under the new identity. Throwing
+        # the framework's generic 403 website page here traps the browser:
+        # `/`, `/login` and `/app` are ALL blocked the same way -- "Home" and
+        # any further navigation just re-triggers this same block, and Desk's
+        # own `session_last_route` replay can turn it into a permanent loop
+        # with no way back short of clearing cookies.
+        #
+        # Log the alumni session out right now instead -- the same real
+        # logout Frappe itself uses (ends the session, clears the sid cookie,
+        # flips frappe.session.user to Guest for the rest of THIS request)
+        # -- and let the request fall through rather than throwing. The
+        # page's own controller then takes over exactly as it does for any
+        # expired session: frappe.www.app.get_context and
+        # recruitment.www.webapp.get_context both already redirect a Guest
+        # straight to `/login`, so this reuses that existing, correct path
+        # instead of re-implementing a redirect here.
+        #
+        # Deliberately scoped to just these page shells, NOT every blocked
+        # "other" path: a stray favicon/manifest/404/static-asset request
+        # from an otherwise perfectly legitimate alumni session (e.g. the
+        # Alumni Portal frontend's own background requests) is also "other"
+        # -- logging THOSE out would silently kill a working alumni session
+        # server-side over one harmless 403, breaking every subsequent
+        # alumni-portal API call in that browser tab. That happened for real:
+        # a blocked `/some-random-page`-style request deleted the session,
+        # and the next `get_alumni_feed` call then failed as Guest with
+        # "... is not whitelisted" even though the alumni portal itself was
+        # never misbehaving.
+        frappe.local.login_manager.logout()
+        return
+
+    # Blocked API/RPC call. If the alumnus just authenticated through the ESS
+    # login, kill the session that init_request() created so no usable ESS
+    # session lingers.
     is_login = kind == "method" and command == "login"
     if is_login:
         _kill_current_session()

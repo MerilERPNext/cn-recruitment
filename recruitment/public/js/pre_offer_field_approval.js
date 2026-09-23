@@ -43,64 +43,8 @@ function poa_skey(str) {
 
 
 // ── Attachments ────────────────────────────────────────────────────────────
-// A submitted Attach field stores a file path ("/private/files/dummy.pdf"),
-// which the panel used to print as plain text — the recruiter could see that a
-// document was sent but not open it. These render it as a link instead, with an
-// inline preview for the two types a browser can show on the spot.
-const POA_IMAGE_RE = /\.(png|jpe?g|gif|webp|bmp|svg)(\?|#|$)/i;
-const POA_PDF_RE   = /\.pdf(\?|#|$)/i;
-const POA_FILE_RE  = /^(https?:\/\/|\/files\/|\/private\/files\/)/i;
-
-// Attach fields always; anything else only when the value really is a file path,
-// so a plain Data field that happens to hold text is never turned into a link.
-function poa_isFileValue(entry, raw) {
-    const ft = entry.fieldtype || "";
-    if (ft === "Attach" || ft === "Attach Image") return true;
-    return POA_FILE_RE.test(raw);
-}
-
-function poa_fileName(url) {
-    try {
-        const path = String(url).split(/[?#]/)[0];
-        return decodeURIComponent(path.split("/").filter(Boolean).pop() || url);
-    } catch (e) {
-        return url;
-    }
-}
-
-function poa_fileCellHTML(raw) {
-    const url  = frappe.utils.escape_html(raw);
-    const name = frappe.utils.escape_html(poa_fileName(raw));
-    return `<a class="poa-file-link" href="${url}" data-file="${url}" title="${url}"
-               style="font-size:0.83rem;word-break:break-all;">📎 ${name}</a>
-            <a href="${url}" target="_blank" rel="noopener" class="text-muted"
-               title="${__("Open in a new tab")}" style="margin-left:6px;font-size:0.78rem;">↗</a>`;
-}
-
-// Preview in place for PDFs and images; every other type is handed to the
-// browser in a new tab, which is what the ↗ link does anyway.
-function poa_previewFile(url) {
-    const isPdf = POA_PDF_RE.test(url);
-    const isImg = POA_IMAGE_RE.test(url);
-    if (!isPdf && !isImg) {
-        window.open(url, "_blank", "noopener");
-        return;
-    }
-    const safe = frappe.utils.escape_html(url);
-    const d = new frappe.ui.Dialog({
-        title: poa_fileName(url),
-        size: "large",
-        fields: [{ fieldtype: "HTML", fieldname: "body" }],
-        primary_action_label: __("Open in a new tab"),
-        primary_action: () => window.open(url, "_blank", "noopener"),
-    });
-    d.fields_dict.body.$wrapper.html(
-        isPdf
-            ? `<iframe src="${safe}" style="width:100%;height:70vh;border:1px solid var(--border-color);border-radius:4px;"></iframe>`
-            : `<div style="text-align:center;"><img src="${safe}" style="max-width:100%;max-height:70vh;"></div>`
-    );
-    d.show();
-}
+// View / Download for Attach values — see approval_file_cells.js.
+const POA_FILES = window.recruitment_approval_files;
 
 
 // ── Child-table expandable rows ────────────────────────────────────────────
@@ -125,7 +69,10 @@ function poa_buildChildParts(entry) {
     const tbRows = rows.map((row, ri) => {
         const cells = childFields.map(f => {
             const v = row[f.fieldname] != null ? String(row[f.fieldname]) : "";
-            return `<td style="font-size:0.73rem;padding:4px 8px;white-space:nowrap;">${frappe.utils.escape_html(v)}</td>`;
+            const cell = v.trim() && POA_FILES.isFile(f.fieldtype, v)
+                ? POA_FILES.cellHTML(v, { compact: true })
+                : frappe.utils.escape_html(v);
+            return `<td style="font-size:0.73rem;padding:4px 8px;white-space:nowrap;">${cell}</td>`;
         }).join("");
         return `<tr style="${ri % 2 !== 0 ? "background:#f9fafb;" : ""}">${cells}</tr>`;
     }).join("");
@@ -375,8 +322,8 @@ function poa_render(frm, filterStatus, filterText) {
                 const raw  = entry.current_value != null ? String(entry.current_value) : "";
                 if (!raw.trim()) {
                     valueCell = `<span class="text-muted" style="font-style:italic;font-size:0.81rem;">—</span>`;
-                } else if (poa_isFileValue(entry, raw.trim())) {
-                    valueCell = poa_fileCellHTML(raw.trim());
+                } else if (POA_FILES.isFile(entry.fieldtype, raw)) {
+                    valueCell = POA_FILES.cellHTML(raw);
                 } else {
                     valueCell = `<span style="font-size:0.83rem;word-break:break-word;">${frappe.utils.escape_html(raw)}</span>`;
                 }
@@ -501,13 +448,7 @@ function poa_render(frm, filterStatus, filterText) {
         poa_promptComment(comment => poa_bulkUpdate(frm, "Rejected", comment));
     });
 
-    $wrapper.find(".poa-file-link").on("click", function (e) {
-        // Left-click previews in place; ctrl/cmd-click and the ↗ link keep the
-        // browser's own "open in a new tab" behaviour.
-        if (e.ctrlKey || e.metaKey || e.shiftKey || e.which === 2) return;
-        e.preventDefault();
-        poa_previewFile($(this).data("file"));
-    });
+    POA_FILES.bind($wrapper);
 
     $wrapper.find(".poa-toggle-child").on("click", function () {
         const eid     = $(this).data("expand-id");

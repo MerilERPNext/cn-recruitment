@@ -11,6 +11,8 @@
   "hiring_workflow_column",
   "enable_hiring_workflow",
   "enable_initiate_onboarding",
+  "mandatory_screening_stage",
+  "mandatory_shortlist_stage",
   "action_buttons_section",
   "enable_pre_offer_form",
   "enable_pre_onboarding_form",
@@ -23,6 +25,8 @@
   "disable_send_offer_after_sent",
   "withdraw_offer_only_after_sent",
   "enable_hr_ops_offer_verification",
+  "auto_withdraw_unjoined_offers",
+  "offer_joining_grace_days",
   "section_break_xbvj",
   "job_offer_print_format",
   "job_offer_print_format_mapping",
@@ -125,6 +129,22 @@
    "label": "Enable Initiate Onboarding Button"
   },
   {
+   "default": "1",
+   "depends_on": "enable_hiring_workflow",
+   "description": "When ON, every hiring workflow (template and Job Opening) must include a Screening stage, and it is always Mandatory. Its other settings stay editable.",
+   "fieldname": "mandatory_screening_stage",
+   "fieldtype": "Check",
+   "label": "Screening Stage Mandatory in All Hiring Flows"
+  },
+  {
+   "default": "1",
+   "depends_on": "enable_hiring_workflow",
+   "description": "When ON, every hiring workflow (template and Job Opening) must include a Shortlist stage, and it is always Mandatory. Its other settings stay editable.",
+   "fieldname": "mandatory_shortlist_stage",
+   "fieldtype": "Check",
+   "label": "Shortlist Stage Mandatory in All Hiring Flows"
+  },
+  {
    "fieldname": "action_buttons_section",
    "fieldtype": "Section Break",
    "label": "Action Buttons"
@@ -204,6 +224,22 @@
    "fieldname": "enable_hr_ops_offer_verification",
    "fieldtype": "Check",
    "label": "Require HR Ops Verification Before Sending Offer"
+  },
+  {
+   "default": "0",
+   "description": "Every day, change a sent or accepted offer to Withdrawn when the candidate has still not been activated as an employee after their Date of Joining plus the grace period below. The position goes back to Open and any pending onboarding is cancelled. Candidates who already have an Employee record are left for HR.",
+   "fieldname": "auto_withdraw_unjoined_offers",
+   "fieldtype": "Check",
+   "label": "Auto-withdraw Offer if Candidate Not Activated by DOJ"
+  },
+  {
+   "default": "0",
+   "depends_on": "eval:doc.auto_withdraw_unjoined_offers",
+   "description": "Days to wait after the Date of Joining before the offer is withdrawn. 0 withdraws it the day after the DOJ.",
+   "fieldname": "offer_joining_grace_days",
+   "fieldtype": "Int",
+   "label": "Grace Period after DOJ (Days)",
+   "non_negative": 1
   },
   {
    "fieldname": "section_break_xbvj",
@@ -392,13 +428,13 @@
    "label": "Enable AOP Budget Check (Department & Cost Center)"
   },
   {
-   "description": "Allowed salary range per Salary Timeframe on a Job Requisition. Leave the table empty for no limit.",
+   "description": "Allowed number of salary digits per Salary Timeframe on a Job Requisition. Leave the table empty for no limit.",
    "fieldname": "salary_range_limits_section",
    "fieldtype": "Section Break",
    "label": "Salary Range Limits"
   },
   {
-   "description": "One row per Salary Timeframe. A blank Minimum or Maximum means that end is unrestricted; a timeframe with no row is unrestricted.",
+   "description": "One row per Salary Timeframe, limiting how many digits the salary may have (e.g. Minimum 4, Maximum 6 allows 1,000 to 9,99,999). A blank Minimum or Maximum means that end is unrestricted; a timeframe with no row is unrestricted.",
    "fieldname": "salary_range_limits",
    "fieldtype": "Table",
    "label": "Salary Range Limits",
@@ -605,7 +641,7 @@
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2026-09-17 12:30:00.000000",
+ "modified": "2026-09-22 11:00:00.000000",
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "Recruitment Settings",

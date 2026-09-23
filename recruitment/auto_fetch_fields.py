@@ -2,6 +2,7 @@ import hashlib
 import re
 
 import frappe
+from frappe import _
 from frappe.model import no_value_fields
 from frappe.model.mapper import get_mapped_doc
 
@@ -175,7 +176,20 @@ def build_employee(source_name, target_doc=None):
     # button, HRMS's redirected mapper, and the DOJ-outcome automation. HRMS
     # called this gate from its own make_employee; ours replaced that function
     # and dropped the call, so nothing enforced it.
-    frappe.get_doc("Employee Onboarding", source_name).validate_employee_creation()
+    onboarding = frappe.get_doc("Employee Onboarding", source_name)
+
+    # A New Hire (direct hire) onboarding is raised against an Employee that
+    # already exists, held at status Pending. Mapping a second one would leave
+    # the person twice on the books; activation is what that record needs.
+    if onboarding.get("employee"):
+        frappe.throw(
+            _("This onboarding is already linked to Employee {0}. Activate that record instead of creating a new one.").format(
+                frappe.bold(onboarding.employee)
+            ),
+            title=_("Employee already exists"),
+        )
+
+    onboarding.validate_employee_creation()
 
     field_map = get_field_map("Employee Onboarding", "Employee") or _legacy_onboarding_field_map()
 

@@ -52,9 +52,30 @@
     // falls through to Application Details instead of opening an empty stepper.
     function hideTab(frm) {
         try {
-            (frm.layout && frm.layout.tabs || []).forEach((t) => {
-                if (t.df && t.df.fieldname === TAB) { t.df.hidden = 1; t.toggle(false); }
+            const tabs = (frm.layout && frm.layout.tabs) || [];
+            let hidden_tab = null;
+            tabs.forEach((t) => {
+                if (t.df && t.df.fieldname === TAB) {
+                    t.df.hidden = 1;
+                    t.toggle(false);
+                    hidden_tab = t;
+                }
             });
+
+            // `Tab.toggle(false)` only adds the `hide` class to the link and the
+            // wrapper -- it does NOT hand the active state to another tab. Frappe
+            // has already opened this one (it is the first tab), so hiding it here
+            // left the form with an active-but-hidden pane and no visible content:
+            // a brand new applicant opened on a blank page.
+            //
+            // Pass the active state to the first tab still visible, the way
+            // Frappe's own Layout.set_tab_as_active() does. Only when the tab we
+            // just hid was the active one, so a user who has already clicked
+            // another tab is not yanked back on the next refresh.
+            if (hidden_tab && hidden_tab.is_active()) {
+                const first_visible_tab = tabs.find((t) => !t.is_hidden());
+                first_visible_tab && first_visible_tab.set_active();
+            }
         } catch (e) { /* non-fatal */ }
     }
 
@@ -170,6 +191,8 @@
             cursor:pointer;text-decoration:none;white-space:nowrap;}
         .hwf-menu a:hover{background:var(--control-bg-on-gray,var(--bg-color));}
         .hwf-menu a.danger{color:var(--red-600,#c0392b);}
+        .hwf-menu a.disabled{opacity:.5;cursor:not-allowed;}
+        .hwf-menu a.disabled:hover{background:none;}
         .hwf-banner{padding:9px 12px;border-radius:6px;font-size:.85rem;font-weight:500;}
         .hwf-banner.ok{background:var(--green-50,#eaf7ee);color:var(--green-700,#1e7a34);}
         .hwf-banner.bad{background:var(--red-50,#fdeaea);color:var(--red-700,#b02a2a);}
@@ -186,6 +209,9 @@
         .hwf-pill.Cleared,.hwf-pill.Approved{background:var(--green-100,#d3efd9);color:var(--green-700,#1e7a34);}
         .hwf-pill.Rejected{background:var(--red-100,#fbd8d8);color:var(--red-700,#b02a2a);}
         .hwf-pill.Pending,.hwf-pill.Sent,.hwf-pill.Filled,.hwf-pill.Reviewed,.hwf-pill.default{background:var(--gray-200,#e6e9ec);color:var(--gray-700,#4a5157);}
+        .hwf-pill.Awaiting{background:var(--orange-100,#fde8d0);color:var(--orange-700,#a4561a);}
+        .hwf-offer-versions{margin-top:6px;font-size:.78rem;color:var(--text-muted,#6c7680);}
+        .hwf-offer-versions a{margin-right:4px;}
         .hwf-empty{padding:18px;text-align:center;color:var(--text-muted);font-size:.85rem;}
         .hwf-link{color:var(--blue-500,#2490ef);cursor:pointer;text-decoration:none;}
         .hwf-link:hover{text-decoration:underline;}
@@ -419,6 +445,140 @@
         );
     }
 
+    // Same server call as the Job Offer form's "Send Job Offer" button, so the
+    // template, attachments and Recruitment Settings rules cannot drift.
+    function sendJobOffer(frm, offer) {
+        frappe.confirm(__("Send the offer email to {0}?", [esc(candidateName(frm.doc))]), () => {
+            frappe.call({
+                method: "recruitment.api.bulk_job_offer.send_bulk_job_offer",
+                args: { job_offers: JSON.stringify([offer.name]) },
+                freeze: true,
+                freeze_message: __("Sending offer…"),
+                callback: (r) => {
+                    const m = (r && r.message) || {};
+                    if (m.sent) {
+                        frappe.show_alert({ message: __("Offer email sent."), indicator: "green" });
+                    } else {
+                        frappe.msgprint({
+                            title: __("Not sent"), indicator: "orange",
+                            message: m.pending_hr_ops
+                                ? __("HR Ops has not been notified for this offer yet. Use 'Notify HR Ops' on the offer first.")
+                                : m.already_sent
+                                    ? __("This offer has already been sent.")
+                                    : __("The offer could not be sent. Open it and check Email Status for the reason."),
+                        });
+                    }
+                    frm.reload_doc();
+                },
+            });
+        });
+    }
+
+    function withdrawJobOffer(frm, offer) {
+        frappe.prompt(
+            [{
+                fieldname: "reason", label: __("Reason"), fieldtype: "Small Text",
+                description: __("Recorded on the offer's timeline. The position returns to Open, and you can resend a revised offer afterwards."),
+            }],
+            (values) => {
+                frappe.call({
+                    method: "recruitment.api.offer_position.withdraw_offer",
+                    args: { job_offer: offer.name, reason: values.reason },
+                    freeze: true,
+                    freeze_message: __("Withdrawing…"),
+                    callback: () => {
+                        frappe.show_alert({ message: __("Offer withdrawn"), indicator: "orange" });
+                        frm.reload_doc();
+                    },
+                });
+            },
+            __("Withdraw Offer"),
+            __("Withdraw")
+        );
+    }
+
+    // A withdrawn / declined / cancelled offer is never edited back to life: the
+    // next version is a new Draft, with the position re-claimed automatically,
+    // opened for HR to review, submit and send.
+    function resendConfirmMessage(offer, rule) {
+        const next = (offer.version || 1) + 1;
+        if (offer.status !== "Accepted" || offer.docstatus === 2) {
+            return __("Create version {0} of {1} as a new Draft? You can edit it, then submit and send it.", [next, esc(offer.name)]);
+        }
+        const eos = ((rule && rule.removes_onboarding) || []).map((e) => esc(e.name));
+        return __("The candidate has already accepted {0}. Resending will:", [esc(offer.name)])
+            + "<ul>"
+            + (eos.length
+                ? "<li>" + __("delete their pending onboarding ({0}), including any details they have filled in on the onboarding form, and remove it from their portal", [eos.join(", ")]) + "</li>"
+                : "")
+            + "<li>" + __("cancel the accepted offer and free its position") + "</li>"
+            + "<li>" + __("create version {0} as a new Draft for you to edit, submit and send", [next]) + "</li>"
+            + "</ul>" + __("Continue?");
+    }
+
+    // An EXPIRED offer has a second route: the candidate simply ran out of time,
+    // so the same letter goes out again on a new expiry date. No new version, and
+    // nothing to re-submit — see recruitment.api.offer_expiry.
+    function resendOfferLetter(frm, offer) {
+        const days =
+            offer.offer_date && offer.custom_jo_expiry_date
+                ? Math.max(frappe.datetime.get_day_diff(offer.custom_jo_expiry_date, offer.offer_date), 1)
+                : 7;
+        frappe.prompt(
+            [{
+                fieldname: "expiry_date", label: __("New Expiry Date"), fieldtype: "Date", reqd: 1,
+                default: frappe.datetime.add_days(frappe.datetime.get_today(), days),
+                description: __("The last day the candidate may accept. The same letter is emailed again and the offer goes back to Awaiting Response."),
+            }],
+            (values) => {
+                frappe.call({
+                    method: "recruitment.api.offer_expiry.resend_offer_letter",
+                    args: { job_offer: offer.name, expiry_date: values.expiry_date },
+                    freeze: true,
+                    freeze_message: __("Resending offer letter…"),
+                    callback: (r) => {
+                        const m = (r && r.message) || {};
+                        if (!m.job_offer) return;
+                        frappe.show_alert({
+                            message: __("Offer letter resent — valid until {0}.", [
+                                frappe.datetime.str_to_user(m.expiry_date),
+                            ]),
+                            indicator: "green",
+                        });
+                        frm.reload_doc();
+                    },
+                });
+            },
+            __("Resend Offer Letter"),
+            __("Resend")
+        );
+    }
+
+    function resendJobOffer(frm, offer, rule) {
+        frappe.confirm(
+            resendConfirmMessage(offer, rule),
+            () => {
+                frappe.call({
+                    method: "recruitment.api.offer_lifecycle.resend_job_offer",
+                    args: { job_offer: offer.name },
+                    freeze: true,
+                    freeze_message: __("Creating new version…"),
+                    callback: (r) => {
+                        const m = (r && r.message) || {};
+                        if (!m.job_offer) return;
+                        frappe.show_alert({
+                            message: m.position_label
+                                ? __("Version {0} created against {1}.", [m.version, m.position_label])
+                                : __("Version {0} created.", [m.version]),
+                            indicator: "green",
+                        });
+                        frappe.set_route("Form", "Job Offer", m.job_offer);
+                    },
+                });
+            }
+        );
+    }
+
     function createJobOffer(frm) {
         // Ask the server whether this candidate may be offered at all before we
         // open a blank form — an active offer, a missing requisition or exhausted
@@ -546,6 +706,18 @@
         return n ? "★".repeat(n) + "☆".repeat(5 - n) : "";
     }
 
+    // Job Offer status -> an existing pill colour. Cancelled is docstatus 2.
+    function offerStatus(o) {
+        return o.docstatus === 2 ? __("Cancelled") : (o.status || "Draft");
+    }
+    function offerPill(o) {
+        const st = o.docstatus === 2 ? "Cancelled" : (o.status || "Draft");
+        const cls = { Accepted: "Approved", Rejected: "Rejected", Withdrawn: "Rejected",
+                      Expired: "Rejected", Cancelled: "Rejected",
+                      "Awaiting Response": "Awaiting" }[st] || "default";
+        return `<span class="hwf-pill ${cls}">${esc(offerStatus(o))}</span>`;
+    }
+
     function pill(text) {
         const cls = ["Cleared", "Approved", "Rejected", "Pending", "Sent", "Filled", "Reviewed"].includes(text) ? text : "default";
         return `<span class="hwf-pill ${cls}">${esc(text)}</span>`;
@@ -612,7 +784,14 @@
         if (view.is_closed) {
             const ok = view.status === "Accepted";
             return `<div class="hwf-panel"><div class="hwf-banner ${ok ? "ok" : "bad"}">
-                ${ok ? "✓ " + __("Candidate has cleared the pipeline (Accepted).") : "✕ " + __("Candidate was rejected.")}
+                ${ok ? "✓ " + __("Candidate has cleared the pipeline (Accepted).")
+                     + (((view.job_offer_actions || {}).resend || {}).allowed
+                        ? " " + __("If the offer needs revising, 'Resend Job Offer' is on the Job Offer stage.") : "")
+                     : (view.current_stage_type === "Offer" && view.job_offer && view.job_offer.status === "Rejected"
+                        ? "✕ " + __("Candidate declined the job offer.")
+                          + ((view.job_offer_actions || {}).resend && view.job_offer_actions.resend.allowed
+                             ? " " + __("A revised offer can be resent from the Job Offer stage.") : "")
+                        : "✕ " + __("Candidate was rejected."))}
                 </div></div>`;
         }
         if ((view.stages || [])[view.current_stage_index]) return "";
@@ -637,7 +816,7 @@
         const live = (items || []).filter(Boolean);
         if (!live.length) return "";
         const links = live.map((i) =>
-            `<a data-menu="${esc(i.key)}"${i.cls ? ` class="${esc(i.cls)}"` : ""}>${esc(i.label)}</a>`).join("");
+            `<a data-menu="${esc(i.key)}"${i.cls ? ` class="${esc(i.cls)}"` : ""}${i.title ? ` title="${esc(i.title)}"` : ""}>${esc(i.label)}</a>`).join("");
         return `<span class="hwf-more-wrap">
                 <button class="hwf-btn" data-act="more" title="${__("More")}">⋮</button>
                 <div class="hwf-menu" style="display:none;">${links}</div>
@@ -663,8 +842,13 @@
             actions += hasInterview
                 ? `<button class="hwf-btn primary" data-act="markdone">${__("Mark as Completed")}</button>`
                 : `<button class="hwf-btn primary" disabled title="${__("Schedule an interview for this stage first.")}">${__("Mark as Completed")}</button>`;
+            // Feedback can be requested only once an interview has actually taken place.
+            const interviewOver = (cur.interviews || []).some((iv) => iv.is_over);
             actions += moreMenu([
-                { key: "feedbackform", label: __("Send Feedback Form") },
+                interviewOver
+                    ? { key: "feedbackform", label: __("Send Feedback Form") }
+                    : { key: "feedbackform", label: __("Send Feedback Form"), cls: "disabled",
+                        title: __("Available after the interview is completed.") },
                 notRequiredItem(cur),
             ]);
         } else if (type === "Pre Offer") {
@@ -679,9 +863,7 @@
             if (!view.is_last) actions += `<button class="hwf-btn" data-act="complete">✓ ${__("Complete stage")}</button>`;
             actions += moreMenu([notRequiredItem(cur)]);
         } else if (type === "Offer") {
-            actions += view.job_offer
-                ? `<button class="hwf-btn" data-act="openoffer">${__("Open Job Offer")}</button>`
-                : `<button class="hwf-btn primary" data-act="createoffer">+ ${__("Create Job Offer")}</button>`;
+            actions += offerActionsHtml(view);
         } else if (!view.is_last) {
             actions += `<button class="hwf-btn primary" data-act="complete">✓ ${__("Complete stage")}</button>`;
         }
@@ -703,19 +885,86 @@
             detail = `<div class="hwf-sub">${bits.join(" &nbsp;·&nbsp; ")}</div>`;
         }
         if (type === "Offer") {
-            const bit = view.job_offer
-                ? __("Job Offer") + ": " + pill(view.job_offer.status || "Open")
-                : __("No Job Offer created yet.");
-            detail = `<div class="hwf-sub">${bit}</div>`;
+            detail = offerDetailHtml(view);
         }
 
         return `<div class="hwf-actions">${actions}</div>${detail}`;
+    }
+
+    // Offer stage buttons. Which of Send / Withdraw / Resend show is decided by
+    // the server (offer_lifecycle.get_offer_actions, which reads the Recruitment
+    // Settings -> Job Offer Rules) — the same answer the Job Offer form uses.
+    function offerActionsHtml(view) {
+        const o = view.job_offer;
+        if (!o) return `<button class="hwf-btn primary" data-act="createoffer">+ ${__("Create Job Offer")}</button>`;
+        const a = view.job_offer_actions || {};
+        let html = "";
+        if (a.resend_letter && a.resend_letter.allowed) {
+            // The expected move on an expired offer, so it leads.
+            html += `<button class="hwf-btn primary" data-act="resendofferletter">✉ ${__("Resend Offer Letter")}</button>`;
+        }
+        if (a.resend && a.resend.allowed) {
+            // Revising an accepted offer undoes onboarding — offered, not pushed.
+            // Alongside "Resend Offer Letter" it is the secondary choice: it is for
+            // when the terms change, not just the date.
+            const cls = (o.status === "Accepted" && o.docstatus !== 2) || (a.resend_letter || {}).allowed
+                ? "hwf-btn" : "hwf-btn primary";
+            html += `<button class="${cls}" data-act="resendoffer">↻ ${__("Resend Job Offer")}</button>`;
+        }
+        if (a.send && a.send.allowed) {
+            html += `<button class="hwf-btn primary" data-act="sendoffer">✉ ${__("Send Job Offer")}</button>`;
+        }
+        html += `<button class="hwf-btn" data-act="openoffer">${o.docstatus === 0 ? __("Edit Job Offer") : __("Open Job Offer")}</button>`;
+        if (a.withdraw && a.withdraw.allowed) {
+            html += `<button class="hwf-btn danger" data-act="withdrawoffer">${__("Withdraw Offer")}</button>`;
+        }
+        return html;
+    }
+
+    function offerDetailHtml(view) {
+        const o = view.job_offer;
+        if (!o) return `<div class="hwf-sub">${__("No Job Offer created yet.")}</div>`;
+        const a = view.job_offer_actions || {};
+        const bits = [
+            `${__("Job Offer")}: <a class="hwf-link" data-open-offer="${esc(o.name)}">${esc(o.name)}</a>`
+                + (o.version > 1 ? ` (v${o.version})` : "") + " " + offerPill(o),
+        ];
+        if (o.email_status === "Sent") bits.push(__("Email sent"));
+        let hint = "";
+        if (o.docstatus === 0 && !["Withdrawn", "Rejected", "Expired"].includes(o.status)) {
+            hint = __("Review the offer and submit it, then send it to the candidate.");
+        } else if (o.status === "Expired" && (a.resend_letter || {}).allowed) {
+            hint = __("The candidate did not respond before the expiry date. Resend the letter with a new date, or raise a revised version.");
+        } else if (a.resend && !a.resend.allowed && (o.docstatus === 2 || ["Withdrawn", "Rejected", "Expired"].includes(o.status))) {
+            hint = a.resend.reason || "";
+        }
+        let html = `<div class="hwf-sub">${bits.join(" &nbsp;·&nbsp; ")}</div>`;
+        if (hint) html += `<div class="hwf-sub text-muted">${esc(hint)}</div>`;
+        const prev = view.previous_offers || [];
+        if (prev.length) {
+            html += `<div class="hwf-offer-versions">${__("Earlier versions")}: ` + prev.map((p) =>
+                `<a class="hwf-link" data-open-offer="${esc(p.name)}">v${p.version} ${esc(p.name)}</a> ${offerPill(p)}`
+            ).join(" &nbsp; ") + `</div>`;
+        }
+        return html;
+    }
+
+    // A candidate who declined (Rejected) or accepted is closed, but the Offer
+    // stage still has one thing to offer: a revised letter.
+    function offerStageReopenable(view, s, i) {
+        const a = view.job_offer_actions || {};
+        return view.is_closed && ["Rejected", "Accepted"].includes(view.status)
+            && (s.stage_type || "") === "Offer" && i === view.current_stage_index
+            && !!(a.resend && a.resend.allowed);
     }
 
     // What a stage shows when expanded: live actions for the current stage, the
     // recorded outcome for anything already passed, a "move here" for what's ahead.
     function stageBody(frm, view, s, i) {
         if (s.state === "current" && !view.is_closed) return renderStageActions(frm, view, s);
+        if (offerStageReopenable(view, s, i)) {
+            return `<div class="hwf-actions">${offerActionsHtml(view)}</div>${offerDetailHtml(view)}`;
+        }
 
         const bits = [];
         if (s.entered_on) bits.push(`${__("Entered")}: ${esc(frappe.datetime.str_to_user(s.entered_on))}`);
@@ -770,9 +1019,11 @@
         const rows = stages.map((s, i) => {
             const st = STATE[s.state] || STATE.upcoming;
             const open = s.state === "current" && !closed;
+            // A declined offer that can be resent stays expanded so the action shows.
+            const expanded = open || offerStageReopenable(view, s, i);
             // The stage in play shows its step number; the rest show their outcome.
             const icon = open ? String(i + 1) : st.icon;
-            return `<div class="hwf-row ${st.cls}${open ? " is-open" : ""}">
+            return `<div class="hwf-row ${st.cls}${expanded ? " is-open" : ""}">
                 <div class="hwf-rail"><span class="hwf-badge">${icon}</span></div>
                 <div class="hwf-card">
                     <div class="hwf-card-head">
@@ -806,6 +1057,9 @@
             });
         });
         $w.find("[data-jump]").on("click", function () { jumpTo(frm, $(this).data("jump")); });
+        $w.find("[data-open-offer]").on("click", function () {
+            frappe.set_route("Form", "Job Offer", $(this).data("open-offer"));
+        });
         $w.find("[data-open-iv]").on("click", function () {
             frappe.set_route("Form", "Interview", $(this).data("open-iv"));
         });
@@ -828,9 +1082,14 @@
             else if (act === "viewpreoffer") gotoPreOfferApprovalTab(frm);
             else if (act === "createoffer") createJobOffer(frm);
             else if (act === "openoffer") frappe.set_route("Form", "Job Offer", view.job_offer.name);
+            else if (act === "sendoffer") sendJobOffer(frm, view.job_offer);
+            else if (act === "withdrawoffer") withdrawJobOffer(frm, view.job_offer);
+            else if (act === "resendoffer") resendJobOffer(frm, view.job_offer, (view.job_offer_actions || {}).resend);
+            else if (act === "resendofferletter") resendOfferLetter(frm, view.job_offer);
             else if (act === "reject") rejectCandidate(frm);
         });
         $w.find(".hwf-menu a").on("click", function () {
+            if ($(this).hasClass("disabled")) return false;
             const item = $(this).data("menu");
             $w.find(".hwf-menu").hide();
             if (item === "notreq") markNotRequired(frm, view.current_stage);

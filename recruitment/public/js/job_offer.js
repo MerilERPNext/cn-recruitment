@@ -31,6 +31,46 @@ function recomputeSalaryComponents(frm) {
     });
 }
 
+// --- Salary amounts in words -------------------------------------------------
+// Every salary figure on the offer has an "(In Words)" field beside it, filled as
+// soon as the figure changes (typed, fetched, or computed like CTC (Total)).
+// The server re-words them all on save — see
+// recruitment.customizations.job_offer.SALARY_WORDS_FIELDS, which this mirrors.
+const JOB_OFFER_SALARY_WORDS = {
+    custom_base_salary: "custom_fixed_ctc_in_words",
+    custom_ctc: "custom_ctc_in_words",
+    custom_total_fixed_pay: "custom_total_fixed_pay_in_words",
+    custom_variable_incentive: "custom_variable_incentive_in_words",
+    custom_location_allowance: "custom_location_allowance_in_words",
+    custom_current_salary: "custom_current_salary_in_words",
+    custom_expected_salary: "custom_expected_salary_in_words",
+};
+
+function showSalaryInWords(frm, source) {
+    const target = JOB_OFFER_SALARY_WORDS[source];
+    if (!target || !frm.fields_dict[target]) return;
+    const value = frm.doc[source];
+    if (value === null || value === undefined || value === "" || value === 0) {
+        if (frm.doc[target]) frm.set_value(target, "");
+        return;
+    }
+    frappe.xcall("recruitment.customizations.job_offer.get_salary_in_words", {
+        amount: value, company: frm.doc.company,
+    }).then((words) => {
+        // Ignore a late answer for a value that has since changed.
+        if (frm.doc[source] === value && (frm.doc[target] || "") !== (words || "")) {
+            frm.set_value(target, words || "");
+        }
+    });
+}
+
+// custom_base_salary has its own handler below (it also recomputes components).
+frappe.ui.form.on("Job Offer", Object.fromEntries(
+    Object.keys(JOB_OFFER_SALARY_WORDS)
+        .filter((f) => f !== "custom_base_salary")
+        .map((f) => [f, (frm) => showSalaryInWords(frm, f)])
+));
+
 // --- Salary Component link-picker filters ------------------------------------
 // The flags these pickers filter on (`custom_variable_part_of_ctc`,
 // `custom_is_extra_payment`) are custom fields owned by cn_indian_payroll, so they
@@ -184,6 +224,7 @@ frappe.ui.form.on("Job Offer", {
 	},
 	custom_base_salary:function(frm){
 		recomputeSalaryComponents(frm);
+		showSalaryInWords(frm, "custom_base_salary");
 	},
 	custom_salary_period:function(frm){
 		recomputeSalaryComponents(frm);
@@ -263,7 +304,7 @@ function recruitment_open_offer_letter_dialog(frm) {
 	}
 
 	function show(tab) {
-		$body().html(tabBar(tab) + `<div class="offer-tab-content" style="min-height:320px;">` +
+		$body().html(tabBar(tab) + `<div class="offer-tab-content" style="min-height:70vh;">` +
 			`<div style="padding:40px;text-align:center;color:#888;">${__("Loading…")}</div></div>`);
 		$body().find(".offer-tab").on("click", function () { show($(this).data("tab")); });
 
@@ -283,7 +324,9 @@ function recruitment_open_offer_letter_dialog(frm) {
 	}
 
 	d.show();
-	d.$wrapper.find(".modal-dialog").css("max-width", "920px");
+	// Full page: the letter is A4 and was unreadable in a 920px column.
+	d.$wrapper.find(".modal-dialog").css({ "max-width": "100%", margin: "10px" });
+	d.$wrapper.find(".modal-body").css({ "max-height": "calc(100vh - 120px)", "overflow-y": "auto" });
 	show("template");
 }
 // --- Dynamic Offer Compensation (grade-based auto breakup) ------------------
@@ -755,6 +798,11 @@ function recruitment_offer_letter_styles() {
 
                     if (frm.doc.docstatus !== 1) return;
                     if (!enabled) return;
+                    // A withdrawn / declined letter is resent as a new version,
+                    // never mailed again (the server refuses it too). An expired
+                    // one goes out through "Resend Offer Letter", which puts a new
+                    // expiry date on it first.
+                    if (["Withdrawn", "Rejected", "Expired"].includes(frm.doc.status)) return;
                     // Recruitment Settings -> Hide Send Job Offer Once Sent.
                     if (hide_once_sent && frm.doc.email_status === "Sent") return;
                     // Nothing goes to the candidate before HR Ops has seen it. The
@@ -939,6 +987,10 @@ frappe.ui.form.on("Job Offer", {
     refresh(frm) {
         if (frm.is_new() || !frm.doc.job_applicant) return;
         if (frm.doc.email_status !== "Sent" && !frm.doc.email_sent_on) return;
+        // An expired letter is out of date by definition — "Resend Offer Letter"
+        // gives it a new expiry date and then mails it, which is the only way it
+        // should reach the candidate again.
+        if (frm.doc.status === "Expired") return;
 
         frm.add_custom_button(__("Retrigger Welcome Email"), () => {
             frappe.confirm(
@@ -967,25 +1019,145 @@ frappe.ui.form.on("Job Offer", {
 });
 
 // ---------------------------------------------------------------------------
-// Withdraw — pulls the offer back and releases its position to Open, which is
+// Withdraw — pulls a SENT offer back and releases its position to Open, which is
 // what lets a Filled requisition be archived again. Distinct from Rejected,
 // which means the candidate refused.
+//
+// Resend — once an offer is withdrawn, rejected, expired or cancelled, raises the
+// next version as a new Draft (position re-claimed automatically) for HR to edit,
+// submit and send.
+//
+// Resend Offer Letter — the lighter move for an EXPIRED offer, where only the
+// candidate's time ran out: pick a new expiry date and the same letter goes out
+// again on the same offer. No new version, nothing to re-submit.
+//
+// Both are decided server-side (offer_lifecycle.get_offer_actions), which also
+// reads the Recruitment Settings -> Job Offer Rules, so the form, the hiring
+// workflow and the endpoints cannot disagree.
 // ---------------------------------------------------------------------------
 frappe.ui.form.on("Job Offer", {
     refresh(frm) {
-        if (frm.is_new() || frm.doc.docstatus === 2) return;
-        if (["Withdrawn", "Accepted"].includes(frm.doc.status)) return;
-
-        // Recruitment Settings -> Allow Withdraw Offer Only After It Is Sent:
-        // then only a submitted offer whose email went out can be withdrawn.
-        frappe.db.get_single_value("Recruitment Settings", "withdraw_offer_only_after_sent")
-            .then((only_after_sent) => {
-                const sent = frm.doc.docstatus === 1 && frm.doc.email_status === "Sent";
-                if (only_after_sent && !sent) return;
-                add_withdraw_offer_button(frm);
-            });
+        if (frm.is_new()) return;
+        if (frm.doc.custom_previous_offer) {
+            frm.set_intro(
+                __("Version {0} of this offer — resent from {1}.", [
+                    frm.doc.custom_offer_version || 2,
+                    `<a href="/app/job-offer/${encodeURIComponent(frm.doc.custom_previous_offer)}">${frappe.utils.escape_html(frm.doc.custom_previous_offer)}</a>`,
+                ]),
+                "blue"
+            );
+        }
+        frappe.call({
+            method: "recruitment.api.offer_lifecycle.get_offer_actions",
+            args: { job_offer: frm.doc.name },
+            callback: (r) => {
+                const a = (r && r.message) || {};
+                if (a.withdraw && a.withdraw.allowed) add_withdraw_offer_button(frm);
+                if (a.resend && a.resend.allowed) add_resend_offer_button(frm, a.resend);
+                if (a.resend_letter && a.resend_letter.allowed) add_resend_letter_button(frm);
+            },
+        });
     },
 });
+
+// The validity period the candidate had the first time, counted from today — so
+// "a week to decide" stays a week without the recruiter doing the arithmetic.
+function default_resend_expiry(doc) {
+    const days =
+        doc.offer_date && doc.custom_jo_expiry_date
+            ? Math.max(frappe.datetime.get_day_diff(doc.custom_jo_expiry_date, doc.offer_date), 1)
+            : 7;
+    return frappe.datetime.add_days(frappe.datetime.get_today(), days);
+}
+
+function add_resend_letter_button(frm) {
+    frm.add_custom_button(__("Resend Offer Letter"), () => {
+        frappe.prompt(
+            [
+                {
+                    fieldname: "expiry_date",
+                    label: __("New Expiry Date"),
+                    fieldtype: "Date",
+                    reqd: 1,
+                    default: default_resend_expiry(frm.doc),
+                    description: __(
+                        "The last day the candidate may accept. The same letter is emailed again and the offer goes back to Awaiting Response on its original position."
+                    ),
+                },
+            ],
+            (values) => {
+                frappe.call({
+                    method: "recruitment.api.offer_expiry.resend_offer_letter",
+                    args: { job_offer: frm.doc.name, expiry_date: values.expiry_date },
+                    freeze: true,
+                    freeze_message: __("Resending offer letter…"),
+                    callback: (r) => {
+                        const m = (r && r.message) || {};
+                        if (!m.job_offer) return;
+                        frappe.show_alert({
+                            message: __("Offer letter resent — valid until {0}.", [
+                                frappe.datetime.str_to_user(m.expiry_date),
+                            ]),
+                            indicator: "green",
+                        });
+                        frm.reload_doc();
+                    },
+                });
+            },
+            __("Resend Offer Letter"),
+            __("Resend")
+        );
+    }).addClass("btn-primary");
+}
+
+function add_resend_offer_button(frm, rule) {
+    const btn = frm.add_custom_button(__("Resend Job Offer"), () => {
+        frappe.confirm(
+            resend_confirm_message(frm.doc.name, frm.doc.custom_offer_version, frm.doc.status, rule, frm.doc.docstatus),
+            () => {
+                frappe.call({
+                    method: "recruitment.api.offer_lifecycle.resend_job_offer",
+                    args: { job_offer: frm.doc.name },
+                    freeze: true,
+                    freeze_message: __("Creating new version…"),
+                    callback: (r) => {
+                        const m = (r && r.message) || {};
+                        if (!m.job_offer) return;
+                        frappe.show_alert({
+                            message: m.position_label
+                                ? __("Version {0} created against {1}.", [m.version, m.position_label])
+                                : __("Version {0} created.", [m.version]),
+                            indicator: "green",
+                        });
+                        frappe.set_route("Form", "Job Offer", m.job_offer);
+                    },
+                });
+            }
+        );
+    });
+    // Revising an accepted offer undoes onboarding — offered, not pushed.
+    if (frm.doc.status !== "Accepted" || frm.doc.docstatus === 2) btn.addClass("btn-primary");
+}
+
+// Shared with the hiring workflow (hiring_workflow_flow.js keeps its own copy of
+// the wording, as the two scripts load on different forms).
+function resend_confirm_message(name, version, status, rule, docstatus) {
+    const next = (version || 1) + 1;
+    const esc = frappe.utils.escape_html;
+    // A cancelled offer may still read "Accepted"; the server treats it as closed.
+    if (status !== "Accepted" || docstatus === 2) {
+        return __("Create version {0} of this offer as a new Draft? You can edit it, then submit and send it.", [next]);
+    }
+    const eos = ((rule && rule.removes_onboarding) || []).map((e) => esc(e.name));
+    return __("The candidate has already accepted {0}. Resending will:", [esc(name)])
+        + "<ul>"
+        + (eos.length
+            ? "<li>" + __("delete their pending onboarding ({0}), including any details they have filled in on the onboarding form, and remove it from their portal", [eos.join(", ")]) + "</li>"
+            : "")
+        + "<li>" + __("cancel the accepted offer and free its position") + "</li>"
+        + "<li>" + __("create version {0} as a new Draft for you to edit, submit and send", [next]) + "</li>"
+        + "</ul>" + __("Continue?");
+}
 
 function add_withdraw_offer_button(frm) {
     frm.add_custom_button(__("Withdraw Offer"), () => {
