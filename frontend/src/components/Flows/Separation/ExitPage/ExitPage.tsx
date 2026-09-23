@@ -2,6 +2,7 @@ import {
   AlertCircle,
   Building,
   Calendar,
+  CalendarOff,
   ChevronDown,
   ChevronUp,
   Coins,
@@ -11,6 +12,7 @@ import {
   Laptop,
   Mail,
   ShieldCheck,
+  Umbrella,
   Users,
   XCircle,
 } from "lucide-react";
@@ -27,6 +29,7 @@ import {
 } from "../../../../hooks/useEmployee";
 import { useEmployeeDocument } from "../../../../hooks/useEmployeeDocuments";
 import { useChatAssistantFlowInitiateData } from "../../../../hooks/useFlows";
+import { useGetLeaveBalance } from "../../../../hooks/useLeaves";
 import { useActiveReportees } from "../../../../hooks/usePip";
 import {
   useEmployeeSupportContacts,
@@ -648,6 +651,31 @@ const ExitPage: React.FC = () => {
   const usedPoints = pointsData?.used_points ?? 0;
   const netPoints = appreciationPoints + awardPoints - usedPoints;
 
+  // 10. Leave Encashment & Lapse (for Exit Page)
+  // Use relievingDate if available, else today — the leave balance API needs a "as of" date
+  const leaveBalanceDate =
+    relievingDate || new Date().toISOString().split("T")[0];
+  const { data: leaveBalanceData, isLoading: isLoadingLeaveBalance } =
+    useGetLeaveBalance(
+      effectiveEmployeeId || undefined,
+      leaveBalanceDate,
+      undefined,
+    );
+
+  // Only show leave types that are not hidden and have a non-zero balance
+  const leaveEncashDays = Math.round(
+    fnfEstimate?.leave_encashment?.total_days ?? 0,
+  );
+  const leaveBalanceList = (leaveBalanceData?.leave_balance ?? [])
+    .filter((lb) => !lb.dont_show_in_frontend && lb.balance > 0)
+    .map((lb) => ({ ...lb, balance: Math.round(lb.balance) }));
+  const totalLeaveBalance = leaveBalanceList.reduce(
+    (sum, lb) => sum + lb.balance,
+    0,
+  );
+  // Days that will lapse = total remaining balance - days being encashed
+  const lapseDays = Math.max(0, totalLeaveBalance - leaveEncashDays);
+
   return (
     <div className="w-full p-3.5 sm:p-4 md:p-6 space-y-4 sm:space-y-5">
       {/* Top Header - Matching Other App Pages */}
@@ -1114,444 +1142,447 @@ const ExitPage: React.FC = () => {
 
               <div className="relative z-10">
                 {/* Header */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-3.5 mb-3 border-b border-gray-100">
-                <div className="flex items-center gap-2">
-                  <div className="p-1.5 rounded-xl bg-primary-50 text-primary-700 border border-primary-100 flex items-center justify-center shrink-0">
-                    <CreditCard className="w-4 h-4" />
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-3.5 mb-3 border-b border-gray-100">
+                  <div className="flex items-center gap-2">
+                    <div className="p-1.5 rounded-xl bg-primary-50 text-primary-700 border border-primary-100 flex items-center justify-center shrink-0">
+                      <CreditCard className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <Typography
+                        variant="subheading"
+                        className="text-gray-900 block font-bold"
+                      >
+                        Full and Final Settlement, Estimated
+                      </Typography>
+                      <Typography
+                        variant="caption"
+                        className="text-gray-500 font-medium block"
+                      >
+                        Subject to final clearances, leave reconciliation, and
+                        asset recovery
+                      </Typography>
+                    </div>
                   </div>
-                  <div>
-                    <Typography
-                      variant="subheading"
-                      className="text-gray-900 block font-bold"
-                    >
-                      Full and Final Settlement, Estimated
-                    </Typography>
-                    <Typography
-                      variant="caption"
-                      className="text-gray-500 font-medium block"
-                    >
-                      Subject to final clearances, leave reconciliation, and
-                      asset recovery
-                    </Typography>
-                  </div>
-                </div>
 
-                {fnfEstimate?.final?.direction && (
-                  <div className="shrink-0 self-start sm:self-auto">
-                    <span
-                      className={`inline-flex items-center px-2.5 py-1 rounded-xl text-xs font-bold border ${
-                        fnfEstimate.final.is_recoverable
-                          ? "bg-rose-50 text-rose-700 border-rose-200"
-                          : "bg-emerald-50 text-emerald-700 border-emerald-200"
-                      }`}
-                    >
-                      {fnfEstimate.final.direction}
-                    </span>
-                  </div>
-                )}
-              </div>
-
-              {/* Content States: Loading, Error, Empty, or Populated */}
-              {isLoadingFnf ? (
-                <div className="py-2">
-                  <TableSkeleton columns={2} rows={4} />
-                </div>
-              ) : isFnfError ? (
-                <div className="py-8 px-4 text-center flex flex-col items-center justify-center">
-                  <div className="w-12 h-12 rounded-2xl bg-rose-50 border border-rose-100 flex items-center justify-center mb-3">
-                    <AlertCircle className="w-6 h-6 text-rose-600" />
-                  </div>
-                  <Typography
-                    variant="bodySmall"
-                    className="text-gray-900 font-bold mb-1 block"
-                  >
-                    Unable to load settlement estimate
-                  </Typography>
-                  <div className="text-xs text-gray-500 mb-4 max-w-md mx-auto">
-                    {errorResponseFormater(
-                      fnfError,
-                      "The settlement calculation could not be retrieved. Please check your connection or try again.",
-                    )}
-                  </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => refetchFnf()}
-                  >
-                    Try Again
-                  </Button>
-                </div>
-              ) : !fnfEstimate ||
-                (!fnfEstimate.earnings?.length &&
-                  !fnfEstimate.deductions?.length &&
-                  !fnfEstimate.totals?.total_earnings &&
-                  !fnfEstimate.totals?.net_settlement) ? (
-                <div className="py-4">
-                  <NoDataFound
-                    title="No Settlement Estimate Available"
-                    subtitle="Settlement calculation has not been computed or is unavailable for this employee."
-                    onClick={() => refetchFnf()}
-                  />
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {/* Period & Days Ribbon */}
-                  {fnfEstimate.period && (
-                    <div className="flex flex-wrap items-center justify-between gap-2 p-2.5 rounded-lg bg-gray-50 border border-gray-100 text-xs">
-                      <div className="flex items-center gap-1.5 text-gray-700 font-medium">
-                        <Calendar className="w-3.5 h-3.5 text-gray-500" />
-                        <span>Period:</span>
-                        <strong className="text-gray-900 font-semibold">
-                          {fnfEstimate.period.start_date
-                            ? formatToIndianDate(fnfEstimate.period.start_date)
-                            : "N/A"}{" "}
-                          &ndash;{" "}
-                          {fnfEstimate.period.end_date
-                            ? formatToIndianDate(fnfEstimate.period.end_date)
-                            : "N/A"}
-                        </strong>
-                      </div>
-                      <div className="flex items-center gap-3 text-gray-600">
-                        <span>
-                          Pay Days:{" "}
-                          <strong className="text-gray-900 font-semibold">
-                            {fnfEstimate.days?.payment_days ?? 0} of{" "}
-                            {fnfEstimate.days?.working_days ?? 0}
-                          </strong>
-                        </span>
-                        {Boolean(
-                          fnfEstimate.days?.recovery_days &&
-                          fnfEstimate.days.recovery_days > 0,
-                        ) && (
-                          <span className="text-rose-600 font-medium">
-                            Recovery: {fnfEstimate.days.recovery_days} days
-                          </span>
-                        )}
-                      </div>
+                  {fnfEstimate?.final?.direction && (
+                    <div className="shrink-0 self-start sm:self-auto">
+                      <span
+                        className={`inline-flex items-center px-2.5 py-1 rounded-xl text-xs font-bold border ${
+                          fnfEstimate.final.is_recoverable
+                            ? "bg-rose-50 text-rose-700 border-rose-200"
+                            : "bg-emerald-50 text-emerald-700 border-emerald-200"
+                        }`}
+                      >
+                        {fnfEstimate.final.direction}
+                      </span>
                     </div>
                   )}
+                </div>
 
-                  {/* Earnings Collapsible Section */}
-                  <div className="rounded-lg border border-gray-100 overflow-hidden">
-                    <button
-                      type="button"
-                      onClick={() => setIsEarningsExpanded((prev) => !prev)}
-                      className="w-full flex items-center justify-between p-3 bg-gray-50/80 hover:bg-gray-100/70 transition-colors text-left"
+                {/* Content States: Loading, Error, Empty, or Populated */}
+                {isLoadingFnf ? (
+                  <div className="py-2">
+                    <TableSkeleton columns={2} rows={4} />
+                  </div>
+                ) : isFnfError ? (
+                  <div className="py-8 px-4 text-center flex flex-col items-center justify-center">
+                    <div className="w-12 h-12 rounded-2xl bg-rose-50 border border-rose-100 flex items-center justify-center mb-3">
+                      <AlertCircle className="w-6 h-6 text-rose-600" />
+                    </div>
+                    <Typography
+                      variant="bodySmall"
+                      className="text-gray-900 font-bold mb-1 block"
                     >
-                      <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 rounded-full bg-emerald-500" />
-                        <Typography
-                          variant="bodySmall"
-                          className="font-bold text-gray-900"
-                        >
-                          Earnings &amp; Additions
-                        </Typography>
-                        <span className="text-[11px] font-semibold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-xl border border-emerald-200">
-                          +
-                          {formatCurrency(
-                            fnfEstimate.totals?.total_earnings ||
-                              fnfEstimate.final?.payable_breakup
-                                ?.salary_earnings ||
-                              0,
-                          )}
-                        </span>
-                      </div>
-                      {isEarningsExpanded ? (
-                        <ChevronUp className="w-4 h-4 text-gray-500" />
-                      ) : (
-                        <ChevronDown className="w-4 h-4 text-gray-500" />
+                      Unable to load settlement estimate
+                    </Typography>
+                    <div className="text-xs text-gray-500 mb-4 max-w-md mx-auto">
+                      {errorResponseFormater(
+                        fnfError,
+                        "The settlement calculation could not be retrieved. Please check your connection or try again.",
                       )}
-                    </button>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => refetchFnf()}
+                    >
+                      Try Again
+                    </Button>
+                  </div>
+                ) : !fnfEstimate ||
+                  (!fnfEstimate.earnings?.length &&
+                    !fnfEstimate.deductions?.length &&
+                    !fnfEstimate.totals?.total_earnings &&
+                    !fnfEstimate.totals?.net_settlement) ? (
+                  <div className="py-4">
+                    <NoDataFound
+                      title="No Settlement Estimate Available"
+                      subtitle="Settlement calculation has not been computed or is unavailable for this employee."
+                      onClick={() => refetchFnf()}
+                    />
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {/* Period & Days Ribbon */}
+                    {fnfEstimate.period && (
+                      <div className="flex flex-wrap items-center justify-between gap-2 p-2.5 rounded-lg bg-gray-50 border border-gray-100 text-xs">
+                        <div className="flex items-center gap-1.5 text-gray-700 font-medium">
+                          <Calendar className="w-3.5 h-3.5 text-gray-500" />
+                          <span>Period:</span>
+                          <strong className="text-gray-900 font-semibold">
+                            {fnfEstimate.period.start_date
+                              ? formatToIndianDate(
+                                  fnfEstimate.period.start_date,
+                                )
+                              : "N/A"}{" "}
+                            &ndash;{" "}
+                            {fnfEstimate.period.end_date
+                              ? formatToIndianDate(fnfEstimate.period.end_date)
+                              : "N/A"}
+                          </strong>
+                        </div>
+                        <div className="flex items-center gap-3 text-gray-600">
+                          <span>
+                            Pay Days:{" "}
+                            <strong className="text-gray-900 font-semibold">
+                              {fnfEstimate.days?.payment_days ?? 0} of{" "}
+                              {fnfEstimate.days?.working_days ?? 0}
+                            </strong>
+                          </span>
+                          {Boolean(
+                            fnfEstimate.days?.recovery_days &&
+                            fnfEstimate.days.recovery_days > 0,
+                          ) && (
+                            <span className="text-rose-600 font-medium">
+                              Recovery: {fnfEstimate.days.recovery_days} days
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    )}
 
-                    {isEarningsExpanded && (
-                      <div className="divide-y divide-gray-100 px-3 text-xs bg-white">
-                        {fnfEstimate.earnings?.map((earning, idx) => (
-                          <div
-                            key={`earning-${earning.salary_component}-${idx}`}
-                            className="py-2 flex items-center justify-between gap-4"
+                    {/* Earnings Collapsible Section */}
+                    <div className="rounded-lg border border-gray-100 overflow-hidden">
+                      <button
+                        type="button"
+                        onClick={() => setIsEarningsExpanded((prev) => !prev)}
+                        className="w-full flex items-center justify-between p-3 bg-gray-50/80 hover:bg-gray-100/70 transition-colors text-left"
+                      >
+                        <div className="flex items-center gap-2">
+                          <div className="w-2 h-2 rounded-full bg-emerald-500" />
+                          <Typography
+                            variant="bodySmall"
+                            className="font-bold text-gray-900"
                           >
-                            <Typography
-                              variant="bodySmall"
-                              className="text-gray-800 font-medium"
-                            >
-                              {earning.salary_component}
-                            </Typography>
-                            <Typography
-                              variant="bodySmall"
-                              className="font-semibold text-gray-900 shrink-0"
-                            >
-                              {formatCurrency(earning.amount)}
-                            </Typography>
-                          </div>
-                        ))}
+                            Earnings &amp; Additions
+                          </Typography>
+                          <span className="text-[11px] font-semibold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-xl border border-emerald-200">
+                            +
+                            {formatCurrency(
+                              fnfEstimate.totals?.total_earnings ||
+                                fnfEstimate.final?.payable_breakup
+                                  ?.salary_earnings ||
+                                0,
+                            )}
+                          </span>
+                        </div>
+                        {isEarningsExpanded ? (
+                          <ChevronUp className="w-4 h-4 text-gray-500" />
+                        ) : (
+                          <ChevronDown className="w-4 h-4 text-gray-500" />
+                        )}
+                      </button>
 
-                        {/* Optional Leave Encashment */}
-                        {Boolean(
-                          fnfEstimate.leave_encashment &&
-                          fnfEstimate.leave_encashment.total_amount > 0,
-                        ) && (
-                          <div className="py-2 flex items-center justify-between gap-4">
-                            <div>
+                      {isEarningsExpanded && (
+                        <div className="divide-y divide-gray-100 px-3 text-xs bg-white">
+                          {fnfEstimate.earnings?.map((earning, idx) => (
+                            <div
+                              key={`earning-${earning.salary_component}-${idx}`}
+                              className="py-2 flex items-center justify-between gap-4"
+                            >
                               <Typography
                                 variant="bodySmall"
                                 className="text-gray-800 font-medium"
                               >
-                                Leave Encashment
+                                {earning.salary_component}
                               </Typography>
-                              {Boolean(
-                                fnfEstimate.leave_encashment?.total_days &&
-                                fnfEstimate.leave_encashment.total_days > 0,
-                              ) && (
-                                <Typography
-                                  variant="caption"
-                                  className="text-gray-500 mt-0.5 block"
-                                >
-                                  {fnfEstimate.leave_encashment?.total_days}{" "}
-                                  days encashed
-                                </Typography>
-                              )}
+                              <Typography
+                                variant="bodySmall"
+                                className="font-semibold text-gray-900 shrink-0"
+                              >
+                                {formatCurrency(earning.amount)}
+                              </Typography>
                             </div>
-                            <Typography
-                              variant="bodySmall"
-                              className="font-semibold text-emerald-700 shrink-0"
-                            >
-                              +
-                              {formatCurrency(
-                                fnfEstimate.leave_encashment?.total_amount || 0,
-                              )}
-                            </Typography>
-                          </div>
-                        )}
+                          ))}
 
-                        {/* Pay Days Arrear if any */}
-                        {Boolean(
-                          fnfEstimate.totals?.pay_days_arrear &&
-                          fnfEstimate.totals.pay_days_arrear > 0,
-                        ) && (
-                          <div className="py-2 flex items-center justify-between gap-4">
-                            <Typography
-                              variant="bodySmall"
-                              className="text-gray-800 font-medium"
-                            >
-                              Pay Days Arrear
-                            </Typography>
-                            <Typography
-                              variant="bodySmall"
-                              className="font-semibold text-gray-900 shrink-0"
-                            >
-                              {formatCurrency(
-                                fnfEstimate.totals.pay_days_arrear,
-                              )}
-                            </Typography>
-                          </div>
-                        )}
-
-                        {(!fnfEstimate.earnings ||
-                          fnfEstimate.earnings.length === 0) && (
-                          <div className="py-2.5 text-center text-gray-500">
-                            No earnings recorded for this period
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Deductions Collapsible Section */}
-                  <div className="rounded-lg border border-gray-100 overflow-hidden">
-                    <button
-                      type="button"
-                      onClick={() => setIsDeductionsExpanded((prev) => !prev)}
-                      className="w-full flex items-center justify-between p-3 bg-gray-50/80 hover:bg-gray-100/70 transition-colors text-left"
-                    >
-                      <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 rounded-full bg-rose-500" />
-                        <Typography
-                          variant="bodySmall"
-                          className="font-bold text-gray-900"
-                        >
-                          Deductions &amp; Recoveries
-                        </Typography>
-                        <span className="text-[11px] font-semibold text-rose-800 bg-rose-50 px-2 py-0.5 rounded-xl border border-rose-200">
-                          &minus;
-                          {formatCurrency(
-                            fnfEstimate.totals?.total_deductions ||
-                              fnfEstimate.final?.receivable_breakup
-                                ?.salary_deductions ||
-                              0,
+                          {/* Optional Leave Encashment */}
+                          {Boolean(
+                            fnfEstimate.leave_encashment &&
+                            fnfEstimate.leave_encashment.total_amount > 0,
+                          ) && (
+                            <div className="py-2 flex items-center justify-between gap-4">
+                              <div>
+                                <Typography
+                                  variant="bodySmall"
+                                  className="text-gray-800 font-medium"
+                                >
+                                  Leave Encashment
+                                </Typography>
+                                {Boolean(
+                                  fnfEstimate.leave_encashment?.total_days &&
+                                  fnfEstimate.leave_encashment.total_days > 0,
+                                ) && (
+                                  <Typography
+                                    variant="caption"
+                                    className="text-gray-500 mt-0.5 block"
+                                  >
+                                    {fnfEstimate.leave_encashment?.total_days}{" "}
+                                    days encashed
+                                  </Typography>
+                                )}
+                              </div>
+                              <Typography
+                                variant="bodySmall"
+                                className="font-semibold text-emerald-700 shrink-0"
+                              >
+                                +
+                                {formatCurrency(
+                                  fnfEstimate.leave_encashment?.total_amount ||
+                                    0,
+                                )}
+                              </Typography>
+                            </div>
                           )}
-                        </span>
-                      </div>
-                      {isDeductionsExpanded ? (
-                        <ChevronUp className="w-4 h-4 text-gray-500" />
-                      ) : (
-                        <ChevronDown className="w-4 h-4 text-gray-500" />
+
+                          {/* Pay Days Arrear if any */}
+                          {Boolean(
+                            fnfEstimate.totals?.pay_days_arrear &&
+                            fnfEstimate.totals.pay_days_arrear > 0,
+                          ) && (
+                            <div className="py-2 flex items-center justify-between gap-4">
+                              <Typography
+                                variant="bodySmall"
+                                className="text-gray-800 font-medium"
+                              >
+                                Pay Days Arrear
+                              </Typography>
+                              <Typography
+                                variant="bodySmall"
+                                className="font-semibold text-gray-900 shrink-0"
+                              >
+                                {formatCurrency(
+                                  fnfEstimate.totals.pay_days_arrear,
+                                )}
+                              </Typography>
+                            </div>
+                          )}
+
+                          {(!fnfEstimate.earnings ||
+                            fnfEstimate.earnings.length === 0) && (
+                            <div className="py-2.5 text-center text-gray-500">
+                              No earnings recorded for this period
+                            </div>
+                          )}
+                        </div>
                       )}
-                    </button>
-
-                    {isDeductionsExpanded && (
-                      <div className="divide-y divide-gray-100 px-3 text-xs bg-white">
-                        {fnfEstimate.deductions?.map((deduction, idx) => (
-                          <div
-                            key={`deduction-${deduction.salary_component}-${idx}`}
-                            className="py-2 flex items-center justify-between gap-4"
-                          >
-                            <Typography
-                              variant="bodySmall"
-                              className="text-gray-800 font-medium"
-                            >
-                              {deduction.salary_component}
-                            </Typography>
-                            <Typography
-                              variant="bodySmall"
-                              className="font-semibold text-rose-700 shrink-0"
-                            >
-                              &minus;
-                              {formatCurrency(Math.abs(deduction.amount))}
-                            </Typography>
-                          </div>
-                        ))}
-
-                        {/* Asset Recovery if any */}
-                        {Boolean(
-                          fnfEstimate.totals?.asset_recovery &&
-                          fnfEstimate.totals.asset_recovery > 0,
-                        ) && (
-                          <div className="py-2 flex items-center justify-between gap-4">
-                            <Typography
-                              variant="bodySmall"
-                              className="text-gray-800 font-medium"
-                            >
-                              Asset Recovery
-                            </Typography>
-                            <Typography
-                              variant="bodySmall"
-                              className="font-semibold text-rose-700 shrink-0"
-                            >
-                              &minus;
-                              {formatCurrency(
-                                fnfEstimate.totals.asset_recovery,
-                              )}
-                            </Typography>
-                          </div>
-                        )}
-
-                        {/* Extra Recovery if any */}
-                        {Boolean(
-                          fnfEstimate.totals?.extra_recovery_deduction &&
-                          fnfEstimate.totals.extra_recovery_deduction > 0,
-                        ) && (
-                          <div className="py-2 flex items-center justify-between gap-4">
-                            <Typography
-                              variant="bodySmall"
-                              className="text-gray-800 font-medium"
-                            >
-                              Other Deductions / Recovery
-                            </Typography>
-                            <Typography
-                              variant="bodySmall"
-                              className="font-semibold text-rose-700 shrink-0"
-                            >
-                              &minus;
-                              {formatCurrency(
-                                fnfEstimate.totals.extra_recovery_deduction,
-                              )}
-                            </Typography>
-                          </div>
-                        )}
-
-                        {(!fnfEstimate.deductions ||
-                          fnfEstimate.deductions.length === 0) && (
-                          <div className="py-2.5 text-center text-gray-500">
-                            No deductions recorded for this period
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Subtotals & Net Estimated Amount Card */}
-                  <div className="mt-3 p-3.5 sm:p-4 rounded-xl bg-gradient-to-br from-primary-50/60 to-gray-50 border border-primary-100">
-                    <div className="space-y-1.5 pb-3 border-b border-primary-100/70 text-xs">
-                      <div className="flex items-center justify-between text-gray-600">
-                        <span>Gross Payable Earnings:</span>
-                        <span className="font-semibold text-gray-900">
-                          {formatCurrency(
-                            fnfEstimate.totals?.total_earnings ||
-                              fnfEstimate.final?.total_payable ||
-                              0,
-                          )}
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between text-gray-600">
-                        <span>Total Deductions &amp; Recoveries:</span>
-                        <span className="font-semibold text-rose-700">
-                          &minus;
-                          {formatCurrency(
-                            fnfEstimate.totals?.total_deductions ||
-                              fnfEstimate.final?.total_receivable ||
-                              0,
-                          )}
-                        </span>
-                      </div>
                     </div>
 
-                    <div className="pt-3 flex items-center justify-between">
-                      <div>
-                        <Typography
-                          variant="bodySmall"
-                          className="font-bold text-gray-900 block"
-                        >
-                          Net Estimated Settlement
-                        </Typography>
-                        <Typography
-                          variant="caption"
-                          className="text-gray-500 font-medium block mt-0.5"
-                        >
-                          {fnfEstimate.final?.is_recoverable
-                            ? "Recoverable amount from employee"
-                            : "Payable to registered salary account"}
-                        </Typography>
-                      </div>
-                      <Typography
-                        variant="h4"
-                        className={`font-extrabold text-xl sm:text-2xl ${
-                          fnfEstimate.final?.is_recoverable
-                            ? "text-rose-700"
-                            : "text-primary-800"
-                        }`}
+                    {/* Deductions Collapsible Section */}
+                    <div className="rounded-lg border border-gray-100 overflow-hidden">
+                      <button
+                        type="button"
+                        onClick={() => setIsDeductionsExpanded((prev) => !prev)}
+                        className="w-full flex items-center justify-between p-3 bg-gray-50/80 hover:bg-gray-100/70 transition-colors text-left"
                       >
-                        {formatCurrency(
-                          fnfEstimate.totals?.net_settlement ??
-                            fnfEstimate.final?.net_pay ??
-                            0,
+                        <div className="flex items-center gap-2">
+                          <div className="w-2 h-2 rounded-full bg-rose-500" />
+                          <Typography
+                            variant="bodySmall"
+                            className="font-bold text-gray-900"
+                          >
+                            Deductions &amp; Recoveries
+                          </Typography>
+                          <span className="text-[11px] font-semibold text-rose-800 bg-rose-50 px-2 py-0.5 rounded-xl border border-rose-200">
+                            &minus;
+                            {formatCurrency(
+                              fnfEstimate.totals?.total_deductions ||
+                                fnfEstimate.final?.receivable_breakup
+                                  ?.salary_deductions ||
+                                0,
+                            )}
+                          </span>
+                        </div>
+                        {isDeductionsExpanded ? (
+                          <ChevronUp className="w-4 h-4 text-gray-500" />
+                        ) : (
+                          <ChevronDown className="w-4 h-4 text-gray-500" />
                         )}
-                      </Typography>
+                      </button>
+
+                      {isDeductionsExpanded && (
+                        <div className="divide-y divide-gray-100 px-3 text-xs bg-white">
+                          {fnfEstimate.deductions?.map((deduction, idx) => (
+                            <div
+                              key={`deduction-${deduction.salary_component}-${idx}`}
+                              className="py-2 flex items-center justify-between gap-4"
+                            >
+                              <Typography
+                                variant="bodySmall"
+                                className="text-gray-800 font-medium"
+                              >
+                                {deduction.salary_component}
+                              </Typography>
+                              <Typography
+                                variant="bodySmall"
+                                className="font-semibold text-rose-700 shrink-0"
+                              >
+                                &minus;
+                                {formatCurrency(Math.abs(deduction.amount))}
+                              </Typography>
+                            </div>
+                          ))}
+
+                          {/* Asset Recovery if any */}
+                          {Boolean(
+                            fnfEstimate.totals?.asset_recovery &&
+                            fnfEstimate.totals.asset_recovery > 0,
+                          ) && (
+                            <div className="py-2 flex items-center justify-between gap-4">
+                              <Typography
+                                variant="bodySmall"
+                                className="text-gray-800 font-medium"
+                              >
+                                Asset Recovery
+                              </Typography>
+                              <Typography
+                                variant="bodySmall"
+                                className="font-semibold text-rose-700 shrink-0"
+                              >
+                                &minus;
+                                {formatCurrency(
+                                  fnfEstimate.totals.asset_recovery,
+                                )}
+                              </Typography>
+                            </div>
+                          )}
+
+                          {/* Extra Recovery if any */}
+                          {Boolean(
+                            fnfEstimate.totals?.extra_recovery_deduction &&
+                            fnfEstimate.totals.extra_recovery_deduction > 0,
+                          ) && (
+                            <div className="py-2 flex items-center justify-between gap-4">
+                              <Typography
+                                variant="bodySmall"
+                                className="text-gray-800 font-medium"
+                              >
+                                Other Deductions / Recovery
+                              </Typography>
+                              <Typography
+                                variant="bodySmall"
+                                className="font-semibold text-rose-700 shrink-0"
+                              >
+                                &minus;
+                                {formatCurrency(
+                                  fnfEstimate.totals.extra_recovery_deduction,
+                                )}
+                              </Typography>
+                            </div>
+                          )}
+
+                          {(!fnfEstimate.deductions ||
+                            fnfEstimate.deductions.length === 0) && (
+                            <div className="py-2.5 text-center text-gray-500">
+                              No deductions recorded for this period
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
 
-                    {fnfEstimate.final?.amount_in_words && (
-                      <div className="mt-2.5 pt-2 border-t border-primary-100/60">
+                    {/* Subtotals & Net Estimated Amount Card */}
+                    <div className="mt-3 p-3.5 sm:p-4 rounded-xl bg-gradient-to-br from-primary-50/60 to-gray-50 border border-primary-100">
+                      <div className="space-y-1.5 pb-3 border-b border-primary-100/70 text-xs">
+                        <div className="flex items-center justify-between text-gray-600">
+                          <span>Gross Payable Earnings:</span>
+                          <span className="font-semibold text-gray-900">
+                            {formatCurrency(
+                              fnfEstimate.totals?.total_earnings ||
+                                fnfEstimate.final?.total_payable ||
+                                0,
+                            )}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between text-gray-600">
+                          <span>Total Deductions &amp; Recoveries:</span>
+                          <span className="font-semibold text-rose-700">
+                            &minus;
+                            {formatCurrency(
+                              fnfEstimate.totals?.total_deductions ||
+                                fnfEstimate.final?.total_receivable ||
+                                0,
+                            )}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="pt-3 flex items-center justify-between">
+                        <div>
+                          <Typography
+                            variant="bodySmall"
+                            className="font-bold text-gray-900 block"
+                          >
+                            Net Estimated Settlement
+                          </Typography>
+                          <Typography
+                            variant="caption"
+                            className="text-gray-500 font-medium block mt-0.5"
+                          >
+                            {fnfEstimate.final?.is_recoverable
+                              ? "Recoverable amount from employee"
+                              : "Payable to registered salary account"}
+                          </Typography>
+                        </div>
                         <Typography
-                          variant="caption"
-                          className="text-gray-600 italic font-medium block"
+                          variant="h4"
+                          className={`font-extrabold text-xl sm:text-2xl ${
+                            fnfEstimate.final?.is_recoverable
+                              ? "text-rose-700"
+                              : "text-primary-800"
+                          }`}
                         >
-                          In words: {fnfEstimate.final.amount_in_words}
+                          {formatCurrency(
+                            fnfEstimate.totals?.net_settlement ??
+                              fnfEstimate.final?.net_pay ??
+                              0,
+                          )}
                         </Typography>
                       </div>
-                    )}
-                  </div>
 
-                  {/* Disclaimer */}
-                  <Typography
-                    variant="caption"
-                    className="text-gray-600 font-medium leading-relaxed bg-gray-50 p-3 rounded-lg border border-gray-200 block"
-                  >
-                    This is an estimated settlement statement and is subject to
-                    revision based on final department clearances, asset
-                    clearance, and attendance reconciliation. Expected payout is
-                    within 45 days of the relieving date.
-                  </Typography>
-                </div>
-              )}
+                      {fnfEstimate.final?.amount_in_words && (
+                        <div className="mt-2.5 pt-2 border-t border-primary-100/60">
+                          <Typography
+                            variant="caption"
+                            className="text-gray-600 italic font-medium block"
+                          >
+                            In words: {fnfEstimate.final.amount_in_words}
+                          </Typography>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Disclaimer */}
+                    <Typography
+                      variant="caption"
+                      className="text-gray-600 font-medium leading-relaxed bg-gray-50 p-3 rounded-lg border border-gray-200 block"
+                    >
+                      This is an estimated settlement statement and is subject
+                      to revision based on final department clearances, asset
+                      clearance, and attendance reconciliation. Expected payout
+                      is within 45 days of the relieving date.
+                    </Typography>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -1795,6 +1826,200 @@ const ExitPage: React.FC = () => {
 
           {/* Right Column (5 cols) */}
           <div className="lg:col-span-5 space-y-4 sm:space-y-5">
+            {/* Leave Encashment & Lapse Card */}
+            {hasSeparation && (
+              <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-5 shadow-xs">
+                <div className="flex items-center justify-between pb-3 mb-3 border-b border-gray-100">
+                  <div className="flex items-center gap-2">
+                    <div className="p-1.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center justify-center shrink-0">
+                      <Umbrella className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <Typography
+                        variant="subheading"
+                        className="text-gray-900 block font-bold"
+                      >
+                        Leave Encashment &amp; Lapse
+                      </Typography>
+                      <Typography
+                        variant="caption"
+                        className="text-gray-500 font-medium block mt-0.5"
+                      >
+                        Based on leave balance
+                        {relievingDate
+                          ? ` as of ${formatToIndianDate(relievingDate)}`
+                          : ""}
+                      </Typography>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      navigate("/webapp/leave-app/leaves/leave-balance")
+                    }
+                    className="text-xs font-semibold text-primary-700 hover:text-primary-800 hover:underline flex items-center gap-1 transition-colors shrink-0 ml-2"
+                  >
+                    View Leaves &rarr;
+                  </button>
+                </div>
+
+                {isLoadingLeaveBalance || isLoadingFnf ? (
+                  <div className="grid grid-cols-2 gap-2.5 py-1">
+                    {[1, 2].map((i) => (
+                      <div
+                        key={i}
+                        className="h-24 bg-gray-50 rounded-xl border border-gray-100 animate-pulse flex flex-col items-center justify-center gap-2"
+                      >
+                        <div className="h-6 w-12 bg-gray-200 rounded" />
+                        <div className="h-3 w-20 bg-gray-200 rounded" />
+                        <div className="h-2 w-16 bg-gray-200 rounded" />
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {/* Stat tiles */}
+                    <div className="grid grid-cols-2 gap-2 sm:gap-2.5">
+                      {/* Days to be Encashed */}
+                      <div className="p-3 rounded-xl bg-emerald-50/60 border border-emerald-200/80 text-center">
+                        <Typography
+                          variant="h3"
+                          className="text-xl sm:text-2xl font-bold text-emerald-700"
+                        >
+                          {leaveEncashDays}
+                        </Typography>
+                        <Typography
+                          variant="caption"
+                          className="text-emerald-800 font-semibold block mt-0.5 text-[11px] sm:text-xs"
+                        >
+                          Days to Encash
+                        </Typography>
+                        {fnfEstimate?.leave_encashment?.total_amount ? (
+                          <Typography
+                            variant="caption"
+                            className="text-emerald-600 font-medium block mt-0.5 text-[10px] sm:text-[11px]"
+                          >
+                            ≈{" "}
+                            {formatCurrency(
+                              fnfEstimate.leave_encashment.total_amount,
+                            )}
+                          </Typography>
+                        ) : null}
+                      </div>
+
+                      {/* Days that will Lapse */}
+                      <div className="p-3 rounded-xl bg-rose-50/60 border border-rose-200/80 text-center">
+                        <Typography
+                          variant="h3"
+                          className="text-xl sm:text-2xl font-bold text-rose-600"
+                        >
+                          {lapseDays}
+                        </Typography>
+                        <Typography
+                          variant="caption"
+                          className="text-rose-700 font-semibold block mt-0.5 text-[11px] sm:text-xs"
+                        >
+                          Days to Lapse
+                        </Typography>
+                        <Typography
+                          variant="caption"
+                          className="text-rose-500 font-medium block mt-0.5 text-[10px] sm:text-[11px]"
+                        >
+                          Non-encashable
+                        </Typography>
+                      </div>
+                    </div>
+
+                    {/* Per-type breakdown */}
+                    {leaveBalanceList.length > 0 && (
+                      <div className="divide-y divide-gray-100 border border-gray-100 rounded-lg overflow-hidden">
+                        <div className="flex items-center justify-between px-3 py-2 bg-gray-50/80 text-[10px] sm:text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                          <span>Leave Type</span>
+                          <div className="flex items-center gap-4">
+                            <span className="text-emerald-700">Encash</span>
+                            <span className="text-rose-600">Lapse</span>
+                          </div>
+                        </div>
+                        {(() => {
+                          // Greedily assign encash days to leave types in order.
+                          // The FnF encashes from the first leave type(s); the rest lapse.
+                          let remaining = leaveEncashDays;
+                          return leaveBalanceList.map((lb) => {
+                            const encashedForRow = Math.min(
+                              lb.balance,
+                              remaining,
+                            );
+                            const lapsedForRow = lb.balance - encashedForRow;
+                            remaining = Math.max(0, remaining - encashedForRow);
+                            return (
+                              <div
+                                key={lb.leave_id}
+                                className="flex items-center justify-between px-3 py-2.5 text-xs"
+                              >
+                                <div className="flex items-center gap-1.5 min-w-0">
+                                  <Umbrella className="w-3 h-3 text-gray-400 shrink-0" />
+                                  <Typography
+                                    variant="caption"
+                                    className="font-medium text-gray-800 truncate"
+                                  >
+                                    {lb.type}
+                                  </Typography>
+                                  <Typography
+                                    variant="caption"
+                                    className="text-gray-400 font-medium shrink-0"
+                                  >
+                                    ({lb.balance} days)
+                                  </Typography>
+                                </div>
+                                <div className="flex items-center gap-4 shrink-0">
+                                  <Typography
+                                    variant="caption"
+                                    className={`font-bold text-xs ${encashedForRow > 0 ? "text-emerald-700" : "text-gray-400"}`}
+                                  >
+                                    {encashedForRow > 0 ? encashedForRow : "—"}
+                                  </Typography>
+                                  <Typography
+                                    variant="caption"
+                                    className={`font-bold text-xs ${lapsedForRow > 0 ? "text-rose-600" : "text-gray-400"}`}
+                                  >
+                                    {lapsedForRow > 0 ? lapsedForRow : "—"}
+                                  </Typography>
+                                </div>
+                              </div>
+                            );
+                          });
+                        })()}
+                      </div>
+                    )}
+
+                    {/* Reminder message */}
+                    {lapseDays > 0 && (
+                      <div className="flex items-start gap-2 p-2.5 rounded-lg bg-rose-50/80 border border-rose-200/80 text-xs text-rose-900 font-medium">
+                        <CalendarOff className="w-3.5 h-3.5 text-rose-500 shrink-0 mt-0.5" />
+                        <span>
+                          <strong className="font-bold text-rose-950">
+                            {lapseDays} leave day
+                            {lapseDays !== 1 ? "s" : ""}
+                          </strong>{" "}
+                          will lapse after your relieving date. Consider using
+                          them before your last working day.
+                        </span>
+                      </div>
+                    )}
+
+                    {leaveEncashDays === 0 && lapseDays === 0 && (
+                      <Typography
+                        variant="caption"
+                        className="text-gray-400 font-medium block text-center py-2"
+                      >
+                        No leave balance data available.
+                      </Typography>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Actionables for you Card */}
             <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-5 shadow-xs">
               <div className="flex items-center justify-between pb-3 mb-2 border-b border-gray-100">
