@@ -93,6 +93,13 @@ _ALUMNI_METHOD_ALLOWLIST = {
     # without this.
     "recruitment.api.alumni_request.create_alumni_employee_request",
     "recruitment.api.alumni_request.get_alumni_request_status",
+    # Recovery step for a PERSONAL_EMAIL_REQUIRED failure above. Guest-callable,
+    # but not guest-authorized — it re-checks the same employee/email identity
+    # pair before writing anything (see `_may_set_personal_email`), so listing
+    # it here only restores reachability for an alumni session in the same
+    # browser; it grants no additional capability over what the function
+    # itself already allows a Guest to do.
+    "recruitment.api.alumni_request.update_employee_personal_email",
     # Alumni Todo manager. Work for an alumnus is raised against the alumni User
     # through the normal Manager + Workflow flow; assignments that already
     # belonged to the company account are deliberately left there. All three

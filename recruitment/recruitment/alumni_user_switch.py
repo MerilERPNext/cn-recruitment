@@ -1,37 +1,31 @@
-"""Employee user switching on employment-status change (Recruitment app).
+"""Alumni User helper functions and relieving date automation.
 
-When an employee leaves, their company-email User is disabled and a User built
-from their `personal_email` takes over as the Alumni Portal account. When they
-rejoin, the switch is reversed.
+This module provides:
 
-This module owns ONLY the account switching. It deliberately reuses the alumni
-mechanisms that already exist rather than adding a parallel system:
+1. **Helper functions** for finding, creating, and configuring Alumni Users:
+   - ``_find_user(email)`` — find existing User by email
+   - ``_create_alumni_user(employee, email)`` — create new Alumni User
+   - ``_configure_alumni_user(email)`` — enable/configure existing User
+   - ``_stamp_alumni_category(email)`` — mark User as Alumni category
 
-* ``User.custom_is_alumni_employee``  — the flag that gates portal login
-  (created in ``recruitment.install``); this module sets it on the personal
-  User and clears it on rejoin.
-* ``Employee.custom_is_alumni_employee`` — HR's manual grant/revoke checkbox,
-  mirrored onto the linked User by
-  ``recruitment.recruitment.alumni_portal.sync_alumni_flag``.
-* ``recruitment.recruitment.alumni_guard`` — the auth hook that already confines
-  an alumni session to the alumni namespace and rejects Desk / ESS / resource
-  APIs. No new authorization layer is introduced here.
-* ``Employee.custom_alumni_user`` — Link to the provisioned personal User, so
-  the portal can resolve Employee <-> alumni User deterministically.
+   These helpers are reused by the checkbox-based Alumni User provisioning
+   logic in ``alumni_checkbox_handler.py``, which triggers on
+   ``Employee.custom_is_alumni_employee`` checkbox changes (0→1, 1→0),
+   completely independent of Employee status.
 
-The COMPANY-email account is deliberately NOT touched here. ERPNext already
-enables/disables it from Employee.status in
-``Employee.validate_for_enabled_user_id`` (erpnext/setup/doctype/employee):
+2. **Relieving Date automation** via ``auto_set_relieving_date()``:
+   - Auto-fills ``relieving_date`` with today when Employee status changes
+     to Left/Inactive (unrelated to Alumni User creation).
 
-    status != Active and user enabled  -> disable the user
-    status == Active and user disabled -> enable the user
+IMPORTANT: The status-based Alumni User creation trigger that previously ran
+on ``Employee.status`` changes (Active → Left/Inactive) has been **removed**.
+Alumni User creation is now **ONLY** triggered by the
+``custom_is_alumni_employee`` checkbox being set to 1, via the dedicated
+``alumni_checkbox_handler`` module.
 
-Duplicating that would be a second, competing implementation of the same rule.
-This module therefore owns only the part that does not already exist: the
-personal-email Alumni account and its link back to the Employee.
-
-Hooked from ``hooks.py`` as an Employee ``on_update`` event; it acts only on a
-real status transition, never on every save.
+The company-email account (User) is still disabled by ERPNext's own logic
+when Employee.status != Active — that is independent of this module and
+unchanged.
 """
 
 from __future__ import annotations
@@ -41,9 +35,6 @@ from frappe import _
 from frappe.utils import cint, getdate, today, validate_email_address
 
 from recruitment.recruitment.alumni_portal import ALUMNI_FLAG
-
-#: Employee statuses that mean "no longer working here".
-EXITED_STATUSES = {"Left", "Inactive"}
 
 #: Alumni Users are Website Users: Frappe itself then denies Desk access, so the
 #: restriction does not depend on roles or on any frontend route guard.
@@ -62,7 +53,8 @@ def _log(event: str, employee: str, **extra) -> None:
 def _set_alumni_user_enabled(email: str, enabled: int) -> bool:
     """Enable/disable the ALUMNI (personal-email) User only.
 
-    The company-email account is left to ERPNext — see the module docstring.
+    The company-email account is left to ERPNext — it is handled by ERPNext's
+    own status rule.
     Returns True when the value actually changed.
     """
     if not email or not frappe.db.exists("User", email):
@@ -134,96 +126,7 @@ def _configure_alumni_user(email: str) -> None:
     _stamp_alumni_category(email)
 
 
-# ── Transitions ───────────────────────────────────────────────────────────────
-def _switch_to_alumni(doc) -> None:
-    """Active -> Left/Inactive: provision the alumni account, then disable work one."""
-    personal = (doc.get("personal_email") or "").strip()
-
-    if not personal:
-        # No alumni account can be provisioned. ERPNext still disables the
-        # company account for a non-Active employee, so this is logged loudly:
-        # the person ends up with no usable login until HR adds a personal email.
-        _log("switch_skipped_no_personal_email", doc.name)
-        frappe.log_error(
-            f"Employee {doc.name} became {doc.status} but has no personal_email; "
-            "alumni account was not provisioned and the company user was left enabled.",
-            "Alumni user switch skipped",
-        )
-        return
-
-    try:
-        validate_email_address(personal, throw=True)
-    except Exception:
-        _log("switch_failed_invalid_personal_email", doc.name)
-        frappe.log_error(
-            f"Employee {doc.name}: personal_email is not a valid address; "
-            "alumni account not provisioned.",
-            "Alumni user switch failed",
-        )
-        return
-
-    company_user = (doc.get("user_id") or "").strip()
-    if personal == company_user:
-        # Same address on both fields — there is no second account to switch to.
-        _log("switch_skipped_same_address", doc.name)
-        return
-
-    # 1. Find or create the alumni account FIRST, so a failure here never leaves
-    #    the employee with a disabled company user and nothing to log in with.
-    existing = _find_user(personal)
-    if existing:
-        _configure_alumni_user(existing)
-        alumni_user = existing
-        _log("alumni_user_reused", doc.name, user=alumni_user)
-    else:
-        alumni_user = _create_alumni_user(doc, personal)
-        _log("alumni_user_created", doc.name, user=alumni_user)
-
-    # 2. Record the link so the portal can resolve Employee <-> alumni User.
-    if frappe.get_meta("Employee").get_field("custom_alumni_user"):
-        if doc.get("custom_alumni_user") != alumni_user:
-            doc.db_set("custom_alumni_user", alumni_user, update_modified=False)
-
-    # The company account is disabled by ERPNext's own status rule; it is kept
-    # for history and never deleted here.
-    _log("switch_to_alumni_complete", doc.name, user=alumni_user, company_user=company_user)
-
-
-def _switch_to_company(doc) -> None:
-    """Left/Inactive -> Active: restore the work account, retire the alumni one."""
-    # ERPNext re-enables the company account itself when status returns to
-    # Active; this module only retires the alumni account.
-    company_user = (doc.get("user_id") or "").strip()
-
-    alumni_user = (doc.get("custom_alumni_user") or "").strip() or _find_user(
-        (doc.get("personal_email") or "").strip()
-    )
-    # Never touch the company account in the alumni branch, even if the two
-    # addresses happen to be the same record.
-    if alumni_user and alumni_user != company_user:
-        # Revoke portal access but keep the account (history / audit).
-        if cint(frappe.db.get_value("User", alumni_user, ALUMNI_FLAG)):
-            frappe.db.set_value(
-                "User", alumni_user, ALUMNI_FLAG, 0, update_modified=False
-            )
-        if _set_alumni_user_enabled(alumni_user, 0):
-            _log("alumni_user_disabled", doc.name, user=alumni_user)
-
-    _log("switch_to_company_complete", doc.name, user=company_user)
-
-
-# ── Validation ────────────────────────────────────────────────────────────────
-def _is_conversion_to_alumni(doc) -> bool:
-    """True only on the *transition* Active -> Left/Inactive (a fresh alumni
-    conversion), not on ordinary saves of an already-exited employee."""
-    new_status = doc.status or ""
-    if new_status not in EXITED_STATUSES:
-        return False
-    before = doc.get_doc_before_save()
-    old_status = (before.status if before else None) or ""
-    return old_status not in EXITED_STATUSES
-
-
+# ── Relieving Date Automation ─────────────────────────────────────────────────
 def auto_set_relieving_date(doc, method: str | None = None) -> None:
     """Employee ``validate`` hook: auto-fill ``relieving_date`` ("Last Working
     Day") with today's date on the real transition into Left/Inactive, if HR
@@ -236,134 +139,55 @@ def auto_set_relieving_date(doc, method: str | None = None) -> None:
 
     Never overwrites an explicitly-set date — if HR already picked a real last
     working day (e.g. backdated, or a future one), that stays authoritative.
-    Only fires on the real transition (same gate as
-    ``validate_alumni_personal_email``); saves of an already-exited record are
-    untouched. The Employee Separation submit path
-    (``update_employee_relieving_date``) sets this via a raw ``db.set_value``
-    outside the doc lifecycle, so it never reaches this hook at all — the two
-    don't conflict.
+    Only fires on the real transition; saves of an already-exited record are
+    untouched.
     """
-    if not _is_conversion_to_alumni(doc):
+    before = doc.get_doc_before_save()
+    old_status = (before.status if before else None) or ""
+    new_status = doc.status or ""
+
+    if new_status not in {"Left", "Inactive"}:
         return
+    if old_status in {"Left", "Inactive"}:
+        return  # Already exited, not a transition
+
     if not doc.get("relieving_date"):
         doc.relieving_date = getdate(today())
 
 
-def validate_alumni_personal_email(doc, method: str | None = None) -> None:
-    """Employee ``validate`` hook: block conversion to alumni without a usable
-    personal email.
-
-    Runs *before* the save commits (and before ERPNext disables the company-email
-    User on the status change), so a failure aborts the whole transition — the
-    employee is never left with a disabled company account and no alumni login.
-
-    Only fires on the real transition into ``Left``/``Inactive``; edits to an
-    already-exited record, and non-``save`` status changes (e.g. the relieving
-    scheduler's ``db.set_value``), are not affected.
-    """
-    if not _is_conversion_to_alumni(doc):
-        return
-
-    personal = (doc.get("personal_email") or "").strip()
-    if not personal:
-        frappe.throw(
-            _("Personal Email is required before converting this employee to Alumni."),
-            title=_("Personal Email Required"),
-        )
-
-    try:
-        validate_email_address(personal, throw=True)
-    except frappe.PermissionError:
-        raise
-    except Exception:
-        frappe.throw(
-            _("Personal Email '{0}' is not a valid email address.").format(personal),
-            title=_("Invalid Personal Email"),
-        )
-
-    # A personal email identical to the company login gives no separate alumni
-    # account: ERPNext would disable that very User, leaving no way to sign in.
-    company_login = (doc.get("user_id") or "").strip()
-    company_email = (doc.get("company_email") or "").strip()
-    if personal in {company_login, company_email} and personal:
-        frappe.throw(
-            _("Personal Email must be different from the company email so the "
-              "alumnus has a separate login after the company account is disabled."),
-            title=_("Personal Email Conflict"),
-        )
-
-
-# ── Hook ──────────────────────────────────────────────────────────────────────
-def handle_employee_status_change(doc, method: str | None = None) -> None:
-    """Employee ``on_update``: switch accounts when `status` actually changes.
-
-    Runs only on a real transition, so ordinary saves never re-create users or
-    re-apply permissions. Any failure is logged and swallowed — account
-    switching must never block HR from saving an Employee record.
-    """
-    if not doc.has_value_changed("status"):
-        return
-
-    before = doc.get_doc_before_save()
-    old_status = (before.status if before else None) or ""
-    new_status = doc.status or ""
-    if old_status == new_status:
-        return
-
-    try:
-        if new_status in EXITED_STATUSES and old_status not in EXITED_STATUSES:
-            _switch_to_alumni(doc)
-        elif new_status not in EXITED_STATUSES and old_status in EXITED_STATUSES:
-            _switch_to_company(doc)
-    except Exception:
-        _log("switch_failed", doc.name, old=old_status, new=new_status)
-        frappe.log_error(
-            frappe.get_traceback(),
-            f"Alumni user switch failed for Employee {doc.name} "
-            f"({old_status} -> {new_status})",
-        )
-
-
-# ── Manual / backfill entry point ─────────────────────────────────────────────
+# ── Deprecated Functions (kept for backward compatibility) ────────────────────
 def apply_account_state(employee: str) -> dict:
-    """Bring one Employee's accounts in line with their current status.
+    """DEPRECATED: This function is kept only for backward compatibility.
 
-    Entry point for callers that change `status` WITHOUT saving the document —
-    notably the relieving scheduler, which uses `frappe.db.set_value` and so
-    never fires the `on_update` hook. Idempotent.
+    Alumni User creation is now triggered EXCLUSIVELY by the
+    ``custom_is_alumni_employee`` checkbox, not by Employee status changes.
+
+    The scheduled relieving job that called this function should be updated
+    to set the Alumni checkbox (`` custom_is_alumni_employee``) to 1 when
+    marking an employee as Inactive, if Alumni status should be granted.
+
+    Returns a no-op dict for compatibility.
     """
     doc = frappe.get_doc("Employee", employee)
-    if doc.status in EXITED_STATUSES:
-        _switch_to_alumni(doc)
-    else:
-        _switch_to_company(doc)
     return {
         "employee": doc.name,
         "status": doc.status,
         "company_user": doc.get("user_id"),
         "alumni_user": doc.get("custom_alumni_user"),
+        "note": "Alumni User creation is now checkbox-based, not status-based",
     }
 
 
-@frappe.whitelist()
 def resync_employee_accounts(employee: str) -> dict:
-    """Re-apply the correct account state for one Employee (admin utility).
+    """DEPRECATED: This admin utility is no longer needed.
 
-    Idempotent; useful for records whose status changed before this hook
-    existed, or where the earlier switch failed.
+    Alumni User creation is now triggered EXCLUSIVELY by the
+    ``custom_is_alumni_employee`` checkbox, not by Employee status changes.
+
+    Returns a no-op dict for compatibility.
     """
-    if not frappe.has_permission("Employee", "write"):
-        frappe.throw(_("Not permitted."), frappe.PermissionError)
-
-    apply_account_state(employee)
-    frappe.db.commit()
-
-    doc = frappe.get_doc("Employee", employee)
-
     return {
         "success": True,
-        "employee": doc.name,
-        "status": doc.status,
-        "company_user": doc.get("user_id"),
-        "alumni_user": doc.get("custom_alumni_user"),
+        "employee": employee,
+        "note": "Alumni User creation is now checkbox-based, not status-based",
     }
