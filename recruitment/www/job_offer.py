@@ -36,8 +36,10 @@ def get_context(context):
                     # Draft too: until the Draft status existed an unsent offer read
                     # "Awaiting Response", and the Action Center (Recruitment
                     # Settings -> Create Candidate Action Item) decides when the
-                    # candidate is pointed here.
-                    ["Job Offer", "status", "in", ["Draft", "Awaiting Response"]]],
+                    # candidate is pointed here. Expired as well — the candidate
+                    # can no longer act on it, but they must still be able to read
+                    # the letter they were sent and see that its date has passed.
+                    ["Job Offer", "status", "in", ["Draft", "Awaiting Response", "Expired"]]],
                 order_by='creation desc',
                 limit=1
             )

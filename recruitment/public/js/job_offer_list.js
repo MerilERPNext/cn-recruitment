@@ -47,7 +47,8 @@ function add_notify_hr_ops_action(listview) {
 
 frappe.listview_settings['Job Offer'] = {
 
-    // Draft -> Awaiting Response (sent) -> Accepted / Rejected / Withdrawn. Also
+    // Draft -> Awaiting Response (sent) -> Accepted / Rejected / Withdrawn /
+    // Expired (validity period passed unanswered). Also
     // drives the form header, which otherwise reads "Draft" for any unsubmitted
     // offer whatever its status.
     add_fields: ["status"],
@@ -59,6 +60,7 @@ frappe.listview_settings['Job Offer'] = {
             "Accepted": "green",
             "Rejected": "red",
             "Withdrawn": "darkgrey",
+            "Expired": "darkgrey",
         };
         if (doc.docstatus === 2) return [__("Cancelled"), "red", "docstatus,=,2"];
         const status = doc.status || "Draft";
@@ -183,6 +185,6 @@ frappe.listview_settings['Job Offer'] = {
 
     before_render: function() {
         frappe.meta.get_docfield("Job Offer", "status").options =
-            "Draft\nAwaiting Response\nAccepted\nRejected\nWithdrawn";
+            "Draft\nAwaiting Response\nAccepted\nRejected\nWithdrawn\nExpired";
     }
 };

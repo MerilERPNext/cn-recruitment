@@ -1,14 +1,18 @@
-"""Job Offer lifecycle — Draft -> sent -> withdrawn / rejected -> resent as a new version.
+"""Job Offer lifecycle — Draft -> sent -> withdrawn / rejected / expired -> resent.
 
     Draft               created (and possibly submitted); the candidate has not had it
     Awaiting Response   "Send Job Offer" emailed it (bulk_job_offer.send_bulk_job_offer)
     Accepted            the candidate accepted
     Rejected            the candidate declined
     Withdrawn           HR pulled it back after sending (offer_position.withdraw_offer)
+    Expired             its Expiry Date passed unanswered (offer_expiry)
 
-A withdrawn, rejected or cancelled offer is history, never edited back to life.
+A withdrawn, rejected, expired or cancelled offer is history, never edited back to life.
 "Resend Job Offer" copies it into a new Draft — the next version, linked through
 `custom_previous_offer` — which HR edits, submits and sends like any other offer.
+An EXPIRED offer has a second, lighter route: `offer_expiry.resend_offer_letter`
+puts a new Expiry Date on the same offer and mails the same letter again, for the
+common case where only the candidate's time ran out and nothing else changed.
 
 An ACCEPTED offer can be resent too, but acceptance has already put the candidate
 into onboarding (a draft Employee Onboarding plus its "Onboarding pending" item
@@ -24,7 +28,7 @@ Settings -> Job Offer Rules keep their meaning: they are read here, not duplicat
 
 import frappe
 from frappe import _
-from frappe.utils import cint, today
+from frappe.utils import add_days, cint, date_diff, getdate, today
 
 JOB_OFFER = "Job Offer"
 
@@ -33,11 +37,13 @@ AWAITING_RESPONSE = "Awaiting Response"
 ACCEPTED = "Accepted"
 REJECTED = "Rejected"
 WITHDRAWN = "Withdrawn"
+EXPIRED = "Expired"
 
 # The candidate is done with these; a new version may be raised against them.
-CLOSED_STATUSES = (REJECTED, WITHDRAWN)
+CLOSED_STATUSES = (REJECTED, WITHDRAWN, EXPIRED)
 
 VERSION_FIELD = "custom_offer_version"
+EXPIRY_FIELD = "custom_jo_expiry_date"
 PREVIOUS_FIELD = "custom_previous_offer"
 RELEASED_POSITION_FIELD = "custom_released_position"
 
@@ -127,7 +133,9 @@ def _send_rule(doc):
 
     if doc.docstatus == 2:
         return _deny(_("This offer is cancelled."))
-    if doc.status in (ACCEPTED, REJECTED, WITHDRAWN):
+    if doc.status in (ACCEPTED, REJECTED, WITHDRAWN, EXPIRED):
+        # An expired letter is re-sent by offer_expiry.resend_offer_letter, which
+        # gives it a new validity period first — never by mailing it as it stands.
         return _deny(_("This offer is {0}.").format(_(doc.status)))
     if doc.docstatus != 1:
         return _deny(_("Submit the offer before sending it."))
@@ -162,7 +170,9 @@ def _resend_rule(doc):
 
     accepted = doc.docstatus != 2 and doc.status == ACCEPTED
     if not (doc.docstatus == 2 or doc.status in CLOSED_STATUSES or accepted):
-        return _deny(_("An offer can be resent only after it is accepted, withdrawn, rejected or cancelled."))
+        return _deny(
+            _("An offer can be resent only after it is accepted, withdrawn, rejected, expired or cancelled.")
+        )
     if _newer_offer_exists(doc):
         return _deny(_("A newer version of this offer already exists."))
     if accepted:
@@ -302,10 +312,15 @@ def _retire_accepted_offer(offer):
 
 
 def offer_actions(doc):
+    from recruitment.api.offer_expiry import resend_letter_rule
+
     return {
         "send": _send_rule(doc),
         "withdraw": _withdraw_rule(doc),
+        # A new version, with the terms open for editing.
         "resend": _resend_rule(doc),
+        # The same letter again on a new Expiry Date — expired offers only.
+        "resend_letter": resend_letter_rule(doc),
     }
 
 
@@ -338,6 +353,28 @@ def get_applicant_offer_actions(job_applicant):
 # ---------------------------------------------------------------------------
 # Resend — a new version
 # ---------------------------------------------------------------------------
+
+def _roll_expiry_forward(new, old):
+    """Give the new version the same validity window, counted from its own date.
+
+    Copying the old Expiry Date across verbatim is how a resent offer could
+    arrive already expired: the letter being replaced has usually lapsed, so its
+    date is behind us. What HR chose is the *window* (offer date -> expiry), and
+    that is what carries over. An offer with no expiry date keeps none.
+    """
+    if not new.meta.has_field(EXPIRY_FIELD):
+        return
+    expiry = old.get(EXPIRY_FIELD)
+    if not expiry:
+        return
+    offer_date = old.get("offer_date")
+    if offer_date:
+        new.set(EXPIRY_FIELD, add_days(new.offer_date, max(date_diff(expiry, offer_date), 0)))
+    elif getdate(expiry) < getdate(today()):
+        # No window to measure and the date itself has passed — better an empty
+        # field HR must fill than a draft that lapses the day it is sent.
+        new.set(EXPIRY_FIELD, None)
+
 
 def _position_for_resend(old, requisition):
     """The seat the new version claims: the one the old offer gave back if it is
@@ -405,6 +442,7 @@ def resend_job_offer(job_offer):
     new.docstatus = 0
     new.status = DRAFT
     new.offer_date = today()
+    _roll_expiry_forward(new, old)
     new.set(VERSION_FIELD, version_of(old) + 1)
     new.set(PREVIOUS_FIELD, old.name)
     new.set(RELEASED_POSITION_FIELD, None)

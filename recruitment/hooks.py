@@ -823,6 +823,11 @@ scheduler_events = {
             "recruitment.recruitment.scheduled_jobs.auto_confirm_employees_without_policy",
         ],
         "0 1 * * *": [
+            # Offers whose Expiry Date passed with no answer from the candidate
+            # become "Expired" and hand their position back. Runs before the
+            # auto-withdraw sweep below, so a lapsed letter is reported as
+            # expired rather than withdrawn.
+            "recruitment.api.offer_expiry.expire_overdue_offers",
             "recruitment.recruitment.onboarding_extras.refresh_onboarding_task_days_to_join",
             "recruitment.recruitment.scheduled_jobs.mark_relieved_employees_as_left",
             "recruitment.recruitment.scheduled_jobs.auto_separate_employees_on_lwd",

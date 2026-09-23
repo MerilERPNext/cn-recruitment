@@ -799,8 +799,10 @@ function recruitment_offer_letter_styles() {
                     if (frm.doc.docstatus !== 1) return;
                     if (!enabled) return;
                     // A withdrawn / declined letter is resent as a new version,
-                    // never mailed again (the server refuses it too).
-                    if (["Withdrawn", "Rejected"].includes(frm.doc.status)) return;
+                    // never mailed again (the server refuses it too). An expired
+                    // one goes out through "Resend Offer Letter", which puts a new
+                    // expiry date on it first.
+                    if (["Withdrawn", "Rejected", "Expired"].includes(frm.doc.status)) return;
                     // Recruitment Settings -> Hide Send Job Offer Once Sent.
                     if (hide_once_sent && frm.doc.email_status === "Sent") return;
                     // Nothing goes to the candidate before HR Ops has seen it. The
@@ -985,6 +987,10 @@ frappe.ui.form.on("Job Offer", {
     refresh(frm) {
         if (frm.is_new() || !frm.doc.job_applicant) return;
         if (frm.doc.email_status !== "Sent" && !frm.doc.email_sent_on) return;
+        // An expired letter is out of date by definition — "Resend Offer Letter"
+        // gives it a new expiry date and then mails it, which is the only way it
+        // should reach the candidate again.
+        if (frm.doc.status === "Expired") return;
 
         frm.add_custom_button(__("Retrigger Welcome Email"), () => {
             frappe.confirm(
@@ -1017,9 +1023,13 @@ frappe.ui.form.on("Job Offer", {
 // what lets a Filled requisition be archived again. Distinct from Rejected,
 // which means the candidate refused.
 //
-// Resend — once an offer is withdrawn, rejected or cancelled, raises the next
-// version as a new Draft (position re-claimed automatically) for HR to edit,
+// Resend — once an offer is withdrawn, rejected, expired or cancelled, raises the
+// next version as a new Draft (position re-claimed automatically) for HR to edit,
 // submit and send.
+//
+// Resend Offer Letter — the lighter move for an EXPIRED offer, where only the
+// candidate's time ran out: pick a new expiry date and the same letter goes out
+// again on the same offer. No new version, nothing to re-submit.
 //
 // Both are decided server-side (offer_lifecycle.get_offer_actions), which also
 // reads the Recruitment Settings -> Job Offer Rules, so the form, the hiring
@@ -1044,10 +1054,61 @@ frappe.ui.form.on("Job Offer", {
                 const a = (r && r.message) || {};
                 if (a.withdraw && a.withdraw.allowed) add_withdraw_offer_button(frm);
                 if (a.resend && a.resend.allowed) add_resend_offer_button(frm, a.resend);
+                if (a.resend_letter && a.resend_letter.allowed) add_resend_letter_button(frm);
             },
         });
     },
 });
+
+// The validity period the candidate had the first time, counted from today — so
+// "a week to decide" stays a week without the recruiter doing the arithmetic.
+function default_resend_expiry(doc) {
+    const days =
+        doc.offer_date && doc.custom_jo_expiry_date
+            ? Math.max(frappe.datetime.get_day_diff(doc.custom_jo_expiry_date, doc.offer_date), 1)
+            : 7;
+    return frappe.datetime.add_days(frappe.datetime.get_today(), days);
+}
+
+function add_resend_letter_button(frm) {
+    frm.add_custom_button(__("Resend Offer Letter"), () => {
+        frappe.prompt(
+            [
+                {
+                    fieldname: "expiry_date",
+                    label: __("New Expiry Date"),
+                    fieldtype: "Date",
+                    reqd: 1,
+                    default: default_resend_expiry(frm.doc),
+                    description: __(
+                        "The last day the candidate may accept. The same letter is emailed again and the offer goes back to Awaiting Response on its original position."
+                    ),
+                },
+            ],
+            (values) => {
+                frappe.call({
+                    method: "recruitment.api.offer_expiry.resend_offer_letter",
+                    args: { job_offer: frm.doc.name, expiry_date: values.expiry_date },
+                    freeze: true,
+                    freeze_message: __("Resending offer letter…"),
+                    callback: (r) => {
+                        const m = (r && r.message) || {};
+                        if (!m.job_offer) return;
+                        frappe.show_alert({
+                            message: __("Offer letter resent — valid until {0}.", [
+                                frappe.datetime.str_to_user(m.expiry_date),
+                            ]),
+                            indicator: "green",
+                        });
+                        frm.reload_doc();
+                    },
+                });
+            },
+            __("Resend Offer Letter"),
+            __("Resend")
+        );
+    }).addClass("btn-primary");
+}
 
 function add_resend_offer_button(frm, rule) {
     const btn = frm.add_custom_button(__("Resend Job Offer"), () => {

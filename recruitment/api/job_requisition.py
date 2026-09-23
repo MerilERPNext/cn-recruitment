@@ -2014,7 +2014,7 @@ def load_current_form_into_settings(overwrite=0):
 
 
 @frappe.whitelist()
-def create_job_requisition(payload=None):
+def create_job_requisition(payload=None, draft=None):
     """
     Submit a Job Requisition.
 
@@ -2024,6 +2024,11 @@ def create_job_requisition(payload=None):
     Fresher creates exactly ONE requisition holding every region it hires in, as
     one `custom_regions` row per unique region. Each submission is independent —
     nothing is merged into requisitions created by an earlier submission.
+
+    `draft` names the Job Requisition Draft this submission came from (see
+    recruitment.api.requisition_draft). It is discarded once the requisition(s)
+    exist — the form is submitted, so the working copy has served its purpose.
+    Submitting is otherwise untouched by the draft feature.
 
     Returns:
         {
@@ -2095,6 +2100,12 @@ def create_job_requisition(payload=None):
             raise
 
         frappe.db.commit()
+
+        if draft:
+            # After the commit: the requisitions are real whatever happens here.
+            from recruitment.api.requisition_draft import discard_on_submit
+
+            discard_on_submit(draft)
 
         created_count = len(results)
         return _ok(
