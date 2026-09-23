@@ -5,6 +5,7 @@ import {
   ChevronDown,
   ChevronUp,
   CreditCard,
+  GraduationCap,
   Info,
   Laptop,
   Mail,
@@ -2083,6 +2084,42 @@ const ExitPage: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Alumni Portal Banner */}
+      <div className="relative overflow-hidden rounded-xl border border-primary-200/80 bg-gradient-to-r from-primary-50/70 via-white to-primary-50/40 p-4 sm:p-5 shadow-xs transition-all hover:shadow-sm">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3.5">
+            <div className="p-2.5 rounded-xl bg-primary-100/80 text-primary-700 border border-primary-200/60 flex items-center justify-center shrink-0 shadow-2xs">
+              <GraduationCap className="w-5 h-5 text-primary-700" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <Typography
+                  variant="body"
+                  className="font-bold text-gray-900 text-sm sm:text-base"
+                >
+                  Ensure Clean Exit to get access to Alumni Portal
+                </Typography>
+                <span className="inline-flex items-center px-2 py-0.5 rounded-3xl text-[10px] font-semibold bg-primary-100 text-primary-800 border border-primary-200">
+                  Alumni Portal
+                </span>
+              </div>
+              <Typography
+                variant="caption"
+                className="text-gray-500 font-medium block mt-0.5"
+              >
+                Complete your pending handovers, asset returns, and departmental clearances smoothly to unlock seamless access to the PW Alumni community.
+              </Typography>
+            </div>
+          </div>
+          <div className="shrink-0 flex items-center gap-2 self-start sm:self-auto">
+            <div className="flex items-center gap-1.5 text-xs font-semibold text-primary-700 bg-white px-3 py-1.5 rounded-lg border border-primary-200 shadow-2xs">
+              <ShieldCheck className="w-3.5 h-3.5 text-primary-600" />
+              <span>Clean Exit Guaranteed</span>
+            </div>
+          </div>
+        </div>
+      </div>
 
       {/* Manager Change Confirmation Modal */}
       <ActionConfirmationModal
