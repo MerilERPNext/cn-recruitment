@@ -743,7 +743,9 @@ export class EmployeeService {
       "recruitment.api.employee_search.search_employees",
       {
         limit: limit,
-        status: "Active",
+        // Inactive/Suspended members still need to be findable (separation
+        // letters, exit paperwork), so the picker is not limited to Active.
+        status: "Active,Inactive,Suspended",
         query: filters,
         exclude_own_employee: excludeOwnEmployee ? 1 : 0,
         employee: employee,
