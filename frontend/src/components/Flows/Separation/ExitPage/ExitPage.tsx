@@ -2,6 +2,7 @@ import {
   AlertCircle,
   Building,
   Calendar,
+  CalendarOff,
   ChevronDown,
   ChevronUp,
   Coins,
@@ -11,6 +12,7 @@ import {
   Laptop,
   Mail,
   ShieldCheck,
+  Umbrella,
   Users,
   XCircle,
 } from "lucide-react";
@@ -27,6 +29,10 @@ import {
 } from "../../../../hooks/useEmployee";
 import { useEmployeeDocument } from "../../../../hooks/useEmployeeDocuments";
 import { useChatAssistantFlowInitiateData } from "../../../../hooks/useFlows";
+import {
+  useGetEmployeeLeaveBalance,
+  useGetLeaveTypesEncashmentMeta,
+} from "../../../../hooks/useLeaves";
 import { useActiveReportees } from "../../../../hooks/usePip";
 import {
   useEmployeeSupportContacts,
@@ -647,6 +653,126 @@ const ExitPage: React.FC = () => {
   const awardPoints = pointsData?.award_points ?? 0;
   const usedPoints = pointsData?.used_points ?? 0;
   const netPoints = appreciationPoints + awardPoints - usedPoints;
+
+  // 10. Leave Encashment & Lapse Summary (for Exit Page)
+  const handleNavigateToLeaveBalance = () => {
+    const params = new URLSearchParams();
+    if (targetEmployeeId) {
+      params.set("target_user", targetEmployeeId);
+    }
+    navigate(
+      `/webapp/leave-app/leaves/leave-balance${params.toString() ? `?${params.toString()}` : ""}`,
+    );
+  };
+
+  const leaveBalanceDate =
+    relievingDate || new Date().toISOString().split("T")[0];
+
+  const { data: leaveBalanceData, isLoading: isLoadingLeaveBalance } =
+    useGetEmployeeLeaveBalance(
+      effectiveEmployeeId || undefined,
+      leaveBalanceDate,
+    );
+
+  const { data: leaveTypesMeta } = useGetLeaveTypesEncashmentMeta();
+
+  const {
+    encashableLeavesList,
+    totalEncashDays,
+    totalLapseDays,
+  } = useMemo(() => {
+    const rawList = leaveBalanceData?.leave_balance ?? [];
+    let encashSum = 0;
+    let lapseSum = 0;
+    const encashableItems: Array<{
+      leave_id: string;
+      type: string;
+      balance: number;
+      encashDays: number;
+      lapseDays: number;
+      ruleHint?: string;
+    }> = [];
+
+    rawList.forEach((lb) => {
+      if (lb.dont_show_in_frontend) return;
+      const balance = Math.max(0, Math.round((lb.balance ?? 0) * 10) / 10);
+      if (balance <= 0) return;
+
+      const meta = leaveTypesMeta?.[lb.leave_id] || leaveTypesMeta?.[lb.type];
+      const encashFlag =
+        lb.custom_encash_leave_while_ff ?? meta?.custom_encash_leave_while_ff;
+      const isEncashable = Number(encashFlag) === 1;
+
+      if (!isEncashable) {
+        // Leave Type does not have custom_encash_leave_while_ff checked -> all days lapse
+        lapseSum += balance;
+        return;
+      }
+
+      // custom_encash_leave_while_ff is ON!
+      const consider =
+        lb.custom_consider_only_the_following_for_leave_for_fnf ??
+        meta?.custom_consider_only_the_following_for_leave_for_fnf;
+
+      const carryOver = Math.max(0, lb.carry_over ?? 0);
+      const accrued = Math.max(0, balance - carryOver);
+
+      let baseBalance = balance;
+      if (consider === "Accrued balance") {
+        baseBalance = Math.min(balance, accrued);
+      } else if (consider === "Carry forward balance") {
+        baseBalance = Math.min(balance, carryOver);
+      }
+
+      const encashMode =
+        lb.custom_encash ?? meta?.custom_encash;
+      const encashOnlyType =
+        lb.custom_encash_only ?? meta?.custom_encash_only;
+      const fixedLeaves =
+        Number(lb.custom_encash_fixed_leaves ?? meta?.custom_encash_fixed_leaves ?? 0);
+      const percentage =
+        Number(lb.custom_encash_percentage ?? meta?.custom_encash_percentage ?? 0);
+
+      let encashed = baseBalance;
+      let ruleHint: string | undefined;
+
+      if (encashMode === "Encash only") {
+        if (encashOnlyType === "Fixed") {
+          encashed = Math.min(baseBalance, fixedLeaves);
+          ruleHint = `Fixed (${fixedLeaves} max)`;
+        } else if (encashOnlyType === "Percentage") {
+          encashed = Math.min(
+            baseBalance,
+            Math.round(((baseBalance * percentage) / 100) * 10) / 10,
+          );
+          ruleHint = `${percentage}% of balance`;
+        }
+      } else {
+        ruleHint = "Encash all unused leave";
+      }
+
+      encashed = Math.max(0, Math.min(balance, encashed));
+      const lapsed = Math.max(0, Math.round((balance - encashed) * 10) / 10);
+
+      encashSum += encashed;
+      lapseSum += lapsed;
+
+      encashableItems.push({
+        leave_id: lb.leave_id,
+        type: lb.type,
+        balance,
+        encashDays: encashed,
+        lapseDays: lapsed,
+        ruleHint,
+      });
+    });
+
+    return {
+      encashableLeavesList: encashableItems,
+      totalEncashDays: Math.round(encashSum * 10) / 10,
+      totalLapseDays: Math.round(lapseSum * 10) / 10,
+    };
+  }, [leaveBalanceData, leaveTypesMeta]);
 
   return (
     <div className="w-full p-3.5 sm:p-4 md:p-6 space-y-4 sm:space-y-5">
@@ -1798,6 +1924,207 @@ const ExitPage: React.FC = () => {
 
           {/* Right Column (5 cols) */}
           <div className="lg:col-span-5 space-y-4 sm:space-y-5">
+            {/* Leave Encashment & Lapse Summary Card */}
+            <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-5 shadow-xs">
+              <div className="flex items-center justify-between pb-3 mb-2 border-b border-gray-100">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-600">
+                    <Umbrella className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <Typography
+                      variant="subheading"
+                      className="text-gray-900 block font-bold"
+                    >
+                      Leave Settlement
+                    </Typography>
+                    <Typography
+                      variant="caption"
+                      className="text-gray-500 font-medium block text-[11px]"
+                    >
+                      F&amp;F encashment &amp; lapse estimate
+                    </Typography>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleNavigateToLeaveBalance}
+                  className="text-xs font-semibold text-primary-700 hover:text-primary-800 hover:underline flex items-center gap-1 transition-colors shrink-0"
+                >
+                  Leave details &rarr;
+                </button>
+              </div>
+
+              {isLoadingLeaveBalance ? (
+                <div className="space-y-3 py-2 animate-pulse">
+                  <div className="grid grid-cols-2 gap-2 sm:gap-2.5">
+                    <div className="h-20 bg-gray-100 rounded-xl" />
+                    <div className="h-20 bg-gray-100 rounded-xl" />
+                  </div>
+                  <div className="h-12 bg-gray-100 rounded-lg" />
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {/* Stat tiles */}
+                  <div className="grid grid-cols-2 gap-2 sm:gap-2.5">
+                    {/* Days to be Encashed */}
+                    <div className="p-3 rounded-xl bg-emerald-50/70 border border-emerald-200/80 text-center">
+                      <Typography
+                        variant="h3"
+                        className="text-xl sm:text-2xl font-bold text-emerald-700"
+                      >
+                        {totalEncashDays}
+                      </Typography>
+                      <Typography
+                        variant="caption"
+                        className="text-emerald-800 font-semibold block mt-0.5 text-[11px] sm:text-xs"
+                      >
+                        Days to Encash
+                      </Typography>
+                      {fnfEstimate?.leave_encashment?.total_amount ? (
+                        <Typography
+                          variant="caption"
+                          className="text-emerald-600 font-medium block mt-0.5 text-[10px] sm:text-[11px]"
+                        >
+                          ≈{" "}
+                          {formatCurrency(
+                            fnfEstimate.leave_encashment.total_amount,
+                          )}
+                        </Typography>
+                      ) : (
+                        <Typography
+                          variant="caption"
+                          className="text-emerald-600/80 font-medium block mt-0.5 text-[10px] sm:text-[11px]"
+                        >
+                          Settled in F&amp;F
+                        </Typography>
+                      )}
+                    </div>
+
+                    {/* Days that will Lapse */}
+                    <div className="p-3 rounded-xl bg-rose-50/70 border border-rose-200/80 text-center">
+                      <Typography
+                        variant="h3"
+                        className="text-xl sm:text-2xl font-bold text-rose-600"
+                      >
+                        {totalLapseDays}
+                      </Typography>
+                      <Typography
+                        variant="caption"
+                        className="text-rose-700 font-semibold block mt-0.5 text-[11px] sm:text-xs"
+                      >
+                        Days to Lapse
+                      </Typography>
+                      <Typography
+                        variant="caption"
+                        className="text-rose-500 font-medium block mt-0.5 text-[10px] sm:text-[11px]"
+                      >
+                        Non-encashable
+                      </Typography>
+                    </div>
+                  </div>
+
+                  {/* Encashable Leaves Breakdown - Show only encashable leave types */}
+                  {encashableLeavesList.length > 0 ? (
+                    <div className="divide-y divide-gray-100 border border-gray-100 rounded-lg overflow-hidden">
+                      <div className="flex items-center justify-between px-3 py-2 bg-gray-50/80 text-[10px] sm:text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                        <span>Leave Type (Encashable)</span>
+                        <div className="flex items-center gap-4">
+                          <span className="text-emerald-700">Encash</span>
+                          {encashableLeavesList.some((item) => item.lapseDays > 0) && (
+                            <span className="text-rose-600">Lapse</span>
+                          )}
+                        </div>
+                      </div>
+                      {encashableLeavesList.map((item) => (
+                        <div
+                          key={item.leave_id}
+                          className="flex items-center justify-between px-3 py-2.5 text-xs hover:bg-gray-50/50 transition-colors"
+                        >
+                          <div className="flex flex-col min-w-0 pr-2">
+                            <div className="flex items-center gap-1.5">
+                              <Umbrella className="w-3 h-3 text-emerald-500 shrink-0" />
+                              <Typography
+                                variant="caption"
+                                className="font-semibold text-gray-800 truncate"
+                              >
+                                {item.type}
+                              </Typography>
+                              <Typography
+                                variant="caption"
+                                className="text-gray-400 font-medium shrink-0"
+                              >
+                                ({item.balance}{" "}
+                                {item.balance === 1 ? "day" : "days"})
+                              </Typography>
+                            </div>
+                            {item.ruleHint && (
+                              <Typography
+                                variant="caption"
+                                className="text-[10px] text-gray-500 mt-0.5 block pl-4"
+                              >
+                                {item.ruleHint}
+                              </Typography>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-4 shrink-0">
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800">
+                              +{item.encashDays}
+                            </span>
+                            {encashableLeavesList.some((i) => i.lapseDays > 0) && (
+                              <Typography
+                                variant="caption"
+                                className={`font-bold text-xs ${
+                                  item.lapseDays > 0
+                                    ? "text-rose-600"
+                                    : "text-gray-300"
+                                }`}
+                              >
+                                {item.lapseDays > 0 ? item.lapseDays : "—"}
+                              </Typography>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="p-3 rounded-lg bg-gray-50 border border-gray-100 text-center">
+                      <Typography
+                        variant="caption"
+                        className="text-gray-500 font-medium block text-xs"
+                      >
+                        No leave types are enabled for F&amp;F encashment.
+                      </Typography>
+                      {totalLapseDays > 0 && (
+                        <Typography
+                          variant="caption"
+                          className="text-rose-600 font-medium block mt-1 text-[11px]"
+                        >
+                          All {totalLapseDays} leave days will lapse upon
+                          relieving.
+                        </Typography>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Lapse reminder if any non-encashable leaves exist */}
+                  {totalLapseDays > 0 && encashableLeavesList.length > 0 && (
+                    <div className="flex items-start gap-2 p-2.5 rounded-lg bg-rose-50/70 border border-rose-200/70 text-xs text-rose-900 font-medium">
+                      <CalendarOff className="w-3.5 h-3.5 text-rose-500 shrink-0 mt-0.5" />
+                      <span>
+                        <strong className="font-bold text-rose-950">
+                          {totalLapseDays} leave day
+                          {totalLapseDays !== 1 ? "s" : ""}
+                        </strong>{" "}
+                        from non-encashable leave types will lapse after
+                        relieving date.
+                      </span>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
             {/* Actionables for you Card */}
             <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-5 shadow-xs">
               <div className="flex items-center justify-between pb-3 mb-2 border-b border-gray-100">
