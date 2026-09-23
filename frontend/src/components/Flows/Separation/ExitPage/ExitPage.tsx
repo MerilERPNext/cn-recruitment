@@ -2,7 +2,6 @@ import {
   AlertCircle,
   Building,
   Calendar,
-  CalendarOff,
   ChevronDown,
   ChevronUp,
   Coins,
@@ -12,7 +11,6 @@ import {
   Laptop,
   Mail,
   ShieldCheck,
-  Umbrella,
   Users,
   XCircle,
 } from "lucide-react";
@@ -29,7 +27,6 @@ import {
 } from "../../../../hooks/useEmployee";
 import { useEmployeeDocument } from "../../../../hooks/useEmployeeDocuments";
 import { useChatAssistantFlowInitiateData } from "../../../../hooks/useFlows";
-import { useGetLeaveBalance } from "../../../../hooks/useLeaves";
 import { useActiveReportees } from "../../../../hooks/usePip";
 import {
   useEmployeeSupportContacts,
@@ -650,31 +647,6 @@ const ExitPage: React.FC = () => {
   const awardPoints = pointsData?.award_points ?? 0;
   const usedPoints = pointsData?.used_points ?? 0;
   const netPoints = appreciationPoints + awardPoints - usedPoints;
-
-  // 10. Leave Encashment & Lapse (for Exit Page)
-  // Use relievingDate if available, else today — the leave balance API needs a "as of" date
-  const leaveBalanceDate =
-    relievingDate || new Date().toISOString().split("T")[0];
-  const { data: leaveBalanceData, isLoading: isLoadingLeaveBalance } =
-    useGetLeaveBalance(
-      effectiveEmployeeId || undefined,
-      leaveBalanceDate,
-      undefined,
-    );
-
-  // Only show leave types that are not hidden and have a non-zero balance
-  const leaveEncashDays = Math.round(
-    fnfEstimate?.leave_encashment?.total_days ?? 0,
-  );
-  const leaveBalanceList = (leaveBalanceData?.leave_balance ?? [])
-    .filter((lb) => !lb.dont_show_in_frontend && lb.balance > 0)
-    .map((lb) => ({ ...lb, balance: Math.round(lb.balance) }));
-  const totalLeaveBalance = leaveBalanceList.reduce(
-    (sum, lb) => sum + lb.balance,
-    0,
-  );
-  // Days that will lapse = total remaining balance - days being encashed
-  const lapseDays = Math.max(0, totalLeaveBalance - leaveEncashDays);
 
   return (
     <div className="w-full p-3.5 sm:p-4 md:p-6 space-y-4 sm:space-y-5">
@@ -1826,200 +1798,6 @@ const ExitPage: React.FC = () => {
 
           {/* Right Column (5 cols) */}
           <div className="lg:col-span-5 space-y-4 sm:space-y-5">
-            {/* Leave Encashment & Lapse Card */}
-            {hasSeparation && (
-              <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-5 shadow-xs">
-                <div className="flex items-center justify-between pb-3 mb-3 border-b border-gray-100">
-                  <div className="flex items-center gap-2">
-                    <div className="p-1.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center justify-center shrink-0">
-                      <Umbrella className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <Typography
-                        variant="subheading"
-                        className="text-gray-900 block font-bold"
-                      >
-                        Leave Encashment &amp; Lapse
-                      </Typography>
-                      <Typography
-                        variant="caption"
-                        className="text-gray-500 font-medium block mt-0.5"
-                      >
-                        Based on leave balance
-                        {relievingDate
-                          ? ` as of ${formatToIndianDate(relievingDate)}`
-                          : ""}
-                      </Typography>
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      navigate("/webapp/leave-app/leaves/leave-balance")
-                    }
-                    className="text-xs font-semibold text-primary-700 hover:text-primary-800 hover:underline flex items-center gap-1 transition-colors shrink-0 ml-2"
-                  >
-                    View Leaves &rarr;
-                  </button>
-                </div>
-
-                {isLoadingLeaveBalance || isLoadingFnf ? (
-                  <div className="grid grid-cols-2 gap-2.5 py-1">
-                    {[1, 2].map((i) => (
-                      <div
-                        key={i}
-                        className="h-24 bg-gray-50 rounded-xl border border-gray-100 animate-pulse flex flex-col items-center justify-center gap-2"
-                      >
-                        <div className="h-6 w-12 bg-gray-200 rounded" />
-                        <div className="h-3 w-20 bg-gray-200 rounded" />
-                        <div className="h-2 w-16 bg-gray-200 rounded" />
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {/* Stat tiles */}
-                    <div className="grid grid-cols-2 gap-2 sm:gap-2.5">
-                      {/* Days to be Encashed */}
-                      <div className="p-3 rounded-xl bg-emerald-50/60 border border-emerald-200/80 text-center">
-                        <Typography
-                          variant="h3"
-                          className="text-xl sm:text-2xl font-bold text-emerald-700"
-                        >
-                          {leaveEncashDays}
-                        </Typography>
-                        <Typography
-                          variant="caption"
-                          className="text-emerald-800 font-semibold block mt-0.5 text-[11px] sm:text-xs"
-                        >
-                          Days to Encash
-                        </Typography>
-                        {fnfEstimate?.leave_encashment?.total_amount ? (
-                          <Typography
-                            variant="caption"
-                            className="text-emerald-600 font-medium block mt-0.5 text-[10px] sm:text-[11px]"
-                          >
-                            ≈{" "}
-                            {formatCurrency(
-                              fnfEstimate.leave_encashment.total_amount,
-                            )}
-                          </Typography>
-                        ) : null}
-                      </div>
-
-                      {/* Days that will Lapse */}
-                      <div className="p-3 rounded-xl bg-rose-50/60 border border-rose-200/80 text-center">
-                        <Typography
-                          variant="h3"
-                          className="text-xl sm:text-2xl font-bold text-rose-600"
-                        >
-                          {lapseDays}
-                        </Typography>
-                        <Typography
-                          variant="caption"
-                          className="text-rose-700 font-semibold block mt-0.5 text-[11px] sm:text-xs"
-                        >
-                          Days to Lapse
-                        </Typography>
-                        <Typography
-                          variant="caption"
-                          className="text-rose-500 font-medium block mt-0.5 text-[10px] sm:text-[11px]"
-                        >
-                          Non-encashable
-                        </Typography>
-                      </div>
-                    </div>
-
-                    {/* Per-type breakdown */}
-                    {leaveBalanceList.length > 0 && (
-                      <div className="divide-y divide-gray-100 border border-gray-100 rounded-lg overflow-hidden">
-                        <div className="flex items-center justify-between px-3 py-2 bg-gray-50/80 text-[10px] sm:text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                          <span>Leave Type</span>
-                          <div className="flex items-center gap-4">
-                            <span className="text-emerald-700">Encash</span>
-                            <span className="text-rose-600">Lapse</span>
-                          </div>
-                        </div>
-                        {(() => {
-                          // Greedily assign encash days to leave types in order.
-                          // The FnF encashes from the first leave type(s); the rest lapse.
-                          let remaining = leaveEncashDays;
-                          return leaveBalanceList.map((lb) => {
-                            const encashedForRow = Math.min(
-                              lb.balance,
-                              remaining,
-                            );
-                            const lapsedForRow = lb.balance - encashedForRow;
-                            remaining = Math.max(0, remaining - encashedForRow);
-                            return (
-                              <div
-                                key={lb.leave_id}
-                                className="flex items-center justify-between px-3 py-2.5 text-xs"
-                              >
-                                <div className="flex items-center gap-1.5 min-w-0">
-                                  <Umbrella className="w-3 h-3 text-gray-400 shrink-0" />
-                                  <Typography
-                                    variant="caption"
-                                    className="font-medium text-gray-800 truncate"
-                                  >
-                                    {lb.type}
-                                  </Typography>
-                                  <Typography
-                                    variant="caption"
-                                    className="text-gray-400 font-medium shrink-0"
-                                  >
-                                    ({lb.balance} days)
-                                  </Typography>
-                                </div>
-                                <div className="flex items-center gap-4 shrink-0">
-                                  <Typography
-                                    variant="caption"
-                                    className={`font-bold text-xs ${encashedForRow > 0 ? "text-emerald-700" : "text-gray-400"}`}
-                                  >
-                                    {encashedForRow > 0 ? encashedForRow : "—"}
-                                  </Typography>
-                                  <Typography
-                                    variant="caption"
-                                    className={`font-bold text-xs ${lapsedForRow > 0 ? "text-rose-600" : "text-gray-400"}`}
-                                  >
-                                    {lapsedForRow > 0 ? lapsedForRow : "—"}
-                                  </Typography>
-                                </div>
-                              </div>
-                            );
-                          });
-                        })()}
-                      </div>
-                    )}
-
-                    {/* Reminder message */}
-                    {lapseDays > 0 && (
-                      <div className="flex items-start gap-2 p-2.5 rounded-lg bg-rose-50/80 border border-rose-200/80 text-xs text-rose-900 font-medium">
-                        <CalendarOff className="w-3.5 h-3.5 text-rose-500 shrink-0 mt-0.5" />
-                        <span>
-                          <strong className="font-bold text-rose-950">
-                            {lapseDays} leave day
-                            {lapseDays !== 1 ? "s" : ""}
-                          </strong>{" "}
-                          will lapse after your relieving date. Consider using
-                          them before your last working day.
-                        </span>
-                      </div>
-                    )}
-
-                    {leaveEncashDays === 0 && lapseDays === 0 && (
-                      <Typography
-                        variant="caption"
-                        className="text-gray-400 font-medium block text-center py-2"
-                      >
-                        No leave balance data available.
-                      </Typography>
-                    )}
-                  </div>
-                )}
-              </div>
-            )}
-
             {/* Actionables for you Card */}
             <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-5 shadow-xs">
               <div className="flex items-center justify-between pb-3 mb-2 border-b border-gray-100">
