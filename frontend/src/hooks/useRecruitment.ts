@@ -1,3 +1,4 @@
+import { useSyncExternalStore } from "react";
 import {
   useMutation,
   useQuery,
@@ -61,6 +62,44 @@ const applyApprovalAllocationToCache = (
   });
 };
 
+// Approvers of just-created requisitions, keyed by name: `null` while still
+// being polled, the approvers once found. The list rows alone can't be trusted
+// for this — QueryProvider re-fetches the list for ~12s after an invalidate,
+// and a fetch that started before the allocation landed overwrites the patched
+// row with an empty one. Keeping the result here lets the "Pending With"
+// tooltip show a loader while polling and the found approvers after, instead
+// of flashing "Not Allocated" in between.
+const createdAllocations = new Map<string, ApprovalAllocation[] | null>();
+const createdAllocationListeners = new Set<() => void>();
+
+const setCreatedAllocation = (name: string, allocation: ApprovalAllocation[] | null | undefined) => {
+  if (allocation === undefined) createdAllocations.delete(name);
+  else createdAllocations.set(name, allocation);
+  createdAllocationListeners.forEach((listener) => listener());
+};
+
+const subscribeCreatedAllocations = (listener: () => void) => {
+  createdAllocationListeners.add(listener);
+  return () => {
+    createdAllocationListeners.delete(listener);
+  };
+};
+
+// Resolve a requisition's approvers for display: the row's own allocation when
+// it has one, else the one found after create; `loading` while still polling.
+export function useApprovalAllocation(
+  name: string | undefined,
+  rowAllocation: ApprovalAllocation[] | undefined,
+): { allocation: ApprovalAllocation[] | undefined; loading: boolean } {
+  const created = useSyncExternalStore(subscribeCreatedAllocations, () =>
+    name ? createdAllocations.get(name) : undefined,
+  );
+
+  if (rowAllocation?.length) return { allocation: rowAllocation, loading: false };
+  if (created === null) return { allocation: rowAllocation, loading: true };
+  return { allocation: created ?? rowAllocation, loading: false };
+}
+
 export function useCreateJobRequisition() {
   const queryClient = useQueryClient();
 
@@ -83,21 +122,17 @@ export function useCreateJobRequisition() {
         .map((requisition) => requisition?.name)
         .filter((name): name is string => Boolean(name));
 
-      if (createdNames.length) {
-        void Promise.all(
-          createdNames.map(async (name): Promise<[string, ApprovalAllocation[]]> => [
-            name,
-            await requisitionService.waitForApprovalAllocation(name),
-          ]),
-        ).then((results) => {
-          const allocationByName = new Map(
-            results.filter(([, allocation]) => allocation.length),
-          );
-          if (allocationByName.size) {
-            applyApprovalAllocationToCache(queryClient, allocationByName);
+      createdNames.forEach((name) => {
+        setCreatedAllocation(name, null);
+        void requisitionService.waitForApprovalAllocation(name).then((allocation) => {
+          if (!allocation.length) {
+            setCreatedAllocation(name, undefined);
+            return;
           }
+          setCreatedAllocation(name, allocation);
+          applyApprovalAllocationToCache(queryClient, new Map([[name, allocation]]));
         });
-      }
+      });
     },
     onError: (error) => {
       toast.error(

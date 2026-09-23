@@ -11,6 +11,8 @@
   "hiring_workflow_column",
   "enable_hiring_workflow",
   "enable_initiate_onboarding",
+  "mandatory_screening_stage",
+  "mandatory_shortlist_stage",
   "action_buttons_section",
   "enable_pre_offer_form",
   "enable_pre_onboarding_form",
@@ -125,6 +127,22 @@
    "fieldname": "enable_initiate_onboarding",
    "fieldtype": "Check",
    "label": "Enable Initiate Onboarding Button"
+  },
+  {
+   "default": "1",
+   "depends_on": "enable_hiring_workflow",
+   "description": "When ON, every hiring workflow (template and Job Opening) must include a Screening stage, and it is always Mandatory. Its other settings stay editable.",
+   "fieldname": "mandatory_screening_stage",
+   "fieldtype": "Check",
+   "label": "Screening Stage Mandatory in All Hiring Flows"
+  },
+  {
+   "default": "1",
+   "depends_on": "enable_hiring_workflow",
+   "description": "When ON, every hiring workflow (template and Job Opening) must include a Shortlist stage, and it is always Mandatory. Its other settings stay editable.",
+   "fieldname": "mandatory_shortlist_stage",
+   "fieldtype": "Check",
+   "label": "Shortlist Stage Mandatory in All Hiring Flows"
   },
   {
    "fieldname": "action_buttons_section",

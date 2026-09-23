@@ -413,12 +413,27 @@ def _position_seeds(doc):
 
     Only lateral requisitions have these — one custom_position_details row each.
     Campus/Fresher budget a lump of openings per region and get none; their
-    offers are policed by offer_validation._capacity instead.
+    offers are policed by offer_validation._capacity instead. Positions rejected
+    during approval are not headcount, so they get no row.
     """
     return [
-        {"location": d.get("location"), "functional_area": d.get("functional_area")}
+        {
+            "location": d.get("location"),
+            "functional_area": d.get("functional_area"),
+            "position_type": position_type_of(d),
+        }
         for d in (doc.get("custom_position_details") or [])
+        if d.get("approval_status") != POSITION_REJECTED
     ]
+
+
+# Position Details.approval_status of a position turned down in approval.
+POSITION_REJECTED = "Rejected"
+
+
+def position_type_of(detail_row):
+    """New, or Replacement when the row names the employee being replaced."""
+    return "Replacement" if detail_row.get("replacement_for") else "New"
 
 
 def ensure_position_rows(name, doc=None):

@@ -304,7 +304,7 @@ function recruitment_open_offer_letter_dialog(frm) {
 	}
 
 	function show(tab) {
-		$body().html(tabBar(tab) + `<div class="offer-tab-content" style="min-height:320px;">` +
+		$body().html(tabBar(tab) + `<div class="offer-tab-content" style="min-height:70vh;">` +
 			`<div style="padding:40px;text-align:center;color:#888;">${__("Loading…")}</div></div>`);
 		$body().find(".offer-tab").on("click", function () { show($(this).data("tab")); });
 
@@ -324,7 +324,9 @@ function recruitment_open_offer_letter_dialog(frm) {
 	}
 
 	d.show();
-	d.$wrapper.find(".modal-dialog").css("max-width", "920px");
+	// Full page: the letter is A4 and was unreadable in a 920px column.
+	d.$wrapper.find(".modal-dialog").css({ "max-width": "100%", margin: "10px" });
+	d.$wrapper.find(".modal-body").css({ "max-height": "calc(100vh - 120px)", "overflow-y": "auto" });
 	show("template");
 }
 // --- Dynamic Offer Compensation (grade-based auto breakup) ------------------

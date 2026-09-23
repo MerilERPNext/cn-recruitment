@@ -349,19 +349,12 @@ def mark_relieved_employees_as_left():
         if emp.user_id:
             frappe.db.set_value("User", emp.user_id, "enabled", 0)
 
+        # NOTE: Alumni User creation is now triggered by the
+        # `custom_is_alumni_employee` checkbox, not by Employee status changes.
+        # If Alumni status should be granted to this employee on relieving,
+        # set the checkbox explicitly via db.set_value() or a separate flow.
         # `db.set_value` above skips the document lifecycle, so the Employee
-        # `on_update` alumni hook never fires on this path. Provision the
-        # personal-email Alumni User explicitly. Existing ToDos are untouched.
-        # Failures are logged and never abort the exit run.
-        try:
-            from recruitment.recruitment.alumni_user_switch import apply_account_state
-
-            apply_account_state(emp.name)
-        except Exception:
-            frappe.log_error(
-                frappe.get_traceback(),
-                f"Alumni account switch failed for {emp.name} on relieving",
-            )
+        # `on_update` hooks never fire on this path.
 
         frappe.log_error(
             message=f"Marked employee {emp.employee_name} ({emp.name}) as Left on relieving date {emp.relieving_date}. User {emp.user_id or 'N/A'} disabled.",

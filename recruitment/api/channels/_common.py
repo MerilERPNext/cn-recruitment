@@ -457,6 +457,19 @@ def _serialize_field_value(doc, fieldname, fieldtype):
 	return value
 
 
+def _duplicity_match_fields(opening_name):
+	"""Job Applicant fields used as duplicity keys for the opening's company."""
+	from recruitment.customizations.ta_duplicity_check import get_settings, match_fields
+
+	try:
+		company = frappe.db.get_value("Job Opening", opening_name, "company") if opening_name else None
+		return set(match_fields(get_settings(company)))
+	except Exception:
+		# Never let a settings problem break the application form.
+		frappe.log_error(frappe.get_traceback(), "Careers: duplicity fields lookup failed")
+		return set()
+
+
 def get_application_fields_for_channel(opening_name, channel, job_applicant=None):
 	"""Return the list of Job Applicant fields to render for `opening_name` on
 	`channel` ("careers" / "ijp" / "refer" / "preoffer").
@@ -544,6 +557,9 @@ def get_application_fields_for_channel(opening_name, channel, job_applicant=None
 	if job_applicant and frappe.db.exists("Job Applicant", job_applicant):
 		applicant_doc = frappe.get_doc("Job Applicant", job_applicant)
 
+	# Duplicity check fields are always mandatory on the careers form.
+	duplicity_keys = _duplicity_match_fields(opening_name) if channel == "careers" else set()
+
 	result = []
 	required_stages = None  # resolved lazily, only if this opening has a child table
 	for r in rows:
@@ -566,7 +582,7 @@ def get_application_fields_for_channel(opening_name, channel, job_applicant=None
 			"display_name": r.get("display_name") or df.label or ref,
 			"fieldtype": df.fieldtype,
 			"options": df.options or managed_options.get(ref) or "",
-			"reqd": 0 if candidate_locked_out else cint(r.get(mandatory_col)),
+			"reqd": 0 if candidate_locked_out else cint(cint(r.get(mandatory_col)) or ref in duplicity_keys),
 			"ctq": cint(r.get("ctq_flag")),
 			"visibility": "All" if visible else "Hidden",
 			"editability": "Editable" if editable else "Read Only",

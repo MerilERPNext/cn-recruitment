@@ -580,6 +580,8 @@ doc_events = {
             "recruitment.customizations.job_opening_settings.validate_job_posting_settings",
             # Hiring Lead Permission Settings (external recruiter / application fields).
             "recruitment.customizations.hiring_lead_permissions.validate_job_opening_hiring_lead_edits",
+            # Recruitment Settings can make Screening / Shortlist compulsory stages.
+            "recruitment.api.hiring_stage.validate_job_opening_compulsory_stages",
             # Compute each External Recruiter row's read-only posting status from its
             # Display From/To window so the grid reflects live availability.
             "recruitment.permissions.doc_type_permissions.set_external_recruiter_posting_status",
@@ -637,19 +639,17 @@ doc_events = {
             # Auto-fill Relieving Date ("Last Working Day") with today on the
             # real transition to Left/Inactive, if HR left it blank.
             "recruitment.recruitment.alumni_user_switch.auto_set_relieving_date",
-            # Block converting an employee to alumni (status -> Left/Inactive)
-            # without a usable personal_email, BEFORE the company-email User is
-            # disabled — so the alumnus is never left with no working login.
-            "recruitment.recruitment.alumni_user_switch.validate_alumni_personal_email",
+            # Validate Personal Email when alumni checkbox is being enabled.
+            "recruitment.recruitment.alumni_checkbox_handler.validate_alumni_personal_email_for_checkbox",
         ],
         "on_update": [
-            # Keep the User's "Is Alumni Employee" flag in sync with status == "Left"
-            # (only sets that checkbox; never touches Employee.status or User.enabled).
+            # Keep the User's "Is Alumni Employee" flag in sync with Employee's checkbox
+            # (only sets that flag on the User; never touches Employee.status or User.enabled).
             "recruitment.recruitment.alumni_portal.sync_alumni_flag",
-            # Switch the primary account on a real status transition: disable the
-            # company-email User and provision/restore the personal-email Alumni
-            # User (and the reverse when the employee rejoins).
-            "recruitment.recruitment.alumni_user_switch.handle_employee_status_change",
+            # Provision or disable Alumni User based on checkbox changes:
+            # checkbox 0→1: create/reuse Alumni User from Personal Email
+            # checkbox 1→0: disable the Alumni User
+            "recruitment.recruitment.alumni_checkbox_handler.handle_alumni_checkbox_change",
             # New Hire: hand a pending Employee to onboarding the moment the
             # approval matrix clears it — but only when its New Hire Form ticks
             # "Initiate Onboarding on Approval". A no-op for every real employee
@@ -899,6 +899,10 @@ override_doctype_class = {
 # Request Events
 # ----------------
 before_request = [
+	# Override ERPNext's automatic User disable on Employee Inactive status.
+	# User state is controlled EXCLUSIVELY by the custom_is_alumni_employee
+	# checkbox via the alumni_checkbox_handler, not by Employee.status changes.
+	"recruitment.recruitment.employee_user_state_override.apply_patch",
 	# Hides Todo Type rows opted out of the ESS Portal (Alumni Portal on, ESS
 	# off) from cn_todo_manager's own get_todo_list -- every caller (the ESS
 	# dashboard widget, the embedded task-manager app, plain Desk access)

@@ -191,6 +191,8 @@
             cursor:pointer;text-decoration:none;white-space:nowrap;}
         .hwf-menu a:hover{background:var(--control-bg-on-gray,var(--bg-color));}
         .hwf-menu a.danger{color:var(--red-600,#c0392b);}
+        .hwf-menu a.disabled{opacity:.5;cursor:not-allowed;}
+        .hwf-menu a.disabled:hover{background:none;}
         .hwf-banner{padding:9px 12px;border-radius:6px;font-size:.85rem;font-weight:500;}
         .hwf-banner.ok{background:var(--green-50,#eaf7ee);color:var(--green-700,#1e7a34);}
         .hwf-banner.bad{background:var(--red-50,#fdeaea);color:var(--red-700,#b02a2a);}
@@ -775,7 +777,7 @@
         const live = (items || []).filter(Boolean);
         if (!live.length) return "";
         const links = live.map((i) =>
-            `<a data-menu="${esc(i.key)}"${i.cls ? ` class="${esc(i.cls)}"` : ""}>${esc(i.label)}</a>`).join("");
+            `<a data-menu="${esc(i.key)}"${i.cls ? ` class="${esc(i.cls)}"` : ""}${i.title ? ` title="${esc(i.title)}"` : ""}>${esc(i.label)}</a>`).join("");
         return `<span class="hwf-more-wrap">
                 <button class="hwf-btn" data-act="more" title="${__("More")}">⋮</button>
                 <div class="hwf-menu" style="display:none;">${links}</div>
@@ -801,8 +803,13 @@
             actions += hasInterview
                 ? `<button class="hwf-btn primary" data-act="markdone">${__("Mark as Completed")}</button>`
                 : `<button class="hwf-btn primary" disabled title="${__("Schedule an interview for this stage first.")}">${__("Mark as Completed")}</button>`;
+            // Feedback can be requested only once an interview has actually taken place.
+            const interviewOver = (cur.interviews || []).some((iv) => iv.is_over);
             actions += moreMenu([
-                { key: "feedbackform", label: __("Send Feedback Form") },
+                interviewOver
+                    ? { key: "feedbackform", label: __("Send Feedback Form") }
+                    : { key: "feedbackform", label: __("Send Feedback Form"), cls: "disabled",
+                        title: __("Available after the interview is completed.") },
                 notRequiredItem(cur),
             ]);
         } else if (type === "Pre Offer") {
@@ -1033,6 +1040,7 @@
             else if (act === "reject") rejectCandidate(frm);
         });
         $w.find(".hwf-menu a").on("click", function () {
+            if ($(this).hasClass("disabled")) return false;
             const item = $(this).data("menu");
             $w.find(".hwf-menu").hide();
             if (item === "notreq") markNotRequired(frm, view.current_stage);
