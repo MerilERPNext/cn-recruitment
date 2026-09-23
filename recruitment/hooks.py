@@ -580,6 +580,8 @@ doc_events = {
             "recruitment.customizations.job_opening_settings.validate_job_posting_settings",
             # Hiring Lead Permission Settings (external recruiter / application fields).
             "recruitment.customizations.hiring_lead_permissions.validate_job_opening_hiring_lead_edits",
+            # Recruitment Settings can make Screening / Shortlist compulsory stages.
+            "recruitment.api.hiring_stage.validate_job_opening_compulsory_stages",
             # Compute each External Recruiter row's read-only posting status from its
             # Display From/To window so the grid reflects live availability.
             "recruitment.permissions.doc_type_permissions.set_external_recruiter_posting_status",

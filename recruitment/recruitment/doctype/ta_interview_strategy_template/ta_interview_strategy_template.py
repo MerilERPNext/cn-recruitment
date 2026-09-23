@@ -83,6 +83,20 @@ class TAInterviewStrategyTemplate(Document):
 	def validate(self):
 		self.validate_applicable_to()
 		self.validate_default()
+		self.validate_compulsory_stages()
+
+	def validate_compulsory_stages(self):
+		from recruitment.api.hiring_stage import enforce_compulsory_stages, stage_rows_changed
+
+		if not stage_rows_changed(
+			self, "interview_rounds", ("step_type", "round_name", "is_mandatory", "allow_skipping")
+		):
+			return
+		enforce_compulsory_stages(
+			[r for r in (self.interview_rounds or []) if r.round_name],
+			lambda r: _stage_type_for_round(r.as_dict()),
+			_("This hiring workflow"),
+		)
 
 	def validate_applicable_to(self):
 		"""Every "Applicable To" assignment must carry attributes.

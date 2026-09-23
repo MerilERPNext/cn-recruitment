@@ -115,7 +115,15 @@ def resend_welcome_email(job_offer):
         now=True,
     )
 
-    return {"status": "ok", "email": email}
+    # The offer is with the candidate again, so it is awaiting their response —
+    # a Rejected or Withdrawn offer that is re-sent is live once more. An
+    # acceptance already given is never taken back by a re-send.
+    status = offer.get("status")
+    if status != AWAITING_RESPONSE and status != "Accepted":
+        offer.db_set("status", AWAITING_RESPONSE, update_modified=False)
+        status = AWAITING_RESPONSE
+
+    return {"status": "ok", "email": email, "offer_status": status}
 
 
 @frappe.whitelist()
@@ -162,6 +170,8 @@ def create_job_offer_for_applicant(job_applicant):
 # sub-status says how far the offer itself has got, and the candidate's own reply
 # moves them on to "Accepted" (advance_on_job_offer_outcome).
 OFFER_STATUS = "Hired"
+# Job Offer status while the candidate has the offer and has not replied.
+AWAITING_RESPONSE = "Awaiting Response"
 SUB_STATUS_TO_SEND = "Offer To Be Sent"
 SUB_STATUS_SENT = "Offer Sent"
 

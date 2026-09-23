@@ -8,6 +8,7 @@
  "field_order": [
   "position_no",
   "status",
+  "position_type",
   "job_id",
   "functional_area",
   "designation_alias",
@@ -33,6 +34,14 @@
    "label": "Position Status",
    "options": "Draft\nOpen\nOn Hold\nFilled\nArchived",
    "default": "Draft"
+  },
+  {
+   "description": "New, or Replacement when the Position Details row names an employee being replaced.",
+   "fieldname": "position_type",
+   "fieldtype": "Select",
+   "label": "Position Type",
+   "options": "\nNew\nReplacement",
+   "read_only": 1
   },
   {
    "fieldname": "job_id",
@@ -101,7 +110,7 @@
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2026-05-21 10:00:00.000000",
+ "modified": "2026-09-22 18:48:09.948081",
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "Job Requisition Position",

@@ -46,8 +46,10 @@ def _offer_holds_position(doc):
 
 def _position_label(row):
     label = _("Position {0}").format(row.get("position_no") or "?")
+    if row.get("position_type"):
+        label = "{0} — {1}".format(label, _(row.get("position_type")))
     bits = [b for b in (row.get("location"), row.get("functional_area")) if b]
-    return "{0} — {1}".format(label, ", ".join(bits)) if bits else label
+    return "{0} · {1}".format(label, ", ".join(bits)) if bits else label
 
 
 def _requisition_is_active(requisition, status=None):
@@ -86,7 +88,7 @@ def _positions_held_by_other_offers(requisition, exclude_offer=None):
 
 
 POSITION_FIELDS = (
-    "name", "position_no", "status", "location", "functional_area", "candidate",
+    "name", "position_no", "status", "position_type", "location", "functional_area", "candidate",
     "candidate_status",
 )
 
@@ -182,6 +184,7 @@ def get_available_positions(job_requisition=None, job_offer=None, job_applicant=
             "name": r.name,
             "position_no": r.position_no,
             "status": r.status,
+            "position_type": r.position_type,
             "location": r.location,
             "functional_area": r.functional_area,
             "label": _position_label(r),
@@ -327,11 +330,17 @@ def validate_position_choice(doc, method=None):
     row = frappe.db.get_value(
         JOB_REQUISITION_POSITION,
         row_name,
-        ["name", "parent", "position_no", "status", "location", "functional_area", "candidate"],
+        ["name", "parent", "position_no", "status", "position_type", "location", "functional_area", "candidate"],
         as_dict=True,
     )
     if not row:
         frappe.throw(_("The selected position no longer exists on this requisition."))
+    # Archived covers positions rejected in approval. Only a newly picked one is
+    # refused, so an offer already holding a position can still be saved.
+    if row.status == POSITION_ARCHIVED and doc.has_value_changed(POSITION_FIELD):
+        frappe.throw(
+            _("Position {0} is archived and can't be offered against.").format(frappe.bold(row.position_no))
+        )
     if requisition and row.parent != requisition:
         frappe.throw(
             _("The selected position belongs to {0}, not to this offer's requisition {1}.").format(

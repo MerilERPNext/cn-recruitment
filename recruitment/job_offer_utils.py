@@ -1126,7 +1126,7 @@ def get_offer_letter_preview_html(job_offer):
             import base64
             data_uri = "data:application/pdf;base64," + base64.b64encode(pdf_bytes).decode()
             return {
-                "html": f'<iframe src="{data_uri}" style="width:100%;height:78vh;border:1px solid #e0e0e0;border-radius:6px;" title="Offer Letter Preview"></iframe>',
+                "html": f'<iframe src="{data_uri}" style="width:100%;height:calc(100vh - 210px);min-height:520px;border:1px solid #e0e0e0;border-radius:6px;" title="Offer Letter Preview"></iframe>',
                 "source": "template",
             }
     elif is_document_template_offer_enabled():
@@ -1159,7 +1159,7 @@ def get_offer_letter_preview_html(job_offer):
                 f'<span class="ol-letter-no">{idx + 1} / {len(formats)}</span>'
                 f'<span class="ol-letter-name">{escape_html(label)}</span>'
                 f'</div>'
-                f'<iframe src="{data_uri}" style="width:100%;height:78vh;border:1px solid #e0e0e0;'
+                f'<iframe src="{data_uri}" style="width:100%;height:calc(100vh - 210px);min-height:520px;border:1px solid #e0e0e0;'
                 f'border-top:none;border-radius:0 0 6px 6px;" title="{escape_html(label)}"></iframe>'
                 f'</div>'
             )
@@ -1182,7 +1182,7 @@ def get_offer_letter_preview_html(job_offer):
         params["format"] = pf
     url = "/printview?" + urlencode(params)
     return {
-        "html": f'<iframe src="{url}" style="width:100%;height:78vh;border:1px solid #e0e0e0;border-radius:6px;" title="Offer Letter Preview"></iframe>',
+        "html": f'<iframe src="{url}" style="width:100%;height:calc(100vh - 210px);min-height:520px;border:1px solid #e0e0e0;border-radius:6px;" title="Offer Letter Preview"></iframe>',
         "source": "print_format",
     }
 
