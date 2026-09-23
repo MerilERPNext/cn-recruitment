@@ -300,6 +300,13 @@ after_migrate = [
 # ---------------
 # Override standard doctype classes
 
+# nextai row approval stamps Vacancy Details rows with raw SQL (no doc_events),
+# so the requisition's Approved / Rejected Positions counts are updated here, at
+# the moment a row's status is written.
+on_row_status_update = [
+    "recruitment.api.requisition_pipeline.refresh_position_approvals",
+]
+
 # Document Events
 # ---------------
 # Hook on document methods and events
