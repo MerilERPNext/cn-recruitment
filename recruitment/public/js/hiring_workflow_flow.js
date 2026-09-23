@@ -498,11 +498,25 @@
     // A withdrawn / declined / cancelled offer is never edited back to life: the
     // next version is a new Draft, with the position re-claimed automatically,
     // opened for HR to review, submit and send.
-    function resendJobOffer(frm, offer) {
+    function resendConfirmMessage(offer, rule) {
+        const next = (offer.version || 1) + 1;
+        if (offer.status !== "Accepted" || offer.docstatus === 2) {
+            return __("Create version {0} of {1} as a new Draft? You can edit it, then submit and send it.", [next, esc(offer.name)]);
+        }
+        const eos = ((rule && rule.removes_onboarding) || []).map((e) => esc(e.name));
+        return __("The candidate has already accepted {0}. Resending will:", [esc(offer.name)])
+            + "<ul>"
+            + (eos.length
+                ? "<li>" + __("delete their pending onboarding ({0}), including any details they have filled in on the onboarding form, and remove it from their portal", [eos.join(", ")]) + "</li>"
+                : "")
+            + "<li>" + __("cancel the accepted offer and free its position") + "</li>"
+            + "<li>" + __("create version {0} as a new Draft for you to edit, submit and send", [next]) + "</li>"
+            + "</ul>" + __("Continue?");
+    }
+
+    function resendJobOffer(frm, offer, rule) {
         frappe.confirm(
-            __("Create version {0} of {1} as a new Draft? You can edit it, then submit and send it.", [
-                (offer.version || 1) + 1, esc(offer.name),
-            ]),
+            resendConfirmMessage(offer, rule),
             () => {
                 frappe.call({
                     method: "recruitment.api.offer_lifecycle.resend_job_offer",
@@ -730,6 +744,8 @@
             const ok = view.status === "Accepted";
             return `<div class="hwf-panel"><div class="hwf-banner ${ok ? "ok" : "bad"}">
                 ${ok ? "✓ " + __("Candidate has cleared the pipeline (Accepted).")
+                     + (((view.job_offer_actions || {}).resend || {}).allowed
+                        ? " " + __("If the offer needs revising, 'Resend Job Offer' is on the Job Offer stage.") : "")
                      : (view.current_stage_type === "Offer" && view.job_offer && view.job_offer.status === "Rejected"
                         ? "✕ " + __("Candidate declined the job offer.")
                           + ((view.job_offer_actions || {}).resend && view.job_offer_actions.resend.allowed
@@ -838,7 +854,9 @@
         const a = view.job_offer_actions || {};
         let html = "";
         if (a.resend && a.resend.allowed) {
-            html += `<button class="hwf-btn primary" data-act="resendoffer">↻ ${__("Resend Job Offer")}</button>`;
+            // Revising an accepted offer undoes onboarding — offered, not pushed.
+            const cls = o.status === "Accepted" && o.docstatus !== 2 ? "hwf-btn" : "hwf-btn primary";
+            html += `<button class="${cls}" data-act="resendoffer">↻ ${__("Resend Job Offer")}</button>`;
         }
         if (a.send && a.send.allowed) {
             html += `<button class="hwf-btn primary" data-act="sendoffer">✉ ${__("Send Job Offer")}</button>`;
@@ -876,11 +894,11 @@
         return html;
     }
 
-    // A candidate who declined the offer is closed (status Rejected), but the
-    // Offer stage still has one thing to offer: a revised letter.
+    // A candidate who declined (Rejected) or accepted is closed, but the Offer
+    // stage still has one thing to offer: a revised letter.
     function offerStageReopenable(view, s, i) {
         const a = view.job_offer_actions || {};
-        return view.is_closed && view.status === "Rejected"
+        return view.is_closed && ["Rejected", "Accepted"].includes(view.status)
             && (s.stage_type || "") === "Offer" && i === view.current_stage_index
             && !!(a.resend && a.resend.allowed);
     }
@@ -1011,7 +1029,7 @@
             else if (act === "openoffer") frappe.set_route("Form", "Job Offer", view.job_offer.name);
             else if (act === "sendoffer") sendJobOffer(frm, view.job_offer);
             else if (act === "withdrawoffer") withdrawJobOffer(frm, view.job_offer);
-            else if (act === "resendoffer") resendJobOffer(frm, view.job_offer);
+            else if (act === "resendoffer") resendJobOffer(frm, view.job_offer, (view.job_offer_actions || {}).resend);
             else if (act === "reject") rejectCandidate(frm);
         });
         $w.find(".hwf-menu a").on("click", function () {

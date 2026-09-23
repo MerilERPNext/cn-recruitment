@@ -20,13 +20,18 @@ Policy
 * An **alumni** session (``Employee.status == "Left"`` OR
   ``User.custom_is_alumni_employee``) may ONLY hit the Alumni Portal namespace
   ``recruitment.recruitment.alumni_portal.*`` (plus a tiny framework allowlist).
-  A blocked **API/RPC call** (``/api/method/*``, ``/api/resource/*``) gets a
-  **403** with a clear message. A blocked **plain page load** (Desk, the ESS
-  shell, or anything else that isn't an API call) instead logs the session out
-  and falls through as Guest, so the page's own existing guest-redirect
-  (``frappe.www.app`` / ``recruitment.www.webapp``) sends it to ``/login``
-  instead of rendering a dead-end 403 page — this is what actually happens
-  right after an admin impersonates an alumni user and the page reloads.
+  A blocked **API/RPC call** (``/api/method/*``, ``/api/resource/*``, and any
+  non-API "other" path that isn't one of the page shells below — favicons,
+  manifests, 404s, static assets, ...) gets a **403** with a clear message,
+  same as before. A blocked **page-shell load** — exactly ``/``, ``/app*``
+  (Desk), ``/webapp*`` (the ESS shell) or ``/login*`` — instead logs the
+  session out and falls through as Guest, so the page's own existing
+  guest-redirect (``frappe.www.app`` / ``recruitment.www.webapp``) sends it to
+  ``/login`` instead of rendering a dead-end 403 page — this is what actually
+  happens right after an admin impersonates an alumni user and the page
+  reloads. Scoped to just those shells (see ``_is_page_shell``) so that an
+  unrelated blocked "other" request never silently kills an otherwise-working
+  alumni session.
 * **Everyone else** (current employees, admins, guests) is untouched: the hook
   returns immediately, so **ESS behaves exactly as before**.
 
@@ -63,6 +68,16 @@ _ALUMNI_GLOBAL_ALLOWLIST = {
     "logout",
     "frappe.ping",
 }
+
+# The Desk/ESS/login page SHELLS -- the only "other"-kind (non-API) paths for
+# which a block should log the session out (see `_is_page_shell`). Deliberately
+# NOT every blocked "other" path: a stray favicon/manifest/404/static-asset
+# request from a perfectly legitimate alumni session (e.g. the Alumni Portal
+# frontend itself) is also "other" and also blocked, but logging out on THOSE
+# would silently kill a working alumni session over a single harmless 403 --
+# which is exactly what happened before this allowlist was added (see
+# `enforce_alumni_isolation`'s docstring note below).
+_PAGE_SHELL_PREFIXES = ("/app", "/webapp", "/login")
 
 # Individual methods that live OUTSIDE the alumni namespaces but which the Alumni
 # Portal legitimately calls.
@@ -268,6 +283,17 @@ def _is_allowed_for_alumni(kind: str, command: str) -> bool:
     return command in _ALUMNI_GLOBAL_ALLOWLIST or command in _ALUMNI_METHOD_ALLOWLIST
 
 
+def _is_page_shell(path: str) -> bool:
+    """True for exactly the Desk/ESS/login page shells -- ``/``, ``/app`` (+
+    subpaths), ``/webapp`` (+ subpaths), ``/login`` (+ query string). NOT true
+    for every other "other"-kind path (favicons, manifests, 404s, static
+    assets, ...) -- see `_PAGE_SHELL_PREFIXES`.
+    """
+    if path in ("", "/"):
+        return True
+    return any(path == p or path.startswith(p + "/") for p in _PAGE_SHELL_PREFIXES)
+
+
 # ── The hook ──────────────────────────────────────────────────────────────────
 def enforce_alumni_isolation() -> None:
     """auth_hook: confine alumni sessions to the Alumni Portal namespace."""
@@ -282,16 +308,15 @@ def enforce_alumni_isolation() -> None:
     if _is_allowed_for_alumni(kind, command):
         return
 
-    if kind == "other":
-        # A blocked plain page load -- Desk `/app/*`, the ESS `/webapp` shell,
-        # or any other full navigation -- most commonly hit right after an
-        # admin impersonates an alumni user and the page reloads under the
-        # new identity. Throwing the framework's generic 403 website page
-        # here traps the browser: `/`, `/login` and `/app` are ALL "other"
-        # too, so they are blocked exactly the same way -- "Home" and any
-        # further navigation just re-triggers this same block, and Desk's own
-        # `session_last_route` replay can turn it into a permanent loop with
-        # no way back short of clearing cookies.
+    if kind == "other" and _is_page_shell(getattr(frappe.local.request, "path", "") or ""):
+        # A blocked Desk/ESS/login page-shell load (`/`, `/app*`, `/webapp*`,
+        # `/login*`) -- most commonly hit right after an admin impersonates an
+        # alumni user and the page reloads under the new identity. Throwing
+        # the framework's generic 403 website page here traps the browser:
+        # `/`, `/login` and `/app` are ALL blocked the same way -- "Home" and
+        # any further navigation just re-triggers this same block, and Desk's
+        # own `session_last_route` replay can turn it into a permanent loop
+        # with no way back short of clearing cookies.
         #
         # Log the alumni session out right now instead -- the same real
         # logout Frappe itself uses (ends the session, clears the sid cookie,
@@ -302,6 +327,18 @@ def enforce_alumni_isolation() -> None:
         # recruitment.www.webapp.get_context both already redirect a Guest
         # straight to `/login`, so this reuses that existing, correct path
         # instead of re-implementing a redirect here.
+        #
+        # Deliberately scoped to just these page shells, NOT every blocked
+        # "other" path: a stray favicon/manifest/404/static-asset request
+        # from an otherwise perfectly legitimate alumni session (e.g. the
+        # Alumni Portal frontend's own background requests) is also "other"
+        # -- logging THOSE out would silently kill a working alumni session
+        # server-side over one harmless 403, breaking every subsequent
+        # alumni-portal API call in that browser tab. That happened for real:
+        # a blocked `/some-random-page`-style request deleted the session,
+        # and the next `get_alumni_feed` call then failed as Guest with
+        # "... is not whitelisted" even though the alumni portal itself was
+        # never misbehaving.
         frappe.local.login_manager.logout()
         return
 

@@ -31,6 +31,46 @@ function recomputeSalaryComponents(frm) {
     });
 }
 
+// --- Salary amounts in words -------------------------------------------------
+// Every salary figure on the offer has an "(In Words)" field beside it, filled as
+// soon as the figure changes (typed, fetched, or computed like CTC (Total)).
+// The server re-words them all on save — see
+// recruitment.customizations.job_offer.SALARY_WORDS_FIELDS, which this mirrors.
+const JOB_OFFER_SALARY_WORDS = {
+    custom_base_salary: "custom_fixed_ctc_in_words",
+    custom_ctc: "custom_ctc_in_words",
+    custom_total_fixed_pay: "custom_total_fixed_pay_in_words",
+    custom_variable_incentive: "custom_variable_incentive_in_words",
+    custom_location_allowance: "custom_location_allowance_in_words",
+    custom_current_salary: "custom_current_salary_in_words",
+    custom_expected_salary: "custom_expected_salary_in_words",
+};
+
+function showSalaryInWords(frm, source) {
+    const target = JOB_OFFER_SALARY_WORDS[source];
+    if (!target || !frm.fields_dict[target]) return;
+    const value = frm.doc[source];
+    if (value === null || value === undefined || value === "" || value === 0) {
+        if (frm.doc[target]) frm.set_value(target, "");
+        return;
+    }
+    frappe.xcall("recruitment.customizations.job_offer.get_salary_in_words", {
+        amount: value, company: frm.doc.company,
+    }).then((words) => {
+        // Ignore a late answer for a value that has since changed.
+        if (frm.doc[source] === value && (frm.doc[target] || "") !== (words || "")) {
+            frm.set_value(target, words || "");
+        }
+    });
+}
+
+// custom_base_salary has its own handler below (it also recomputes components).
+frappe.ui.form.on("Job Offer", Object.fromEntries(
+    Object.keys(JOB_OFFER_SALARY_WORDS)
+        .filter((f) => f !== "custom_base_salary")
+        .map((f) => [f, (frm) => showSalaryInWords(frm, f)])
+));
+
 // --- Salary Component link-picker filters ------------------------------------
 // The flags these pickers filter on (`custom_variable_part_of_ctc`,
 // `custom_is_extra_payment`) are custom fields owned by cn_indian_payroll, so they
@@ -184,6 +224,7 @@ frappe.ui.form.on("Job Offer", {
 	},
 	custom_base_salary:function(frm){
 		recomputeSalaryComponents(frm);
+		showSalaryInWords(frm, "custom_base_salary");
 	},
 	custom_salary_period:function(frm){
 		recomputeSalaryComponents(frm);
@@ -1000,18 +1041,16 @@ frappe.ui.form.on("Job Offer", {
             callback: (r) => {
                 const a = (r && r.message) || {};
                 if (a.withdraw && a.withdraw.allowed) add_withdraw_offer_button(frm);
-                if (a.resend && a.resend.allowed) add_resend_offer_button(frm);
+                if (a.resend && a.resend.allowed) add_resend_offer_button(frm, a.resend);
             },
         });
     },
 });
 
-function add_resend_offer_button(frm) {
-    frm.add_custom_button(__("Resend Job Offer"), () => {
+function add_resend_offer_button(frm, rule) {
+    const btn = frm.add_custom_button(__("Resend Job Offer"), () => {
         frappe.confirm(
-            __("Create version {0} of this offer as a new Draft? You can edit it, then submit and send it.", [
-                (frm.doc.custom_offer_version || 1) + 1,
-            ]),
+            resend_confirm_message(frm.doc.name, frm.doc.custom_offer_version, frm.doc.status, rule, frm.doc.docstatus),
             () => {
                 frappe.call({
                     method: "recruitment.api.offer_lifecycle.resend_job_offer",
@@ -1032,7 +1071,29 @@ function add_resend_offer_button(frm) {
                 });
             }
         );
-    }).addClass("btn-primary");
+    });
+    // Revising an accepted offer undoes onboarding — offered, not pushed.
+    if (frm.doc.status !== "Accepted" || frm.doc.docstatus === 2) btn.addClass("btn-primary");
+}
+
+// Shared with the hiring workflow (hiring_workflow_flow.js keeps its own copy of
+// the wording, as the two scripts load on different forms).
+function resend_confirm_message(name, version, status, rule, docstatus) {
+    const next = (version || 1) + 1;
+    const esc = frappe.utils.escape_html;
+    // A cancelled offer may still read "Accepted"; the server treats it as closed.
+    if (status !== "Accepted" || docstatus === 2) {
+        return __("Create version {0} of this offer as a new Draft? You can edit it, then submit and send it.", [next]);
+    }
+    const eos = ((rule && rule.removes_onboarding) || []).map((e) => esc(e.name));
+    return __("The candidate has already accepted {0}. Resending will:", [esc(name)])
+        + "<ul>"
+        + (eos.length
+            ? "<li>" + __("delete their pending onboarding ({0}), including any details they have filled in on the onboarding form, and remove it from their portal", [eos.join(", ")]) + "</li>"
+            : "")
+        + "<li>" + __("cancel the accepted offer and free its position") + "</li>"
+        + "<li>" + __("create version {0} as a new Draft for you to edit, submit and send", [next]) + "</li>"
+        + "</ul>" + __("Continue?");
 }
 
 function add_withdraw_offer_button(frm) {

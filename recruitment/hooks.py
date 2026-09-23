@@ -99,6 +99,8 @@ doctype_js = {
     "Job Applicant": [
         "public/js/job_applicant.js",
         "public/js/hiring_workflow_flow.js",
+        # View / Download for attachments in the approval panel below.
+        "public/js/approval_file_cells.js",
         "public/js/pre_offer_field_approval.js",
         "public/js/job_applicant_banner.js",
         # "Previous Applications" tab — has this candidate applied to us before?
@@ -147,6 +149,7 @@ doctype_js = {
         "public/js/employee_onboarding.js",
         "public/js/employee_onboarding_portal_field_inspector.js",
         "public/js/emp_OB_verification_table.js",
+        "public/js/approval_file_cells.js",
         "public/js/emp_OB_field_level_approval.js",
         "public/js/employee_onboarding_statutory.js",
     ],
@@ -302,6 +305,11 @@ after_migrate = [
 # Hook on document methods and events
 
 doc_events = {
+    # No approval moves on an archived requisition — every Approve / Reject /
+    # Send Back from a ToDo saves the tracker, so this catches them all.
+    "Approval Tracker": {
+        "validate": "recruitment.api.requisition_status.block_approval_on_archived",
+    },
     # Custom Doctype Fields (nextai) decides where a managed field sits on the
     # Job Applicant form. Job Applicant Profile Settings groups fields into its
     # own curated sections and never re-groups an existing row, so a managed
@@ -422,12 +430,18 @@ doc_events = {
             # requisition and still be free. Runs before save so a stale pick is
             # rejected rather than silently claiming the wrong row.
             "recruitment.api.offer_position.validate_position_choice",
+            # Every salary figure's "(In Words)" field follows the figure.
+            "recruitment.customizations.job_offer.set_salary_in_words",
             # Offer-time duplicity rules from TA Duplicity Check Settings: an
             # active offer held by the same person under another application, and
             # the employee-pool outcomes (block / exceptional approval / allow).
             "recruitment.customizations.ta_duplicity_job_offer.check_job_offer_duplicity",
         ],
-        "before_save": "recruitment.customizations.job_offer.calculate_salary_structure",
+        "before_save": [
+            "recruitment.customizations.job_offer.calculate_salary_structure",
+            # Again after CTC (Total) is computed above.
+            "recruitment.customizations.job_offer.set_salary_in_words",
+        ],
         "after_insert": [
             "recruitment.api.action_center.sync_job_offer_action_item",
             "recruitment.api.requisition_pipeline.refresh_from_job_offer",
@@ -493,6 +507,9 @@ doc_events = {
             # Enforce Recruitment Settings -> Job Requisition Settings
             # (max positions, replacement-employee restriction & uniqueness).
             "recruitment.api.job_requisition.validate_requisition_settings",
+            # Status set to Archived by hand: same role / state checks as the
+            # Archive button (the on_update cleanup below revokes approvals).
+            "recruitment.api.requisition_status.guard_manual_archive",
             # Recruitment Settings -> "Enable AOP Budget Check": refuse a
             # requisition whose Salary Range (Max) x positions is more than its
             # Department / Cost Center budget has left. Runs after
@@ -526,6 +543,9 @@ doc_events = {
             # (custom_position_summary) from the headcount rows
             # (custom_position_details). Idempotent, so it is safe on every update.
             "recruitment.api.requisition_status.materialise_positions_on_approval",
+            # Status changed to Archived by hand: cancel every open ToDo and revoke
+            # the approval in flight, exactly as the Archive button does.
+            "recruitment.api.requisition_status.close_tasks_when_archived",
             # Store "how many of this designation do we already have in this region"
             # and "how much are we already hiring there". Runs here rather than in
             # validate because these are derived columns: written during validate
@@ -781,6 +801,11 @@ doc_events = {
 
 scheduler_events = {
     "cron": {
+        # A requisition archived by a raw backend write fires no hook: close its
+        # open ToDos / approval on the next pass.
+        "*/10 * * * *": [
+            "recruitment.api.requisition_status.sweep_archived_requisitions",
+        ],
         "59 23 * * *": [
             "recruitment.customizations.employee_separation.task_reassignment.reassign_employee_separation_tasks",
             "recruitment.customizations.employee_onboarding.overide_class.reassign_tasks",
@@ -804,6 +829,10 @@ scheduler_events = {
             # AOP budget: re-flag live requisitions their Department / Cost Center
             # budget left no longer covers. No-op (clears flags) when disabled.
             "recruitment.api.requisition_budget.refresh_over_budget_flags",
+            # Recruitment Settings -> "Auto-withdraw Offer if Candidate Not
+            # Activated by DOJ": withdraw offers past DOJ + grace days whose
+            # candidate has no Employee. No-op while the setting is off.
+            "recruitment.api.offer_auto_withdraw.auto_withdraw_unjoined_offers",
         ],
         "30 1 * * *": [
             # Pay every referral reward installment that is due and still eligible.

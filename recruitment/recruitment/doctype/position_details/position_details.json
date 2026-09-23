@@ -77,15 +77,13 @@
    "options": "Functional Area"
   },
   {
-   "depends_on": "doc.custom_type_of_position==\"Replacement\"",
    "fieldname": "employee_type",
    "fieldtype": "Link",
    "ignore_user_permissions": 1,
    "in_list_view": 1,
    "label": "Employee Type",
-   "mandatory_depends_on": "doc.custom_type_of_position==\"Replacement\"",
-   "options": "Employment Type",
-   "read_only_depends_on": "doc.custom_type_of_position==\"New\""
+   "mandatory_depends_on": "eval:doc.custom_type_of_position==\"New\" || doc.custom_type_of_position==\"Replacement\"",
+   "options": "Employment Type"
   },
   {
    "description": "JSON array of {cost_center, percentage} entries — one position can be split across multiple cost centers (e.g. [{\"cost_center\": \"CC-001\", \"percentage\": 50}, {\"cost_center\": \"CC-002\", \"percentage\": 50}]).",
@@ -121,7 +119,7 @@
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2026-09-03 10:00:00.000000",
+ "modified": "2026-09-22 10:00:00.000000",
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "Position Details",
