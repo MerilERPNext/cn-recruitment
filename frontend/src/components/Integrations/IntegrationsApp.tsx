@@ -1,23 +1,23 @@
-import React, { useState, useEffect, useMemo } from "react";
 import {
   CheckCircle2,
-  RefreshCw,
-  Search,
+  Clock,
   ExternalLink,
   Lock,
-  Clock,
+  RefreshCw,
+  Search,
   ShieldCheck,
   Zap,
 } from "lucide-react";
+import React, { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
-import DesktopLayoutWrapper from "../DesktopLayoutWrapper";
-import HeaderBar from "../HeaderBar";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import {
-  integrationService,
   GoogleCalendarStatus,
+  integrationService,
 } from "../../services/integrationService";
 import { errorResponseFormater } from "../../utils/errorResponseFormater";
+import DesktopLayoutWrapper from "../DesktopLayoutWrapper";
+import HeaderBar from "../HeaderBar";
 
 interface IntegrationItem {
   id: string;
@@ -80,48 +80,6 @@ const GoogleCalendarOfficialIcon: React.FC<{ className?: string }> = ({
       style={{ fill: "#1967d2" }}
       transform="translate(3.75 3.75)"
     />
-  </svg>
-);
-
-const SlackOfficialIcon = () => (
-  <svg viewBox="0 0 24 24" className="w-10 h-10 shrink-0" fill="currentColor">
-    <path
-      fill="#E01E5A"
-      d="M5.042 15.165a2.528 2.528 0 0 1-2.52 2.523A2.528 2.528 0 0 1 0 15.165a2.527 2.527 0 0 1 2.522-2.52h2.52v2.52zM6.313 15.165a2.527 2.527 0 0 1 2.521-2.52 2.527 2.527 0 0 1 2.521 2.52v6.313A2.528 2.528 0 0 1 8.834 24a2.528 2.528 0 0 1-2.521-2.522v-6.313z"
-    />
-    <path
-      fill="#36C5F0"
-      d="M8.834 5.042a2.528 2.528 0 0 1-2.521-2.52A2.528 2.528 0 0 1 8.834 0a2.528 2.528 0 0 1 2.521 2.522v2.52H8.834zM8.834 6.313a2.528 2.528 0 0 1 2.521 2.521 2.528 2.528 0 0 1-2.521 2.521H2.522A2.528 2.528 0 0 1 0 8.834a2.528 2.528 0 0 1 2.522-2.521h6.312z"
-    />
-    <path
-      fill="#2EB67D"
-      d="M18.956 8.834a2.528 2.528 0 0 1 2.522-2.521A2.528 2.528 0 0 1 24 8.834a2.528 2.528 0 0 1-2.522 2.521h-2.522V8.834zM17.688 8.834a2.528 2.528 0 0 1-2.523 2.521 2.527 2.527 0 0 1-2.52-2.521V2.522A2.527 2.527 0 0 1 15.165 0a2.528 2.528 0 0 1 2.523 2.522v6.312z"
-    />
-    <path
-      fill="#ECB22E"
-      d="M15.165 18.956a2.528 2.528 0 0 1 2.523 2.522A2.528 2.528 0 0 1 15.165 24a2.527 2.527 0 0 1-2.52-2.522v-2.522h2.52zM15.165 17.688a2.527 2.527 0 0 1-2.52-2.523 2.527 2.527 0 0 1 2.52-2.52h6.313A2.527 2.527 0 0 1 24 15.165a2.528 2.528 0 0 1-2.522 2.523h-6.313z"
-    />
-  </svg>
-);
-
-const TeamsOfficialIcon = () => (
-  <svg viewBox="0 0 48 48" className="w-10 h-10 shrink-0" fill="none">
-    <path fill="#5059C9" d="M30 14h12c1.1 0 2 .9 2 2v16c0 1.1-.9 2-2 2H30V14z" />
-    <path fill="#7B83EB" d="M12 10h18c1.1 0 2 .9 2 2v24c0 1.1-.9 2-2 2H12c-1.1 0-2-.9-2-2V12c0-1.1.9-2 2-2z" />
-    <circle cx="36" cy="9" r="4" fill="#5059C9" />
-    <circle cx="21" cy="6" r="5" fill="#7B83EB" />
-    <path fill="#FFF" d="M25 21h-8v-3h11v12h-3V21z" />
-  </svg>
-);
-
-const ZoomOfficialIcon = () => (
-  <svg viewBox="0 0 48 48" className="w-10 h-10 shrink-0" fill="none">
-    <rect width="48" height="48" rx="10" fill="#2D8CFF" />
-    <path
-      d="M11 18a2 2 0 0 1 2-2h15a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H13a2 2 0 0 1-2-2V18z"
-      fill="#FFF"
-    />
-    <path d="M31 21.6L37 17v14l-6-4.6v-4.8z" fill="#FFF" />
   </svg>
 );
 
@@ -197,7 +155,7 @@ export const IntegrationsApp: React.FC = () => {
     } catch (error: any) {
       console.warn("Sync failed:", error);
       toast.error(
-        errorResponseFormater(error, "Could not sync with Google Calendar.")
+        errorResponseFormater(error, "Could not sync with Google Calendar."),
       );
     } finally {
       setIsSyncing(false);
@@ -208,7 +166,7 @@ export const IntegrationsApp: React.FC = () => {
     setIsConnecting(true);
     try {
       const redirectUrl = await integrationService.connectGoogleCalendar(
-        window.location.pathname
+        window.location.pathname,
       );
       if (redirectUrl && typeof redirectUrl === "string") {
         toast.loading("Redirecting to Google authorization...", {
@@ -223,15 +181,15 @@ export const IntegrationsApp: React.FC = () => {
       toast.error(
         errorResponseFormater(
           err,
-          "Failed to initiate Google Calendar connection."
-        )
+          "Failed to initiate Google Calendar connection.",
+        ),
       );
     } finally {
       setIsConnecting(false);
     }
   };
 
-  const categories = ["All Apps", "Calendar", "Communication", "Meeting"];
+  const categories = ["All Apps"];
 
   // Extensible integration list for current and future apps
   const integrations: IntegrationItem[] = [
@@ -249,48 +207,6 @@ export const IntegrationsApp: React.FC = () => {
         "Automated Google Meet interview links generation",
         "Panelist calendar availability checking",
         "Background calendar refresh & conflict avoidance",
-      ],
-    },
-    {
-      id: "slack",
-      name: "Slack Integration",
-      category: "Communication",
-      description:
-        "Instant notifications for new candidate applications, interview feedback submissions, and requisition approval requests.",
-      icon: <SlackOfficialIcon />,
-      status: "coming_soon",
-      features: [
-        "Interview reminders sent to team channels",
-        "Instant candidate feedback capture forms",
-        "Status alerts for job requisition approvals",
-      ],
-    },
-    {
-      id: "ms-teams",
-      name: "Microsoft Teams",
-      category: "Meeting",
-      description:
-        "Conduct virtual interviews, manage interview recordings, and sync meeting invites inside MS Teams.",
-      icon: <TeamsOfficialIcon />,
-      status: "coming_soon",
-      features: [
-        "One-click Teams meeting link generation",
-        "Team scheduling assistant integration",
-        "Bot notifications for hiring managers",
-      ],
-    },
-    {
-      id: "zoom",
-      name: "Zoom Meetings",
-      category: "Meeting",
-      description:
-        "Schedule and host video interviews with automated Zoom room creation and candidate link delivery.",
-      icon: <ZoomOfficialIcon />,
-      status: "coming_soon",
-      features: [
-        "Automated unique interview room links",
-        "Waiting room and passcodes enabled by default",
-        "Cloud recording integration for interview panels",
       ],
     },
   ];
@@ -320,8 +236,9 @@ export const IntegrationsApp: React.FC = () => {
             Connected Apps & Tools
           </h1>
           <p className="text-xs sm:text-sm text-blue-100/90 leading-relaxed">
-            Connect external calendars and collaboration tools to automate interview
-            schedules, avoid double-bookings, and streamline hiring workflows.
+            Connect external calendars and collaboration tools to automate
+            interview schedules, avoid double-bookings, and streamline hiring
+            workflows.
           </p>
         </div>
       </div>
@@ -436,7 +353,8 @@ export const IntegrationsApp: React.FC = () => {
                       <span>
                         Account:{" "}
                         <strong className="font-semibold text-gray-800">
-                          {calendarStatus.google_account || "Primary Google Calendar"}
+                          {calendarStatus.google_account ||
+                            "Primary Google Calendar"}
                         </strong>
                       </span>
                     </div>
@@ -503,8 +421,8 @@ export const IntegrationsApp: React.FC = () => {
                       {isSyncing
                         ? "Syncing Calendar..."
                         : isConnected
-                        ? "Sync Calendar Now"
-                        : "Connect Google Calendar"}
+                          ? "Sync Calendar Now"
+                          : "Connect Google Calendar"}
                     </button>
                   </div>
                 ) : (
@@ -527,7 +445,6 @@ export const IntegrationsApp: React.FC = () => {
           );
         })}
       </div>
-
     </div>
   );
 
