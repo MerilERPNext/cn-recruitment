@@ -1101,8 +1101,19 @@ const ExitPage: React.FC = () => {
               </div>
             )}
             {/* Full and Final Settlement (FnF) */}
-            <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-5 shadow-xs transition-all">
-              {/* Header */}
+            <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-5 shadow-xs transition-all relative overflow-hidden">
+              {/* Background Watermark: Tentative */}
+              <div
+                className="absolute inset-0 flex items-center justify-center pointer-events-none select-none z-0 overflow-hidden"
+                aria-hidden="true"
+              >
+                <span className="text-primary-700/[0.12] sm:text-primary-700/[0.14] text-5xl sm:text-7xl md:text-8xl font-black uppercase tracking-[0.25em] -rotate-[18deg] whitespace-nowrap">
+                  Tentative
+                </span>
+              </div>
+
+              <div className="relative z-10">
+                {/* Header */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-3.5 mb-3 border-b border-gray-100">
                 <div className="flex items-center gap-2">
                   <div className="p-1.5 rounded-xl bg-primary-50 text-primary-700 border border-primary-100 flex items-center justify-center shrink-0">
@@ -1541,6 +1552,7 @@ const ExitPage: React.FC = () => {
                   </Typography>
                 </div>
               )}
+              </div>
             </div>
 
             {/* Clearance Status */}
