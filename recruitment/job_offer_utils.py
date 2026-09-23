@@ -518,7 +518,7 @@ def download_job_offer_pdf(appl, token=None, separate=None):
         jo_id = frappe.db.get_value("Job Offer", {
             "job_applicant": appl,
             "docstatus": ["!=", 2],
-            "status": ["in", ["Draft", "Awaiting Response", "Accepted", "Rejected"]]
+            "status": ["in", ["Draft", "Awaiting Response", "Accepted", "Rejected", "Expired"]]
         }, order_by="creation desc")
         if not jo_id:
             frappe.throw("No active Job Offer found")
@@ -570,7 +570,7 @@ def preview_job_offer_html(appl, token=None):
         jo_id = frappe.db.get_value("Job Offer", {
             "job_applicant": appl,
             "docstatus": ["!=", 2],
-            "status": ["in", ["Draft", "Awaiting Response", "Accepted", "Rejected"]]
+            "status": ["in", ["Draft", "Awaiting Response", "Accepted", "Rejected", "Expired"]]
         }, order_by="creation desc")
         if not jo_id:
             frappe.throw("No active Job Offer found")
@@ -732,8 +732,44 @@ def get_job_offer_status(appl, token=None):
     jo_id = current_offer_name(appl)
     if not jo_id:
         return {"status": None}
-    status = frappe.db.get_value("Job Offer", jo_id, "status")
-    return {"status": status}
+    offer = frappe.get_doc("Job Offer", jo_id)
+    # `expired` rather than status == "Expired": the label is stamped by a daily
+    # job, so between midnight and that run the offer is past its date while
+    # still reading "Awaiting Response". A portal hiding its Accept / Decline
+    # buttons on this flag agrees with what job_offer_update will allow.
+    from recruitment.api.offer_expiry import offer_has_lapsed
+
+    return {
+        "status": offer.status,
+        "expired": offer_has_lapsed(offer),
+        "expiry_date": offer.get("custom_jo_expiry_date"),
+    }
+
+def _refuse_lapsed_offer(jo_id):
+    """An offer past its Expiry Date is off the table — the candidate can neither
+    accept nor decline it.
+
+    Checked against the date and not only against the "Expired" status: the
+    status is stamped by a daily job (recruitment.api.offer_expiry), so between
+    midnight and that run the letter is lapsed while still reading "Awaiting
+    Response". The recruiter puts it back in play with a new expiry date.
+    """
+    from recruitment.api.offer_expiry import offer_has_lapsed
+
+    offer = frappe.get_doc("Job Offer", jo_id)
+    if not offer_has_lapsed(offer):
+        return
+    expiry = offer.get("custom_jo_expiry_date")
+    frappe.throw(
+        _("This offer expired on {0} and can no longer be accepted or declined. "
+          "Please contact your recruiter if you would still like to take it up.").format(
+            formatdate(expiry)
+        )
+        if expiry
+        else _("This offer has expired and can no longer be accepted or declined."),
+        title=_("Offer Expired"),
+    )
+
 
 @frappe.whitelist(allow_guest=True)
 def job_offer_update(status, appl, token=None, reason=None, message=None):
@@ -744,6 +780,8 @@ def job_offer_update(status, appl, token=None, reason=None, message=None):
         # The version in play, not an older withdrawn / declined one.
         from recruitment.api.offer_lifecycle import current_offer_name
         jo_id = current_offer_name(appl)
+        if jo_id and status in ("Accepted", "Rejected"):
+            _refuse_lapsed_offer(jo_id)
         if status == "Accepted":
             offer_doc = frappe.get_doc("Job Offer", jo_id)
             offer_doc.status = "Accepted"

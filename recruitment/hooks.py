@@ -300,6 +300,13 @@ after_migrate = [
 # ---------------
 # Override standard doctype classes
 
+# nextai row approval stamps Vacancy Details rows with raw SQL (no doc_events),
+# so the requisition's Approved / Rejected Positions counts are updated here, at
+# the moment a row's status is written.
+on_row_status_update = [
+    "recruitment.api.requisition_pipeline.refresh_position_approvals",
+]
+
 # Document Events
 # ---------------
 # Hook on document methods and events
@@ -823,6 +830,11 @@ scheduler_events = {
             "recruitment.recruitment.scheduled_jobs.auto_confirm_employees_without_policy",
         ],
         "0 1 * * *": [
+            # Offers whose Expiry Date passed with no answer from the candidate
+            # become "Expired" and hand their position back. Runs before the
+            # auto-withdraw sweep below, so a lapsed letter is reported as
+            # expired rather than withdrawn.
+            "recruitment.api.offer_expiry.expire_overdue_offers",
             "recruitment.recruitment.onboarding_extras.refresh_onboarding_task_days_to_join",
             "recruitment.recruitment.scheduled_jobs.mark_relieved_employees_as_left",
             "recruitment.recruitment.scheduled_jobs.auto_separate_employees_on_lwd",

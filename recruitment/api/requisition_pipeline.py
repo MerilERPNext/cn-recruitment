@@ -328,6 +328,28 @@ def _refresh(job_requisition):
         )
 
 
+def refresh_position_approvals(child_doctype, row_names, parent_doctype, parent_name):
+    """nextai ``on_row_status_update`` hook — a Vacancy Details row was approved,
+    rejected or reset to Pending.
+
+    Row approval writes the rows with raw SQL, so the requisition's own
+    on_update never sees it. Only the Approved / Rejected Positions counts
+    depend on those rows, so only they are recomputed here — not the whole
+    pipeline — and any other child table on any other doctype is ignored.
+    """
+    if child_doctype != POSITION_DETAIL or parent_doctype != JOB_REQUISITION or not parent_name:
+        return
+    meta = frappe.get_meta(JOB_REQUISITION)
+    fields = (PIPELINE_FIELDS["approved_positions"], PIPELINE_FIELDS["rejected_positions"])
+    if not all(meta.has_field(f) for f in fields):
+        return
+    approved, rejected = _position_approvals(parent_name)
+    frappe.db.set_value(
+        JOB_REQUISITION, parent_name, dict(zip(fields, (approved, rejected))),
+        update_modified=False,
+    )
+
+
 def refresh_from_applicant(doc, method=None):
     """Job Applicant hook — roll the change up to the requisition behind its
     opening. No-op for a candidate whose opening came from no requisition."""

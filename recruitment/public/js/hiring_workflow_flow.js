@@ -516,6 +516,44 @@
             + "</ul>" + __("Continue?");
     }
 
+    // An EXPIRED offer has a second route: the candidate simply ran out of time,
+    // so the same letter goes out again on a new expiry date. No new version, and
+    // nothing to re-submit — see recruitment.api.offer_expiry.
+    function resendOfferLetter(frm, offer) {
+        const days =
+            offer.offer_date && offer.custom_jo_expiry_date
+                ? Math.max(frappe.datetime.get_day_diff(offer.custom_jo_expiry_date, offer.offer_date), 1)
+                : 7;
+        frappe.prompt(
+            [{
+                fieldname: "expiry_date", label: __("New Expiry Date"), fieldtype: "Date", reqd: 1,
+                default: frappe.datetime.add_days(frappe.datetime.get_today(), days),
+                description: __("The last day the candidate may accept. The same letter is emailed again and the offer goes back to Awaiting Response."),
+            }],
+            (values) => {
+                frappe.call({
+                    method: "recruitment.api.offer_expiry.resend_offer_letter",
+                    args: { job_offer: offer.name, expiry_date: values.expiry_date },
+                    freeze: true,
+                    freeze_message: __("Resending offer letter…"),
+                    callback: (r) => {
+                        const m = (r && r.message) || {};
+                        if (!m.job_offer) return;
+                        frappe.show_alert({
+                            message: __("Offer letter resent — valid until {0}.", [
+                                frappe.datetime.str_to_user(m.expiry_date),
+                            ]),
+                            indicator: "green",
+                        });
+                        frm.reload_doc();
+                    },
+                });
+            },
+            __("Resend Offer Letter"),
+            __("Resend")
+        );
+    }
+
     function resendJobOffer(frm, offer, rule) {
         frappe.confirm(
             resendConfirmMessage(offer, rule),
@@ -675,7 +713,8 @@
     function offerPill(o) {
         const st = o.docstatus === 2 ? "Cancelled" : (o.status || "Draft");
         const cls = { Accepted: "Approved", Rejected: "Rejected", Withdrawn: "Rejected",
-                      Cancelled: "Rejected", "Awaiting Response": "Awaiting" }[st] || "default";
+                      Expired: "Rejected", Cancelled: "Rejected",
+                      "Awaiting Response": "Awaiting" }[st] || "default";
         return `<span class="hwf-pill ${cls}">${esc(offerStatus(o))}</span>`;
     }
 
@@ -860,9 +899,16 @@
         if (!o) return `<button class="hwf-btn primary" data-act="createoffer">+ ${__("Create Job Offer")}</button>`;
         const a = view.job_offer_actions || {};
         let html = "";
+        if (a.resend_letter && a.resend_letter.allowed) {
+            // The expected move on an expired offer, so it leads.
+            html += `<button class="hwf-btn primary" data-act="resendofferletter">✉ ${__("Resend Offer Letter")}</button>`;
+        }
         if (a.resend && a.resend.allowed) {
             // Revising an accepted offer undoes onboarding — offered, not pushed.
-            const cls = o.status === "Accepted" && o.docstatus !== 2 ? "hwf-btn" : "hwf-btn primary";
+            // Alongside "Resend Offer Letter" it is the secondary choice: it is for
+            // when the terms change, not just the date.
+            const cls = (o.status === "Accepted" && o.docstatus !== 2) || (a.resend_letter || {}).allowed
+                ? "hwf-btn" : "hwf-btn primary";
             html += `<button class="${cls}" data-act="resendoffer">↻ ${__("Resend Job Offer")}</button>`;
         }
         if (a.send && a.send.allowed) {
@@ -885,9 +931,11 @@
         ];
         if (o.email_status === "Sent") bits.push(__("Email sent"));
         let hint = "";
-        if (o.docstatus === 0 && !["Withdrawn", "Rejected"].includes(o.status)) {
+        if (o.docstatus === 0 && !["Withdrawn", "Rejected", "Expired"].includes(o.status)) {
             hint = __("Review the offer and submit it, then send it to the candidate.");
-        } else if (a.resend && !a.resend.allowed && (o.docstatus === 2 || ["Withdrawn", "Rejected"].includes(o.status))) {
+        } else if (o.status === "Expired" && (a.resend_letter || {}).allowed) {
+            hint = __("The candidate did not respond before the expiry date. Resend the letter with a new date, or raise a revised version.");
+        } else if (a.resend && !a.resend.allowed && (o.docstatus === 2 || ["Withdrawn", "Rejected", "Expired"].includes(o.status))) {
             hint = a.resend.reason || "";
         }
         let html = `<div class="hwf-sub">${bits.join(" &nbsp;·&nbsp; ")}</div>`;
@@ -1037,6 +1085,7 @@
             else if (act === "sendoffer") sendJobOffer(frm, view.job_offer);
             else if (act === "withdrawoffer") withdrawJobOffer(frm, view.job_offer);
             else if (act === "resendoffer") resendJobOffer(frm, view.job_offer, (view.job_offer_actions || {}).resend);
+            else if (act === "resendofferletter") resendOfferLetter(frm, view.job_offer);
             else if (act === "reject") rejectCandidate(frm);
         });
         $w.find(".hwf-menu a").on("click", function () {

@@ -18,7 +18,10 @@ const FRAPPE_MANAGED_FIELDS = ["status", "workflow_state"];
 
 export const recruitmentService = {
   createJobRequisition: async (
-    payload: CreateJobRequisitionPayload
+    payload: CreateJobRequisitionPayload,
+    // The Job Requisition Draft this submission came from, if any. The server
+    // discards it once the requisition(s) exist.
+    draft?: string | null
   ): Promise<CreateJobRequisitionResponse> => {
     // Remove undefined / null / empty string values AND workflow-managed fields
     const cleanedPayload = Object.fromEntries(
@@ -50,6 +53,7 @@ export const recruitmentService = {
       "recruitment.api.job_requisition.create_job_requisition",
       {
         payload: cleanedPayload,
+        draft: draft || undefined,
       }
     ) as Promise<CreateJobRequisitionResponse>;
   },
