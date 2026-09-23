@@ -4,6 +4,7 @@ import {
   Calendar,
   ChevronDown,
   ChevronUp,
+  Coins,
   CreditCard,
   GraduationCap,
   Info,
@@ -24,6 +25,7 @@ import {
   useCurrentEmployeeDetails,
   useEmployee,
 } from "../../../../hooks/useEmployee";
+import { useEmployeeDocument } from "../../../../hooks/useEmployeeDocuments";
 import { useChatAssistantFlowInitiateData } from "../../../../hooks/useFlows";
 import { useActiveReportees } from "../../../../hooks/usePip";
 import {
@@ -36,21 +38,24 @@ import {
 import { useMyPendingTaskCounts } from "../../../../hooks/useTasks";
 import { useTodoCategories } from "../../../../hooks/useTodo";
 import { getFlowConfigOthersTriggerList } from "../../../../services/flowsService";
+import {
+  useEmployeePoints,
+  useRecognitionFlags,
+} from "../../../../services/recognitionService";
+import { DocumentItem } from "../../../../types/employeeDocument";
 import { formatCurrency } from "../../../../utils/currency";
 import { errorResponseFormater } from "../../../../utils/errorResponseFormater";
 import formatToIndianDate from "../../../../utils/formatToIndianDate";
+import { getFileNameFromUrl } from "../../../../utils/urlFormating";
 import ActionConfirmationModal from "../../../shared/ActionConfirmationModal";
 import Button from "../../../shared/atoms/Button";
 import NoDataFound from "../../../shared/atoms/NoDataFound";
 import { Typography } from "../../../shared/atoms/Typography";
 import { ViewAll } from "../../../shared/atoms/ViewAll";
 import Avatar from "../../../shared/Avatar";
+import { FilePreviewModal } from "../../../shared/molecules/FilePreviewModal";
 import TableSkeleton from "../../../shared/molecules/Skeletons/TableSkeleton";
 import WrapperHoverCard from "../../../shared/WrapperHoverCard";
-import { useEmployeeDocument } from "../../../../hooks/useEmployeeDocuments";
-import { DocumentItem } from "../../../../types/employeeDocument";
-import { getFileNameFromUrl } from "../../../../utils/urlFormating";
-import { FilePreviewModal } from "../../../shared/molecules/FilePreviewModal";
 
 interface ExtendedEmployeeFields {
   relieving_date?: string | null;
@@ -632,6 +637,17 @@ const ExitPage: React.FC = () => {
     return employeeDocuments.slice(0, 7);
   }, [employeeDocuments]);
 
+  // 9. Recognition Points Summary (Points balance before exit)
+  const recognitionFlags = useRecognitionFlags();
+  const { data: pointsData, isLoading: isLoadingPoints } = useEmployeePoints({
+    employee: effectiveEmployeeId,
+  });
+
+  const appreciationPoints = pointsData?.appreciation_points ?? 0;
+  const awardPoints = pointsData?.award_points ?? 0;
+  const usedPoints = pointsData?.used_points ?? 0;
+  const netPoints = appreciationPoints + awardPoints - usedPoints;
+
   return (
     <div className="w-full p-3.5 sm:p-4 md:p-6 space-y-4 sm:space-y-5">
       {/* Top Header - Matching Other App Pages */}
@@ -944,6 +960,146 @@ const ExitPage: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-5 items-start">
           {/* Left Column (7 cols) */}
           <div className="lg:col-span-7 space-y-4 sm:space-y-5">
+            {/* Points Summary Card */}
+            {(!recognitionFlags.loaded ||
+              !recognitionFlags.hideRewardsPointSummary) && (
+              <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-5 shadow-xs">
+                <div className="flex items-center justify-between pb-3 mb-3 border-b border-gray-100">
+                  <div className="flex items-center gap-2">
+                    <div className="p-1.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200 flex items-center justify-center shrink-0">
+                      <Coins className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <Typography
+                        variant="subheading"
+                        className="text-gray-900 block font-bold"
+                      >
+                        Points Summary
+                      </Typography>
+                      <Typography
+                        variant="caption"
+                        className="text-gray-500 font-medium block mt-0.5"
+                      >
+                        Recognition &amp; reward points balance
+                      </Typography>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      navigate(
+                        isViewingOtherUser && effectiveEmployeeId
+                          ? `/webapp/recognition/vibe/earned-points?target_user=${effectiveEmployeeId}`
+                          : "/webapp/recognition/vibe/earned-points",
+                      )
+                    }
+                    className="text-xs font-semibold text-primary-700 hover:text-primary-800 hover:underline flex items-center gap-1 transition-colors shrink-0 ml-2"
+                  >
+                    View Points Summary &rarr;
+                  </button>
+                </div>
+
+                {isLoadingPoints ? (
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 py-1">
+                    {[1, 2, 3, 4].map((i) => (
+                      <div
+                        key={i}
+                        className="h-20 bg-gray-50 rounded-xl border border-gray-100 animate-pulse flex flex-col items-center justify-center gap-2"
+                      >
+                        <div className="h-6 w-12 bg-gray-200 rounded" />
+                        <div className="h-3 w-20 bg-gray-200 rounded" />
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                      {/* Appreciation Points */}
+                      <div className="p-3 rounded-xl bg-gray-50/90 border border-gray-200/80 text-center">
+                        <Typography
+                          variant="h3"
+                          className="text-xl sm:text-2xl font-bold text-blue-600"
+                        >
+                          {appreciationPoints.toLocaleString("en-IN")}
+                        </Typography>
+                        <Typography
+                          variant="caption"
+                          className="text-gray-500 font-medium block mt-0.5"
+                        >
+                          Appreciation Points
+                        </Typography>
+                      </div>
+
+                      {/* Award Points */}
+                      <div className="p-3 rounded-xl bg-gray-50/90 border border-gray-200/80 text-center">
+                        <Typography
+                          variant="h3"
+                          className="text-xl sm:text-2xl font-bold text-blue-600"
+                        >
+                          {awardPoints.toLocaleString("en-IN")}
+                        </Typography>
+                        <Typography
+                          variant="caption"
+                          className="text-gray-500 font-medium block mt-0.5"
+                        >
+                          Award Points
+                        </Typography>
+                      </div>
+
+                      {/* Net Points */}
+                      <div className="p-3 rounded-xl bg-gray-50/90 border border-gray-200/80 text-center">
+                        <Typography
+                          variant="h3"
+                          className="text-xl sm:text-2xl font-bold text-blue-600"
+                        >
+                          {netPoints.toLocaleString("en-IN")}
+                        </Typography>
+                        <Typography
+                          variant="caption"
+                          className="text-gray-500 font-medium block mt-0.5"
+                        >
+                          Net Points
+                        </Typography>
+                      </div>
+
+                      {/* Redeemed Box with Gradient matching Points Summary */}
+                      <div className="flex items-center justify-center rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 p-3 text-white text-center shadow-xs">
+                        <div>
+                          <Typography
+                            variant="h3"
+                            className="text-xl sm:text-2xl font-bold text-white"
+                          >
+                            {usedPoints.toLocaleString("en-IN")}
+                          </Typography>
+                          <Typography
+                            variant="caption"
+                            className="text-white font-medium block mt-0.5"
+                          >
+                            Redeemed
+                          </Typography>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Exit reminder when netPoints > 0 */}
+                    {netPoints > 0 && (
+                      <div className="flex items-center gap-2 p-2.5 rounded-lg bg-amber-50/80 border border-amber-200/80 text-xs text-amber-900 font-medium">
+                        <Coins className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                        <span>
+                          You have{" "}
+                          <strong className="font-bold text-amber-950">
+                            {netPoints.toLocaleString("en-IN")} unredeemed
+                            points
+                          </strong>
+                          . Please redeem your points before your last working
+                          day.
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
             {/* Full and Final Settlement (FnF) */}
             <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-5 shadow-xs transition-all">
               {/* Header */}
@@ -1728,8 +1884,7 @@ const ExitPage: React.FC = () => {
                         variant="caption"
                         className="text-gray-500 font-medium mt-0.5 block"
                       >
-                        {expenseCount}{" "}
-                        {expenseCount === 1 ? "claim" : "claims"}
+                        {expenseCount} {expenseCount === 1 ? "claim" : "claims"}
                         {relievingDate
                           ? `, by ${formatToIndianDate(relievingDate)}`
                           : ""}
@@ -1825,8 +1980,6 @@ const ExitPage: React.FC = () => {
                 </div>
               )}
             </div>
-
-           
 
             {/* Task Box Card */}
             <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-5 shadow-xs">
@@ -1958,7 +2111,7 @@ const ExitPage: React.FC = () => {
               </div>
             </div>
 
-             {/* Your Reportees */}
+            {/* Your Reportees */}
             <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-5 shadow-xs">
               <div className="flex items-center gap-2 pb-3 mb-2 border-b border-gray-100">
                 <div className="p-1.5 rounded-full bg-primary-50 text-primary-700 border border-primary-100 flex items-center justify-center shrink-0">
@@ -2108,7 +2261,9 @@ const ExitPage: React.FC = () => {
                 variant="caption"
                 className="text-gray-500 font-medium block mt-0.5"
               >
-                Complete your pending handovers, asset returns, and departmental clearances smoothly to unlock seamless access to the PW Alumni community.
+                Complete your pending handovers, asset returns, and departmental
+                clearances smoothly to unlock seamless access to the PW Alumni
+                community.
               </Typography>
             </div>
           </div>
