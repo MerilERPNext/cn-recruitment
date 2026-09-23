@@ -834,7 +834,7 @@ const PositionDetailsTab = ({
                 <div>
                   <span className="text-gray-500">Location</span>
                   <p className="font-medium text-gray-900 mt-0.5">
-                    {pos.location_title || pos.location || "—"}
+                    {pos.custom_location_title || pos.location_title || pos.location || "—"}
                   </p>
                 </div>
                 {isReplacement && (
@@ -950,7 +950,7 @@ const PositionDetailsTab = ({
                 {/* Location */}
                 <td className="px-5 py-4 text-sm text-gray-700 max-w-[260px]">
                   <span className="whitespace-pre-line leading-relaxed">
-                    {pos.location_title || pos.location || "—"}
+                    {pos.custom_location_title || pos.location_title || pos.location || "—"}
                   </span>
                 </td>
 

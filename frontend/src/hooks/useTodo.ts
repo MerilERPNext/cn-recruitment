@@ -11,11 +11,12 @@ export function useTodoList(filters: TodoFilters = {}) {
   });
 }
 
-export function useTodoCategories() {
+export function useTodoCategories(enabled: boolean = true) {
   return useQuery<TodoCategory[]>({
     queryKey: ["todo-categories"],
     queryFn: () => todoService.getTodoCategories(),
     staleTime: 2 * 60 * 1000, // 2 minutes
+    enabled,
     select: (data) => data.filter((cat) => cat.name !== "Uncategorized"),
   });
 }

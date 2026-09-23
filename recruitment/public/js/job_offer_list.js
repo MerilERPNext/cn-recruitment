@@ -47,6 +47,24 @@ function add_notify_hr_ops_action(listview) {
 
 frappe.listview_settings['Job Offer'] = {
 
+    // Draft -> Awaiting Response (sent) -> Accepted / Rejected / Withdrawn. Also
+    // drives the form header, which otherwise reads "Draft" for any unsubmitted
+    // offer whatever its status.
+    add_fields: ["status"],
+    has_indicator_for_draft: 1,
+    get_indicator(doc) {
+        const colours = {
+            "Draft": "gray",
+            "Awaiting Response": "orange",
+            "Accepted": "green",
+            "Rejected": "red",
+            "Withdrawn": "darkgrey",
+        };
+        if (doc.docstatus === 2) return [__("Cancelled"), "red", "docstatus,=,2"];
+        const status = doc.status || "Draft";
+        return [__(status), colours[status] || "gray", "status,=," + status];
+    },
+
     onload(listview) {
 
         const df = {
@@ -165,6 +183,6 @@ frappe.listview_settings['Job Offer'] = {
 
     before_render: function() {
         frappe.meta.get_docfield("Job Offer", "status").options =
-            "Awaiting Response\nAccepted\nRejected";
+            "Draft\nAwaiting Response\nAccepted\nRejected\nWithdrawn";
     }
 };

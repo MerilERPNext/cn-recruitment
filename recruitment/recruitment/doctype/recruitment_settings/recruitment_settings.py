@@ -32,6 +32,23 @@ def _guard_meta_doctype(doctype_name):
 
 
 class RecruitmentSettings(Document):
+    def validate(self):
+        self.validate_salary_range_limits()
+
+    def validate_salary_range_limits(self):
+        """Salary Range Limits are digit counts; a Maximum Digits (when set)
+        must not be less than Minimum Digits."""
+        for row in self.get("salary_range_limits") or []:
+            low = frappe.utils.cint(row.min_digits)
+            high = frappe.utils.cint(row.max_digits)
+            if low < 0 or high < 0:
+                frappe.throw(_("Row #{0}: Salary digits cannot be negative.").format(row.idx))
+            if low and high and high < low:
+                frappe.throw(
+                    _("Row #{0}: Maximum Digits ({1}) cannot be less than Minimum Digits ({2}) for {3}.")
+                    .format(row.idx, high, low, row.salary_timeframe)
+                )
+
     def on_update(self):
         from recruitment.api.requisition_budget import on_settings_update
 

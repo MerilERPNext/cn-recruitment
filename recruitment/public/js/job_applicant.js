@@ -615,6 +615,77 @@ recruitment.open_pre_onboarding_dialog = function (job_applicant_id, prefill_doc
     dlg.show();
 };
 
+// --- Resend Job Offer -------------------------------------------------------
+// Once the candidate's newest offer is accepted, withdrawn, rejected or
+// cancelled, raise the next version from here too — not only from the hiring
+// workflow's Offer stage, which is absent when the workflow is off or the
+// candidate is on another stage. Whether it is allowed is decided server-side
+// (offer_lifecycle.get_offer_actions).
+frappe.ui.form.on("Job Applicant", {
+    refresh(frm) {
+        if (frm.is_new()) return;
+        const applicant = frm.doc.name;
+        frappe.call({
+            method: "recruitment.api.offer_lifecycle.get_applicant_offer_actions",
+            args: { job_applicant: applicant },
+            callback: (r) => {
+                // The user may have moved to another applicant while this loaded.
+                if (frm.doc.name !== applicant) return;
+                const a = r && r.message;
+                if (!(a && a.resend && a.resend.allowed)) return;
+                const accepted = a.status === "Accepted" && a.docstatus !== 2;
+                const btn = frm.add_custom_button(__("Resend Job Offer"), () => {
+                    frappe.confirm(
+                        applicant_resend_confirm_message(a, accepted),
+                        () => {
+                            frappe.call({
+                                method: "recruitment.api.offer_lifecycle.resend_job_offer",
+                                args: { job_offer: a.job_offer },
+                                freeze: true,
+                                freeze_message: __("Creating new version…"),
+                                callback: (res) => {
+                                    const m = (res && res.message) || {};
+                                    if (!m.job_offer) return;
+                                    frappe.show_alert({
+                                        message: m.position_label
+                                            ? __("Version {0} created against {1}.", [m.version, m.position_label])
+                                            : __("Version {0} created.", [m.version]),
+                                        indicator: "green",
+                                    });
+                                    frappe.set_route("Form", "Job Offer", m.job_offer);
+                                },
+                            });
+                        }
+                    );
+                }, __("Actions"));
+                // Revising an accepted offer undoes onboarding — offered, not pushed.
+                if (accepted) btn.removeClass("btn-primary");
+            },
+        });
+    },
+});
+
+// Same wording as job_offer.js resend_confirm_message (the two scripts load on
+// different forms): an accepted offer says what resending removes.
+function applicant_resend_confirm_message(a, accepted) {
+    const next = (a.version || 1) + 1;
+    const esc = frappe.utils.escape_html;
+    if (!accepted) {
+        return __("Create version {0} of {1} as a new Draft? You can edit it, then submit and send it.", [
+            next, esc(a.job_offer),
+        ]);
+    }
+    const eos = ((a.resend && a.resend.removes_onboarding) || []).map((e) => esc(e.name));
+    return __("The candidate has already accepted {0}. Resending will:", [esc(a.job_offer)])
+        + "<ul>"
+        + (eos.length
+            ? "<li>" + __("delete their pending onboarding ({0}), including any details they have filled in on the onboarding form, and remove it from their portal", [eos.join(", ")]) + "</li>"
+            : "")
+        + "<li>" + __("cancel the accepted offer and free its position") + "</li>"
+        + "<li>" + __("create version {0} as a new Draft for you to edit, submit and send", [next]) + "</li>"
+        + "</ul>" + __("Continue?");
+}
+
 // --- Auto-screening: manual "Run Screening" trigger -------------------------
 frappe.ui.form.on("Job Applicant", {
     refresh(frm) {

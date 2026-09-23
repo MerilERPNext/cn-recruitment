@@ -16,6 +16,7 @@ import { Briefcase, CheckCircle, Edit, FileText, FolderOpen } from "lucide-react
 import formatToIndianDate from "../../utils/formatToIndianDate";
 import WrapperHoverCard from "../shared/WrapperHoverCard";
 import AllocatedToTooltip from "../shared/AllocatedToTooltip";
+import { useApprovalAllocation } from "../../hooks/useRecruitment";
 import type { JobRequisitionListResponse, RequisitionListColumn } from "../../types/recruitment";
 import requisitionNotFoundImage from "../../assets/rec_not_found.jpeg";
 
@@ -169,6 +170,8 @@ const Requisition = () => {
   const RequisitionItem = ({ item, onView }: { item: any; onView: (item: any) => void }) => {
     const { isDesktop } = useScreenSize();
     const [showRequesterCard, setShowRequesterCard] = useState(false);
+    const { allocation: approvalAllocation, loading: isAllocationLoading } =
+      useApprovalAllocation(item?.name, item?.approval_allocation);
 
     const handleRowClick = () => {
       onView(item);
@@ -204,7 +207,7 @@ const Requisition = () => {
         return (
           <div className="flex justify-center items-center">
             {String(value || "").toLowerCase().includes("pending") ? (
-              <AllocatedToTooltip users={item?.approval_allocation} title="Pending With" position="left">
+              <AllocatedToTooltip users={approvalAllocation} loading={isAllocationLoading} title="Pending With" position="left">
                 <Badge label={String(value || "--")} backgroundColor={getStatusColor(String(value || ""))} />
               </AllocatedToTooltip>
             ) : (
@@ -271,7 +274,8 @@ const Requisition = () => {
           <div className="flex justify-center items-center">
             {status?.toLowerCase().includes("pending") ? (
               <AllocatedToTooltip
-                users={item?.approval_allocation}
+                users={approvalAllocation}
+                loading={isAllocationLoading}
                 title="Pending With"
                 position="left"
               >
@@ -438,7 +442,8 @@ const Requisition = () => {
             </div>
             {status?.toLowerCase().includes("pending") ? (
               <AllocatedToTooltip
-                users={item?.approval_allocation}
+                users={approvalAllocation}
+                loading={isAllocationLoading}
                 title="Pending With"
                 position="bottom"
               >
@@ -619,6 +624,8 @@ const Requisition = () => {
   ];
 
   const [selectedRequisition, setSelectedRequisition] = useState<any | null>(null);
+  const { allocation: selectedAllocation, loading: isSelectedAllocationLoading } =
+    useApprovalAllocation(selectedRequisition?.name, selectedRequisition?.approval_allocation);
 
   const navigateToDetail = useCallback((item: any) => {
     navigate(`/webapp/recruitment/requisition/${item.name}`, {
@@ -785,7 +792,8 @@ const Requisition = () => {
                   </Typography>
                   {selectedRequisition?.status?.toLowerCase().includes("pending") ? (
                     <AllocatedToTooltip
-                      users={selectedRequisition?.approval_allocation}
+                      users={selectedAllocation}
+                      loading={isSelectedAllocationLoading}
                       title="Pending With"
                       position="bottom"
                     >
@@ -891,7 +899,7 @@ const Requisition = () => {
                           <tr key={idx} className="hover:bg-gray-50/50">
                             <td className="px-4 py-2 font-medium">{idx+1}</td>
                             <td className="px-4 py-2">{pos.vacancy_type}</td>
-                            <td className="px-4 py-2">{pos.location_title || "—"}</td>
+                            <td className="px-4 py-2">{pos.custom_location_title || pos.location_title || pos.location || "—"}</td>
                             <td className="px-4 py-2">
                               {pos.reporting_manager ? (
                                 <WrapperHoverCard employeeId={String(pos.reporting_manager)}>

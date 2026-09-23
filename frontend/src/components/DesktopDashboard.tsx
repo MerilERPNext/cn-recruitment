@@ -897,14 +897,17 @@ export default function DesktopDashboard() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
-            {/* Row 1: Tasks Awaiting (8) | Clocking (4) */}
-            <div className="lg:col-span-8">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
+            {/* Left Column (8 cols): Tasks Awaiting + MicroApps + Recommendations */}
+            <div className="lg:col-span-8 flex flex-col gap-4">
               <TasksAwaiting />
+              <MicroAppInDashboard />
+              <RecommendationsForYou />
             </div>
 
-            <div className="lg:col-span-4">
-              <Card shadow="sm" className="h-full flex flex-col gap-4">
+            {/* Right Column (4 cols): Daily Timings/Attendance + Events + Requests */}
+            <div className="lg:col-span-4 flex flex-col gap-4">
+              <Card shadow="sm" className="flex flex-col gap-4">
                 <div>
                   <Typography
                     variant="subheading"
@@ -1049,13 +1052,13 @@ export default function DesktopDashboard() {
                 </div>
 
                 <div
-                  className={`flex  h-full ${homeSummary && !homeSummary?.length
+                  className={`flex ${homeSummary && !homeSummary?.length
                     ? "flex-col-reverse gap-3"
                     : "flex-row gap-3 mt-2"
                     }`}
                 >
                   {canShowClockIn?.can_show && (
-                    <div className="flex-1">
+                    <div className="w-full">
                       <Button
                         fullWidth
                         size="lg"
@@ -1083,7 +1086,7 @@ export default function DesktopDashboard() {
                   {/* Status */}
 
                   {!homeSummary?.length && (
-                    <div className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-primary-50 text-primary-600 rounded-xl border border-primary-100">
+                    <div className="w-full flex items-center justify-center gap-2 px-3 py-2.5 bg-primary-50 text-primary-600 rounded-xl border border-primary-100">
                       <Typography
                         variant="bodySmall"
                         className="font-bold text-primary-600"
@@ -1094,24 +1097,10 @@ export default function DesktopDashboard() {
                   )}
                 </div>
               </Card>
-            </div>
 
-            {/* Row 2 & 3: MicroApps (8, span 2) | Events (4) + Requests (4) */}
-            <div className="lg:col-span-8 lg:row-span-2 flex flex-col gap-4">
-              <div className="flex-1 min-h-0">
-                <MicroAppInDashboard />
-              </div>
-              <div className="flex-shrink-0">
-                <RecommendationsForYou />
-              </div>
-            </div>
-
-            <div className="lg:col-span-4">
               <Events />
-            </div>
 
-            <div className="lg:col-span-4">
-              <Card shadow="sm" className="h-full">
+              <Card shadow="sm">
                 <div className="flex justify-between items-center mb-4">
                   <Typography variant="subheading" color="title">
                     Requests

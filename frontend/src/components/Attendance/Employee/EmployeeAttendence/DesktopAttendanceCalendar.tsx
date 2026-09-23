@@ -1,4 +1,5 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useRef, useState } from "react";
+import { format } from "date-fns";
 
 import { Calendar, CalendarRange, CheckCircle2, ChevronLeft, ChevronRight, CircleX, Columns2, Gift, Home, XCircle } from "lucide-react";
 
@@ -41,6 +42,9 @@ const getEventBadgeStyle = (doctype: string): { label: string; borderClass: stri
             return { label: "Overtime Request", borderClass: "border-l-2 border-orange-400" };
         case "Out Duty":
             return { label: "Out Duty", borderClass: "border-l-2 border-purple-400" };
+        case "Holiday":
+        case "Holidays":
+            return { label: "Holiday", borderClass: "border-l-2 border-blue-400" };
         default:
             return { label: doctype, borderClass: "border-l-2 border-gray-400" };
     }
@@ -70,6 +74,13 @@ const getStatusBgStyle = (status: string): string => {
             return "bg-yellow-50 text-yellow-700 border-l-2 border-yellow-400";
         case "Revoked":
             return "bg-purple-50 text-purple-700 border-l-2 border-purple-400";
+        case "Weekly Off":
+        case "weekly off":
+        case "week-off":
+            return "bg-gray-100 text-gray-700 border-l-2 border-gray-400";
+        case "Holiday":
+        case "holiday":
+            return "bg-blue-50 text-blue-700 border-l-2 border-blue-400";
         default:
             return "bg-gray-50 text-gray-600 border-l-2 border-gray-400";
     }
@@ -141,6 +152,21 @@ const getEventDisplay = (event: AttendanceRecord): { label: string; className: s
     const status = event?.status || "";
     const baseClass = "border-l-2";
 
+    if (doctype === "Holiday" || doctype === "Holidays") {
+        const isWO = event?.weekly_off === 1 || status?.toLowerCase() === "weekly off";
+        const title = event?.title;
+        const cleanTitle = title?.startsWith("Holiday: ") ? title.replace(/^Holiday:\s*/, "") : title;
+        const label = isWO
+            ? (cleanTitle && cleanTitle !== "WO" ? cleanTitle : "Weekly Off")
+            : (cleanTitle || "Holiday");
+        return {
+            label,
+            className: isWO
+                ? `${baseClass} border-gray-400 bg-gray-100 text-gray-700`
+                : `${baseClass} border-blue-400 bg-blue-50 text-blue-700`,
+        };
+    }
+
     if (doctype === "Leave Request" && status === "Approved") {
         return {
             label: `On Leave${detailText}`,
@@ -182,6 +208,23 @@ const DesktopAttendanceCalendar: React.FC<attendanceProps> = ({
 }) => {
     const [searchParams, setSearchParams] = useSearchParams();
     const { data: showCompoffLate = false } = useCompoffLateDetailsEnabled();
+    const [isMonthYearPickerOpen, setIsMonthYearPickerOpen] = useState(false);
+    const [monthYearPickerView, setMonthYearPickerView] = useState<"month" | "year">("month");
+    const monthYearPickerRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        if (!isMonthYearPickerOpen) return;
+        const handleClickOutside = (event: MouseEvent) => {
+            if (
+                monthYearPickerRef.current &&
+                !monthYearPickerRef.current.contains(event.target as Node)
+            ) {
+                setIsMonthYearPickerOpen(false);
+            }
+        };
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, [isMonthYearPickerOpen]);
 
     useEffect(() => {
         if (!selectedDate && !searchParams.get("date")) return;
@@ -242,13 +285,8 @@ const DesktopAttendanceCalendar: React.FC<attendanceProps> = ({
                         }
                         const eventDisplay = getEventDisplay({ ...event, doctype: doctypeKey });
                         return (
-                            <Tooltip content={eventDisplay.label}>
-
+                            <Tooltip key={index} content={eventDisplay.label}>
                                 <div
-                                    key={index}
-                                    // onClick={(e) => {
-                                    // e.stopPropagation();
-                                    // }}
                                     className={`min-w-0 text-[10px] text-left font-semibold pl-1.5 pr-1 py-0.5 leading-tight truncate rounded-sm ${eventDisplay.className}`}
                                     title={eventDisplay.label}
                                 >
@@ -395,11 +433,23 @@ const DesktopAttendanceCalendar: React.FC<attendanceProps> = ({
                     if (!date) return;
                     setSelectedDate(date);
                     const attendance = getAttendanceStatus(date as Date);
+                    const dateKey = format(date as Date, "yyyy-MM-dd");
 
                     setShowDetailsFor({
                         date: date as Date,
                         status: attendance?.status,
-                        data: attendance?.record as AttendanceRecord,
+                        data:
+                            attendance?.record ||
+                            ({
+                                name: `placeholder-${dateKey}`,
+                                doctype: "Attendance",
+                                start: dateKey,
+                                end: dateKey,
+                                title: "No Data",
+                                status: attendance?.status,
+                                docstatus: "",
+                                employee: "",
+                            } as AttendanceRecord),
                         events: attendance?.events as AttendanceRecord[],
                         isWeeklyOff: attendance?.isWeeklyOff,
                     });
@@ -412,6 +462,8 @@ const DesktopAttendanceCalendar: React.FC<attendanceProps> = ({
                 inline
                 renderCustomHeader={({
                     date,
+                    changeMonth,
+                    changeYear,
                     decreaseMonth,
                     increaseMonth,
                     prevMonthButtonDisabled,
@@ -426,10 +478,83 @@ const DesktopAttendanceCalendar: React.FC<attendanceProps> = ({
                         >
                             <ChevronLeft className="w-5 h-5" />
                         </Button>
-                        <span className="base-title">
-                            {date.toLocaleString("default", { month: "long" })}{" "}
-                            {date.getFullYear()}
-                        </span>
+                        <div className="relative" ref={monthYearPickerRef}>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setIsMonthYearPickerOpen((prev) => !prev);
+                                    setMonthYearPickerView("month");
+                                }}
+                                className="base-title bg-transparent hover:bg-gray-50 rounded-md px-2 py-1 cursor-pointer"
+                            >
+                                {date.toLocaleString("default", { month: "long" })}{" "}
+                                {date.getFullYear()}
+                            </button>
+                            {isMonthYearPickerOpen && (
+                                <div className="popup-datepicker-reset month-year-picker-popup absolute z-50 top-full left-1/2 -translate-x-1/2 mt-1">
+                                    <DatePicker
+                                        inline
+                                        showMonthYearPicker={monthYearPickerView === "month"}
+                                        showYearPicker={monthYearPickerView === "year"}
+                                        selected={date}
+                                        onChange={(selected) => {
+                                            if (!selected) return;
+                                            if (monthYearPickerView === "year") {
+                                                // A year was picked from the year grid -- drop back
+                                                // into the month grid for that year instead of
+                                                // closing, so picking a month is still one more click.
+                                                changeYear(selected.getFullYear());
+                                                setMonthYearPickerView("month");
+                                                return;
+                                            }
+                                            changeYear(selected.getFullYear());
+                                            changeMonth(selected.getMonth());
+                                            setIsMonthYearPickerOpen(false);
+                                        }}
+                                        renderCustomHeader={({
+                                            monthDate,
+                                            decreaseYear,
+                                            increaseYear,
+                                            prevYearButtonDisabled,
+                                            nextYearButtonDisabled,
+                                            visibleYearsRange,
+                                        }) => (
+                                            <div className="month-year-picker-header flex items-center justify-between px-2 py-2">
+                                                <button
+                                                    type="button"
+                                                    onClick={decreaseYear}
+                                                    disabled={prevYearButtonDisabled}
+                                                    className="month-year-picker-nav-year"
+                                                >
+                                                    <ChevronLeft className="w-4 h-4" />
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() =>
+                                                        setMonthYearPickerView((prev) =>
+                                                            prev === "month" ? "year" : "month"
+                                                        )
+                                                    }
+                                                    className="month-year-picker-year-toggle"
+                                                >
+                                                    {monthYearPickerView === "year" && visibleYearsRange
+                                                        ? `${visibleYearsRange.startYear} - ${visibleYearsRange.endYear}`
+                                                        : monthDate.getFullYear()}
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={increaseYear}
+                                                    disabled={nextYearButtonDisabled}
+                                                    className="month-year-picker-nav-year"
+                                                >
+                                                    <ChevronRight className="w-4 h-4" />
+                                                </button>
+                                            </div>
+                                        )}
+                                    />
+                                </div>
+                            )}
+                        </div>
                         <Button
                             variant="subtle"
                             onClick={increaseMonth}

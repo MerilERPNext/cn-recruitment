@@ -2281,8 +2281,7 @@ const RequisitionFormV2 = () => {
                 <div className="alert alert-info mt-4 mb-2 rounded-md">
                   <i className="fa fa-info-circle mr-2" />
                   <strong>{String(formData.salary_timeframe)}</strong> salary
-                  must be {describeSalaryLimit(activeSalaryLimit)}
-                  {formData.salary_currency ? ` ${formData.salary_currency}` : ""}.
+                  must be {describeSalaryLimit(activeSalaryLimit)}.
                 </div>
               )}
               {/position/i.test(steps[currentTab] || "") &&

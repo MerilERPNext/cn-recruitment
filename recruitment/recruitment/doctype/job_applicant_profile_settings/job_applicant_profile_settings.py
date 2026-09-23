@@ -172,36 +172,36 @@ def iter_profile_fields(meta):
 	(`_auto_sync`) and section-based field placement (field_flow_sync) read from
 	it, so "which section a field belongs to" can never be computed two ways.
 
-	Skips exactly what the config never lists: layout fieldtypes, hidden/read-only
-	fields, and everything inside a hidden section.
+	Eligibility is a property of the FIELD, never of its container: a field is
+	listed unless it is a layout fieldtype, or is itself hidden or read-only.
+
+	Section and tab visibility are deliberately NOT considered. They describe the
+	desk form, while this config drives the candidate-facing application form --
+	two different surfaces. Honouring them dropped real input fields (Cover
+	Letter, Current/Expected CTC, the salary range) from the config with no way
+	for an admin to enable them, purely because someone had tidied the desk
+	layout. It was inconsistent as well: a hidden Section Break dropped its
+	fields, a hidden Tab Break did not.
+
+	A hidden section still supplies its label, so the fields inside it keep the
+	grouping they had rather than falling back to the tab or "General".
 	"""
 	current_tab = ""
 	current_section = ""
-	section_skipped = False
 	for f in meta.fields:
 		if f.fieldtype == "Tab Break":
 			# New tab: its label is the grouping fallback for fields sitting
 			# directly under it or under unlabelled sections.
 			current_tab = (f.label or "").strip()
 			current_section = ""
-			section_skipped = False
 			continue
 		if f.fieldtype == "Section Break":
-			if f.hidden:
-				# Hidden section: drop it and everything inside.
-				current_section = ""
-				section_skipped = True
-			elif f.label and f.label.strip():
+			# Unlabelled (e.g. a mirrored layout section): keep the previous
+			# labelled section rather than discarding its fields into "General".
+			if f.label and f.label.strip():
 				current_section = f.label.strip()
-				section_skipped = False
-			else:
-				# Visible but unlabelled (e.g. a mirrored layout section): keep the
-				# previous labelled section rather than discarding its fields.
-				section_skipped = False
 			continue
 
-		if section_skipped:
-			continue
 		if f.fieldtype in NON_DATA_FIELDTYPES:
 			continue
 		if not f.fieldname or f.hidden or f.read_only:
@@ -372,7 +372,6 @@ class JobApplicantProfileSettings(Document):
 		exactly as configured.
 
 		A field is kept OUT of the table only when it is:
-		  - inside a hidden section (the whole section is dropped)
 		  - hidden / read-only / no fieldname / a layout fieldtype
 		  - under an EXCLUDED_TABS tab (e.g. "Feedback": PIP, induction/onboarding
 		    feedback, goals) — internal process data, never an application field

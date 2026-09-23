@@ -239,7 +239,6 @@ const AttendanceLayoutContent: React.FC = () => {
     currentPathSegment === "my-overtime-requests" ||
     currentPathSegment === "team-overtime-requests";
 
-  console.log(isOvertimePage && plannedOvertimAllowed && canRequestOvertime, "can show overtime request")
   // Actions Button Component for Second Top Bar
   const ActionsButton = () => {
     return (

@@ -115,7 +115,15 @@ def resend_welcome_email(job_offer):
         now=True,
     )
 
-    return {"status": "ok", "email": email}
+    # The offer is with the candidate again, so it is awaiting their response —
+    # a Rejected or Withdrawn offer that is re-sent is live once more. An
+    # acceptance already given is never taken back by a re-send.
+    status = offer.get("status")
+    if status != AWAITING_RESPONSE and status != "Accepted":
+        offer.db_set("status", AWAITING_RESPONSE, update_modified=False)
+        status = AWAITING_RESPONSE
+
+    return {"status": "ok", "email": email, "offer_status": status}
 
 
 @frappe.whitelist()
@@ -162,6 +170,8 @@ def create_job_offer_for_applicant(job_applicant):
 # sub-status says how far the offer itself has got, and the candidate's own reply
 # moves them on to "Accepted" (advance_on_job_offer_outcome).
 OFFER_STATUS = "Hired"
+# Job Offer status while the candidate has the offer and has not replied.
+AWAITING_RESPONSE = "Awaiting Response"
 SUB_STATUS_TO_SEND = "Offer To Be Sent"
 SUB_STATUS_SENT = "Offer Sent"
 
@@ -301,6 +311,12 @@ def send_bulk_job_offer(job_offers):
 
             # Only allow submitted job offers
             if job_offer.docstatus != 1:
+                skipped += 1
+                continue
+
+            # A withdrawn or declined letter is history — "Resend Job Offer"
+            # raises a new version instead of mailing the old one again.
+            if job_offer.status in ("Withdrawn", "Rejected"):
                 skipped += 1
                 continue
 
@@ -447,6 +463,13 @@ def send_bulk_job_offer(job_offers):
                 "email_sent_on": now()
             })
 
+            # Sending is what puts the offer in front of the candidate: Draft ->
+            # Awaiting Response. Anything else (a re-send) keeps its status.
+            if job_offer.status == "Draft":
+                job_offer.db_set("status", "Awaiting Response")
+                from recruitment.api.offer_position import sync_offer_position
+                sync_offer_position(job_offer)
+
             # ----------------------------
             # Create Communication Log
             # ----------------------------
@@ -470,6 +493,8 @@ def send_bulk_job_offer(job_offers):
             # Update Applicant
             # ----------------------------
             _mark_offer_stage(applicant.name, SUB_STATUS_SENT)
+            from recruitment.api.hiring_stage import record_offer_event
+            record_offer_event(job_offer, "Offer Sent")
 
             sent += 1
 

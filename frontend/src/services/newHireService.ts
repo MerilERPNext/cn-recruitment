@@ -115,14 +115,16 @@ export async function initiateOnboarding(
 }
 
 /**
- * Activate a pending Employee into an Active Employee code (renames PEND- into real employee series).
+ * Activate a pending Employee with the company email HR enters
+ * (renames PEND- into the real employee series).
  */
 export async function activateEmployee(
-  name: string
+  name: string,
+  companyEmail: string
 ): Promise<ActivateEmployeeResponse> {
   const res = await FrappeAPI.callMethod(
     "recruitment.api.new_hire.activate_employee",
-    { name }
+    { name, company_email: companyEmail }
   );
   return res as ActivateEmployeeResponse;
 }

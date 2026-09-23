@@ -9,14 +9,19 @@ record.
 
 Naming
 ------
-A new hire is named by Employee's own ``naming_series:`` autoname, exactly like
-any other employee — ``cn_hrms_core``'s ``before_insert`` stamps the company
-series onto ``naming_series`` and Frappe names the record from it. The employee
-code is therefore issued at intake, not at activation, and never changes;
-``activate_employee`` only flips the status.
+A pending Employee is inserted with an explicit ``PEND-#####`` name
+(``insert(set_name=...)``), which bypasses autoname — so a new hire who never
+joins does not burn a real employee code. ``activate_employee`` renames it into
+the site's real series (the one ``cn_hrms_core``'s ``before_insert`` already
+stamped onto ``naming_series``) and flips the status to Active. Records raised
+while intake used the real series keep their name; activation only flips them.
 
-Records raised before this (named out of a ``PEND-#####`` series) are still
-renamed into the real series on activation — see :func:`activate_employee`.
+Company email
+-------------
+Asked at activation, not at intake — the person has no mailbox until they are
+actually joining. It is therefore left off the intake form, and Employee's own
+``reqd`` on it (a cn_hrms_core Property Setter) is deferred for as long as the
+record has never been Active — see :func:`defer_activation_fields`.
 
 Response envelope
 -----------------
@@ -37,16 +42,26 @@ to quote instead.
 
 Lifecycle
 ---------
-``status`` stays "Pending" for the whole intake; the intake's own progress lives
-on ``custom_new_hire_stage``, so the approval matrix has something to drive that
-is not the person's employment status:
+HR fills the form and submits; the Employee is created Pending under a ``PEND-``
+code. HR then activates it, entering the company email, and it becomes Active
+under its real code. ``status`` stays "Pending" until then; the intake's own
+progress lives on ``custom_new_hire_stage``, so the approval matrix has
+something to drive that is not the person's employment status:
 
-    Draft -> Pending Approval -> Approved -> Onboarding Initiated -> Completed
-                              -> Rejected            (Cancelled before onboarding)
+    Draft -> Pending Approval -> Approved -> Completed (activated)
+                              -> Rejected            (Cancelled before activation)
+
+Activation is allowed from Pending Approval as well as Approved: an approval
+matrix — where one is configured — runs alongside, not in front of it.
+
+Step 2 (Assign & Initiate Onboarding, stage "Onboarding Initiated") is no longer
+part of the flow and nothing in the UI calls it. Its endpoints and the
+auto-initiate hook are kept intact so it can be switched back on.
 
 A New Hire Form record configures which Employee fields the form shows, in what
 order, under which tab and section, and which are mandatory. A field with no
-config row follows the Employee meta exactly.
+config row follows the Employee meta exactly. Its `initiation_fields` table does
+the same for step 2, over Employee Onboarding fields.
 """
 
 import json
@@ -55,7 +70,7 @@ from contextlib import contextmanager
 import frappe
 from frappe import _
 from frappe.custom.doctype.custom_field.custom_field import create_custom_field
-from frappe.model.naming import make_autoname
+from frappe.model.naming import make_autoname, set_new_name
 from frappe.model.rename_doc import rename_doc
 
 DOCTYPE = "Employee"
@@ -68,7 +83,7 @@ EMPLOYEE_ONBOARDING = "Employee Onboarding"
 PENDING_STATUS = "Pending"
 ACTIVE_STATUS = "Active"
 
-# Only for the legacy records raised before intake used the standard series.
+PENDING_SERIES = "PEND-.#####"
 PENDING_PREFIX = "PEND-"
 
 STAGE_FIELD = "custom_new_hire_stage"
@@ -78,6 +93,14 @@ STAGES = (
     "Onboarding Initiated", "Completed", "Rejected", "Cancelled",
 )
 EDITABLE_STAGES = frozenset({"Draft", "Rejected"})
+INITIABLE_STAGES = frozenset({"Pending Approval", "Approved"})
+# Everything a submitted intake can be in. "Onboarding Initiated" and "Completed"
+# are there for records raised while step 2 was still part of the flow.
+ACTIVATABLE_STAGES = frozenset({"Pending Approval", "Approved", "Onboarding Initiated", "Completed"})
+
+# Employee fields HR supplies at activation rather than at intake. They are kept
+# off the intake form, and their Employee-level `reqd` is deferred until then.
+ACTIVATION_FIELDS = ("company_email",)
 
 _LAYOUT_TYPES = frozenset({
     "Column Break", "Tab Break", "Section Break", "HTML", "HTML Editor",
@@ -90,7 +113,7 @@ _LAYOUT_TYPES = frozenset({
 # to the reporting-hierarchy nested set.
 _SKIP_FIELDNAMES = frozenset({
     "naming_series", "amended_from", "employee", "employee_name", "status",
-    "lft", "rgt", "old_parent", STAGE_FIELD, FORM_FIELD,
+    "lft", "rgt", "old_parent", STAGE_FIELD, FORM_FIELD, *ACTIVATION_FIELDS,
 })
 
 _FRAPPE_MANAGED = frozenset({
@@ -102,13 +125,14 @@ _FRAPPE_MANAGED = frozenset({
 _NO_EXPLICIT_ORDER = 10_000
 
 # What a blank form starts with. Employee marks `first_name`, `gender`,
-# `date_of_joining`, `company` and `company_email` mandatory, and this site
+# `date_of_joining` and `company` mandatory (`company_email` too, but that one is
+# asked at activation — see ACTIVATION_FIELDS), and this site
 # additionally refuses an Employee with no Department or Designation through a
 # custom validation that `reqd` does not expose — so a form built without them
 # looks fine and then fails at the far end.
 _CORE_FORM_FIELDS = (
     "first_name", "middle_name", "last_name", "gender", "date_of_birth",
-    "personal_email", "cell_number", "company_email",
+    "personal_email", "cell_number",
     "company", "department", "designation", "employment_type", "grade",
     "branch", "reports_to", "date_of_joining", "ctc",
 )
@@ -197,6 +221,20 @@ def _fail(message, title):
     """
     log = frappe.log_error(frappe.get_traceback(), title)
     return _err(message, http=500, data={"error_log": getattr(log, "name", None)})
+
+
+def _name_error_message(exc):
+    """A readable message for `frappe.NameError`.
+
+    It is not a ValidationError, so without this it fell through to the 500
+    branch — an invalid name or a clash with an existing record (an email
+    already in use) is the caller's to fix, not a server fault. A duplicate
+    raised by the insert itself carries (doctype, name, db error) rather than
+    a message, so that one is put into words here.
+    """
+    if isinstance(exc, frappe.DuplicateEntryError) and len(exc.args) >= 2:
+        return _("{0} {1} already exists.").format(_(exc.args[0]), exc.args[1])
+    return frappe.utils.strip_html(str(exc)) or _("Invalid name.")
 
 
 def _has_native_commit_guard():
@@ -631,6 +669,8 @@ def get_new_hire_form_config(form=None, name=None, company=None, employment_type
                    _build_form_config(form_doc, doc=doc, employment_type=employment_type))
     except frappe.PermissionError as exc:
         return _err(str(exc) or _("Not permitted."), http=403)
+    except frappe.NameError as exc:
+        return _err(_name_error_message(exc), http=400)
     except frappe.ValidationError as exc:
         return _err(str(exc), http=400)
     except Exception:
@@ -857,11 +897,11 @@ def _validate_mandatory(doc, form_doc, employment_type=None, config=None):
 def create_new_hire(payload=None, form=None, submit=1):
     """Create the new hire as a pending Employee.
 
-    Named by Employee's own autoname, so the code matches every other employee
-    from the moment the intake is raised. `status` is Pending, which is what keeps
-    the record out of payroll and attendance (both filter `status == "Active"`)
-    and out of the role grants in `cn_hrms_core`, which fire on the transition TO
-    Active — the status carries the whole separation, not the name.
+    Named out of the `PEND-` series via `insert(set_name=...)`, which bypasses
+    autoname — so no real employee code is consumed until activation. `status` is
+    Pending, which keeps the record out of payroll and attendance (both filter
+    `status == "Active"`) and out of the role grants in `cn_hrms_core`, which
+    fire on the transition TO Active.
 
     `submit=1` (default) sets the stage to Pending Approval, which is what the
     approval matrix's Flow Config fires on. Nothing here starts it.
@@ -892,7 +932,7 @@ def create_new_hire(payload=None, form=None, submit=1):
             )
 
         with _atomic("new_hire_create"):
-            doc.insert()
+            doc.insert(set_name=make_autoname(PENDING_SERIES))
 
         return _ok(_("New hire {0} created.").format(doc.name), {
             "name": doc.name,
@@ -903,6 +943,8 @@ def create_new_hire(payload=None, form=None, submit=1):
         }, http=201)
     except frappe.PermissionError as exc:
         return _err(str(exc) or _("Not permitted."), http=403)
+    except frappe.NameError as exc:
+        return _err(_name_error_message(exc), http=400)
     except frappe.ValidationError as exc:
         return _err(str(exc), http=400)
     except Exception:
@@ -964,6 +1006,8 @@ def update_new_hire(name=None, payload=None, submit=0):
         })
     except frappe.PermissionError as exc:
         return _err(str(exc) or _("Not permitted."), http=403)
+    except frappe.NameError as exc:
+        return _err(_name_error_message(exc), http=400)
     except frappe.ValidationError as exc:
         return _err(str(exc), http=400)
     except Exception:
@@ -978,7 +1022,7 @@ _DEFAULT_LIST_COLUMNS = (
     "name", "employee_name", "designation", "department", "company",
     "employment_type", "date_of_joining", STAGE_FIELD,
 )
-_LIST_COLUMN_LABEL_OVERRIDES = {"name": "Employee ID"}
+_LIST_COLUMN_LABEL_OVERRIDES = {"name": "Pending ID"}
 _SORTABLE = frozenset({
     "creation", "modified", "name", "employee_name", "date_of_joining",
     "company", "designation", "department", STAGE_FIELD,
@@ -1011,7 +1055,14 @@ def _sanitize_order_by(order_by):
 
 
 def _can_initiate(row):
-    return bool(row.get(STAGE_FIELD) == "Approved")
+    return row.get(STAGE_FIELD) in INITIABLE_STAGES
+
+
+def _can_activate(row):
+    """Pending and submitted. A blank stage is a Pending Employee raised outside
+    intake (the desk, an import) — nothing to wait for, so it may be activated."""
+    stage = row.get(STAGE_FIELD)
+    return row.get("status") == PENDING_STATUS and (not stage or stage in ACTIVATABLE_STAGES)
 
 
 @frappe.whitelist()
@@ -1021,8 +1072,9 @@ def get_new_hire(name=None, filters=None, stage=None, search=None,
 
     The list is always scoped to `status = "Pending"`, so it can never show the
     site's real staff. Pass `stage="Approved"` for the ones waiting to be
-    onboarded. Every row carries `can_initiate_onboarding`, so the button's
-    enabled state is a server decision.
+    onboarded. Every row carries `can_activate` (and the dormant
+    `can_initiate_onboarding`), so the button's enabled state is a server
+    decision.
     """
     try:
         frappe.has_permission(DOCTYPE, "read", throw=True)
@@ -1038,6 +1090,7 @@ def get_new_hire(name=None, filters=None, stage=None, search=None,
             doc.apply_fieldlevel_read_permissions()
             data = doc.as_dict()
             data["can_initiate_onboarding"] = _can_initiate(data)
+            data["can_activate"] = _can_activate(data)
             return _ok(_("New hire fetched."), data)
 
         query_filters = {}
@@ -1065,7 +1118,9 @@ def get_new_hire(name=None, filters=None, stage=None, search=None,
         query_filters["status"] = PENDING_STATUS
 
         columns = _list_columns()
-        fields = list({c["fieldname"] for c in columns} | {"name", STAGE_FIELD, "status"})
+        # company_email rides along so the activation dialog opens prefilled.
+        fields = list({c["fieldname"] for c in columns}
+                      | {"name", STAGE_FIELD, "status", "company_email"})
 
         rows = frappe.get_list(
             DOCTYPE, filters=query_filters, fields=fields,
@@ -1075,6 +1130,7 @@ def get_new_hire(name=None, filters=None, stage=None, search=None,
         )
         for row in rows:
             row["can_initiate_onboarding"] = _can_initiate(row)
+            row["can_activate"] = _can_activate(row)
 
         # Counted through get_list so the total honours the same permissions and
         # filters as the page above — a total larger than the rows the caller can
@@ -1246,10 +1302,482 @@ def _matrix_ladder():
 
 
 # ---------------------------------------------------------------------------
-# Handoff and activation
+# Handoff (step 2 — Assign & Initiate Onboarding) and activation
 # ---------------------------------------------------------------------------
+#
+# The New Hire Form's `initiation_fields` table picks which Employee Onboarding
+# fields HR fills before the onboarding is created; the rest of the onboarding is
+# the candidate's, on the portal. An empty table means the standard set below.
 
-def _create_job_applicant(doc, form_doc):
+PORTAL_FORM_FIELD = "custom_onboarding_portal_form"
+INITIATION_TAB = "Initiate Onboarding"
+
+_DEFAULT_INITIATION_FIELDS = (
+    PORTAL_FORM_FIELD, "boarding_begins_on", "employee_onboarding_template",
+    "custom_onboarding_spoc", "custom_manager", "custom_onboarding_buddy",
+)
+
+# Onboarding fields this module sets itself. Offering them to HR would let a
+# step-2 value point the onboarding at a different person or applicant.
+_INITIATION_SERVER_FIELDS = frozenset({
+    "job_applicant", "job_offer", "employee", "employee_name", "company",
+    "boarding_status", "project", "amended_from", "activities", "naming_series",
+    "custom_direct_hire", "custom_candidate_portal_fields",
+    "custom_field_approval_json",
+})
+
+# Same value on both doctypes under the same name: prefilled from the pending
+# Employee so HR is not asked for what intake already captured.
+_EMPLOYEE_PREFILL = ("date_of_joining", "department", "designation", "holiday_list")
+
+
+def initiation_field_problem(fieldname):
+    """Why `fieldname` cannot be a step-2 field, or None when it can."""
+    df = frappe.get_meta(EMPLOYEE_ONBOARDING).get_field(fieldname)
+    if not df:
+        return _("Employee Onboarding has no field called {0}.").format(frappe.bold(fieldname))
+    if fieldname in _INITIATION_SERVER_FIELDS or fieldname in _FRAPPE_MANAGED:
+        return _("{0} is set by the system when onboarding is initiated.").format(frappe.bold(fieldname))
+    if df.fieldtype in _LAYOUT_TYPES:
+        return _("{0} is a layout element, not a field.").format(frappe.bold(fieldname))
+    if df.fieldtype == "Table":
+        # Table MultiSelect is fine — it renders as a multi-pick. A full grid is
+        # onboarding data, which belongs to the candidate's portal form.
+        return _("{0} is a table; only Table MultiSelect fields can be used here.").format(
+            frappe.bold(fieldname))
+    return None
+
+
+def _initiation_rows(form_doc):
+    """[(fieldname, row-or-None)] in display order. An empty table falls back to
+    the standard set; the portal form is always present, because without it the
+    candidate has no form to open."""
+    meta = frappe.get_meta(EMPLOYEE_ONBOARDING)
+    rows = [r for r in (form_doc.get("initiation_fields") or []) if (r.fieldname or "").strip()]
+    if rows:
+        rows = sorted(rows, key=lambda r: (_row_order(r), r.idx))
+        picked = [(r.fieldname.strip(), r) for r in rows]
+    else:
+        picked = [(f, None) for f in _DEFAULT_INITIATION_FIELDS]
+
+    picked = [(f, r) for f, r in picked if meta.has_field(f) and not initiation_field_problem(f)]
+    if meta.has_field(PORTAL_FORM_FIELD) and PORTAL_FORM_FIELD not in {f for f, _row in picked}:
+        picked.insert(0, (PORTAL_FORM_FIELD, None))
+    return picked
+
+
+def _multiselect_link(child_doctype):
+    """(fieldname, linked doctype) of the Link a Table MultiSelect row holds."""
+    for df in frappe.get_meta(child_doctype).fields:
+        if df.fieldtype == "Link":
+            return df.fieldname, df.options
+    return None, None
+
+
+def _multiselect_ids(value, child_doctype):
+    """A Table MultiSelect value as a plain list of linked ids, whether it
+    arrives as child rows, dicts, a list of ids or a comma-separated string."""
+    if not value:
+        return []
+    if isinstance(value, str):
+        return [v.strip() for v in value.split(",") if v.strip()]
+    link_field = _multiselect_link(child_doctype)[0]
+    ids = []
+    for item in value:
+        item = item.get(link_field) if hasattr(item, "get") else item
+        if item:
+            ids.append(item)
+    return ids
+
+
+def _default_portal_form(form_doc):
+    return (form_doc.get("onboarding_portal_form")
+            or frappe.db.get_value("Onboarding Portal Forms", {"default": 1}, "name"))
+
+
+def _initiation_prefill(fieldname, doc, form_doc, onboarding):
+    """What the step-2 field opens with: an existing onboarding's value, then the
+    pending Employee's, then the built-in default for the handful that have one."""
+    if onboarding is not None and onboarding.get(fieldname):
+        return onboarding.get(fieldname)
+    if fieldname in _EMPLOYEE_PREFILL and doc.get(fieldname):
+        return doc.get(fieldname)
+    if fieldname == PORTAL_FORM_FIELD:
+        return _default_portal_form(form_doc)
+    if fieldname == "boarding_begins_on":
+        return frappe.utils.today()
+    if fieldname == "employee_onboarding_template":
+        from recruitment.api.candidate_portal import _default_onboarding_template
+        return _default_onboarding_template()
+    return None
+
+
+def _build_initiation_config(form_doc, doc, onboarding=None):
+    """Step-2 render config, in the same tabs -> sections -> fields shape as the
+    intake form so one renderer draws both. Always a single tab."""
+    meta = frappe.get_meta(EMPLOYEE_ONBOARDING)
+
+    section_of, current = {}, ""
+    for df in meta.fields:
+        if df.fieldtype in ("Section Break", "Tab Break"):
+            current = (df.label or "").strip() or current
+        elif df.fieldname:
+            section_of[df.fieldname] = current
+
+    sections, order = {}, []
+    for position, (fieldname, row) in enumerate(_initiation_rows(form_doc), start=1):
+        df = meta.get_field(fieldname)
+        is_portal_form = fieldname == PORTAL_FORM_FIELD
+        entry = {
+            "fieldname": fieldname,
+            "label": (row.get("label_override") if row else "") or (df.label or fieldname).strip(),
+            "fieldtype": df.fieldtype,
+            "options": df.options or "",
+            "is_mandatory": 1 if is_portal_form else _three_state(
+                row.get("mandatory_override") if row else None, df.reqd, "Required", "Optional"),
+            "read_only": 0 if is_portal_form else _three_state(
+                row.get("read_only_override") if row else None, df.read_only, "Read Only", "Editable"),
+            "depends_on": df.get("depends_on") or "",
+            "mandatory_depends_on": df.get("mandatory_depends_on") or "",
+            "default": "",
+            "length": df.get("length") or 0,
+            "description": df.get("description") or "",
+            "order": position,
+        }
+        value = _initiation_prefill(fieldname, doc, form_doc, onboarding)
+        if value in (None, "", []) and row and row.get("default_value"):
+            value = row.default_value
+        if df.fieldtype == "Table MultiSelect":
+            # The renderer draws a multi-pick over the doctype the rows link to.
+            entry["child_doctype"] = df.options
+            entry["options"] = _multiselect_link(df.options)[1] or ""
+            value = _multiselect_ids(value, df.options)
+        entry["value"] = value
+
+        section = (row.get("section_override") if row else "") or section_of.get(fieldname, "")
+        if section not in sections:
+            sections[section] = []
+            order.append(section)
+        sections[section].append(entry)
+
+    return {
+        "doctype": EMPLOYEE_ONBOARDING,
+        "form": form_doc.name,
+        "employee": doc.name,
+        "employee_name": doc.employee_name,
+        "email": doc.get("personal_email") or doc.get("company_email"),
+        "send_portal_invite": 1 if form_doc.get("send_portal_invite") else 0,
+        "tabs": [{"tab": INITIATION_TAB,
+                  "sections": [{"section": s, "fields": sections[s]} for s in order]}],
+    }
+
+
+def _config_fields(config):
+    """Every field of a built config, in display order."""
+    for tab in config["tabs"]:
+        for section in tab["sections"]:
+            yield from section["fields"]
+
+
+def _existing_ids(doctype, ids):
+    """The subset of `ids` that exist as `doctype` records — one query, however
+    long the list a client sends."""
+    if not ids:
+        return set()
+    return set(frappe.get_all(doctype, filters={"name": ("in", list(ids))}, pluck="name"))
+
+
+def _apply_initiation_payload(onboarding, payload, config):
+    """Write the step-2 values HR may set onto the new onboarding.
+
+    Mirrors `_apply_payload`: only fields the config shows and leaves editable are
+    written, anything else is ignored, and a Link that no longer resolves is
+    dropped rather than failing the whole initiation.
+    """
+    fields = {f["fieldname"]: f for f in _config_fields(config)}
+    ignored, dropped = [], []
+
+    for fieldname, value in (payload or {}).items():
+        field = fields.get(fieldname)
+        if not field or field["read_only"]:
+            ignored.append(fieldname)
+            continue
+        df = onboarding.meta.get_field(fieldname)
+
+        if df.fieldtype == "Table MultiSelect":
+            link_field, linked = _multiselect_link(df.options)
+            ids = list(dict.fromkeys(_multiselect_ids(value, df.options)))
+            valid = _existing_ids(linked, ids) if linked else set(ids)
+            if len(valid) < len(ids):
+                dropped.append(fieldname)
+            onboarding.set(fieldname, [{link_field: item} for item in ids if item in valid])
+            continue
+
+        if df.fieldtype == "Link" and value and not frappe.db.exists(df.options, value):
+            dropped.append(fieldname)
+            frappe.logger().info(
+                "New Hire: dropping invalid onboarding link {0}={1!r} (no such {2})".format(
+                    fieldname, str(value)[:80], df.options))
+            continue
+        onboarding.set(fieldname, value)
+
+    return {"ignored_fields": ignored, "dropped_links": dropped}
+
+
+def _apply_initiation_defaults(onboarding, config):
+    """Fill every step-2 field still blank with what the screen would have
+    opened with — the auto-initiate path has no screen, and HR may post a
+    partial payload."""
+    for field in _config_fields(config):
+        if onboarding.get(field["fieldname"]) or field["value"] in (None, "", []):
+            continue
+        if field["fieldtype"] == "Table MultiSelect":
+            link_field = _multiselect_link(field["child_doctype"])[0]
+            for item in field["value"]:
+                onboarding.append(field["fieldname"], {link_field: item})
+        else:
+            onboarding.set(field["fieldname"], field["value"])
+
+
+def _validate_initiation_mandatory(onboarding, config):
+    missing = [
+        f["label"]
+        for f in _config_fields(config)
+        if f["is_mandatory"] and not f["read_only"]
+        and onboarding.get(f["fieldname"]) in (None, "", [])
+    ]
+    if missing:
+        frappe.throw(_("Required: {0}").format(", ".join(missing)),
+                     title=_("Missing mandatory fields"))
+
+
+# Step-2 configuration — the API over New Hire Form's `initiation_fields`,
+# for a settings screen that is not the desk form.
+
+_INITIATION_ROW_FIELDS = (
+    "fieldname", "label_override", "mandatory_override", "read_only_override",
+    "section_override", "order", "default_value",
+)
+_INITIATION_SETTINGS = ("send_portal_invite", "portal_invite_template", "onboarding_portal_form")
+
+
+def _initiation_settings(form_doc):
+    """What a settings screen shows for one form's step 2: the saved rows, the
+    form-level switches, and what HR actually gets (`effective_fields` — the
+    standard set when no rows are saved, the portal form always included)."""
+    return {
+        "form": form_doc.name,
+        "uses_default_fields": not any(
+            (r.fieldname or "").strip() for r in form_doc.get("initiation_fields") or []),
+        "initiation_fields": [
+            {k: r.get(k) for k in _INITIATION_ROW_FIELDS}
+            for r in sorted(form_doc.get("initiation_fields") or [],
+                            key=lambda r: (_row_order(r), r.idx))
+        ],
+        "effective_fields": [f for f, _row in _initiation_rows(form_doc)],
+        **{k: form_doc.get(k) for k in _INITIATION_SETTINGS},
+    }
+
+
+@frappe.whitelist()
+def get_onboarding_field_catalog(form=None, search=None):
+    """Every Employee Onboarding field step 2 can use, grouped the way Employee
+    Onboarding groups them, each marked `on_form` when the form already has it.
+
+    Fields the server sets itself, layout elements and full tables are left
+    out — the same rule `save_initiation_fields` enforces.
+    """
+    try:
+        frappe.has_permission(FORM_DOCTYPE, "read", throw=True)
+        form_doc = resolve_form(form=form)
+        placed = set(f for f, _row in _initiation_rows(form_doc)) if form_doc else set()
+        needle = (search or "").strip().lower()
+
+        groups, index, total = [], {}, 0
+        current_tab, current_section = "", ""
+        for df in frappe.get_meta(EMPLOYEE_ONBOARDING).fields:
+            if df.fieldtype == "Tab Break":
+                current_tab, current_section = (df.label or "").strip(), ""
+                continue
+            if df.fieldtype == "Section Break":
+                current_section = (df.label or "").strip()
+                continue
+            if not df.fieldname or initiation_field_problem(df.fieldname):
+                continue
+            if needle and needle not in df.fieldname.lower() and needle not in (df.label or "").lower():
+                continue
+
+            key = (current_tab, current_section)
+            if key not in index:
+                index[key] = len(groups)
+                groups.append({"tab": current_tab, "section": current_section, "fields": []})
+            groups[index[key]]["fields"].append({
+                "fieldname": df.fieldname,
+                "label": (df.label or df.fieldname).strip(),
+                "fieldtype": df.fieldtype,
+                "options": df.options or "",
+                "reqd": df.reqd or 0,
+                "read_only": 1 if df.read_only else 0,
+                "on_form": df.fieldname in placed,
+                "locked": df.fieldname == PORTAL_FORM_FIELD,
+            })
+            total += 1
+
+        return _ok(_("Onboarding field catalogue fetched."), {
+            "doctype": EMPLOYEE_ONBOARDING,
+            "form": form_doc.name if form_doc else None,
+            "groups": groups,
+            "total": total,
+        })
+    except frappe.PermissionError as exc:
+        return _err(str(exc) or _("Not permitted."), http=403)
+    except frappe.NameError as exc:
+        return _err(_name_error_message(exc), http=400)
+    except frappe.ValidationError as exc:
+        return _err(str(exc), http=400)
+    except Exception:
+        return _fail(_("The onboarding field catalogue could not be read."),
+                     "get_onboarding_field_catalog failed")
+
+
+@frappe.whitelist()
+def get_initiation_fields(form=None):
+    """The saved step-2 configuration of one New Hire Form (the default when
+    `form` is not given)."""
+    try:
+        frappe.has_permission(FORM_DOCTYPE, "read", throw=True)
+        form_doc = resolve_form(form=form)
+        if not form_doc:
+            return _err(_("No New Hire Form is configured. Create one and mark it default."), http=412)
+        return _ok(_("Initiation fields fetched."), _initiation_settings(form_doc))
+    except frappe.PermissionError as exc:
+        return _err(str(exc) or _("Not permitted."), http=403)
+    except frappe.NameError as exc:
+        return _err(_name_error_message(exc), http=400)
+    except frappe.ValidationError as exc:
+        return _err(str(exc), http=400)
+    except Exception:
+        return _fail(_("The initiation fields could not be read."), "get_initiation_fields failed")
+
+
+@frappe.whitelist()
+def save_initiation_fields(form=None, fields=None, settings=None):
+    """Replace a New Hire Form's step-2 configuration.
+
+    `fields` is the complete list, in display order — rows not in it are
+    removed, and `order` is taken from list position when a row does not give
+    one. Each entry is a fieldname or an object with any of: fieldname,
+    label_override, mandatory_override (Default/Required/Optional),
+    read_only_override (Default/Read Only/Editable), section_override,
+    order, default_value. Pass `fields: []` to fall back to the standard set.
+    Omit `fields` to change only `settings`.
+
+    `settings` optionally sets send_portal_invite, portal_invite_template and
+    onboarding_portal_form. Validation is the form's own, so a bad fieldname
+    comes back as a 400 naming the row.
+    """
+    try:
+        frappe.has_permission(FORM_DOCTYPE, "write", throw=True)
+        form_doc = resolve_form(form=form)
+        if not form_doc:
+            return _err(_("No New Hire Form is configured. Create one and mark it default."), http=412)
+        form_doc = frappe.get_doc(FORM_DOCTYPE, form_doc.name)
+        form_doc.check_permission("write")
+
+        if isinstance(fields, str):
+            try:
+                fields = json.loads(fields) if fields.strip() else None
+            except (TypeError, ValueError):
+                return _err(_("`fields` must be valid JSON."))
+        if fields is not None and not isinstance(fields, list):
+            return _err(_("`fields` must be a list."))
+
+        settings = _coerce_payload(settings) if settings not in (None, "") else {}
+        unknown = set(settings) - set(_INITIATION_SETTINGS)
+        if unknown:
+            return _err(_("Unknown setting(s): {0}").format(", ".join(sorted(unknown))))
+
+        if fields is not None:
+            form_doc.set("initiation_fields", [])
+            for position, entry in enumerate(fields, start=1):
+                row = {"fieldname": entry} if isinstance(entry, str) else entry
+                if not isinstance(row, dict) or not (row.get("fieldname") or "").strip():
+                    return _err(_("Entry {0} has no fieldname.").format(position))
+                row = {k: row.get(k) for k in _INITIATION_ROW_FIELDS if row.get(k) is not None}
+                row["fieldname"] = row["fieldname"].strip()
+                row.setdefault("order", position)
+                form_doc.append("initiation_fields", row)
+
+        for key, value in settings.items():
+            form_doc.set(key, value)
+
+        with _atomic("new_hire_save_initiation"):
+            form_doc.save()
+
+        return _ok(_("Initiation fields saved."), _initiation_settings(form_doc))
+    except frappe.PermissionError as exc:
+        return _err(str(exc) or _("Not permitted."), http=403)
+    except frappe.NameError as exc:
+        return _err(_name_error_message(exc), http=400)
+    except frappe.ValidationError as exc:
+        return _err(frappe.utils.strip_html(str(exc)), http=400)
+    except Exception:
+        return _fail(_("The initiation fields could not be saved."), "save_initiation_fields failed")
+
+
+def _existing_onboarding(name, for_update=False):
+    return frappe.db.get_value(
+        EMPLOYEE_ONBOARDING, {"employee": name, "docstatus": ("<", 2)},
+        ["name", "job_applicant"], as_dict=True, for_update=for_update)
+
+
+@frappe.whitelist()
+def get_onboarding_initiation_config(name=None):
+    """Render config for step 2 — the fields HR fills before onboarding starts.
+
+    Every field carries its prefilled `value`. `can_initiate` says whether the
+    Assign & Initiate button should be live; when onboarding already exists,
+    `employee_onboarding` names it and the values are read back from it.
+    """
+    try:
+        if not name:
+            return _err(_("Employee is required."))
+        if not frappe.db.exists(DOCTYPE, name):
+            return _err(_("Employee not found: {0}").format(name), http=404)
+
+        doc = frappe.get_doc(DOCTYPE, name)
+        doc.check_permission("read")
+
+        form_doc = resolve_form(form=doc.get(FORM_FIELD))
+        if not form_doc:
+            return _err(_("The form this new hire was raised on no longer exists."), http=412)
+
+        existing = _existing_onboarding(name)
+        # Its values are only echoed back to someone who may read it; anyone
+        # else still learns that it exists, and sees the prefill instead.
+        onboarding = None
+        if existing and frappe.has_permission(EMPLOYEE_ONBOARDING, "read", doc=existing.name):
+            onboarding = frappe.get_doc(EMPLOYEE_ONBOARDING, existing.name)
+
+        data = _build_initiation_config(form_doc, doc, onboarding)
+        data.update({
+            "stage": doc.get(STAGE_FIELD),
+            "can_initiate": not existing and _can_initiate(doc),
+            "employee_onboarding": existing.name if existing else None,
+        })
+        return _ok(_("Initiation configuration fetched."), data)
+    except frappe.PermissionError as exc:
+        return _err(str(exc) or _("Not permitted."), http=403)
+    except frappe.NameError as exc:
+        return _err(_name_error_message(exc), http=400)
+    except frappe.ValidationError as exc:
+        return _err(str(exc), http=400)
+    except Exception:
+        return _fail(_("The initiation form could not be built."),
+                     "get_onboarding_initiation_config failed")
+
+
+def _create_job_applicant(doc, portal_form):
     """The Job Applicant the onboarding hangs off.
 
     Not paperwork: the candidate portal locates the onboarding by
@@ -1264,23 +1792,110 @@ def _create_job_applicant(doc, form_doc):
     applicant.status = "Accepted"
     if applicant.meta.has_field("phone_number") and doc.get("cell_number"):
         applicant.phone_number = doc.cell_number
-
-    portal_form = (form_doc.get("onboarding_portal_form")
-                   or frappe.db.get_value("Onboarding Portal Forms", {"default": 1}, "name"))
-    if portal_form and applicant.meta.has_field("custom_onboarding_portal_form"):
-        applicant.custom_onboarding_portal_form = portal_form
+    if portal_form and applicant.meta.has_field(PORTAL_FORM_FIELD):
+        applicant.set(PORTAL_FORM_FIELD, portal_form)
 
     applicant.insert(ignore_permissions=True)
     return applicant
 
 
+def _link_applicant_to_onboarding(applicant, onboarding):
+    """The same back-links the recruitment path leaves, so screens that start
+    from the applicant (pre-onboarding status, the portal) find this one too."""
+    for fieldname, value in (
+        ("custom_pre_onboarding_employee_onboarding", onboarding.name),
+        ("custom_pre_onboarding_status", "Onboarding Created"),
+        ("custom_pre_onboarding_released_at", frappe.utils.now_datetime()),
+    ):
+        if applicant.meta.has_field(fieldname):
+            applicant.db_set(fieldname, value, update_modified=False)
+
+
+def _portal_url(applicant, onboarding):
+    """Where the invite points: the candidate frontend's onboarding page — the
+    same redirect the Action Center item carries."""
+    from recruitment.api.action_center import build_onboarding_redirect
+
+    try:
+        base = frappe.db.get_single_value("Campus Settings", "candidate_portal_url")
+    except Exception:
+        base = None
+    base = (base or frappe.utils.get_url()).rstrip("/")
+    return base + build_onboarding_redirect(applicant.name, onboarding.name)
+
+
+_FALLBACK_INVITE_SUBJECT = "Complete your onboarding at {company}"
+_FALLBACK_INVITE_MESSAGE = """<p>Hi {{ applicant_name }},</p>
+<p>Welcome aboard! Your onboarding has been initiated. Please sign in to the
+candidate portal with this email address and complete your onboarding form.</p>
+<p><a href="{{ portal_url }}">{{ portal_url }}</a></p>
+<p>If this is your first time, choose <b>Activate account</b> and verify the
+one-time code we email you to set your password.</p>
+<p>Regards,<br>{{ company }}</p>"""
+
+
+def _send_portal_invite(applicant, onboarding, doc, form_doc):
+    """Give the candidate a way in: provision their portal login and email them.
+
+    Returns a warning for the response, or None. Never raises — the onboarding
+    exists and the Action Center item is there whatever happens to one email,
+    so a mail problem must not roll the initiation back.
+    """
+    email = (applicant.email_id or "").strip()
+    if not email:
+        return _("No email on the new hire, so no portal invite was sent.")
+    try:
+        from recruitment.api.candidate_auth import ensure_candidate_for_invite
+        from recruitment.recruitment.communication_log import sendmail_with_log
+
+        ensure_candidate_for_invite(
+            email, full_name=doc.employee_name, mobile_no=doc.get("cell_number"),
+            job_applicant=applicant.name, candidate_source="New Hire",
+        )
+
+        # Rendered into HTML, and the name is whatever intake typed — escape
+        # it so a name cannot carry markup into the email.
+        escape = frappe.utils.escape_html
+        context = {
+            "applicant_name": escape(doc.employee_name or ""),
+            "employee": escape(doc.name),
+            "employee_onboarding": escape(onboarding.name),
+            "portal_url": escape(_portal_url(applicant, onboarding)),
+            "company": escape(doc.company or ""),
+        }
+        template = form_doc.get("portal_invite_template")
+        if template and frappe.db.exists("Email Template", template):
+            from frappe.email.doctype.email_template.email_template import get_email_template
+            rendered = get_email_template(template, context)
+            subject, message = rendered.get("subject"), rendered.get("message")
+        else:
+            subject = _FALLBACK_INVITE_SUBJECT.format(company=doc.company or "")
+            message = frappe.render_template(_FALLBACK_INVITE_MESSAGE, context)
+
+        sendmail_with_log(
+            recipients=[email], subject=subject, message=message,
+            reference_doctype=EMPLOYEE_ONBOARDING, reference_name=onboarding.name,
+        )
+        return None
+    except Exception:
+        frappe.log_error(frappe.get_traceback(), f"new_hire: portal invite failed for {doc.name}")
+        return _("Onboarding was initiated, but the portal invite could not be sent. "
+                 "The candidate can still sign in with {0}.").format(email)
+
+
 @frappe.whitelist()
-def initiate_onboarding(name=None):
-    """Hand an approved pending Employee to the existing onboarding process.
+def initiate_onboarding(name=None, payload=None):
+    """Step 2: hand a pending Employee to onboarding with HR's step-2 values.
 
     Creates the Job Applicant, then the Employee Onboarding linked to BOTH the
     applicant and the pending Employee — so onboarding fills in the same record
-    that will later be activated, and `make_employee` is never needed.
+    that will later be activated, and `make_employee` is never needed. The
+    candidate gets an Action Center item pointing at the onboarding and, when
+    the form asks for it, a portal login and an invite email.
+
+    `payload` holds the step-2 fields (see `get_onboarding_initiation_config`).
+    Blank fields take their prefilled value, so calling with no payload — the
+    auto-initiate path — still produces a complete onboarding.
 
     Idempotent: an onboarding already linked to this Employee is returned as is.
     """
@@ -1292,10 +1907,19 @@ def initiate_onboarding(name=None):
 
         doc = frappe.get_doc(DOCTYPE, name)
         doc.check_permission("write")
+        # The records below are inserted with ignore_permissions, so check the
+        # caller may create an onboarding at all rather than lend them ours.
+        # Not on the auto-initiate path: that is the system acting on an
+        # approval, and the approver need not hold onboarding rights.
+        if not frappe.flags.get("new_hire_internal_call"):
+            frappe.has_permission(EMPLOYEE_ONBOARDING, "create", throw=True)
 
-        existing = frappe.db.get_value(
-            EMPLOYEE_ONBOARDING, {"employee": name, "docstatus": ("<", 2)},
-            ["name", "job_applicant"], as_dict=True)
+        # A double click sends two of these. Lock the Employee row so the second
+        # waits for the first to commit, then look for the onboarding with a
+        # locking read — a plain read would use this transaction's snapshot,
+        # taken before the wait, and miss it.
+        frappe.db.get_value(DOCTYPE, name, "name", for_update=True)
+        existing = _existing_onboarding(name, for_update=True)
         if existing:
             return _ok(_("Onboarding for {0} was already initiated.").format(name), {
                 "name": name,
@@ -1306,9 +1930,9 @@ def initiate_onboarding(name=None):
                 "already_initiated": True,
             })
 
-        if doc.get(STAGE_FIELD) != "Approved":
+        if not _can_initiate(doc):
             return _err(
-                _("{0} is {1}. Onboarding can only be initiated once the request is Approved.").format(
+                _("{0} is {1}. Onboarding can only be initiated once the new hire is submitted.").format(
                     name, doc.get(STAGE_FIELD) or doc.status),
                 http=409)
 
@@ -1316,31 +1940,46 @@ def initiate_onboarding(name=None):
         if not form_doc:
             return _err(_("The form this new hire was raised on no longer exists."), http=412)
 
-        with _atomic("new_hire_handoff"):
-            applicant = _create_job_applicant(doc, form_doc)
+        payload = _coerce_payload(payload) if payload not in (None, "") else {}
+        config = _build_initiation_config(form_doc, doc)
 
-            onboarding = frappe.new_doc(EMPLOYEE_ONBOARDING)
+        # Built and checked before anything is written: nothing below needs the
+        # database until the applicant insert.
+        onboarding = frappe.new_doc(EMPLOYEE_ONBOARDING)
+        applied = _apply_initiation_payload(onboarding, payload, config)
+        _apply_initiation_defaults(onboarding, config)
+        _validate_initiation_mandatory(onboarding, config)
+
+        portal_form = onboarding.get(PORTAL_FORM_FIELD)
+        if not portal_form:
+            return _err(_("No Onboarding Portal Form is set on {0} and none is marked default.").format(
+                form_doc.name), http=412)
+
+        with _atomic("new_hire_handoff"):
+            applicant = _create_job_applicant(doc, portal_form)
+
             onboarding.job_applicant = applicant.name
             onboarding.employee = doc.name
             onboarding.employee_name = doc.employee_name
             onboarding.company = doc.company
-            onboarding.date_of_joining = doc.date_of_joining
-            onboarding.boarding_begins_on = frappe.utils.today()
+            if not onboarding.get("date_of_joining"):
+                onboarding.date_of_joining = doc.date_of_joining
+            if not onboarding.get("boarding_begins_on"):
+                onboarding.boarding_begins_on = frappe.utils.today()
             for fieldname in ("department", "designation"):
-                if onboarding.meta.has_field(fieldname) and doc.get(fieldname):
+                if (onboarding.meta.has_field(fieldname) and doc.get(fieldname)
+                        and not onboarding.get(fieldname)):
                     onboarding.set(fieldname, doc.get(fieldname))
-            if onboarding.meta.has_field("custom_direct_hire"):
-                onboarding.custom_direct_hire = 1
-            if onboarding.meta.has_field("custom_onboarding_portal_form"):
-                onboarding.custom_onboarding_portal_form = (
-                    applicant.get("custom_onboarding_portal_form"))
+            if onboarding.meta.has_field(DIRECT_HIRE_FLAG):
+                onboarding.set(DIRECT_HIRE_FLAG, 1)
 
             # The two things a hand-built onboarding would otherwise be missing.
             # `materialize_onboarding_from_applicant` is not reusable here — it is
             # written around an applicant-first flow and re-derives the Employee — but
             # these are the parts that matter, and skipping them is not survivable:
             # an onboarding with no template carries NO activities, so the candidate
-            # and HR get a task list that is silently empty.
+            # and HR get a task list that is silently empty. Both only fill what is
+            # still blank, so HR's step-2 values win.
             from recruitment.api.candidate_portal import (
                 _apply_default_onboarding_template, _apply_onboarding_automation_fields,
             )
@@ -1348,43 +1987,108 @@ def initiate_onboarding(name=None):
             _apply_default_onboarding_template(onboarding)
 
             onboarding.insert(ignore_permissions=True)
+            _link_applicant_to_onboarding(applicant, onboarding)
+
+            # The candidate's entry point on the portal. Nothing raises it on
+            # insert — no doc event is registered for it — so do it here, as
+            # the Job Offer path does on acceptance.
+            from recruitment.api.action_center import sync_onboarding_action_item
+            sync_onboarding_action_item(onboarding)
 
             doc.db_set(STAGE_FIELD, "Onboarding Initiated", update_modified=False)
 
-        return _ok(_("Onboarding {0} initiated.").format(onboarding.name), {
+        invite_warning = None
+        if form_doc.get("send_portal_invite"):
+            invite_warning = _send_portal_invite(applicant, onboarding, doc, form_doc)
+
+        response = _ok(_("Onboarding {0} initiated.").format(onboarding.name), {
             "name": doc.name,
             "status": doc.status,
             "stage": "Onboarding Initiated",
             "job_applicant": applicant.name,
             "employee_onboarding": onboarding.name,
             "already_initiated": False,
+            "portal_invite_sent": bool(form_doc.get("send_portal_invite") and not invite_warning),
+            **applied,
         }, http=201)
+        if invite_warning:
+            response["warnings"].append(invite_warning)
+        return response
     except frappe.PermissionError as exc:
         return _err(str(exc) or _("Not permitted."), http=403)
+    except frappe.NameError as exc:
+        return _err(_name_error_message(exc), http=400)
     except frappe.ValidationError as exc:
         return _err(str(exc), http=400)
     except Exception:
         return _fail(_("Onboarding could not be initiated."), "initiate_onboarding failed")
 
 
+def _company_email_problem(email, name):
+    """Why `email` cannot be this new hire's company email, or None."""
+    # `validate_email_address` splits on commas and returns only the valid parts,
+    # so "a@x.com, junk" would pass as "a@x.com" — insist on exactly one address.
+    if "," in email or frappe.utils.validate_email_address(email) != email:
+        return _("{0} is not a valid email address.").format(email), 400
+    # Another current employee on the same address would share its login. Only
+    # people who have left (or a withdrawn intake, which is Inactive) free it up.
+    clash = frappe.db.get_value(
+        DOCTYPE,
+        {"company_email": email, "name": ("!=", name),
+         "status": ("not in", ("Left", "Inactive"))},
+        "name")
+    if clash:
+        return _("{0} is already the company email of {1}.").format(email, clash), 409
+    return None
+
+
+def _real_employee_code(doc):
+    """The code Employee would have given `doc` had it not been named `PEND-`.
+
+    Runs Frappe's own naming pipeline on a throwaway copy, so a Document Naming
+    Rule (which on this site turns "PW-" into PW30037), the controller's
+    autoname and the naming series are applied in the same order as for any
+    other insert — rebuilding the name from `naming_series` alone skips the rule
+    and issues codes in a different format from every other employee. Consumes
+    the next number, so call it inside the activation transaction.
+    """
+    probe = frappe.get_doc(doc.as_dict())
+    set_new_name(probe)
+    return probe.name
+
+
 @frappe.whitelist()
-def activate_employee(name=None):
-    """Turn a completed pending Employee into a real one.
+def activate_employee(name=None, company_email=None):
+    """Turn a pending Employee into a real one.
 
-    `status = "Active"` is the whole of it: that transition releases the
-    hierarchy role grants in `cn_hrms_core` and lets payroll and attendance see
-    the person. The employee code was issued at intake and does not change.
+    HR supplies the company email here — it is not asked at intake. Without one
+    (passed now, or already on the record) the employee is not activated.
 
-    The one exception is a record raised before intake used the standard series:
-    it still carries a `PEND-` name, so it is renamed into the real series first,
-    and only then activated — that way the role grants and every downstream hook
-    fire against the final name, leaving nothing pointing at a `PEND-` id.
+    Two steps, in this order:
+
+      1. rename out of `PEND-` into the site's real series — named exactly as
+         a fresh Employee would be (see :func:`_real_employee_code`), so the
+         code matches every other employee. Frappe's rename updates every
+         inbound link, and Employee's `after_rename` re-stamps its own
+         `employee` field. A record raised while intake used the real series
+         has nothing to rename.
+      2. `status = "Active"` with the company email, saved through the document —
+         that transition releases the hierarchy role grants in `cn_hrms_core`
+         and lets payroll and attendance see the person.
+
+    Renaming first means the role grants and every downstream hook fire against
+    the final name, so nothing is left pointing at a `PEND-` id.
     """
     try:
         if not name:
             return _err(_("Employee is required."))
-        if not frappe.db.exists(DOCTYPE, name):
-            return _err(_("Employee not found: {0}").format(name), http=404)
+        # A double click sends two of these. Lock the row so the second waits for
+        # the first to commit; the locking read also sees that commit (a plain
+        # read would use this transaction's older snapshot), and after a rename
+        # the PEND- row is simply gone.
+        if not frappe.db.get_value(DOCTYPE, name, "name", for_update=True):
+            return _err(_("Employee not found: {0}. It may have just been activated.").format(name),
+                        http=404)
 
         doc = frappe.get_doc(DOCTYPE, name)
         doc.check_permission("write")
@@ -1395,33 +2099,34 @@ def activate_employee(name=None):
                 "previous_name": None,
                 "status": doc.status,
                 "stage": doc.get(STAGE_FIELD),
+                "company_email": doc.get("company_email"),
                 "renamed": False,
             })
         if doc.status != PENDING_STATUS:
             return _err(
                 _("{0} is {1}, not Pending, so it cannot be activated.").format(name, doc.status),
                 http=409)
+        if not _can_activate(doc):
+            return _err(
+                _("{0} is {1}. Only a submitted new hire can be activated.").format(
+                    name, doc.get(STAGE_FIELD)),
+                http=409)
+
+        company_email = (company_email or doc.get("company_email") or "").strip()
+        if not company_email:
+            return _err(_("Company email is required to activate {0}.").format(name))
+        problem = _company_email_problem(company_email, name)
+        if problem:
+            return _err(problem[0], http=problem[1])
 
         final = doc.name
         renamed = False
-        # Legacy only: intake names new hires out of the real series now, so
-        # there is nothing to rename for anything raised since that change.
-        pattern = None
-        if doc.name.startswith(PENDING_PREFIX):
-            series = (doc.get("naming_series") or "").strip()
-            if not series:
-                return _err(
-                    _("{0} has no naming series, so a real employee code cannot be issued.").format(name),
-                    http=409)
-            # The series is stored as a prefix ("HomeFirst-"); make_autoname wants
-            # the hash placeholders that decide the number width.
-            pattern = series if "#" in series else series + ".#####"
 
         # Rename and activation are one unit: a rename that lands and an
         # activation that then fails would leave a renamed record still Pending.
         with _atomic("new_hire_activate"):
-            if pattern:
-                final = rename_doc(DOCTYPE, doc.name, make_autoname(pattern),
+            if doc.name.startswith(PENDING_PREFIX):
+                final = rename_doc(DOCTYPE, doc.name, _real_employee_code(doc),
                                    force=True, ignore_permissions=True, show_alert=False)
                 renamed = True
 
@@ -1430,6 +2135,7 @@ def activate_employee(name=None):
             # writes straight to SQL without firing a single document event — so
             # activating that way granted the new employee nothing.
             active = frappe.get_doc(DOCTYPE, final)
+            active.company_email = company_email
             active.status = ACTIVE_STATUS
             active.set(STAGE_FIELD, "Completed")
             active.save(ignore_permissions=True)
@@ -1439,10 +2145,15 @@ def activate_employee(name=None):
             "previous_name": name if renamed else None,
             "status": ACTIVE_STATUS,
             "stage": "Completed",
+            "company_email": company_email,
             "renamed": renamed,
         })
     except frappe.PermissionError as exc:
         return _err(str(exc) or _("Not permitted."), http=403)
+    except frappe.NameError as exc:
+        return _err(_name_error_message(exc), http=400)
+    except frappe.ValidationError as exc:
+        return _err(frappe.utils.strip_html(str(exc)), http=400)
     except Exception:
         return _fail(_("The employee could not be activated."), "activate_employee failed")
 
@@ -1494,6 +2205,58 @@ def cancel_new_hire(name=None, reason=None):
 # ---------------------------------------------------------------------------
 # Hook handlers
 # ---------------------------------------------------------------------------
+
+
+def _never_active(doc):
+    """Whether this Employee has only ever been Pending — a new hire not yet
+    activated (or one withdrawn before activation). Read off the saved copy, so
+    an activation in progress (Pending -> Active) does NOT count."""
+    before = doc.get_doc_before_save()
+    if before is None:
+        return doc.status == PENDING_STATUS
+    return before.status == PENDING_STATUS and doc.status in (PENDING_STATUS, "Inactive")
+
+
+def defer_activation_fields(doc, method=None):
+    """`Employee.before_validate`: let a not-yet-activated new hire save without
+    the fields HR only supplies at activation (the company email).
+
+    Frappe can only switch its mandatory check off wholesale, so switch it off
+    here and let :func:`check_deferred_mandatory` redo it minus those fields —
+    every other required field is still enforced. This covers every save path a
+    pending hire goes through (intake, the approval matrix, cancel, the desk),
+    not just this module's endpoints.
+    """
+    # The flags live on the document object, so clear what a previous save of
+    # this same object left behind before deciding again. Left set, a record
+    # saved again after activation would skip the mandatory check entirely.
+    if doc.flags.pop("new_hire_deferred_mandatory", None):
+        doc.flags.ignore_mandatory = False
+    if doc.flags.ignore_mandatory or doc.flags.ignore_validate:
+        return
+    if not _never_active(doc):
+        return
+    if all(doc.get(f) for f in ACTIVATION_FIELDS):
+        return
+    doc.flags.ignore_mandatory = True
+    doc.flags.new_hire_deferred_mandatory = True
+
+
+def check_deferred_mandatory(doc, method=None):
+    """`Employee.before_save`: the mandatory check `defer_activation_fields`
+    switched off, minus the activation fields. Runs after every validate hook,
+    so a field a hook fills in (naming_series, say) is not reported missing."""
+    if not doc.flags.get("new_hire_deferred_mandatory"):
+        return
+    missing = [m for m in doc._get_missing_mandatory_fields() if m[0] not in ACTIVATION_FIELDS]
+    for child in doc.get_all_children():
+        missing.extend(child._get_missing_mandatory_fields())
+    if not missing:
+        return
+    for _fieldname, message in missing:
+        frappe.msgprint(message)
+    raise frappe.MandatoryError(
+        "[{0}, {1}]: {2}".format(doc.doctype, doc.name, ", ".join(m[0] for m in missing)))
 
 
 def auto_initiate_on_approval(doc, method=None):

@@ -654,7 +654,13 @@ def sync_job_offer_action_item(doc, method=None):
         return
 
     offer_status = (getattr(doc, "status", "") or "").strip().lower()
-    is_closed = doc.docstatus == 2 or offer_status in {"accepted", "cancelled", "rejected"}
+    is_closed = doc.docstatus == 2 or offer_status in {"accepted", "cancelled", "rejected", "withdrawn"}
+
+    if offer_status == "withdrawn":
+        # HR pulled the offer back: there is nothing left for the candidate to
+        # act on, so the item goes away rather than lingering as Completed.
+        _delete_minimal_item(candidate_email, doc.doctype, doc.name, commit=False)
+        return
 
     if is_closed:
         mark_item_completed(

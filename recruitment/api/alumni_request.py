@@ -11,6 +11,7 @@ and shapes a structured JSON response. All business rules live in the service la
 
 Endpoints:
     POST /api/method/recruitment.api.alumni_request.create_alumni_employee_request
+    POST /api/method/recruitment.api.alumni_request.update_employee_personal_email
     GET  /api/method/recruitment.api.alumni_request.get_alumni_request_status
 """
 
@@ -24,14 +25,21 @@ from recruitment.recruitment.alumni_employee_request_service import (
     AlumniRequestError,
     create_alumni_employee_request as _create_request,
     get_request_status as _get_request_status,
+    update_employee_personal_email as _update_personal_email,
 )
 
 _logger = frappe.logger("recruitment", allow_site=True)
 
 
-def _bad_request(message: str, status: int = 400) -> dict:
+def _bad_request(message: str, status: int = 400, error_code: str | None = None) -> dict:
     frappe.local.response["http_status_code"] = status
-    return {"success": False, "message": message}
+    body: dict = {"success": False, "message": message}
+    # Only set for the handful of rules a caller needs to branch on (currently
+    # just PERSONAL_EMAIL_REQUIRED) — omitted for everything else, so this adds
+    # a field rather than changing the existing error shape.
+    if error_code:
+        body["error_code"] = error_code
+    return body
 
 
 @frappe.whitelist(allow_guest=True, methods=["POST"])
@@ -77,8 +85,10 @@ def create_alumni_employee_request(
             created_from="Portal",
         )
     except AlumniRequestError as e:
-        # Expected, user-safe validation error.
-        return _bad_request(str(e))
+        # Expected, user-safe validation error. `error_code` is unset for most
+        # rules and only present (e.g. "PERSONAL_EMAIL_REQUIRED") when the
+        # frontend has a specific recovery flow for that failure.
+        return _bad_request(str(e), error_code=getattr(e, "error_code", None))
     except frappe.DuplicateEntryError:
         return _bad_request(
             _("A pending Alumni Employee Request already exists for this employee."), 409
@@ -93,6 +103,63 @@ def create_alumni_employee_request(
         "message": _("Request submitted successfully."),
         "request_id": doc.name,
         "status": doc.status,
+    }
+
+
+@frappe.whitelist(allow_guest=True, methods=["POST"])
+@rate_limit(key="employee", limit=10, seconds=60 * 60)
+def update_employee_personal_email(
+    employee: str | None = None,
+    personal_email: str | None = None,
+    email: str | None = None,
+) -> dict:
+    """Save a missing Personal Email on the Employee so the request can be retried.
+
+    The recovery step for a ``create_alumni_employee_request`` that came back with
+    ``error_code = "PERSONAL_EMAIL_REQUIRED"``: the portal collects the address,
+    posts it here, and re-submits the request once this returns success.
+
+    ``employee`` + ``email`` are the same identity pair the create endpoint takes —
+    ``email`` must already be on the Employee record — unless the caller is signed
+    in as that Employee's own User or as HR. Writes only ``Employee.personal_email``:
+    no User is created, no alumni flag is set, and the Employee's status (Inactive
+    very much included) is left exactly as it was.
+
+    Failures carry an ``error_code`` the portal can branch on —
+    ``INVALID_PERSONAL_EMAIL``, ``PERSONAL_EMAIL_ALREADY_SET`` or ``NOT_AUTHORIZED``.
+    """
+    employee = (employee or "").strip()
+    personal_email = (personal_email or "").strip()
+    email = (email or "").strip()
+
+    if not employee:
+        return _bad_request(_("Employee is required."))
+    if not personal_email:
+        return _bad_request(
+            _("Personal Email is required."), error_code="INVALID_PERSONAL_EMAIL"
+        )
+
+    remote = getattr(getattr(frappe.local, "request", None), "remote_addr", None)
+    _logger.info(
+        f"Alumni Personal Email update received for employee={employee} ip={remote}"
+    )
+
+    try:
+        emp = _update_personal_email(employee, personal_email, identity_email=email)
+    except AlumniRequestError as e:
+        return _bad_request(str(e), error_code=getattr(e, "error_code", None))
+    except Exception:
+        frappe.log_error(frappe.get_traceback(), "update_employee_personal_email failed")
+        return _bad_request(
+            _("Unable to save the Personal Email right now. Please try again later."), 500
+        )
+
+    frappe.local.response["http_status_code"] = 200
+    return {
+        "success": True,
+        "message": _("Personal Email saved successfully."),
+        "employee": emp.name,
+        "personal_email": emp.personal_email,
     }
 
 

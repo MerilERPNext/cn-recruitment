@@ -7,8 +7,8 @@
  "engine": "InnoDB",
  "field_order": [
   "salary_timeframe",
-  "min_amount",
-  "max_amount"
+  "min_digits",
+  "max_digits"
  ],
  "fields": [
   {
@@ -20,26 +20,26 @@
    "reqd": 1
   },
   {
-   "description": "Lowest salary that may be entered for this timeframe. Leave blank for no lower limit.",
-   "fieldname": "min_amount",
-   "fieldtype": "Currency",
+   "description": "Fewest digits the salary may have for this timeframe (e.g. 4 allows 1,000 and above). Leave blank for no lower limit.",
+   "fieldname": "min_digits",
+   "fieldtype": "Int",
    "in_list_view": 1,
-   "label": "Minimum Amount",
+   "label": "Minimum Digits",
    "non_negative": 1
   },
   {
-   "description": "Highest salary that may be entered for this timeframe. Leave blank for no upper limit.",
-   "fieldname": "max_amount",
-   "fieldtype": "Currency",
+   "description": "Most digits the salary may have for this timeframe; must not be less than Minimum Digits (e.g. 6 allows up to 9,99,999). Leave blank for no upper limit.",
+   "fieldname": "max_digits",
+   "fieldtype": "Int",
    "in_list_view": 1,
-   "label": "Maximum Amount",
+   "label": "Maximum Digits",
    "non_negative": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2026-09-08 10:00:00.000000",
+ "modified": "2026-09-22 10:00:00.000000",
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "Salary Range Limit",

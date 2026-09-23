@@ -106,6 +106,8 @@ doctype_js = {
     "Job Applicant": [
         "public/js/job_applicant.js",
         "public/js/hiring_workflow_flow.js",
+        # View / Download for attachments in the approval panel below.
+        "public/js/approval_file_cells.js",
         "public/js/pre_offer_field_approval.js",
         "public/js/job_applicant_banner.js",
         # "Previous Applications" tab — has this candidate applied to us before?
@@ -154,6 +156,7 @@ doctype_js = {
         "public/js/employee_onboarding.js",
         "public/js/employee_onboarding_portal_field_inspector.js",
         "public/js/emp_OB_verification_table.js",
+        "public/js/approval_file_cells.js",
         "public/js/emp_OB_field_level_approval.js",
         "public/js/employee_onboarding_statutory.js",
     ],
@@ -309,6 +312,11 @@ after_migrate = [
 # Hook on document methods and events
 
 doc_events = {
+    # No approval moves on an archived requisition — every Approve / Reject /
+    # Send Back from a ToDo saves the tracker, so this catches them all.
+    "Approval Tracker": {
+        "validate": "recruitment.api.requisition_status.block_approval_on_archived",
+    },
     # Custom Doctype Fields (nextai) decides where a managed field sits on the
     # Job Applicant form. Job Applicant Profile Settings groups fields into its
     # own curated sections and never re-groups an existing row, so a managed
@@ -429,12 +437,18 @@ doc_events = {
             # requisition and still be free. Runs before save so a stale pick is
             # rejected rather than silently claiming the wrong row.
             "recruitment.api.offer_position.validate_position_choice",
+            # Every salary figure's "(In Words)" field follows the figure.
+            "recruitment.customizations.job_offer.set_salary_in_words",
             # Offer-time duplicity rules from TA Duplicity Check Settings: an
             # active offer held by the same person under another application, and
             # the employee-pool outcomes (block / exceptional approval / allow).
             "recruitment.customizations.ta_duplicity_job_offer.check_job_offer_duplicity",
         ],
-        "before_save": "recruitment.customizations.job_offer.calculate_salary_structure",
+        "before_save": [
+            "recruitment.customizations.job_offer.calculate_salary_structure",
+            # Again after CTC (Total) is computed above.
+            "recruitment.customizations.job_offer.set_salary_in_words",
+        ],
         "after_insert": [
             "recruitment.api.action_center.sync_job_offer_action_item",
             "recruitment.api.requisition_pipeline.refresh_from_job_offer",
@@ -467,6 +481,8 @@ doc_events = {
         ],
         "on_cancel": [
             "recruitment.api.offer_position.sync_offer_position",
+            # "Offer Cancelled" on the candidate's hiring workflow (newest version only).
+            "recruitment.api.offer_lifecycle.on_offer_cancel",
             "recruitment.api.requisition_pipeline.refresh_from_job_offer",
             "recruitment.recruitment.hr_ops_offer_review.close_hr_ops_todos",
         ],
@@ -498,6 +514,9 @@ doc_events = {
             # Enforce Recruitment Settings -> Job Requisition Settings
             # (max positions, replacement-employee restriction & uniqueness).
             "recruitment.api.job_requisition.validate_requisition_settings",
+            # Status set to Archived by hand: same role / state checks as the
+            # Archive button (the on_update cleanup below revokes approvals).
+            "recruitment.api.requisition_status.guard_manual_archive",
             # Recruitment Settings -> "Enable AOP Budget Check": refuse a
             # requisition whose Salary Range (Max) x positions is more than its
             # Department / Cost Center budget has left. Runs after
@@ -531,6 +550,9 @@ doc_events = {
             # (custom_position_summary) from the headcount rows
             # (custom_position_details). Idempotent, so it is safe on every update.
             "recruitment.api.requisition_status.materialise_positions_on_approval",
+            # Status changed to Archived by hand: cancel every open ToDo and revoke
+            # the approval in flight, exactly as the Archive button does.
+            "recruitment.api.requisition_status.close_tasks_when_archived",
             # Store "how many of this designation do we already have in this region"
             # and "how much are we already hiring there". Runs here rather than in
             # validate because these are derived columns: written during validate
@@ -565,6 +587,8 @@ doc_events = {
             "recruitment.customizations.job_opening_settings.validate_job_posting_settings",
             # Hiring Lead Permission Settings (external recruiter / application fields).
             "recruitment.customizations.hiring_lead_permissions.validate_job_opening_hiring_lead_edits",
+            # Recruitment Settings can make Screening / Shortlist compulsory stages.
+            "recruitment.api.hiring_stage.validate_job_opening_compulsory_stages",
             # Compute each External Recruiter row's read-only posting status from its
             # Display From/To window so the grid reflects live availability.
             "recruitment.permissions.doc_type_permissions.set_external_recruiter_posting_status",
@@ -610,21 +634,29 @@ doc_events = {
             # On hire of a referred candidate, generate the Referral Reward + payout schedule.
             "recruitment.recruitment.referral_reward_engine.generate_referral_reward_on_employee",
         ],
-        "before_save": "recruitment.recruitment.employee_confirmation_hooks.calculate_final_confirmation_date",
+        # New Hire: a pending hire's company email is asked at activation, so
+        # its Employee-level `reqd` is deferred until then (every other
+        # mandatory field is still checked, in before_save).
+        "before_validate": "recruitment.api.new_hire.defer_activation_fields",
+        "before_save": [
+            "recruitment.recruitment.employee_confirmation_hooks.calculate_final_confirmation_date",
+            "recruitment.api.new_hire.check_deferred_mandatory",
+        ],
         "validate": [
-            # Block converting an employee to alumni (status -> Left/Inactive)
-            # without a usable personal_email, BEFORE the company-email User is
-            # disabled — so the alumnus is never left with no working login.
-            "recruitment.recruitment.alumni_user_switch.validate_alumni_personal_email",
+            # Auto-fill Relieving Date ("Last Working Day") with today on the
+            # real transition to Left/Inactive, if HR left it blank.
+            "recruitment.recruitment.alumni_user_switch.auto_set_relieving_date",
+            # Validate Personal Email when alumni checkbox is being enabled.
+            "recruitment.recruitment.alumni_checkbox_handler.validate_alumni_personal_email_for_checkbox",
         ],
         "on_update": [
-            # Keep the User's "Is Alumni Employee" flag in sync with status == "Left"
-            # (only sets that checkbox; never touches Employee.status or User.enabled).
+            # Keep the User's "Is Alumni Employee" flag in sync with Employee's checkbox
+            # (only sets that flag on the User; never touches Employee.status or User.enabled).
             "recruitment.recruitment.alumni_portal.sync_alumni_flag",
-            # Switch the primary account on a real status transition: disable the
-            # company-email User and provision/restore the personal-email Alumni
-            # User (and the reverse when the employee rejoins).
-            "recruitment.recruitment.alumni_user_switch.handle_employee_status_change",
+            # Provision or disable Alumni User based on checkbox changes:
+            # checkbox 0→1: create/reuse Alumni User from Personal Email
+            # checkbox 1→0: disable the Alumni User
+            "recruitment.recruitment.alumni_checkbox_handler.handle_alumni_checkbox_change",
             # New Hire: hand a pending Employee to onboarding the moment the
             # approval matrix clears it — but only when its New Hire Form ticks
             # "Initiate Onboarding on Approval". A no-op for every real employee
@@ -776,6 +808,11 @@ doc_events = {
 
 scheduler_events = {
     "cron": {
+        # A requisition archived by a raw backend write fires no hook: close its
+        # open ToDos / approval on the next pass.
+        "*/10 * * * *": [
+            "recruitment.api.requisition_status.sweep_archived_requisitions",
+        ],
         "59 23 * * *": [
             "recruitment.customizations.employee_separation.task_reassignment.reassign_employee_separation_tasks",
             "recruitment.customizations.employee_onboarding.overide_class.reassign_tasks",
@@ -799,6 +836,10 @@ scheduler_events = {
             # AOP budget: re-flag live requisitions their Department / Cost Center
             # budget left no longer covers. No-op (clears flags) when disabled.
             "recruitment.api.requisition_budget.refresh_over_budget_flags",
+            # Recruitment Settings -> "Auto-withdraw Offer if Candidate Not
+            # Activated by DOJ": withdraw offers past DOJ + grace days whose
+            # candidate has no Employee. No-op while the setting is off.
+            "recruitment.api.offer_auto_withdraw.auto_withdraw_unjoined_offers",
         ],
         "30 1 * * *": [
             # Pay every referral reward installment that is due and still eligible.
@@ -864,7 +905,19 @@ override_doctype_class = {
 
 # Request Events
 # ----------------
-# before_request = ["recruitment.utils.before_request"]
+before_request = [
+	# Override ERPNext's automatic User disable on Employee Inactive status.
+	# User state is controlled EXCLUSIVELY by the custom_is_alumni_employee
+	# checkbox via the alumni_checkbox_handler, not by Employee.status changes.
+	"recruitment.recruitment.employee_user_state_override.apply_patch",
+	# Hides Todo Type rows opted out of the ESS Portal (Alumni Portal on, ESS
+	# off) from cn_todo_manager's own get_todo_list -- every caller (the ESS
+	# dashboard widget, the embedded task-manager app, plain Desk access)
+	# funnels through the same query builder, so this is patched there rather
+	# than duplicated per caller. Alumni Portal sessions are exempted; see
+	# overrides/todo_ess_visibility.py for the full rationale.
+	"recruitment.recruitment.overrides.todo_ess_visibility.apply_patch",
+]
 # after_request = ["recruitment.utils.after_request"]
 
 # Job Events

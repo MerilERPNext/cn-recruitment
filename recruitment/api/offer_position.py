@@ -46,8 +46,10 @@ def _offer_holds_position(doc):
 
 def _position_label(row):
     label = _("Position {0}").format(row.get("position_no") or "?")
+    if row.get("position_type"):
+        label = "{0} — {1}".format(label, _(row.get("position_type")))
     bits = [b for b in (row.get("location"), row.get("functional_area")) if b]
-    return "{0} — {1}".format(label, ", ".join(bits)) if bits else label
+    return "{0} · {1}".format(label, ", ".join(bits)) if bits else label
 
 
 def _requisition_is_active(requisition, status=None):
@@ -86,7 +88,8 @@ def _positions_held_by_other_offers(requisition, exclude_offer=None):
 
 
 POSITION_FIELDS = (
-    "name", "position_no", "status", "location", "functional_area", "candidate",
+    "name", "position_no", "status", "position_type", "location", "functional_area", "candidate",
+    "candidate_status",
 )
 
 
@@ -181,6 +184,7 @@ def get_available_positions(job_requisition=None, job_offer=None, job_applicant=
             "name": r.name,
             "position_no": r.position_no,
             "status": r.status,
+            "position_type": r.position_type,
             "location": r.location,
             "functional_area": r.functional_area,
             "label": _position_label(r),
@@ -283,8 +287,10 @@ def _release(offer_name, row_name, requisition, rows=None, req_status=None):
         {"status": POSITION_OPEN, "candidate": None, "candidate_status": None},
         update_modified=False,
     )
+    # Remember the seat, so "Resend Job Offer" can take the same one back.
     frappe.db.set_value(
-        JOB_OFFER, offer_name, {POSITION_FIELD: None, POSITION_LABEL_FIELD: None},
+        JOB_OFFER, offer_name,
+        {POSITION_FIELD: None, POSITION_LABEL_FIELD: None, "custom_released_position": row_name},
         update_modified=False,
     )
     # Reflect the release locally so the rollup needs no re-read.
@@ -303,6 +309,11 @@ def validate_position_choice(doc, method=None):
     requisition = _requisition_of(doc)
     row_name = doc.get(POSITION_FIELD)
 
+    # A withdrawn / rejected offer has handed its position back (and had the
+    # field cleared); it must still save, e.g. to record a note.
+    if not _offer_holds_position(doc):
+        return
+
     if not row_name:
         # Lateral itemises headcount, so an unpicked offer cannot say what it
         # consumes. Campus has nothing to pick — offer_validation guards it.
@@ -319,11 +330,17 @@ def validate_position_choice(doc, method=None):
     row = frappe.db.get_value(
         JOB_REQUISITION_POSITION,
         row_name,
-        ["name", "parent", "position_no", "status", "location", "functional_area", "candidate"],
+        ["name", "parent", "position_no", "status", "position_type", "location", "functional_area", "candidate"],
         as_dict=True,
     )
     if not row:
         frappe.throw(_("The selected position no longer exists on this requisition."))
+    # Archived covers positions rejected in approval. Only a newly picked one is
+    # refused, so an offer already holding a position can still be saved.
+    if row.status == POSITION_ARCHIVED and doc.has_value_changed(POSITION_FIELD):
+        frappe.throw(
+            _("Position {0} is archived and can't be offered against.").format(frappe.bold(row.position_no))
+        )
     if requisition and row.parent != requisition:
         frappe.throw(
             _("The selected position belongs to {0}, not to this offer's requisition {1}.").format(
@@ -403,7 +420,14 @@ def sync_offer_position(doc, method=None):
             frappe.db.set_value(JOB_OFFER, doc.name, POSITION_FIELD, row_name, update_modified=False)
 
         if row.status == POSITION_FILLED and row.candidate == applicant:
-            return  # already correct — skip the writes and the rollup
+            # Already claimed — only keep the offer's status mirrored on the row
+            # (Draft -> Awaiting Response -> Accepted). No rollup needed.
+            if row.candidate_status != doc.get("status"):
+                frappe.db.set_value(
+                    JOB_REQUISITION_POSITION, row_name, "candidate_status", doc.get("status"),
+                    update_modified=False,
+                )
+            return
 
         frappe.db.set_value(
             JOB_REQUISITION_POSITION,
@@ -462,6 +486,26 @@ def release_offer_position(doc, method=None):
         frappe.log_error(frappe.get_traceback(), "Job Offer: position release on delete failed")
 
 
+def _run_withdraw_notifications(doc):
+    """Fire the Job Offer Notifications the raw status write skipped.
+
+    Configure either as a Notification on Job Offer:
+      - Send Alert On "Value Change", Value Changed "status", with
+        Condition ``doc.status == "Withdrawn"``, or
+      - Send Alert On "Method", Trigger Method "on_offer_withdrawn".
+    A broken notification template must not undo the withdrawal.
+    """
+    for method in ("on_change", "on_offer_withdrawn"):
+        logged = len(frappe.local.message_log)
+        try:
+            doc.run_notifications(method)
+        except Exception:
+            # frappe.throw already queued the traceback for the user; the
+            # withdrawal succeeded, so keep it in the Error Log only.
+            del frappe.local.message_log[logged:]
+            frappe.log_error(frappe.get_traceback(), "Job Offer: withdraw notification failed")
+
+
 @frappe.whitelist()
 def withdraw_offer(job_offer, reason=None):
     """Withdraw an offer and return its position to Open.
@@ -481,17 +525,13 @@ def withdraw_offer(job_offer, reason=None):
             _("This offer has already been accepted. Cancel the onboarding instead of withdrawing.")
         )
 
-    # Recruitment Settings -> Allow Withdraw Offer Only After It Is Sent.
-    from recruitment.recruitment.offer_send_rules import validate_withdraw
+    # Only a sent offer can be withdrawn; honours Recruitment Settings ->
+    # Allow Withdraw Offer Only After It Is Sent as well.
+    from recruitment.api.offer_lifecycle import _withdraw_rule
 
-    validate_withdraw(doc)
-
-    row_name = doc.get(POSITION_FIELD)
-    requisition = _requisition_of(doc)
-
-    # Submitted offers only accept allow-on-submit writes, so go through the db.
-    frappe.db.set_value(JOB_OFFER, job_offer, "status", "Withdrawn")
-    _release(job_offer, row_name, requisition)
+    rule = _withdraw_rule(doc)
+    if not rule["allowed"]:
+        frappe.throw(rule["reason"], title=_("Cannot Withdraw Offer"))
 
     actor = (
         frappe.db.get_value("Employee", {"user_id": frappe.session.user}, "employee_name")
@@ -500,7 +540,39 @@ def withdraw_offer(job_offer, reason=None):
     content = _("{0} withdrew this offer.").format(actor)
     if reason:
         content += " " + _("Reason: {0}").format(reason)
-    doc.add_comment("Comment", content)
+    return apply_withdrawal(doc, content)
+
+
+def apply_withdrawal(doc, comment):
+    """Mark the offer Withdrawn and do everything that goes with it: hand the
+    position back, close the candidate's Action Center item, record the event on
+    their hiring workflow, fire the withdraw notifications and leave `comment`
+    on the offer. Callers do their own permission / eligibility checks."""
+    job_offer = doc.name
+    row_name = doc.get(POSITION_FIELD)
+    requisition = _requisition_of(doc)
+
+    # Snapshot the pre-withdrawal state so a Value Change notification on
+    # `status` sees Awaiting Response -> Withdrawn.
+    doc.load_doc_before_save()
+
+    # Submitted offers only accept allow-on-submit writes, so go through the db.
+    frappe.db.set_value(JOB_OFFER, job_offer, "status", "Withdrawn")
+    _release(job_offer, row_name, requisition)
+
+    # The raw write above fires no doc_events: close the candidate's Action
+    # Center item and put the withdrawal on their hiring workflow here.
+    doc.status = "Withdrawn"
+    from recruitment.api.action_center import sync_job_offer_action_item
+    from recruitment.api.hiring_stage import record_offer_event
+
+    try:
+        sync_job_offer_action_item(doc)
+    except Exception:
+        frappe.log_error(frappe.get_traceback(), "Job Offer: action item close on withdraw failed")
+    record_offer_event(doc, "Offer Withdrawn")
+    _run_withdraw_notifications(doc)
+    doc.add_comment("Comment", comment)
 
     return {
         "job_offer": job_offer,
