@@ -64,6 +64,16 @@ export interface LeaveBalance {
   };
   balance_excluding_future_transactions: number;
   optional_leave?: number;
+  custom_encash_leave_while_ff?: number;
+  custom_encash?: "Encash all unused Leave" | "Encash only" | string;
+  custom_encash_only?: "Fixed" | "Percentage" | string;
+  custom_encash_fixed_leaves?: number;
+  custom_encash_percentage?: number;
+  custom_consider_only_the_following_for_leave_for_fnf?:
+    | "Accrued balance"
+    | "Carry forward balance"
+    | "Both"
+    | string;
 }
 
 export interface LeaveTransaction {
