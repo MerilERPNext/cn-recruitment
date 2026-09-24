@@ -619,3 +619,12 @@ export interface EmployeeSeparationDetails {
   deactivation_type: string | null;
   deactivation_reason: string | null;
 }
+
+export interface EmployeeEventItem {
+  name: string;
+  date_of_birth: string;
+  employee_name: string;
+  image?: string | null;
+  date_of_joining: string;
+}
+
