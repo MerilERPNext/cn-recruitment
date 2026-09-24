@@ -424,21 +424,28 @@ def ensure_alumni_employee_employee_field():
     mirrored the User flag and could not be edited) into this editable stored one.
     Converting virtual -> stored adds the DB column on migrate; existing values
     are seeded from the User flag by `backfill_employee_alumni_mirror`.
+
+    The `depends_on` show/hide rule is deliberately NOT part of that self-heal:
+    it is set once, when the field is first created, and never rewritten on a
+    later migrate -- so an admin can change (or clear) it in Customize Form and
+    the change sticks.
     """
     from frappe.utils import cint
 
-    # Editable + stored: undo the old virtual / read-only / getter definition.
-    # Also only ever meaningful for someone who has actually left -- an Active
-    # employee can't be alumni -- so it's hidden on the form until status says
-    # otherwise, and shown as an Employee-list column so HR can see it at a
-    # glance without opening each record.
+    # Only ever meaningful for someone who has actually left -- an Active
+    # employee can't be alumni -- so the field starts out hidden on the form
+    # until status says otherwise. Creation-time default only (see docstring):
+    # not in `desired` below, so a later migrate leaves whatever an admin set.
     depends_on = 'eval:doc.status != "Active"'
+
+    # Editable + stored: undo the old virtual / read-only / getter definition,
+    # and keep it as an Employee-list column so HR can see it at a glance
+    # without opening each record. These ARE re-asserted on every migrate.
     desired = {
         "is_virtual": 0,
         "read_only": 0,
         "options": "",
         "no_copy": 1,
-        "depends_on": depends_on,
         "in_list_view": 1,
     }
     try:
@@ -454,7 +461,6 @@ def ensure_alumni_employee_employee_field():
                     cint(cf.is_virtual)
                     or cint(cf.read_only)
                     or (cf.options or "")
-                    or (cf.depends_on or "") != depends_on
                     or not cint(cf.in_list_view)
                 ):
                     cf.update(desired)
