@@ -141,12 +141,13 @@ def ensure_ess_todo_type_field():
     """Add `Todo Type.custom_show_in_ess_portal` — the ESS Portal gate.
 
     Sibling of `custom_show_in_alumni_portal` (same Custom Field ownership
-    rationale: cn_todo_manager stays untouched). Together the two flags
+    rationale: the field belongs to this app, not to cn_todo_manager, so it
+    survives a `bench update` there). Together the two flags
     follow the same visibility matrix already shipped for
     `Notice.show_in_ess_portal` / `Notice.show_in_alumni_portal` -- see
-    `recruitment.recruitment.notice_visibility.visible_in_portal`, reused
-    (not reimplemented) by `overrides.todo_ess_visibility` for this field
-    pair too:
+    `recruitment.recruitment.notice_visibility.visible_in_portal`. The
+    Todo Type side of that matrix is enforced by cn_todo_manager itself
+    (`todo_api.ess_hidden_todo_types`), which reads these fields:
 
         ESS on  / Alumni off -> ESS only
         ESS off / Alumni on  -> Alumni only

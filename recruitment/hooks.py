@@ -914,14 +914,11 @@ before_request = [
 	# Override ERPNext's automatic User disable on Employee Inactive status.
 	# User state is controlled EXCLUSIVELY by the custom_is_alumni_employee
 	# checkbox via the alumni_checkbox_handler, not by Employee.status changes.
-	"recruitment.recruitment.employee_user_state_override.apply_patch",
-	# Hides Todo Type rows opted out of the ESS Portal (Alumni Portal on, ESS
-	# off) from cn_todo_manager's own get_todo_list -- every caller (the ESS
-	# dashboard widget, the embedded task-manager app, plain Desk access)
-	# funnels through the same query builder, so this is patched there rather
-	# than duplicated per caller. Alumni Portal sessions are exempted; see
-	# overrides/todo_ess_visibility.py for the full rationale.
-	"recruitment.recruitment.overrides.todo_ess_visibility.apply_patch",
+	# "recruitment.recruitment.employee_user_state_override.apply_patch",
+	# Todo Type ESS Portal visibility is not patched in from here: the rule
+	# lives in cn_todo_manager's own todo_api (`ess_hidden_todo_types`),
+	# applied in the query builder every caller funnels through. This app
+	# only owns the two Custom Fields it reads -- see `install.py`.
 ]
 # after_request = ["recruitment.utils.after_request"]
 
