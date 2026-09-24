@@ -17,7 +17,7 @@ Employee.status or User.enabled).
 Endpoints (call as `recruitment.recruitment.alumni_portal.<fn>`):
     portal_login, portal_login_with_employee_code, get_alumni_context, portal_logout,
     request_password_otp, verify_password_otp, reset_password_with_otp,
-    get_alumni_tickets
+    change_alumni_password, get_alumni_tickets
 """
 
 from __future__ import annotations
@@ -524,6 +524,85 @@ def reset_password_with_otp(email: str, otp: str, new_password: str) -> dict:
         "success": True,
         "message": _("Your password has been reset. You can now sign in."),
     }
+
+
+# ── Change password (logged-in, from the profile page) ────────────────────────
+@frappe.whitelist(methods=["POST"])
+@rate_limit(limit=10, seconds=60 * 60)
+def change_alumni_password(
+    current_password: str | None = None,
+    new_password: str | None = None,
+    confirm_password: str | None = None,
+) -> dict:
+    """Change the signed-in alumnus's password from the Alumni Portal profile.
+
+    Fields (all required): ``current_password``, ``new_password``,
+    ``confirm_password``. The caller must already hold an alumni session (the
+    guard only lets alumni sessions reach this namespace; ``_require_alumni_session``
+    re-checks the flag so an ESS user can never change a password here).
+
+    Rules, in order:
+      * all three fields present;
+      * ``new_password`` == ``confirm_password``;
+      * ``new_password`` differs from ``current_password``;
+      * ``current_password`` matches the stored hash (wrong -> 401, no hint);
+      * the new password passes the site password policy (weak -> 400 with the
+        policy feedback), which also hashes and stores it.
+
+    On success every OTHER session for the user is ended (the current one is
+    kept), so a leaked password can't keep a stale login alive elsewhere.
+
+    Returns ``{"success": bool, "message": str}``; never touches the OTP reset
+    flow, ``User.enabled`` or ``Employee.status``.
+    """
+    from frappe.utils import today
+    from frappe.utils.password import check_password
+
+    user = _require_alumni_session()
+
+    current_password = current_password or ""
+    new_password = new_password or ""
+    confirm_password = confirm_password or ""
+
+    def _fail(message: str, status: int = 400) -> dict:
+        frappe.local.response["http_status_code"] = status
+        return {"success": False, "message": message}
+
+    if not current_password:
+        return _fail(_("Current password is required."))
+    if not new_password:
+        return _fail(_("New password is required."))
+    if not confirm_password:
+        return _fail(_("Please confirm your new password."))
+    if new_password != confirm_password:
+        return _fail(_("New password and confirm password do not match."))
+    if new_password == current_password:
+        return _fail(_("New password must be different from the current password."))
+
+    try:
+        # Only verifies; deliberately does not reset the failed-login tracker.
+        check_password(user, current_password, delete_tracker_cache=False)
+    except frappe.AuthenticationError:
+        return _fail(_("Current password is incorrect."), 401)
+
+    # Setting `new_password` runs the password-strength policy and hashes it
+    # (same path as `reset_password_with_otp`). `logout_all_sessions` ends every
+    # session EXCEPT the current one.
+    user_doc = frappe.get_doc("User", user)
+    user_doc.new_password = new_password
+    user_doc.logout_all_sessions = 1
+    try:
+        user_doc.save(ignore_permissions=True)
+        frappe.db.set_value(
+            "User", user, "last_password_reset_date", today(), update_modified=False
+        )
+        frappe.db.commit()
+    except frappe.exceptions.ValidationError as e:
+        frappe.db.rollback()
+        return _fail(str(e) or _("Password is too weak."))
+
+    frappe.local.response["http_status_code"] = 200
+    return {"success": True, "message": _("Your password has been changed.")}
 
 
 # ── Login via email OTP ───────────────────────────────────────────────────────
