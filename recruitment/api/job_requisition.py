@@ -112,6 +112,10 @@ PARENT_READONLY_FIELDS = (
     "custom_active_requisitions",
     "custom_active_openings",
     "custom_headcount_last_updated",
+    # How many of this requisition's own Vacancy Details rows were Approved /
+    # Rejected. Stored on the doc by recruitment.api.requisition_pipeline.
+    "custom_approved_positions",
+    "custom_rejected_positions",
     # Set by recruitment.api.requisition_budget when the Department / Cost Center
     # budget left no longer covers this live requisition.
     "custom_over_budget",
@@ -1776,6 +1780,9 @@ def get_available_job_requisition_fields():
 _DEFAULT_REQUISITION_COLUMNS = [
     "name", "designation", "department", "company",
     "status", "no_of_positions",
+    # Of those positions, how many the approvers passed / turned down — stored on
+    # the requisition by requisition_pipeline, so no extra query either.
+    "custom_approved_positions", "custom_rejected_positions",
     # The ask is only meaningful next to what already exists: how many of this
     # designation are on the rolls in this region, and how many are already being
     # hired there. Both are stored on the requisition, so this costs no extra query.
@@ -2014,7 +2021,7 @@ def load_current_form_into_settings(overwrite=0):
 
 
 @frappe.whitelist()
-def create_job_requisition(payload=None):
+def create_job_requisition(payload=None, draft=None):
     """
     Submit a Job Requisition.
 
@@ -2024,6 +2031,11 @@ def create_job_requisition(payload=None):
     Fresher creates exactly ONE requisition holding every region it hires in, as
     one `custom_regions` row per unique region. Each submission is independent —
     nothing is merged into requisitions created by an earlier submission.
+
+    `draft` names the Job Requisition Draft this submission came from (see
+    recruitment.api.requisition_draft). It is discarded once the requisition(s)
+    exist — the form is submitted, so the working copy has served its purpose.
+    Submitting is otherwise untouched by the draft feature.
 
     Returns:
         {
@@ -2095,6 +2107,12 @@ def create_job_requisition(payload=None):
             raise
 
         frappe.db.commit()
+
+        if draft:
+            # After the commit: the requisitions are real whatever happens here.
+            from recruitment.api.requisition_draft import discard_on_submit
+
+            discard_on_submit(draft)
 
         created_count = len(results)
         return _ok(
@@ -3809,6 +3827,10 @@ _EDIT_AFTER_APPROVAL_IGNORE = {
     # from the stored value without anyone having edited the requisition.
     "custom_active_employees", "custom_active_requisitions", "custom_active_openings",
     "custom_headcount_last_updated",
+    # Approved / Rejected Positions — recounted when a Vacancy Details row's
+    # approval status is stamped (requisition_pipeline.refresh_position_approvals),
+    # without a save, so an open form may legitimately hold an older number.
+    "custom_approved_positions", "custom_rejected_positions",
     # Parent mirrors of where the requisition hires — the Regions table's region
     # and the Position Details table's location (see
     # recruitment.customizations.job_requisition_region). Derived, never typed —

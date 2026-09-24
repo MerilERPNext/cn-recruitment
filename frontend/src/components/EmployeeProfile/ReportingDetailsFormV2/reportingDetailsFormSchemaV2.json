@@ -22,7 +22,7 @@
                     "customClass": "mb-4",
                     "dataSrc": "url",
                     "data": {
-                        "url": "/api/method/recruitment.api.employee_search.search_employees?status=Active"
+                        "url": "/api/method/recruitment.api.employee_search.search_employees?status=Active,Inactive,Suspended"
                     },
                     "template": "<span><div>{{ item.employee_name || '-' }} ({{ item.employee_id || '-' }})</div><div style=\"font-size:0.85em;color:#6b7280;\"> {{ item.department_display ||'' }}, {{item.branch_display || ''}}</div></span>",
                     "selectValues": "message",

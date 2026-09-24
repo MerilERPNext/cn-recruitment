@@ -25,6 +25,7 @@ import type {
 } from "../types/leaves";
 import toast from "react-hot-toast";
 import { errorResponseFormater } from "../utils/errorResponseFormater";
+import { FrappeAPI } from "../utils/frappeAPI";
 
 export type LeaveType = {
   allocated_leaves: number;
@@ -84,6 +85,51 @@ export const useGetEmployeeLeaveBalance = (
         skipTargetEmployee: true,
       }),
     enabled: !!employeeId && !!date,
+    staleTime: 5 * 60 * 1000,
+  });
+};
+
+export interface LeaveTypeEncashmentMeta {
+  name: string;
+  leave_type_name: string;
+  custom_encash_leave_while_ff?: number;
+  custom_encash?: string;
+  custom_encash_only?: string;
+  custom_encash_fixed_leaves?: number;
+  custom_encash_percentage?: number;
+  custom_consider_only_the_following_for_leave_for_fnf?: string;
+}
+
+export const useGetLeaveTypesEncashmentMeta = () => {
+  return useQuery<Record<string, LeaveTypeEncashmentMeta>>({
+    queryKey: ["leave-types-encashment-meta"],
+    queryFn: async () => {
+      try {
+        const res = await FrappeAPI.getDocumentList("Leave Type", {
+          fields: [
+            "name",
+            "leave_type_name",
+            "custom_encash_leave_while_ff",
+            "custom_encash",
+            "custom_encash_only",
+            "custom_encash_fixed_leaves",
+            "custom_encash_percentage",
+            "custom_consider_only_the_following_for_leave_for_fnf",
+          ],
+          limit: 200,
+        });
+        const map: Record<string, LeaveTypeEncashmentMeta> = {};
+        const data = (res.data as LeaveTypeEncashmentMeta[]) || [];
+        data.forEach((lt) => {
+          if (lt.name) map[lt.name] = lt;
+          if (lt.leave_type_name) map[lt.leave_type_name] = lt;
+        });
+        return map;
+      } catch (err) {
+        console.error("Failed to fetch leave types encashment meta", err);
+        return {};
+      }
+    },
     staleTime: 5 * 60 * 1000,
   });
 };

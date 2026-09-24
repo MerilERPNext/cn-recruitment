@@ -315,14 +315,15 @@ export const PIPCardsSection: React.FC<PIPCardsSectionProps> = ({
           const canInitiate =
             !isLocked && !isCompleted && !isActivityPending && canInitiatePipAction;
 
-          // Unlock message if locked
-          const unlockMessage = pipStatus?.blocked_by_priority
-            ? `Unlocks once PIP ${pipStatus.blocked_by_priority} is completed.`
-            : pipStatus?.blocked_by
-              ? `Unlocks once ${pipStatus.blocked_by} is completed.`
-              : priority > 1
-                ? `Unlocks once PIP ${priority - 1} is completed.`
-                : pipStatus?.lock_message || "This PIP cycle is currently locked.";
+          // Unlock message if locked: previous PIP stage must be completed
+          const unlockMessage =
+            priority > 1
+              ? `Unlocks once PIP ${priority - 1} is completed.`
+              : pipStatus?.blocked_by_priority
+                ? `Unlocks once PIP ${pipStatus.blocked_by_priority} is completed.`
+                : pipStatus?.blocked_by
+                  ? `Unlocks once ${pipStatus.blocked_by} is completed.`
+                  : pipStatus?.lock_message || "This PIP cycle is currently locked.";
 
           return (
             <div

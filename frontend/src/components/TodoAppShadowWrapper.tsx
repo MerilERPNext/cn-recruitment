@@ -34,7 +34,7 @@ import { useSearchParams } from "react-router-dom";
  */
 const TodoSkeleton = () => (
     <>
-        {/* Shimmer keyframe — injected once into the host document head */}
+        {/* Shimmer keyframe and responsive display rules */}
         <style>{`
             @keyframes _todo-shimmer {
                 0%   { background-position: -600px 0; }
@@ -46,9 +46,24 @@ const TodoSkeleton = () => (
                 animation: _todo-shimmer 1.4s ease infinite;
                 border-radius: 4px;
             }
+            ._todo-sk-desktop {
+                display: flex !important;
+            }
+            ._todo-sk-mobile {
+                display: none !important;
+            }
+            @media (max-width: 768px) {
+                ._todo-sk-desktop {
+                    display: none !important;
+                }
+                ._todo-sk-mobile {
+                    display: flex !important;
+                }
+            }
         `}</style>
 
-        <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", backgroundColor: "#fff", overflow: "hidden" }}>
+        {/* ─── Desktop Skeleton (> 768px) ────────────────────────────────────── */}
+        <div className="_todo-sk-desktop" style={{ width: "100%", height: "100%", flexDirection: "column", backgroundColor: "#fff", overflow: "hidden" }}>
 
             {/* Header bar */}
             <div className="_todo-sh" style={{ height: 56, borderRadius: 0, flexShrink: 0 }} />
@@ -176,6 +191,86 @@ const TodoSkeleton = () => (
                         ))}
                     </div>
                 </div>
+            </div>
+        </div>
+
+        {/* ─── Mobile Skeleton (<= 768px) ────────────────────────────────────── */}
+        <div className="_todo-sk-mobile" style={{ width: "100%", height: "100%", flexDirection: "column", backgroundColor: "#fff", padding: "12px 14px", boxSizing: "border-box", overflowY: "auto" }}>
+
+            {/* Mobile Header: Hamburger icon + Category title + My Todo switch */}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14, flexShrink: 0 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <div className="_todo-sh" style={{ width: 36, height: 36, borderRadius: 8, flexShrink: 0 }} />
+                    <div className="_todo-sh" style={{ width: 120, height: 18, borderRadius: 4 }} />
+                </div>
+                <div className="_todo-sh" style={{ width: 78, height: 28, borderRadius: 14, flexShrink: 0 }} />
+            </div>
+
+            {/* Mobile Sub-tabs: Pending vs Completed (full-width) */}
+            <div style={{
+                display: "flex",
+                gap: 4,
+                background: "#f3f4f6",
+                padding: 4,
+                borderRadius: 8,
+                width: "100%",
+                marginBottom: 14,
+                boxSizing: "border-box",
+                flexShrink: 0,
+            }}>
+                <div className="_todo-sh" style={{ flex: 1, height: 32, borderRadius: 6 }} />
+                <div className="_todo-sh" style={{ flex: 1, height: 32, borderRadius: 6, opacity: 0.45 }} />
+            </div>
+
+            {/* Mobile Task Cards (Card View matching TaskCardView) */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 10, width: "100%" }}>
+                {[
+                    { badgeW: 100, line1W: 110, line2W: 140, descW: "85%" },
+                    { badgeW: 80,  line1W: 95,  line2W: 120, descW: "92%" },
+                    { badgeW: 115, line1W: 130, line2W: 105, descW: "78%" },
+                    { badgeW: 90,  line1W: 100, line2W: 135, descW: "88%" },
+                ].map((card, idx) => (
+                    <div
+                        key={idx}
+                        style={{
+                            background: "#ffffff",
+                            border: "1px solid #e5e7eb",
+                            borderRadius: 10,
+                            padding: "12px 14px",
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: 10,
+                            boxShadow: "0 1px 2px rgba(0,0,0,0.03)",
+                            boxSizing: "border-box",
+                            width: "100%",
+                        }}
+                    >
+                        {/* Top row: Checkbox placeholder + Category badge pill */}
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                            <div className="_todo-sh" style={{ width: 16, height: 16, borderRadius: 3 }} />
+                            <div className="_todo-sh" style={{ width: card.badgeW, height: 18, borderRadius: 9 }} />
+                        </div>
+
+                        {/* Middle lines: Metadata and Description */}
+                        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                                <div className="_todo-sh" style={{ width: 65, height: 11 }} />
+                                <div className="_todo-sh" style={{ width: card.line1W, height: 12 }} />
+                            </div>
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                                <div className="_todo-sh" style={{ width: 75, height: 11 }} />
+                                <div className="_todo-sh" style={{ width: card.line2W, height: 12 }} />
+                            </div>
+                            <div className="_todo-sh" style={{ width: card.descW, height: 13, marginTop: 2 }} />
+                        </div>
+
+                        {/* Bottom row: Due date tag + Act action button */}
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", paddingTop: 4, borderTop: "1px solid #f9fafb" }}>
+                            <div className="_todo-sh" style={{ width: 115, height: 20, borderRadius: 4 }} />
+                            <div className="_todo-sh" style={{ width: 52, height: 28, borderRadius: 6 }} />
+                        </div>
+                    </div>
+                ))}
             </div>
         </div>
     </>

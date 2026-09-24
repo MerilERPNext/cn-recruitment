@@ -88,12 +88,44 @@ def search_employees(query=None, status=None, exclude_own_employee=0, employee=N
     rows = run_search(
         entries,
         terms,
-        status=status,
+        status=normalise_status(status),
         exclude_employee=exclude_employee,
         limit=resolve_limit(limit, settings["result_limit"]),
     )
 
     return [format_employee(row, entries) for row in rows]
+
+
+def normalise_status(status):
+    """Accept a single status, a comma-separated list, or a JSON array.
+
+    Callers sending ``status=Active`` keep the behaviour they had. Sending
+    ``status=Active,Inactive`` (or a JSON list) now widens the search instead
+    of matching nothing, which is what a caller wanting both used to get.
+    """
+    if not status:
+        return []
+
+    if isinstance(status, str):
+        status = status.strip()
+        # The webapp posts arrays as a JSON string.
+        if status.startswith("["):
+            try:
+                status = frappe.parse_json(status)
+            except Exception:
+                return []
+        else:
+            status = status.split(",")
+
+    if not isinstance(status, (list, tuple)):
+        status = [status]
+
+    seen = []
+    for value in status:
+        value = cstr(value).strip()
+        if value and value not in seen:
+            seen.append(value)
+    return seen
 
 
 def split_terms(query):
@@ -401,8 +433,10 @@ def run_search(entries, terms, status=None, exclude_employee=None, limit=DEFAULT
         conditions.append(" OR ".join(f"{column} LIKE %({key})s" for column in search_columns))
 
     if status:
-        conditions.append("e.`status` = %(status)s")
-        values["status"] = status
+        conditions.append(
+            "e.`status` IN (%s)" % ", ".join(f"%(status{i})s" for i in range(len(status)))
+        )
+        values.update({f"status{i}": value for i, value in enumerate(status)})
 
     if exclude_employee:
         conditions.append("e.`name` != %(exclude_employee)s")
