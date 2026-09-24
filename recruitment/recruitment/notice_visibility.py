@@ -36,7 +36,8 @@ def visible_in_portal(
 ) -> bool:
     """Apply the visibility matrix for one notice (or, via `legacy_default_ess`,
     any other doctype reusing this same ESS/Alumni flag pair -- see
-    `recruitment.recruitment.overrides.todo_ess_visibility` for Todo Type).
+    `cn_todo_manager`'s `todo_api.ess_hidden_todo_types` for Todo Type,
+    which applies the same matrix with `legacy_default_ess=False` inline).
 
     ``portal`` is ``"ess"`` or ``"alumni"``. Alumni always shows only
     explicitly-flagged rows. ESS additionally shows the "neither set" legacy

@@ -103,20 +103,23 @@ def registration_status(drive):
             "the registration desk."
         )
 
-    row = frappe.db.get_value(
-        "Campus Drive",
-        drive,
-        [
-            "name",
-            "drive_name",
-            "drive_status",
-            "registration_form_enabled",
-            "registration_form_title",
-            "registration_open_from",
-            "drive_end_date",
-        ],
-        as_dict=True,
-    )
+    fields = [
+        "name",
+        "drive_name",
+        "drive_status",
+        "registration_form_enabled",
+        "registration_form_title",
+        "drive_end_date",
+    ]
+    # `registration_open_from` was dropped from Campus Drive; selecting a column the
+    # doctype no longer has is an OperationalError (500 on the public verify page).
+    # Read it only where the field still exists so the start-date gate keeps working
+    # if it is ever restored.
+    has_open_from = frappe.get_meta("Campus Drive").has_field("registration_open_from")
+    if has_open_from:
+        fields.append("registration_open_from")
+
+    row = frappe.db.get_value("Campus Drive", drive, fields, as_dict=True)
     if not row:
         return None, _(
             "This registration link is not valid. Please scan the QR code shown at the "
@@ -136,9 +139,10 @@ def registration_status(drive):
         )
 
     today = getdate(nowdate())
-    if row.registration_open_from and getdate(row.registration_open_from) > today:
+    open_from = row.get("registration_open_from") if has_open_from else None
+    if open_from and getdate(open_from) > today:
         return None, _("Registration for this campus drive opens on {0}.").format(
-            formatdate(row.registration_open_from)
+            formatdate(open_from)
         )
     if row.drive_end_date and getdate(row.drive_end_date) < today:
         return None, _("Registration for this campus drive closed on {0}.").format(

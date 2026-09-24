@@ -122,7 +122,14 @@ export default function PDFFormsPage() {
   }
   async function panelSubmit() {
     if (panel === "publish" || panel === "submit") return save(true);
-    if (panel === "template" && form) { setForm({ ...form, title, reference_doctype: reference }); setDirty(true); setPanel(null); return; }
+    if (panel === "template" && form) {
+      const referenceDoctype = reference.trim();
+      if (!referenceDoctype && form.questions.some(q => !q.exclude && q.value_source === "Record Field")) {
+        toast.error(__("Select a Reference DocType because one or more questions use Record Field."));
+        return;
+      }
+      setForm({ ...form, title, reference_doctype: referenceDoctype }); setDirty(true); setPanel(null); return;
+    }
     if (panel === "signature" && signatureQuestion && canvas.current) {
       const context = canvas.current.getContext("2d")!;
       if (typedName.trim()) {
@@ -210,7 +217,7 @@ export default function PDFFormsPage() {
             {(panel === "upload" || panel === "template") && <>
               {panel === "upload" && <PDFField label="PDF document" help={__("PDF documents and scans, up to {0} MB and 30 pages. Questions are discovered automatically for your review.").replace("{0}", String(maxUploadBytes / 1024 / 1024))}><input required type="file" accept=".pdf,application/pdf" className={controlClass} onChange={e => { const chosen = e.target.files?.[0] || null; setFile(chosen); if (chosen && !title) setTitle(chosen.name.replace(/\.pdf$/i, "")); }} /></PDFField>}
               <PDFField label="Template title"><input required className={controlClass} value={title} onChange={e => setTitle(e.target.value)} /></PDFField>
-              <PDFField label="Reference DocType (optional)" help="The record type used to prefill mapped fields, such as Employee."><PDFLinkField doctype="DocType" value={reference} onChange={setReference} /></PDFField>
+              <PDFField label="Reference DocType" help="Optional for user-entered forms. Required when a question uses Record Field; this record type supplies the linked values."><PDFLinkField doctype="DocType" value={reference} onChange={setReference} /></PDFField>
             </>}
             {panel === "assign" && <><PDFField label="Assign to user"><PDFLinkField doctype="User" value={recipient} onChange={setRecipient} /></PDFField>{form?.reference_doctype && <PDFField label={`${form.reference_doctype} record`}><PDFLinkField doctype={form.reference_doctype} value={record} onChange={setRecord} /></PDFField>}</>}
             {panel === "publish" && <p className="text-sm leading-relaxed text-gray-600">{__("Submitting freezes the questions and field rules and makes this template available to workflows. Duplicate it to create a new version.")}</p>}

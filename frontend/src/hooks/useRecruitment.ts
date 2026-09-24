@@ -104,8 +104,19 @@ export function useCreateJobRequisition() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (payload: CreateJobRequisitionPayload) =>
-      recruitmentService.createJobRequisition(payload),
+    mutationFn: (
+      variables:
+        | CreateJobRequisitionPayload
+        | { payload: CreateJobRequisitionPayload; draft?: string | null },
+    ) => {
+      // Either the payload on its own (the v1 form) or the payload plus the
+      // draft it was raised from (the v2 wizard).
+      const { payload, draft } =
+        variables && "payload" in variables
+          ? (variables as { payload: CreateJobRequisitionPayload; draft?: string | null })
+          : { payload: variables as CreateJobRequisitionPayload, draft: null };
+      return recruitmentService.createJobRequisition(payload, draft);
+    },
 
     onSuccess: (response) => {
       // One refetch, to pull in the rows that were just created.

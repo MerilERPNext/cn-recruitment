@@ -36,10 +36,11 @@ JOB_OPENING = "Job Opening"
 JOB_REQUISITION = "Job Requisition"
 
 # An offer stops counting against headcount only once it is cancelled, refused by
-# the candidate (Rejected) or pulled by the company (Withdrawn). Withdrawing is
-# also what releases the position it held — see recruitment.api.offer_position.
+# the candidate (Rejected), pulled by the company (Withdrawn) or lapsed unanswered
+# (Expired). Each of those also releases the position it held — see
+# recruitment.api.offer_position and recruitment.api.offer_expiry.
 REJECTED_STATUS = "Rejected"
-INACTIVE_STATUSES = (REJECTED_STATUS, "Withdrawn")
+INACTIVE_STATUSES = (REJECTED_STATUS, "Withdrawn", "Expired")
 
 
 def _allow_multiple_offers() -> bool:

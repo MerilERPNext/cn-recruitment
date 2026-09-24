@@ -307,6 +307,13 @@ after_migrate = [
 # ---------------
 # Override standard doctype classes
 
+# nextai row approval stamps Vacancy Details rows with raw SQL (no doc_events),
+# so the requisition's Approved / Rejected Positions counts are updated here, at
+# the moment a row's status is written.
+on_row_status_update = [
+    "recruitment.api.requisition_pipeline.refresh_position_approvals",
+]
+
 # Document Events
 # ---------------
 # Hook on document methods and events
@@ -830,6 +837,11 @@ scheduler_events = {
             "recruitment.recruitment.scheduled_jobs.auto_confirm_employees_without_policy",
         ],
         "0 1 * * *": [
+            # Offers whose Expiry Date passed with no answer from the candidate
+            # become "Expired" and hand their position back. Runs before the
+            # auto-withdraw sweep below, so a lapsed letter is reported as
+            # expired rather than withdrawn.
+            "recruitment.api.offer_expiry.expire_overdue_offers",
             "recruitment.recruitment.onboarding_extras.refresh_onboarding_task_days_to_join",
             "recruitment.recruitment.scheduled_jobs.mark_relieved_employees_as_left",
             "recruitment.recruitment.scheduled_jobs.auto_separate_employees_on_lwd",
@@ -909,14 +921,11 @@ before_request = [
 	# Override ERPNext's automatic User disable on Employee Inactive status.
 	# User state is controlled EXCLUSIVELY by the custom_is_alumni_employee
 	# checkbox via the alumni_checkbox_handler, not by Employee.status changes.
-	"recruitment.recruitment.employee_user_state_override.apply_patch",
-	# Hides Todo Type rows opted out of the ESS Portal (Alumni Portal on, ESS
-	# off) from cn_todo_manager's own get_todo_list -- every caller (the ESS
-	# dashboard widget, the embedded task-manager app, plain Desk access)
-	# funnels through the same query builder, so this is patched there rather
-	# than duplicated per caller. Alumni Portal sessions are exempted; see
-	# overrides/todo_ess_visibility.py for the full rationale.
-	"recruitment.recruitment.overrides.todo_ess_visibility.apply_patch",
+	# "recruitment.recruitment.employee_user_state_override.apply_patch",
+	# Todo Type ESS Portal visibility is not patched in from here: the rule
+	# lives in cn_todo_manager's own todo_api (`ess_hidden_todo_types`),
+	# applied in the query builder every caller funnels through. This app
+	# only owns the two Custom Fields it reads -- see `install.py`.
 ]
 # after_request = ["recruitment.utils.after_request"]
 

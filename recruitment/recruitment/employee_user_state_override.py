@@ -1,78 +1,39 @@
-"""Override ERPNext's automatic User disable on Employee Inactive status.
+# """Take ERPNext's ``Employee.status`` -> ``User.enabled`` sync out of the picture.
 
-ERPNext's built-in `Employee.validate_for_enabled_user_id()` automatically
-disables the Employee's company-email User whenever Employee.status changes
-from Active to Inactive (or any other non-Active status).
+# ERPNext's ``Employee.validate_for_enabled_user_id`` keeps ``User.enabled`` in
+# lock-step with ``Employee.status`` on every save — disabling the login when the
+# Employee is not Active and re-enabling it when they are. This app owns that
+# state instead: an account is disabled or enabled only by the
+# ``custom_is_alumni_employee`` checkbox, via ``alumni_checkbox_handler``. Leaving
+# ERPNext's sync in place would fight it — flipping an alumni Employee back to
+# Active would re-enable the company login the checkbox handler just disabled — so
+# the method is replaced with a no-op from the ``before_request`` hook.
+# """
 
-In this system, User enable/disable state is controlled ONLY by the
-`custom_is_alumni_employee` checkbox:
-  * Checkbox 0 (alumni OFF): Company User should remain ACTIVE
-  * Checkbox 1 (alumni ON): Company User should be DISABLED (via checkbox handler)
+# from __future__ import annotations
 
-This override patches ERPNext's logic to skip the automatic disable when
-Alumni mode is inactive. The checkbox handler takes full control of User state.
-"""
-
-from __future__ import annotations
-
-import frappe
-from frappe.utils import cint
-
-_PATCHED = "_recruitment_employee_user_state"
-ALUMNI_FLAG = "custom_is_alumni_employee"
+# _PATCHED = "_recruitment_employee_user_state"
 
 
-def _skip_user_disable_on_inactive(doc, enabled: int | None) -> bool:
-    """Return True if ERPNext should SKIP auto-disabling the User on Inactive status.
+# def patch_employee_user_state_validation() -> None:
+#     """Replace ``Employee.validate_for_enabled_user_id`` with a no-op (idempotent)."""
+#     from erpnext.setup.doctype.employee.employee import Employee
 
-    User disable should NOT happen automatically based on Employee.status.
-    Only the Alumni checkbox should control User state.
+#     if getattr(Employee, _PATCHED, False):
+#         return
 
-    So: if Employee.status != Active and Alumni mode is NOT active, skip the
-    automatic disable. The company User stays enabled.
-    """
-    if enabled is None:
-        # User doesn't exist or couldn't be loaded — ERPNext will throw
-        return False
+#     def validate_for_enabled_user_id_patched(self, *args, **kwargs):
+#         """Do nothing — User.enabled belongs to the alumni checkbox, not to status."""
+#         # The open signature is required, not laziness: ERPNext changed how this
+#         # method is called between versions — some pass the User's `enabled` flag,
+#         # newer ones pass nothing and look it up themselves. Pinning the parameters
+#         # to either shape raises TypeError on the other before the body even runs,
+#         # which breaks every Employee save on that version.
 
-    # If Alumni mode is active, let the checkbox handler control User state
-    if cint(doc.get(ALUMNI_FLAG)):
-        return True
-
-    # Alumni mode is NOT active: never auto-disable based on status
-    # Company User stays enabled regardless of Employee.status
-    return True
+#     Employee.validate_for_enabled_user_id = validate_for_enabled_user_id_patched
+#     setattr(Employee, _PATCHED, True)
 
 
-def patch_employee_user_state_validation() -> None:
-    """Patch Employee.validate_for_enabled_user_id to skip auto-disable logic.
-
-    Runs from the `before_request` hook, once per request, idempotent.
-    """
-    from erpnext.setup.doctype.employee.employee import Employee
-
-    if getattr(Employee, _PATCHED, False):
-        return
-
-    original_validate = Employee.validate_for_enabled_user_id
-
-    def validate_for_enabled_user_id_patched(self, enabled):
-        """Patched version: skip auto-disable on Inactive if Alumni mode is OFF."""
-        if enabled is None:
-            frappe.throw(frappe.bold(self.user_id) + " " + _("does not exist"))
-
-        # SKIP the built-in logic that disables User on non-Active status
-        # User state is now controlled ONLY by the Alumni checkbox handler
-        if _skip_user_disable_on_inactive(self, enabled):
-            return
-
-        # Fallback to original (should not reach here in normal operation)
-        original_validate(self, enabled)
-
-    Employee.validate_for_enabled_user_id = validate_for_enabled_user_id_patched
-    setattr(Employee, _PATCHED, True)
-
-
-def apply_patch() -> None:
-    """Entry point called from before_request hook."""
-    patch_employee_user_state_validation()
+# def apply_patch() -> None:
+#     """Entry point for the ``before_request`` hook."""
+#     patch_employee_user_state_validation()

@@ -91,8 +91,21 @@ export function usePostExpenseClaim() {
   return useMutation({
     mutationFn: (expenses_data: string) =>
       expenseService.postExpenseClaim(expenses_data),
-    onSuccess: () => {
+    onSuccess: (response: any) => {
       toast.success("Expense claim submitted successfully!");
+
+      // Backend allows over-limit claims for "Warn" policies and returns the warnings
+      const data = response?.limit_warnings ? response : response?.message;
+      if (data?.has_limit_warnings && Array.isArray(data?.limit_warnings)) {
+        data.limit_warnings.forEach((warning: any) => {
+          const text = String(warning?.message || "")
+            .replace(/<[^>]*>/g, "")
+            .trim();
+          if (text) {
+            toast(text, { icon: "⚠️", duration: 8000 });
+          }
+        });
+      }
 
       setTimeout(() => {
         queryClient.invalidateQueries({

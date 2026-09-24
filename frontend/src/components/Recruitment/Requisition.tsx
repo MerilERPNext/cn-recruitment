@@ -19,6 +19,7 @@ import AllocatedToTooltip from "../shared/AllocatedToTooltip";
 import { useApprovalAllocation } from "../../hooks/useRecruitment";
 import type { JobRequisitionListResponse, RequisitionListColumn } from "../../types/recruitment";
 import requisitionNotFoundImage from "../../assets/rec_not_found.jpeg";
+import RequisitionDrafts from "./RequisitionDrafts";
 
 // Sticky + visible-width keeps the image centred when the CardTable scrolls horizontally
 const RequisitionNotFound = (
@@ -711,6 +712,8 @@ const Requisition = () => {
           );
         })}
       </div>
+      {/* Unsubmitted "Save as Draft" forms — renders nothing when there are none. */}
+      <RequisitionDrafts />
       {isDesktop ? (
           <CardTable
           titles={activeTitles}

@@ -314,9 +314,11 @@ def send_bulk_job_offer(job_offers):
                 skipped += 1
                 continue
 
-            # A withdrawn or declined letter is history — "Resend Job Offer"
-            # raises a new version instead of mailing the old one again.
-            if job_offer.status in ("Withdrawn", "Rejected"):
+            # A withdrawn, declined or lapsed letter is history — "Resend Job
+            # Offer" raises a new version instead of mailing the old one again,
+            # and an expired one is revived by offer_expiry.resend_offer_letter,
+            # which gives it a new validity period first.
+            if job_offer.status in ("Withdrawn", "Rejected", "Expired"):
                 skipped += 1
                 continue
 

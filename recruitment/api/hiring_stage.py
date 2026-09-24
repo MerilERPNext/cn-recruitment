@@ -1037,6 +1037,10 @@ def advance_on_job_offer_outcome(doc, method=None):
 _OFFER_EVENT_SUBSTATUS = {
 	"Offer Withdrawn": "Offer Withdrawn",
 	"Offer Cancelled": "Offer Cancelled",
+	"Offer Expired": "Offer Expired",
+	# The same letter went out again on a new expiry date
+	# (offer_expiry.resend_offer_letter) — the candidate is back to deciding.
+	"Offer Resent": "Offer Sent",
 }
 
 
@@ -1517,7 +1521,12 @@ def get_workflow_view(job_applicant):
 
 	versions = offers_of(
 		doc.name,
-		fields=("name", "status", "docstatus", "email_status", "custom_offer_version", "creation"),
+		# offer_date / expiry carry the validity window the flow's "Resend Offer
+		# Letter" prompt defaults from.
+		fields=(
+			"name", "status", "docstatus", "email_status", "custom_offer_version",
+			"offer_date", "custom_jo_expiry_date", "creation",
+		),
 	)
 	offer = versions[0] if versions else None
 	offer_action_map = None

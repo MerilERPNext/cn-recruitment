@@ -32,7 +32,11 @@ POSITION_FIELD = "custom_requisition_position"
 POSITION_LABEL_FIELD = "custom_position_label"
 REQUISITION_FIELD = "custom_job_requisition"
 
-RELEASING_STATUSES = ("Rejected", "Withdrawn")
+# An offer in one of these has left the table without the candidate joining, so
+# the position it held goes back to Open. Expired belongs here for the same
+# reason as Withdrawn: a lapsed letter must not hold headcount while HR decides
+# whether to resend it (recruitment.api.offer_expiry).
+RELEASING_STATUSES = ("Rejected", "Withdrawn", "Expired")
 CLAIMABLE_REQUISITION_STATUSES = (
     APPROVED_ACTIVE_STATUS, APPROVED_DRAFT_STATUS, AUTO_ARCHIVED_STATUS,
 )
@@ -486,24 +490,26 @@ def release_offer_position(doc, method=None):
         frappe.log_error(frappe.get_traceback(), "Job Offer: position release on delete failed")
 
 
-def _run_withdraw_notifications(doc):
-    """Fire the Job Offer Notifications the raw status write skipped.
+def run_offer_notifications(doc, methods, label="status change"):
+    """Fire the Job Offer Notifications a raw status write skipped.
 
     Configure either as a Notification on Job Offer:
       - Send Alert On "Value Change", Value Changed "status", with
-        Condition ``doc.status == "Withdrawn"``, or
-      - Send Alert On "Method", Trigger Method "on_offer_withdrawn".
-    A broken notification template must not undo the withdrawal.
+        Condition ``doc.status == "Withdrawn"`` (or "Expired"), or
+      - Send Alert On "Method", Trigger Method "on_offer_withdrawn" /
+        "on_offer_expired".
+    A broken notification template must not undo the status change that called
+    this — shared with recruitment.api.offer_expiry for exactly that reason.
     """
-    for method in ("on_change", "on_offer_withdrawn"):
+    for method in methods:
         logged = len(frappe.local.message_log)
         try:
             doc.run_notifications(method)
         except Exception:
-            # frappe.throw already queued the traceback for the user; the
-            # withdrawal succeeded, so keep it in the Error Log only.
+            # frappe.throw already queued the traceback for the user; the status
+            # change succeeded, so keep it in the Error Log only.
             del frappe.local.message_log[logged:]
-            frappe.log_error(frappe.get_traceback(), "Job Offer: withdraw notification failed")
+            frappe.log_error(frappe.get_traceback(), f"Job Offer: {label} notification failed")
 
 
 @frappe.whitelist()
@@ -571,7 +577,7 @@ def apply_withdrawal(doc, comment):
     except Exception:
         frappe.log_error(frappe.get_traceback(), "Job Offer: action item close on withdraw failed")
     record_offer_event(doc, "Offer Withdrawn")
-    _run_withdraw_notifications(doc)
+    run_offer_notifications(doc, ("on_change", "on_offer_withdrawn"), "withdraw")
     doc.add_comment("Comment", comment)
 
     return {
