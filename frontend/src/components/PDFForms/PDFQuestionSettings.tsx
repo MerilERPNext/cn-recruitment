@@ -15,11 +15,13 @@ export const controlClass = "w-full rounded-lg border border-gray-200 bg-white p
 export default function PDFQuestionSettings({ question, form, onClose, onSave }: { question: PDFQuestion; form: PDFForm; onClose: () => void; onSave: (q: PDFQuestion) => void }) {
   const [draft, setDraft] = useState({ ...question });
   const update = (values: Partial<PDFQuestion>) => setDraft(old => ({ ...old, ...values }));
-  const sourceDoctype = draft.source_doctype || form.reference_doctype || "";
+  const referenceDoctype = form.reference_doctype?.trim() || "";
+  const sourceDoctype = draft.source_doctype?.trim() || referenceDoctype;
+  const hasExternalSource = !!referenceDoctype && !!sourceDoctype && sourceDoctype !== referenceDoctype;
   const fields = useQuery({ queryKey: ["pdf-mapping-fields", sourceDoctype], enabled: !!sourceDoctype,
     queryFn: () => pdfFormsService.fields(sourceDoctype), staleTime: 300000 });
-  const links = useQuery({ queryKey: ["pdf-mapping-fields", form.reference_doctype], enabled: !!form.reference_doctype,
-    queryFn: () => pdfFormsService.fields(form.reference_doctype!), staleTime: 300000 });
+  const links = useQuery({ queryKey: ["pdf-mapping-fields", referenceDoctype], enabled: !!referenceDoctype,
+    queryFn: () => pdfFormsService.fields(referenceDoctype), staleTime: 300000 });
   useEffect(() => { const key = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); }; window.addEventListener("keydown", key); return () => window.removeEventListener("keydown", key); }, [onClose]);
   return <SideDrawer open onClose={onClose} side="right" size="xl" title={`${__("Configure")} ${question.question}`} className="p-0">
     <form className="flex min-h-full flex-col" onSubmit={e => { e.preventDefault(); onSave(draft); }}>
@@ -37,15 +39,17 @@ export default function PDFQuestionSettings({ question, form, onClose, onSave }:
           {["User Input", "Record Field", "Fixed Value"].map(value => <option key={value}>{value}</option>)}
         </select></PDFField>
         {draft.value_source === "Record Field" ? <>
-        <PDFField label="Source DocType" help={!form.reference_doctype ? "Set a Reference DocType in template settings first." : undefined}><PDFLinkField doctype="DocType" value={sourceDoctype} onChange={value => update({ source_doctype: value, source_field: "", source_link_field: "" })} /></PDFField>
-        {sourceDoctype !== form.reference_doctype && <PDFField label="Link from reference record"><select required className={controlClass} value={draft.source_link_field || ""} onChange={e => update({ source_link_field: e.target.value })}>
-          <option value="">{__("Select a linking field")}</option>{links.data?.filter(f => f.fieldtype === "Link" && f.options === sourceDoctype).map(f => <option key={f.value} value={f.value}>{f.label}</option>)}
-        </select></PDFField>}
-        <PDFField label="Linked record field" help={sourceDoctype ? `${__("Prefilled from")} ${sourceDoctype}` : "Select a source DocType."}>
-          <select required className={controlClass} value={draft.source_field || ""} onChange={e => update({ source_field: e.target.value })}>
-            <option value="">{__("Select a field")}</option>{fields.data?.map(f => <option key={f.value} value={f.value}>{f.label}</option>)}
-          </select>
-        </PDFField></> : <PDFField label="Default / fixed value">{draft.field_type === "Checkbox" ? <select className={controlClass} value={["1", "Yes", "true"].includes(draft.default_value || "") || draft.choices.includes(draft.default_value || "") ? "true" : ""} onChange={e => update({ default_value: e.target.value })}><option value="">{__("Unchecked")}</option><option value="true">{__("Checked")}</option></select>
+        {!referenceDoctype ? <p role="alert" className="mb-4 rounded-lg bg-amber-50 p-3 text-xs leading-relaxed text-amber-800">{__("Set a Reference DocType in Template settings before choosing a Record Field.")}</p> : <>
+          <PDFField label="Source DocType" help={__("Defaults to the template Reference DocType. Choose another DocType only when the reference record links to it.")}><PDFLinkField doctype="DocType" value={sourceDoctype} onChange={value => update({ source_doctype: value, source_field: "", source_link_field: "" })} /></PDFField>
+          {hasExternalSource && <PDFField label="Link from reference record"><select required className={controlClass} value={draft.source_link_field || ""} onChange={e => update({ source_link_field: e.target.value })}>
+            <option value="">{__("Select a linking field")}</option>{links.data?.filter(f => f.fieldtype === "Link" && f.options === sourceDoctype).map(f => <option key={f.value} value={f.value}>{f.label}</option>)}
+          </select></PDFField>}
+          <PDFField label="Linked record field" help={`${__("Prefilled from")} ${sourceDoctype}`}>
+            <select required className={controlClass} value={draft.source_field || ""} onChange={e => update({ source_field: e.target.value })}>
+              <option value="">{__("Select a field")}</option>{fields.data?.map(f => <option key={f.value} value={f.value}>{f.label}</option>)}
+            </select>
+          </PDFField>
+        </>}</> : <PDFField label="Default / fixed value">{draft.field_type === "Checkbox" ? <select className={controlClass} value={["1", "Yes", "true"].includes(draft.default_value || "") || draft.choices.includes(draft.default_value || "") ? "true" : ""} onChange={e => update({ default_value: e.target.value })}><option value="">{__("Unchecked")}</option><option value="true">{__("Checked")}</option></select>
           : draft.choices.length ? <select className={controlClass} value={draft.default_value || ""} onChange={e => update({ default_value: e.target.value })}><option value="">{__("No default")}</option>{draft.choices.map(choice => <option key={choice}>{choice}</option>)}</select>
           : <input className={controlClass} type={draft.field_type === "Date" ? "date" : draft.field_type === "Number" ? "number" : draft.field_type === "Email" ? "email" : "text"} value={draft.default_value || ""} onChange={e => update({ default_value: e.target.value })} />}</PDFField>}
         {draft.choices.length > 0 && <PDFField label="Choices from PDF"><p className="text-sm text-gray-600">{draft.choices.join(" · ")}</p></PDFField>}
