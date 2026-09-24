@@ -358,26 +358,33 @@ const MobileDashboard: React.FC = () => {
     <div className="h-screen font-sans flex flex-col">
       {/* Header */}
       <div className="bg-white/80 backdrop-blur-lg border-b border-white/20 px-2 py-3 shadow-sm sticky top-0 z-10 flex-shrink-0">
-        <div className="flex items-center justify-between">
-          <Button
-            bgColor=""
-            variant="subtle"
-            className="w-12 h-12 p-0 rounded-xl overflow-hidden "
-          >
-            <img
-              src={typeof logoToShow === "string" ? logoToShow : ""}
-              alt="CompnayLogo"
-              className="w-12 h-12 p-1 rounded-full flex-shrink-0"
-            />
-            <Typography variant="subheading">
-              Welcome,{" "}
-              <span className="text-primary-900 whitespace-nowrap">
+        <div className="flex items-center justify-between gap-2 min-w-0">
+          <div className="flex items-center gap-2 min-w-0 flex-1">
+            <Button
+              bgColor=""
+              variant="subtle"
+              className="w-12 h-12 p-0 rounded-xl overflow-hidden flex-shrink-0"
+            >
+              <img
+                src={typeof logoToShow === "string" ? logoToShow : ""}
+                alt="CompnayLogo"
+                className="w-12 h-12 p-1 rounded-full flex-shrink-0"
+              />
+            </Button>
+            <div className="flex flex-col min-w-0 leading-tight">
+              <Typography variant="caption" className="text-gray-800">
+                Welcome,
+              </Typography>
+              <Typography
+                variant="subheading"
+                className="text-primary-900 truncate"
+              >
                 {currentEmployee?.employee_name?.split(" ")[0] || ""}!
-              </span>
-            </Typography>
-          </Button>
+              </Typography>
+            </div>
+          </div>
 
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
             <RedeemablePointsBadge variant="light" />
 
             <button
