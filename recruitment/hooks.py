@@ -650,12 +650,16 @@ doc_events = {
             "recruitment.recruitment.alumni_checkbox_handler.validate_alumni_personal_email_for_checkbox",
         ],
         "on_update": [
+            # Company-email login follows Employee.status: disabled while the
+            # employee is Left / Inactive. Never touches the alumni account.
+            "recruitment.recruitment.employee_user_state.disable_company_user_on_exit",
             # Keep the User's "Is Alumni Employee" flag in sync with Employee's checkbox
             # (only sets that flag on the User; never touches Employee.status or User.enabled).
             "recruitment.recruitment.alumni_portal.sync_alumni_flag",
-            # Provision or disable Alumni User based on checkbox changes:
+            # Alumni (personal-email) User follows the checkbox:
             # checkbox 0→1: create/reuse Alumni User from Personal Email
             # checkbox 1→0: disable the Alumni User
+            # Never touches the company-email User (that is status-driven, above).
             "recruitment.recruitment.alumni_checkbox_handler.handle_alumni_checkbox_change",
             # New Hire: hand a pending Employee to onboarding the moment the
             # approval matrix clears it — but only when its New Hire Form ticks
@@ -911,17 +915,12 @@ override_doctype_class = {
 # Request Events
 # ----------------
 before_request = [
-	# Override ERPNext's automatic User disable on Employee Inactive status.
-	# User state is controlled EXCLUSIVELY by the custom_is_alumni_employee
-	# checkbox via the alumni_checkbox_handler, not by Employee.status changes.
-	"recruitment.recruitment.employee_user_state_override.apply_patch",
-	# Hides Todo Type rows opted out of the ESS Portal (Alumni Portal on, ESS
-	# off) from cn_todo_manager's own get_todo_list -- every caller (the ESS
-	# dashboard widget, the embedded task-manager app, plain Desk access)
-	# funnels through the same query builder, so this is patched there rather
-	# than duplicated per caller. Alumni Portal sessions are exempted; see
-	# overrides/todo_ess_visibility.py for the full rationale.
-	"recruitment.recruitment.overrides.todo_ess_visibility.apply_patch",
+	# ERPNext's own Employee.status -> User.enabled sync is left in place; the
+	# app restates the Left/Inactive rule in employee_user_state (doc_events).
+	# Todo Type ESS Portal visibility is not patched in from here: the rule
+	# lives in cn_todo_manager's own todo_api (`ess_hidden_todo_types`),
+	# applied in the query builder every caller funnels through. This app
+	# only owns the two Custom Fields it reads -- see `install.py`.
 ]
 # after_request = ["recruitment.utils.after_request"]
 

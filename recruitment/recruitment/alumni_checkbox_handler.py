@@ -1,21 +1,21 @@
-"""Alumni Employee checkbox handler — checkbox-based User provisioning.
+"""Alumni Employee checkbox handler — checkbox-based Alumni User provisioning.
 
-This module handles Alumni User provisioning based on the `custom_is_alumni_employee`
-checkbox, completely decoupled from Employee status changes.
+The `custom_is_alumni_employee` checkbox is the **only** trigger for creating the
+alumni (personal-email) User. It can be set:
+  * Manually by HR / System Manager on an exited (Left / Inactive) employee
+  * Automatically by workflow/approval (e.g., Alumni Employee Request approval)
+  * By `sync_alumni_flag`, which defaults it on when status transitions to Left
 
-The `custom_is_alumni_employee` checkbox is the **only** trigger for Alumni User
-creation. It can be set:
-  * Manually by System Manager / Admin
-  * Automatically by workflow/approval process (e.g., Alumni Employee Request approval)
-  * Any other future process that sets `Employee.custom_is_alumni_employee = 1`
+Division of responsibility (see also ``employee_user_state``):
+  * ``Employee.status`` (Left / Inactive) governs the **company-email** User:
+    it is disabled by ``employee_user_state.disable_company_user_on_exit``
+    (and by ERPNext's own status sync).
+  * ``custom_is_alumni_employee`` governs the **alumni personal-email** User:
+    0→1 creates / re-enables it, 1→0 disables it.
 
-Employee status changes (Active → Inactive, Inactive → Active, etc.) do NOT
-automatically trigger Alumni User creation. That is handled by existing ERPNext
-logic:
-  * `status != Active` → disables the company-email User (ERPNext default)
-  * `status == Active` → re-enables the company-email User (ERPNext default)
-
-This module is completely independent of that flow.
+This module therefore never touches the company-email User. In particular,
+unticking the checkbox does NOT re-enable the company login of an exited
+employee — that stays disabled as long as the status says Left / Inactive.
 """
 
 from __future__ import annotations
@@ -30,6 +30,7 @@ from recruitment.recruitment.alumni_user_switch import (
     _create_alumni_user,
     _configure_alumni_user,
 )
+from recruitment.recruitment.employee_user_state import EXITED_STATUSES
 
 _LOGGER = "alumni_checkbox_handler"
 
@@ -57,26 +58,31 @@ def _is_alumni_checkbox_disabling(doc) -> bool:
 
 
 def validate_alumni_personal_email_for_checkbox(doc, method: str | None = None) -> None:
-    """Employee ``validate`` hook: require Personal Email when alumni checkbox
-    is being enabled (for manual user actions only).
+    """Employee ``validate`` hook: when the alumni checkbox is being enabled by
+    hand (0→1), require an exited status and a usable Personal Email.
 
-    Only fires when `custom_is_alumni_employee` changes from 0→1. Ordinary
-    saves of an already-alumni employee are untouched.
+    Ordinary saves of an already-alumni employee are untouched.
 
-    When the checkbox is set by the Alumni Request approval workflow
-    (via `mark_employee_as_alumni()`), bypass this validation — the Personal
-    Email requirement is only enforced for manual user-initiated changes.
-    The checkbox handler's `on_update()` will attempt Alumni User creation
-    and handle missing Personal Email gracefully.
+    When the checkbox is set by the Alumni Request approval workflow (via
+    `mark_employee_as_alumni()`), these checks are bypassed — they apply to
+    manual user-initiated changes only. The `on_update` handler then attempts
+    Alumni User creation and handles a missing Personal Email gracefully.
     """
     if not _is_alumni_checkbox_enabling(doc):
         return
 
     # Skip validation if this is being set by the approval workflow, not a manual user action.
-    # The approval workflow is flagged via the special context variable during programmatic
-    # checkpoint updates from `mark_employee_as_alumni()`.
     if frappe.local.flags.get("_alumni_checkbox_from_approval_workflow"):
         return
+
+    # An alumni account is for someone who has left: the personal-email User is
+    # created for an exited (Left / Inactive) employee only.
+    if (doc.status or "") not in EXITED_STATUSES:
+        frappe.throw(
+            _("Alumni Employee can only be enabled for an employee whose status is "
+              "Left or Inactive (current status: {0}).").format(doc.status or "-"),
+            title=_("Employee Still Active"),
+        )
 
     personal = (doc.get("personal_email") or "").strip()
     if not personal:
@@ -107,19 +113,18 @@ def validate_alumni_personal_email_for_checkbox(doc, method: str | None = None) 
 
 
 def handle_alumni_checkbox_change(doc, method: str | None = None) -> None:
-    """Employee ``on_update`` hook: implement full User switching based on
+    """Employee ``on_update`` hook: provision or disable the alumni User on
     checkbox changes.
 
     When `custom_is_alumni_employee` changes:
       * 0→1 (enabling alumni):
-        - Create/reuse Alumni User from Personal Email
-        - Disable the company-email User
-        - Enable the Alumni Personal Email User
-        - Link Alumni User to Employee
+        - Create (or reuse and re-enable) the Alumni User from Personal Email
+        - Link it to the Employee via `custom_alumni_user`
       * 1→0 (disabling alumni):
         - Disable the Alumni Personal Email User
-        - Enable the company-email User
-        - Return to normal company-email mode
+
+    The company-email User is never touched here: its enabled state follows
+    `Employee.status` (see ``employee_user_state``).
 
     Runs only on actual checkbox changes; ordinary saves never re-create users.
     Any failure is logged — this must never block Employee saves.
@@ -142,7 +147,7 @@ def handle_alumni_checkbox_change(doc, method: str | None = None) -> None:
                 _log("alumni_enable_skipped_same_address", doc.name)
                 return
 
-            # Find or create the Alumni User
+            # Find or create the Alumni User (both paths leave it enabled)
             existing = _find_user(personal)
             if existing:
                 _configure_alumni_user(existing)
@@ -157,15 +162,7 @@ def handle_alumni_checkbox_change(doc, method: str | None = None) -> None:
                 if doc.get("custom_alumni_user") != alumni_user:
                     doc.db_set("custom_alumni_user", alumni_user, update_modified=False)
 
-            # Disable the company-email User
-            if company_user and frappe.db.exists("User", company_user):
-                if cint(frappe.db.get_value("User", company_user, "enabled")):
-                    frappe.db.set_value(
-                        "User", company_user, "enabled", 0, update_modified=False
-                    )
-                    _log("company_user_disabled_on_alumni_enable", doc.name, user=company_user)
-
-            # Enable the Alumni User
+            # Make sure the Alumni User is enabled
             if cint(frappe.db.get_value("User", alumni_user, "enabled")) == 0:
                 frappe.db.set_value(
                     "User", alumni_user, "enabled", 1, update_modified=False
@@ -181,25 +178,21 @@ def handle_alumni_checkbox_change(doc, method: str | None = None) -> None:
 
     elif _is_alumni_checkbox_disabling(doc):
         try:
-            # Disable the Alumni User
             alumni_user = (doc.get("custom_alumni_user") or "").strip() or _find_user(
                 (doc.get("personal_email") or "").strip()
             )
+            company_user = (doc.get("user_id") or "").strip()
+            if alumni_user and alumni_user == company_user:
+                # Shared address: that login is the company account -- leave it to status.
+                _log("alumni_disable_skipped_same_address", doc.name, user=alumni_user)
+                return
+
             if alumni_user and frappe.db.exists("User", alumni_user):
                 if cint(frappe.db.get_value("User", alumni_user, "enabled")):
                     frappe.db.set_value(
                         "User", alumni_user, "enabled", 0, update_modified=False
                     )
                     _log("alumni_user_disabled_on_checkbox", doc.name, user=alumni_user)
-
-            # Enable the company-email User
-            company_user = (doc.get("user_id") or "").strip()
-            if company_user and frappe.db.exists("User", company_user):
-                if cint(frappe.db.get_value("User", company_user, "enabled")) == 0:
-                    frappe.db.set_value(
-                        "User", company_user, "enabled", 1, update_modified=False
-                    )
-                    _log("company_user_enabled_on_alumni_disable", doc.name, user=company_user)
 
         except Exception:
             _log("alumni_checkbox_disable_failed", doc.name)

@@ -23,9 +23,9 @@ Alumni User creation is now **ONLY** triggered by the
 ``custom_is_alumni_employee`` checkbox being set to 1, via the dedicated
 ``alumni_checkbox_handler`` module.
 
-The company-email account (User) is still disabled by ERPNext's own logic
-when Employee.status != Active — that is independent of this module and
-unchanged.
+The company-email account (User) is disabled when Employee.status is Left /
+Inactive by ``employee_user_state.disable_company_user_on_exit`` (and ERPNext's
+own status sync) — independent of this module and of the alumni checkbox.
 """
 
 from __future__ import annotations
@@ -53,8 +53,8 @@ def _log(event: str, employee: str, **extra) -> None:
 def _set_alumni_user_enabled(email: str, enabled: int) -> bool:
     """Enable/disable the ALUMNI (personal-email) User only.
 
-    The company-email account is left to ERPNext — it is handled by ERPNext's
-    own status rule.
+    The company-email account is never touched here — it follows
+    Employee.status (see ``employee_user_state``).
     Returns True when the value actually changed.
     """
     if not email or not frappe.db.exists("User", email):
