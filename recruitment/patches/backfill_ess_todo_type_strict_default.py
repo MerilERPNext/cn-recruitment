@@ -1,7 +1,8 @@
 """Preserve existing ESS Todo visibility when `custom_show_in_ess_portal`'s
 "neither box checked" default changed from ESS-visible to hidden-everywhere.
 
-`overrides/todo_ess_visibility.py` used to treat a Todo Type with both
+ESS Todo Type visibility (enforced in cn_todo_manager's own
+`todo_api.ess_hidden_todo_types`) used to treat a Todo Type with both
 `custom_show_in_ess_portal` and `custom_show_in_alumni_portal` unchecked as
 ESS-visible (Notice's own legacy default, reused as-is). That was changed to
 strict opt-in on both sides -- "neither set" now means hidden in both
