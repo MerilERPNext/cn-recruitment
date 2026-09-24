@@ -9,6 +9,7 @@ import {
   EmployeeNode,
   IReason,
   EmployeeSeparationDetails,
+  EmployeeEventItem,
 } from "../types/employee";
 import { FilterCondition } from "../types/frappe";
 import {
@@ -942,6 +943,20 @@ export class EmployeeService {
       { employee },
     );
     return response;
+  }
+
+  static async getEmployeeEvents(
+    limit_page_length: number = 19999,
+    start: number = 0,
+  ): Promise<EmployeeEventItem[]> {
+    const response = await FrappeAPI.getMethod(
+      "cn_hrms_core.cn_hrms_core.apis.employee.get_employee_events",
+      {
+        limit_page_length,
+        start,
+      },
+    );
+    return (response as EmployeeEventItem[]) || [];
   }
 }
 
