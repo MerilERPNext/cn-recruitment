@@ -269,6 +269,7 @@ def _map_rounds_to_stages(template_doc):
 			# interview is actually created.
 			"interviewer_pool": row.get("interviewer_pool"),
 			"interviewer_role": row.get("interviewer_role"),
+			"evaluation_form": row.get("evaluation_form"),
 			"sla": 0,
 			"sla_unit": "d",
 			"notify": 1,

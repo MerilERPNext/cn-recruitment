@@ -81,3 +81,4 @@ recruitment.patches.position_type_and_archive_rejected_positions
 recruitment.patches.backfill_ess_todo_type_strict_default
 recruitment.patches.job_offer_fixed_ctc_in_words
 recruitment.patches.salary_range_limits_to_digits
+recruitment.patches.add_job_opening_experience_field

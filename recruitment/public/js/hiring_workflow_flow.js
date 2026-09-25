@@ -378,12 +378,19 @@
                 if (!m) return;
                 frappe.model.with_doctype("Interview", () => {
                     const d = frappe.model.get_new_doc("Interview");
+                    // Link triggers on open would let HRMS's interview_round
+                    // handler clear job_applicant and replace the panel.
+                    d.__run_link_triggers = false;
                     d.job_applicant = m.job_applicant;
                     // v15 links the round through `interview_round`, v16 through
                     // `interview_type`; the server says which this site has.
                     d[m.interview_round_field || "interview_round"] = m.interview_round;
                     if (m.designation) d.designation = m.designation;
                     if (m.job_opening) d.job_opening = m.job_opening;
+                    if (m.evaluation_form) d.custom_evaluation_form = m.evaluation_form;
+                    Object.entries(m.fetched || {}).forEach(([field, value]) => {
+                        if (value != null && frappe.meta.has_field("Interview", field)) d[field] = value;
+                    });
                     // The stage's configured panel. Plain assignment, not
                     // frm.set_value: HRMS's own `interview_round` handler CLEARS
                     // interview_details and refills it from the round, so these
@@ -394,6 +401,47 @@
                         frappe.model.add_child(d, "Interview Detail", "interview_details").interviewer = interviewer;
                     });
                     frappe.set_route("Form", "Interview", d.name);
+                });
+            },
+        });
+    }
+
+    // Read-only view of the stage's feedback form, as interviewers get it.
+    function previewFeedbackForm(stageName, frm) {
+        frappe.call({
+            method: "recruitment.api.interview_feedback_approval.get_stage_feedback_form_preview",
+            args: { job_applicant: frm.doc.name, stage_name: stageName },
+            freeze: true,
+            freeze_message: __("Loading form…"),
+            callback: (r) => {
+                const res = (r && r.message) || {};
+                const d = new frappe.ui.Dialog({
+                    title: __("Feedback Form Preview") + (res.label ? ` — ${esc(res.label)}` : ""),
+                    size: "large",
+                    fields: [{ fieldtype: "HTML", fieldname: "body" }],
+                    primary_action_label: __("Close"),
+                    primary_action: () => d.hide(),
+                });
+                const $body = d.fields_dict.body.$wrapper;
+                d.show();
+                if (!res.schema) {
+                    $body.html(`<div class="hwf-empty">${res.widget
+                        ? __("The form {0} could not be read.", [esc(res.widget)])
+                        : __("No feedback form is set on this stage.")}</div>`);
+                    return;
+                }
+                if (!window.Formio) {
+                    $body.html(`<div class="hwf-empty">${__("The form viewer is not available.")}</div>`);
+                    return;
+                }
+                const schema = {
+                    ...res.schema,
+                    components: (res.schema.components || []).filter((c) => !(c && c.type === "button")),
+                };
+                const el = $("<div></div>").appendTo($body.empty())[0];
+                window.Formio.createForm(el, schema, { readOnly: true }).catch((e) => {
+                    console.error("Feedback form preview failed", e);
+                    $body.html(`<div class="hwf-empty">${__("This form could not be displayed.")}</div>`);
                 });
             },
         });
@@ -839,6 +887,9 @@
             // it too (complete_interview), this just says so before the click.
             const hasInterview = (cur.interviews || []).length > 0;
             actions += `<button class="hwf-btn" data-act="interview">+ ${__("Schedule Interview")}</button>`;
+            if (cur.evaluation_form) {
+                actions += `<button class="hwf-btn" data-act="previewfeedback">${__("Preview Feedback Form")}</button>`;
+            }
             actions += hasInterview
                 ? `<button class="hwf-btn primary" data-act="markdone">${__("Mark as Completed")}</button>`
                 : `<button class="hwf-btn primary" disabled title="${__("Schedule an interview for this stage first.")}">${__("Mark as Completed")}</button>`;
@@ -1074,6 +1125,7 @@
             }
             if (act === "complete") completeStage(frm);
             else if (act === "interview") scheduleInterview(frm, view.current_stage);
+            else if (act === "previewfeedback") previewFeedbackForm(view.current_stage, frm);
             else if (act === "markdone") openInterviewDialog(frm, view);
             else if (act === "review") openReviewDialog(frm, $(this).data("mode"));
             else if (act === "screening") runScreening(frm);

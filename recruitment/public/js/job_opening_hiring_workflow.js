@@ -84,6 +84,7 @@
 			frm.set_query("interviewer_pool", "custom_hiring_stages", () => ({
 				query: "recruitment.recruitment.doctype.ta_interview_strategy_template.ta_interview_strategy_template.get_interviewer_user_assignments",
 			}));
+			frm.set_query("evaluation_form", "custom_hiring_stages", () => ({ filters: { doc_type: ["in", ["Interview Feedback", "Interview"]], is_archived: 0 } }));
 		},
 
 		refresh(frm) {

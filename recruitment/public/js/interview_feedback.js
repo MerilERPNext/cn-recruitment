@@ -340,3 +340,38 @@ function describe(ctx) {
     }
     return `${__("Locations of region {0}.", [ctx.region_label || ctx.region])} ${base}`;
 }
+
+// Skill Assessment → Description: what each skill means for this round. The server
+// stamps it on save (fill_skill_descriptions) whichever way the rows arrived; this
+// only shows it while the panel is still rating, so they read it before they score.
+function fillSkillDescriptions(frm) {
+    if (frm.doc.docstatus !== 0) return;
+    const rows = (frm.doc.skill_assessment || []).filter((r) => r.skill && !r.custom_description);
+    if (!rows.length) return;
+    frappe.call({
+        method: "recruitment.customizations.interview_feedback.interview_feedback.get_skill_descriptions",
+        args: { interview_round: frm.doc.interview_round, skills: rows.map((r) => r.skill) },
+        callback: (r) => {
+            const descriptions = r.message || {};
+            rows.forEach((row) => {
+                if (descriptions[row.skill]) row.custom_description = descriptions[row.skill];
+            });
+            frm.refresh_field("skill_assessment");
+        },
+    });
+}
+
+frappe.ui.form.on("Interview Feedback", {
+    refresh: fillSkillDescriptions,
+    // HRMS refills the grid from the round's Expected Skill Set; wait for that call.
+    interview_round(frm) {
+        frappe.after_ajax(() => fillSkillDescriptions(frm));
+    },
+});
+
+frappe.ui.form.on("Skill Assessment", {
+    skill(frm, cdt, cdn) {
+        frappe.model.set_value(cdt, cdn, "custom_description", "");
+        fillSkillDescriptions(frm);
+    },
+});

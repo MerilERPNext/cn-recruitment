@@ -311,6 +311,14 @@ on_row_status_update = [
     "recruitment.api.requisition_pipeline.refresh_position_approvals",
 ]
 
+# Interview feedback via the approval matrix (recruitment.api.interview_feedback_approval).
+approval_form_schema = [
+    "recruitment.api.interview_feedback_approval.add_result_question",
+]
+on_approval_form_submit = [
+    "recruitment.api.interview_feedback_approval.create_feedback_from_approval",
+]
+
 # Document Events
 # ---------------
 # Hook on document methods and events
@@ -384,6 +392,9 @@ doc_events = {
             # on_submit: the submit chain below already re-saves the Interview, and
             # a missing answer should be flagged while the panel is still writing.
             "recruitment.api.interview_feedback_form.validate_form_response",
+            # Each skill row carries its description — the round's Expected Skill
+            # Set text, else the Skill master's.
+            "recruitment.customizations.interview_feedback.interview_feedback.fill_skill_descriptions",
         ],
         "on_submit": [
             "recruitment.customizations.interview_feedback.interview_feedback.on_submit_feedback",
@@ -581,6 +592,10 @@ doc_events = {
         "on_update": "recruitment.api.requisition_budget.on_budget_master_update",
     },
     "Job Opening": {
+        # Job Title from the requisition's Job Description (else the Designation's
+        # name, never its id) and Experience from the requisition's range. Before
+        # validate so HRMS builds the web route from the right title.
+        "before_validate": "recruitment.customizations.job_opening_from_requisition.set_fields_from_requisition",
         "validate": [
             # An opening raised from a requisition inherits its recruiter — without
             # one the opening belongs to nobody. Creation only, and on every path

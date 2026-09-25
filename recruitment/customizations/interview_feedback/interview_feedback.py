@@ -214,3 +214,43 @@ def create_interview_feedback(data, interview_name, interviewer, job_applicant):
     )
 
 
+
+
+def fill_skill_descriptions(doc, method=None):
+    """Stamp each Skill Assessment row with what the skill means for this round.
+
+    The round's Expected Skill Set description wins — it is written for this round
+    ("system design at senior level") — and the Skill master's generic description is
+    the fallback. On validate rather than in the form, because rows arrive from four
+    places (HRMS desk, the Submit Feedback route, the REST API, create_interview_feedback)
+    and only some of them run the form's JS.
+    """
+    rows = doc.get("skill_assessment") or []
+    if not rows:
+        return
+    descriptions = get_skill_descriptions(doc.interview_round, [r.skill for r in rows])
+    for row in rows:
+        row.custom_description = descriptions.get(row.skill)
+
+
+@frappe.whitelist()
+def get_skill_descriptions(interview_round=None, skills=None):
+    """{skill: description} — round's Expected Skill Set first, Skill master second."""
+    if isinstance(skills, str):
+        skills = frappe.parse_json(skills)
+    skills = [s for s in (skills or []) if s]
+    if not skills:
+        return {}
+
+    descriptions = dict(frappe.get_all(
+        "Skill", filters={"name": ["in", skills]}, fields=["name", "description"], as_list=True,
+    ))
+    if interview_round:
+        for skill, description in frappe.get_all(
+            "Expected Skill Set",
+            filters={"parent": interview_round, "parenttype": "Interview Round", "skill": ["in", skills]},
+            fields=["skill", "description"], as_list=True,
+        ):
+            if description:
+                descriptions[skill] = description
+    return {s: descriptions.get(s) for s in skills}

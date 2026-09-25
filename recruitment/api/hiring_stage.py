@@ -27,6 +27,7 @@ import json
 import frappe
 from frappe import _
 from frappe.utils import flt, get_datetime, get_url, now_datetime
+from hrms.hr.doctype.interview.interview import get_interviewers
 
 from recruitment.recruitment.communication_log import sendmail_with_log
 
@@ -172,16 +173,23 @@ def get_opening_stages(job_opening):
 			"parenttype": "Job Opening",
 			"parentfield": STAGES_FIELD,
 		},
-		fields=[
+		fields=_with_evaluation_form([
 			"stage_name", "stage_type", "is_mandatory",
 			"interviewer_pool", "interviewer_role",
 			"sla", "sla_unit", "owner_role", "notify", "auto", "notes", "idx",
-		],
+		]),
 		order_by="idx asc",
 	)
 	if not rows:
 		return rows
 	return _append_offer_stages(job_opening, rows)
+
+
+def _with_evaluation_form(fields):
+	"""Add the stage's feedback form column once the doctype is migrated to have it."""
+	if frappe.get_meta("Job Opening Hiring Stage").has_field("evaluation_form"):
+		return fields + ["evaluation_form"]
+	return fields
 
 
 def _terminal_stage(name, stage_type, idx):
@@ -190,7 +198,7 @@ def _terminal_stage(name, stage_type, idx):
 		# Off by default; the Pre Job Offer stage takes it from the opening's
 		# "Pre Job Offer Mandatory" tick (see _append_offer_stages).
 		"is_mandatory": 0,
-		"interviewer_pool": None, "interviewer_role": None,
+		"interviewer_pool": None, "interviewer_role": None, "evaluation_form": None,
 		"sla": 0, "sla_unit": "d", "owner_role": "HR",
 		"notify": 0, "auto": 0, "notes": "", "idx": idx,
 	}
@@ -255,11 +263,11 @@ def get_openings_stages(job_openings):
 			"parenttype": "Job Opening",
 			"parentfield": STAGES_FIELD,
 		},
-		fields=[
+		fields=_with_evaluation_form([
 			"parent", "stage_name", "stage_type", "is_mandatory",
 			"interviewer_pool", "interviewer_role",
 			"sla", "sla_unit", "owner_role", "notify", "auto", "notes", "idx",
-		],
+		]),
 		order_by="parent asc, idx asc",
 	)
 	pre_flags = {
@@ -867,13 +875,26 @@ def prepare_interview(job_applicant, stage_name=None):
 	interview_round = _ensure_interview_round(stage.get("stage_name"), doc.get("designation"))
 	return {
 		"job_applicant": doc.name,
+		# fetch_from values: the client opens the form with link triggers off.
+		"fetched": {
+			"resume_attachment": doc.get("resume_attachment"),
+			"resume_link": doc.get("resume_link"),
+			"expected_average_rating": frappe.db.get_value(
+				"Interview Round", interview_round, "expected_average_rating"
+			),
+		},
 		"interview_round": interview_round,
 		# Named, not assumed: v15 links the round through `interview_round`, v16
 		# through `interview_type`. The client sets whichever this site has.
 		"interview_round_field": get_interview_round_field() or "interview_round",
 		"designation": doc.get("designation"),
 		"job_opening": doc.get("job_title"),
-		"interviewers": stage_interviewers(stage),
+		# The round's default panel when the stage names none (what HRMS's
+		# interview_round trigger used to fill in).
+		"interviewers": stage_interviewers(stage) or [
+			r.interviewer for r in get_interviewers(interview_round) if r.interviewer
+		],
+		"evaluation_form": stage.get("evaluation_form"),
 	}
 
 
@@ -1526,6 +1547,7 @@ def get_workflow_view(job_applicant):
 			"entered_on": info.get("entered_on"),
 			"result": info.get("result"),
 			"interviews": interviews_by_stage.get(s.get("stage_name"), []),
+			"evaluation_form": s.get("evaluation_form"),
 			# Named only where the answer is "nobody has been asked yet": an
 			# Interview stage still to come/in play with no interview scheduled.
 			# Once interviews exist, each one carries its own `pending_with`.

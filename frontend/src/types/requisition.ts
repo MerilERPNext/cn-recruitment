@@ -75,7 +75,7 @@ export interface RequisitionBudgetStatus {
     trigger_date: string | null;
     completed_date: string | null;
     is_row_stage?: boolean;
-    rows?: { actioned: number; total: number };
+    rows?: { actioned: number; total: number; approved?: number; rejected?: number };
     row_approvals?: RequisitionRowApproval[];
     // Act button fields — populated by backend only for pending stages that
     // have a linked ToDo with custom_doctype_actions.

@@ -1,4 +1,8 @@
 frappe.ui.form.on("Interview", {
+    setup: function(frm) {
+        // Only interview forms (widget Doc Type).
+        frm.set_query("custom_evaluation_form", () => ({ filters: { doc_type: ["in", ["Interview Feedback", "Interview"]], is_archived: 0 } }));
+    },
     refresh: function(frm){
 		if(frm.doc.status=="Pending"){
 			  frm.add_custom_button(__('Travel Request'), function(){
