@@ -84,6 +84,16 @@ class TAInterviewStrategyTemplate(Document):
 		self.validate_applicable_to()
 		self.validate_default()
 		self.validate_compulsory_stages()
+		self.set_round_counts()
+
+	def set_round_counts(self):
+		from recruitment.api.hiring_stage import set_round_counts
+
+		set_round_counts(
+			self,
+			[r for r in (self.interview_rounds or []) if r.round_name],
+			lambda r: _stage_type_for_round(r.as_dict()),
+		)
 
 	def validate_compulsory_stages(self):
 		from recruitment.api.hiring_stage import enforce_compulsory_stages, stage_rows_changed

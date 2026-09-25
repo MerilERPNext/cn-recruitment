@@ -101,6 +101,44 @@ def stage_rows_changed(doc, fieldname, fields):
 	return snap(before) != snap(doc)
 
 
+# Stage type -> fieldname suffix of its "No. of … Rounds" counter. The counters sit
+# above the stages grid on both the Job Opening (custom_ prefixed) and the TA
+# Interview Strategy Template; public/js/hiring_round_counts.js grows/shrinks the
+# grid when one is edited.
+ROUND_COUNT_FIELDS = {
+	"Shortlist": "no_of_shortlisting_rounds",
+	"Screening": "no_of_screening_rounds",
+	"Interview": "no_of_interview_rounds",
+}
+
+
+def set_round_counts(doc, rows, type_of, prefix=""):
+	"""Store how many rows of each round type ``rows`` carries.
+
+	The rows are the truth — the counters only summarise them — so a grid edited
+	by hand, prefilled from a template or written through the API still saves
+	with counters that match.
+	"""
+	counts = dict.fromkeys(ROUND_COUNT_FIELDS, 0)
+	for row in rows or []:
+		stage_type = type_of(row)
+		if stage_type in counts:
+			counts[stage_type] += 1
+	for stage_type, field in ROUND_COUNT_FIELDS.items():
+		if doc.meta.has_field(prefix + field):
+			doc.set(prefix + field, counts[stage_type])
+
+
+def set_job_opening_round_counts(doc, method=None):
+	"""Job Opening validate hook — see :func:`set_round_counts`."""
+	set_round_counts(
+		doc,
+		[r for r in doc.get(STAGES_FIELD) or [] if r.stage_name],
+		lambda r: (r.get("stage_type") or "").strip(),
+		prefix="custom_",
+	)
+
+
 def validate_job_opening_compulsory_stages(doc, method=None):
 	"""Job Opening validate hook. Openings with no stages don't use the workflow."""
 	if not stage_rows_changed(doc, STAGES_FIELD, ("stage_type", "stage_name", "is_mandatory")):

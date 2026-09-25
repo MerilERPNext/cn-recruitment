@@ -30,6 +30,7 @@
 		(stages || []).forEach((s) => frm.add_child("custom_hiring_stages", s));
 		frm.refresh_field("custom_hiring_stages");
 		recruitment.interview_round_link.sync(frm, STAGE_LINK);
+		recruitment.hiring_round_counts.recount(frm);
 	}
 
 	function fetchAndFill(frm, opts) {

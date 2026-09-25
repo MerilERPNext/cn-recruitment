@@ -358,6 +358,41 @@ def apply_default_eligibility_rules(doc, method=None):
 		frappe.log_error(frappe.get_traceback(), "Campus eligibility defaults failed")
 
 
+def _opening_rules(opening):
+	return frappe.get_all(
+		"Job Opening Eligibility Rule",
+		filters={"parent": opening, "parenttype": "Job Opening", "parentfield": RULES_FIELD},
+		fields=["field_name", "match_field", "match_operator", "match_value", "match_value_to",
+		        "operator", "value", "value_to", "action"],
+		order_by="idx asc",
+	)
+
+
+def _decide(doc, rules):
+	"""(status, substatus, comment) for this candidate against ``rules``.
+
+	A rule fires when the candidate MATCHES it — the row on screen reads
+	"when <field> <op> <value> → <action>", and this is that sentence.
+	Knock out → Rejected · Flag → Hold · nothing matched → Shortlisted (substatus
+	None: a pass leaves the candidate's substatus alone).
+	"""
+	knockouts, flags = [], []
+	for r in rules:
+		if not r.get("field_name"):
+			continue
+		if not _rule_matches(doc, r):
+			continue
+		(knockouts if (r.get("action") or "") == "Knock out" else flags).append(_rule_label(r))
+
+	if knockouts:
+		return (REJECT_STATUS, REJECT_SUBSTATUS,
+		        _("❌ <b>Rejected</b> — matched knock-out condition: {0}").format("; ".join(knockouts)))
+	if flags:
+		return (HOLD_STATUS, HOLD_SUBSTATUS,
+		        _("⏸️ <b>On Hold</b> — matched condition to review: {0}").format("; ".join(flags)))
+	return (PASS_STATUS, None, _("✅ <b>Shortlisted</b> — no eligibility condition matched."))
+
+
 def evaluate_eligibility(job_applicant):
 	"""Evaluate the opening's eligibility rules and set the candidate's outcome.
 
@@ -374,43 +409,113 @@ def evaluate_eligibility(job_applicant):
 		if not opening:
 			return
 
-		rules = frappe.get_all(
-			"Job Opening Eligibility Rule",
-			filters={"parent": opening, "parenttype": "Job Opening", "parentfield": RULES_FIELD},
-			fields=["field_name", "match_field", "match_operator", "match_value", "match_value_to",
-			        "operator", "value", "value_to", "action"],
-			order_by="idx asc",
-		)
+		rules = _opening_rules(opening)
 		if not rules:
 			return
 
-		# A rule fires when the candidate MATCHES it — the row on screen reads
-		# "when <field> <op> <value> → <action>", and this is that sentence.
-		knockouts, flags = [], []
-		for r in rules:
-			if not r.get("field_name"):
-				continue
-			if not _rule_matches(doc, r):
-				continue
-			(knockouts if (r.get("action") or "") == "Knock out" else flags).append(_rule_label(r))
-
-		# Knock out → Rejected · Flag → Hold · nothing matched → Shortlisted. A
-		# timeline comment always records the decision + the exact reason.
-		if knockouts:
-			doc.db_set("status", REJECT_STATUS, update_modified=False)
-			doc.db_set("custom_substatus", REJECT_SUBSTATUS, update_modified=False)
-			_comment(doc, _("❌ <b>Rejected</b> — matched knock-out condition: {0}").format("; ".join(knockouts)))
-		elif flags:
-			doc.db_set("status", HOLD_STATUS, update_modified=False)
-			doc.db_set("custom_substatus", HOLD_SUBSTATUS, update_modified=False)
-			_comment(doc, _("⏸️ <b>On Hold</b> — matched condition to review: {0}").format("; ".join(flags)))
-		else:
-			doc.db_set("status", PASS_STATUS, update_modified=False)
-			_comment(doc, _("✅ <b>Shortlisted</b> — no eligibility condition matched."))
+		# A timeline comment always records the decision + the exact reason.
+		status, substatus, comment = _decide(doc, rules)
+		doc.db_set("status", status, update_modified=False)
+		if substatus:
+			doc.db_set("custom_substatus", substatus, update_modified=False)
+		_comment(doc, comment)
 		frappe.db.commit()
 	except Exception:
 		# Eligibility scoring must never block campus application submission.
 		frappe.log_error(frappe.get_traceback(), "Campus eligibility evaluation failed")
+
+
+# Re-running after the rules change only touches candidates eligibility itself held
+# back: Rejected · "Eligibility Not Met" and Hold · "Eligibility Flagged". Everyone
+# else — Open, Shortlisted, Interview, Approvals, a manual rejection — is skipped, so
+# a re-run can never pull back a candidate who already passed or moved forward.
+ELIGIBILITY_SUBSTATUSES = (REJECT_SUBSTATUS, HOLD_SUBSTATUS)
+
+
+def _in_screening(status, substatus):
+	return (status, substatus or "") in (
+		(REJECT_STATUS, REJECT_SUBSTATUS),
+		(HOLD_STATUS, HOLD_SUBSTATUS),
+	)
+
+
+def _rerun(applicants):
+	"""Re-evaluate ``applicants`` (rows with name/job_title/status/custom_substatus),
+	each against its own opening's CURRENT rules. Returns the tally for the UI."""
+	summary = {"total": len(applicants), "evaluated": 0, "changed": 0,
+	           "rejected": 0, "hold": 0, "shortlisted": 0,
+	           "skipped_stage": 0, "skipped_no_rules": 0, "failed": 0}
+	rules_by_opening = {}
+
+	for a in applicants:
+		if not _in_screening(a.status, a.custom_substatus):
+			summary["skipped_stage"] += 1
+			continue
+		if a.job_title not in rules_by_opening:
+			rules_by_opening[a.job_title] = _opening_rules(a.job_title) if a.job_title else []
+		rules = rules_by_opening[a.job_title]
+		if not rules:
+			summary["skipped_no_rules"] += 1
+			continue
+
+		try:
+			doc = frappe.get_doc("Job Applicant", a.name)
+			status, substatus, comment = _decide(doc, rules)
+			# A pass also clears the eligibility reason from the last run —
+			# "Shortlisted · Eligibility Not Met" would read as a contradiction.
+			new_sub = substatus or ""
+
+			summary["evaluated"] += 1
+			summary[{REJECT_STATUS: "rejected", HOLD_STATUS: "hold"}.get(status, "shortlisted")] += 1
+			if status == a.status and new_sub == (a.custom_substatus or ""):
+				continue  # same outcome — keep the timeline quiet
+
+			doc.db_set({"status": status, "custom_substatus": new_sub or None}, update_modified=False)
+			_comment(doc, _("🔁 Eligibility re-run: {0}").format(comment))
+			summary["changed"] += 1
+		except Exception:
+			summary["failed"] += 1
+			frappe.log_error(frappe.get_traceback(), f"Eligibility re-run failed for {a.name}")
+
+	frappe.db.commit()
+	return summary
+
+
+_APPLICANT_FIELDS = ["name", "job_title", "status", "custom_substatus"]
+
+
+@frappe.whitelist(methods=["POST"])
+def rerun_eligibility_for_opening(job_opening):
+	"""Re-check this Job Opening's eligibility-rejected / held candidates against
+	its current (saved) eligibility rules."""
+	frappe.get_doc("Job Opening", job_opening).check_permission("write")
+	if not _opening_rules(job_opening):
+		frappe.throw(_("This opening has no eligibility conditions to run."))
+	applicants = frappe.get_all(
+		"Job Applicant", filters={"job_title": job_opening},
+		fields=_APPLICANT_FIELDS, limit_page_length=0,
+	)
+	return _rerun(applicants)
+
+
+@frappe.whitelist(methods=["POST"])
+def rerun_eligibility_for_drive(campus_drive):
+	"""Re-check this Campus Drive's eligibility-rejected / held candidates (invited
+	or walk-in), each against their own opening's current eligibility rules."""
+	from recruitment.recruitment.doctype.campus_drive.campus_drive import _on_drive_or_filters
+
+	frappe.get_doc("Campus Drive", campus_drive).check_permission("write")
+	invites = frappe.get_all(
+		"Campus Drive Invite",
+		filters={"parenttype": "Campus Drive", "parent": campus_drive},
+		pluck="campus_invite",
+	)
+	applicants = frappe.get_all(
+		"Job Applicant",
+		or_filters=_on_drive_or_filters(campus_drive, invites),
+		fields=_APPLICANT_FIELDS, limit_page_length=0,
+	)
+	return _rerun(applicants)
 
 
 def _comment(doc, text):

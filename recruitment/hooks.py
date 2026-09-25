@@ -112,6 +112,7 @@ doctype_js = {
     "Job Opening": [
         "public/js/job_opening.js",
         "public/js/interview_round_link.js",
+        "public/js/hiring_round_counts.js",
         "public/js/job_opening_hiring_workflow.js",
         "public/js/job_opening_attach_resumes.js",
         "public/js/applicant_field_picker.js",
@@ -119,7 +120,10 @@ doctype_js = {
     ],
     # Same eligibility builder as the Job Opening, editing the campus defaults.
     "Campus Eligibility Settings": ["public/js/job_opening_eligibility_ui.js"],
-    "TA Interview Strategy Template": ["public/js/interview_round_link.js"],
+    "TA Interview Strategy Template": [
+        "public/js/interview_round_link.js",
+        "public/js/hiring_round_counts.js",
+    ],
     "TA Duplicity Check Settings": ["public/js/applicant_field_picker.js"],
     "TA Rehire Check Settings": ["public/js/applicant_field_picker.js"],
     "Job Description": ["public/js/job_description.js"],
@@ -589,6 +593,8 @@ doc_events = {
             "recruitment.customizations.hiring_lead_permissions.validate_job_opening_hiring_lead_edits",
             # Recruitment Settings can make Screening / Shortlist compulsory stages.
             "recruitment.api.hiring_stage.validate_job_opening_compulsory_stages",
+            # "No. of Shortlisting / Screening / Interview Rounds" mirror the stage rows.
+            "recruitment.api.hiring_stage.set_job_opening_round_counts",
             # Compute each External Recruiter row's read-only posting status from its
             # Display From/To window so the grid reflects live availability.
             "recruitment.permissions.doc_type_permissions.set_external_recruiter_posting_status",
