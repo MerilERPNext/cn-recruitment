@@ -343,14 +343,23 @@ function describe(ctx) {
 
 // Skill Assessment → Description: what each skill means for this round. The server
 // stamps it on save (fill_skill_descriptions) whichever way the rows arrived; this
-// only shows it while the panel is still rating, so they read it before they score.
+// shows it the moment the skills appear, so the panel reads it before they score.
+//
+// The round lives in a different field per HRMS version — `interview_round` on v15,
+// `interview_type` on v16 — and HRMS refills the grid from whichever one changed.
+// Both are sent: each version has only one of them, and the server reads the round's
+// Expected Skill Set from under the round doctype this site actually has.
 function fillSkillDescriptions(frm) {
     if (frm.doc.docstatus !== 0) return;
     const rows = (frm.doc.skill_assessment || []).filter((r) => r.skill && !r.custom_description);
     if (!rows.length) return;
     frappe.call({
         method: "recruitment.customizations.interview_feedback.interview_feedback.get_skill_descriptions",
-        args: { interview_round: frm.doc.interview_round, skills: rows.map((r) => r.skill) },
+        args: {
+            interview_round: frm.doc.interview_round || null,
+            interview_type: frm.doc.interview_type || null,
+            skills: rows.map((r) => r.skill),
+        },
         callback: (r) => {
             const descriptions = r.message || {};
             rows.forEach((row) => {
@@ -361,12 +370,18 @@ function fillSkillDescriptions(frm) {
     });
 }
 
+// HRMS fills the grid with frm.set_value("skill_assessment", rows) inside the
+// callback of the call its round handler makes. Filling a table that way fires no
+// event of its own (no table, row-add or `skill` trigger), so the round change is the
+// only hook: wait for HRMS's call to land, then describe the rows it added.
+function fillAfterSkillsLoad(frm) {
+    frappe.after_ajax(() => fillSkillDescriptions(frm));
+}
+
 frappe.ui.form.on("Interview Feedback", {
     refresh: fillSkillDescriptions,
-    // HRMS refills the grid from the round's Expected Skill Set; wait for that call.
-    interview_round(frm) {
-        frappe.after_ajax(() => fillSkillDescriptions(frm));
-    },
+    interview_round: fillAfterSkillsLoad, // HRMS v15
+    interview_type: fillAfterSkillsLoad, // HRMS v16
 });
 
 frappe.ui.form.on("Skill Assessment", {

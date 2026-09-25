@@ -171,11 +171,15 @@ def _drive_institutes(drive):
             "parentfield": "participating_institutes",
             "parent": drive,
         },
-        fields=["institute", "institute_name"],
+        # The child row no longer carries an `institute_name` column (dropped in
+        # 546a99474); selecting it is an OperationalError. An Institute is named by
+        # its `institute_name` (autoname field:institute_name), so the link value is
+        # already the display name the walk-in form shows.
+        fields=["institute"],
         order_by="idx asc",
     )
     return [
-        {"institute": r.institute, "institute_name": r.institute_name or r.institute}
+        {"institute": r.institute, "institute_name": r.institute}
         for r in rows
         if r.institute
     ]

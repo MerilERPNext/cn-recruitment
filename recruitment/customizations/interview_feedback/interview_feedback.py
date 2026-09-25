@@ -228,14 +228,36 @@ def fill_skill_descriptions(doc, method=None):
     rows = doc.get("skill_assessment") or []
     if not rows:
         return
-    descriptions = get_skill_descriptions(doc.interview_round, [r.skill for r in rows])
+    descriptions = get_skill_descriptions(_feedback_round(doc), [r.skill for r in rows])
     for row in rows:
         row.custom_description = descriptions.get(row.skill)
 
 
+def _feedback_round(doc):
+    """The round this feedback is for, whichever field this HRMS version keeps it in.
+
+    v15 stores it in ``interview_round`` (-> Interview Round), v16 in
+    ``interview_type`` (-> Interview Type). Reading ``doc.interview_round`` alone
+    found nothing on v16, so every row fell back to the Skill master's generic
+    description and the round's own wording was never used.
+    """
+    from recruitment.api.hiring_stage import get_interview_round_field
+
+    field = get_interview_round_field("Interview Feedback")
+    return doc.get(field) if field else None
+
+
 @frappe.whitelist()
-def get_skill_descriptions(interview_round=None, skills=None):
-    """{skill: description} — round's Expected Skill Set first, Skill master second."""
+def get_skill_descriptions(interview_round=None, skills=None, interview_type=None):
+    """{skill: description} — round's Expected Skill Set first, Skill master second.
+
+    The round may be passed as ``interview_round`` (HRMS v15 naming) or
+    ``interview_type`` (v16); either is the name of a record of the round doctype
+    this site actually has, and the Expected Skill Set is read from under that
+    doctype -- "Interview Round" on v15, "Interview Type" on v16.
+    """
+    from recruitment.api.hiring_stage import get_interview_round_doctype
+
     if isinstance(skills, str):
         skills = frappe.parse_json(skills)
     skills = [s for s in (skills or []) if s]
@@ -245,10 +267,12 @@ def get_skill_descriptions(interview_round=None, skills=None):
     descriptions = dict(frappe.get_all(
         "Skill", filters={"name": ["in", skills]}, fields=["name", "description"], as_list=True,
     ))
-    if interview_round:
+    round_name = interview_round or interview_type
+    round_doctype = get_interview_round_doctype()
+    if round_name and round_doctype:
         for skill, description in frappe.get_all(
             "Expected Skill Set",
-            filters={"parent": interview_round, "parenttype": "Interview Round", "skill": ["in", skills]},
+            filters={"parent": round_name, "parenttype": round_doctype, "skill": ["in", skills]},
             fields=["skill", "description"], as_list=True,
         ):
             if description:
