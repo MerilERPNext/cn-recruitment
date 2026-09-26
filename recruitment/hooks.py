@@ -95,7 +95,8 @@ fixtures = [
 
 # include js in doctype views
 doctype_js = {
-    "Job Offer": ["public/js/job_offer.js"],
+    # The wizard view reads the tabs job_offer.js renders into, so it loads after it.
+    "Job Offer": ["public/js/job_offer.js", "public/js/job_offer_wizard.js"],
     "Job Applicant": [
         "public/js/job_applicant.js",
         "public/js/hiring_workflow_flow.js",

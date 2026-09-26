@@ -562,7 +562,12 @@ function recruitment_render_offer_letter_tab(frm) {
 	const tab = ((frm.layout && frm.layout.tabs) || []).find(
 		(t) => t.df && t.df.fieldname === "custom_offer_letter_tab"
 	);
-	const isShowing = !tab || !tab.tab_link || tab.tab_link.find("a").hasClass("active");
+	// `.nav-link`, not `a`: v15 renders the tab link as a <button>, so an `a`
+	// lookup found nothing and the letter only painted when the tab happened to
+	// be open at refresh. The wizard view (job_offer_wizard.js) switches steps by
+	// clicking this same link, so it lands here too.
+	const $link = tab && tab.tab_link ? tab.tab_link.find(".nav-link") : $();
+	const isShowing = !tab || !tab.tab_link || $link.hasClass("active");
 	if (isShowing) {
 		paint(active);
 	} else {
@@ -570,7 +575,7 @@ function recruitment_render_offer_letter_tab(frm) {
 		// refresh, so binding without removing would leave one handler per refresh
 		// — and the first click would then fire them all at once, each issuing its
 		// own server call before any of them had populated the cache.
-		tab.tab_link.find("a").off("click.ol").on("click.ol", () => paint(active));
+		$link.off("click.ol").on("click.ol", () => paint(active));
 	}
 }
 
