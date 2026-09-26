@@ -17,7 +17,8 @@
   "owner_role",
   "notify",
   "auto",
-  "notes"
+  "notes",
+  "after_stage"
  ],
  "fields": [
   {
@@ -119,12 +120,20 @@
    "fieldtype": "Small Text",
    "in_list_view": 1,
    "label": "Notes"
+  },
+  {
+   "fieldname": "after_stage",
+   "fieldtype": "Data",
+   "label": "Added After Stage",
+   "hidden": 1,
+   "read_only": 1,
+   "description": "Set only on a stage added for one candidate: the stage it follows."
   }
  ],
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2026-09-25 13:00:00.000000",
+ "modified": "2026-09-26 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "Job Opening Hiring Stage",

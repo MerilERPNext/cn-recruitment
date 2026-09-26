@@ -5,14 +5,17 @@ from frappe.utils import get_link_to_form
 def check_feedback_and_update_result(interview_feedback):
     # Fetch the Interview document
     interview = frappe.get_doc('Interview', interview_feedback.interview)
-    
+
     interview_details = interview.get('interview_details')  # This retrieves the child table records
-    
+
     # Fetch all feedback for the interview excluding 'Cancelled' status
-    feedbacks = frappe.get_all('Interview Feedback', 
-                                filters={'interview': interview_feedback.interview, 'docstatus': 1}, 
+    feedbacks = frappe.get_all('Interview Feedback',
+                                filters={'interview': interview_feedback.interview, 'docstatus': 1},
                                 fields=['interviewer', 'result'])
-    
+
+    if _all_must_clear(interview):
+        return _decide_all_must_clear(interview, feedbacks)
+
     # Check if all interviewers have provided feedback (excluding cancelled)
     if len(feedbacks) < len(interview_details):
         # If not all feedbacks are received, exit without changing the status
@@ -31,6 +34,38 @@ def check_feedback_and_update_result(interview_feedback):
         interview.status = 'Pending'
 
     # Save the updated status
+    interview.save(ignore_permissions=True)
+
+
+def _all_must_clear(interview):
+    """Hiring-workflow interviews move on only if EVERY interviewer's form is positive.
+
+    Campus Drive interviews keep the majority vote above — their panels are run
+    from the drive and were built around it.
+    """
+    if interview.get("custom_campus_drive"):
+        return False
+    from recruitment.api.hiring_stage import is_hiring_workflow_enabled
+
+    return is_hiring_workflow_enabled()
+
+
+def _decide_all_must_clear(interview, feedbacks):
+    """AND rule, decided once every panel member has submitted: all Cleared →
+    Cleared, any other result → Rejected. Until then the interview stays open.
+
+    Keyed on WHO is on the panel, not on how many feedbacks exist: a panel member
+    replaced on reschedule, or HR's "Mark as Completed" feedback, must neither
+    count as a vote nor stand in for a missing one.
+    """
+    panel = {r.interviewer for r in (interview.get("interview_details") or []) if r.interviewer}
+    results = {f.interviewer: f.result for f in feedbacks if f.interviewer in panel}
+    if not panel or len(results) < len(panel):
+        return
+    status = "Cleared" if all(r == "Cleared" for r in results.values()) else "Rejected"
+    if interview.status == status:
+        return
+    interview.status = status
     interview.save(ignore_permissions=True)
 
 @frappe.whitelist()

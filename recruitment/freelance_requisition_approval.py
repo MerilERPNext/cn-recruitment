@@ -1470,19 +1470,20 @@ def _schedule_interview(applicant, stage_name):
     stage is completed against an interview that was actually scheduled.
     """
     from recruitment.api.hiring_stage import (
+        _ensure_interview_round,
+        _find_stage_interview,
         get_interview_round_field,
         prepare_interview,
     )
 
-    prefill = prepare_interview(applicant, stage_name=stage_name)
-    round_field = prefill.get("interview_round_field") or get_interview_round_field()
-
-    existing = frappe.db.get_value("Interview", {
-        "job_applicant": applicant,
-        round_field: prefill["interview_round"],
-    }, "name")
+    # prepare_interview refuses a stage that already has one, so look first.
+    designation = frappe.db.get_value("Job Applicant", applicant, "designation")
+    existing = _find_stage_interview(applicant, _ensure_interview_round(stage_name, designation))
     if existing:
         return existing
+
+    prefill = prepare_interview(applicant, stage_name=stage_name)
+    round_field = prefill.get("interview_round_field") or get_interview_round_field()
 
     iv = frappe.new_doc("Interview")
     iv.job_applicant = prefill["job_applicant"]

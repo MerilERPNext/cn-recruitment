@@ -314,11 +314,49 @@ def get_applicant_stages(applicant):
 	"""
 	opening = applicant.get("job_title")
 	template = applicant.get(WORKFLOW_OVERRIDE_FIELD)
+	stages = None
 	if template:
 		rows = _template_stages(template)
 		if rows:
-			return _append_offer_stages(opening, rows)
-	return get_opening_stages(opening)
+			stages = _append_offer_stages(opening, rows)
+	if stages is None:
+		stages = get_opening_stages(opening)
+	return _with_extra_stages(stages, applicant.get(EXTRA_STAGES_FIELD))
+
+
+# Interview stages a recruiter added for ONE candidate from the Hiring Workflow
+# tab (add_interview_stage). Rows of the same child doctype as the opening's, each
+# carrying `after_stage` — the stage it follows in this candidate's flow.
+EXTRA_STAGES_FIELD = "custom_extra_hiring_stages"
+# Stages an added interview round may never be placed after: the offer end of the
+# flow stays last.
+OFFER_STAGE_TYPES = ("Pre Offer", "Offer", "Done")
+
+
+def _with_extra_stages(stages, extras):
+	"""``stages`` with the candidate's own added stages spliced in.
+
+	Replayed in the order they were added, each goes DIRECTLY after its
+	``after_stage`` — exactly where the recruiter put it, even if an earlier extra
+	already followed that stage. An extra whose anchor has gone (the opening's stage
+	was renamed or removed) lands just before the offer stages rather than
+	disappearing from the candidate's flow.
+	"""
+	if not extras or not stages:
+		return stages
+	out = list(stages)
+	for row in sorted(extras, key=lambda r: r.get("idx") or 0):
+		extra = dict(row.as_dict() if hasattr(row, "as_dict") else row)
+		extra["is_extra"] = 1
+		anchor = extra.get("after_stage")
+		at = _find_stage(out, anchor) if anchor else -1
+		if at >= 0:
+			at += 1
+		else:
+			at = next((i for i, s in enumerate(out)
+			           if (s.get("stage_type") or "") in OFFER_STAGE_TYPES), len(out))
+		out.insert(at, extra)
+	return out
 
 
 def _template_stages(template):
@@ -520,15 +558,35 @@ def sync_status_for_stage(doc, stage):
 def _enter_stage(doc, stage, result="Moved", interview=None, save=True,
 				 ignore_permissions=False, notify=True):
 	"""Place ``doc`` into ``stage``: set current stage, log history, sync status."""
+	leaving = doc.get(STAGE_FIELD)
 	doc.set(STAGE_FIELD, stage.get("stage_name"))
 	_append_history(doc, stage, result, interview=interview)
 	sync_status_for_stage(doc, stage)
 
 	if save:
 		doc.save(ignore_permissions=ignore_permissions)
+		if leaving and leaving != stage.get("stage_name"):
+			_close_pre_offer_if_left(doc, leaving)
 	if notify and stage.get("notify"):
 		_notify_stage_entry(doc, stage)
 	return stage
+
+
+def _close_pre_offer_if_left(doc, left_stage_name):
+	"""Leaving a Pre Offer stage — completed, skipped, or auto-advanced on approval —
+	closes the candidate's pre-offer round on the portal. Never blocks the move."""
+	if not any((r.status or "") in ("Sent", "Filled") for r in (doc.get("custom_pre_offer_forms") or [])):
+		return
+	try:
+		stages = get_applicant_stages(doc)
+		idx = _find_stage(stages, left_stage_name)
+		if idx < 0 or (stages[idx].get("stage_type") or "") != "Pre Offer":
+			return
+		from recruitment.api.action_center import close_pre_offer_round
+
+		close_pre_offer_round(doc)
+	except Exception:
+		frappe.log_error(frappe.get_traceback(), "Hiring Workflow: closing pre-offer round failed")
 
 
 def _campus_stage_mail_allowed(doc):
@@ -873,8 +931,21 @@ def prepare_interview(job_applicant, stage_name=None):
 
 	stage = stages[idx]
 	interview_round = _ensure_interview_round(stage.get("stage_name"), doc.get("designation"))
+	# One live interview per stage — the flow disables the button, this stops a
+	# stale form or a second tab from booking another.
+	existing = _find_stage_interview(doc.name, interview_round)
+	if existing:
+		frappe.throw(
+			_("Interview {0} is already scheduled for stage {1}.").format(
+				existing, stage.get("stage_name")
+			),
+			title=_("Interview Already Scheduled"),
+		)
 	return {
 		"job_applicant": doc.name,
+		# What the (read-only) Job Applicant link displays on the new Interview.
+		"applicant_title": doc.get(frappe.get_meta("Job Applicant").title_field or "applicant_name")
+		or doc.get("applicant_name"),
 		# fetch_from values: the client opens the form with link triggers off.
 		"fetched": {
 			"resume_attachment": doc.get("resume_attachment"),
@@ -962,6 +1033,14 @@ def advance_on_interview_result(interview_name):
 			return
 
 		doc = frappe.get_doc("Job Applicant", applicant)
+		# One interview moves the candidate once. Feedback that lands after the
+		# round was already decided (HR's "Mark as Completed", a late panel member)
+		# would otherwise push them on again from whatever stage they are on now.
+		if any(
+			r.get("interview") == interview_name and r.get("result") in ("Auto (Cleared)", "Cleared", "Rejected")
+			for r in (doc.get(HISTORY_FIELD) or [])
+		):
+			return
 		stages = get_applicant_stages(doc)
 		current = doc.get(STAGE_FIELD)
 		idx = _find_stage(stages, current) if current else -1
@@ -1233,7 +1312,8 @@ def _find_stage_interview(job_applicant, round_name):
 	return frappe.db.get_value(
 		"Interview",
 		{"job_applicant": job_applicant, **({round_field: round_name} if round_field else {}),
-		 "docstatus": ["<", 2]},
+		 # A cancelled interview frees its stage to be scheduled again.
+		 "docstatus": ["<", 2], "status": ["!=", "Cancelled"]},
 		"name",
 	)
 
@@ -1296,6 +1376,15 @@ def complete_interview(job_applicant, rating, comments=None, assessment=None, st
 	# Set the interview outcome so the on_submit auto-advance hook acts on it.
 	frappe.db.set_value("Interview", interview, "status", result)
 	fb.submit()
+	# The stage is decided, so the panel's feedback tasks are too. Explicit: the
+	# db.set_value above skips the Interview's on_update hook that would do it.
+	from recruitment.api.interview_feedback_approval import cancel_approval_tasks
+	from recruitment.api.stage_interview import close_feedback_tasks
+
+	close_feedback_tasks(interview, status="Closed")
+	# …and so are the panel's approval tasks: left open, a late answer on one would
+	# file feedback against a round HR has already decided.
+	cancel_approval_tasks(interview, reason=_("Interview marked as completed by {0}.").format(frappe.session.user))
 	frappe.db.commit()
 
 	return {"interview": interview, "feedback": fb.name, "result": result}
@@ -1348,9 +1437,27 @@ def _interview_is_over(iv):
 
 
 @frappe.whitelist()
-def send_interview_feedback_form(job_applicant, stage_name=None):
-	"""Email the stage interview's interviewer(s) a request to submit feedback
-	(a link to the Interview). Allowed only after the interview is over."""
+def send_interview_feedback_form(job_applicant, stage_name=None, evaluation_form=None,
+                                 interviewer_forms=None):
+	"""Send the stage interview's feedback form to every interviewer who still owes
+	feedback: a ToDo in their Tasks list plus an email, both opening the Interview.
+	Allowed only after the interview is over.
+
+	``evaluation_form`` (a Microapp Form Widget) is the form they fill in. It is set
+	on the Interview, and may change only while no feedback has been started —
+	see :func:`recruitment.api.stage_interview.set_evaluation_form`.
+
+	``interviewer_forms`` (``{interviewer: widget}``, JSON) gives panel members
+	different forms instead; each one's form is locked once they start feedback.
+	"""
+	from recruitment.api.interview_feedback_approval import approval_task_users
+	from recruitment.api.stage_interview import (
+		close_feedback_tasks,
+		create_feedback_tasks,
+		set_evaluation_form,
+		set_interviewer_forms,
+	)
+
 	_require_applicant_write(job_applicant)
 	doc = frappe.get_doc("Job Applicant", job_applicant)
 	stages, idx = _stage_or_throw(doc, stage_name)
@@ -1364,16 +1471,43 @@ def send_interview_feedback_form(job_applicant, stage_name=None):
 	iv = frappe.get_doc("Interview", interview)
 	if not _interview_is_over(iv):
 		frappe.throw(_("The feedback form can be sent only after the interview is completed."))
-	interviewers = [r.interviewer for r in (iv.get("interview_details") or []) if r.interviewer]
-	if not interviewers:
+	panel = [r.interviewer for r in (iv.get("interview_details") or []) if r.interviewer]
+	if not panel:
 		frappe.throw(_("This interview has no interviewers — schedule it and add interviewers first."))
+	done = set(frappe.get_all(
+		"Interview Feedback", filters={"interview": interview, "docstatus": 1}, pluck="interviewer"
+	))
+	# Every panel member who hasn't submitted — the whole panel on a first send.
+	interviewers = [u for u in dict.fromkeys(panel) if u not in done]
+	if not interviewers:
+		frappe.throw(_("Every interviewer has already submitted feedback for this interview."))
+
+	set_evaluation_form(iv, evaluation_form)
+	if interviewer_forms:
+		if isinstance(interviewer_forms, str):
+			interviewer_forms = json.loads(interviewer_forms)
+		# Only those still owing feedback are re-assigned.
+		changed = set_interviewer_forms(
+			iv, {u: f for u, f in interviewer_forms.items() if u in interviewers})
+		# A task already naming the old form is replaced by one naming the new.
+		close_feedback_tasks(iv.name, users=changed)
+		iv.reload()
+	# Where the Approval Policy Matrix already gave an interviewer their task when
+	# the interview was saved, that task now carries the chosen form — a second,
+	# plain task would only duplicate it. Everyone else gets the plain one.
+	with_approval = approval_task_users(iv.name) & set(interviewers)
+	tasks = create_feedback_tasks(
+		iv, [u for u in interviewers if u not in with_approval],
+		doc.get("custom_full_name") or doc.get("applicant_name") or doc.name,
+	)
 
 	url = get_url("/app/interview/" + interview)
 	message = frappe.render_template(
 		"Hello,<br><br>"
 		"Please submit your feedback for the <b>{{ round }}</b> interview with "
 		"<b>{{ applicant }}</b>.<br><br>"
-		"<a href='{{ url }}'>Open the interview to add feedback</a><br><br>"
+		"<a href='{{ url }}'>Open the interview to add feedback</a><br>"
+		"It is also waiting in your Tasks list.<br><br>"
 		"Regards,<br>Recruitment Team",
 		{"applicant": doc.get("applicant_name") or doc.name, "round": round_name, "url": url},
 	)
@@ -1391,7 +1525,14 @@ def send_interview_feedback_form(job_applicant, stage_name=None):
 		frappe.log_error(frappe.get_traceback(), "Hiring Workflow: feedback-form email failed")
 	frappe.db.set_value("Interview", interview, "status", "Under Review")
 	frappe.db.commit()
-	return {"interview": interview, "sent_to": interviewers, "emailed": emailed}
+	return {
+		"interview": interview,
+		"sent_to": interviewers,
+		"tasks_created": tasks,
+		"approval_tasks": sorted(with_approval),
+		"evaluation_form": iv.get("custom_evaluation_form"),
+		"emailed": emailed,
+	}
 
 
 # --------------------------------------------------------------------------- #
@@ -1445,23 +1586,32 @@ def _annotate_interview_owners(interviews_by_stage):
 	names = [iv.get("name") for iv in rows]
 
 	panel = {}
+	# Each panel member's own feedback form, where they were given one.
+	row_forms = {}
+	has_row_form = frappe.get_meta("Interview Detail").has_field("custom_evaluation_form")
 	for d in frappe.get_all(
 		"Interview Detail",
 		filters={"parenttype": "Interview", "parent": ["in", names]},
-		fields=["parent", "interviewer"],
+		fields=["parent", "interviewer"] + (["custom_evaluation_form"] if has_row_form else []),
 		order_by="idx asc",
 	):
 		if d.get("interviewer"):
 			panel.setdefault(d["parent"], []).append(d["interviewer"])
+			if d.get("custom_evaluation_form"):
+				row_forms.setdefault(d["parent"], {})[d["interviewer"]] = d["custom_evaluation_form"]
 
-	# Only a submitted feedback counts as "done" — a draft is still pending.
-	submitted = {}
+	# Only a submitted feedback counts as "done" — a draft is still pending. A
+	# draft does lock that interviewer's form, which "Send Feedback Form" needs to
+	# know (`started_by`), so drafts come back in the same query.
+	submitted, started = {}, {}
 	for f in frappe.get_all(
 		"Interview Feedback",
-		filters={"interview": ["in", names], "docstatus": 1},
-		fields=["interview", "interviewer"],
+		filters={"interview": ["in", names], "docstatus": ["<", 2]},
+		fields=["interview", "interviewer", "docstatus"],
 	):
-		submitted.setdefault(f["interview"], set()).add(f.get("interviewer"))
+		started.setdefault(f["interview"], set()).add(f.get("interviewer"))
+		if f.get("docstatus") == 1:
+			submitted.setdefault(f["interview"], set()).add(f.get("interviewer"))
 
 	# One lookup for every interviewer across the whole pipeline.
 	lookup = {u["user"]: u for u in _user_names([i for ids in panel.values() for i in ids])}
@@ -1469,6 +1619,10 @@ def _annotate_interview_owners(interviews_by_stage):
 	for iv in rows:
 		interviewers = panel.get(iv.get("name"), [])
 		done = submitted.get(iv.get("name"), set())
+		iv["feedback_given"] = len(done)
+		iv["submitted_by"] = sorted(u for u in done if u)
+		iv["started_by"] = sorted(u for u in started.get(iv.get("name"), set()) if u)
+		iv["panel_forms"] = row_forms.get(iv.get("name"), {})
 		iv["interviewers"] = [lookup[u] for u in interviewers if u in lookup]
 		iv["pending_with"] = (
 			[lookup[u] for u in interviewers if u not in done and u in lookup]
@@ -1491,6 +1645,19 @@ def _stage_pending_owner(doc):
 	return _user_names([recruiter]) if recruiter else []
 
 
+def _add_stage_blocked(doc, idx, closed):
+	"""Mirror of stage_interview._extra_stage_context's refusals, for the button."""
+	if not doc.meta.has_field(EXTRA_STAGES_FIELD):
+		return _("Adding stages needs a migrate on this site.")
+	if doc.get("custom_campus_drive") or doc.get("custom_campus_invite"):
+		return _("Campus candidates follow their Campus Drive's rounds.")
+	if closed:
+		return _("The hiring flow is closed for this candidate.")
+	if idx < 0:
+		return _("Place the candidate on a hiring stage first.")
+	return None
+
+
 @frappe.whitelist()
 def get_workflow_view(job_applicant):
 	"""Everything the visual stepper needs in one round-trip: the ordered stages
@@ -1499,6 +1666,9 @@ def get_workflow_view(job_applicant):
 	if not is_hiring_workflow_enabled():
 		return {"enabled": False, "stages": []}
 
+	# Whitelisted: the stages, interviewers, offer and its approvers are only for
+	# someone who may read this candidate.
+	frappe.has_permission("Job Applicant", "read", doc=job_applicant, throw=True)
 	doc = frappe.get_doc("Job Applicant", job_applicant)
 	stages = get_applicant_stages(doc)
 	current = doc.get(STAGE_FIELD)
@@ -1510,23 +1680,41 @@ def get_workflow_view(job_applicant):
 	hist = _latest_history_by_stage(doc)
 
 	# Interviews grouped by round name (rounds are named after the stage).
+	from recruitment.api.stage_interview import CANCELLED, change_blocker
+
 	interviews_by_stage = {}
+	cancelled_by_stage = {}
 	round_field = get_interview_round_field()
+	iv_meta = frappe.get_meta("Interview")
 	for iv in frappe.get_all(
 		"Interview",
 		# `docstatus < 2` so a cancelled interview does not make a stage look
 		# completable — complete_interview ignores those, and the flow's
-		# "Mark as Completed" button is enabled off exactly this list.
+		# "Mark as Completed" button is enabled off exactly this list. The same
+		# goes for status Cancelled (a draft can't be docstatus-cancelled); those
+		# are listed apart, as history.
 		filters={"job_applicant": doc.name, "docstatus": ["<", 2]},
-		fields=["name", "scheduled_on", "to_time", "status", "average_rating"]
-		       + ([round_field] if round_field else []),
+		fields=["name", "scheduled_on", "from_time", "to_time", "status", "average_rating", "docstatus"]
+		       + ([round_field] if round_field else [])
+		       + [f for f in ("custom_evaluation_form", "custom_campus_drive",
+		                      "custom_calendar_event_id", "custom_meeting_status")
+		          if iv_meta.has_field(f)],
 		order_by="scheduled_on asc, creation asc",
 	):
 		iv["is_over"] = _interview_is_over(iv)
-		interviews_by_stage.setdefault(
-			(iv.get(round_field) if round_field else "") or "", []).append(iv)
+		key = (iv.get(round_field) if round_field else "") or ""
+		if iv.get("status") == CANCELLED:
+			cancelled_by_stage.setdefault(key, []).append(
+				{"name": iv.name, "scheduled_on": iv.scheduled_on, "status": CANCELLED})
+			continue
+		interviews_by_stage.setdefault(key, []).append(iv)
 
 	_annotate_interview_owners(interviews_by_stage)
+	# Whether Cancel / Reschedule is open for each interview, and why not.
+	for group in interviews_by_stage.values():
+		for iv in group:
+			iv["change_blocked"] = change_blocker(iv, iv.get("feedback_given"))
+			iv.pop("custom_calendar_event_id", None)  # only needed for the check
 	# Who a stage with no interview yet is waiting on — the opening's recruiter.
 	stage_owner = _stage_pending_owner(doc)
 
@@ -1547,6 +1735,9 @@ def get_workflow_view(job_applicant):
 			"entered_on": info.get("entered_on"),
 			"result": info.get("result"),
 			"interviews": interviews_by_stage.get(s.get("stage_name"), []),
+			"cancelled_interviews": cancelled_by_stage.get(s.get("stage_name"), []),
+			# Added for this candidate only (add_interview_stage) — removable while ahead.
+			"is_extra": 1 if s.get("is_extra") else 0,
 			"evaluation_form": s.get("evaluation_form"),
 			# Named only where the answer is "nobody has been asked yet": an
 			# Interview stage still to come/in play with no interview scheduled.
@@ -1577,7 +1768,7 @@ def get_workflow_view(job_applicant):
 
 	# Newest version first. A cancelled one still counts — it is what "Resend Job
 	# Offer" copies — and the older versions are listed beneath it as history.
-	from recruitment.api.offer_lifecycle import offer_actions, offers_of
+	from recruitment.api.offer_lifecycle import offer_actions, offer_approval_status, offers_of
 
 	versions = offers_of(
 		doc.name,
@@ -1590,11 +1781,18 @@ def get_workflow_view(job_applicant):
 	)
 	offer = versions[0] if versions else None
 	offer_action_map = None
+	offer_approval = None
 	if offer:
 		offer["version"] = int(offer.get("custom_offer_version") or 1)
 		for v in versions[1:]:
 			v["version"] = int(v.get("custom_offer_version") or 1)
-		offer_action_map = offer_actions(frappe.get_doc("Job Offer", offer.name))
+		offer_doc = frappe.get_doc("Job Offer", offer.name)
+		offer_action_map = offer_actions(offer_doc)
+		# "Pending with" on the Offer stage; never worth failing the view over.
+		try:
+			offer_approval = offer_approval_status(offer_doc)
+		except Exception:
+			frappe.log_error(frappe.get_traceback(), "Hiring Workflow: offer approval status failed")
 
 	return {
 		"enabled": True,
@@ -1605,9 +1803,12 @@ def get_workflow_view(job_applicant):
 		"status": status,
 		"is_closed": rejected or accepted,
 		"stages": out_stages,
+		# Why "+ Add Interview Stage" is unavailable for this candidate, if it is.
+		"add_stage_blocked": _add_stage_blocked(doc, idx, rejected or accepted),
 		"pre_offer": pre_offer,
 		"job_offer": offer,
 		"job_offer_actions": offer_action_map,
+		"job_offer_approval": offer_approval,
 		"previous_offers": versions[1:],
 	}
 

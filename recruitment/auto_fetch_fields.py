@@ -216,6 +216,16 @@ def build_employee(source_name, target_doc=None):
             if value not in (None, ""):
                 target.set(target_field, value)
 
+        # A hire relocating to join: the expense app measures their relocation
+        # window from "Relocation Based On", and does nothing while it is blank.
+        # For a new joiner that basis is their Date of Joining.
+        if (
+            target.get("custom_is_relocation_employee")
+            and target.meta.has_field("custom_relocation_based_on")
+            and not target.get("custom_relocation_based_on")
+        ):
+            target.custom_relocation_based_on = "Date Of Joining"
+
         # Field Flow (nextai) chain. The connector records which Onboarding this
         # Employee came from; apply_connector_fetch then resolves the managed
         # `fetch_from` fields right now. Frappe resolves fetch_from server-side

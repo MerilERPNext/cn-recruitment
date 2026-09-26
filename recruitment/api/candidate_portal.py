@@ -643,11 +643,13 @@ def materialize_onboarding_from_applicant(job_applicant_id, prefill=None):
     applicant = frappe.get_doc("Job Applicant", job_applicant_id)
 
     existing_eo = applicant.get("custom_pre_onboarding_employee_onboarding")
-    if existing_eo and not frappe.db.exists("Employee Onboarding", existing_eo):
-        # The linked Employee Onboarding was deleted out from under us, leaving a
-        # dangling reference on the applicant. Drop it and fall through to create a
-        # fresh one — returning the stale name would crash callers that get_doc the
-        # result (e.g. _sync_onboarding_action_for_applicant on Job Offer accept).
+    if existing_eo and frappe.db.get_value("Employee Onboarding", existing_eo, "docstatus") in (None, 2):
+        # The linked Employee Onboarding was deleted or cancelled out from under us,
+        # leaving a dangling reference on the applicant. Drop it and fall through to
+        # create a fresh one — returning the stale name would crash callers that
+        # get_doc the result (e.g. _sync_onboarding_action_for_applicant on Job Offer
+        # accept), and a cancelled one would be handed back as if it were live, so
+        # onboarding could never be initiated again.
         applicant.db_set("custom_pre_onboarding_employee_onboarding", None, update_modified=False)
         existing_eo = None
     if existing_eo:

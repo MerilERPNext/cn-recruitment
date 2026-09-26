@@ -141,7 +141,9 @@ def _interview_counts(applicants):
         return 0, 0
     rows = frappe.get_all(
         "Interview",
-        filters={"job_applicant": ["in", applicants], "docstatus": ["<", 2]},
+        # A cancelled interview never took place (see api.stage_interview).
+        filters={"job_applicant": ["in", applicants], "docstatus": ["<", 2],
+                 "status": ["!=", "Cancelled"]},
         fields=["job_applicant", "status"],
     )
     scheduled, done = set(), set()

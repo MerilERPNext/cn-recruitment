@@ -328,6 +328,10 @@ doc_events = {
     # Send Back from a ToDo saves the tracker, so this catches them all.
     "Approval Tracker": {
         "validate": "recruitment.api.requisition_status.block_approval_on_archived",
+        # nextai hands interviewers their feedback tasks after the Interview has
+        # committed; settle those tasks against what is already known when they
+        # land (per-interviewer forms, feedback already in, a cancelled interview).
+        "on_update": "recruitment.api.interview_feedback_approval.reconcile_interview_approval",
     },
     # Custom Doctype Fields (nextai) decides where a managed field sits on the
     # Job Applicant form. Job Applicant Profile Settings groups fields into its
@@ -377,6 +381,12 @@ doc_events = {
             # Roll "Interview Scheduled / Done" up to the requisition behind this
             # candidate's opening. Never raises — see requisition_pipeline.
             "recruitment.api.requisition_pipeline.refresh_from_interview",
+            # A decided or cancelled interview owes nobody feedback: close the
+            # panel's feedback tasks (recruitment.api.stage_interview).
+            "recruitment.api.stage_interview.close_tasks_when_decided",
+            # Feedback forms picked or changed after the interviewers' approval
+            # tasks went out reach those tasks (recruitment.api.interview_feedback_approval).
+            "recruitment.api.interview_feedback_approval.sync_forms_on_interview_update",
         ],
         "on_submit": "recruitment.api.requisition_pipeline.refresh_from_interview",
         "on_cancel": "recruitment.api.requisition_pipeline.refresh_from_interview",
@@ -395,9 +405,16 @@ doc_events = {
             # Each skill row carries its description — the round's Expected Skill
             # Set text, else the Skill master's.
             "recruitment.customizations.interview_feedback.interview_feedback.fill_skill_descriptions",
+            # Nothing is filed against an interview the hiring workflow cancelled.
+            "recruitment.api.stage_interview.block_feedback_on_cancelled",
         ],
         "on_submit": [
             "recruitment.customizations.interview_feedback.interview_feedback.on_submit_feedback",
+            # The interviewer's feedback task in their Tasks list is done.
+            "recruitment.api.stage_interview.close_task_on_feedback",
+            # Feedback given straight on the Interview settles that interviewer's
+            # approval task too, so it doesn't linger in their Tasks list.
+            "recruitment.api.interview_feedback_approval.close_approval_task_on_feedback",
             # The work location the panel chose becomes the candidate's final
             # location (Job Applicant.custom_location).
             "recruitment.api.interview_work_location.apply_work_location",
@@ -464,8 +481,9 @@ doc_events = {
             # Again after CTC (Total) is computed above.
             "recruitment.customizations.job_offer.set_salary_in_words",
         ],
+        # The Action Center item is synced from on_update below, which Frappe also
+        # runs on insert and on submit — listing it here too ran it twice.
         "after_insert": [
-            "recruitment.api.action_center.sync_job_offer_action_item",
             "recruitment.api.requisition_pipeline.refresh_from_job_offer",
             # Claim the position (Filled + candidate) while the offer is live,
             # release it the moment it is withdrawn / rejected / cancelled, then
@@ -474,13 +492,15 @@ doc_events = {
             "recruitment.api.offer_position.sync_offer_position",
         ],
         "on_submit": [
-            "recruitment.api.action_center.sync_job_offer_action_item",
             "recruitment.api.offer_position.sync_offer_position",
             # "Offer Generated" on the requisition's TAT block.
             "recruitment.api.requisition_pipeline.refresh_from_job_offer",
         ],
         # Reflect Accepted/Rejected offer outcome on the candidate's hiring stage.
         "on_update": [
+            # A draft whose Status is set to Withdrawn / Expired by hand must drop
+            # its Action Center item too — before, only submitted offers did.
+            "recruitment.api.action_center.sync_job_offer_action_item",
             "recruitment.api.hiring_stage.advance_on_job_offer_outcome",
             "recruitment.api.offer_position.sync_offer_position",
             # Stamp the day the candidate accepted. Both update events, because
@@ -496,6 +516,8 @@ doc_events = {
         ],
         "on_cancel": [
             "recruitment.api.offer_position.sync_offer_position",
+            # Drop the cancelled offer's Action Center card; the amended offer raises its own.
+            "recruitment.api.action_center.sync_job_offer_action_item",
             # "Offer Cancelled" on the candidate's hiring workflow (newest version only).
             "recruitment.api.offer_lifecycle.on_offer_cancel",
             "recruitment.api.requisition_pipeline.refresh_from_job_offer",
@@ -915,6 +937,9 @@ override_doctype_class = {
     # See recruitment.customizations.job_requisition.CustomJobRequisition.
     "Job Requisition": "recruitment.customizations.job_requisition.CustomJobRequisition",
     "Employee Separation": "recruitment.customizations.employee_separation.override_class.CustomEmployeeSeparation",
+    # Offer letter placeholders: link titles, every Job Offer link as
+    # {{link.field}}, formatted currency. See the module docstring.
+    "Document Template": "recruitment.customizations.document_template.RecruitmentDocumentTemplate",
 }
 #
 # each overriding function accepts a `data` argument;
