@@ -586,10 +586,29 @@ frappe.ui.form.on("Job Opening", {
 		});
 	},
 	company(frm) {
-		if (frm.doc.department) frm.set_value("department", null);
-		if (frm.doc.designation) frm.set_value("designation", null);
+		return reset_cascade_children(frm, "company", ["department", "designation"]);
 	},
 	department(frm) {
-		if (frm.doc.designation) frm.set_value("designation", null);
+		return reset_cascade_children(frm, "department", ["designation"]);
 	},
 });
+
+// Department/Designation are fetched from job_requisition together, and their change
+// triggers run after both are set — so on a new opening, keep the children when they
+// match the linked requisition instead of clearing the designation it just filled.
+async function reset_cascade_children(frm, parent, children) {
+	if (!children.some((f) => frm.doc[f])) return;
+	if (frm.is_new() && frm.doc.job_requisition) {
+		const fields = [parent, ...children];
+		const { message: jr } = await frappe.db.get_value(
+			"Job Requisition",
+			frm.doc.job_requisition,
+			fields
+		);
+		if (jr && fields.every((f) => (jr[f] || null) === (frm.doc[f] || null))) return;
+	}
+
+	for (const f of children) {
+		if (frm.doc[f]) await frm.set_value(f, null);
+	}
+}

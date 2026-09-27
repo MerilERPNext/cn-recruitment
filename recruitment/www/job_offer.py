@@ -127,10 +127,11 @@ def get_context(context):
                 context.applicant_name = jo_fields.get('applicant_name') or ''
                 context.offer_date = jo_fields.get('offer_date')
 
-                # Company logo — try Company doctype first, fall back to Website Settings
-                context.company_logo = ''
-                if context.company:
-                    context.company_logo = frappe.db.get_value('Company', context.company, 'company_logo') or ''
+                # Company logo — try Company doctype first, fall back to Website Settings.
+                # Served through a candidate-loadable URL: a private logo file would
+                # otherwise be refused to the candidate viewing the offer.
+                from recruitment.api.candidate_portal import _company_logo_url
+                context.company_logo = _company_logo_url(context.company) or ''
                 if not context.company_logo:
                     context.company_logo = frappe.db.get_single_value('Website Settings', 'app_logo') or ''
                 if not context.company_logo:

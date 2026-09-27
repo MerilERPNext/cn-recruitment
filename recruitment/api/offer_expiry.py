@@ -14,12 +14,12 @@ terms the company stopped standing behind.
                             Expiry Date never expires.
 
     resend_offer_letter     what the recruiter does next. They pick a new Expiry
-                            Date and the SAME letter goes out again, the offer
-                            back to Awaiting Response on the same position.
-                            Nothing about the terms changes, so no new version
-                            is raised — when the terms must change,
-                            `offer_lifecycle.resend_job_offer` raises version
-                            N+1 instead, which an expired offer allows too.
+                            Date and version N+1 is raised with the same terms,
+                            submitted and emailed at once (Awaiting Response).
+                            The expired offer stays Expired as history, and both
+                            offers log the resend in their activity. When the
+                            terms must change, `offer_lifecycle.resend_job_offer`
+                            raises N+1 as a Draft for HR to edit instead.
 
 Expired is a releasing status everywhere the other closed statuses are
 (offer_position, offer_validation, offer_lifecycle), so an expired letter stops
@@ -168,7 +168,7 @@ _ALLOW = {"allowed": True, "reason": None}
 
 
 def resend_letter_rule(doc):
-    """May this expired offer's letter be sent again as it stands?
+    """May this expired offer be resent as a new version on a new expiry date?
 
     Read by `offer_lifecycle.get_offer_actions`, so the form button and the
     endpoint below can never disagree.
@@ -180,7 +180,7 @@ def resend_letter_rule(doc):
         return _deny(_("This offer is cancelled."))
     if (doc.get("status") or "") != EXPIRED:
         return _deny(
-            _("Only an expired offer can be resent as it stands. This one is {0}.").format(
+            _("Only an expired offer can be resent with a new expiry date. This one is {0}.").format(
                 _(doc.get("status") or "Draft")
             )
         )
@@ -190,6 +190,10 @@ def resend_letter_rule(doc):
         return _deny(_("A newer version of this offer already exists."))
     if not frappe.has_permission(JOB_OFFER, "write", doc=doc.name):
         return _deny(_("You do not have permission to change this Job Offer."))
+    # Resending raises, submits and sends a new version — the same rights the
+    # endpoint checks, so the button is not offered to someone it would refuse.
+    if not (frappe.has_permission(JOB_OFFER, "create") and frappe.has_permission(JOB_OFFER, "submit")):
+        return _deny(_("You need permission to create and submit Job Offers to resend this offer letter."))
     return _ALLOW
 
 
@@ -214,100 +218,112 @@ def _validated_expiry(doc, expiry_date):
     return expiry
 
 
-def _reclaim_position(doc):
-    """Take back the position the offer gave up when it lapsed.
-
-    While the offer sat Expired its seat was Open and another offer may have
-    taken it, so this asks for the released one first and falls back to whatever
-    is still free — the same rule `resend_job_offer` uses for a new version.
-    """
-    from recruitment.api.offer_lifecycle import _position_for_resend
-    from recruitment.api.offer_position import POSITION_FIELD, requires_position
-
-    requisition = doc.get("custom_job_requisition")
-    if not requisition or not requires_position(requisition) or doc.get(POSITION_FIELD):
-        return
-
-    position = _position_for_resend(doc, requisition)
-    if not position:
-        frappe.throw(
-            _(
-                "Every position on {0} is filled or claimed by another offer, so this letter "
-                "cannot be sent again. Withdraw the offer holding the position, or raise a new version."
-            ).format(frappe.bold(requisition)),
-            title=_("No Position Available"),
-        )
-    frappe.db.set_value(JOB_OFFER, doc.name, POSITION_FIELD, position, update_modified=False)
-    doc.set(POSITION_FIELD, position)
+# Fields that say HR Ops has verified the offer's terms. The new version carries
+# the same terms, so it carries that verification over instead of waiting on HR
+# Ops a second time (Recruitment Settings -> Require HR Ops Verification).
+_HR_OPS_FIELDS = ("custom_hr_ops_notified", "custom_hr_ops_notified_on", "custom_hr_ops_notified_by")
 
 
 @frappe.whitelist()
 def resend_offer_letter(job_offer, expiry_date):
-    """Give an expired offer a new validity period and email the same letter again.
+    """Resend an expired offer to the candidate as a new version on a new expiry date.
 
-    The offer itself does not change — same terms, same version, same letter —
-    so this is not `resend_job_offer`, which copies the offer into a new Draft
-    version for HR to edit. Use this one when the candidate simply ran out of
-    time; use that one when anything about the offer has to change.
+    Version N+1 is copied from the expired offer with the same terms, given the
+    new Expiry Date, submitted and emailed straight away, so the candidate is
+    back in front of a live offer. The expired offer stays Expired as history.
+    Both offers log the resend in their activity, and the candidate's hiring
+    workflow records "Offer Resent".
 
-    The whole thing is one transaction: if the email cannot go out, the offer
-    stays Expired rather than sitting at Awaiting Response with nothing sent.
+    Use `offer_lifecycle.resend_job_offer` instead when the terms must change: it
+    raises N+1 as a Draft for HR to edit.
+
+    The whole thing is one transaction: if the new version cannot be submitted or
+    its email cannot go out, nothing is kept and the old offer stays Expired.
     """
-    from recruitment.api.action_center import sync_job_offer_action_item
-    from recruitment.api.bulk_job_offer import resend_welcome_email
+    from recruitment.api.bulk_job_offer import send_bulk_job_offer
     from recruitment.api.hiring_stage import record_offer_event
-    from recruitment.api.offer_position import sync_offer_position
+    from recruitment.recruitment.offer_send_rules import EMAIL_SENT
+    from recruitment.api.offer_lifecycle import raise_new_version, version_of
     from recruitment.api.offer_validation import check_offer_allowed
 
     if not job_offer:
         frappe.throw(_("Job Offer is required."))
     frappe.has_permission(JOB_OFFER, "write", doc=job_offer, throw=True)
+    frappe.has_permission(JOB_OFFER, "create", throw=True)
+    frappe.has_permission(JOB_OFFER, "submit", throw=True)
 
-    doc = frappe.get_doc(JOB_OFFER, job_offer)
-    rule = resend_letter_rule(doc)
+    old = frappe.get_doc(JOB_OFFER, job_offer)
+    rule = resend_letter_rule(old)
     if not rule["allowed"]:
         frappe.throw(rule["reason"], title=_("Cannot Resend Offer Letter"))
 
-    expiry = _validated_expiry(doc, expiry_date)
+    expiry = _validated_expiry(old, expiry_date)
 
-    # Reviving the letter puts the candidate back in front of an active offer,
-    # so it has to clear the same gates a fresh offer does — the position it
+    # Resending puts the candidate back in front of an active offer, so it has to
+    # clear the same gates a fresh offer does — the position the expired offer
     # released may well have been spoken for while it sat expired.
-    allowed = check_offer_allowed(doc.job_applicant, exclude_offer=doc.name)
+    allowed = check_offer_allowed(old.job_applicant, exclude_offer=old.name)
     if not allowed.get("allowed"):
         frappe.throw(allowed.get("message"), title=_("Cannot Resend Offer Letter"))
 
-    _reclaim_position(doc)
+    overrides = {EXPIRY_FIELD: expiry}
+    overrides.update({f: old.get(f) for f in _HR_OPS_FIELDS})
+    new = raise_new_version(old, overrides)
+    new.submit()
 
-    previous_expiry = doc.get(EXPIRY_FIELD)
-    frappe.db.set_value(
-        JOB_OFFER, doc.name, {EXPIRY_FIELD: expiry, "status": AWAITING_RESPONSE}
-    )
-    doc.set(EXPIRY_FIELD, expiry)
-    doc.status = AWAITING_RESPONSE
+    result = send_bulk_job_offer([new.name])
+    # `email_sent_on` is stamped the moment the mail is out and nothing after
+    # clears it. send_bulk_job_offer can still report the offer as failed when a
+    # later step (its Communication log) breaks — the candidate has the letter
+    # all the same, so that must not roll the new version away.
+    emailed = result.get("sent") or frappe.db.get_value(JOB_OFFER, new.name, "email_sent_on")
+    if not emailed:
+        # Roll everything back — the new version must not sit submitted but unsent.
+        email_error = frappe.db.get_value(JOB_OFFER, new.name, "email_error")
+        if result.get("pending_hr_ops"):
+            reason = _("HR Ops has not been notified for this offer yet. Click 'Notify HR Ops' first.")
+        else:
+            reason = email_error or _("The offer email could not be sent.")
+        frappe.throw(
+            _("The offer letter was not resent: {0}").format(reason),
+            title=_("Cannot Resend Offer Letter"),
+        )
 
-    # Raw writes fire no doc_events: re-claim the position, put the offer back in
-    # the candidate's Action Center and tell the hiring workflow it is live again.
-    sync_offer_position(doc)
+    if not result.get("sent"):
+        # Sent, but a post-send step marked it Failed — say what actually happened.
+        frappe.db.set_value(JOB_OFFER, new.name, "email_status", EMAIL_SENT, update_modified=False)
+    # The candidate has this version now: keep it, whatever the bookkeeping below does.
+    frappe.db.commit()
+
+    new.reload()
+    previous_expiry = old.get(EXPIRY_FIELD)
+    version = version_of(new)
     try:
-        sync_job_offer_action_item(doc)
+        new.add_comment(
+            "Comment",
+            _("Version {0}, resent from {1} (Expired). Offer letter emailed to the candidate, valid until {2}.").format(
+                version, old.name, formatdate(expiry)
+            ),
+        )
+        old.add_comment(
+            "Comment",
+            _("Superseded by version {0}: {1}. Offer letter resent with a new expiry date ({2}).").format(
+                version, new.name, formatdate(expiry)
+            ),
+        )
+        record_offer_event(
+            new,
+            "Offer Resent",
+            notes=_("{0} (version {1}), resent from {2} after it expired").format(new.name, version, old.name),
+        )
     except Exception:
-        frappe.log_error(frappe.get_traceback(), "Job Offer: action item on letter resend failed")
-    record_offer_event(doc, "Offer Resent")
-
-    # Last, and not wrapped: a failed send must roll the status back with it.
-    resend_welcome_email(doc.name)
-
-    doc.add_comment(
-        "Comment",
-        _("Offer letter resent to the candidate. Expiry date moved from {0} to {1}.").format(
-            formatdate(previous_expiry) if previous_expiry else _("none"), formatdate(expiry)
-        ),
-    )
+        frappe.log_error(frappe.get_traceback(), f"Resend Offer Letter: logging failed for {new.name}")
 
     return {
-        "job_offer": doc.name,
-        "status": AWAITING_RESPONSE,
+        "job_offer": new.name,
+        "version": version,
+        "previous_offer": old.name,
+        "status": new.status,
         "expiry_date": str(expiry),
         "previous_expiry_date": str(previous_expiry) if previous_expiry else None,
     }

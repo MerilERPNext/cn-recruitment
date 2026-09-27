@@ -1799,6 +1799,26 @@ def _create_job_applicant(doc, portal_form):
     return applicant
 
 
+def _cancelled_onboarding(name):
+    """The newest cancelled onboarding of this Employee, or None."""
+    return frappe.db.get_value(
+        EMPLOYEE_ONBOARDING, {"employee": name, "docstatus": 2},
+        ["name", "job_applicant"], as_dict=True, order_by="creation desc")
+
+
+def _reuse_job_applicant(job_applicant, portal_form):
+    """The Job Applicant a cancelled onboarding hung off, so initiating again
+    does not give the candidate a second one — their portal login is tied to it
+    (`Candidate Portal User.job_applicant`). None when it no longer exists."""
+    if not frappe.db.exists(JOB_APPLICANT, job_applicant):
+        return None
+    applicant = frappe.get_doc(JOB_APPLICANT, job_applicant)
+    if portal_form and applicant.meta.has_field(PORTAL_FORM_FIELD):
+        applicant.set(PORTAL_FORM_FIELD, portal_form)
+        applicant.save(ignore_permissions=True)
+    return applicant
+
+
 def _link_applicant_to_onboarding(applicant, onboarding):
     """The same back-links the recruitment path leaves, so screens that start
     from the applicant (pre-onboarding status, the portal) find this one too."""
@@ -1930,7 +1950,13 @@ def initiate_onboarding(name=None, payload=None):
                 "already_initiated": True,
             })
 
-        if not _can_initiate(doc):
+        # Onboarding that was initiated and then cancelled may be initiated again
+        # (Retrigger Onboarding); the stage still reads "Onboarding Initiated".
+        cancelled = (
+            _cancelled_onboarding(name)
+            if doc.get(STAGE_FIELD) == "Onboarding Initiated" else None
+        )
+        if not _can_initiate(doc) and not cancelled:
             return _err(
                 _("{0} is {1}. Onboarding can only be initiated once the new hire is submitted.").format(
                     name, doc.get(STAGE_FIELD) or doc.status),
@@ -1956,7 +1982,11 @@ def initiate_onboarding(name=None, payload=None):
                 form_doc.name), http=412)
 
         with _atomic("new_hire_handoff"):
-            applicant = _create_job_applicant(doc, portal_form)
+            applicant = (
+                _reuse_job_applicant(cancelled.job_applicant, portal_form)
+                if cancelled and cancelled.job_applicant
+                else None
+            ) or _create_job_applicant(doc, portal_form)
 
             onboarding.job_applicant = applicant.name
             onboarding.employee = doc.name

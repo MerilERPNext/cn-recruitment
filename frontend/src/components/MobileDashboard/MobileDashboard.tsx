@@ -357,41 +357,51 @@ const MobileDashboard: React.FC = () => {
   return (
     <div className="h-screen font-sans flex flex-col">
       {/* Header */}
-      <div className="bg-white/80 backdrop-blur-lg border-b border-white/20 px-2 py-3 shadow-sm sticky top-0 z-10 flex-shrink-0">
-        <div className="flex items-center justify-between">
-          <Button
-            bgColor=""
-            variant="subtle"
-            className="w-12 h-12 p-0 rounded-xl overflow-hidden "
-          >
-            <img
-              src={typeof logoToShow === "string" ? logoToShow : ""}
-              alt="CompnayLogo"
-              className="w-12 h-12 p-1 rounded-full flex-shrink-0"
-            />
-            <Typography variant="subheading">
-              Welcome,{" "}
-              <span className="text-primary-900 whitespace-nowrap">
+      <div className="bg-white/90 backdrop-blur-md border-b border-gray-100 px-4 py-2.5 sm:py-3 shadow-xs sticky top-0 z-20 flex-shrink-0">
+        <div className="flex items-center justify-between gap-2.5 min-w-0">
+          <div className="flex items-center gap-3 min-w-0 flex-1">
+            <div className="w-11 h-11 rounded-full overflow-hidden flex-shrink-0 flex items-center justify-center bg-gray-50 border border-gray-200/80 shadow-2xs">
+              <img
+                src={typeof logoToShow === "string" ? logoToShow : ""}
+                alt="Company Logo"
+                className="w-full h-full object-contain rounded-full"
+              />
+            </div>
+            <div className="flex flex-col justify-center min-w-0 leading-tight">
+              <Typography
+                variant="bodySmall"
+                component="span"
+                className="text-gray-900 font-bold leading-tight"
+              >
+                Welcome,
+              </Typography>
+              <Typography
+                variant="bodySmall"
+                component="span"
+                className="text-primary-900 font-bold leading-tight truncate"
+              >
                 {currentEmployee?.employee_name?.split(" ")[0] || ""}!
-              </span>
-            </Typography>
-          </Button>
+              </Typography>
+            </div>
+          </div>
 
-          <div className="flex items-center gap-2 sm:gap-3">
-            <RedeemablePointsBadge variant="light" />
+          <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
+            <RedeemablePointsBadge variant="light" className="h-9" />
 
             <button
               onClick={() => navigate("/webapp/notification-log")}
-              className="relative p-2 hover:bg-primary-400/20 rounded-lg transition-colors"
+              aria-label="Notifications"
+              className="relative w-9 h-9 flex items-center justify-center hover:bg-primary-50 active:bg-primary-100 rounded-xl transition-colors text-gray-600 hover:text-primary-700"
             >
               <NotificationBell className="text-gray-600 hover:text-gray-800" />
             </button>
 
             <button
-              className="relative p-2 hover:bg-primary-400/20 rounded-lg transition-colors"
+              aria-label="Search"
+              className="relative w-9 h-9 flex items-center justify-center hover:bg-primary-50 active:bg-primary-100 rounded-xl transition-colors text-gray-600 hover:text-primary-700"
               onClick={() => setIsSearchDrawerOpen(true)}
             >
-              <Search className="text-gray-600 hover:text-gray-800" />
+              <Search className="w-5 h-5 text-gray-600 hover:text-gray-800" />
             </button>
           </div>
         </div>

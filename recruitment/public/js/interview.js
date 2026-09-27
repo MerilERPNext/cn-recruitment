@@ -1,5 +1,13 @@
 frappe.ui.form.on("Interview", {
+    setup: function(frm) {
+        // Only interview forms (widget Doc Type).
+        frm.set_query("custom_evaluation_form", () => ({ filters: { doc_type: ["in", ["Interview Feedback", "Interview"]], is_archived: 0 } }));
+        // A panel member's own form (Interview Detail column) — same list. Empty
+        // means they fill in the interview's Evaluation Form above.
+        frm.set_query("custom_evaluation_form", "interview_details", () => ({ filters: { doc_type: ["in", ["Interview Feedback", "Interview"]], is_archived: 0 } }));
+    },
     refresh: function(frm){
+		lock_candidate(frm);
 		if(frm.doc.status=="Pending"){
 			  frm.add_custom_button(__('Travel Request'), function(){
 				var description="Applicant Name: ";
@@ -40,6 +48,16 @@ frappe.ui.form.on("Interview", {
         });
     }
 })
+// Candidate (and the round, whose HRMS handler clears the candidate) are fixed
+// once the interview is tied to an applicant: opened from the hiring workflow,
+// or already saved. Picking someone else would detach it from their stage.
+function lock_candidate(frm) {
+	if (!frm.doc.job_applicant || !(frm.doc.__from_hiring_workflow || !frm.is_new())) return;
+	["job_applicant", "interview_round", "interview_type"]
+		.filter((f) => frm.fields_dict[f])
+		.forEach((f) => frm.set_df_property(f, "read_only", 1));
+}
+
 frappe.ui.form.on('Interview Detail', {
 	interview_details_remove: function(frm, cdt, cdn) {
 		frappe.db.get_list('User Permission', {

@@ -5,14 +5,17 @@ from frappe.utils import get_link_to_form
 def check_feedback_and_update_result(interview_feedback):
     # Fetch the Interview document
     interview = frappe.get_doc('Interview', interview_feedback.interview)
-    
+
     interview_details = interview.get('interview_details')  # This retrieves the child table records
-    
+
     # Fetch all feedback for the interview excluding 'Cancelled' status
-    feedbacks = frappe.get_all('Interview Feedback', 
-                                filters={'interview': interview_feedback.interview, 'docstatus': 1}, 
+    feedbacks = frappe.get_all('Interview Feedback',
+                                filters={'interview': interview_feedback.interview, 'docstatus': 1},
                                 fields=['interviewer', 'result'])
-    
+
+    if _all_must_clear(interview):
+        return _decide_all_must_clear(interview, feedbacks)
+
     # Check if all interviewers have provided feedback (excluding cancelled)
     if len(feedbacks) < len(interview_details):
         # If not all feedbacks are received, exit without changing the status
@@ -31,6 +34,38 @@ def check_feedback_and_update_result(interview_feedback):
         interview.status = 'Pending'
 
     # Save the updated status
+    interview.save(ignore_permissions=True)
+
+
+def _all_must_clear(interview):
+    """Hiring-workflow interviews move on only if EVERY interviewer's form is positive.
+
+    Campus Drive interviews keep the majority vote above — their panels are run
+    from the drive and were built around it.
+    """
+    if interview.get("custom_campus_drive"):
+        return False
+    from recruitment.api.hiring_stage import is_hiring_workflow_enabled
+
+    return is_hiring_workflow_enabled()
+
+
+def _decide_all_must_clear(interview, feedbacks):
+    """AND rule, decided once every panel member has submitted: all Cleared →
+    Cleared, any other result → Rejected. Until then the interview stays open.
+
+    Keyed on WHO is on the panel, not on how many feedbacks exist: a panel member
+    replaced on reschedule, or HR's "Mark as Completed" feedback, must neither
+    count as a vote nor stand in for a missing one.
+    """
+    panel = {r.interviewer for r in (interview.get("interview_details") or []) if r.interviewer}
+    results = {f.interviewer: f.result for f in feedbacks if f.interviewer in panel}
+    if not panel or len(results) < len(panel):
+        return
+    status = "Cleared" if all(r == "Cleared" for r in results.values()) else "Rejected"
+    if interview.status == status:
+        return
+    interview.status = status
     interview.save(ignore_permissions=True)
 
 @frappe.whitelist()
@@ -214,3 +249,67 @@ def create_interview_feedback(data, interview_name, interviewer, job_applicant):
     )
 
 
+
+
+def fill_skill_descriptions(doc, method=None):
+    """Stamp each Skill Assessment row with what the skill means for this round.
+
+    The round's Expected Skill Set description wins — it is written for this round
+    ("system design at senior level") — and the Skill master's generic description is
+    the fallback. On validate rather than in the form, because rows arrive from four
+    places (HRMS desk, the Submit Feedback route, the REST API, create_interview_feedback)
+    and only some of them run the form's JS.
+    """
+    rows = doc.get("skill_assessment") or []
+    if not rows:
+        return
+    descriptions = get_skill_descriptions(_feedback_round(doc), [r.skill for r in rows])
+    for row in rows:
+        row.custom_description = descriptions.get(row.skill)
+
+
+def _feedback_round(doc):
+    """The round this feedback is for, whichever field this HRMS version keeps it in.
+
+    v15 stores it in ``interview_round`` (-> Interview Round), v16 in
+    ``interview_type`` (-> Interview Type). Reading ``doc.interview_round`` alone
+    found nothing on v16, so every row fell back to the Skill master's generic
+    description and the round's own wording was never used.
+    """
+    from recruitment.api.hiring_stage import get_interview_round_field
+
+    field = get_interview_round_field("Interview Feedback")
+    return doc.get(field) if field else None
+
+
+@frappe.whitelist()
+def get_skill_descriptions(interview_round=None, skills=None, interview_type=None):
+    """{skill: description} — round's Expected Skill Set first, Skill master second.
+
+    The round may be passed as ``interview_round`` (HRMS v15 naming) or
+    ``interview_type`` (v16); either is the name of a record of the round doctype
+    this site actually has, and the Expected Skill Set is read from under that
+    doctype -- "Interview Round" on v15, "Interview Type" on v16.
+    """
+    from recruitment.api.hiring_stage import get_interview_round_doctype
+
+    if isinstance(skills, str):
+        skills = frappe.parse_json(skills)
+    skills = [s for s in (skills or []) if s]
+    if not skills:
+        return {}
+
+    descriptions = dict(frappe.get_all(
+        "Skill", filters={"name": ["in", skills]}, fields=["name", "description"], as_list=True,
+    ))
+    round_name = interview_round or interview_type
+    round_doctype = get_interview_round_doctype()
+    if round_name and round_doctype:
+        for skill, description in frappe.get_all(
+            "Expected Skill Set",
+            filters={"parent": round_name, "parenttype": round_doctype, "skill": ["in", skills]},
+            fields=["skill", "description"], as_list=True,
+        ):
+            if description:
+                descriptions[skill] = description
+    return {s: descriptions.get(s) for s in skills}

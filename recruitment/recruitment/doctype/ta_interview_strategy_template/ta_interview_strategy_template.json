@@ -10,6 +10,12 @@
   "is_default",
   "column_break_main",
   "applicable_to",
+  "section_break_round_counts",
+  "no_of_shortlisting_rounds",
+  "column_break_round_counts_1",
+  "no_of_screening_rounds",
+  "column_break_round_counts_2",
+  "no_of_interview_rounds",
   "section_break_rounds",
   "interview_rounds"
  ],
@@ -43,6 +49,41 @@
    "description": "Dynamic User Assignments of purpose <b>Attributes</b>. Their attribute rows (Department, Designation, Location, Company \u2026 on a Job Opening) decide which openings this template covers. Several assignments OR; the most specific matching template wins."
   },
   {
+   "fieldname": "section_break_round_counts",
+   "fieldtype": "Section Break",
+   "label": "Rounds per Stage",
+   "description": "How many rounds of each stage type this workflow runs. Changing a number adds or removes rows of that type in the rounds table below."
+  },
+  {
+   "fieldname": "no_of_shortlisting_rounds",
+   "fieldtype": "Int",
+   "label": "No. of Shortlisting Rounds",
+   "non_negative": 1,
+   "default": "0"
+  },
+  {
+   "fieldname": "column_break_round_counts_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "no_of_screening_rounds",
+   "fieldtype": "Int",
+   "label": "No. of Screening Rounds",
+   "non_negative": 1,
+   "default": "0"
+  },
+  {
+   "fieldname": "column_break_round_counts_2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "no_of_interview_rounds",
+   "fieldtype": "Int",
+   "label": "No. of Interview Rounds",
+   "non_negative": 1,
+   "default": "0"
+  },
+  {
    "fieldname": "section_break_rounds",
    "fieldtype": "Section Break"
   },
@@ -57,7 +98,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-08-24 12:00:00.000000",
+ "modified": "2026-09-24 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "TA Interview Strategy Template",

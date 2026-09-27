@@ -18,6 +18,7 @@ import {
   EmployeeNode,
   EmployeePreviousDetailsResponse,
   SalaryStructureAssignmentsResponse,
+  EmployeeEventItem,
 } from "../types/employee";
 import { FilterCondition } from "../types/frappe";
 import { AddressInfoData } from "../types/profile";
@@ -1098,3 +1099,16 @@ export const useDeleteEmployeeAndUserMutation = () => {
     },
   });
 };
+
+export const useGetEmployeeEvents = (
+  limit_page_length: number = 19999,
+  start: number = 0,
+): UseQueryResult<EmployeeEventItem[], Error> => {
+  return useQuery<EmployeeEventItem[], Error>({
+    queryKey: ["employee-events", limit_page_length, start],
+    queryFn: () => EmployeeService.getEmployeeEvents(limit_page_length, start),
+    refetchOnWindowFocus: true,
+    ...defaultQueryOptions,
+  });
+};
+
