@@ -53,7 +53,15 @@ add_to_apps_screen = [
 	}
 ]
 
-# Website user home page (by Role)
+# Home page by Role.
+#
+# Frappe reads this hook from frappe.website.utils.get_home_page_via_hooks, which
+# is reached for the *website root* only -- "/" resolves through resolve_path ->
+# get_home_page(). It does NOT drive the post-login redirect: auth.py consults
+# get_home_page() on the Website User branch alone and hardcodes the Desk for
+# everyone else. The login leg is handled by
+# recruitment/recruitment/login_redirect.py, which reads the entries below so the
+# two agree -- notably keeping External Recruiters out of the ESS portal.
 role_home_page = {
 	"System User": "/webapp",
 	# External recruiters land on their (scoped) Job Opening list in Desk.
@@ -922,6 +930,12 @@ before_request = [
 	# than duplicated per caller. Alumni Portal sessions are exempted; see
 	# overrides/todo_ess_visibility.py for the full rationale.
 	"recruitment.recruitment.overrides.todo_ess_visibility.apply_patch",
+	# Send an already-signed-in System User who opens /login to /webapp rather
+	# than frappe's Desk default. Only this one leg of the portal redirect is a
+	# before_request hook -- the login itself is redirected by a patch installed
+	# from recruitment/__init__.py, because init_request runs LoginManager
+	# before it runs these hooks. See recruitment/recruitment/login_redirect.py.
+	"recruitment.recruitment.login_redirect.redirect_signed_in_login_page",
 ]
 # after_request = ["recruitment.utils.after_request"]
 

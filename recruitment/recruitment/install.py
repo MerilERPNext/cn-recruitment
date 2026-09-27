@@ -60,6 +60,98 @@ def after_migrate():
     ensure_hr_ops_email_template()
     ensure_campus_panel_email_template()
     ensure_hired_status()
+    ensure_webapp_login_redirect_field()
+
+
+#: What the switch does, kept in one place so the field description and a later
+#: migrate that refreshes it cannot drift apart.
+WEBAPP_REDIRECT_DESCRIPTION = (
+    "Send users with the Employee role to /webapp when they sign in, instead of "
+    "the Desk. Administrator, Website Users and anyone without the role are "
+    "unaffected."
+)
+
+
+def ensure_webapp_login_redirect_field():
+    """Add `Website Settings.custom_redirect_to_webapp_after_login` — the switch
+    behind `recruitment.recruitment.login_redirect`.
+
+    Sits in the Landing Page section right after the stock `home_page` field,
+    which answers the same question for Website Users.
+
+    The value is written once, here, at the moment the field is created. A
+    Custom Field `default` only applies to documents inserted afterwards, and
+    Website Settings is a Single that already exists on every site, so without
+    this the switch would read NULL — off — and the redirect would never fire.
+    A later migrate only refreshes the description (which changes when the rule
+    behind the switch changes) and leaves the value alone, so an admin who
+    unticks it stays unticked.
+    """
+    if frappe.get_meta("Website Settings").get_field(
+        "custom_redirect_to_webapp_after_login"
+    ):
+        _refresh_webapp_login_redirect_description()
+        return
+    try:
+        from frappe.custom.doctype.custom_field.custom_field import create_custom_field
+
+        create_custom_field(
+            "Website Settings",
+            {
+                "fieldname": "custom_redirect_to_webapp_after_login",
+                "label": "Redirect employees to Employee Self Service after login",
+                "fieldtype": "Check",
+                "default": "1",
+                "insert_after": "home_page",
+                "description": WEBAPP_REDIRECT_DESCRIPTION,
+                "module": "Recruitment",
+            },
+            ignore_validate=True,
+        )
+        frappe.db.set_single_value(
+            "Website Settings", "custom_redirect_to_webapp_after_login", 1
+        )
+        frappe.clear_cache(doctype="Website Settings")
+    except Exception:
+        frappe.logger("recruitment").warning(
+            "ensure_webapp_login_redirect_field: skipped", exc_info=True
+        )
+
+
+def _refresh_webapp_login_redirect_description():
+    """Bring an already-created switch's help text back in step.
+
+    Only the description — the ticked/unticked value is the admin's, and the
+    label is left alone in case it has been translated or renamed on a site.
+    """
+    name = frappe.db.get_value(
+        "Custom Field",
+        {
+            "dt": "Website Settings",
+            "fieldname": "custom_redirect_to_webapp_after_login",
+        },
+    )
+    if not name:
+        # Declared in a fixture or the doctype itself rather than as a Custom
+        # Field — not ours to rewrite.
+        return
+
+    try:
+        if (
+            frappe.db.get_value("Custom Field", name, "description")
+            == WEBAPP_REDIRECT_DESCRIPTION
+        ):
+            return
+
+        frappe.db.set_value(
+            "Custom Field", name, "description", WEBAPP_REDIRECT_DESCRIPTION
+        )
+        frappe.clear_cache(doctype="Website Settings")
+    except Exception:
+        frappe.logger("recruitment").warning(
+            "ensure_webapp_login_redirect_field: description not refreshed",
+            exc_info=True,
+        )
 
 
 def ensure_alumni_todo_form_field():
