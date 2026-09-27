@@ -970,17 +970,6 @@ override_doctype_class = {
 # Request Events
 # ----------------
 before_request = [
-	# Override ERPNext's automatic User disable on Employee Inactive status.
-	# User state is controlled EXCLUSIVELY by the custom_is_alumni_employee
-	# checkbox via the alumni_checkbox_handler, not by Employee.status changes.
-	"recruitment.recruitment.employee_user_state_override.apply_patch",
-	# Hides Todo Type rows opted out of the ESS Portal (Alumni Portal on, ESS
-	# off) from cn_todo_manager's own get_todo_list -- every caller (the ESS
-	# dashboard widget, the embedded task-manager app, plain Desk access)
-	# funnels through the same query builder, so this is patched there rather
-	# than duplicated per caller. Alumni Portal sessions are exempted; see
-	# overrides/todo_ess_visibility.py for the full rationale.
-	"recruitment.recruitment.overrides.todo_ess_visibility.apply_patch",
 	# Send an already-signed-in System User who opens /login to /webapp rather
 	# than frappe's Desk default. Only this one leg of the portal redirect is a
 	# before_request hook -- the login itself is redirected by a patch installed
