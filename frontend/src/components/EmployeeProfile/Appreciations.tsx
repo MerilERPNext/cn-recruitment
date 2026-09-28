@@ -138,7 +138,7 @@ const Appreciations = () => {
 
             {/* Horizontally scrollable award cards */}
             {open && (
-                <div className="absolute left-0 top-full z-50 mt-2 w-[684px] max-w-[90vw] rounded-xl border border-gray-200 bg-white p-3 shadow-lg">
+                <div className="absolute left-0 top-full z-50 mt-2 w-[684px] max-w-[calc(100vw-2rem)] sm:max-w-[90vw] rounded-xl border border-gray-200 bg-white p-3 shadow-lg">
                     {programsLoading ? (
                         <div className="flex items-center justify-center py-8">
                             <CircularLoader size="sm" />
@@ -148,7 +148,7 @@ const Appreciations = () => {
                             No awards available
                         </div>
                     ) : (
-                        <div className="grid grid-cols-4 gap-3 max-h-[340px] overflow-y-auto pb-1">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 max-h-[340px] overflow-y-auto pb-1">
                             {programs.map((p) => (
                                 <button
                                     type="button"
