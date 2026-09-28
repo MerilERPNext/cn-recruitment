@@ -17,4 +17,4 @@ frappe.ui.form.on("Employee Onboarding", {
             frm.set_df_property('custom_confirm_home_bank_account_no', 'hidden', 1);
 		}
 	}
-})
+});
