@@ -30,6 +30,8 @@ import {
   formatTo24HourTime,
   getDeviceLocation,
   getDeviceLocationWeb,
+  getLocationPermissionState,
+  LOCATION_BLOCKED_MESSAGE,
 } from "../../utils/helperUtils";
 import TasksAwaiting from "../../components/DashboardComponent/TasksAwaiting";
 import EmployeeFallback from "../../components/EmployeeFallback";
@@ -53,7 +55,9 @@ import { RecommendationsForYou } from "../../components/DashboardComponent/Recom
 
 const MobileDashboard: React.FC = () => {
   const [location, setLocation] = useState<Coordinates | null>(null);
-  const [isLocationLoading, setIsLocationLoading] = useState(true);
+  // Location is requested only when the user taps Check In / Check Out, never
+  // on mount, so the browser's permission prompt is tied to that action.
+  const [isLocationLoading, setIsLocationLoading] = useState(false);
   const [locationError, setLocationError] = useState<string | null>(null);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [geoLocationModal, setGeoLocationModal] = useState(false);
@@ -71,7 +75,8 @@ const MobileDashboard: React.FC = () => {
     } catch (err) {
       console.error("Failed to get location:", err);
       setLocationError(
-        "Please refresh to get your current location.",
+        (err as Error)?.message ||
+          "Location access is required for Check In. Please enable location services and try again.",
       );
       return null;
     } finally {
@@ -80,25 +85,27 @@ const MobileDashboard: React.FC = () => {
   };
 
   const handleGeoButtonClick = async () => {
+    // Check In / Check Out tap - the ONLY place location is requested.
+    // 1. Read the browser / device permission state (never prompts).
+    if (!window.isApp) {
+      const permission = await getLocationPermissionState();
+      if (permission === "denied") {
+        // Blocked: the platform will not prompt again, so do not open the
+        // modal - show the settings guidance instead.
+        setLocationError(LOCATION_BLOCKED_MESSAGE);
+        return;
+      }
+    }
+    // 2. Get the position. "granted" resolves silently; "prompt" makes the
+    //    OS / browser show its native dialog right now, because of this tap.
+    //    In the native app the bridge's own permission handling runs here.
     const coords = await fetchLocation();
     if (!coords) {
-      toast.error("Could not get location. Please enable location services and try again.");
       return;
     }
+    // 3. Continue the existing Check In flow (map, current location, Submit).
     setGeoLocationModal(true);
   };
-
-  useEffect(() => {
-    // Initial fetch with a fallback retry to handle potential native interface delay
-    fetchLocation().then((coords) => {
-      if (!coords) {
-        // If initial fetch fails, try again after a short delay
-        setTimeout(() => {
-          fetchLocation();
-        }, 1000);
-      }
-    });
-  }, []);
 
   useEffect(() => {
     if (location) {
@@ -576,8 +583,7 @@ const MobileDashboard: React.FC = () => {
                   disabled={
                     checkInCheckOutPending ||
                     !employeeShift?.shift ||
-                    isLocationLoading ||
-                    !location
+                    isLocationLoading
                   }
                   className="font-medium"
                 >
