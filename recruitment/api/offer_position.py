@@ -92,9 +92,21 @@ def _positions_held_by_other_offers(requisition, exclude_offer=None):
 
 
 POSITION_FIELDS = (
-    "name", "position_no", "status", "position_type", "location", "functional_area", "candidate",
-    "candidate_status",
+    "name", "position_no", "status", "position_type", "location", "functional_area", "employee_type",
+    "candidate", "candidate_status",
 )
+EMPLOYMENT_TYPE_FIELD = "custom_employment_type"
+
+
+def position_employment_type(row, requisition=None):
+    """Employment Type an offer against `row` should carry: the position's own,
+    else the requisition's. None when neither says."""
+    if row and row.get("employee_type"):
+        return row.get("employee_type")
+    requisition = requisition or (row.get("parent") if row else None)
+    if not requisition or not frappe.get_meta(JOB_REQUISITION).has_field("custom_employment_type_link"):
+        return None
+    return frappe.db.get_value(JOB_REQUISITION, requisition, "custom_employment_type_link")
 
 
 def _positions_of(requisition):
@@ -191,6 +203,7 @@ def get_available_positions(job_requisition=None, job_offer=None, job_applicant=
             "position_type": r.position_type,
             "location": r.location,
             "functional_area": r.functional_area,
+            "employee_type": position_employment_type(r, job_requisition),
             "label": _position_label(r),
             "current": r.name == current,
         }
@@ -334,7 +347,8 @@ def validate_position_choice(doc, method=None):
     row = frappe.db.get_value(
         JOB_REQUISITION_POSITION,
         row_name,
-        ["name", "parent", "position_no", "status", "position_type", "location", "functional_area", "candidate"],
+        ["name", "parent", "position_no", "status", "position_type", "location", "functional_area",
+         "employee_type", "candidate"],
         as_dict=True,
     )
     if not row:
@@ -365,6 +379,26 @@ def validate_position_choice(doc, method=None):
         )
 
     doc.set(POSITION_LABEL_FIELD, _position_label(row))
+    _apply_position_employment_type(doc, row)
+
+
+def _apply_position_employment_type(doc, row):
+    """The seat decides the Employment Type: take it whenever the position is
+    picked or changed, and fill it when still empty. A type HR changes by hand
+    later, on the same position, is left alone. Draft only — a sent offer's
+    type drives its letter and is never rewritten underneath it."""
+    if cint(doc.get("docstatus")) != 0 or not doc.meta.has_field(EMPLOYMENT_TYPE_FIELD):
+        return
+    if doc.get(EMPLOYMENT_TYPE_FIELD):
+        if not doc.has_value_changed(POSITION_FIELD):
+            return
+        # A new version (Resend Job Offer / Resend Offer Letter) is copied from
+        # the last one, type included — keep what that offer settled on.
+        if doc.is_new() and doc.get("custom_previous_offer"):
+            return
+    value = position_employment_type(row)
+    if value:
+        doc.set(EMPLOYMENT_TYPE_FIELD, value)
 
 
 def _requisition_of(doc):
@@ -421,7 +455,17 @@ def sync_offer_position(doc, method=None):
             if row is None:
                 return
             row_name = row.name
-            frappe.db.set_value(JOB_OFFER, doc.name, POSITION_FIELD, row_name, update_modified=False)
+            values = {POSITION_FIELD: row_name}
+            if (
+                cint(doc.get("docstatus")) == 0
+                and doc.meta.has_field(EMPLOYMENT_TYPE_FIELD)
+                and not doc.get(EMPLOYMENT_TYPE_FIELD)
+            ):
+                employment_type = position_employment_type(row, requisition)
+                if employment_type:
+                    values[EMPLOYMENT_TYPE_FIELD] = employment_type
+                    doc.set(EMPLOYMENT_TYPE_FIELD, employment_type)
+            frappe.db.set_value(JOB_OFFER, doc.name, values, update_modified=False)
 
         if row.status == POSITION_FILLED and row.candidate == applicant:
             # Already claimed — only keep the offer's status mirrored on the row

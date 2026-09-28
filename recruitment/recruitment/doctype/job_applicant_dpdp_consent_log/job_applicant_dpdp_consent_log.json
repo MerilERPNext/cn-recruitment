@@ -32,6 +32,8 @@
   "external_status",
   "otp_verified",
   "verified_at",
+  "receipt_number",
+  "captured_at",
   "snapshot_section",
   "form_title",
   "form_subtitle",
@@ -333,12 +335,27 @@
    "fieldtype": "Datetime",
    "label": "Verified At",
    "read_only": 1
+  },
+  {
+   "depends_on": "eval:doc.consent_source==\"External Portal\"",
+   "description": "Consent receipt number issued by the consent portal.",
+   "fieldname": "receipt_number",
+   "fieldtype": "Data",
+   "label": "Receipt Number",
+   "read_only": 1
+  },
+  {
+   "depends_on": "eval:doc.consent_source==\"External Portal\"",
+   "fieldname": "captured_at",
+   "fieldtype": "Datetime",
+   "label": "Captured At",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 0,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-09-04 10:00:00.000000",
+ "modified": "2026-09-28 10:00:00.000000",
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "Job Applicant DPDP Consent Log",

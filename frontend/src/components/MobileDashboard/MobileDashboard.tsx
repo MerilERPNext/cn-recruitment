@@ -4,22 +4,13 @@ import {
   useCheckInOutService,
   useGetEmployeeShift,
   useGetQuickAttendanceSummary,
-  useHomeSummaryDetails,
+  useTodayAttendanceSummary,
 } from "../../hooks/useAttendance";
 import { useCompanyLogo } from "../../hooks/useCompanyLogo";
 import { useGetUserNotices } from "../../hooks/useNotices";
 
-import {
-  compareAsc,
-  compareDesc,
-  differenceInMinutes,
-  endOfDay,
-  endOfMonth,
-  format,
-  parseISO,
-  startOfDay,
-  startOfMonth,
-} from "date-fns";
+
+import { endOfMonth, format, startOfMonth } from "date-fns";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { useCurrentEmployeeDetails } from "../../hooks/useEmployee";
@@ -30,6 +21,8 @@ import {
   formatTo24HourTime,
   getDeviceLocation,
   getDeviceLocationWeb,
+  getLocationPermissionState,
+  LOCATION_BLOCKED_MESSAGE,
 } from "../../utils/helperUtils";
 import TasksAwaiting from "../../components/DashboardComponent/TasksAwaiting";
 import EmployeeFallback from "../../components/EmployeeFallback";
@@ -53,9 +46,10 @@ import { RecommendationsForYou } from "../../components/DashboardComponent/Recom
 
 const MobileDashboard: React.FC = () => {
   const [location, setLocation] = useState<Coordinates | null>(null);
-  const [isLocationLoading, setIsLocationLoading] = useState(true);
+  // Location is requested only when the user taps Check In / Check Out, never
+  // on mount, so the browser's permission prompt is tied to that action.
+  const [isLocationLoading, setIsLocationLoading] = useState(false);
   const [locationError, setLocationError] = useState<string | null>(null);
-  const [currentTime, setCurrentTime] = useState(new Date());
   const [geoLocationModal, setGeoLocationModal] = useState(false);
   const [isRequestIssueModalOpen, setIsRequestIssueModalOpen] = useState(false);
   const navigate = useNavigate();
@@ -71,7 +65,8 @@ const MobileDashboard: React.FC = () => {
     } catch (err) {
       console.error("Failed to get location:", err);
       setLocationError(
-        "Please refresh to get your current location.",
+        (err as Error)?.message ||
+          "Location access is required for Check In. Please enable location services and try again.",
       );
       return null;
     } finally {
@@ -80,39 +75,33 @@ const MobileDashboard: React.FC = () => {
   };
 
   const handleGeoButtonClick = async () => {
+    // Check In / Check Out tap - the ONLY place location is requested.
+    // 1. Read the browser / device permission state (never prompts).
+    if (!window.isApp) {
+      const permission = await getLocationPermissionState();
+      if (permission === "denied") {
+        // Blocked: the platform will not prompt again, so do not open the
+        // modal - show the settings guidance instead.
+        setLocationError(LOCATION_BLOCKED_MESSAGE);
+        return;
+      }
+    }
+    // 2. Get the position. "granted" resolves silently; "prompt" makes the
+    //    OS / browser show its native dialog right now, because of this tap.
+    //    In the native app the bridge's own permission handling runs here.
     const coords = await fetchLocation();
     if (!coords) {
-      toast.error("Could not get location. Please enable location services and try again.");
       return;
     }
+    // 3. Continue the existing Check In flow (map, current location, Submit).
     setGeoLocationModal(true);
   };
-
-  useEffect(() => {
-    // Initial fetch with a fallback retry to handle potential native interface delay
-    fetchLocation().then((coords) => {
-      if (!coords) {
-        // If initial fetch fails, try again after a short delay
-        setTimeout(() => {
-          fetchLocation();
-        }, 1000);
-      }
-    });
-  }, []);
 
   useEffect(() => {
     if (location) {
       setLocationError(null);
     }
   }, [location]);
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentTime(new Date());
-    }, 60000);
-
-    return () => clearInterval(timer);
-  }, []);
 
   const { data: currentEmployee } =
     useCurrentEmployeeDetails({ logged_in_employee_details: true });
@@ -128,13 +117,6 @@ const MobileDashboard: React.FC = () => {
   const { mutate: checkInCheckOutMutation, isPending: checkInCheckOutPending } =
     useCheckInOutService();
 
-  const start = format(startOfDay(new Date()), "yyyy-MM-dd HH:mm:ss");
-  const end = format(endOfDay(new Date()), "yyyy-MM-dd HH:mm:ss");
-
-  const filters = {
-    time: ["between", [start, end]],
-  };
-
   const { data: CompanyLogo } = useCompanyLogo();
   const currentEmployeeCompany = currentEmployee?.company;
   const matchedCompany =
@@ -147,48 +129,24 @@ const MobileDashboard: React.FC = () => {
       : CompanyLogo?.[0];
 
   const logoToShow = matchedCompany?.company_logo || "logo not found";
-  const encodedFilters = encodeURIComponent(JSON.stringify(filters));
-  const {
-    data: homeSummary,
-    refetch: refetchHomeSummary,
-    isRefetching,
-    isLoading: homeSummaryLoading,
-  } = useHomeSummaryDetails(currentEmployee?.user_id || "", encodedFilters);
   const { data: employeeShift } = useGetEmployeeShift(
     currentEmployee?.user_id || "",
   );
-  const checkIns = homeSummary?.filter((log) => log.log_type === "IN") ?? [];
-  const checkOuts = homeSummary?.filter((log) => log.log_type === "OUT") ?? [];
+  const {
+    homeSummary,
+    refetch: refetchHomeSummary,
+    isRefetching,
+    isLoading: homeSummaryLoading,
+    firstCheckIn,
+    lastCheckOut,
+    isCurrentlyCheckedIn,
+    totalWorkingHours,
+    workPercentage,
+  } = useTodayAttendanceSummary(
+    currentEmployee?.user_id,
+    employeeShift?.custom_standard_working_hrs,
+  );
   const [isSearchDrawerOpen, setIsSearchDrawerOpen] = useState(false);
-  const firstCheckIn = checkIns.length
-    ? checkIns.sort((a, b) =>
-      compareAsc(
-        parseISO(a.time.replace(" ", "T")),
-        parseISO(b.time.replace(" ", "T")),
-      ),
-    )[0]
-    : undefined;
-
-  const lastCheckOut = checkOuts.length
-    ? checkOuts.sort((a, b) =>
-      compareDesc(
-        parseISO(a.time.replace(" ", "T")),
-        parseISO(b.time.replace(" ", "T")),
-      ),
-    )[0]
-    : undefined;
-
-  const lastLog =
-    homeSummary && homeSummary.length > 0
-      ? [...homeSummary].sort((a, b) =>
-        compareDesc(
-          parseISO(a.time.replace(" ", "T")),
-          parseISO(b.time.replace(" ", "T")),
-        ),
-      )[0]
-      : undefined;
-
-  const isCurrentlyCheckedIn = lastLog?.log_type === "IN";
   type CustomError = Error & {
     response?: { data?: { message?: { error: string } } };
   };
@@ -263,89 +221,11 @@ const MobileDashboard: React.FC = () => {
 
 
   const getTotalTime = () => {
-    if (!homeSummary || homeSummary.length === 0) {
-      return "--:--";
-    }
-
-    let totalMinutes = 0;
-    const sortedLogs = [...homeSummary].sort((a, b) =>
-      compareAsc(
-        parseISO(a.time.replace(" ", "T")),
-        parseISO(b.time.replace(" ", "T")),
-      ),
-    );
-
-    let currentCheckIn: (typeof sortedLogs)[0] | null = null;
-
-    for (const log of sortedLogs) {
-      if (log.log_type === "IN") {
-        currentCheckIn = log;
-      } else if (log.log_type === "OUT" && currentCheckIn) {
-        const checkInTime = parseISO(currentCheckIn.time.replace(" ", "T"));
-        const checkOutTime = parseISO(log.time.replace(" ", "T"));
-        totalMinutes += differenceInMinutes(checkOutTime, checkInTime);
-        currentCheckIn = null;
-      }
-    }
-
-    if (currentCheckIn && isCurrentlyCheckedIn) {
-      const checkInTime = parseISO(currentCheckIn.time.replace(" ", "T"));
-      totalMinutes += differenceInMinutes(currentTime, checkInTime);
-    }
-
-    const hours = Math.floor(totalMinutes / 60);
-    const minutes = totalMinutes % 60;
-    return `${hours.toString().padStart(2, "0")}:${minutes
-      .toString()
-      .padStart(2, "0")}`;
+    return totalWorkingHours;
   };
 
   const getWorkPercentage = () => {
-    if (!firstCheckIn || !firstCheckIn.shift_start || !firstCheckIn.shift_end) {
-      return 0;
-    }
-
-    let totalWorkedMinutes = 0;
-
-    if (homeSummary && homeSummary.length > 0) {
-      const sortedLogs = [...homeSummary].sort((a, b) =>
-        compareAsc(
-          parseISO(a.time.replace(" ", "T")),
-          parseISO(b.time.replace(" ", "T")),
-        ),
-      );
-
-      let currentCheckIn: (typeof sortedLogs)[0] | null = null;
-
-      for (const log of sortedLogs) {
-        if (log.log_type === "IN") {
-          currentCheckIn = log;
-        } else if (log.log_type === "OUT" && currentCheckIn) {
-          const checkInTime = parseISO(currentCheckIn.time.replace(" ", "T"));
-          const checkOutTime = parseISO(log.time.replace(" ", "T"));
-          totalWorkedMinutes += differenceInMinutes(checkOutTime, checkInTime);
-          currentCheckIn = null;
-        }
-      }
-
-      if (currentCheckIn && isCurrentlyCheckedIn) {
-        const checkInTime = parseISO(currentCheckIn.time.replace(" ", "T"));
-        totalWorkedMinutes += differenceInMinutes(currentTime, checkInTime);
-      }
-    }
-
-    const shiftStart = parseISO(firstCheckIn.shift_start.replace(" ", "T"));
-    const shiftEnd = parseISO(firstCheckIn.shift_end.replace(" ", "T"));
-    const totalShiftMinutes = differenceInMinutes(shiftEnd, shiftStart);
-
-    if (totalShiftMinutes <= 0) {
-      return 0;
-    }
-
-    const percentage = Math.round(
-      (totalWorkedMinutes / totalShiftMinutes) * 100,
-    );
-    return Math.min(percentage, 100);
+    return workPercentage;
   };
 
   const { data: userNotices, isLoading: userNoticeIsLoading } =
@@ -586,8 +466,7 @@ const MobileDashboard: React.FC = () => {
                   disabled={
                     checkInCheckOutPending ||
                     !employeeShift?.shift ||
-                    isLocationLoading ||
-                    !location
+                    isLocationLoading
                   }
                   className="font-medium"
                 >

@@ -16,7 +16,7 @@ const ContextualPopup: FC<ContextualPopupProps> = ({
   className = "",
 }) => {
   const popupRef = useRef<HTMLDivElement>(null);
-  const [position, setPosition] = useState<{ top: number; right: number } | null>(null);
+  const [position, setPosition] = useState<{ top: number; left: number } | null>(null);
 
   useEffect(() => {
     if (!isOpen) {
@@ -29,23 +29,27 @@ const ContextualPopup: FC<ContextualPopupProps> = ({
 
       const triggerRect = triggerRef.current.getBoundingClientRect();
       const viewport = { width: window.innerWidth, height: window.innerHeight };
+      const padding = 12;
 
-      // Anchor from the right edge of the trigger — avoids needing popup width
-      const right = viewport.width - triggerRect.right;
-      let top = triggerRect.bottom + 4;
+      const popupWidth = popupRef.current?.offsetWidth || 280;
+      const popupHeight = popupRef.current?.offsetHeight || 200;
 
-      // If popup would overflow bottom, flip above the trigger
-      if (popupRef.current) {
-        const popupHeight = popupRef.current.offsetHeight;
-        if (top + popupHeight > viewport.height) {
-          top = triggerRect.top - popupHeight - 4;
-        }
+      // Vertical position (prefer below trigger)
+      let top = triggerRect.bottom + 6;
+      if (top + popupHeight > viewport.height - padding) {
+        const flippedTop = triggerRect.top - popupHeight - 6;
+        top = flippedTop >= padding ? flippedTop : Math.max(padding, viewport.height - popupHeight - padding);
       }
 
-      setPosition({ top, right });
+      // Horizontal position:
+      // Try to center with trigger or align with trigger left, clamped to viewport bounds
+      let left = triggerRect.left + (triggerRect.width - popupWidth) / 2;
+      left = Math.max(padding, Math.min(left, viewport.width - popupWidth - padding));
+
+      setPosition({ top, left });
     };
 
-    // Run immediately then again after one frame so offsetHeight is available
+    // Run immediately then again after one frame so offsetWidth/offsetHeight are accurate
     computePosition();
     const raf = requestAnimationFrame(computePosition);
 
@@ -81,11 +85,11 @@ const ContextualPopup: FC<ContextualPopupProps> = ({
   return (
     <div
       ref={popupRef}
-      className={`fixed z-50 bg-white border border-gray-200 rounded-md shadow-md min-w-[150px] ${className}`}
+      className={`fixed z-50 bg-white border border-gray-200 rounded-md shadow-md max-w-[calc(100vw-24px)] ${className}`}
       style={
         position
-          ? { top: `${position.top}px`, right: `${position.right}px` }
-          : { visibility: "hidden", top: 0, right: 0 }
+          ? { top: `${position.top}px`, left: `${position.left}px` }
+          : { visibility: "hidden", top: 0, left: 0 }
       }
     >
       {children}

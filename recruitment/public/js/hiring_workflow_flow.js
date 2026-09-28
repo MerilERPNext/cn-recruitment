@@ -225,6 +225,9 @@
         .hwf-pv-row:last-child{border-bottom:none;}
         .hwf-pv-label{font-size:.85rem;font-weight:500;color:var(--text-color,#36414c);}
         .hwf-pv-req{font-size:.66rem;font-weight:700;padding:1px 7px;border-radius:10px;background:var(--red-100,#fbd8d8);color:var(--red-700,#b02a2a);}
+        .hwf-fb-head{text-transform:none;letter-spacing:0;font-size:.85rem;color:var(--text-color,#36414c);}
+        .hwf-fb-form{margin:6px 0 8px;}
+        .hwf-pv-row .hwf-pv-label{min-width:180px;}
         .hwf-pv-type{margin-left:auto;font-size:.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.4px;}
         `;
         const el = document.createElement("style");
@@ -632,7 +635,39 @@
         });
     }
 
-    // Read-only view of the stage's feedback form, as interviewers get it.
+    // Render a Form.io schema read-only into `el`, optionally filled with `data`.
+    // Buttons are dropped: nothing here can be submitted.
+    function renderFormio(el, schema, data) {
+        if (!window.Formio) {
+            $(el).html(`<div class="hwf-empty">${__("The form viewer is not available.")}</div>`);
+            return;
+        }
+        const clean = {
+            ...schema,
+            components: (schema.components || []).filter((c) => !(c && c.type === "button")),
+        };
+        window.Formio.createForm(el, clean, { readOnly: true }).then((form) => {
+            if (data) form.submission = { data };
+        }).catch((e) => {
+            console.error("Feedback form render failed", e);
+            $(el).html(`<div class="hwf-empty">${__("This form could not be displayed.")}</div>`);
+        });
+    }
+
+    function infoDialog(title) {
+        const d = new frappe.ui.Dialog({
+            title,
+            size: "large",
+            fields: [{ fieldtype: "HTML", fieldname: "body" }],
+            primary_action_label: __("Close"),
+            primary_action: () => d.hide(),
+        });
+        d.show();
+        return { d, $body: d.fields_dict.body.$wrapper };
+    }
+
+    // Read-only view of the stage's feedback form(s), as interviewers get them —
+    // the stage's form and any the interview or a panel member was given.
     function previewFeedbackForm(stageName, frm) {
         frappe.call({
             method: "recruitment.api.interview_feedback_approval.get_stage_feedback_form_preview",
@@ -640,35 +675,113 @@
             freeze: true,
             freeze_message: __("Loading form…"),
             callback: (r) => {
+                const forms = ((r && r.message) || {}).forms || [];
+                const title = __("Feedback Form Preview") + (forms.length === 1 ? ` — ${esc(forms[0].label)}` : "");
+                const { $body } = infoDialog(title);
+                if (!forms.length) {
+                    $body.html(`<div class="hwf-empty">${__("No feedback form is set on this stage.")}</div>`);
+                    return;
+                }
+                $body.empty();
+                forms.forEach((f) => {
+                    const who = (f.interviewers || []).length
+                        ? `<span class="text-muted"> · ${__("for")} ${esc(f.interviewers.join(", "))}</span>` : "";
+                    const $sec = $(`<div class="hwf-pv-sec"><div class="hwf-pv-sec-title">${esc(f.label)}${who}</div><div></div></div>`)
+                        .appendTo($body);
+                    const el = $sec.children().last()[0];
+                    if (!f.schema) $(el).html(`<div class="hwf-empty">${__("The form {0} could not be read.", [esc(f.widget)])}</div>`);
+                    else renderFormio(el, f.schema);
+                });
+            },
+        });
+    }
+
+    // Every submitted feedback on the stage, each interviewer's form filled in as
+    // they sent it. A feedback filed on the standard grid shows its skill ratings.
+    function viewSubmittedFeedback(stageName, frm) {
+        frappe.call({
+            method: "recruitment.api.interview_feedback_approval.get_stage_submitted_feedback",
+            args: { job_applicant: frm.doc.name, stage_name: stageName },
+            freeze: true,
+            freeze_message: __("Loading feedback…"),
+            callback: (r) => {
+                const list = ((r && r.message) || {}).feedback || [];
+                const { $body } = infoDialog(__("Submitted Feedback") + ` — ${esc(stageName)}`);
+                if (!list.length) {
+                    $body.html(`<div class="hwf-empty">${__("No feedback has been submitted for this stage yet.")}</div>`);
+                    return;
+                }
+                $body.empty();
+                list.forEach((fb) => {
+                    const head = `<div class="hwf-pv-sec-title hwf-fb-head">
+                        ${esc(fb.interviewer)} &nbsp;${pill(fb.result || "Pending")}
+                        <span>${ratingStars(fb.average_rating)}</span>
+                        <span class="text-muted"> · ${fb.submitted_on ? esc(frappe.datetime.str_to_user(fb.submitted_on)) : ""}
+                            · <a href="/app/interview-feedback/${encodeURIComponent(fb.name)}" target="_blank">${esc(fb.name)}</a>
+                            ${fb.label ? " · " + esc(fb.label) : ""}</span>
+                    </div>`;
+                    let extra = "";
+                    if (!fb.schema && (fb.skills || []).length) {
+                        extra += fb.skills.map((sk) => `<div class="hwf-pv-row">
+                            <span class="hwf-pv-label">${esc(sk.skill)}</span><span>${ratingStars(sk.rating)}</span></div>`).join("");
+                    }
+                    (fb.extras || []).forEach((x) => {
+                        extra += `<div class="hwf-pv-row"><span class="hwf-pv-label">${esc(x.label)}</span><span>${esc(x.value)}</span></div>`;
+                    });
+                    if (fb.feedback) {
+                        extra += `<div class="hwf-pv-row"><span class="hwf-pv-label">${__("Feedback")}</span></div>
+                            <div class="hwf-sub" style="white-space:pre-wrap;">${esc(fb.feedback)}</div>`;
+                    }
+                    const $sec = $(`<div class="hwf-pv-sec">${head}<div class="hwf-fb-form"></div>${extra}</div>`).appendTo($body);
+                    if (fb.schema) renderFormio($sec.find(".hwf-fb-form")[0], fb.schema, fb.data || {});
+                });
+            },
+        });
+    }
+
+    // What the candidate sent back on the pre-offer form: each field's value and
+    // approval status. Read-only; approving still happens on the Pre Offer tab.
+    function viewPreOfferSubmission(frm) {
+        frappe.call({
+            method: API + ".get_pre_offer_submission",
+            args: { job_applicant: frm.doc.name },
+            freeze: true,
+            freeze_message: __("Loading pre offer…"),
+            callback: (r) => {
                 const res = (r && r.message) || {};
-                const d = new frappe.ui.Dialog({
-                    title: __("Feedback Form Preview") + (res.label ? ` — ${esc(res.label)}` : ""),
-                    size: "large",
-                    fields: [{ fieldtype: "HTML", fieldname: "body" }],
-                    primary_action_label: __("Close"),
-                    primary_action: () => d.hide(),
-                });
-                const $body = d.fields_dict.body.$wrapper;
-                d.show();
-                if (!res.schema) {
-                    $body.html(`<div class="hwf-empty">${res.widget
-                        ? __("The form {0} could not be read.", [esc(res.widget)])
-                        : __("No feedback form is set on this stage.")}</div>`);
-                    return;
+                const fields = res.fields || [];
+                const rounds = res.rounds || [];
+                const { $body } = infoDialog(__("Pre Offer"));
+                const when = (v) => (v ? esc(frappe.datetime.str_to_user(v)) : "—");
+                let html = rounds.map((rd) => `<div class="hwf-sub" style="margin-top:0;">
+                    ${__("Sent")}: ${when(rd.sent_at)} &nbsp;·&nbsp; ${__("Filled")}: ${when(rd.filled_at)} &nbsp;·&nbsp; ${pill(rd.status || "Sent")}
+                </div>`).join("");
+                if (!fields.length) {
+                    html += `<div class="hwf-empty">${__("The candidate has not submitted the pre-offer form yet.")}</div>`;
+                } else {
+                    const groups = [];
+                    const bySec = {};
+                    fields.forEach((f) => {
+                        if (!bySec[f.section]) { bySec[f.section] = []; groups.push(f.section); }
+                        bySec[f.section].push(f);
+                    });
+                    const approved = fields.filter((f) => f.approval_status === "Approved").length;
+                    html += `<div class="hwf-pv"><div class="hwf-pv-head">${__("{0} of {1} field(s) approved", [approved, fields.length])}</div>` +
+                        groups.map((g) => `<div class="hwf-pv-sec"><div class="hwf-pv-sec-title">${esc(g)}</div>` +
+                            bySec[g].map((f) => {
+                                const val = f.value == null || f.value === "" ? `<span class="text-muted">—</span>`
+                                    : (f.fieldtype === "Attach" || f.fieldtype === "Attach Image")
+                                        ? `<a href="${esc(f.value)}" target="_blank">${esc(String(f.value).split("/").pop())}</a>`
+                                        : esc(f.value);
+                                const note = f.hr_comment ? `<div class="text-muted" style="font-size:11px;">${esc(f.hr_comment)}</div>` : "";
+                                return `<div class="hwf-pv-row">
+                                    <span class="hwf-pv-label">${esc(f.label)}</span>
+                                    <span style="flex:1;white-space:pre-wrap;">${val}${note}</span>
+                                    ${pill(f.approval_status || "Pending")}
+                                </div>`;
+                            }).join("") + `</div>`).join("") + `</div>`;
                 }
-                if (!window.Formio) {
-                    $body.html(`<div class="hwf-empty">${__("The form viewer is not available.")}</div>`);
-                    return;
-                }
-                const schema = {
-                    ...res.schema,
-                    components: (res.schema.components || []).filter((c) => !(c && c.type === "button")),
-                };
-                const el = $("<div></div>").appendTo($body.empty())[0];
-                window.Formio.createForm(el, schema, { readOnly: true }).catch((e) => {
-                    console.error("Feedback form preview failed", e);
-                    $body.html(`<div class="hwf-empty">${__("This form could not be displayed.")}</div>`);
-                });
+                $body.html(html);
             },
         });
     }
@@ -990,6 +1103,7 @@
             if (position) {
                 d.custom_requisition_position = position.name;
                 d.custom_position_label = position.label;
+                if (position.employee_type) d.custom_employment_type = position.employee_type;
             }
             frappe.set_route("Form", "Job Offer", d.name);
         });
@@ -1130,6 +1244,33 @@
             </span>`;
     }
 
+    // Preview (blank) / View (submitted) for an Interview stage's feedback forms.
+    // A form can sit on the stage or only on its interview / panel rows, so any
+    // of those makes the preview worth offering.
+    function feedbackButtonsHtml(stage) {
+        const ivs = stage.interviews || [];
+        const hasForm = !!stage.evaluation_form || ivs.some((iv) =>
+            iv.custom_evaluation_form || Object.keys(iv.panel_forms || {}).length);
+        const submitted = ivs.some((iv) => (iv.submitted_by || []).length);
+        const st = esc(stage.stage_name);
+        let html = "";
+        if (hasForm) html += `<button class="hwf-btn" data-act="previewfeedback" data-stage="${st}">${__("Preview Feedback Form")}</button>`;
+        if (submitted) html += `<button class="hwf-btn" data-act="viewfeedback" data-stage="${st}">${__("View Feedback")}</button>`;
+        return html;
+    }
+
+    // Read-only buttons on a stage the candidate has already passed.
+    function pastStageButtonsHtml(view, s) {
+        const type = s.stage_type || "";
+        let html = "";
+        if (type === "Interview") html = feedbackButtonsHtml(s);
+        else if (type === "Pre Offer") {
+            html = `<button class="hwf-btn" data-act="previewpreoffer">${__("Preview")}</button>`;
+            if ((view.pre_offer || {}).sent) html += `<button class="hwf-btn" data-act="viewpreofferdata">${__("View Pre Offer")}</button>`;
+        }
+        return html ? `<div class="hwf-actions" style="margin-top:8px;">${html}</div>` : "";
+    }
+
     // Actions + context for the stage the candidate is standing on. Rendered inside
     // that stage's card in the vertical flow, so it carries no frame of its own.
     function renderStageActions(frm, view, cur) {
@@ -1150,9 +1291,7 @@
             actions += hasInterview
                 ? `<button class="hwf-btn" disabled title="${__("An interview is already scheduled for this stage.")}">+ ${__("Schedule Interview")}</button>`
                 : `<button class="hwf-btn" data-act="interview">+ ${__("Schedule Interview")}</button>`;
-            if (cur.evaluation_form) {
-                actions += `<button class="hwf-btn" data-act="previewfeedback">${__("Preview Feedback Form")}</button>`;
-            }
+            actions += feedbackButtonsHtml(cur);
             actions += hasInterview
                 ? `<button class="hwf-btn primary" data-act="markdone">${__("Mark as Completed")}</button>`
                 : `<button class="hwf-btn primary" disabled title="${__("Schedule an interview for this stage first.")}">${__("Mark as Completed")}</button>`;
@@ -1182,7 +1321,7 @@
             // once the candidate submits. This one answers the other question —
             // what is this opening going to ask for — and works before sending.
             actions += `<button class="hwf-btn" data-act="previewpreoffer">${__("Preview")}</button>`;
-            actions += `<button class="hwf-btn" data-act="viewpreoffer">${__("View Pre Offer Form")}</button>`;
+            if (po.sent) actions += `<button class="hwf-btn" data-act="viewpreoffer">${__("View Pre Offer Form")}</button>`;
             if (!view.is_last) actions += `<button class="hwf-btn" data-act="complete">✓ ${__("Complete stage")}</button>`;
             actions += moreMenu([notRequiredItem(cur)]);
         } else if (type === "Offer") {
@@ -1324,6 +1463,7 @@
         if (s.result) bits.push(`${__("Result")}: ${esc(s.result)}`);
 
         let html = bits.length ? `<div class="hwf-sub" style="margin-top:0;">${bits.join(" &nbsp;·&nbsp; ")}</div>` : "";
+        if (s.state !== "upcoming") html += pastStageButtonsHtml(view, s);
         html += interviewsHtml(s);
         // Forward-only: a completed or current stage can't be revisited, so the jump
         // is offered on upcoming stages only.
@@ -1439,7 +1579,9 @@
             }
             if (act === "complete") completeStage(frm);
             else if (act === "interview") scheduleInterview(frm, view.current_stage);
-            else if (act === "previewfeedback") previewFeedbackForm(view.current_stage, frm);
+            else if (act === "previewfeedback") previewFeedbackForm($(this).data("stage") || view.current_stage, frm);
+            else if (act === "viewfeedback") viewSubmittedFeedback($(this).data("stage") || view.current_stage, frm);
+            else if (act === "viewpreofferdata") viewPreOfferSubmission(frm);
             else if (act === "markdone") openInterviewDialog(frm, view);
             else if (act === "review") openReviewDialog(frm, $(this).data("mode"));
             else if (act === "screening") runScreening(frm);

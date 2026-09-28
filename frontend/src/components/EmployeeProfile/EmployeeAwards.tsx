@@ -44,7 +44,7 @@ export const AwardBadge: React.FC<{ award: Award }> = ({ award }) => {
                 isOpen={isOpen}
                 onClose={() => setIsOpen(false)}
                 triggerRef={triggerRef}
-                className="!min-w-[280px] !max-w-[320px] p-5 !rounded-2xl !border-blue-200 !shadow-2xl !bg-white backdrop-blur-sm"
+                className="w-[280px] sm:w-[320px] max-w-[calc(100vw-24px)] p-5 !rounded-2xl !border-blue-200 !shadow-2xl !bg-white backdrop-blur-sm"
             >
                 <div className="flex flex-col gap-4">
                     {/* Header */}
@@ -282,11 +282,12 @@ export const AwardsSection: React.FC<AwardsSectionProps> = ({ isDesktop, mobileC
 
     return (
         <div className="w-full border-t border-gray-100 mt-4 pt-4 px-6">
-            <Typography variant="h4" className="font-bold text-gray-900 mb-4">
-                Appreciations
+            <Typography variant="h4" className="font-bold text-gray-900 mb-4 flex items-center gap-2">
+                <AwardIcon className="text-primary" size={18} />
+                <span>Appreciations</span>
             </Typography>
 
-            <div className="flex gap-4 overflow-x-auto py-2 scrollbar-hide">
+            <div className="flex gap-4 overflow-x-auto py-2 -mx-6 px-6 scrollbar-hide">
                 {displayedAwards.map((award: Award) => (
                     <AwardBadge key={award.name} award={award} />
                 ))}
