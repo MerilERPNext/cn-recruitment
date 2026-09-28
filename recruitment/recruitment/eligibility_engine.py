@@ -40,6 +40,8 @@ REJECT_SUBSTATUS = "Eligibility Not Met"
 HOLD_SUBSTATUS = "Eligibility Flagged"
 
 RULES_FIELD = "custom_eligibility_rules"
+# Read-only copy of the Flag rules that put the candidate on Hold (blank otherwise).
+HOLD_CONDITION_FIELD = "custom_on_hold_condition"
 
 def _entry(value, label, df=None, fieldtype=None, options=None):
 	"""One catalog entry. `options` carries the raw docfield options — the linked
@@ -369,12 +371,13 @@ def _opening_rules(opening):
 
 
 def _decide(doc, rules):
-	"""(status, substatus, comment) for this candidate against ``rules``.
+	"""(status, substatus, comment, hold_condition) for this candidate against ``rules``.
 
 	A rule fires when the candidate MATCHES it — the row on screen reads
 	"when <field> <op> <value> → <action>", and this is that sentence.
 	Knock out → Rejected · Flag → Hold · nothing matched → Shortlisted (substatus
-	None: a pass leaves the candidate's substatus alone).
+	None: a pass leaves the candidate's substatus alone). ``hold_condition`` is the
+	matched Flag rules as plain text on Hold, and "" otherwise.
 	"""
 	knockouts, flags = [], []
 	for r in rules:
@@ -386,11 +389,13 @@ def _decide(doc, rules):
 
 	if knockouts:
 		return (REJECT_STATUS, REJECT_SUBSTATUS,
-		        _("❌ <b>Rejected</b> — matched knock-out condition: {0}").format("; ".join(knockouts)))
+		        _("❌ <b>Rejected</b> — matched knock-out condition: {0}").format("; ".join(knockouts)), "")
 	if flags:
+		hold_condition = "; ".join(flags)
 		return (HOLD_STATUS, HOLD_SUBSTATUS,
-		        _("⏸️ <b>On Hold</b> — matched condition to review: {0}").format("; ".join(flags)))
-	return (PASS_STATUS, None, _("✅ <b>Shortlisted</b> — no eligibility condition matched."))
+		        _("⏸️ <b>On Hold</b> — matched condition to review: {0}").format(hold_condition),
+		        hold_condition)
+	return (PASS_STATUS, None, _("✅ <b>Shortlisted</b> — no eligibility condition matched."), "")
 
 
 def evaluate_eligibility(job_applicant):
@@ -414,8 +419,9 @@ def evaluate_eligibility(job_applicant):
 			return
 
 		# A timeline comment always records the decision + the exact reason.
-		status, substatus, comment = _decide(doc, rules)
-		doc.db_set("status", status, update_modified=False)
+		status, substatus, comment, hold_condition = _decide(doc, rules)
+		doc.db_set({"status": status, HOLD_CONDITION_FIELD: hold_condition or None},
+		           update_modified=False)
 		if substatus:
 			doc.db_set("custom_substatus", substatus, update_modified=False)
 		_comment(doc, comment)
@@ -460,17 +466,19 @@ def _rerun(applicants):
 
 		try:
 			doc = frappe.get_doc("Job Applicant", a.name)
-			status, substatus, comment = _decide(doc, rules)
+			status, substatus, comment, hold_condition = _decide(doc, rules)
 			# A pass also clears the eligibility reason from the last run —
 			# "Shortlisted · Eligibility Not Met" would read as a contradiction.
 			new_sub = substatus or ""
 
 			summary["evaluated"] += 1
 			summary[{REJECT_STATUS: "rejected", HOLD_STATUS: "hold"}.get(status, "shortlisted")] += 1
-			if status == a.status and new_sub == (a.custom_substatus or ""):
+			if (status == a.status and new_sub == (a.custom_substatus or "")
+			        and hold_condition == (doc.get(HOLD_CONDITION_FIELD) or "")):
 				continue  # same outcome — keep the timeline quiet
 
-			doc.db_set({"status": status, "custom_substatus": new_sub or None}, update_modified=False)
+			doc.db_set({"status": status, "custom_substatus": new_sub or None,
+			            HOLD_CONDITION_FIELD: hold_condition or None}, update_modified=False)
 			_comment(doc, _("🔁 Eligibility re-run: {0}").format(comment))
 			summary["changed"] += 1
 		except Exception:
