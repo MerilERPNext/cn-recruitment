@@ -13,7 +13,7 @@
  "is_standard": 1,
  "message": "<p>Hii {{frappe.db.get_value(\"User\",doc.custom_assign_to_recruiter,\"full_name\")}}</p>\n<p>I hope this message finds you well.</p>\n<p>We have a new job requirement for the position of {{doc.designation}} that needs to be filled as soon as possible. Below are the details of the job requirement:</p>\n<p>Job Title: {{doc.designation}}</p>\n<p>Department: {{doc.department}}</p>\n<p>Location: {{doc.custom_location}}</p>\n<p>No of. Positions: {{doc.no_of_positions}}</p>\n<b>Skills Required:</b>\n{% for skill in doc.custom_skills %}\n{{ skill.skill }},\n{% endfor %}\n<p>Please prioritize this role and begin the recruitment process at your earliest convenience. I am looking for candidates who not only meet the qualifications but also fit well with our company culture.</p>\n<p>Let me know if you need any further information or if you would like to discuss the job requirement in more detail.</p>\n<p>Thank you for your assistance.</p>\n<p>Best regards,</p>\n<p>{{frappe.db.get_value(\"User\",frappe.session.user,\"full_name\")}}</p>",
  "message_type": "HTML",
- "modified": "2024-06-25 15:21:48.488194",
+ "modified": "2026-09-25 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "Job Requisition",
@@ -27,8 +27,6 @@
  ],
  "send_system_notification": 0,
  "send_to_all_assignees": 0,
- "sender": "Prathamjadhav052",
- "sender_email": "prathamjadhav052@gmail.com",
  "subject": " New Job Requirement Assignment: {{doc.designation}}",
  "value_changed": "custom_assign_to_recruiter"
 }

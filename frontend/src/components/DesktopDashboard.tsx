@@ -817,7 +817,7 @@ export default function DesktopDashboard() {
                         fullWidth
                         contentAlign="start"
                         onClick={() => {
-                          window.location.href = "/app/home";
+                          window.location.href = "/app";
                         }}
                       >
                         <Dock className="w-4 h-4" />

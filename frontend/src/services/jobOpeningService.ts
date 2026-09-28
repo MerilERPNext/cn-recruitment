@@ -52,7 +52,9 @@ export const jobOpeningService = {
       const jobOpeningDoc = {
         doctype: "Job Opening",
         job_requisition: params.job_requisition,
-        job_title: params.job_title || requisitionData.designation || "Job Opening",
+        // Left unset, the server fills it from the requisition's Job Description
+        // (else the Designation's name) — the designation field holds its id.
+        job_title: params.job_title || undefined,
         designation: params.designation || requisitionData.designation,
         department: params.department || requisitionData.department,
         company: requisitionData.company, // Required field

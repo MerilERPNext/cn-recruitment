@@ -181,6 +181,7 @@
         .hwf-btn[disabled]{opacity:.5;cursor:not-allowed;}
         .hwf-req{font-size:.66rem;font-weight:600;letter-spacing:.03em;text-transform:uppercase;
             padding:1px 6px;border-radius:9px;background:var(--orange-100,#fdebd0);color:var(--orange-700,#9c5700);}
+        .hwf-req.hwf-extra{background:var(--purple-100,#ece4fb);color:var(--purple-700,#5b3aa8);}
         .hwf-btn.danger{color:var(--red-600,#c0392b);border-color:var(--red-200,#f0b4b4);}
         .hwf-btn.danger:hover{background:var(--red-50,#fdeaea);}
         .hwf-more-wrap{position:relative;display:inline-block;}
@@ -339,18 +340,237 @@
         });
     }
 
-    function sendFeedbackForm(frm, stageName) {
-        frappe.call({
-            method: API + ".send_interview_feedback_form",
-            args: { job_applicant: frm.doc.name, stage_name: stageName },
-            freeze: true,
-            freeze_message: __("Sending feedback request…"),
-            callback: (r) => {
-                const m = r && r.message;
-                if (!m) return;
-                const to = (m.sent_to || []).join(", ");
-                frappe.show_alert({ message: __("Feedback form sent to {0}", [to || __("interviewers")]), indicator: "green" });
+    // Pick each interviewer's evaluation form, then send it to everyone still
+    // owing feedback: a task in their Tasks list plus an email. Interviewers may get
+    // different forms; the stage clears only when every one of them is positive.
+    // The server locks an interviewer's form once THEY have started feedback.
+    const FORM_QUERY = () => ({ filters: { doc_type: ["in", ["Interview Feedback", "Interview"]], is_archived: 0 } });
+
+    function sendFeedbackForm(frm, stage) {
+        const iv = (stage.interviews || [])[0] || {};
+        const done = new Set(iv.submitted_by || []);
+        // Still owing feedback: pending_with while the interview is open, else the
+        // panel minus whoever has submitted.
+        const owing = (iv.pending_with && iv.pending_with.length ? iv.pending_with : (iv.interviewers || []))
+            .filter((p) => !done.has(p.user));
+        const fallback = iv.custom_evaluation_form || stage.evaluation_form || "";
+        const panelForms = iv.panel_forms || {};
+        // Someone who has started a draft is locked to the form they are on. Show
+        // them exactly that, so the default send doesn't ask to change it (the
+        // server would refuse the whole send with "Form Locked").
+        const started = new Set(iv.started_by || []);
+        const formFor = (user) => started.has(user)
+            ? (panelForms[user] || iv.custom_evaluation_form || "")
+            : (panelForms[user] || fallback);
+        const d = new frappe.ui.Dialog({
+            title: __("Send Feedback Form"),
+            size: "large",
+            fields: [
+                {
+                    fieldtype: "Link", fieldname: "apply_all", label: __("Same form for everyone"),
+                    options: "Microapp Form Widget", get_query: FORM_QUERY,
+                    description: __("Optional: picks this form on every row below."),
+                    change() {
+                        const v = d.get_value("apply_all");
+                        if (!v) return;
+                        (d.fields_dict.forms.df.data || []).forEach((row) => { row.form = v; });
+                        d.fields_dict.forms.grid.refresh();
+                    },
+                },
+                {
+                    fieldtype: "Table", fieldname: "forms", label: __("Form per interviewer"),
+                    cannot_add_rows: true, cannot_delete_rows: true, in_place_edit: true,
+                    data: owing.map((p) => ({
+                        user: p.user,
+                        interviewer: p.full_name || p.user,
+                        form: formFor(p.user),
+                    })),
+                    fields: [
+                        { fieldtype: "Data", fieldname: "user", hidden: 1 },
+                        { fieldtype: "Data", fieldname: "interviewer", label: __("Interviewer"),
+                          in_list_view: 1, read_only: 1, columns: 4 },
+                        { fieldtype: "Link", fieldname: "form", label: __("Feedback Form"),
+                          options: "Microapp Form Widget", in_list_view: 1, columns: 6,
+                          get_query: FORM_QUERY },
+                    ],
+                },
+                {
+                    fieldtype: "HTML", fieldname: "hint",
+                    options: `<div class="hwf-sub">${owing.length
+                        ? __("Each interviewer gets a task for their own form. An empty form means the standard skill assessment. The candidate moves on only when every interviewer's feedback is positive.")
+                        : __("Every interviewer has already submitted feedback.")}</div>`,
+                },
+            ],
+            primary_action_label: __("Send to Interviewers"),
+            primary_action() {
+                const forms = {};
+                (d.fields_dict.forms.df.data || []).forEach((row) => {
+                    if (row.user) forms[row.user] = row.form || "";
+                });
+                frappe.call({
+                    method: API + ".send_interview_feedback_form",
+                    args: {
+                        job_applicant: frm.doc.name,
+                        stage_name: stage.stage_name,
+                        interviewer_forms: JSON.stringify(forms),
+                    },
+                    freeze: true,
+                    freeze_message: __("Sending feedback request…"),
+                    callback: (r) => {
+                        const m = r && r.message;
+                        if (!m) return;
+                        d.hide();
+                        const to = (m.sent_to || []).join(", ");
+                        frappe.show_alert({
+                            message: __("Feedback form assigned to {0}", [to || __("interviewers")]),
+                            indicator: "green",
+                        });
+                        frm.reload_doc();
+                    },
+                });
             },
+        });
+        d.show();
+    }
+
+    function cancelInterview(frm, iv) {
+        frappe.prompt(
+            [{
+                fieldname: "reason", label: __("Reason"), fieldtype: "Small Text", reqd: 1,
+                description: __("The interview is kept on record as Cancelled, the panel is notified, and the stage can be scheduled again."),
+            }],
+            (v) => {
+                frappe.call({
+                    method: "recruitment.api.stage_interview.cancel_interview",
+                    args: { job_applicant: frm.doc.name, interview: iv.name, reason: v.reason },
+                    freeze: true,
+                    freeze_message: __("Cancelling interview…"),
+                    callback: (r) => {
+                        if (!r || !r.message) return;
+                        frappe.show_alert({ message: __("Interview {0} cancelled.", [esc(iv.name)]), indicator: "orange" });
+                        frm.reload_doc();
+                    },
+                });
+            },
+            __("Cancel Interview {0}", [iv.name]),
+            __("Cancel Interview")
+        );
+    }
+
+    function rescheduleInterview(frm, iv) {
+        const current = (iv.interviewers || []).map((p) => p.user);
+        const d = new frappe.ui.Dialog({
+            title: __("Reschedule Interview {0}", [iv.name]),
+            fields: [
+                { fieldtype: "Date", fieldname: "scheduled_on", label: __("Date"), reqd: 1,
+                  default: iv.scheduled_on },
+                { fieldtype: "Column Break" },
+                { fieldtype: "Time", fieldname: "from_time", label: __("From Time"), reqd: 1,
+                  default: iv.from_time },
+                { fieldtype: "Column Break" },
+                { fieldtype: "Time", fieldname: "to_time", label: __("To Time"), reqd: 1,
+                  default: iv.to_time },
+                { fieldtype: "Section Break" },
+                {
+                    fieldtype: "MultiSelectPills", fieldname: "interviewers", label: __("Interviewers"), reqd: 1,
+                    default: current,
+                    description: __("Remove someone to take them off the panel; add a replacement to hand the interview over."),
+                    get_data: (txt) => frappe.db.get_link_options("User", txt, { enabled: 1, user_type: "System User" }),
+                },
+                { fieldtype: "Small Text", fieldname: "reason", label: __("Reason") },
+            ],
+            primary_action_label: __("Reschedule"),
+            primary_action(values) {
+                frappe.call({
+                    method: "recruitment.api.stage_interview.reschedule_interview",
+                    args: {
+                        job_applicant: frm.doc.name,
+                        interview: iv.name,
+                        scheduled_on: values.scheduled_on,
+                        from_time: values.from_time,
+                        to_time: values.to_time,
+                        interviewers: JSON.stringify(values.interviewers || []),
+                        reason: values.reason || "",
+                    },
+                    freeze: true,
+                    freeze_message: __("Rescheduling…"),
+                    callback: (r) => {
+                        if (!r || !r.message) return;
+                        d.hide();
+                        frappe.show_alert({ message: __("Interview rescheduled and the panel notified."), indicator: "green" });
+                        frm.reload_doc();
+                    },
+                });
+            },
+        });
+        d.show();
+    }
+
+    // An Interview stage for THIS candidate only. It can follow their current
+    // stage or any later one, but never the offer stages, which always close the
+    // flow — the server enforces the same.
+    const OFFER_TYPES = ["Pre Offer", "Offer", "Done"];
+
+    function addInterviewStage(frm, view) {
+        const stages = view.stages || [];
+        const anchors = stages
+            .slice(Math.max(view.current_stage_index, 0))
+            .filter((s) => !OFFER_TYPES.includes(s.stage_type || ""))
+            .map((s) => s.stage_name);
+        if (!anchors.length) {
+            frappe.msgprint(__("The candidate is already at the offer stages; no interview stage can be added."));
+            return;
+        }
+        const d = new frappe.ui.Dialog({
+            title: __("Add Interview Stage"),
+            fields: [
+                { fieldtype: "Data", fieldname: "stage_name", label: __("Stage Name"), reqd: 1,
+                  description: __("For example: Technical Round 2, Managerial Round.") },
+                { fieldtype: "Select", fieldname: "after_stage", label: __("Add After"), reqd: 1,
+                  options: anchors, default: view.current_stage || anchors[0] },
+                { fieldtype: "Link", fieldname: "evaluation_form", label: __("Feedback Form"),
+                  options: "Microapp Form Widget", get_query: FORM_QUERY,
+                  description: __("Default form for this stage's interview. Can be changed per interviewer later.") },
+                { fieldtype: "Check", fieldname: "is_mandatory", label: __("Mandatory (can't be skipped)") },
+                { fieldtype: "HTML", fieldname: "hint",
+                  options: `<div class="hwf-sub">${__("Only this candidate's flow changes. Other candidates on the opening are not affected.")}</div>` },
+            ],
+            primary_action_label: __("Add Stage"),
+            primary_action(values) {
+                frappe.call({
+                    method: "recruitment.api.stage_interview.add_interview_stage",
+                    args: {
+                        job_applicant: frm.doc.name,
+                        stage_name: values.stage_name,
+                        after_stage: values.after_stage,
+                        evaluation_form: values.evaluation_form || null,
+                        is_mandatory: values.is_mandatory ? 1 : 0,
+                    },
+                    freeze: true,
+                    callback: (r) => {
+                        if (!r || !r.message) return;
+                        d.hide();
+                        frappe.show_alert({ message: __("Stage {0} added.", [esc(r.message.stage_name)]), indicator: "green" });
+                        frm.reload_doc();
+                    },
+                });
+            },
+        });
+        d.show();
+    }
+
+    function removeInterviewStage(frm, stageName) {
+        frappe.confirm(__("Remove the stage <b>{0}</b> from this candidate's flow?", [esc(stageName)]), () => {
+            frappe.call({
+                method: "recruitment.api.stage_interview.remove_interview_stage",
+                args: { job_applicant: frm.doc.name, stage_name: stageName },
+                freeze: true,
+                callback: (r) => {
+                    if (!r || !r.message) return;
+                    frappe.show_alert({ message: __("Stage removed."), indicator: "orange" });
+                    frm.reload_doc();
+                },
+            });
         });
     }
 
@@ -378,12 +598,25 @@
                 if (!m) return;
                 frappe.model.with_doctype("Interview", () => {
                     const d = frappe.model.get_new_doc("Interview");
+                    // Link triggers on open would let HRMS's interview_round
+                    // handler clear job_applicant and replace the panel.
+                    d.__run_link_triggers = false;
+                    // interview.js locks candidate + round on this form: the
+                    // interview belongs to this applicant's stage, and HRMS's
+                    // round handler would otherwise clear the candidate.
+                    d.__from_hiring_workflow = 1;
                     d.job_applicant = m.job_applicant;
+                    // Show the name straight away, not the id until a lookup lands.
+                    if (m.applicant_title) frappe.utils.add_link_title("Job Applicant", m.job_applicant, m.applicant_title);
                     // v15 links the round through `interview_round`, v16 through
                     // `interview_type`; the server says which this site has.
                     d[m.interview_round_field || "interview_round"] = m.interview_round;
                     if (m.designation) d.designation = m.designation;
                     if (m.job_opening) d.job_opening = m.job_opening;
+                    if (m.evaluation_form) d.custom_evaluation_form = m.evaluation_form;
+                    Object.entries(m.fetched || {}).forEach(([field, value]) => {
+                        if (value != null && frappe.meta.has_field("Interview", field)) d[field] = value;
+                    });
                     // The stage's configured panel. Plain assignment, not
                     // frm.set_value: HRMS's own `interview_round` handler CLEARS
                     // interview_details and refills it from the round, so these
@@ -394,6 +627,47 @@
                         frappe.model.add_child(d, "Interview Detail", "interview_details").interviewer = interviewer;
                     });
                     frappe.set_route("Form", "Interview", d.name);
+                });
+            },
+        });
+    }
+
+    // Read-only view of the stage's feedback form, as interviewers get it.
+    function previewFeedbackForm(stageName, frm) {
+        frappe.call({
+            method: "recruitment.api.interview_feedback_approval.get_stage_feedback_form_preview",
+            args: { job_applicant: frm.doc.name, stage_name: stageName },
+            freeze: true,
+            freeze_message: __("Loading form…"),
+            callback: (r) => {
+                const res = (r && r.message) || {};
+                const d = new frappe.ui.Dialog({
+                    title: __("Feedback Form Preview") + (res.label ? ` — ${esc(res.label)}` : ""),
+                    size: "large",
+                    fields: [{ fieldtype: "HTML", fieldname: "body" }],
+                    primary_action_label: __("Close"),
+                    primary_action: () => d.hide(),
+                });
+                const $body = d.fields_dict.body.$wrapper;
+                d.show();
+                if (!res.schema) {
+                    $body.html(`<div class="hwf-empty">${res.widget
+                        ? __("The form {0} could not be read.", [esc(res.widget)])
+                        : __("No feedback form is set on this stage.")}</div>`);
+                    return;
+                }
+                if (!window.Formio) {
+                    $body.html(`<div class="hwf-empty">${__("The form viewer is not available.")}</div>`);
+                    return;
+                }
+                const schema = {
+                    ...res.schema,
+                    components: (res.schema.components || []).filter((c) => !(c && c.type === "button")),
+                };
+                const el = $("<div></div>").appendTo($body.empty())[0];
+                window.Formio.createForm(el, schema, { readOnly: true }).catch((e) => {
+                    console.error("Feedback form preview failed", e);
+                    $body.html(`<div class="hwf-empty">${__("This form could not be displayed.")}</div>`);
                 });
             },
         });
@@ -517,8 +791,8 @@
     }
 
     // An EXPIRED offer has a second route: the candidate simply ran out of time,
-    // so the same letter goes out again on a new expiry date. No new version, and
-    // nothing to re-submit — see recruitment.api.offer_expiry.
+    // so the next version, with the same terms, is submitted and emailed on a new
+    // expiry date. Nothing to edit or re-submit — see recruitment.api.offer_expiry.
     function resendOfferLetter(frm, offer) {
         const days =
             offer.offer_date && offer.custom_jo_expiry_date
@@ -528,7 +802,7 @@
             [{
                 fieldname: "expiry_date", label: __("New Expiry Date"), fieldtype: "Date", reqd: 1,
                 default: frappe.datetime.add_days(frappe.datetime.get_today(), days),
-                description: __("The last day the candidate may accept. The same letter is emailed again and the offer goes back to Awaiting Response."),
+                description: __("The last day the candidate may accept. A new version of the offer, with the same terms, is created and emailed to the candidate."),
             }],
             (values) => {
                 frappe.call({
@@ -540,7 +814,9 @@
                         const m = (r && r.message) || {};
                         if (!m.job_offer) return;
                         frappe.show_alert({
-                            message: __("Offer letter resent — valid until {0}.", [
+                            message: __("Offer letter resent as version {0} ({1}) — valid until {2}.", [
+                                m.version,
+                                m.job_offer,
                                 frappe.datetime.str_to_user(m.expiry_date),
                             ]),
                             indicator: "green",
@@ -552,6 +828,25 @@
             __("Resend Offer Letter"),
             __("Resend")
         );
+    }
+
+    // A live offer the candidate has not answered: mail it to them again as it
+    // stands. The server re-checks the rule (offer_lifecycle._resend_email_rule).
+    function resendOfferEmail(frm, offer) {
+        frappe.confirm(__("Email offer {0} to {1} again?", [esc(offer.name), esc(candidateName(frm.doc))]), () => {
+            frappe.call({
+                method: "recruitment.api.offer_lifecycle.resend_offer_email",
+                args: { job_offer: offer.name },
+                freeze: true,
+                freeze_message: __("Resending offer…"),
+                callback: (r) => {
+                    const m = (r && r.message) || {};
+                    if (!m.email) return;
+                    frappe.show_alert({ message: __("Offer emailed again to {0}", [esc(m.email)]), indicator: "green" });
+                    frm.reload_doc();
+                },
+            });
+        });
     }
 
     function resendJobOffer(frm, offer, rule) {
@@ -758,16 +1053,28 @@
         return "";
     }
 
+    // Cancelled interviews stay on record, muted, under the stage they were for.
+    function cancelledHtml(stage) {
+        const list = stage.cancelled_interviews || [];
+        if (!list.length) return "";
+        return `<div class="hwf-ivlist">` + list.map((iv) =>
+            `<div class="hwf-ivrow text-muted">
+                <a class="hwf-link" data-open-iv="${esc(iv.name)}">${esc(iv.name)}</a>
+                <span class="hwf-pill Rejected">${__("Cancelled")}</span>
+                <span>${iv.scheduled_on ? esc(frappe.datetime.str_to_user(iv.scheduled_on)) : ""}</span>
+            </div>`).join("") + `</div>`;
+    }
+
     function interviewsHtml(stage) {
         const list = stage.interviews || [];
         if (!list.length) {
             // Nothing scheduled yet — the round is waiting on whoever books it.
             const owner = names(stage.pending_with);
-            return owner.length
+            return (owner.length
                 ? `<div class="hwf-sub" style="margin-top:8px;"><span class="hwf-owner-label">${__("Pending with")}:</span> ${esc(owner.join(", "))} — ${__("no interview scheduled yet")}</div>`
-                : "";
+                : "") + cancelledHtml(stage);
         }
-        return `<div class="hwf-ivlist">` + list.map((iv) =>
+        return cancelledHtml(stage) + `<div class="hwf-ivlist">` + list.map((iv) =>
             `<div class="hwf-ivitem">
                 <div class="hwf-ivrow">
                     <a class="hwf-link" data-open-iv="${esc(iv.name)}">${esc(iv.name)}</a>
@@ -838,17 +1145,33 @@
             // the stage can't be completed before one exists — the server refuses
             // it too (complete_interview), this just says so before the click.
             const hasInterview = (cur.interviews || []).length > 0;
-            actions += `<button class="hwf-btn" data-act="interview">+ ${__("Schedule Interview")}</button>`;
+            // One interview per stage: once it is booked (cancelled ones are not
+            // in this list), rescheduling happens on the Interview itself.
+            actions += hasInterview
+                ? `<button class="hwf-btn" disabled title="${__("An interview is already scheduled for this stage.")}">+ ${__("Schedule Interview")}</button>`
+                : `<button class="hwf-btn" data-act="interview">+ ${__("Schedule Interview")}</button>`;
+            if (cur.evaluation_form) {
+                actions += `<button class="hwf-btn" data-act="previewfeedback">${__("Preview Feedback Form")}</button>`;
+            }
             actions += hasInterview
                 ? `<button class="hwf-btn primary" data-act="markdone">${__("Mark as Completed")}</button>`
                 : `<button class="hwf-btn primary" disabled title="${__("Schedule an interview for this stage first.")}">${__("Mark as Completed")}</button>`;
             // Feedback can be requested only once an interview has actually taken place.
             const interviewOver = (cur.interviews || []).some((iv) => iv.is_over);
+            // Cancel / Reschedule act on the stage's one live interview; the server
+            // says when that is no longer allowed (feedback in, decided, campus…).
+            const live = (cur.interviews || [])[0];
+            const blocked = !live ? __("Schedule an interview for this stage first.") : live.change_blocked;
+            const changeItem = (key, label, cls) => blocked
+                ? { key, label, cls: `disabled${cls ? " " + cls : ""}`, title: blocked }
+                : { key, label, cls };
             actions += moreMenu([
                 interviewOver
                     ? { key: "feedbackform", label: __("Send Feedback Form") }
                     : { key: "feedbackform", label: __("Send Feedback Form"), cls: "disabled",
                         title: __("Available after the interview is completed.") },
+                changeItem("rescheduleiv", __("Reschedule Interview")),
+                changeItem("canceliv", __("Cancel Interview"), "danger"),
                 notRequiredItem(cur),
             ]);
         } else if (type === "Pre Offer") {
@@ -910,6 +1233,15 @@
             const cls = (o.status === "Accepted" && o.docstatus !== 2) || (a.resend_letter || {}).allowed
                 ? "hwf-btn" : "hwf-btn primary";
             html += `<button class="${cls}" data-act="resendoffer">↻ ${__("Resend Job Offer")}</button>`;
+        } else if (a.resend_email && a.resend_email.allowed) {
+            // Live offer awaiting the candidate: the same email again.
+            html += `<button class="hwf-btn" data-act="resendofferemail">↻ ${__("Resend Job Offer")}</button>`;
+        } else if (!(a.resend_letter || {}).allowed) {
+            // Always on the stage once there is an offer, saying why it can't be
+            // used yet — "Resend Offer Letter" stands in for it on an expired one.
+            const closed = o.docstatus === 2 || ["Accepted", "Rejected", "Withdrawn", "Expired"].includes(o.status);
+            const why = (closed ? (a.resend || {}).reason : (a.resend_email || {}).reason) || "";
+            html += `<button class="hwf-btn" disabled title="${esc(why)}">↻ ${__("Resend Job Offer")}</button>`;
         }
         if (a.send && a.send.allowed) {
             html += `<button class="hwf-btn primary" data-act="sendoffer">✉ ${__("Send Job Offer")}</button>`;
@@ -939,6 +1271,7 @@
             hint = a.resend.reason || "";
         }
         let html = `<div class="hwf-sub">${bits.join(" &nbsp;·&nbsp; ")}</div>`;
+        html += offerApprovalHtml(view.job_offer_approval);
         if (hint) html += `<div class="hwf-sub text-muted">${esc(hint)}</div>`;
         const prev = view.previous_offers || [];
         if (prev.length) {
@@ -947,6 +1280,26 @@
             ).join(" &nbsp; ") + `</div>`;
         }
         return html;
+    }
+
+    // Where the offer's approval stands — a nextai approval flow on Job Offer, or
+    // the HR Ops verification step (offer_lifecycle.offer_approval_status). While
+    // it is live, name the approvers; a role-based stage names the role(s).
+    function offerApprovalHtml(ap) {
+        if (!ap) return "";
+        const stage = ap.stage ? ` <span class="text-muted">(${esc(ap.stage)})</span>` : "";
+        if (ap.status === "Pending" || ap.status === "Send Back") {
+            const people = names(ap.pending_with);
+            const parts = [];
+            if (people.length) parts.push(esc(people.join(", ")));
+            if ((ap.roles || []).length) {
+                parts.push(esc(ap.roles.join(", ")) + ` <span class="text-muted">(${__("role")})</span>`);
+            }
+            const who = parts.join("; ") || `<span class="text-muted">${__("no approver assigned")}</span>`;
+            const label = ap.status === "Send Back" ? __("Sent back — pending with") : __("Approval pending with");
+            return `<div class="hwf-sub"><span class="hwf-owner-label">${label}:</span> ${who}${stage}</div>`;
+        }
+        return `<div class="hwf-sub"><span class="hwf-owner-label">${__("Approval")}:</span> ${pill(ap.status)}${stage}</div>`;
     }
 
     // A candidate who declined (Rejected) or accepted is closed, but the Offer
@@ -986,6 +1339,11 @@
                 ? `<div class="hwf-sub" style="margin-top:10px;">${__("Can't move here — the mandatory stage(s) {0} must be completed first.", [esc(blockers.join(", "))])}</div>`
                 : `<div class="hwf-actions" style="margin-top:10px;">
                 <button class="hwf-btn" data-jump="${esc(s.stage_name)}">${__("Move candidate to this stage")}</button>
+            </div>`;
+        }
+        if (s.is_extra && s.state === "upcoming" && !view.is_closed) {
+            html += `<div class="hwf-actions" style="margin-top:10px;">
+                <button class="hwf-btn danger" data-remove-stage="${esc(s.stage_name)}">${__("Remove this stage")}</button>
             </div>`;
         }
         return html || `<div class="hwf-sub" style="margin-top:0;">${__("Nothing recorded for this stage yet.")}</div>`;
@@ -1031,6 +1389,7 @@
                         <span class="hwf-sbadge ${stageStatusCls(s)}">${esc(stageStatusLabel(s))}</span>
                         <span class="hwf-type">${esc(s.stage_type || "")}</span>
                         ${s.is_mandatory ? `<span class="hwf-req" title="${__("This stage can't be skipped.")}">${__("Mandatory")}</span>` : ""}
+                        ${s.is_extra ? `<span class="hwf-req hwf-extra" title="${__("Added for this candidate only.")}">${__("Added")}</span>` : ""}
                         <span class="hwf-chevron">⌄</span>
                     </div>
                     <div class="hwf-card-body">${stageBody(frm, view, s, i)}</div>
@@ -1038,7 +1397,11 @@
             </div>`;
         }).join("");
 
-        $w.html(`<div class="hwf-wrap">${renderBanner(view)}<div class="hwf-flow">${rows}</div></div>`);
+        const addBtn = view.add_stage_blocked
+            ? `<button class="hwf-btn" disabled title="${esc(view.add_stage_blocked)}">+ ${__("Add Interview Stage")}</button>`
+            : `<button class="hwf-btn" data-add-stage="1">+ ${__("Add Interview Stage")}</button>`;
+        $w.html(`<div class="hwf-wrap">${renderBanner(view)}<div class="hwf-flow">${rows}</div>
+            <div class="hwf-actions" style="margin-top:12px;padding-left:40px;">${addBtn}</div></div>`);
 
         // Expand / collapse a stage. Actions live in the body, so they never
         // collide with this.
@@ -1057,6 +1420,8 @@
             });
         });
         $w.find("[data-jump]").on("click", function () { jumpTo(frm, $(this).data("jump")); });
+        $w.find("[data-add-stage]").on("click", () => addInterviewStage(frm, view));
+        $w.find("[data-remove-stage]").on("click", function () { removeInterviewStage(frm, $(this).data("remove-stage")); });
         $w.find("[data-open-offer]").on("click", function () {
             frappe.set_route("Form", "Job Offer", $(this).data("open-offer"));
         });
@@ -1074,6 +1439,7 @@
             }
             if (act === "complete") completeStage(frm);
             else if (act === "interview") scheduleInterview(frm, view.current_stage);
+            else if (act === "previewfeedback") previewFeedbackForm(view.current_stage, frm);
             else if (act === "markdone") openInterviewDialog(frm, view);
             else if (act === "review") openReviewDialog(frm, $(this).data("mode"));
             else if (act === "screening") runScreening(frm);
@@ -1085,6 +1451,7 @@
             else if (act === "sendoffer") sendJobOffer(frm, view.job_offer);
             else if (act === "withdrawoffer") withdrawJobOffer(frm, view.job_offer);
             else if (act === "resendoffer") resendJobOffer(frm, view.job_offer, (view.job_offer_actions || {}).resend);
+            else if (act === "resendofferemail") resendOfferEmail(frm, view.job_offer);
             else if (act === "resendofferletter") resendOfferLetter(frm, view.job_offer);
             else if (act === "reject") rejectCandidate(frm);
         });
@@ -1092,8 +1459,12 @@
             if ($(this).hasClass("disabled")) return false;
             const item = $(this).data("menu");
             $w.find(".hwf-menu").hide();
+            const cur = (view.stages || [])[view.current_stage_index] || {};
+            const liveIv = (cur.interviews || [])[0];
             if (item === "notreq") markNotRequired(frm, view.current_stage);
-            else if (item === "feedbackform") sendFeedbackForm(frm, view.current_stage);
+            else if (item === "feedbackform") sendFeedbackForm(frm, cur);
+            else if (item === "rescheduleiv" && liveIv) rescheduleInterview(frm, liveIv);
+            else if (item === "canceliv" && liveIv) cancelInterview(frm, liveIv);
         });
         // close any open menu when clicking elsewhere
         $(document).off("click.hwfmenu").on("click.hwfmenu", () => $w.find(".hwf-menu").hide());

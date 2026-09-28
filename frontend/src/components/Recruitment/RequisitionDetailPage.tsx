@@ -1110,17 +1110,19 @@ const CustomApprovalTab = ({
                   >
                     {stage.stage_name}
                   </Typography>
-                  <AllocatedToTooltip
-                    users={stage.approvers}
-                    title="Approvers"
-                    position="bottom"
-                  >
-                    <Badge
-                      label={stage.status || "Not started"}
-                      size="sm"
-                      backgroundColor={getStatusColor(stage.status || "")}
-                    />
-                  </AllocatedToTooltip>
+                  {stage.status?.toLowerCase() !== "approved" && (
+                    <AllocatedToTooltip
+                      users={stage.approvers}
+                      title="Approvers"
+                      position="bottom"
+                    >
+                      <Badge
+                        label={stage.status || "Not started"}
+                        size="sm"
+                        backgroundColor={getStatusColor(stage.status || "")}
+                      />
+                    </AllocatedToTooltip>
+                  )}
                   {/* Act button for System Manager — shown when setting is on (all tasks)
                       or when off for unassigned tasks with a linked ToDo action */}
                   {isSystemManager &&
@@ -1159,8 +1161,9 @@ const CustomApprovalTab = ({
                   </span>
                   {stage.rows && (
                     <span>
-                      {stage.rows.actioned} of {stage.rows.total} positions
-                      actioned
+                      Out of {stage.rows.total} positions -{" "}
+                      {stage.rows.approved ?? 0} approved,{" "}
+                      {stage.rows.rejected ?? 0} rejected
                     </span>
                   )}
                 </div>

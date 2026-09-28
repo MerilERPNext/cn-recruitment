@@ -19,6 +19,7 @@
   "enable_offer_letter_button",
   "enable_preview_offer_letter_button",
   "enable_send_job_offer_button",
+  "use_classic_job_offer_form",
   "job_offer_rules_section",
   "allow_multiple_job_offers",
   "offer_action_item_trigger",
@@ -183,6 +184,13 @@
    "fieldname": "enable_send_job_offer_button",
    "fieldtype": "Check",
    "label": "Enable Send Job Offer Button"
+  },
+  {
+   "default": "0",
+   "description": "The Job Offer form opens as a step-by-step wizard (Basic Details, Offer Letter Template, Salary, Preview, Approval) built from the form's tabs. Tick to show the plain tabbed form instead.",
+   "fieldname": "use_classic_job_offer_form",
+   "fieldtype": "Check",
+   "label": "Use Classic Job Offer Form"
   },
   {
    "fieldname": "job_offer_rules_section",
@@ -641,7 +649,7 @@
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2026-09-22 11:00:00.000000",
+ "modified": "2026-09-26 16:05:00.000000",
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "Recruitment Settings",

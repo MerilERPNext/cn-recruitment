@@ -4,7 +4,8 @@ import { useNavigate } from "react-router-dom";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import { useTodoCategories, useTodoList } from "../../hooks/useTodo";
 import { useOptionalTargetEmployeeId } from "../../context/ViewedUserContext";
-import type { ToDo } from "../../services/todoService";
+import type { ListViewField, ToDo } from "../../services/todoService";
+import { formatCurrency } from "../../utils/currency";
 import formatToIndianDate from "../../utils/formatToIndianDate";
 import { sanitizeToPlainText } from "../../utils/sanitizeToPlainText";
 import { Card } from "../shared/atoms/Card";
@@ -14,16 +15,17 @@ import CustomDropdown from "../shared/CustomDropdown";
 import { CardSkeleton } from "../shared/molecules/Skeletons/TableSkeleton";
 import { NoDataFound } from "../shared/atoms/NoDataFound";
 
-// Colours cycle by category position; task icons take the active category's colour.
+// Colours cycle by category position; the dot carries the category's identity on
+// every chip, while chip/icon tints only apply to the active one.
 const CATEGORY_COLORS = [
-  { chip: "bg-blue-100 text-blue-700 ring-blue-300", icon: "bg-blue-50 text-blue-600" },
-  { chip: "bg-purple-100 text-purple-700 ring-purple-300", icon: "bg-purple-50 text-purple-600" },
-  { chip: "bg-green-100 text-green-700 ring-green-300", icon: "bg-green-50 text-green-600" },
-  { chip: "bg-pink-100 text-pink-700 ring-pink-300", icon: "bg-pink-50 text-pink-600" },
-  { chip: "bg-yellow-100 text-yellow-700 ring-yellow-300", icon: "bg-yellow-50 text-yellow-600" },
-  { chip: "bg-orange-100 text-orange-700 ring-orange-300", icon: "bg-orange-50 text-orange-600" },
-  { chip: "bg-cyan-100 text-cyan-700 ring-cyan-300", icon: "bg-cyan-50 text-cyan-600" },
-  { chip: "bg-red-100 text-red-700 ring-red-300", icon: "bg-red-50 text-red-500" },
+  { chip: "bg-blue-100 text-blue-700 ring-blue-300", icon: "bg-blue-50 text-blue-600", dot: "bg-blue-500" },
+  { chip: "bg-purple-100 text-purple-700 ring-purple-300", icon: "bg-purple-50 text-purple-600", dot: "bg-purple-500" },
+  { chip: "bg-green-100 text-green-700 ring-green-300", icon: "bg-green-50 text-green-600", dot: "bg-green-500" },
+  { chip: "bg-pink-100 text-pink-700 ring-pink-300", icon: "bg-pink-50 text-pink-600", dot: "bg-pink-500" },
+  { chip: "bg-yellow-100 text-yellow-700 ring-yellow-300", icon: "bg-yellow-50 text-yellow-600", dot: "bg-yellow-500" },
+  { chip: "bg-orange-100 text-orange-700 ring-orange-300", icon: "bg-orange-50 text-orange-600", dot: "bg-orange-500" },
+  { chip: "bg-cyan-100 text-cyan-700 ring-cyan-300", icon: "bg-cyan-50 text-cyan-600", dot: "bg-cyan-500" },
+  { chip: "bg-red-100 text-red-700 ring-red-300", icon: "bg-red-50 text-red-500", dot: "bg-red-500" },
 ];
 
 const PINK_BADGE = { className: "bg-pink-50 text-pink-600", dotClassName: "bg-pink-500" };
@@ -48,6 +50,167 @@ const TICKET_STATUS_BADGES: Record<string, { label: string; className: string; d
   Archived: { label: "Archived", ...GRAY_BADGE },
 };
 
+const EMPTY_TODOS: ToDo[] = [];
+const EMPTY_FIELDS: ListViewField[] = [];
+
+const DATE_FIELDTYPES = new Set(["Date", "Datetime"]);
+
+// Prose columns either repeat the task description or blow out the one-line
+// meta row, and layout fieldtypes carry no value at all, so neither makes it
+// onto the card.
+const SKIPPED_FIELDTYPES = new Set([
+  "Text",
+  "Small Text",
+  "Long Text",
+  "Text Editor",
+  "Markdown Editor",
+  "HTML Editor",
+  "Code",
+  "Section Break",
+  "Column Break",
+  "Tab Break",
+  "HTML",
+  "Button",
+  "Image",
+  "Attach",
+  "Attach Image",
+  "Signature",
+]);
+
+// The row already leads with a due date; a second timestamp beside it is noise.
+const SKIPPED_FIELDNAMES = new Set(["creation", "modified"]);
+
+// Link-path columns are configured with machine-joined labels
+// ("From Employee - Employee"); only the trailing segment reads as a label.
+const shortLabel = (label: string) => {
+  const parts = String(label || "").split(" - ");
+  return (parts[parts.length - 1] || label || "").trim();
+};
+
+// Amounts read better pinned to the row's trailing edge than buried in the meta
+// line, so they are split out of the configured columns.
+const isAmountField = (field: ListViewField) => field.fieldtype === "Currency";
+
+const formatFieldValue = (field: ListViewField, value: unknown): string => {
+  if (value === null || value === undefined || value === "") return "";
+  if (isAmountField(field)) return formatCurrency(value as string | number);
+  if (DATE_FIELDTYPES.has(field.fieldtype)) return formatToIndianDate(value as string);
+  if (field.fieldtype === "Check") return Number(value) ? "Yes" : "No";
+  const raw = String(value);
+  return raw.includes("<") ? sanitizeToPlainText(raw) : raw;
+};
+
+// More than a couple of pairs and the meta line wraps into the next row.
+const MAX_META_FIELDS = 2;
+
+// Start/end dates are configured as two independent columns but read as a single
+// fact, so a recognised pair is collapsed into one "start to end" chunk instead
+// of burning both meta slots on half a date range each.
+const RANGE_PAIRS: Array<[string, string]> = [
+  ["from_date", "to_date"],
+  ["work_from_date", "work_end_date"],
+  ["start_date", "end_date"],
+  ["date_from", "date_to"],
+];
+
+/** Names the partner column of `fieldname`, best match first. */
+const rangePartnerNames = (fieldname: string): string[] => {
+  const candidates: string[] = [];
+  for (const [start, end] of RANGE_PAIRS) {
+    if (fieldname === start) {
+      candidates.push(end);
+    } else if (fieldname.endsWith(`_${start}`)) {
+      candidates.push(`${fieldname.slice(0, -start.length)}${end}`);
+    }
+  }
+  return candidates;
+};
+
+// A day count belongs to the range it measures, not to a slot of its own. It has
+// to come from the configured column: a half-day leave spans one calendar day but
+// counts as 0.5, so deriving it from the dates would be wrong.
+const DURATION_FIELDTYPES = new Set(["Float", "Int"]);
+const DURATION_FIELDNAME = /(days|duration)$/i;
+
+const isDurationField = (field: ListViewField) =>
+  DURATION_FIELDTYPES.has(field.fieldtype) && DURATION_FIELDNAME.test(field.fieldname);
+
+const formatDayCount = (raw: unknown): string => {
+  const count = Number(raw);
+  if (!Number.isFinite(count) || count <= 0) return "";
+  return `${count} ${count === 1 ? "day" : "days"}`;
+};
+
+interface MetaChunk {
+  key: string;
+  label: string;
+  value: string;
+  isRange: boolean;
+}
+
+const buildMetaChunks = (
+  fields: ListViewField[],
+  data: Record<string, unknown>
+): MetaChunk[] => {
+  const byName = new Map(fields.map((field) => [field.fieldname, field]));
+  const consumed = new Set<string>();
+  const chunks: MetaChunk[] = [];
+
+  for (const field of fields) {
+    if (consumed.has(field.fieldname)) continue;
+
+    const value = formatFieldValue(field, data[field.fieldname]);
+    if (!value) continue;
+
+    // Pair up only when both halves are dates that actually resolved.
+    if (DATE_FIELDTYPES.has(field.fieldtype)) {
+      const partner = rangePartnerNames(field.fieldname)
+        .map((name) => byName.get(name))
+        .find(
+          (candidate): candidate is ListViewField =>
+            !!candidate &&
+            DATE_FIELDTYPES.has(candidate.fieldtype) &&
+            !!formatFieldValue(candidate, data[candidate.fieldname])
+        );
+
+      if (partner) {
+        consumed.add(partner.fieldname);
+        const partnerValue = formatFieldValue(partner, data[partner.fieldname]);
+        // Single-day requests set both ends to the same date; repeating it
+        // reads as a mistake rather than a range.
+        const span = partnerValue === value ? value : `${value} to ${partnerValue}`;
+
+        const duration = fields.find(
+          (candidate) => isDurationField(candidate) && formatDayCount(data[candidate.fieldname])
+        );
+        if (duration) consumed.add(duration.fieldname);
+        const dayCount = duration ? formatDayCount(data[duration.fieldname]) : "";
+
+        chunks.push({
+          key: field.fieldname,
+          label: shortLabel(field.label),
+          value: dayCount ? `${span} (${dayCount})` : span,
+          isRange: true,
+        });
+        continue;
+      }
+    }
+
+    chunks.push({
+      key: field.fieldname,
+      label: shortLabel(field.label),
+      value,
+      isRange: false,
+    });
+  }
+
+  return chunks;
+};
+
+const MetaSeparator: React.FC = () => (
+  <span className="w-1 h-1 rounded-full bg-gray-200 flex-shrink-0" aria-hidden />
+);
+
 const TicketStatusBadge: React.FC<{ status: string }> = ({ status }) => {
   const badge = TICKET_STATUS_BADGES[status] ?? { label: status, ...GRAY_BADGE };
 
@@ -61,7 +224,32 @@ const TicketStatusBadge: React.FC<{ status: string }> = ({ status }) => {
   );
 };
 
-const MyToDoItem: React.FC<{ item: ToDo; iconClassName: string }> = ({ item, iconClassName }) => {
+// A date range is the defining fact of a leave or attendance approval, so it takes
+// the meta line on its own rather than competing with columns that mostly repeat
+// what the task title already says.
+const capMetaChunks = (chunks: MetaChunk[]): MetaChunk[] => {
+  const range = chunks.find((chunk) => chunk.isRange);
+  if (range) return [range];
+
+  return chunks.slice(0, MAX_META_FIELDS);
+};
+
+/** Values the task title already states are noise when repeated underneath it. */
+const dropTitleEchoes = (chunks: MetaChunk[], title: string): MetaChunk[] => {
+  const haystack = title.toLowerCase();
+  return chunks.filter((chunk) => {
+    const value = chunk.value.trim();
+    // Short values (codes, single digits) collide by accident far too easily.
+    if (chunk.isRange || value.length < 4) return true;
+    return !haystack.includes(value.toLowerCase());
+  });
+};
+
+const MyToDoItem: React.FC<{
+  item: ToDo;
+  iconClassName: string;
+  listViewFields: ListViewField[];
+}> = ({ item, iconClassName, listViewFields }) => {
   const navigate = useNavigate();
   const targetEmployeeId = useOptionalTargetEmployeeId();
 
@@ -89,6 +277,31 @@ const MyToDoItem: React.FC<{ item: ToDo; iconClassName: string }> = ({ item, ico
   const Icon = isTicket ? HelpCircle : ClipboardList;
   const dueDate = item.custom_due_datetime || item.date;
 
+  // What a row shows past the due date is whatever the Todo Type configured:
+  // an expense task surfaces its amount and employee id, a leave task its dates.
+  const { amount, metaFields } = useMemo(() => {
+    const data = (item.reference_data ?? {}) as Record<string, unknown>;
+    const amountField = listViewFields.find(isAmountField);
+
+    return {
+      amount: amountField ? formatFieldValue(amountField, data[amountField.fieldname]) : "",
+      metaFields: capMetaChunks(
+        dropTitleEchoes(
+          buildMetaChunks(
+            listViewFields.filter(
+              (field) =>
+                !isAmountField(field) &&
+                !SKIPPED_FIELDTYPES.has(field.fieldtype) &&
+                !SKIPPED_FIELDNAMES.has(field.fieldname)
+            ),
+            data
+          ),
+          cleanDescription
+        )
+      ),
+    };
+  }, [item.reference_data, listViewFields, cleanDescription]);
+
   return (
     <div
       key={item.name}
@@ -109,7 +322,7 @@ const MyToDoItem: React.FC<{ item: ToDo; iconClassName: string }> = ({ item, ico
             {cleanDescription || "Task"}
           </Typography>
 
-          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+          <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1">
             <Typography variant="label" color="body2">
               {dueDate ? (
                 <>
@@ -122,21 +335,40 @@ const MyToDoItem: React.FC<{ item: ToDo; iconClassName: string }> = ({ item, ico
                 "No due date"
               )}
             </Typography>
+            {metaFields.map((meta) => (
+              <React.Fragment key={meta.key}>
+                <MetaSeparator />
+                <Typography variant="label" color="body2" className="line-clamp-1">
+                  {meta.label ? `${meta.label} ` : ""}
+                  <span className="font-semibold text-text-title">{meta.value}</span>
+                </Typography>
+              </React.Fragment>
+            ))}
             {isTicket && item.reference_status && (
               <TicketStatusBadge status={item.reference_status} />
             )}
           </div>
         </div>
       </div>
-      <button
-        onClick={(e) => {
-          e.stopPropagation();
-          handleClick();
-        }}
-        className="text-primary-600 group-hover:text-primary-700 text-xs font-semibold px-3 py-1.5 rounded-lg bg-primary-50 group-hover:bg-primary-100 hover:bg-primary-200 transition-colors whitespace-nowrap flex-shrink-0"
-      >
-        View task
-      </button>
+      <div className="flex items-center gap-3 flex-shrink-0">
+        {amount && (
+          <Typography
+            variant="bodySmall"
+            className="font-semibold text-text-title whitespace-nowrap tabular-nums"
+          >
+            {amount}
+          </Typography>
+        )}
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            handleClick();
+          }}
+          className="text-primary-600 group-hover:text-primary-700 text-xs font-semibold px-3 py-1.5 rounded-lg bg-primary-50 group-hover:bg-primary-100 hover:bg-primary-200 transition-colors whitespace-nowrap flex-shrink-0"
+        >
+          View task
+        </button>
+      </div>
     </div>
   );
 };
@@ -180,13 +412,16 @@ const TasksAwaiting: React.FC = () => {
 
   // Fetch todos for the selected category using category_filter
   const {
-    data: todos = [],
+    data: todoResult,
     isLoading: isTodosLoading,
   } = useTodoList(
     activeCategory
       ? { category_filter: activeCategory }
       : {}
   );
+
+  const todos = todoResult?.todos ?? EMPTY_TODOS;
+  const listViewFields = todoResult?.listViewFields ?? EMPTY_FIELDS;
 
   // Show only top 5 items
   const displayedTodos = useMemo(() => todos.slice(0, 5), [todos]);
@@ -197,6 +432,11 @@ const TasksAwaiting: React.FC = () => {
       value: cat.name,
     }));
   }, [categories]);
+
+  const totalPending = useMemo(
+    () => categories.reduce((sum, cat) => sum + (cat.count || 0), 0),
+    [categories]
+  );
 
   const isLoading = isCategoriesLoading;
 
@@ -217,10 +457,18 @@ const TasksAwaiting: React.FC = () => {
 
   return (
     <Card shadow="sm" className="h-fit md:h-full flex flex-col">
-      <div className="flex justify-between items-center mb-4">
-        <Typography variant="subheading" color="title">
-          Tasks Awaiting You
-        </Typography>
+      <div className="flex justify-between items-start gap-3 mb-4">
+        <div className="min-w-0">
+          <Typography variant="subheading" color="title">
+            Tasks Awaiting You
+          </Typography>
+          {!isLoading && totalPending > 0 && (
+            <Typography variant="label" color="body2" className="block mt-0.5">
+              {totalPending} pending across {categories.length}{" "}
+              {categories.length === 1 ? "category" : "categories"}
+            </Typography>
+          )}
+        </div>
         <ViewAll title="View to-do" onClick={handleTodoClick} />
       </div>
 
@@ -241,7 +489,7 @@ const TasksAwaiting: React.FC = () => {
       )}
 
       {isDesktop && !isLoading && categories.length > 0 && (
-        <div className="flex items-center gap-1 mb-2">
+        <div className="flex items-center gap-1 mb-3">
           {chipsOverflow && (
             <button
               type="button"
@@ -252,21 +500,29 @@ const TasksAwaiting: React.FC = () => {
               <ChevronLeft className="w-4 h-4" />
             </button>
           )}
-          <div ref={chipsRef} className="flex gap-2.5 p-2 min-w-0 flex-1 overflow-x-auto scrollbar-hide">
+          <div ref={chipsRef} className="flex gap-2 py-1.5 min-w-0 flex-1 overflow-x-auto scrollbar-hide">
             {categories.map((cat, idx) => {
               const isActive = activeCategory === cat.name;
-              const colors = getCategoryColors(idx).chip;
+              const colors = getCategoryColors(idx);
 
               return (
                 <button
                   key={cat.name}
                   onClick={() => setActiveCategory(cat.name)}
-                  className={`px-3.5 py-1.5 rounded-xl text-xs sm:text-sm whitespace-nowrap font-medium shadow-xs transition-all ${isActive
-                    ? `scale-[1.02] ring-2 font-semibold ${colors}`
-                    : `${colors} opacity-75 hover:opacity-100 hover:scale-[1.01]`
-                    } `}
+                  aria-pressed={isActive}
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs sm:text-sm whitespace-nowrap border transition-all ${isActive
+                    ? `font-semibold border-transparent ring-1 shadow-xs ${colors.chip}`
+                    : "font-medium border-gray-50 bg-white text-text-body1 hover:border-gray-100 hover:bg-gray-10/40"
+                    }`}
                 >
-                  {cat.name} ({cat.count})
+                  <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${colors.dot}`} />
+                  {cat.name}
+                  <span
+                    className={`rounded-full px-1.5 py-px text-[11px] font-semibold tabular-nums ${isActive ? "bg-white/70" : "bg-gray-10/70 text-text-body2"
+                      }`}
+                  >
+                    {cat.count}
+                  </span>
                 </button>
               );
             })}
@@ -290,7 +546,12 @@ const TasksAwaiting: React.FC = () => {
           <CardSkeleton rows={2} />
         ) : displayedTodos.length > 0 ? (
           displayedTodos.map((item: ToDo) => (
-            <MyToDoItem key={item.name} item={item} iconClassName={activeIconClassName} />
+            <MyToDoItem
+              key={item.name}
+              item={item}
+              iconClassName={activeIconClassName}
+              listViewFields={listViewFields}
+            />
           ))
         ) : (
           <NoDataFound

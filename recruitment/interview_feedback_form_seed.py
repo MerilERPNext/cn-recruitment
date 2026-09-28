@@ -139,6 +139,7 @@ def _create_form():
 
 	doc = frappe.new_doc("Microapp Form Widget")
 	doc.label = FORM_NAME
+	doc.doc_type = "Interview Feedback"
 	doc.custom_form_data = json.dumps(_schema())
 	doc.form_status = "Active"
 	doc.insert(ignore_permissions=True)

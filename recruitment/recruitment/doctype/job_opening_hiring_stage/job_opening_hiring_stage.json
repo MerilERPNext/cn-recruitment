@@ -11,12 +11,14 @@
   "is_mandatory",
   "interviewer_pool",
   "interviewer_role",
+  "evaluation_form",
   "sla",
   "sla_unit",
   "owner_role",
   "notify",
   "auto",
-  "notes"
+  "notes",
+  "after_stage"
  ],
  "fields": [
   {
@@ -61,6 +63,14 @@
    "label": "Interviewer Role",
    "options": "Role",
    "depends_on": "eval:doc.stage_type == 'Interview'"
+  },
+  {
+   "fieldname": "evaluation_form",
+   "fieldtype": "Link",
+   "label": "Interview Feedback Form",
+   "options": "Microapp Form Widget",
+   "depends_on": "eval:doc.stage_type == 'Interview'",
+   "description": "The form interviewers fill in for this round. Set on every interview scheduled for this stage."
   },
   {
    "columns": 1,
@@ -110,12 +120,20 @@
    "fieldtype": "Small Text",
    "in_list_view": 1,
    "label": "Notes"
+  },
+  {
+   "fieldname": "after_stage",
+   "fieldtype": "Data",
+   "label": "Added After Stage",
+   "hidden": 1,
+   "read_only": 1,
+   "description": "Set only on a stage added for one candidate: the stage it follows."
   }
  ],
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2026-08-24 15:00:00.000000",
+ "modified": "2026-09-26 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "Job Opening Hiring Stage",

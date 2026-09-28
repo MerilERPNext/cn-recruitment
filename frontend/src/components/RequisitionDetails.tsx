@@ -178,7 +178,6 @@ const RequisitionDetails: React.FC = () => {
     try {
       const result = await createJobOpeningMutation.mutateAsync({
         job_requisition: requisitionId,
-        job_title: job.designation,
         designation: job.designation,
         department: job.department,
         employment_type: job.employment_type,

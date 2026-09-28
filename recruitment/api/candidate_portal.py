@@ -643,11 +643,13 @@ def materialize_onboarding_from_applicant(job_applicant_id, prefill=None):
     applicant = frappe.get_doc("Job Applicant", job_applicant_id)
 
     existing_eo = applicant.get("custom_pre_onboarding_employee_onboarding")
-    if existing_eo and not frappe.db.exists("Employee Onboarding", existing_eo):
-        # The linked Employee Onboarding was deleted out from under us, leaving a
-        # dangling reference on the applicant. Drop it and fall through to create a
-        # fresh one — returning the stale name would crash callers that get_doc the
-        # result (e.g. _sync_onboarding_action_for_applicant on Job Offer accept).
+    if existing_eo and frappe.db.get_value("Employee Onboarding", existing_eo, "docstatus") in (None, 2):
+        # The linked Employee Onboarding was deleted or cancelled out from under us,
+        # leaving a dangling reference on the applicant. Drop it and fall through to
+        # create a fresh one — returning the stale name would crash callers that
+        # get_doc the result (e.g. _sync_onboarding_action_for_applicant on Job Offer
+        # accept), and a cancelled one would be handed back as if it were live, so
+        # onboarding could never be initiated again.
         applicant.db_set("custom_pre_onboarding_employee_onboarding", None, update_modified=False)
         existing_eo = None
     if existing_eo:
@@ -1057,12 +1059,87 @@ def _logo_includes_company_name(company):
         return False
 
 
-def _get_branding(eo_doc, applicant_doc):
-    """Company badge shown atop the candidate portal. Sourced from the Employee
-    Onboarding company, falling back to the Job Applicant's finalized company."""
+def _candidate_company(eo_doc, applicant_doc):
+    """The group company a candidate's portal belongs to.
+
+    Employee Onboarding company first, then the Job Applicant's finalized
+    company, then the company of the Job Opening they applied to — Job Applicant
+    carries no company of its own, so before an offer is finalized the opening is
+    the only place it is recorded.
+    """
     company = eo_doc.get("company") if eo_doc is not None else None
     if not company and applicant_doc is not None:
         company = applicant_doc.get("custom_company_finalized") or applicant_doc.get("company")
+        if not company and applicant_doc.get("job_title"):
+            company = frappe.db.get_value("Job Opening", applicant_doc.get("job_title"), "company")
+    return company or None
+
+
+def _raw_company_logo(company):
+    """Company.company_logo as stored, or None. Optional / site-specific field."""
+    if not company:
+        return None
+    try:
+        if frappe.get_meta("Company").get_field("company_logo"):
+            return frappe.db.get_value("Company", company, "company_logo") or None
+    except Exception:
+        pass
+    return None
+
+
+def _company_logo_url(company):
+    """A URL a candidate's browser can actually load for this company's logo.
+
+    Candidates are not Desk users, so a logo uploaded as a private file
+    (/private/files/...) is refused to them. Those are served through
+    :func:`company_logo` instead, which only ever streams a Company's own logo.
+    Public files and external URLs are returned as stored.
+    """
+    import os
+
+    logo = _raw_company_logo(company)
+    if not logo:
+        return None
+    if logo.startswith("/private/"):
+        # A record whose file is gone would render as a broken image — let the
+        # caller fall back to the site logo instead.
+        if not os.path.exists(frappe.get_site_path(logo.lstrip("/"))):
+            return None
+        from urllib.parse import urlencode
+
+        return "/api/method/recruitment.api.candidate_portal.company_logo?" + urlencode({"company": company})
+    return logo
+
+
+@frappe.whitelist(allow_guest=True)
+def company_logo(company):
+    """Stream a Company's logo inline, whether its file is public or private.
+
+    Exposes nothing but the file named in Company.company_logo — the same image
+    the portal shows every candidate of that company.
+    """
+    logo = _raw_company_logo(company)
+    if not logo or "://" in logo:
+        raise frappe.DoesNotExistError(_("No logo for this company."))
+
+    file_name = frappe.db.get_value("File", {"file_url": logo}, "name")
+    if not file_name:
+        raise frappe.DoesNotExistError(_("No logo for this company."))
+    file_doc = frappe.get_doc("File", file_name)
+    try:
+        content = file_doc.get_content()
+    except OSError:
+        raise frappe.DoesNotExistError(_("No logo for this company."))
+
+    frappe.local.response.filename = file_doc.file_name or logo.rsplit("/", 1)[-1]
+    frappe.local.response.filecontent = content
+    frappe.local.response.type = "download"
+    frappe.local.response.display_content_as = "inline"
+
+
+def _get_branding(eo_doc, applicant_doc):
+    """Company badge shown atop the candidate portal — see _candidate_company."""
+    company = _candidate_company(eo_doc, applicant_doc)
     if not company:
         return {
             "company": None, "company_name": None, "logo": None, "badge_label": None,
@@ -1070,13 +1147,7 @@ def _get_branding(eo_doc, applicant_doc):
         }
 
     name = frappe.db.get_value("Company", company, "company_name") or company
-    # Company logo is optional / site-specific — read it defensively.
-    logo = None
-    try:
-        if frappe.get_meta("Company").get_field("company_logo"):
-            logo = frappe.db.get_value("Company", company, "company_logo")
-    except Exception:
-        logo = None
+    logo = _company_logo_url(company)
     return {
         "company": company,
         "company_name": name,
@@ -2013,10 +2084,51 @@ def get_website_branding():
         default_company = None
 
     settings = frappe.get_single("Website Settings")
+
+    # A signed-in candidate sees their own group company's logo; the site logo
+    # stays for guests (login page) and for companies with no logo uploaded.
+    company = _signed_in_candidate_company()
+    company_logo_url = _company_logo_url(company)
     return {
         "title_prefix": settings.title_prefix,
-        "app_logo": settings.app_logo,
-        # Additive: both keys above are unchanged. True only when the company's
-        # logo already spells out its name, so the UI can drop the text.
-        "logo_includes_company_name": _logo_includes_company_name(default_company),
+        "app_logo": company_logo_url or settings.app_logo,
+        # True only when the logo shown already spells out its company's name,
+        # so the UI can drop the text.
+        "logo_includes_company_name": _logo_includes_company_name(
+            company if company_logo_url else default_company
+        ),
+        "company": company,
+        "company_name": frappe.db.get_value("Company", company, "company_name") if company else None,
     }
+
+
+def _signed_in_candidate_company():
+    """Company of the candidate behind this request's portal session, or None.
+
+    Guest-safe: no cookie, an expired session or any lookup failure is None.
+    """
+    from recruitment.api.candidate_auth import _get_active_session, _get_session_cookie
+
+    try:
+        token = _get_session_cookie()
+        session = _get_active_session(token) if token else None
+        if not session:
+            return None
+
+        candidate = frappe.db.get_value(
+            "Candidate Portal User", session.candidate, ["email", "job_applicant"], as_dict=True
+        )
+        if not candidate:
+            return None
+        applicant = candidate.job_applicant or frappe.db.get_value(
+            "Job Applicant", {"email_id": candidate.email}, "name", order_by="modified desc"
+        )
+        if not applicant:
+            return None
+
+        onboarding = _get_onboarding_name_by_job_applicant(applicant)
+        eo_doc = frappe.get_doc("Employee Onboarding", onboarding) if onboarding else None
+        return _candidate_company(eo_doc, frappe.get_doc("Job Applicant", applicant))
+    except Exception:
+        frappe.log_error(frappe.get_traceback(), "Candidate portal: branding company lookup failed")
+        return None

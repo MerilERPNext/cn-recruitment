@@ -45,7 +45,13 @@ function renderEvaluationForm(frm) {
 
 	frappe.call({
 		method: "recruitment.api.interview_feedback_form.get_interview_feedback_form",
-		args: { interview: frm.doc.interview },
+		// The interviewer's own form when the panel was given different ones; a
+		// draft keeps the form it was started on.
+		args: {
+			interview: frm.doc.interview,
+			interviewer: frm.doc.interviewer || null,
+			form: frm.doc.custom_evaluation_form || null,
+		},
 		callback: (r) => {
 			const config = (r && r.message) || {};
 			if (!config.schema) {
@@ -118,7 +124,13 @@ function drawForm(frm, config) {
 	wrapper.empty();
 	const container = $('<div class="ifb-dynamic-form"></div>').appendTo(wrapper)[0];
 
-	window.Formio.createForm(container, stripSubmitButtons(config.schema))
+	// A submitted (or cancelled) feedback is a record, not an input: draw it
+	// read-only from the start. Not `instance.setDisabled(true)` afterwards — in
+	// Formio 4 that is setDisabled(element, flag), and passing `true` as the
+	// element throws, which sent every submitted feedback to the warning below.
+	const readOnly = frm.doc.docstatus !== 0;
+
+	window.Formio.createForm(container, stripSubmitButtons(config.schema), { readOnly })
 		.then((instance) => {
 			frm.__ifb_formio = instance;
 
@@ -126,10 +138,7 @@ function drawForm(frm, config) {
 			// feedback — so the panel carries on where they left off.
 			instance.submission = { data: readResponse(frm) };
 
-			// A submitted feedback is a record, not an input.
-			if (frm.doc.docstatus === 1) instance.setDisabled(true);
-
-			instance.on("change", () => writeResponse(frm, instance));
+			if (!readOnly) instance.on("change", () => writeResponse(frm, instance));
 		})
 		.catch((e) => {
 			// The panel gets a plain sentence; the console gets what actually broke.
