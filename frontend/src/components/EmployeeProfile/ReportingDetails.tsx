@@ -197,10 +197,11 @@ const ReportingDetails = ({ onActionSuccess }: ReportingDetailsProps) => {
           <div className="flex flex-col gap-1 flex-1">
             <div className="flex justify-between items-center">
               {/* A period the field held no value: there is no employee to link
-                  to, so the tile just states the gap. */}
+                  to, so the tile just states the gap. Same "NA" wording the
+                  employment-history cards use for a gap row. */}
               {isUnassigned ? (
                 <Typography variant="bodyMedium" className="font-bold text-gray-400 italic truncate">
-                  Unassigned
+                  NA
                 </Typography>
               ) : (
                 <Link to={`/webapp/employee-profile?target_user=${id}`} target="_blank">

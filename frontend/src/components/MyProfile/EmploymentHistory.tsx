@@ -22,6 +22,7 @@ import NoDataFound from "../shared/atoms/NoDataFound";
 import ConfirmationModal from "../shared/atoms/ConfirmationModal";
 import { useLoadingOverlay } from "../../context/OverlayContext";
 import { computeAddSlideBounds, computeSlideDateBounds } from "../../utils/slideDateBounds";
+import { historyFieldLabel } from "../../utils/historyFieldLabel";
 import { errorResponseFormater } from "../../utils/errorResponseFormater";
 import toast from "react-hot-toast";
 
@@ -302,16 +303,16 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
                       className={`${history.length === 1 ? "max-w-md w-full" : ""}`}
                     >
                       <EmploymentHistoryCard
-                        company={item.company?.name || ""}
-                        department={item.department?.name || ""}
-                        band={item.band?.name || ""}
-                        grade={item.grade?.name || ""}
+                        company={historyFieldLabel(item.company, "")}
+                        department={historyFieldLabel(item.department, "")}
+                        band={historyFieldLabel(item.band, "")}
+                        grade={historyFieldLabel(item.grade, "")}
                         start_date={item.from_date}
                         end_date={item.to_date}
                         isCurrent={item.is_current}
-                        functionalArea={item?.functional_area?.name || ""}
+                        functionalArea={historyFieldLabel(item?.functional_area, "")}
                         is_promotion={item.is_promotion}
-                        designation={item?.designation?.name || ""}
+                        designation={historyFieldLabel(item?.designation, "")}
                         onEdit={(canEditEmploymentHistory && item.can_edit !== false) ? () => handleEditCard(item) : undefined}
                         onDelete={(canDeleteEmploymentHistory && item.can_delete) ? () => setPendingDelete({ type: "history", names: collectRowNames(item as unknown as Record<string, unknown>), subSection: "work_role" }) : undefined}
                       />
