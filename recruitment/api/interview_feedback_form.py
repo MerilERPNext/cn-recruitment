@@ -285,6 +285,12 @@ def validate_form_response(doc, method=None):
 		_require_skill_assessment(doc)
 		return
 
+	# The form replaces the skill grid, but HRMS still seeds it with one unrated row per
+	# expected skill, and `rating` is reqd on each row — so those rows would fail the
+	# mandatory check that runs after validate. The panel never saw them; drop them.
+	if doc.get("skill_assessment"):
+		doc.set("skill_assessment", [])
+
 	data = _parse(doc.get("custom_form_response")) or {}
 
 	if doc.docstatus == 1:

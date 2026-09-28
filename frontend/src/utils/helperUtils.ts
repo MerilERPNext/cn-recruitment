@@ -141,23 +141,50 @@ export async function getDeviceLocation(): Promise<Coordinates> {
   }
 }
 
+export const LOCATION_BLOCKED_MESSAGE =
+  "Location access is required for Check In. It is blocked for this site - please allow location in your browser or device settings and try again.";
+
+export type LocationPermissionState = "granted" | "prompt" | "denied" | "unknown";
+
+/**
+ * Current geolocation permission as reported by the browser / device.
+ * Never prompts. "unknown" means the Permissions API is unavailable (older
+ * iOS Safari, some WebViews) - callers should then just try to get the
+ * position and let the platform decide whether to prompt.
+ */
+export async function getLocationPermissionState(): Promise<LocationPermissionState> {
+  if (!navigator.geolocation) return "denied";
+  if (!navigator.permissions?.query) return "unknown";
+  try {
+    const status = await navigator.permissions.query({ name: "geolocation" });
+    return status.state;
+  } catch {
+    return "unknown";
+  }
+}
+
+/**
+ * Resolve the device position on the web.
+ *
+ * Must only be called from an explicit user action (the Check In / Check Out
+ * tap): `getCurrentPosition` is what triggers the browser permission prompt.
+ * `navigator.permissions.query` never prompts, so it is safe as a pre-check:
+ *  - "granted"  -> position resolves silently, no prompt;
+ *  - "prompt"   -> the browser asks now (an "Allow once" grant reverts to
+ *                  "prompt" later, so the user is asked again on a later tap);
+ *  - "denied"   -> the browser will NOT prompt again, so fail fast with
+ *                  guidance to re-enable it in settings.
+ */
 export async function getDeviceLocationWeb(): Promise<Coordinates> {
   if (!navigator.geolocation) {
     throw new Error("Geolocation is not supported by this browser.");
   }
-  if (navigator.permissions) {
-    try {
-      const permissionStatus = await navigator.permissions.query({
-        name: "geolocation",
-      });
-
-      if (permissionStatus.state === "denied") {
-        throw new Error("Location permission was denied.");
-      }
-    } catch (err) {
-      console.warn("Could not verify permissions:", err);
-    }
+  if ((await getLocationPermissionState()) === "denied") {
+    // The browser will not prompt again: fail fast with settings guidance.
+    throw new Error(LOCATION_BLOCKED_MESSAGE);
   }
+  // "granted" resolves silently; "prompt" makes the browser / OS show its
+  // native permission dialog now; "unknown" lets the platform decide.
   return new Promise<Coordinates>((resolve, reject) => {
     navigator.geolocation.getCurrentPosition(
       (position: GeolocationPosition) => {
@@ -165,6 +192,10 @@ export async function getDeviceLocationWeb(): Promise<Coordinates> {
         resolve({ latitude, longitude });
       },
       (error: GeolocationPositionError) => {
+        if (error.code === error.PERMISSION_DENIED) {
+          reject(new Error(LOCATION_BLOCKED_MESSAGE));
+          return;
+        }
         reject(new Error("Error getting location: " + error.message));
       },
     );

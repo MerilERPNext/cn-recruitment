@@ -28,6 +28,16 @@ frappe.ui.form.on("Interview Feedback", {
 		frm.__ifb_form_key = null;
 		renderEvaluationForm(frm);
 	},
+
+	// Dropping the grid's `reqd` only relaxes the TABLE. HRMS still fills it with one
+	// row per expected skill (rating 0) from the round, and `rating` is reqd on every
+	// Skill Assessment row — so those hidden, unratable rows block the save. validate
+	// runs before Frappe's client mandatory check, so emptying the grid here clears it.
+	validate(frm) {
+		if (frm.doc.custom_evaluation_form && (frm.doc.skill_assessment || []).length) {
+			frm.clear_table("skill_assessment");
+		}
+	},
 });
 
 function renderEvaluationForm(frm) {

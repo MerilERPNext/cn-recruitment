@@ -8,8 +8,8 @@ Self Service, so someone with no employee identity has no reason to land there.
 Everyone else (Website Users, external recruiters, admin-only accounts) keeps
 frappe's own choice. See :func:`landing_route` for the full order of checks.
 
-Why this needs patches rather than a hook
------------------------------------------
+Why this needs code rather than a hook
+--------------------------------------
 ``hooks.py`` already declares::
 
     role_home_page = {"System User": "/webapp"}
@@ -28,30 +28,42 @@ for everyone else it hardcodes the Desk::
     else:
         frappe.local.response["home_page"] = get_default_path() or "/app"
 
-So no hook can move a System User's landing page after login, and the places
-that decide where a fresh session goes have to be wrapped instead. There are
-three:
+So no hook can move a desk user's landing page after login. Everything here
+hangs off one ``before_request`` entry point, :func:`on_before_request`, which
+covers the three ways a session is handed a destination:
 
-* ``LoginManager.set_user_info`` -- the username/password and
-  ``/api/method/login`` flow; ``login.js`` navigates to the ``home_page`` key of
-  the response. Wrapping here rather than ``frappe.apps.get_default_path``
-  (which it calls) is what also covers the ``default_workspace`` short-circuit
-  above -- a user with a default workspace never reaches ``get_default_path``.
-* ``frappe.utils.oauth.redirect_post_login`` -- social / SSO logins, which
-  issue their own HTTP redirect and ignore ``response["home_page"]`` entirely.
-* ``/login`` opened by a session that is *already* signed in -- handled by the
-  ``before_request`` hook :func:`redirect_signed_in_login_page`, because
-  frappe's own ``www/login.py`` sends those to ``get_default_path() or "/app"``.
+* **The credential and ``/api/method/login`` flow.** The login runs inside
+  ``HTTPRequest()``, which ``frappe.app.init_request`` builds *before* it runs
+  the ``before_request`` hooks -- so by the time this module gets control the
+  login has already happened and written ``response["home_page"]``.
+  :func:`_override_login_response` rewrites that value, which is still sitting
+  in ``frappe.local.response`` and does not reach the client until
+  ``build_response`` runs at the end of the request; ``handler.handle`` skips
+  ``execute_cmd`` for ``cmd == "login"``, so nothing in between touches it.
+  Rewriting the response also covers the ``default_workspace`` short-circuit
+  above, which never consults ``get_default_path``.
+* **Social / SSO and email-link logins**, which sign the user in later in the
+  same request, inside the handler, and then issue their own HTTP redirect
+  without looking at ``response["home_page"]``. Those need
+  ``frappe.utils.oauth.redirect_post_login`` wrapped, and
+  :func:`_install_oauth_wrapper` does it from here -- ``before_request`` still
+  runs ahead of the handler, so the wrapper is always in place in time.
+* **``/login`` opened by a session that is already signed in**, which frappe's
+  own ``www/login.py`` sends to ``get_default_path() or "/app"``.
+  :func:`_redirect_signed_in_login_page` gets in first.
 
-Why this installs at import time
---------------------------------
-``frappe.app.init_request`` builds ``HTTPRequest()`` -- which runs the entire
-login, ``set_user_info`` included -- *before* it runs the ``before_request``
-hooks. Installing the ``set_user_info`` wrapper from a ``before_request`` entry
-(the way this app installs its other patches) would therefore miss the very
-login it exists to redirect, once per freshly started worker. :func:`install`
-is called from ``recruitment/__init__.py`` so the wrapper is in place before
-any request is served.
+Why not patch ``LoginManager.set_user_info``
+--------------------------------------------
+An earlier version of this module wrapped it, installed from
+``recruitment/__init__.py`` so the wrapper would be in place before the first
+login. That does not work: **nothing imports the ``recruitment`` package before
+``HTTPRequest()`` runs.** ``frappe.get_hooks`` serves ``hooks.py`` out of the
+Redis cache without importing the app at all, so on a warm cache the package is
+first imported as a side effect of resolving a ``before_request`` hook -- that
+is, *after* the login it was supposed to redirect. The observable result was a
+redirect that silently did nothing on a freshly started worker and started
+working once that worker had served one request. Rewriting the response needs
+no patch and no import timing at all.
 
 Turning it off
 --------------
@@ -67,7 +79,7 @@ Deliberately left alone
 * Website Users -- not desk users, and frappe already routes them through
   ``get_home_page()``.
 * A ``?redirect-to=`` deep link -- ``login.js`` already gives that precedence
-  over ``home_page``, and :func:`redirect_signed_in_login_page` stands down for
+  over ``home_page``, and :func:`_redirect_signed_in_login_page` stands down for
   it too, so a link into a specific page still works.
 * Roles named in ``role_home_page`` other than ``System User`` -- see
   :func:`_role_home_page_route`.
@@ -104,14 +116,37 @@ _OAUTH_IMPORTERS = ("frappe.utils.oauth", "frappe.www.login")
 _WRAPPED_FLAG = "_webapp_login_redirect_wrapped"
 
 
-def install():
-    """Wrap the login redirect sites.
+def on_before_request():
+    """``before_request`` hook -- the only entry point into this module.
 
-    Idempotent: a second call is a no-op, so it is safe to run from
-    ``recruitment/__init__.py`` on every worker import.
+    Order matters: the OAuth wrapper goes in first because the handler that
+    would use it runs later in this same request; then the response rewrite for
+    a credential login that has *already* happened inside ``HTTPRequest()``;
+    then the ``/login`` redirect, which signals by raising.
     """
-    _wrap_set_user_info()
-    _wrap_redirect_post_login()
+    try:
+        _install_oauth_wrapper()
+        _override_login_response()
+    except Exception:
+        # A landing page is never worth failing a login over.
+        _log_failure("Webapp login redirect failed")
+
+    # Deliberately outside the guard above: this one reports success by raising
+    # a redirect, which must not be swallowed as an error.
+    _redirect_signed_in_login_page()
+
+
+def _log_failure(title):
+    """Never let logging a failure become the failure.
+
+    This runs inside the login request, where an Error Log insert of its own can
+    fail; an exception escaping here would turn a cosmetic problem into a user
+    who cannot sign in.
+    """
+    try:
+        frappe.log_error(title=title)
+    except Exception:
+        pass
 
 
 # --- where should this session land? ---------------------------------------
@@ -233,46 +268,32 @@ def _launcher_bans_portal(user):
     return APP_NAME in hidden_apps()
 
 
-# --- patches ---------------------------------------------------------------
+# --- the credential / API login ---------------------------------------------
 
 
-def _wrap_set_user_info():
-    """Force ``response["home_page"]`` after frappe has picked the Desk.
+def _override_login_response():
+    """Rewrite the ``home_page`` that a just-completed login wrote.
 
-    Wrapping rather than replacing keeps everything else ``set_user_info`` does
-    -- the cookies, ``full_name``, the ``redirect_after_login`` cache -- intact.
+    ``response["message"] == "Logged In"`` is set by ``set_user_info`` only for a
+    non-Website-User login that is not a session resume, so it identifies
+    exactly the case worth acting on -- an ordinary authenticated request leaves
+    ``message`` unset. The value is still server-side at this point (``login.js``
+    reads it from the JSON built at the end of the request), so replacing it is
+    indistinguishable from frappe having chosen the portal itself.
     """
-    from frappe.auth import LoginManager
-
-    orig = LoginManager.set_user_info
-    if getattr(orig, _WRAPPED_FLAG, False):
+    response = getattr(frappe.local, "response", None)
+    if not response or response.get("message") != "Logged In":
         return
 
-    @functools.wraps(orig)
-    def set_user_info(self, resume=False):
-        orig(self, resume=resume)
-
-        # A resumed session is not a login, and frappe writes no home_page for
-        # one. /login reached by such a session is handled by the
-        # before_request hook below instead.
-        if resume:
-            return
-
-        try:
-            route = landing_route(user_type=(self.info or {}).get("user_type"))
-        except Exception:
-            # Never let the landing page decide whether someone can log in.
-            frappe.log_error(title="Webapp login redirect failed")
-            return
-
-        if route:
-            frappe.local.response["home_page"] = route
-
-    setattr(set_user_info, _WRAPPED_FLAG, True)
-    LoginManager.set_user_info = set_user_info
+    route = landing_route()
+    if route:
+        response["home_page"] = route
 
 
-def _wrap_redirect_post_login():
+# --- social / SSO logins ----------------------------------------------------
+
+
+def _install_oauth_wrapper():
     """Cover social / SSO logins.
 
     ``frappe.utils.oauth.login_oauth_user`` finishes with
@@ -292,7 +313,7 @@ def _wrap_redirect_post_login():
             try:
                 route = landing_route()
             except Exception:
-                frappe.log_error(title="Webapp login redirect failed (oauth)")
+                _log_failure("Webapp login redirect failed (oauth)")
                 route = None
 
             if route:
@@ -338,14 +359,13 @@ class _TemporaryRedirect(RequestRedirect):
     code = 302
 
 
-def redirect_signed_in_login_page():
-    """``before_request``: send an already-signed-in System User who opens
-    ``/login`` to the portal.
+def _redirect_signed_in_login_page():
+    """Send an already-signed-in user who opens ``/login`` to the portal.
 
     Frappe's ``www/login.py`` redirects such a request to
-    ``get_default_path() or "/app"`` -- the Desk. This gets in first. It cannot
-    be folded into the ``set_user_info`` wrapper because no login happens here:
-    the session is resumed, and a resume writes no ``home_page``.
+    ``get_default_path() or "/app"`` -- the Desk. This gets in first. It is
+    separate from :func:`_override_login_response` because no login happens
+    here: the session is resumed, and a resume writes no ``home_page``.
 
     Only ``/login`` itself is matched. The credential POST goes to
     ``/api/method/login`` and is untouched.
@@ -364,7 +384,7 @@ def redirect_signed_in_login_page():
     try:
         route = landing_route()
     except Exception:
-        frappe.log_error(title="Webapp login redirect failed (/login)")
+        _log_failure("Webapp login redirect failed (/login)")
         return
 
     if not route:

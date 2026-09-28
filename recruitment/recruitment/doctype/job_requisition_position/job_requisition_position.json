@@ -11,6 +11,7 @@
   "position_type",
   "job_id",
   "functional_area",
+  "employee_type",
   "designation_alias",
   "location",
   "candidate",
@@ -56,6 +57,13 @@
    "in_list_view": 1,
    "label": "Functional Area",
    "options": "Functional Area"
+  },
+  {
+   "fieldname": "employee_type",
+   "fieldtype": "Link",
+   "label": "Employee Type",
+   "options": "Employment Type",
+   "read_only": 1
   },
   {
    "fieldname": "designation_alias",
@@ -110,7 +118,7 @@
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2026-09-22 18:48:09.948081",
+ "modified": "2026-09-28 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "Job Requisition Position",

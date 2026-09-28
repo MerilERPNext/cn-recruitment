@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React from "react";
 import { Typography } from "../shared/atoms/Typography";
 import Button from "../shared/atoms/Button";
@@ -24,11 +25,26 @@ import { useLoadingOverlay } from "../../context/OverlayContext";
 import { computeAddSlideBounds, computeSlideDateBounds } from "../../utils/slideDateBounds";
 import { historyFieldLabel } from "../../utils/historyFieldLabel";
 import { errorResponseFormater } from "../../utils/errorResponseFormater";
+import { useScreenSize } from "../../hooks/useScreenSize";
+import { MobileTabDropdown } from "../EmployeeProfile/MobileTabDropdown";
 import toast from "react-hot-toast";
+
+// eslint-disable-next-line react-refresh/only-export-components
+export const EMPLOYMENT_HISTORY_SUBSECTIONS = [
+  { key: "joining_history", label: "Employee Joining History" },
+  { key: "work_role", label: "Work History" },
+  { key: "employee_role", label: "Employment Roles" },
+  { key: "employment_type", label: "Employment Type" },
+  { key: "work_location", label: "Work Locations" },
+  { key: "cost_center", label: "Cost Center" },
+  { key: "segments", label: "Segments" },
+];
 
 interface EmploymentHistoryProps {
   employeeId: string | undefined;
   onActionSuccess?: (subSectionId?: string) => void;
+  activeSubSection?: string;
+  onActiveSubSectionChange?: (key: string) => void;
 }
 
 export interface CustomWorkHistory {
@@ -37,7 +53,6 @@ export interface CustomWorkHistory {
   records: string;
   start_date: string | null;
   end_date: string | null;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [key: string]: any;
 }
 
@@ -46,16 +61,23 @@ export interface Employee {
   date_of_joining?: string;
   custom_work_history?: CustomWorkHistory[];
   work_roles?: WorkRole[];
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [key: string]: any;
 }
 
 const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
   employeeId,
   onActionSuccess,
+  activeSubSection,
+  onActiveSubSectionChange,
 }) => {
-  const { data, isLoading, error } = useGetEmploymentHistoryData(employeeId || "")
-  const { data: employeePreviousDetails } = useGetEmployeePreviousDetails(employeeId || "")
+  const { isDesktop } = useScreenSize();
+  const [internalMobileSubSection, setInternalMobileSubSection] = React.useState("joining_history");
+  const mobileSubSection = (activeSubSection !== undefined && activeSubSection !== "")
+    ? activeSubSection
+    : internalMobileSubSection;
+  const setMobileSubSection = onActiveSubSectionChange || setInternalMobileSubSection;
+  const { data, isLoading, error } = useGetEmploymentHistoryData(employeeId || "");
+  const { data: employeePreviousDetails } = useGetEmployeePreviousDetails(employeeId || "");
 
   const flattenPreviousJoiningHistory = (
     node: EmployeePreviousDetailNode | null,
@@ -154,7 +176,6 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
   const [editItem, setEditItem] = React.useState<WorkRole | WorkLocation | EmploymentTypes | EmployeeRole | EmployeeCostCenter | null>(null);
   const [editType, setEditType] = React.useState<"work_role" | "work_location" | "employment_type" | "employee_role" | "cost_center">("work_role");
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleEditCard = (item: any, type: "work_role" | "work_location" | "employment_type" | "employee_role" | "cost_center" = "work_role") => {
     setEditItem(item);
     setEditType(type);
@@ -173,7 +194,6 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
   // disallow overlaps with neighbouring slides and any date before the joining
   // date. On ADD the new slide starts after the newest existing slide and runs
   // to "Present", so its end date is read-only.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const activeSectionList: any[] =
     editType === "work_location" ? workLocation
       : editType === "employment_type" ? employmentTypes
@@ -193,34 +213,25 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
   const handleFormSuccess = () => {
     const subSection = editType;
     handleCloseModal();
+    setMobileSubSection(subSection);
     onActionSuccess?.(subSection);
   };
 
   return (
     <div className="address-form-container bg-white rounded-md">
-      <div className="px-0 md:px-6 py-2 md:p-8">
-        <div className="flex items-start justify-between border-b border-gray-200 pb-2 mb-4 md:pb-4 md:mb-8 rounded-md ">
-          <div>
-            <Typography variant="h4" className="font-bold text-gray-900 mb-2 text-xl sm:text-2xl">
-              Employment History
-            </Typography>
-            <Typography variant="bodyMedium" color="body2" className="max-sm:text-sm">
-              Your employment history and organizational information
-            </Typography>
+      <div className="px-0 md:px-6 py-0 md:p-8">
+        {isDesktop && (
+          <div className="flex items-start justify-between border-b border-gray-200 pb-2 mb-4 md:pb-4 md:mb-8 rounded-md">
+            <div>
+              <Typography variant="h4" className="font-bold text-gray-900 mb-2 text-xl sm:text-2xl">
+                Employment History
+              </Typography>
+              <Typography variant="bodyMedium" color="body2" className="max-sm:text-sm">
+                Your employment history and organizational information
+              </Typography>
+            </div>
           </div>
-          {/* <div className="flex">
-            {canAddEmploymentHistory && (
-              <Button
-                onClick={() => setIsModalOpen(true)}
-                icon={<PlusIcon className="h-4 w-4" />}
-                variant="contain"
-                size="md"
-              >
-                Add
-              </Button>
-            )}
-          </div> */}
-        </div>
+        )}
         {!employeeId && (
           <p className="p-4 text-gray-500">No employee selected</p>
         )}
@@ -253,259 +264,318 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
         )}
         {!isLoading && !error && employeeId && (
           <>
-            <div className="flex flex-col gap-2 mt-6">
-              <div className="flex items-center justify-between">
-                <Typography variant="h4" className="font-bold text-gray-900 text-lg">
-                  Employee Joining History
-                </Typography>
-              </div>
-              {previousJoiningHistory.length > 0 ? (
-                <div className="flex gap-2 overflow-auto">
-                  {previousJoiningHistory.map((item) => (
-                    <div
-                      key={item.employee + item.date_of_joining}
-                      className={`${previousJoiningHistory.length === 1 ? "max-w-md w-full" : ""}`}
-                    >
-                      <EmployeePreviousJoiningCard
-                        employee={item.employee}
-                        employee_name={item.employee_name}
-                        designation={item.designation}
-                        company_name={item.company_name}
-                        department_name={item.department_name}
-                        location_name={item.location_name}
-                        date_of_joining={item.date_of_joining}
-                        relieving_date={item.relieving_date}
-                        image={item?.image}
-                      />
-                    </div>
-                  ))}
+            {!isDesktop && !onActiveSubSectionChange && (
+              <MobileTabDropdown
+                label="Sub-Section"
+                options={EMPLOYMENT_HISTORY_SUBSECTIONS}
+                value={mobileSubSection}
+                onChange={(key) => setMobileSubSection(key)}
+                variant="neutral"
+                stickyTopClass="top-[149px]"
+                className="mb-3"
+                zIndex={15}
+              />
+            )}
+
+            <div className={isDesktop ? "" : "px-4 pb-4"}>
+            {(isDesktop || mobileSubSection === "joining_history") && (
+              <div className="flex flex-col gap-2 mt-2 md:mt-6">
+                <div className="flex items-center justify-between">
+                  <Typography variant="h4" className="font-bold text-gray-900 text-lg">
+                    Employee Joining History
+                  </Typography>
                 </div>
-              ) : (
-                <NoDataFound title="No Employee Joining History" subtitle="No employee joining history records found." />
-              )}
-            </div>
-            <div className="flex flex-col gap-2" data-subsection="work_role">
-              <div className="flex items-center justify-between">
-                <Typography variant="h4" className="font-bold text-gray-900 text-lg">
-                  Work History
-                </Typography>
-                {canAddEmploymentHistory && (
-                  <Button onClick={() => handleAddCard("work_role")} icon={<PlusIcon className="h-4 w-4" />} variant="contain" size="md">
-                    Add
-                  </Button>
+                {previousJoiningHistory.length > 0 ? (
+                  <div className="flex gap-2 overflow-auto">
+                    {previousJoiningHistory.map((item) => (
+                      <div
+                        key={item.employee + item.date_of_joining}
+                        className={`${previousJoiningHistory.length === 1 ? "max-w-md w-full" : ""}`}
+                      >
+                        <EmployeePreviousJoiningCard
+                          employee={item.employee}
+                          employee_name={item.employee_name}
+                          designation={item.designation}
+                          company_name={item.company_name}
+                          department_name={item.department_name}
+                          location_name={item.location_name}
+                          date_of_joining={item.date_of_joining}
+                          relieving_date={item.relieving_date}
+                          image={item?.image}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <NoDataFound title="No Employee Joining History" subtitle="No employee joining history records found." />
                 )}
               </div>
-              {history.length > 0 ? (
-                <div className="flex gap-2 overflow-auto">
-                  {history.map((item) => (
-                    <div
-                      key={item?.from_date + item?.designation?.id}
-                      className={`${history.length === 1 ? "max-w-md w-full" : ""}`}
-                    >
-                      <EmploymentHistoryCard
-                        company={historyFieldLabel(item.company, "")}
-                        department={historyFieldLabel(item.department, "")}
-                        band={historyFieldLabel(item.band, "")}
-                        grade={historyFieldLabel(item.grade, "")}
-                        start_date={item.from_date}
-                        end_date={item.to_date}
-                        isCurrent={item.is_current}
-                        functionalArea={historyFieldLabel(item?.functional_area, "")}
-                        is_promotion={item.is_promotion}
-                        designation={historyFieldLabel(item?.designation, "")}
-                        onEdit={(canEditEmploymentHistory && item.can_edit !== false) ? () => handleEditCard(item) : undefined}
-                        onDelete={(canDeleteEmploymentHistory && item.can_delete) ? () => setPendingDelete({ type: "history", names: collectRowNames(item as unknown as Record<string, unknown>), subSection: "work_role" }) : undefined}
-                      />
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <NoDataFound title="No Work History" subtitle="No work history records have been added yet." />
-              )}
-            </div>
+            )}
 
-            <div className="flex flex-col gap-2 mt-6" data-subsection="employee_role">
-              <div className="flex items-center justify-between">
-                <Typography variant="h4" className="font-bold text-gray-900 text-lg">
-                  Employment Roles
-                </Typography>
-                {canAddEmploymentHistory && (
-                  <Button onClick={() => handleAddCard("employee_role")} icon={<PlusIcon className="h-4 w-4" />} variant="contain" size="md">
-                    Add
-                  </Button>
+            {(isDesktop || mobileSubSection === "work_role") && (
+              <div className="flex flex-col gap-2 mt-2 md:mt-6" data-subsection="work_role">
+                <div className="flex items-center justify-between">
+                  <Typography variant="h4" className="font-bold text-gray-900 text-lg">
+                    Work History
+                  </Typography>
+                  {canAddEmploymentHistory && (
+                    <Button
+                      onClick={() => handleAddCard("work_role")}
+                      icon={<PlusIcon className="h-4 w-4" />}
+                      variant="contain"
+                      size="md"
+                      className={isDesktop ? "!hidden md:!inline-flex" : ""}
+                    >
+                      Add
+                    </Button>
+                  )}
+                </div>
+                {history.length > 0 ? (
+                  <div className="flex gap-2 overflow-auto">
+                    {history.map((item) => (
+                      <div
+                        key={item?.from_date + item?.designation?.id}
+                        className={`${history.length === 1 ? "max-w-md w-full" : ""}`}
+                      >
+                        <EmploymentHistoryCard
+                          company={historyFieldLabel(item.company, "")}
+                          department={historyFieldLabel(item.department, "")}
+                          band={historyFieldLabel(item.band, "")}
+                          grade={historyFieldLabel(item.grade, "")}
+                          start_date={item.from_date}
+                          end_date={item.to_date}
+                          isCurrent={item.is_current}
+                          functionalArea={historyFieldLabel(item?.functional_area, "")}
+                          is_promotion={item.is_promotion}
+                          designation={historyFieldLabel(item?.designation, "")}
+                          onEdit={(canEditEmploymentHistory && item.can_edit !== false) ? () => handleEditCard(item) : undefined}
+                          onDelete={(canDeleteEmploymentHistory && item.can_delete) ? () => setPendingDelete({ type: "history", names: collectRowNames(item as unknown as Record<string, unknown>), subSection: "work_role" }) : undefined}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <NoDataFound title="No Work History" subtitle="No work history records have been added yet." />
                 )}
               </div>
-              {employeeRoles.length > 0 ? (
-                <div className="flex gap-2 overflow-auto">
-                  {employeeRoles.map((item) => (
-                    <div
-                      key={item.from_date + item?.to_date}
-                      className={`${employeeRoles.length === 1 ? "max-w-md w-full" : ""}`}
-                    >
-                      <EmployeeRolesCard
-                        from_date={item.from_date}
-                        to_date={item.to_date}
-                        is_current={item.is_current}
-                        is_promotion={item.is_promotion}
-                        employee_role={item.employee_role}
-                        onEdit={(canEditEmploymentHistory && item.can_edit !== false) ? () => handleEditCard(item, "employee_role") : undefined}
-                        onDelete={(canDeleteEmploymentHistory && item.can_delete) ? () => {
-                          const names = [item.employee_role?.row_name].filter(Boolean) as string[];
-                          setPendingDelete({ type: "history", names, subSection: "employee_role" });
-                        } : undefined}
-                      />
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <NoDataFound title="No Employment Roles" subtitle="No employment role records have been added yet." />
-              )}
-            </div>
+            )}
 
-            <div className="flex flex-col gap-2 mt-6" data-subsection="employment_type">
-              <div className="flex items-center justify-between">
-                <Typography variant="h4" className="font-bold text-gray-900 text-lg">
-                  Employment Type
-                </Typography>
-                {canAddEmploymentHistory && (
-                  <Button onClick={() => handleAddCard("employment_type")} icon={<PlusIcon className="h-4 w-4" />} variant="contain" size="md">
-                    Add
-                  </Button>
+            {(isDesktop || mobileSubSection === "employee_role") && (
+              <div className="flex flex-col gap-2 mt-2 md:mt-6" data-subsection="employee_role">
+                <div className="flex items-center justify-between">
+                  <Typography variant="h4" className="font-bold text-gray-900 text-lg">
+                    Employment Roles
+                  </Typography>
+                  {canAddEmploymentHistory && (
+                    <Button
+                      onClick={() => handleAddCard("employee_role")}
+                      icon={<PlusIcon className="h-4 w-4" />}
+                      variant="contain"
+                      size="md"
+                      className={isDesktop ? "!hidden md:!inline-flex" : ""}
+                    >
+                      Add
+                    </Button>
+                  )}
+                </div>
+                {employeeRoles.length > 0 ? (
+                  <div className="flex gap-2 overflow-auto">
+                    {employeeRoles.map((item) => (
+                      <div
+                        key={item.from_date + item?.to_date}
+                        className={`${employeeRoles.length === 1 ? "max-w-md w-full" : ""}`}
+                      >
+                        <EmployeeRolesCard
+                          from_date={item.from_date}
+                          to_date={item.to_date}
+                          is_current={item.is_current}
+                          is_promotion={item.is_promotion}
+                          employee_role={item.employee_role}
+                          onEdit={(canEditEmploymentHistory && item.can_edit !== false) ? () => handleEditCard(item, "employee_role") : undefined}
+                          onDelete={(canDeleteEmploymentHistory && item.can_delete) ? () => {
+                            const names = [item.employee_role?.row_name].filter(Boolean) as string[];
+                            setPendingDelete({ type: "history", names, subSection: "employee_role" });
+                          } : undefined}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <NoDataFound title="No Employment Roles" subtitle="No employment role records have been added yet." />
                 )}
               </div>
-              {employmentTypes.length > 0 ? (
-                <div className="flex gap-2 overflow-auto">
-                  {employmentTypes.map((item) => (
-                    <div
-                      key={item.from_date + item?.to_date}
-                      className={`${employmentTypes.length === 1 ? "max-w-md w-full" : ""}`}
-                    >
-                      <EmploymentTypesCard
-                        from_date={item.from_date}
-                        to_date={item.to_date}
-                        is_current={item.is_current}
-                        is_promotion={item.is_promotion}
-                        employment_type={item.employment_type}
-                        employee_subtype={item.employee_subtype}
-                        onEdit={(canEditEmploymentHistory && item.can_edit !== false) ? () => handleEditCard(item, "employment_type") : undefined}
-                        onDelete={(canDeleteEmploymentHistory && item.can_delete) ? () => {
-                          const names = [item.employment_type?.row_name, item.employee_subtype?.row_name].filter(Boolean) as string[];
-                          setPendingDelete({ type: "history", names, subSection: "employment_type" });
-                        } : undefined}
-                      />
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <NoDataFound title="No Employment Types" subtitle="No employment type records have been added yet." />
-              )}
-            </div>
+            )}
 
-            <div className="flex flex-col gap-2 mt-6" data-subsection="work_location">
-              <div className="flex items-center justify-between">
-                <Typography variant="h4" className="font-bold text-gray-900 text-lg">
-                  Work Locations
-                </Typography>
-                {canAddEmploymentHistory && (
-                  <Button onClick={() => handleAddCard("work_location")} icon={<PlusIcon className="h-4 w-4" />} variant="contain" size="md">
-                    Add
-                  </Button>
+            {(isDesktop || mobileSubSection === "employment_type") && (
+              <div className="flex flex-col gap-2 mt-2 md:mt-6" data-subsection="employment_type">
+                <div className="flex items-center justify-between">
+                  <Typography variant="h4" className="font-bold text-gray-900 text-lg">
+                    Employment Type
+                  </Typography>
+                  {canAddEmploymentHistory && (
+                    <Button
+                      onClick={() => handleAddCard("employment_type")}
+                      icon={<PlusIcon className="h-4 w-4" />}
+                      variant="contain"
+                      size="md"
+                      className={isDesktop ? "!hidden md:!inline-flex" : ""}
+                    >
+                      Add
+                    </Button>
+                  )}
+                </div>
+                {employmentTypes.length > 0 ? (
+                  <div className="flex gap-2 overflow-auto">
+                    {employmentTypes.map((item) => (
+                      <div
+                        key={item.from_date + item?.to_date}
+                        className={`${employmentTypes.length === 1 ? "max-w-md w-full" : ""}`}
+                      >
+                        <EmploymentTypesCard
+                          from_date={item.from_date}
+                          to_date={item.to_date}
+                          is_current={item.is_current}
+                          is_promotion={item.is_promotion}
+                          employment_type={item.employment_type}
+                          employee_subtype={item.employee_subtype}
+                          onEdit={(canEditEmploymentHistory && item.can_edit !== false) ? () => handleEditCard(item, "employment_type") : undefined}
+                          onDelete={(canDeleteEmploymentHistory && item.can_delete) ? () => {
+                            const names = [item.employment_type?.row_name, item.employee_subtype?.row_name].filter(Boolean) as string[];
+                            setPendingDelete({ type: "history", names, subSection: "employment_type" });
+                          } : undefined}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <NoDataFound title="No Employment Types" subtitle="No employment type records have been added yet." />
                 )}
               </div>
-              {workLocation.length > 0 ? (
-                <div className="flex gap-2 overflow-auto">
-                  {workLocation.map((item) => (
-                    <div
-                      key={item.from_date + item?.to_date}
-                      className={`${workLocation.length === 1 ? "max-w-md w-full" : ""}`}
-                    >
-                      <EmploymentWorkLocationCard
-                        from_date={item.from_date}
-                        to_date={item.to_date}
-                        is_current={item.is_current}
-                        work_location={item.work_location}
-                        office_area={item.office_area}
-                        country={item.country}
-                        state={item.state}
-                        city={item.city}
-                        onEdit={(canEditEmploymentHistory && item.can_edit !== false) ? () => handleEditCard(item, "work_location") : undefined}
-                        onDelete={(canDeleteEmploymentHistory && item.can_delete) ? () => {
-                          const names = [item.work_location?.row_name].filter(Boolean) as string[];
-                          setPendingDelete({ type: "history", names, subSection: "work_location" });
-                        } : undefined}
-                      />
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <NoDataFound title="No Work Locations" subtitle="No work location records have been added yet." />
-              )}
-            </div>
+            )}
 
-            <div className="flex flex-col gap-2 mt-6" data-subsection="cost_center">
-              <div className="flex items-center justify-between">
-                <Typography variant="h4" className="font-bold text-gray-900 text-lg">
-                  Cost Center
-                </Typography>
-                {canAddEmploymentHistory && (
-                  <Button onClick={() => handleAddCard("cost_center")} icon={<PlusIcon className="h-4 w-4" />} variant="contain" size="md">
-                    Add
-                  </Button>
+            {(isDesktop || mobileSubSection === "work_location") && (
+              <div className="flex flex-col gap-2 mt-2 md:mt-6" data-subsection="work_location">
+                <div className="flex items-center justify-between">
+                  <Typography variant="h4" className="font-bold text-gray-900 text-lg">
+                    Work Locations
+                  </Typography>
+                  {canAddEmploymentHistory && (
+                    <Button
+                      onClick={() => handleAddCard("work_location")}
+                      icon={<PlusIcon className="h-4 w-4" />}
+                      variant="contain"
+                      size="md"
+                      className={isDesktop ? "!hidden md:!inline-flex" : ""}
+                    >
+                      Add
+                    </Button>
+                  )}
+                </div>
+                {workLocation.length > 0 ? (
+                  <div className="flex gap-2 overflow-auto">
+                    {workLocation.map((item) => (
+                      <div
+                        key={item.from_date + item?.to_date}
+                        className={`${workLocation.length === 1 ? "max-w-md w-full" : ""}`}
+                      >
+                        <EmploymentWorkLocationCard
+                          from_date={item.from_date}
+                          to_date={item.to_date}
+                          is_current={item.is_current}
+                          work_location={item.work_location}
+                          office_area={item.office_area}
+                          country={item.country}
+                          state={item.state}
+                          city={item.city}
+                          onEdit={(canEditEmploymentHistory && item.can_edit !== false) ? () => handleEditCard(item, "work_location") : undefined}
+                          onDelete={(canDeleteEmploymentHistory && item.can_delete) ? () => {
+                            const names = [item.work_location?.row_name].filter(Boolean) as string[];
+                            setPendingDelete({ type: "history", names, subSection: "work_location" });
+                          } : undefined}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <NoDataFound title="No Work Locations" subtitle="No work location records have been added yet." />
                 )}
               </div>
-              {costCenters.length > 0 ? (
-                <div className="flex gap-2 overflow-auto">
-                  {costCenters.map((item) => (
-                    <div
-                      key={item.from_date}
-                      className={`${costCenters.length === 1 ? "max-w-md w-full" : ""}`}
-                    >
-                      <EmployeeCostCenterCard
-                        allocations={item.allocations}
-                        from_date={item.from_date}
-                        to_date={item.to_date}
-                        is_current={item.is_current}
-                        onEdit={(canEditEmploymentHistory && item.can_edit !== false) ? () => handleEditCard(item, "cost_center") : undefined}
-                        onDelete={(canDeleteEmploymentHistory && item.can_delete) ? () => {
-                          const names = item.allocations.map((a) => a.row_name).filter(Boolean) as string[];
-                          setPendingDelete({ type: "cost_center", names, subSection: "cost_center" });
-                        } : undefined}
-                      />
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <NoDataFound title="No Cost Centers" subtitle="No cost center records have been added yet." />
-              )}
-            </div>
+            )}
 
-            <div className="flex flex-col gap-2 mt-6">
-              <div className="flex items-center justify-between">
-                <Typography variant="h4" className="font-bold text-gray-900 text-lg">
-                  Segments
-                </Typography>
-              </div>
-              {segmentTotals.length > 0 ? (
-                <div className="flex gap-2 overflow-auto">
-                  {segmentTotals.map((item) => (
-                    <div
-                      key={item.from_date}
-                      className={`${segmentTotals.length === 1 ? "max-w-md w-full" : ""}`}
+            {(isDesktop || mobileSubSection === "cost_center") && (
+              <div className="flex flex-col gap-2 mt-2 md:mt-6" data-subsection="cost_center">
+                <div className="flex items-center justify-between">
+                  <Typography variant="h4" className="font-bold text-gray-900 text-lg">
+                    Cost Center
+                  </Typography>
+                  {canAddEmploymentHistory && (
+                    <Button
+                      onClick={() => handleAddCard("cost_center")}
+                      icon={<PlusIcon className="h-4 w-4" />}
+                      variant="contain"
+                      size="md"
+                      className={isDesktop ? "!hidden md:!inline-flex" : ""}
                     >
-                      <EmploymentSegmentsCard
-                        from_date={item.from_date}
-                        to_date={item.to_date}
-                        is_current={item.is_current}
-                        segment_totals={item.segment_totals}
-                        total_percentage={item.total_percentage}
-                      />
-                    </div>
-                  ))}
+                      Add
+                    </Button>
+                  )}
                 </div>
-              ) : (
-                <NoDataFound title="No Segments" subtitle="No segment records have been added yet." />
-              )}
-            </div>
+                {costCenters.length > 0 ? (
+                  <div className="flex gap-2 overflow-auto">
+                    {costCenters.map((item) => (
+                      <div
+                        key={item.from_date}
+                        className={`${costCenters.length === 1 ? "max-w-md w-full" : ""}`}
+                      >
+                        <EmployeeCostCenterCard
+                          allocations={item.allocations}
+                          from_date={item.from_date}
+                          to_date={item.to_date}
+                          is_current={item.is_current}
+                          onEdit={(canEditEmploymentHistory && item.can_edit !== false) ? () => handleEditCard(item, "cost_center") : undefined}
+                          onDelete={(canDeleteEmploymentHistory && item.can_delete) ? () => {
+                            const names = item.allocations.map((a) => a.row_name).filter(Boolean) as string[];
+                            setPendingDelete({ type: "cost_center", names, subSection: "cost_center" });
+                          } : undefined}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <NoDataFound title="No Cost Centers" subtitle="No cost center records have been added yet." />
+                )}
+              </div>
+            )}
+
+            {(isDesktop || mobileSubSection === "segments") && (
+              <div className="flex flex-col gap-2 mt-2 md:mt-6">
+                <div className="flex items-center justify-between">
+                  <Typography variant="h4" className="font-bold text-gray-900 text-lg">
+                    Segments
+                  </Typography>
+                </div>
+                {segmentTotals.length > 0 ? (
+                  <div className="flex gap-2 overflow-auto">
+                    {segmentTotals.map((item) => (
+                      <div
+                        key={item.from_date}
+                        className={`${segmentTotals.length === 1 ? "max-w-md w-full" : ""}`}
+                      >
+                        <EmploymentSegmentsCard
+                          from_date={item.from_date}
+                          to_date={item.to_date}
+                          is_current={item.is_current}
+                          segment_totals={item.segment_totals}
+                          total_percentage={item.total_percentage}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <NoDataFound title="No Segments" subtitle="No segment records have been added yet." />
+                )}
+              </div>
+            )}
 
             {/* <div className="flex flex-col gap-2 mt-6">
               <div className="flex items-center justify-between">
@@ -539,6 +609,7 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
             </div> */}
 
 
+            </div>
           </>
         )}
 

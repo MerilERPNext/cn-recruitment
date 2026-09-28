@@ -476,7 +476,8 @@ doc_events = {
             "recruitment.customizations.job_offer.set_offer_region",
             # The position this offer consumes must belong to the offer's
             # requisition and still be free. Runs before save so a stale pick is
-            # rejected rather than silently claiming the wrong row.
+            # rejected rather than silently claiming the wrong row. Also takes the
+            # offer's Employee Type from the position picked.
             "recruitment.api.offer_position.validate_position_choice",
             # Every salary figure's "(In Words)" field follows the figure.
             "recruitment.customizations.job_offer.set_salary_in_words",
@@ -970,12 +971,13 @@ override_doctype_class = {
 # Request Events
 # ----------------
 before_request = [
-	# Send an already-signed-in System User who opens /login to /webapp rather
-	# than frappe's Desk default. Only this one leg of the portal redirect is a
-	# before_request hook -- the login itself is redirected by a patch installed
-	# from recruitment/__init__.py, because init_request runs LoginManager
-	# before it runs these hooks. See recruitment/recruitment/login_redirect.py.
-	"recruitment.recruitment.login_redirect.redirect_signed_in_login_page",
+	# Land employees on /webapp instead of the Desk. init_request runs the whole
+	# login (HTTPRequest -> LoginManager) before it runs these hooks, so this
+	# rewrites the home_page the login already chose rather than patching it --
+	# the value is still server-side until the response is built. Also covers
+	# SSO and /login reached by an already-signed-in session.
+	# See recruitment/recruitment/login_redirect.py.
+	"recruitment.recruitment.login_redirect.on_before_request",
 ]
 # after_request = ["recruitment.utils.after_request"]
 
