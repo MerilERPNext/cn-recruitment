@@ -1,10 +1,15 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { useEffect, useMemo, useState } from "react";
 import {
   useMutation,
   useQuery,
   useQueryClient,
   UseQueryResult,
 } from "@tanstack/react-query";
+import {
+  calculateCheckInSummary,
+  getTodayAttendanceFilters,
+} from "../utils/attendanceSummaryUtils";
 import {
   attendanceService,
   getAllAttendancePolicies,
@@ -98,6 +103,32 @@ export const useHomeSummaryDetails = (
     ...defaultQueryOptions,
   });
 };
+
+export const useTodayAttendanceSummary = (
+  userId?: string,
+  standardWorkingHours?: number,
+) => {
+  const { encodedFilters } = useMemo(() => getTodayAttendanceFilters(), []);
+  const query = useHomeSummaryDetails(userId || "", encodedFilters);
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(new Date()), 60000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const summary = useMemo(() => {
+    return calculateCheckInSummary(query.data, currentTime, standardWorkingHours);
+  }, [query.data, currentTime, standardWorkingHours]);
+
+  return {
+    ...query,
+    homeSummary: query.data,
+    currentTime,
+    ...summary,
+  };
+};
+
 export const usePolicyVisibilityFlags = (): UseQueryResult<any, Error> => {
   return useQuery<any, Error>({
     queryKey: ["policy-visibility-flags"],

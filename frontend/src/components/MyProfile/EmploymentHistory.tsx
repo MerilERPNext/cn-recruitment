@@ -25,6 +25,7 @@ import { computeAddSlideBounds, computeSlideDateBounds } from "../../utils/slide
 import { historyFieldLabel } from "../../utils/historyFieldLabel";
 import { errorResponseFormater } from "../../utils/errorResponseFormater";
 import toast from "react-hot-toast";
+import { useScreenSize } from "../../hooks/useScreenSize";
 
 interface EmploymentHistoryProps {
   employeeId: string | undefined;
@@ -54,6 +55,7 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
   employeeId,
   onActionSuccess,
 }) => {
+  const { isDesktop } = useScreenSize();
   const { data, isLoading, error } = useGetEmploymentHistoryData(employeeId || "")
   const { data: employeePreviousDetails } = useGetEmployeePreviousDetails(employeeId || "")
 
@@ -289,8 +291,14 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
                 <Typography variant="h4" className="font-bold text-gray-900 text-lg">
                   Work History
                 </Typography>
-                {canAddEmploymentHistory && (
-                  <Button onClick={() => handleAddCard("work_role")} icon={<PlusIcon className="h-4 w-4" />} variant="contain" size="md">
+                {isDesktop && canAddEmploymentHistory && (
+                  <Button
+                    onClick={() => handleAddCard("work_role")}
+                    icon={<PlusIcon className="h-4 w-4" />}
+                    variant="contain"
+                    size="md"
+                    className="!hidden md:!inline-flex"
+                  >
                     Add
                   </Button>
                 )}
@@ -329,8 +337,14 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
                 <Typography variant="h4" className="font-bold text-gray-900 text-lg">
                   Employment Roles
                 </Typography>
-                {canAddEmploymentHistory && (
-                  <Button onClick={() => handleAddCard("employee_role")} icon={<PlusIcon className="h-4 w-4" />} variant="contain" size="md">
+                {isDesktop && canAddEmploymentHistory && (
+                  <Button
+                    onClick={() => handleAddCard("employee_role")}
+                    icon={<PlusIcon className="h-4 w-4" />}
+                    variant="contain"
+                    size="md"
+                    className="!hidden md:!inline-flex"
+                  >
                     Add
                   </Button>
                 )}
@@ -367,8 +381,14 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
                 <Typography variant="h4" className="font-bold text-gray-900 text-lg">
                   Employment Type
                 </Typography>
-                {canAddEmploymentHistory && (
-                  <Button onClick={() => handleAddCard("employment_type")} icon={<PlusIcon className="h-4 w-4" />} variant="contain" size="md">
+                {isDesktop && canAddEmploymentHistory && (
+                  <Button
+                    onClick={() => handleAddCard("employment_type")}
+                    icon={<PlusIcon className="h-4 w-4" />}
+                    variant="contain"
+                    size="md"
+                    className="!hidden md:!inline-flex"
+                  >
                     Add
                   </Button>
                 )}
@@ -406,8 +426,14 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
                 <Typography variant="h4" className="font-bold text-gray-900 text-lg">
                   Work Locations
                 </Typography>
-                {canAddEmploymentHistory && (
-                  <Button onClick={() => handleAddCard("work_location")} icon={<PlusIcon className="h-4 w-4" />} variant="contain" size="md">
+                {isDesktop && canAddEmploymentHistory && (
+                  <Button
+                    onClick={() => handleAddCard("work_location")}
+                    icon={<PlusIcon className="h-4 w-4" />}
+                    variant="contain"
+                    size="md"
+                    className="!hidden md:!inline-flex"
+                  >
                     Add
                   </Button>
                 )}
@@ -447,8 +473,14 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
                 <Typography variant="h4" className="font-bold text-gray-900 text-lg">
                   Cost Center
                 </Typography>
-                {canAddEmploymentHistory && (
-                  <Button onClick={() => handleAddCard("cost_center")} icon={<PlusIcon className="h-4 w-4" />} variant="contain" size="md">
+                {isDesktop && canAddEmploymentHistory && (
+                  <Button
+                    onClick={() => handleAddCard("cost_center")}
+                    icon={<PlusIcon className="h-4 w-4" />}
+                    variant="contain"
+                    size="md"
+                    className="!hidden md:!inline-flex"
+                  >
                     Add
                   </Button>
                 )}

@@ -11,7 +11,7 @@ const Overview = () => {
     const { data: userUiPermission } = useGetUiPermission("Profile");
 
     const tabs = [
-        { key: "personal-summary", label: "Personal Summary", permissionKey: "show_personal_summary" },
+        { key: "personal-summary", label: "Profile Summary", permissionKey: "show_personal_summary" },
         { key: "emergency-contact", label: "Emergency Contact", permissionKey: "show_emergency_tab" },
         { key: "org-chart", label: "Organizational Chart", permissionKey: "show_org_chart" },
     ];

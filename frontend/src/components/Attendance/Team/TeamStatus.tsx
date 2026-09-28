@@ -34,6 +34,9 @@ const getStatusBadge = (records: TeamStatusRecord[]) => {
     if (status === "half day") return { label: "Half Day", className: "bg-orange-100 text-orange-700" };
     if (status === "on leave" || targetRecord.leave_type) return { label: "On Leave", className: "bg-amber-100 text-amber-700" };
     if (status === "absent") return { label: "Absent", className: "bg-red-100 text-red-700" };
+    if (status === "weekly off" || status === "week off" || status === "week-off" || status === "weeklyoff" || status === "wo") {
+        return { label: "Weekly Off", className: "bg-purple-100 text-purple-700" };
+    }
     return null;
 };
 
@@ -76,6 +79,14 @@ const DayIcon = ({ record }: { record: TeamStatusRecord }) => {
         return (
             <div className="w-9 h-9 rounded-xl bg-amber-100 flex items-center justify-center">
                 <span className="text-sm font-bold text-amber-500">L</span>
+            </div>
+        );
+    }
+
+    if (status === "weekly off" || status === "week off" || status === "week-off" || status === "weeklyoff" || status === "wo") {
+        return (
+            <div className="w-9 h-9 rounded-xl bg-purple-100 flex items-center justify-center">
+                <span className="text-xs font-bold text-purple-600">WO</span>
             </div>
         );
     }
