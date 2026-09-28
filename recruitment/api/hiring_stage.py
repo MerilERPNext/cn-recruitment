@@ -1814,6 +1814,40 @@ def get_workflow_view(job_applicant):
 
 
 @frappe.whitelist()
+def get_pre_offer_submission(job_applicant):
+	"""What the candidate sent back on the pre-offer form, read-only.
+
+	Backs "View Pre Offer" on the Pre Job Offer stage, including once the stage is
+	behind the candidate: every field with its value and where its approval stands,
+	plus when each round was sent and filled.
+	"""
+	if not job_applicant:
+		frappe.throw(_("job_applicant is required"))
+	frappe.has_permission("Job Applicant", "read", doc=job_applicant, throw=True)
+
+	doc = frappe.get_doc("Job Applicant", job_applicant)
+	return {
+		"rounds": [
+			{"status": r.get("status"), "sent_at": r.get("sent_at"), "filled_at": r.get("filled_at")}
+			for r in (doc.get("custom_pre_offer_forms") or [])
+		],
+		"fields": [
+			{
+				"section": r.get("section_label") or _("General"),
+				"label": r.get("label") or r.get("fieldname"),
+				"fieldtype": r.get("fieldtype"),
+				"value": r.get("current_value"),
+				"approval_status": r.get("approval_status"),
+				"reviewed_by": r.get("reviewed_by"),
+				"reviewed_on": r.get("reviewed_on"),
+				"hr_comment": r.get("hr_comment"),
+			}
+			for r in (doc.get("custom_pre_offer_field_approvals") or [])
+		],
+	}
+
+
+@frappe.whitelist()
 def get_pre_offer_form_preview(job_applicant):
 	"""The pre-offer form as the candidate will receive it, before it is sent.
 

@@ -24,7 +24,7 @@ DOCTYPE = "DPDP Act Settings"
 
 DEFAULTS = {
     "consent_mode": "Internal Form",
-    "consent_start_url": "https://uat-hpcp.homefirstindia.com:8443/hpcp/partner/consent/start",
+    "consent_start_url": "https://uat-hpcp.homefirstindia.com/hpcp/partner/consent/start",
     "org_id": "HRMS",
     "configuration_code": "EMPLOYEE_ONBOARDING",
     "consent_channel": "EMAIL",
@@ -32,7 +32,6 @@ DEFAULTS = {
     "callback_header_name": "X-Consent-Token",
     "return_url_template": "/action-center",
     "session_validity_minutes": 30,
-    "send_urls_in_start_payload": 0,
 }
 
 

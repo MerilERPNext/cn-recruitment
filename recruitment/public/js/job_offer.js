@@ -913,6 +913,10 @@ function choose_offer_position(frm, opts) {
                     const chosen = positions.find((p) => p.name === values.position);
                     frm.set_value("custom_requisition_position", values.position);
                     frm.set_value("custom_position_label", chosen ? chosen.label : "");
+                    // The seat decides the Employee Type (the server does the same on save).
+                    if (chosen && chosen.employee_type) {
+                        frm.set_value("custom_employment_type", chosen.employee_type);
+                    }
                     dialog.hide();
                     frappe.show_alert({
                         message: __("Position set to {0}", [chosen ? chosen.label : values.position]),

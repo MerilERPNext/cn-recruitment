@@ -476,7 +476,8 @@ doc_events = {
             "recruitment.customizations.job_offer.set_offer_region",
             # The position this offer consumes must belong to the offer's
             # requisition and still be free. Runs before save so a stale pick is
-            # rejected rather than silently claiming the wrong row.
+            # rejected rather than silently claiming the wrong row. Also takes the
+            # offer's Employee Type from the position picked.
             "recruitment.api.offer_position.validate_position_choice",
             # Every salary figure's "(In Words)" field follows the figure.
             "recruitment.customizations.job_offer.set_salary_in_words",

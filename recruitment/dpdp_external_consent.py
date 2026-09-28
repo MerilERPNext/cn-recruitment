@@ -78,9 +78,19 @@ DEFAULT_TIMEOUT = 30
 MAX_SESSIONS_PER_HOUR = 5
 
 EXPIRED_STATUSES = {"EXPIRED", "TIMEOUT", "TIMED_OUT"}
+# The journey itself broke (OTP not verified, terminal error on the portal) — distinct
+# from the candidate refusing, and the session is dead either way.
+FAILED_STATUSES = {"FAILED", "FAILURE", "ERROR"}
 
 # Truthy spellings a partner may use for a per-section "accepted" flag sent as text.
-TRUTHY_STRINGS = COMPLETED_STATUSES | {"TRUE", "YES", "Y", "1"}
+# HPCP reports each purpose as ``"decision": "GRANTED"``.
+TRUTHY_STRINGS = COMPLETED_STATUSES | {"GRANTED", "TRUE", "YES", "Y", "1"}
+
+# The only channels the consent-start API accepts.
+CHANNELS = ("EMAIL", "SMS")
+
+# Header HPCP signs webhook bodies in when a webhook secret is configured on its side.
+SIGNATURE_HEADER = "X-HPCP-Signature"
 
 
 # ---------------------------------------------------------------------------
@@ -140,6 +150,21 @@ def _return_url(appl, session_id=None, status=None):
 # Starting a session
 # ---------------------------------------------------------------------------
 
+def _normalize_mobile(value):
+    """The bare 10-digit number the portal requires.
+
+    Job Applicant phone numbers are free text — "+91-98765 43210", "098765 43210" —
+    while the portal rejects anything but ten digits. A country code or trunk zero is
+    stripped; anything that still isn't ten digits is returned as-is for the caller
+    to reject with a message naming the candidate."""
+    digits = re.sub(r"\D", "", cstr(value))
+    if len(digits) == 12 and digits.startswith("91"):
+        digits = digits[2:]
+    elif len(digits) == 11 and digits.startswith("0"):
+        digits = digits[1:]
+    return digits
+
+
 def _applicant_contacts(appl):
     row = frappe.db.get_value(
         "Job Applicant", appl, ["applicant_name", "email_id", "phone_number"], as_dict=True
@@ -149,8 +174,13 @@ def _applicant_contacts(appl):
     return {
         "name": get_full_name(appl) or row.get("applicant_name"),
         "email": cstr(row.get("email_id")).strip(),
-        "mobile": cstr(row.get("phone_number")).strip(),
+        "mobile": _normalize_mobile(row.get("phone_number")),
     }
+
+
+def _channel(settings):
+    channel = cstr(settings.consent_channel).strip().upper()
+    return channel if channel in CHANNELS else "EMAIL"
 
 
 def _live_session(appl):
@@ -185,19 +215,29 @@ def _auth_header(settings):
     return "Basic " + base64.b64encode(raw).decode()
 
 
-def _start_payload(settings, appl, contacts):
+def _start_payload(settings, appl, contacts, session_name):
+    """Body of the consent-start call, per the HPCP partner spec.
+
+    ``externalCustomerRef`` and ``consentId`` are echoed back in the webhook, so they
+    carry our Job Applicant and DPDP Consent Session names — the callback can then
+    be matched even if the portal's sessionId were ever missing. ``redirectUrl`` is
+    per-session (it can carry the candidate's token), which the partner-level default
+    redirect cannot. The webhook URL itself is configured on the portal, not sent."""
     payload = {
         "configurationCode": cstr(settings.configuration_code).strip() or "EMPLOYEE_ONBOARDING",
-        "channel": cstr(settings.consent_channel).strip() or "EMAIL",
+        "channel": _channel(settings),
         "mobile": contacts["mobile"],
         "customerName": contacts["name"],
-        "email": contacts["email"],
+        "externalCustomerRef": appl,
+        "consentId": session_name,
+        "redirectUrl": _return_url(appl),
     }
-    # Some partners take these per-request; others have them pre-configured against
-    # the Configuration Code and reject unknown keys — hence the switch.
-    if cint(settings.send_urls_in_start_payload):
-        payload["callbackUrl"] = callback_url()
-        payload["redirectUrl"] = _return_url(appl)
+    # Only required for EMAIL; a blank value would fail the portal's email-format check.
+    if contacts["email"]:
+        payload["email"] = contacts["email"]
+    secondary = cstr(settings.secondary_url).strip()
+    if secondary:
+        payload["secondaryUrl"] = secondary
     return payload
 
 
@@ -270,8 +310,8 @@ def _create_session(appl):
     # The portal validates mobile on every channel, not just SMS — an EMAIL session
     # with a blank mobile comes back "Mobile is required". Checking here names the
     # candidate and the field to fix, instead of surfacing the partner's generic error.
-    channel = cstr(settings.consent_channel).strip().upper() or "EMAIL"
-    if not contacts["email"] and channel in ("EMAIL", "BOTH"):
+    channel = _channel(settings)
+    if not contacts["email"] and channel == "EMAIL":
         frappe.throw(
             _("{0} has no email address on their Job Applicant record, so the consent link cannot be sent.").format(contacts["name"])
         )
@@ -279,8 +319,11 @@ def _create_session(appl):
         frappe.throw(
             _("{0} has no mobile number on their Job Applicant record. The consent portal requires one for every consent session — add it to the Job Applicant and try again.").format(contacts["name"])
         )
+    if len(contacts["mobile"]) != 10:
+        frappe.throw(
+            _("{0}'s mobile number on their Job Applicant record is not a valid 10-digit number. The consent portal requires one — correct it and try again.").format(contacts["name"])
+        )
 
-    payload = _start_payload(settings, appl, contacts)
     headers = {
         "Content-Type": "application/json",
         "orgId": cstr(settings.org_id).strip() or "HRMS",
@@ -291,11 +334,14 @@ def _create_session(appl):
     session.job_applicant = appl
     session.email_id = contacts["email"]
     session.phone_number = contacts["mobile"]
-    session.channel = payload["channel"]
-    session.configuration_code = payload["configurationCode"]
-    session.request_payload = frappe.as_json(payload)
+    session.channel = channel
+    session.configuration_code = cstr(settings.configuration_code).strip() or "EMPLOYEE_ONBOARDING"
     session.status = "Pending"
     session.insert(ignore_permissions=True)
+    # The payload carries the session's own name as consentId, so it can only be built
+    # once the row exists.
+    payload = _start_payload(settings, appl, contacts, session.name)
+    session.db_set("request_payload", frappe.as_json(payload), update_modified=False)
     # Committed here so the naming series is settled and no lock is carried into the
     # call below. A row with no short_url is never handed to a candidate — _live_session
     # skips it — so an abandoned attempt is inert rather than a broken link.
@@ -499,13 +545,16 @@ def get_consent_session_status(appl, token=None):
 # Callback from the partner portal
 # ---------------------------------------------------------------------------
 
+def _raw_callback_body():
+    try:
+        return frappe.request.get_data(as_text=True) if frappe.request else ""
+    except Exception:
+        return ""
+
+
 def _callback_body():
     """The partner POSTs a JSON body; fall back to form-encoded fields."""
-    try:
-        raw = frappe.request.get_data(as_text=True) if frappe.request else ""
-    except Exception:
-        raw = ""
-
+    raw = _raw_callback_body()
     body = _safe_json(raw) if raw else None
     if isinstance(body, dict):
         return body
@@ -516,23 +565,48 @@ def _callback_body():
     return form
 
 
+def _valid_signature(secret, signature):
+    """True when ``signature`` is the HMAC-SHA256 of the raw webhook body.
+
+    The spec names the header but not its encoding, so hex and base64 digests are
+    both accepted, with or without a ``sha256=`` prefix."""
+    import hashlib
+    import hmac
+
+    signature = signature.strip()
+    if signature.lower().startswith("sha256="):
+        signature = signature[7:]
+    digest = hmac.new(secret.encode(), _raw_callback_body().encode(), hashlib.sha256).digest()
+    return hmac.compare_digest(signature.lower(), digest.hex()) or hmac.compare_digest(
+        signature, base64.b64encode(digest).decode()
+    )
+
+
 def _authenticate_callback(settings):
-    """Reject anything that does not carry the shared secret.
+    """Reject anything that is not provably from the portal.
 
     The endpoint has to be guest-reachable (the partner has no login here), so the
     secret is the only thing standing between an anonymous POST and a recorded
-    consent. An unconfigured secret is a hard failure, never an open door."""
+    consent. An unconfigured secret is a hard failure, never an open door.
+
+    Either proof is accepted: HPCP's own ``X-HPCP-Signature`` (an HMAC of the body,
+    sent when a webhook secret is configured on their side — set it to our Callback
+    Secret), or the shared secret sent verbatim in the configured header."""
+    import hmac
+
     secret = cstr(settings.get_password("callback_secret", raise_exception=False) or "").strip()
     if not secret:
         frappe.throw(_("Consent callback is not configured."), frappe.ValidationError)
+
+    signature = cstr(frappe.get_request_header(SIGNATURE_HEADER) or "").strip()
+    if signature and _valid_signature(secret, signature):
+        return
 
     # A custom header, deliberately not Authorization: Frappe's own OAuth layer
     # intercepts `Authorization: Bearer ...` and rejects the request before this
     # method ever runs, so a bearer-shaped secret could never be honoured here.
     header = cstr(settings.callback_header_name).strip() or DEFAULT_CALLBACK_HEADER
     sent = cstr(frappe.get_request_header(header) or "").strip()
-
-    import hmac
 
     if not sent or not hmac.compare_digest(sent, secret):
         # PermissionError surfaces as 403; Frappe overrides any code set here.
@@ -546,7 +620,8 @@ def _normalize_sections(body):
     small list of aliases rather than one hard-coded spelling. Anything unmapped is
     still recorded — an audit row with the raw label is better than a dropped one."""
     sections = (
-        body.get("consents")
+        body.get("decisions")
+        or body.get("consents")
         or body.get("sections")
         or body.get("consentDetails")
         or body.get("purposes")
@@ -565,11 +640,23 @@ def _normalize_sections(body):
                          "is_mandatory": 0, "accepted": 1})
             continue
 
-        key = cstr(item.get("code") or item.get("consentKey") or item.get("key")
-                   or item.get("purposeCode") or item.get("id")).strip()
-        label = cstr(item.get("label") or item.get("title") or item.get("name")
-                     or item.get("statement") or item.get("description") or key).strip()
-        accepted = item.get("accepted")
+        key = cstr(item.get("purpose") or item.get("code") or item.get("consentKey")
+                   or item.get("key") or item.get("purposeCode") or item.get("id")).strip()
+        label = cstr(item.get("purposeName") or item.get("label") or item.get("title")
+                     or item.get("name") or item.get("statement") or item.get("description")
+                     or key).strip()
+        # The data the purpose covers (KYC, Bureau Request, ...) is part of what the
+        # candidate agreed to, so it is kept on the audit row with the purpose.
+        attributes = [
+            cstr(a.get("code") if isinstance(a, dict) else a).strip()
+            for a in (item.get("dataAttributes") or [])
+        ]
+        attributes = [a for a in attributes if a]
+        if attributes:
+            label = f"{label} (Data: {', '.join(attributes)})"
+        accepted = item.get("decision")
+        if accepted is None:
+            accepted = item.get("accepted")
         if accepted is None:
             accepted = item.get("consentGiven", item.get("status"))
         if isinstance(accepted, str):
@@ -593,10 +680,21 @@ def _session_from_callback(body):
         body.get("sessionId") or body.get("session_id") or body.get("consentSessionId")
         or (body.get("data") or {}).get("sessionId")
     ).strip()
-    if not session_id:
+    # consentId is our own session name, sent at start and echoed back by the portal.
+    consent_id = cstr(body.get("consentId")).strip()
+    if not session_id and not consent_id:
         frappe.throw(_("Missing sessionId in consent callback."), frappe.ValidationError)
 
-    name = frappe.db.get_value(SESSION_DOCTYPE, {"session_id": session_id}, "name")
+    name = session_id and frappe.db.get_value(SESSION_DOCTYPE, {"session_id": session_id}, "name")
+    if not name and consent_id:
+        # Only a row that never learned its portal sessionId (the start response was
+        # lost) is matched this way; one bound to a different session is not.
+        row = frappe.db.get_value(SESSION_DOCTYPE, consent_id, ["name", "session_id"], as_dict=True)
+        if row and not row.session_id:
+            name = row.name
+            if session_id:
+                frappe.db.set_value(SESSION_DOCTYPE, name, "session_id", session_id,
+                                    update_modified=False)
     if not name:
         # DoesNotExistError is what makes this a 404; Frappe derives the status from
         # the exception type, so setting it by hand here would be ignored.
@@ -648,6 +746,15 @@ def consent_callback():
             session.db_set({"status": "Expired", "completed_at": now_datetime()},
                            update_modified=False)
             return _callback_response(appl, session, None, False)
+        if status in FAILED_STATUSES:
+            # Dead session: marking it Failed stops _live_session handing out its link,
+            # so the candidate's next attempt starts a fresh journey.
+            session.db_set(
+                {"status": "Failed", "completed_at": now_datetime(),
+                 "error_message": cstr(body.get("message"))[:500] or None},
+                update_modified=False,
+            )
+            return _callback_response(appl, session, None, False)
         if status not in COMPLETED_STATUSES:
             # Not a decision yet (PENDING / IN_PROGRESS) — acknowledge and wait.
             return _callback_response(appl, session, None, False)
@@ -692,6 +799,8 @@ def _record_consent(appl, session, body, status):
     log.verified_at = _parse_partner_datetime(
         body.get("verifiedAt") or body.get("completedAt") or body.get("timestamp")
     ) or now_datetime()
+    log.receipt_number = cstr(body.get("receiptNumber")).strip() or None
+    log.captured_at = _parse_partner_datetime(body.get("capturedAt"))
 
     if cint(settings.capture_employee_name):
         log.employee_name = cstr(body.get("customerName") or session.applicant_name)

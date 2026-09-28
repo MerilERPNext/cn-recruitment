@@ -28,7 +28,7 @@
   "callback_secret",
   "external_callback_col_break",
   "return_url_template",
-  "send_urls_in_start_payload",
+  "secondary_url",
   "session_validity_minutes",
   "intro_content_section",
   "intro_content",
@@ -152,11 +152,11 @@
   {
    "default": "EMAIL",
    "depends_on": "eval:doc.enabled && doc.consent_mode==\"External Portal\"",
-   "description": "How the portal delivers the consent link / OTP to the candidate.",
+   "description": "How the portal sends the OTP to the candidate. <b>EMAIL</b> needs an email address on the Job Applicant; a 10-digit mobile number is required either way.",
    "fieldname": "consent_channel",
    "fieldtype": "Select",
    "label": "Channel",
-   "options": "EMAIL\nSMS\nBOTH"
+   "options": "EMAIL\nSMS"
   },
   {
    "default": "30",
@@ -208,12 +208,11 @@
    "label": "Return URL Template"
   },
   {
-   "default": "0",
    "depends_on": "eval:doc.enabled && doc.consent_mode==\"External Portal\"",
-   "description": "Also send <code>callbackUrl</code> / <code>redirectUrl</code> inside the consent-start payload. Leave OFF when the portal has them pre-configured against the Configuration Code \u2014 some partners reject unknown keys.",
-   "fieldname": "send_urls_in_start_payload",
-   "fieldtype": "Check",
-   "label": "Send URLs in Start Payload"
+   "description": "Optional. Sent as <code>secondaryUrl</code> in the consent-start payload; the portal preserves it and echoes it back in the webhook. Leave blank if not needed.",
+   "fieldname": "secondary_url",
+   "fieldtype": "Data",
+   "label": "Secondary URL"
   },
   {
    "default": "30",
@@ -344,7 +343,7 @@
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2026-09-04 10:00:00.000000",
+ "modified": "2026-09-28 10:00:00.000000",
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "DPDP Act Settings",

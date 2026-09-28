@@ -206,25 +206,161 @@ def _message(e):
 # --------------------------------------------------------------------------- #
 # Preview from the hiring workflow
 # --------------------------------------------------------------------------- #
+def _stage_interviews(job_applicant, stage_name):
+	"""The applicant's live (not cancelled) interviews for one hiring stage."""
+	from recruitment.api.hiring_stage import get_interview_round_field
+	from recruitment.api.stage_interview import CANCELLED
+
+	round_field = get_interview_round_field()
+	if not round_field:
+		return []
+	return frappe.get_all(
+		INTERVIEW,
+		filters={
+			"job_applicant": job_applicant,
+			round_field: stage_name,
+			"docstatus": ["<", 2],
+			"status": ["!=", CANCELLED],
+		},
+		pluck="name",
+		order_by="creation asc",
+	)
+
+
+def _form_label(widget):
+	return frappe.db.get_value("Microapp Form Widget", widget, "label") or widget
+
+
+def _full_names(users):
+	users = [u for u in dict.fromkeys(users) if u]
+	if not users:
+		return {}
+	return dict(frappe.get_all(
+		"User", filters={"name": ["in", users]}, fields=["name", "full_name"], as_list=True
+	))
+
+
 @frappe.whitelist()
 def get_stage_feedback_form_preview(job_applicant, stage_name):
-	"""The feedback form tagged on a hiring stage, as interviewers will see it."""
+	"""Every feedback form a hiring stage uses, as interviewers will see it.
+
+	The stage's own form first, then whatever its interview actually carries — the
+	interview's form and each panel member's own — so the preview still works on a
+	stage configured without a form but whose interview was given one. ``forms`` is
+	the full list; the top-level keys repeat the first entry.
+	"""
 	frappe.has_permission("Job Applicant", "read", doc=job_applicant, throw=True)
 	from recruitment.api.hiring_stage import _find_stage, get_applicant_stages
 
 	stages = get_applicant_stages(frappe.get_doc("Job Applicant", job_applicant))
 	idx = _find_stage(stages, stage_name)
-	widget = stages[idx].get("evaluation_form") if idx >= 0 else None
-	if not widget:
-		return {}
-	schema = get_form_schema(widget)
-	if not schema:
-		return {"widget": widget}
-	return {
-		"widget": widget,
-		"label": frappe.db.get_value("Microapp Form Widget", widget, "label") or widget,
-		"schema": with_result_question(schema),
-	}
+
+	# widget -> interviewers filling it in (empty for a form nobody has yet).
+	owners = {}
+	stage_form = stages[idx].get("evaluation_form") if idx >= 0 else None
+	if stage_form:
+		owners[stage_form] = []
+	for interview in _stage_interviews(job_applicant, stage_name):
+		panel = frappe.get_all(
+			INTERVIEW_DETAIL,
+			filters={"parent": interview, "parenttype": INTERVIEW},
+			pluck="interviewer",
+			order_by="idx asc",
+		)
+		for interviewer in panel or [None]:
+			widget = form_for_interviewer(interview, interviewer)
+			if widget:
+				owners.setdefault(widget, [])
+				if interviewer and interviewer not in owners[widget]:
+					owners[widget].append(interviewer)
+
+	if not owners:
+		return {"forms": []}
+
+	names = _full_names([u for users in owners.values() for u in users])
+	forms = []
+	for widget, users in owners.items():
+		schema = get_form_schema(widget)
+		forms.append({
+			"widget": widget,
+			"label": _form_label(widget),
+			"schema": with_result_question(schema) if schema else None,
+			"interviewers": [names.get(u) or u for u in users],
+		})
+	return {**forms[0], "forms": forms}
+
+
+@frappe.whitelist()
+def get_stage_submitted_feedback(job_applicant, stage_name):
+	"""Submitted Interview Feedback for a hiring stage, one entry per interviewer.
+
+	A form-based feedback comes back with the form it was filled on and the answers
+	(plus Result) to render it read-only; one filed on the standard grid comes back
+	with its skill ratings instead.
+	"""
+	frappe.has_permission("Job Applicant", "read", doc=job_applicant, throw=True)
+	from recruitment.api.interview_feedback_form import _parse
+
+	interviews = _stage_interviews(job_applicant, stage_name)
+	if not interviews:
+		return {"feedback": []}
+
+	meta = frappe.get_meta(FEEDBACK)
+	optional = [f for f in (
+		"custom_evaluation_form", "custom_form_response", "custom_recommended_region",
+		"custom_region_recommendation_reason", "custom_work_location",
+	) if meta.has_field(f)]
+	rows = frappe.get_all(
+		FEEDBACK,
+		filters={"interview": ["in", interviews], "docstatus": 1},
+		fields=["name", "interview", "interviewer", "result", "feedback", "average_rating", "modified"] + optional,
+		order_by="modified asc",
+	)
+	if not rows:
+		return {"feedback": []}
+
+	skills = {}
+	for s in frappe.get_all(
+		"Skill Assessment",
+		filters={"parenttype": FEEDBACK, "parent": ["in", [r.name for r in rows]]},
+		fields=["parent", "skill", "rating"],
+		order_by="idx asc",
+	):
+		skills.setdefault(s.parent, []).append({"skill": s.skill, "rating": s.rating})
+
+	names = _full_names([r.interviewer for r in rows])
+	schemas = {}
+	out = []
+	for r in rows:
+		widget = r.get("custom_evaluation_form")
+		schema = None
+		if widget:
+			if widget not in schemas:
+				s = get_form_schema(widget)
+				schemas[widget] = with_result_question(s) if s else None
+			schema = schemas[widget]
+		answers = _parse(r.get("custom_form_response")) or {}
+		extras = [
+			(meta.get_label(f), r.get(f))
+			for f in ("custom_recommended_region", "custom_region_recommendation_reason", "custom_work_location")
+			if r.get(f)
+		]
+		out.append({
+			"name": r.name,
+			"interview": r.interview,
+			"interviewer": names.get(r.interviewer) or r.interviewer,
+			"result": r.result,
+			"submitted_on": r.modified,
+			"average_rating": r.average_rating,
+			"feedback": r.feedback,
+			"widget": widget,
+			"label": _form_label(widget) if widget else None,
+			"schema": schema,
+			"data": {**answers, RESULT_KEY: r.result} if schema else None,
+			"skills": skills.get(r.name, []),
+			"extras": [{"label": label, "value": value} for label, value in extras],
+		})
+	return {"feedback": out}
 
 
 # --------------------------------------------------------------------------- #
