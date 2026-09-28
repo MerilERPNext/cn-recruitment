@@ -19,7 +19,13 @@ import Button from "../../../shared/atoms/Button";
 import { Typography } from "../../../shared/atoms/Typography";
 import { useTargetUser } from "../../../../context/ViewedUserContext";
 import GeoLocationModal from "../../../MobileDashboard/GeoLocationModal";
-import { Coordinates, getDeviceLocation, getDeviceLocationWeb } from "../../../../utils/helperUtils";
+import {
+  Coordinates,
+  getDeviceLocation,
+  getDeviceLocationWeb,
+  getLocationPermissionState,
+  LOCATION_BLOCKED_MESSAGE,
+} from "../../../../utils/helperUtils";
 
 const formatTimeSafe = (timeStr?: string) => {
   if (!timeStr) return "--:--";
@@ -123,7 +129,11 @@ const AttendanceCardList = ({
         : await getDeviceLocationWeb();
       setLocation(coords);
       return coords;
-    } catch {
+    } catch (err) {
+      toast.error(
+        (err as Error)?.message ||
+          "Could not get location. Please enable location services and try again.",
+      );
       return null;
     } finally {
       setIsLocationLoading(false);
@@ -131,9 +141,14 @@ const AttendanceCardList = ({
   };
 
   const handleGeoButtonClick = async () => {
+    // Check In / Check Out tap - the ONLY place location is requested.
+    if (!window.isApp && (await getLocationPermissionState()) === "denied") {
+      toast.error(LOCATION_BLOCKED_MESSAGE);
+      return;
+    }
+    // "granted" resolves silently; "prompt" shows the native dialog now.
     const coords = await fetchLocation();
     if (!coords) {
-      toast.error("Could not get location. Please enable location services and try again.");
       return;
     }
     setGeoLocationModal(true);
