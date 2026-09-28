@@ -6606,6 +6606,19 @@
    "translatable": 0,
    "unique": 0,
    "width": null
+  },
+  {
+   "depends_on": "eval:doc.custom_on_hold_condition",
+   "description": "Eligibility condition(s) that put this applicant on Hold. Set automatically.",
+   "dt": "Job Applicant",
+   "fieldname": "custom_on_hold_condition",
+   "fieldtype": "Small Text",
+   "insert_after": "custom_application_details_tab",
+   "label": "On Hold Condition",
+   "module": "Recruitment",
+   "name": "Job Applicant-custom_on_hold_condition",
+   "no_copy": 1,
+   "read_only": 1
   }
  ],
  "custom_perms": [],

@@ -43,7 +43,7 @@
   },
   {
    "columns": 2,
-   "fetch_from": "job_applicant.applicant_name",
+   "fetch_from": "job_applicant.custom_full_name",
    "fieldname": "applicant_name",
    "fieldtype": "Data",
    "in_list_view": 1,
@@ -88,7 +88,7 @@
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2026-07-16 00:00:00.000000",
+ "modified": "2026-09-28 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "Campus Drive GD Group Member",
