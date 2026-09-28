@@ -31,6 +31,9 @@ frappe.ui.form.on("Campus Drive", {
 		// separate section), so the whole interview pipeline lives in one place.
 		cdWhenVisible(frm, "institute_candidates_html", () => cdRenderCandidates(frm));
 		cdWhenVisible(frm, "interview_rounds_html", () => cdRenderRounds(frm));
+		if (!frm.is_new()) {
+			frm.add_custom_button(__("Re-run Eligibility"), () => cdRerunEligibility(frm), __("Actions"));
+		}
 	},
 });
 
@@ -80,6 +83,43 @@ function cdSetQueries(frm) {
 			campus_drive: frm.is_new() ? null : frm.doc.name,
 		},
 	}));
+}
+
+/**
+ * Re-check the drive's candidates (invited and walk-in) against each opening's
+ * current eligibility conditions — for when an opening's rules changed mid-drive.
+ */
+function cdRerunEligibility(frm) {
+	frappe.confirm(
+		__("Re-check this drive's eligibility-rejected and held candidates against their opening's current conditions?<br><br>"
+			+ "Only candidates Rejected or put on Hold by an eligibility condition are re-checked; those who now pass become Shortlisted. "
+			+ "Candidates already Shortlisted or further along, or rejected for another reason, are not touched."),
+		() => frappe.call({
+			method: "recruitment.recruitment.eligibility_engine.rerun_eligibility_for_drive",
+			args: { campus_drive: frm.doc.name },
+			freeze: true,
+			freeze_message: __("Re-running eligibility…"),
+		}).then((r) => {
+			const s = r && r.message;
+			if (!s) return;
+			const line = (label, n) => (n ? `<li>${label}: <b>${n}</b></li>` : "");
+			frappe.msgprint({
+				title: __("Eligibility re-run"),
+				indicator: s.failed ? "orange" : "green",
+				message: `<p>${__("{0} candidate(s) re-checked, {1} changed status.", [s.evaluated, s.changed])}</p>
+					<ul>
+						${line(__("Rejected"), s.rejected)}
+						${line(__("On Hold"), s.hold)}
+						${line(__("Shortlisted"), s.shortlisted)}
+						${line(__("Not touched — not held back by eligibility"), s.skipped_stage)}
+						${line(__("Skipped — opening has no conditions"), s.skipped_no_rules)}
+						${line(__("Failed (see Error Log)"), s.failed)}
+					</ul>`,
+			});
+			// The candidate board's counts are now stale.
+			frm.reload_doc();
+		})
+	);
 }
 
 /**

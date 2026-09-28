@@ -4,22 +4,13 @@ import {
   useCheckInOutService,
   useGetEmployeeShift,
   useGetQuickAttendanceSummary,
-  useHomeSummaryDetails,
+  useTodayAttendanceSummary,
 } from "../../hooks/useAttendance";
 import { useCompanyLogo } from "../../hooks/useCompanyLogo";
 import { useGetUserNotices } from "../../hooks/useNotices";
 
-import {
-  compareAsc,
-  compareDesc,
-  differenceInMinutes,
-  endOfDay,
-  endOfMonth,
-  format,
-  parseISO,
-  startOfDay,
-  startOfMonth,
-} from "date-fns";
+
+import { endOfMonth, format, startOfMonth } from "date-fns";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { useCurrentEmployeeDetails } from "../../hooks/useEmployee";
@@ -59,7 +50,6 @@ const MobileDashboard: React.FC = () => {
   // on mount, so the browser's permission prompt is tied to that action.
   const [isLocationLoading, setIsLocationLoading] = useState(false);
   const [locationError, setLocationError] = useState<string | null>(null);
-  const [currentTime, setCurrentTime] = useState(new Date());
   const [geoLocationModal, setGeoLocationModal] = useState(false);
   const [isRequestIssueModalOpen, setIsRequestIssueModalOpen] = useState(false);
   const navigate = useNavigate();
@@ -113,14 +103,6 @@ const MobileDashboard: React.FC = () => {
     }
   }, [location]);
 
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentTime(new Date());
-    }, 60000);
-
-    return () => clearInterval(timer);
-  }, []);
-
   const { data: currentEmployee } =
     useCurrentEmployeeDetails({ logged_in_employee_details: true });
 
@@ -135,13 +117,6 @@ const MobileDashboard: React.FC = () => {
   const { mutate: checkInCheckOutMutation, isPending: checkInCheckOutPending } =
     useCheckInOutService();
 
-  const start = format(startOfDay(new Date()), "yyyy-MM-dd HH:mm:ss");
-  const end = format(endOfDay(new Date()), "yyyy-MM-dd HH:mm:ss");
-
-  const filters = {
-    time: ["between", [start, end]],
-  };
-
   const { data: CompanyLogo } = useCompanyLogo();
   const currentEmployeeCompany = currentEmployee?.company;
   const matchedCompany =
@@ -154,48 +129,24 @@ const MobileDashboard: React.FC = () => {
       : CompanyLogo?.[0];
 
   const logoToShow = matchedCompany?.company_logo || "logo not found";
-  const encodedFilters = encodeURIComponent(JSON.stringify(filters));
-  const {
-    data: homeSummary,
-    refetch: refetchHomeSummary,
-    isRefetching,
-    isLoading: homeSummaryLoading,
-  } = useHomeSummaryDetails(currentEmployee?.user_id || "", encodedFilters);
   const { data: employeeShift } = useGetEmployeeShift(
     currentEmployee?.user_id || "",
   );
-  const checkIns = homeSummary?.filter((log) => log.log_type === "IN") ?? [];
-  const checkOuts = homeSummary?.filter((log) => log.log_type === "OUT") ?? [];
+  const {
+    homeSummary,
+    refetch: refetchHomeSummary,
+    isRefetching,
+    isLoading: homeSummaryLoading,
+    firstCheckIn,
+    lastCheckOut,
+    isCurrentlyCheckedIn,
+    totalWorkingHours,
+    workPercentage,
+  } = useTodayAttendanceSummary(
+    currentEmployee?.user_id,
+    employeeShift?.custom_standard_working_hrs,
+  );
   const [isSearchDrawerOpen, setIsSearchDrawerOpen] = useState(false);
-  const firstCheckIn = checkIns.length
-    ? checkIns.sort((a, b) =>
-      compareAsc(
-        parseISO(a.time.replace(" ", "T")),
-        parseISO(b.time.replace(" ", "T")),
-      ),
-    )[0]
-    : undefined;
-
-  const lastCheckOut = checkOuts.length
-    ? checkOuts.sort((a, b) =>
-      compareDesc(
-        parseISO(a.time.replace(" ", "T")),
-        parseISO(b.time.replace(" ", "T")),
-      ),
-    )[0]
-    : undefined;
-
-  const lastLog =
-    homeSummary && homeSummary.length > 0
-      ? [...homeSummary].sort((a, b) =>
-        compareDesc(
-          parseISO(a.time.replace(" ", "T")),
-          parseISO(b.time.replace(" ", "T")),
-        ),
-      )[0]
-      : undefined;
-
-  const isCurrentlyCheckedIn = lastLog?.log_type === "IN";
   type CustomError = Error & {
     response?: { data?: { message?: { error: string } } };
   };
@@ -270,89 +221,11 @@ const MobileDashboard: React.FC = () => {
 
 
   const getTotalTime = () => {
-    if (!homeSummary || homeSummary.length === 0) {
-      return "--:--";
-    }
-
-    let totalMinutes = 0;
-    const sortedLogs = [...homeSummary].sort((a, b) =>
-      compareAsc(
-        parseISO(a.time.replace(" ", "T")),
-        parseISO(b.time.replace(" ", "T")),
-      ),
-    );
-
-    let currentCheckIn: (typeof sortedLogs)[0] | null = null;
-
-    for (const log of sortedLogs) {
-      if (log.log_type === "IN") {
-        currentCheckIn = log;
-      } else if (log.log_type === "OUT" && currentCheckIn) {
-        const checkInTime = parseISO(currentCheckIn.time.replace(" ", "T"));
-        const checkOutTime = parseISO(log.time.replace(" ", "T"));
-        totalMinutes += differenceInMinutes(checkOutTime, checkInTime);
-        currentCheckIn = null;
-      }
-    }
-
-    if (currentCheckIn && isCurrentlyCheckedIn) {
-      const checkInTime = parseISO(currentCheckIn.time.replace(" ", "T"));
-      totalMinutes += differenceInMinutes(currentTime, checkInTime);
-    }
-
-    const hours = Math.floor(totalMinutes / 60);
-    const minutes = totalMinutes % 60;
-    return `${hours.toString().padStart(2, "0")}:${minutes
-      .toString()
-      .padStart(2, "0")}`;
+    return totalWorkingHours;
   };
 
   const getWorkPercentage = () => {
-    if (!firstCheckIn || !firstCheckIn.shift_start || !firstCheckIn.shift_end) {
-      return 0;
-    }
-
-    let totalWorkedMinutes = 0;
-
-    if (homeSummary && homeSummary.length > 0) {
-      const sortedLogs = [...homeSummary].sort((a, b) =>
-        compareAsc(
-          parseISO(a.time.replace(" ", "T")),
-          parseISO(b.time.replace(" ", "T")),
-        ),
-      );
-
-      let currentCheckIn: (typeof sortedLogs)[0] | null = null;
-
-      for (const log of sortedLogs) {
-        if (log.log_type === "IN") {
-          currentCheckIn = log;
-        } else if (log.log_type === "OUT" && currentCheckIn) {
-          const checkInTime = parseISO(currentCheckIn.time.replace(" ", "T"));
-          const checkOutTime = parseISO(log.time.replace(" ", "T"));
-          totalWorkedMinutes += differenceInMinutes(checkOutTime, checkInTime);
-          currentCheckIn = null;
-        }
-      }
-
-      if (currentCheckIn && isCurrentlyCheckedIn) {
-        const checkInTime = parseISO(currentCheckIn.time.replace(" ", "T"));
-        totalWorkedMinutes += differenceInMinutes(currentTime, checkInTime);
-      }
-    }
-
-    const shiftStart = parseISO(firstCheckIn.shift_start.replace(" ", "T"));
-    const shiftEnd = parseISO(firstCheckIn.shift_end.replace(" ", "T"));
-    const totalShiftMinutes = differenceInMinutes(shiftEnd, shiftStart);
-
-    if (totalShiftMinutes <= 0) {
-      return 0;
-    }
-
-    const percentage = Math.round(
-      (totalWorkedMinutes / totalShiftMinutes) * 100,
-    );
-    return Math.min(percentage, 100);
+    return workPercentage;
   };
 
   const { data: userNotices, isLoading: userNoticeIsLoading } =
@@ -364,41 +237,51 @@ const MobileDashboard: React.FC = () => {
   return (
     <div className="h-screen font-sans flex flex-col">
       {/* Header */}
-      <div className="bg-white/80 backdrop-blur-lg border-b border-white/20 px-2 py-3 shadow-sm sticky top-0 z-10 flex-shrink-0">
-        <div className="flex items-center justify-between">
-          <Button
-            bgColor=""
-            variant="subtle"
-            className="w-12 h-12 p-0 rounded-xl overflow-hidden "
-          >
-            <img
-              src={typeof logoToShow === "string" ? logoToShow : ""}
-              alt="CompnayLogo"
-              className="w-12 h-12 p-1 rounded-full flex-shrink-0"
-            />
-            <Typography variant="subheading">
-              Welcome,{" "}
-              <span className="text-primary-900 whitespace-nowrap">
+      <div className="bg-white/90 backdrop-blur-md border-b border-gray-100 px-4 py-2.5 sm:py-3 shadow-xs sticky top-0 z-20 flex-shrink-0">
+        <div className="flex items-center justify-between gap-2.5 min-w-0">
+          <div className="flex items-center gap-3 min-w-0 flex-1">
+            <div className="w-11 h-11 rounded-full overflow-hidden flex-shrink-0 flex items-center justify-center bg-gray-50 border border-gray-200/80 shadow-2xs">
+              <img
+                src={typeof logoToShow === "string" ? logoToShow : ""}
+                alt="Company Logo"
+                className="w-full h-full object-contain rounded-full"
+              />
+            </div>
+            <div className="flex flex-col justify-center min-w-0 leading-tight">
+              <Typography
+                variant="bodySmall"
+                component="span"
+                className="text-gray-900 font-bold leading-tight"
+              >
+                Welcome,
+              </Typography>
+              <Typography
+                variant="bodySmall"
+                component="span"
+                className="text-primary-900 font-bold leading-tight truncate"
+              >
                 {currentEmployee?.employee_name?.split(" ")[0] || ""}!
-              </span>
-            </Typography>
-          </Button>
+              </Typography>
+            </div>
+          </div>
 
-          <div className="flex items-center gap-2 sm:gap-3">
-            <RedeemablePointsBadge variant="light" />
+          <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
+            <RedeemablePointsBadge variant="light" className="h-9" />
 
             <button
               onClick={() => navigate("/webapp/notification-log")}
-              className="relative p-2 hover:bg-primary-400/20 rounded-lg transition-colors"
+              aria-label="Notifications"
+              className="relative w-9 h-9 flex items-center justify-center hover:bg-primary-50 active:bg-primary-100 rounded-xl transition-colors text-gray-600 hover:text-primary-700"
             >
               <NotificationBell className="text-gray-600 hover:text-gray-800" />
             </button>
 
             <button
-              className="relative p-2 hover:bg-primary-400/20 rounded-lg transition-colors"
+              aria-label="Search"
+              className="relative w-9 h-9 flex items-center justify-center hover:bg-primary-50 active:bg-primary-100 rounded-xl transition-colors text-gray-600 hover:text-primary-700"
               onClick={() => setIsSearchDrawerOpen(true)}
             >
-              <Search className="text-gray-600 hover:text-gray-800" />
+              <Search className="w-5 h-5 text-gray-600 hover:text-gray-800" />
             </button>
           </div>
         </div>

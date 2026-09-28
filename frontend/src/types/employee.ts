@@ -409,6 +409,9 @@ export interface EmployeeSupplementary {
   employee_roles?: EmployeeRole[];
   cost_centers?: EmployeeCostCenter[];
   company_name?: string;
+  company_display?: string;
+  custom_hrbp_display?: string;
+  custom_hrbp_name?: string;
   current_address?: string;
   /** Fields an admin added to Employee Search Settings; search results only */
   search_fields?: EmployeeSearchFieldValue[];
@@ -474,10 +477,12 @@ export interface EmployeeIdCardResponse {
   status: "Active" | "Inactive" | string; // extendable
 }
 export interface EmployeeProfileOverview {
+  field_name?: string;
   field_label: string;
   display: string;
   value: string;
   field_type: string;
+  options?: string;
 }
 export interface EmployeeFieldsToTrack {
   field_name: string;
@@ -619,3 +624,12 @@ export interface EmployeeSeparationDetails {
   deactivation_type: string | null;
   deactivation_reason: string | null;
 }
+
+export interface EmployeeEventItem {
+  name: string;
+  date_of_birth: string;
+  employee_name: string;
+  image?: string | null;
+  date_of_joining: string;
+}
+

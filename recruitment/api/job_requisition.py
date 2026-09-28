@@ -4341,7 +4341,19 @@ def get_requisition_approval_flow(requisition_name):
         # Per-position detail for a stage that fanned out.
         if len(stage_logs) > 1 or any(l.get("is_row_log") for l in stage_logs):
             entry["is_row_stage"] = True
-            entry["rows"] = {"actioned": aggregate["actioned"], "total": aggregate["total"]}
+            # Same row set the aggregate counts: Cancelled rows are left out
+            # unless every row was cancelled.
+            counted = [
+                (l.get("status") or "Pending")
+                for l in stage_logs
+                if (l.get("status") or "") != "Cancelled"
+            ] or [(l.get("status") or "Pending") for l in stage_logs]
+            entry["rows"] = {
+                "actioned": aggregate["actioned"],
+                "total": aggregate["total"],
+                "approved": counted.count("Approved"),
+                "rejected": counted.count("Rejected"),
+            }
             entry["row_approvals"] = [
                 {
                     "label": log.get("row_label"),

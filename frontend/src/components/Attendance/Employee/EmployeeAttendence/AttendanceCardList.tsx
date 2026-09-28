@@ -1,12 +1,8 @@
 import {
-  compareDesc,
-  endOfDay,
   format,
   isSameDay,
   isValid as isValidDate,
   parse,
-  parseISO,
-  startOfDay,
 } from "date-fns";
 import { useMemo, useState } from "react";
 import { toast } from "react-hot-toast";
@@ -15,7 +11,7 @@ import {
   useCheckInOutService,
   useClockInOutService,
   useGetEmployeeShift,
-  useHomeSummaryDetails,
+  useTodayAttendanceSummary,
 } from "../../../../hooks/useAttendance";
 import { useCurrentEmployeeDetails } from "../../../../hooks/useEmployee";
 import { AttendanceRecord, CustomError } from "../../../../types/attendance";
@@ -112,13 +108,13 @@ const AttendanceCardList = ({
     currentEmployee?.user_id ? { user: currentEmployee.user_id } : {},
   );
 
-  const start = format(startOfDay(new Date()), "yyyy-MM-dd HH:mm:ss");
-  const end = format(endOfDay(new Date()), "yyyy-MM-dd HH:mm:ss");
-  const encodedFilters = encodeURIComponent(
-    JSON.stringify({ time: ["between", [start, end]] }),
-  );
-  const { data: homeSummary, refetch: refetchHomeSummary } =
-    useHomeSummaryDetails(currentEmployee?.user_id || "", encodedFilters);
+  const {
+    refetch: refetchHomeSummary,
+    isCurrentlyCheckedIn,
+    inTime: todayInTime,
+    outTime: todayOutTime,
+    totalWorkingHours: todayTotalWorkingHours,
+  } = useTodayAttendanceSummary(currentEmployee?.user_id);
 
   const { mutate: checkInCheckOutMutation, isPending: checkInCheckOutPending } =
     useCheckInOutService();
@@ -157,18 +153,6 @@ const AttendanceCardList = ({
     }
     setGeoLocationModal(true);
   };
-
-  const lastLog =
-    homeSummary && homeSummary.length > 0
-      ? [...homeSummary].sort((a, b) =>
-        compareDesc(
-          parseISO(a.time.replace(" ", "T")),
-          parseISO(b.time.replace(" ", "T")),
-        ),
-      )[0]
-      : undefined;
-
-  const isCurrentlyCheckedIn = lastLog?.log_type === "IN";
 
   const handleGeoCheckInOut = () => {
     if (!location?.latitude || !location?.longitude) {
@@ -287,15 +271,27 @@ const AttendanceCardList = ({
                 <div className="flex justify-between items-center gap-2">
                   <div>
                     <p className={`text-xs ${today ? "text-primary-100" : "text-gray-500"}`}>Check In</p>
-                    <p className="text-sm font-semibold">{formatTimeSafe(record?.in_time)}</p>
+                    <p className="text-sm font-semibold">
+                      {today && todayInTime !== "--:--"
+                        ? todayInTime
+                        : formatTimeSafe(record?.in_time)}
+                    </p>
                   </div>
                   <div>
                     <p className={`text-xs ${today ? "text-primary-100" : "text-gray-500"}`}>Check Out</p>
-                    <p className="text-sm font-semibold">{formatTimeSafe(record?.out_time)}</p>
+                    <p className="text-sm font-semibold">
+                      {today && todayOutTime !== "--:--"
+                        ? todayOutTime
+                        : formatTimeSafe(record?.out_time)}
+                    </p>
                   </div>
                   <div>
                     <p className={`text-xs ${today ? "text-primary-100" : "text-gray-500"}`}>Total hours</p>
-                    <p className="text-sm font-semibold">{getTotalHours(record?.in_time, record?.out_time)}</p>
+                    <p className="text-sm font-semibold">
+                      {today && todayTotalWorkingHours !== "--:--"
+                        ? todayTotalWorkingHours
+                        : getTotalHours(record?.in_time, record?.out_time)}
+                    </p>
                   </div>
                 </div>
                 <div

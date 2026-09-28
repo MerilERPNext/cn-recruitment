@@ -226,11 +226,23 @@ def make_job_opening(source_name, target_doc=None, recruiter=None):
     assert_recruiter_assigned(source_name, recruiter=recruiter)
 
     def set_missing_values(source, target):
-        target.job_title = source.designation
+        # The Job Description's title, else the Designation's name — not its id.
+        from recruitment.customizations.job_opening_from_requisition import job_title_for_requisition
+
+        target.job_title = job_title_for_requisition(source) or source.designation
         # A freshly created opening always starts Open (JR status options such as
         # "Open & Approved" aren't valid on Job Opening).
         target.status = "Open"
         target.description = source.description
+        # add_fetch never runs for a mapped doc: take the Designation's Functional Area.
+        if (
+            target.designation
+            and not target.get("custom_functional_area")
+            and target.meta.has_field("custom_functional_area")
+        ):
+            target.custom_functional_area = frappe.db.get_value(
+                "Designation", target.designation, "custom_functional_area"
+            )
         if recruiter and target.meta.has_field(OPENING_RECRUITER_FIELD):
             target.set(OPENING_RECRUITER_FIELD, recruiter)
 

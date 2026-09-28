@@ -1,13 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import {
-  compareAsc,
-  compareDesc,
-  differenceInMinutes,
-  endOfDay,
-  format,
-  parseISO,
-  startOfDay,
-} from "date-fns";
 import {
   ArrowUpDown,
   Calendar,
@@ -36,8 +26,8 @@ import {
   useCanShowClockIn,
   useClockInOutService,
   useGetEmployeeShift,
-  useHomeSummaryDetails,
   usePlannedOvertimeAllowed,
+  useTodayAttendanceSummary,
 } from "../hooks/useAttendance";
 import useCurrentUser from "../hooks/useCurrentUser";
 import { useCurrentEmployeeDetails } from "../hooks/useEmployee";
@@ -86,7 +76,6 @@ import { RecommendationsForYou } from "./DashboardComponent/RecommendationsForYo
 import Tooltip from "./shared/Tooltip";
 
 export default function DesktopDashboard() {
-  const [currentTime, setCurrentTime] = useState(new Date());
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   const [isSidebarExpanded, setIsSidebarExpanded] = useState(false);
   const navigate = useNavigate();
@@ -127,59 +116,28 @@ export default function DesktopDashboard() {
     setShowChangePasswordModal(true);
   };
 
-  const start = format(startOfDay(new Date()), "yyyy-MM-dd HH:mm:ss");
-  const end = format(endOfDay(new Date()), "yyyy-MM-dd HH:mm:ss");
-  const filters = {
-    time: ["between", [start, end]],
-  };
-  const encodedFilters = encodeURIComponent(JSON.stringify(filters));
-  // const { data: notices, isLoading: noticeIsLoading } = useGetAllNotices(5, [
-  //   ["status", "!=", "Expired"],
-  // ]);
   const { data: userNotices, isLoading: userNoticeIsLoading } =
     useGetUserNotices();
 
   const {
-    data: homeSummary,
+    homeSummary,
     refetch: refetchHomeSummary,
     isRefetching,
-  } = useHomeSummaryDetails(currentEmployee?.user_id || "", encodedFilters);
+    firstCheckIn,
+    lastCheckOut,
+    isCurrentlyCheckedIn,
+    totalWorkingHours,
+    workPercentage,
+  } = useTodayAttendanceSummary(
+    currentEmployee?.user_id,
+    employeeShift?.custom_standard_working_hrs,
+  );
   const { data: canShowClockIn } = useCanShowClockIn(
     currentEmployee?.user_id ? { user: currentEmployee.user_id } : {},
   );
   const { mutate: clockInCheckOutMutation, isPending: clockInCheckOutPending } =
     useClockInOutService();
 
-  const checkIns = homeSummary?.filter((log) => log.log_type === "IN") ?? [];
-  const checkOuts = homeSummary?.filter((log) => log.log_type === "OUT") ?? [];
-  const firstCheckIn = checkIns.length
-    ? checkIns.sort((a, b) =>
-      compareAsc(
-        parseISO(a.time.replace(" ", "T")),
-        parseISO(b.time.replace(" ", "T")),
-      ),
-    )[0]
-    : undefined;
-  const lastCheckOut = checkOuts.length
-    ? checkOuts.sort((a, b) =>
-      compareDesc(
-        parseISO(a.time.replace(" ", "T")),
-        parseISO(b.time.replace(" ", "T")),
-      ),
-    )[0]
-    : undefined;
-
-  const lastLog =
-    homeSummary && homeSummary.length > 0
-      ? [...homeSummary].sort((a, b) =>
-        compareDesc(
-          parseISO(a.time.replace(" ", "T")),
-          parseISO(b.time.replace(" ", "T")),
-        ),
-      )[0]
-      : undefined;
-
-  const isCurrentlyCheckedIn = lastLog?.log_type === "IN";
   const { data: currentUser } = useCurrentUser();
 
   const logoutHandler = async () => {
@@ -196,14 +154,6 @@ export default function DesktopDashboard() {
       setIsLoggingOut(false);
     }
   };
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentTime(new Date());
-    }, 60000);
-
-    return () => clearInterval(timer);
-  }, []);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -233,41 +183,7 @@ export default function DesktopDashboard() {
   }, [employeeShift?.custom_standard_working_hrs]);
 
   const getTotalTime = () => {
-    if (!homeSummary || homeSummary.length === 0) {
-      return "00:00";
-    }
-
-    let totalMinutes = 0;
-    const sortedLogs = [...homeSummary].sort((a, b) =>
-      compareAsc(
-        parseISO(a.time.replace(" ", "T")),
-        parseISO(b.time.replace(" ", "T")),
-      ),
-    );
-
-    let currentCheckIn: (typeof sortedLogs)[0] | null = null;
-
-    for (const log of sortedLogs) {
-      if (log.log_type === "IN") {
-        currentCheckIn = log;
-      } else if (log.log_type === "OUT" && currentCheckIn) {
-        const checkInTime = parseISO(currentCheckIn.time.replace(" ", "T"));
-        const checkOutTime = parseISO(log.time.replace(" ", "T"));
-        totalMinutes += differenceInMinutes(checkOutTime, checkInTime);
-        currentCheckIn = null;
-      }
-    }
-
-    if (currentCheckIn && isCurrentlyCheckedIn) {
-      const checkInTime = parseISO(currentCheckIn.time.replace(" ", "T"));
-      totalMinutes += differenceInMinutes(currentTime, checkInTime);
-    }
-
-    const hours = Math.floor(totalMinutes / 60);
-    const minutes = totalMinutes % 60;
-    return `${hours.toString().padStart(2, "0")}:${minutes
-      .toString()
-      .padStart(2, "0")}`;
+    return totalWorkingHours === "--:--" ? "00:00" : totalWorkingHours;
   };
 
   const handleClockInOut = (type: string) => {
@@ -313,53 +229,7 @@ export default function DesktopDashboard() {
   };
 
   const getWorkPercentage = () => {
-    if (!firstCheckIn || !firstCheckIn.shift_start || !firstCheckIn.shift_end) {
-      return 0;
-    }
-
-    let totalWorkedMinutes = 0;
-
-    if (homeSummary && homeSummary.length > 0) {
-      const sortedLogs = [...homeSummary].sort((a, b) =>
-        compareAsc(
-          parseISO(a.time.replace(" ", "T")),
-          parseISO(b.time.replace(" ", "T")),
-        ),
-      );
-
-      let currentCheckIn: (typeof sortedLogs)[0] | null = null;
-
-      for (const log of sortedLogs) {
-        if (log.log_type === "IN") {
-          currentCheckIn = log;
-        } else if (log.log_type === "OUT" && currentCheckIn) {
-          const checkInTime = parseISO(currentCheckIn.time.replace(" ", "T"));
-          const checkOutTime = parseISO(log.time.replace(" ", "T"));
-          totalWorkedMinutes += differenceInMinutes(checkOutTime, checkInTime);
-          currentCheckIn = null;
-        }
-      }
-
-      if (currentCheckIn && isCurrentlyCheckedIn) {
-        const checkInTime = parseISO(currentCheckIn.time.replace(" ", "T"));
-        totalWorkedMinutes += differenceInMinutes(currentTime, checkInTime);
-      }
-    }
-
-    const shiftStart = parseISO(firstCheckIn.shift_start.replace(" ", "T"));
-    const shiftEnd = parseISO(firstCheckIn.shift_end.replace(" ", "T"));
-    const totalShiftMinutes = employeeShift?.custom_standard_working_hrs
-      ? employeeShift.custom_standard_working_hrs * 60
-      : differenceInMinutes(shiftEnd, shiftStart);
-
-    if (totalShiftMinutes <= 0) {
-      return 0;
-    }
-
-    const percentage = Math.round(
-      (totalWorkedMinutes / totalShiftMinutes) * 100,
-    );
-    return Math.min(percentage, 100);
+    return workPercentage;
   };
 
   const contentMarginLeft = isSidebarExpanded ? "ml-64" : "ml-20";
@@ -817,7 +687,7 @@ export default function DesktopDashboard() {
                         fullWidth
                         contentAlign="start"
                         onClick={() => {
-                          window.location.href = "/app/home";
+                          window.location.href = "/app";
                         }}
                       >
                         <Dock className="w-4 h-4" />

@@ -66,7 +66,7 @@ def get_post_login_route():
     if not applicant_name or not opening_name:
         return {
             "survey_required": False,
-            "redirect_url": ACTION_CENTER_URL,
+            "redirect_url": _landing_url(),
             "job_applicant": applicant_name,
             "job_opening": opening_name,
             "current_step": None,
@@ -114,7 +114,7 @@ def get_post_login_route():
     if _dpdp_consent_pending(applicant_name):
         return {"survey_required": False, "redirect_url": _dpdp_consent_url(applicant_name), **flow}
 
-    return {"survey_required": False, "redirect_url": ACTION_CENTER_URL, **flow}
+    return {"survey_required": False, "redirect_url": _landing_url(), **flow}
 
 
 @candidate_required
@@ -255,7 +255,7 @@ def _next_url(applicant_name):
     step = _next_step(applicant_name, opening, skip=(SURVEY_STEP,))
     if step in (JOB_OFFER_STEP, ONBOARDING_STEP):
         return _step_url(step, applicant_name)
-    return ACTION_CENTER_URL
+    return _landing_url()
 
 
 # ---------------------------------------------------------------------------
@@ -310,7 +310,20 @@ def _step_url(step, applicant_name):
         return JOB_OFFER_URL_TEMPLATE.format(applicant=applicant_name) + "&token=" + offer_token(applicant_name)
     if step == ONBOARDING_STEP:
         return ONBOARDING_URL_TEMPLATE.format(applicant=applicant_name)
-    return ACTION_CENTER_URL
+    return _landing_url()
+
+
+def _landing_url():
+    """Where a candidate lands once no flow step is pending.
+
+    Taken from Candidate Portal Auth Settings -> Redirect To; falls back to the
+    action center when that field is blank.
+    """
+    try:
+        redirect_to = frappe.db.get_single_value("Candidate Portal Auth Settings", "redirect_to")
+    except Exception:
+        redirect_to = None
+    return (redirect_to or "").strip() or ACTION_CENTER_URL
 
 
 def _dpdp_consent_url(applicant_name):

@@ -11,8 +11,9 @@ A withdrawn, rejected, expired or cancelled offer is history, never edited back 
 "Resend Job Offer" copies it into a new Draft — the next version, linked through
 `custom_previous_offer` — which HR edits, submits and sends like any other offer.
 An EXPIRED offer has a second, lighter route: `offer_expiry.resend_offer_letter`
-puts a new Expiry Date on the same offer and mails the same letter again, for the
-common case where only the candidate's time ran out and nothing else changed.
+raises the next version with the same terms and a new Expiry Date, submits it
+and mails it straight away, for the common case where only the candidate's time
+ran out and nothing else changed.
 
 An ACCEPTED offer can be resent too, but acceptance has already put the candidate
 into onboarding (a draft Employee Onboarding plus its "Onboarding pending" item
@@ -162,6 +163,30 @@ def _withdraw_rule(doc):
     # Recruitment Settings -> Allow Withdraw Offer Only After It Is Sent.
     if cint(_setting("withdraw_offer_only_after_sent")) and not is_offer_sent(doc):
         return _deny(_("This offer can only be withdrawn after it has been submitted and its offer email sent."))
+    return _ALLOW
+
+
+def _resend_email_rule(doc):
+    """May the offer the candidate already has be emailed to them again, as it
+    stands? Only while it is live and awaiting their answer — a closed offer is
+    resent as a new version (`_resend_rule`), an expired one on a new date."""
+    from recruitment.api.offer_expiry import offer_has_lapsed
+    from recruitment.recruitment.offer_send_rules import EMAIL_SENT
+
+    if doc.docstatus == 2:
+        return _deny(_("This offer is cancelled."))
+    if doc.status != AWAITING_RESPONSE:
+        return _deny(
+            _("Only an offer awaiting the candidate's response can be emailed again. This one is {0}.").format(
+                _(doc.status or DRAFT)
+            )
+        )
+    if doc.get("email_status") != EMAIL_SENT and not doc.get("email_sent_on"):
+        return _deny(_("The offer has not been emailed yet. Use 'Send Job Offer' first."))
+    if offer_has_lapsed(doc):
+        return _deny(_("The offer's expiry date has passed. Resend it with a new expiry date instead."))
+    if not frappe.has_permission(JOB_OFFER, "write", doc=doc.name):
+        return _deny(_("You do not have permission to change this Job Offer."))
     return _ALLOW
 
 
@@ -319,8 +344,90 @@ def offer_actions(doc):
         "withdraw": _withdraw_rule(doc),
         # A new version, with the terms open for editing.
         "resend": _resend_rule(doc),
+        # The live offer emailed to the candidate again, unchanged.
+        "resend_email": _resend_email_rule(doc),
         # The same letter again on a new Expiry Date — expired offers only.
         "resend_letter": resend_letter_rule(doc),
+    }
+
+
+# ---------------------------------------------------------------------------
+# Approval — who the offer is waiting on
+# ---------------------------------------------------------------------------
+
+APPROVAL_TRACKER = "Approval Tracker"
+APPROVAL_LOG = "Approval Log Entry"
+LIVE_APPROVAL_STATUSES = ("Pending", "Send Back")
+
+
+def _split_names(value):
+    return [v.strip() for v in (value or "").split(",") if v.strip()]
+
+
+def offer_approval_status(doc):
+    """Where the offer's approval stands, for the hiring workflow's Offer stage.
+
+    Two things can hold an offer before it reaches the candidate, read in order:
+
+    1. A nextai approval flow on Job Offer (Approval Tracker). While it is live,
+       the approvers are the log entries still Pending — named users, or roles
+       when the stage is role-based.
+    2. The HR Ops verification step (Recruitment Settings -> Job Offer Rules):
+       once "Notify HR Ops" has gone out, the offer waits on the HR Ops users
+       holding an open "Verify & release" ToDo until it is sent.
+
+    Returns None when neither applies.
+    ``{"status", "source", "stage", "pending_with": [{user, full_name}], "roles": [...]}``
+    """
+    tracker = frappe.get_all(
+        APPROVAL_TRACKER,
+        filters={"doc_type": JOB_OFFER, "doc_name": doc.name, "status": ["!=", "Revoked"]},
+        fields=["name", "status"],
+        order_by="creation desc",
+        limit=1,
+    )
+    if tracker:
+        tracker = tracker[0]
+        out = {"status": tracker.status, "source": "approval", "stage": None, "pending_with": [], "roles": []}
+        if tracker.status in LIVE_APPROVAL_STATUSES:
+            users, roles, stages = [], [], []
+            for log in frappe.get_all(
+                APPROVAL_LOG,
+                filters={"parent": tracker.name, "parenttype": APPROVAL_TRACKER, "status": "Pending"},
+                fields=["user", "custom_allocated_to_users", "role", "custom_assigned_to_roles", "stage_name"],
+                order_by="idx asc",
+            ):
+                users += _split_names(log.custom_allocated_to_users) or _split_names(log.user)
+                roles += _split_names(log.custom_assigned_to_roles) or _split_names(log.role)
+                if log.stage_name:
+                    stages.append(log.stage_name)
+            from recruitment.api.hiring_stage import _user_names
+
+            out.update(
+                pending_with=_user_names(users),
+                roles=list(dict.fromkeys(roles)),
+                stage=", ".join(dict.fromkeys(stages)) or None,
+            )
+        return out
+
+    from recruitment.recruitment import hr_ops_offer_review as hr_ops
+    from recruitment.recruitment.offer_send_rules import is_offer_sent
+
+    if doc.docstatus == 2 or not hr_ops.verification_enabled() or not hr_ops.is_notified(doc):
+        return None
+    if is_offer_sent(doc):
+        return {"status": "Approved", "source": "hr_ops", "stage": _("HR Ops verification"),
+                "pending_with": [], "roles": []}
+    from recruitment.api.hiring_stage import _user_names
+
+    assignees = _user_names(frappe.get_all("ToDo", filters=hr_ops._open_todo_filters(doc), pluck="allocated_to"))
+    return {
+        "status": "Pending",
+        "source": "hr_ops",
+        "stage": _("HR Ops verification"),
+        "pending_with": assignees,
+        # The role only when no one holds a ToDo to name instead.
+        "roles": [] if assignees else [hr_ops.HR_OPS_ROLE],
     }
 
 
@@ -348,6 +455,25 @@ def get_applicant_offer_actions(job_applicant):
     if not versions or not frappe.has_permission(JOB_OFFER, "read", doc=versions[0].name):
         return None
     return get_offer_actions(versions[0].name)
+
+
+@frappe.whitelist()
+def resend_offer_email(job_offer):
+    """The hiring workflow's "Resend Job Offer" on a live offer: the same offer
+    email again (Recruitment Settings -> Job Offer Template), nothing changed."""
+    if not job_offer:
+        frappe.throw(_("Job Offer is required."))
+    frappe.has_permission(JOB_OFFER, "read", doc=job_offer, throw=True)
+    doc = frappe.get_doc(JOB_OFFER, job_offer)
+    rule = _resend_email_rule(doc)
+    if not rule["allowed"]:
+        frappe.throw(rule["reason"], title=_("Cannot Resend Job Offer"))
+
+    from recruitment.api.bulk_job_offer import resend_welcome_email
+
+    result = resend_welcome_email(job_offer)
+    doc.add_comment("Comment", _("Offer email sent to the candidate again from the hiring workflow."))
+    return result
 
 
 # ---------------------------------------------------------------------------
@@ -403,40 +529,16 @@ def _position_for_resend(old, requisition):
     return row.name if row else None
 
 
-@frappe.whitelist()
-def resend_job_offer(job_offer):
-    """Copy a withdrawn / rejected / cancelled offer into a new Draft version.
+def raise_new_version(old, overrides=None):
+    """Copy `old` into its next version and insert it as a Draft on a free
+    position. `overrides` are set on the copy just before insert. Callers do
+    their own permission / eligibility checks and logging.
 
-    The new version is not sent: HR reviews it, submits and clicks "Send Job
-    Offer" as for any other offer. Returns the new offer's name.
+    Shared by `resend_job_offer` (HR edits the draft) and
+    `offer_expiry.resend_offer_letter` (sent straight away on a new expiry date).
     """
     from recruitment.api.offer_position import requires_position
     from recruitment.customizations.job_offer import _requisition_for_applicant
-
-    if not job_offer:
-        frappe.throw(_("Job Offer is required."))
-    frappe.has_permission(JOB_OFFER, "read", doc=job_offer, throw=True)
-    frappe.has_permission(JOB_OFFER, "create", throw=True)
-
-    old = frappe.get_doc(JOB_OFFER, job_offer)
-    rule = _resend_rule(old)
-    if not rule["allowed"]:
-        frappe.throw(rule["reason"], title=_("Cannot Resend Job Offer"))
-
-    removed_onboarding = []
-    old_status = _("Cancelled") if old.docstatus == 2 else _(old.status)
-    if old.docstatus != 2 and old.status == ACCEPTED:
-        frappe.has_permission(JOB_OFFER, "write", doc=old, throw=True)
-        # Retiring cancels the offer and deletes the onboarding with
-        # ignore_permissions — so the caller must hold those rights themselves.
-        if old.docstatus == 1:
-            frappe.has_permission(JOB_OFFER, "cancel", doc=old, throw=True)
-        for eo in _pending_onboarding(old.job_applicant):
-            frappe.has_permission(ONBOARDING, "delete", doc=eo.name, throw=True)
-            if eo.docstatus == 1:
-                frappe.has_permission(ONBOARDING, "cancel", doc=eo.name, throw=True)
-        removed_onboarding = _retire_accepted_offer(old)
-        old.reload()
 
     new = frappe.copy_doc(old)
     new.docstatus = 0
@@ -465,7 +567,47 @@ def resend_job_offer(job_offer):
             )
         new.set("custom_requisition_position", position)
 
+    for fieldname, value in (overrides or {}).items():
+        if new.meta.has_field(fieldname):
+            new.set(fieldname, value)
+
     new.insert()
+    return new
+
+
+@frappe.whitelist()
+def resend_job_offer(job_offer):
+    """Copy a withdrawn / rejected / cancelled offer into a new Draft version.
+
+    The new version is not sent: HR reviews it, submits and clicks "Send Job
+    Offer" as for any other offer. Returns the new offer's name.
+    """
+    if not job_offer:
+        frappe.throw(_("Job Offer is required."))
+    frappe.has_permission(JOB_OFFER, "read", doc=job_offer, throw=True)
+    frappe.has_permission(JOB_OFFER, "create", throw=True)
+
+    old = frappe.get_doc(JOB_OFFER, job_offer)
+    rule = _resend_rule(old)
+    if not rule["allowed"]:
+        frappe.throw(rule["reason"], title=_("Cannot Resend Job Offer"))
+
+    removed_onboarding = []
+    old_status = _("Cancelled") if old.docstatus == 2 else _(old.status)
+    if old.docstatus != 2 and old.status == ACCEPTED:
+        frappe.has_permission(JOB_OFFER, "write", doc=old, throw=True)
+        # Retiring cancels the offer and deletes the onboarding with
+        # ignore_permissions — so the caller must hold those rights themselves.
+        if old.docstatus == 1:
+            frappe.has_permission(JOB_OFFER, "cancel", doc=old, throw=True)
+        for eo in _pending_onboarding(old.job_applicant):
+            frappe.has_permission(ONBOARDING, "delete", doc=eo.name, throw=True)
+            if eo.docstatus == 1:
+                frappe.has_permission(ONBOARDING, "cancel", doc=eo.name, throw=True)
+        removed_onboarding = _retire_accepted_offer(old)
+        old.reload()
+
+    new = raise_new_version(old)
 
     new.add_comment(
         "Comment",

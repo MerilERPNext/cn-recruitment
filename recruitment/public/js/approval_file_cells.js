@@ -9,7 +9,7 @@
  *
  * Shared through `window` because each doctype's scripts are loaded on their own.
  */
-(function () {
+;(function () {
     if (window.recruitment_approval_files) return;
 
     const IMAGE_RE = /\.(png|jpe?g|gif|webp|bmp|svg)(\?|#|$)/i;

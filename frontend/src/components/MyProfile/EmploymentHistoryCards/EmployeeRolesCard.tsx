@@ -3,6 +3,7 @@ import { EditIcon, TrashIcon } from "lucide-react";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 import IconButton from "../../shared/atoms/IconButton";
 import Tooltip from "../../shared/Tooltip";
+import { historyFieldLabel } from "../../../utils/historyFieldLabel";
 
 interface Field {
     id: string | null;
@@ -73,9 +74,9 @@ const EmployeeRolesCard: React.FC<EmploymentRolesCardProps> = ({
                         Employee Role
                     </p>
 
-                    <Tooltip content={employee_role?.name || "-"}>
+                    <Tooltip content={historyFieldLabel(employee_role)}>
                         <p className="font-semibold text-lg text-gray-900 line-clamp-1">
-                            {employee_role?.name || "-"}
+                            {historyFieldLabel(employee_role)}
                         </p>
                     </Tooltip>
                 </div>

@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { useGetAllEmployees } from "../../hooks/useEmployee";
+import { useGetEmployeeEvents } from "../../hooks/useEmployee";
 import { format } from "date-fns";
 import Avatar from "../shared/Avatar";
 import Badge from "../shared/Badge";
@@ -9,11 +9,7 @@ import { CardSkeleton } from "../shared/molecules/Skeletons/TableSkeleton";
 import WrapperHoverCard from "../shared/WrapperHoverCard";
 
 const Events = () => {
-  const { data = [], isLoading } = useGetAllEmployees(
-    ["name", "date_of_birth", "employee_name", "image", "date_of_joining"],
-    19999,
-    [["status", "=", "Active"]],
-  );
+  const { data = [], isLoading } = useGetEmployeeEvents();
 
   const [activeTab, setActiveTab] = useState("Birthdays");
 

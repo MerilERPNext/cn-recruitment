@@ -33,6 +33,7 @@
 			host: "custom_eligibility_rules_ui",
 			table: "custom_eligibility_rules",
 			defaults: true,
+			rerun: true,
 		},
 		"Campus Eligibility Settings": {
 			host: "eligibility_rules_ui",
@@ -512,6 +513,8 @@
 				<button class="elig-add">+ ${__("Add Condition")}</button>
 				${cfg.defaults ? `<button class="elig-btn ghost" data-role="load-defaults">${__("Load campus defaults")}</button>
 					<button class="elig-btn ghost" data-role="open-settings">${__("Edit defaults")}</button>` : ""}
+				${cfg.rerun && !frm.is_new() && rules.length ? `<button class="elig-btn ghost" data-role="rerun"
+					title="${__("Apply the saved conditions to candidates who have already applied")}">🔁 ${__("Re-run on existing candidates")}</button>` : ""}
 			</div>
 		</div>`);
 
@@ -649,6 +652,48 @@
 		});
 	}
 
+	/** Re-check the candidates already on this opening against its saved conditions. */
+	function rerunEligibility(frm) {
+		// The server reads the SAVED rules — running with unsaved edits would apply
+		// the old ones while the screen shows the new.
+		if (frm.is_dirty()) {
+			frappe.msgprint({
+				title: __("Save first"),
+				indicator: "orange",
+				message: __("Save the opening so the re-run uses the conditions you see."),
+			});
+			return;
+		}
+		frappe.confirm(
+			__("Re-check this opening's eligibility-rejected and held candidates against the current conditions?<br><br>"
+				+ "Only candidates Rejected or put on Hold by an eligibility condition are re-checked; those who now pass become Shortlisted. "
+				+ "Candidates already Shortlisted or further along, or rejected for another reason, are not touched."),
+			() => frappe.call({
+				method: `${ENGINE}.rerun_eligibility_for_opening`,
+				args: { job_opening: frm.doc.name },
+				freeze: true,
+				freeze_message: __("Re-running eligibility…"),
+			}).then((r) => r && r.message && showRerunSummary(r.message))
+		);
+	}
+
+	function showRerunSummary(s) {
+		const line = (label, n) => (n ? `<li>${label}: <b>${n}</b></li>` : "");
+		frappe.msgprint({
+			title: __("Eligibility re-run"),
+			indicator: s.failed ? "orange" : "green",
+			message: `<p>${__("{0} candidate(s) re-checked, {1} changed status.", [s.evaluated, s.changed])}</p>
+				<ul>
+					${line(__("Rejected"), s.rejected)}
+					${line(__("On Hold"), s.hold)}
+					${line(__("Shortlisted"), s.shortlisted)}
+					${line(__("Not touched — not held back by eligibility"), s.skipped_stage)}
+					${line(__("Skipped — opening has no conditions"), s.skipped_no_rules)}
+					${line(__("Failed (see Error Log)"), s.failed)}
+				</ul>`,
+		});
+	}
+
 	function bind(frm, $w, cfg) {
 		const rules = frm.doc[cfg.table] || [];
 		const rowOf = (el) => rules[parseInt($(el).data("i"), 10)];
@@ -760,6 +805,7 @@
 
 		$w.find('[data-role="load-defaults"]').on("click", () => loadDefaults(frm, cfg));
 		$w.find('[data-role="open-settings"]').on("click", () => frappe.set_route("Form", SETTINGS_DOCTYPE));
+		$w.find('[data-role="rerun"]').on("click", () => rerunEligibility(frm));
 	}
 
 	function markAndRerender(frm, cfg) {

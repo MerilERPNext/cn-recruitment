@@ -37,3 +37,19 @@ class CustomEmployeeBoardingController(Document):
         self.create_task_and_notify_user()
 
 EmployeeBoardingController.on_submit = CustomEmployeeBoardingController.on_submit
+
+# Land signed-in System Users on the Employee Self Service portal (/webapp)
+# instead of the Desk. Installed here, at import time, because
+# frappe.app.init_request runs the whole login (HTTPRequest -> LoginManager)
+# BEFORE the before_request hooks this app installs its other patches from, so a
+# before_request entry would miss the first login of every fresh worker.
+# Gated by Website Settings -> "Redirect to Employee Self Service after login";
+# see recruitment/recruitment/login_redirect.py for the full rationale.
+try:
+    from recruitment.recruitment.login_redirect import install as _install_login_redirect
+
+    _install_login_redirect()
+except Exception as e:
+    import logging
+
+    logging.getLogger(__name__).warning(f"Failed to apply webapp login redirect patch: {e}")

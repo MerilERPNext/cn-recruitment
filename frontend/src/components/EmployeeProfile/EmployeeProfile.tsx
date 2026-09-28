@@ -426,17 +426,17 @@ const EmployeeProfile: React.FC = () => {
               className="hidden"
               onChange={handleFileChange}
             />
-            <div className="flex items-start gap-5 px-6 py-6 border-b border-gray-50 bg-white">
-              <div className="relative shrink-0">
+            <div className="flex flex-col items-center text-center px-6 py-6 border-b border-gray-50 bg-white">
+              <div className="relative shrink-0 mb-3">
                 <img
                   src={profileImageSrc}
                   alt="User avatar"
-                  className="w-24 h-24 rounded-2xl object-cover ring-4 ring-blue-50/10 shadow-sm"
+                  className="w-24 h-24 rounded-full object-cover ring-4 ring-blue-50/20 shadow-md"
                   onError={() => setImageLoadError(true)}
                 />
                 <button
                   onClick={handleImageClick}
-                  className="absolute -bottom-1.5 -right-1.5 h-8 w-8 bg-white flex justify-center items-center p-1.5 rounded-xl shadow-lg border border-gray-100 hover:bg-gray-50 transition-all active:scale-95 text-primary-600"
+                  className="absolute -bottom-1 -right-1 h-8 w-8 bg-white flex justify-center items-center p-1.5 rounded-full shadow-lg border border-gray-100 hover:bg-gray-50 transition-all active:scale-95 text-primary-600"
                   aria-label="Upload new avatar"
                 >
                   {updateDocMutation.isPending || uploadMutation.isPending ? (
@@ -446,46 +446,29 @@ const EmployeeProfile: React.FC = () => {
                   )}
                 </button>
               </div>
-              <div className="flex flex-col flex-1 min-w-0">
+              <div className="flex flex-col items-center w-full min-w-0">
                 <Typography
                   variant="h4"
-                  className="font-bold truncate tracking-tight text-lg sm:text-xl"
+                  className="font-bold truncate tracking-tight text-lg sm:text-xl text-center"
                 >
                   {user?.employee_name}
                 </Typography>
-                {user?.department_display && (
-                  <Tooltip content={user?.department_display}>
-                    <Typography
-                      variant="bodySmall"
-                      color="secondary"
-                      className="font-small truncate mt-1 flex gap-1.5 items-center"
-                    >
-                      <Building size={12} className="text-primary-500" />
-                      <span>{user?.department_display}</span>
-                    </Typography>
-                  </Tooltip>
-                )}
-                {user?.branch_display && (
+                {(user?.department_display || user?.branch_display) && (
                   <Typography
                     variant="bodySmall"
                     color="secondary"
-                    className="font-medium truncate mt-1 flex gap-1.5 items-center"
+                    className="font-medium text-center mt-1 text-xs text-gray-500 line-clamp-2 px-4"
                   >
-                    <MapPin size={14} className="text-primary-500" />
-                    <Tooltip content={user?.branch_display}>
-                      <span className="line-clamp-1">
-                        {user?.branch_display}
-                      </span>
-                    </Tooltip>
+                    {[user?.department_display, user?.branch_display].filter(Boolean).join(" - ")}
                   </Typography>
                 )}
                 {user?.employee && (
                   <Typography
                     variant="bodySmall"
                     color="disabled"
-                    className="font-medium mt-1.5 flex gap-1.5 items-center uppercase tracking-wider"
+                    className="font-medium mt-1.5 flex gap-1.5 items-center justify-center uppercase tracking-wider text-xs"
                   >
-                    <IdCard size={16} />
+                    <IdCard size={14} />
                     <span>{user?.employee}</span>
                   </Typography>
                 )}
@@ -493,13 +476,13 @@ const EmployeeProfile: React.FC = () => {
                   <Typography
                     variant="bodySmall"
                     color="primary"
-                    className="flex gap-1.5 items-center"
+                    className="flex gap-1.5 items-center justify-center mt-1 text-xs"
                   >
-                    <Mail size={14} className="text-primary-500" />
+                    <Mail size={12} className="text-primary-500" />
                     <span>{user?.company_email || user?.personal_email}</span>
                   </Typography>
                 )}
-                <div className="flex flex-wrap items-center gap-3 mt-4">
+                <div className="flex flex-wrap items-center justify-center gap-3 mt-3">
                   {user?.custom_employment_status && canShowEmployeeStatus && (
                     <Badge
                       label={

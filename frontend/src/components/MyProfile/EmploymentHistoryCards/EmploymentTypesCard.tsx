@@ -3,6 +3,7 @@ import { EditIcon, TrashIcon } from "lucide-react";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 import IconButton from "../../shared/atoms/IconButton";
 import Tooltip from "../../shared/Tooltip";
+import { historyFieldLabel } from "../../../utils/historyFieldLabel";
 
 interface Field {
     id: string | null;
@@ -74,9 +75,9 @@ const EmploymentTypesCard: React.FC<EmploymentTypesCardProps> = ({
                     <p className="text-xs text-gray-500">
                         Employment Type
                     </p>
-                    <Tooltip content={employment_type?.name || "-"}>
+                    <Tooltip content={historyFieldLabel(employment_type)}>
                         <p className="font-semibold text-gray-900 line-clamp-1">
-                            {employment_type?.name || "-"}
+                            {historyFieldLabel(employment_type)}
                         </p>
                     </Tooltip>
                 </div>
@@ -85,9 +86,9 @@ const EmploymentTypesCard: React.FC<EmploymentTypesCardProps> = ({
                     <p className="text-xs text-gray-500">
                         Employee Subtype
                     </p>
-                    <Tooltip content={employee_subtype?.name || "-"}>
+                    <Tooltip content={historyFieldLabel(employee_subtype)}>
                         <p className="font-semibold text-gray-900 line-clamp-1">
-                            {employee_subtype?.name || "-"}
+                            {historyFieldLabel(employee_subtype)}
                         </p>
                     </Tooltip>
                 </div>

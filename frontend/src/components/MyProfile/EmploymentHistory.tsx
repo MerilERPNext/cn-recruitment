@@ -22,8 +22,10 @@ import NoDataFound from "../shared/atoms/NoDataFound";
 import ConfirmationModal from "../shared/atoms/ConfirmationModal";
 import { useLoadingOverlay } from "../../context/OverlayContext";
 import { computeAddSlideBounds, computeSlideDateBounds } from "../../utils/slideDateBounds";
+import { historyFieldLabel } from "../../utils/historyFieldLabel";
 import { errorResponseFormater } from "../../utils/errorResponseFormater";
 import toast from "react-hot-toast";
+import { useScreenSize } from "../../hooks/useScreenSize";
 
 interface EmploymentHistoryProps {
   employeeId: string | undefined;
@@ -53,6 +55,7 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
   employeeId,
   onActionSuccess,
 }) => {
+  const { isDesktop } = useScreenSize();
   const { data, isLoading, error } = useGetEmploymentHistoryData(employeeId || "")
   const { data: employeePreviousDetails } = useGetEmployeePreviousDetails(employeeId || "")
 
@@ -288,8 +291,14 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
                 <Typography variant="h4" className="font-bold text-gray-900 text-lg">
                   Work History
                 </Typography>
-                {canAddEmploymentHistory && (
-                  <Button onClick={() => handleAddCard("work_role")} icon={<PlusIcon className="h-4 w-4" />} variant="contain" size="md">
+                {isDesktop && canAddEmploymentHistory && (
+                  <Button
+                    onClick={() => handleAddCard("work_role")}
+                    icon={<PlusIcon className="h-4 w-4" />}
+                    variant="contain"
+                    size="md"
+                    className="!hidden md:!inline-flex"
+                  >
                     Add
                   </Button>
                 )}
@@ -302,16 +311,16 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
                       className={`${history.length === 1 ? "max-w-md w-full" : ""}`}
                     >
                       <EmploymentHistoryCard
-                        company={item.company?.name || ""}
-                        department={item.department?.name || ""}
-                        band={item.band?.name || ""}
-                        grade={item.grade?.name || ""}
+                        company={historyFieldLabel(item.company, "")}
+                        department={historyFieldLabel(item.department, "")}
+                        band={historyFieldLabel(item.band, "")}
+                        grade={historyFieldLabel(item.grade, "")}
                         start_date={item.from_date}
                         end_date={item.to_date}
                         isCurrent={item.is_current}
-                        functionalArea={item?.functional_area?.name || ""}
+                        functionalArea={historyFieldLabel(item?.functional_area, "")}
                         is_promotion={item.is_promotion}
-                        designation={item?.designation?.name || ""}
+                        designation={historyFieldLabel(item?.designation, "")}
                         onEdit={(canEditEmploymentHistory && item.can_edit !== false) ? () => handleEditCard(item) : undefined}
                         onDelete={(canDeleteEmploymentHistory && item.can_delete) ? () => setPendingDelete({ type: "history", names: collectRowNames(item as unknown as Record<string, unknown>), subSection: "work_role" }) : undefined}
                       />
@@ -328,8 +337,14 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
                 <Typography variant="h4" className="font-bold text-gray-900 text-lg">
                   Employment Roles
                 </Typography>
-                {canAddEmploymentHistory && (
-                  <Button onClick={() => handleAddCard("employee_role")} icon={<PlusIcon className="h-4 w-4" />} variant="contain" size="md">
+                {isDesktop && canAddEmploymentHistory && (
+                  <Button
+                    onClick={() => handleAddCard("employee_role")}
+                    icon={<PlusIcon className="h-4 w-4" />}
+                    variant="contain"
+                    size="md"
+                    className="!hidden md:!inline-flex"
+                  >
                     Add
                   </Button>
                 )}
@@ -366,8 +381,14 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
                 <Typography variant="h4" className="font-bold text-gray-900 text-lg">
                   Employment Type
                 </Typography>
-                {canAddEmploymentHistory && (
-                  <Button onClick={() => handleAddCard("employment_type")} icon={<PlusIcon className="h-4 w-4" />} variant="contain" size="md">
+                {isDesktop && canAddEmploymentHistory && (
+                  <Button
+                    onClick={() => handleAddCard("employment_type")}
+                    icon={<PlusIcon className="h-4 w-4" />}
+                    variant="contain"
+                    size="md"
+                    className="!hidden md:!inline-flex"
+                  >
                     Add
                   </Button>
                 )}
@@ -405,8 +426,14 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
                 <Typography variant="h4" className="font-bold text-gray-900 text-lg">
                   Work Locations
                 </Typography>
-                {canAddEmploymentHistory && (
-                  <Button onClick={() => handleAddCard("work_location")} icon={<PlusIcon className="h-4 w-4" />} variant="contain" size="md">
+                {isDesktop && canAddEmploymentHistory && (
+                  <Button
+                    onClick={() => handleAddCard("work_location")}
+                    icon={<PlusIcon className="h-4 w-4" />}
+                    variant="contain"
+                    size="md"
+                    className="!hidden md:!inline-flex"
+                  >
                     Add
                   </Button>
                 )}
@@ -446,8 +473,14 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
                 <Typography variant="h4" className="font-bold text-gray-900 text-lg">
                   Cost Center
                 </Typography>
-                {canAddEmploymentHistory && (
-                  <Button onClick={() => handleAddCard("cost_center")} icon={<PlusIcon className="h-4 w-4" />} variant="contain" size="md">
+                {isDesktop && canAddEmploymentHistory && (
+                  <Button
+                    onClick={() => handleAddCard("cost_center")}
+                    icon={<PlusIcon className="h-4 w-4" />}
+                    variant="contain"
+                    size="md"
+                    className="!hidden md:!inline-flex"
+                  >
                     Add
                   </Button>
                 )}

@@ -118,6 +118,56 @@ def _delete_minimal_item(candidate_email, reference_doctype, reference_docname, 
     return names
 
 
+def _latest_pre_offer_item(applicant_doc):
+    """The Action Center item of the applicant's newest pre-offer round that
+    still exists, or None. Scoped to this applicant's own rows, so a pre-offer
+    for the candidate's other application is never picked up."""
+    for row in reversed(applicant_doc.get("custom_pre_offer_forms") or []):
+        if row.portal_form:
+            continue
+        if row.get("action_item") and frappe.db.exists(ACTION_DOCTYPE, row.action_item):
+            return row.action_item
+        name = frappe.db.get_value(
+            ACTION_DOCTYPE,
+            {"reference_doctype": "Job Applicant Pre Offer Form", "reference_docname": row.name},
+            "name",
+        )
+        if name:
+            return name
+    return None
+
+
+def close_pre_offer_round(applicant_doc):
+    """The candidate has moved past the Pre Offer stage, so nothing is left for
+    them to do on it: every pre-offer row still Sent / Filled becomes Reviewed and
+    its Action Center item Completed.
+
+    Without this, HR completing (or skipping) the stage from the hiring workflow
+    left the portal card on "Action Required" and the form open for a round that
+    was already over. Scoped to this applicant's own rows, so a candidate's
+    pre-offer for another application is untouched. No commit.
+    """
+    rows = applicant_doc.get("custom_pre_offer_forms") or []
+    if not rows:
+        return []
+    for row in rows:
+        if (row.status or "") in ("Sent", "Filled"):
+            row.db_set("status", "Reviewed", update_modified=False)
+
+    names = frappe.get_all(
+        ACTION_DOCTYPE,
+        filters={
+            "reference_doctype": "Job Applicant Pre Offer Form",
+            "reference_docname": ["in", [row.name for row in rows]],
+            "status": ["!=", "Completed"],
+        },
+        pluck="name",
+    )
+    for name in names:
+        frappe.db.set_value(ACTION_DOCTYPE, name, "status", "Completed")
+    return names
+
+
 def mark_item_completed(
     reference_doctype,
     reference_docname,
@@ -352,6 +402,10 @@ def _send_pre_offer_for_applicant(applicant, allow_resend=True):
         if existing and existing.status in ("Sent", "Filled", "Reviewed"):
             return {"created": False, "reason": "already sent", "action_item": existing.get("action_item")}
 
+    # The item an earlier round raised, if any — found before appending, so the
+    # new row is not mistaken for it.
+    previous_item = _latest_pre_offer_item(applicant)
+
     # Always anchor a fresh form-less row for this send (a re-send is a new round).
     row = applicant.append("custom_pre_offer_forms", {})
     row.portal_form = None
@@ -360,14 +414,27 @@ def _send_pre_offer_for_applicant(applicant, allow_resend=True):
     row.filled_at = None
     applicant.save(ignore_permissions=True)
 
-    item = _upsert_minimal_item(
-        candidate_email=candidate_email,
-        reference_doctype="Job Applicant Pre Offer Form",
-        reference_docname=row.name,
-        redirect_url=build_pre_offer_redirect(applicant.name),
-        description=_("Pre Offer Form is ready. Please fill and submit the required details."),
-        commit=False,
-    )
+    description = _("Pre Offer Form is ready. Please fill and submit the required details.")
+    if previous_item:
+        # Every round opens the same form, so the candidate keeps one card:
+        # re-point the earlier round's item at this row and re-open it. A new
+        # item per round left the old ones behind, so the same task showed up
+        # under both Pending and Completed.
+        item = frappe.get_doc(ACTION_DOCTYPE, previous_item)
+        item.reference_docname = row.name
+        item.redirect_url = build_pre_offer_redirect(applicant.name)
+        item.description = description
+        item.status = "Action Required"
+        item.save(ignore_permissions=True)
+    else:
+        item = _upsert_minimal_item(
+            candidate_email=candidate_email,
+            reference_doctype="Job Applicant Pre Offer Form",
+            reference_docname=row.name,
+            redirect_url=build_pre_offer_redirect(applicant.name),
+            description=description,
+            commit=False,
+        )
     row.db_set("action_item", item.name, update_modified=False)
 
     applicant.db_set("status", "Approvals", update_modified=False)
@@ -658,10 +725,12 @@ def sync_job_offer_action_item(doc, method=None):
         "accepted", "cancelled", "rejected", "withdrawn", "expired",
     }
 
-    if offer_status in {"withdrawn", "expired"}:
-        # HR pulled the offer back, or it lapsed unanswered: there is nothing
-        # left for the candidate to act on, so the item goes away rather than
-        # lingering as Completed. Resending the letter raises a fresh one.
+    if offer_status in {"withdrawn", "expired"} or doc.docstatus == 2:
+        # HR pulled the offer back, it lapsed unanswered, or it was cancelled:
+        # there is nothing left for the candidate to act on, so the item goes
+        # away rather than lingering. Resending the letter raises a fresh one,
+        # and an amended offer is a new document with its own item — keeping
+        # the cancelled one's showed the candidate the same offer twice.
         _delete_minimal_item(candidate_email, doc.doctype, doc.name, commit=False)
         return
 
@@ -821,6 +890,12 @@ def initiate_onboarding(job_applicant):
     endpoint can't be driven when the feature is off)."""
     if not frappe.db.get_single_value("Recruitment Settings", "enable_initiate_onboarding"):
         frappe.throw(_("Initiate Onboarding is disabled in Recruitment Settings."))
+    return initiate_onboarding_for_applicant(job_applicant)
+
+
+def initiate_onboarding_for_applicant(job_applicant):
+    """`initiate_onboarding` without the Recruitment Settings gate — shared with
+    the Onboarding Pending Initiation report and Retrigger Onboarding."""
     if not job_applicant:
         frappe.throw(_("Job Applicant is required."))
 
@@ -929,9 +1004,11 @@ def sync_pre_offer_field_rejection_action(applicant_doc):
         return
     candidate_email = applicant_doc.email_id
 
-    # The form-less pre-offer row anchors the candidate's pre-offer action item.
+    # The newest form-less pre-offer row anchors the candidate's pre-offer action
+    # item. Re-opening the oldest round instead left the newer rounds' items
+    # Completed, so the same task showed under both Pending and Completed.
     formless = next(
-        (r for r in (applicant_doc.get("custom_pre_offer_forms") or []) if not r.portal_form),
+        (r for r in reversed(applicant_doc.get("custom_pre_offer_forms") or []) if not r.portal_form),
         None,
     )
     if not formless:
@@ -1024,12 +1101,21 @@ def get_action_center_items(candidate_id=None, candidate_email=None, limit=100):
 
     _attach_job_context(rows)
 
+    # Tab counts from the very list returned, so a badge can never disagree
+    # with the cards under it. "Approved" is a done state, like "Completed".
+    completed_count = sum(1 for row in rows if row.get("status") in _DONE_STATUSES)
+
     return {
         "status": "success",
         "candidate_email": resolved_email,
         "total": len(rows),
+        "pending_count": len(rows) - completed_count,
+        "completed_count": completed_count,
         "items": rows,
     }
+
+
+_DONE_STATUSES = frozenset({"Completed", "Approved"})
 
 
 # How each action item's reference doc leads back to the Job Applicant that owns
