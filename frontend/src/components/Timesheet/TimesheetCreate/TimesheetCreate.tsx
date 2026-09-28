@@ -81,16 +81,18 @@ const TimesheetCreate: React.FC = () => {
 
   // Employee details
   const { data: user } = useCurrentUser();
+  const { targetEmployeeId, isViewingOtherUser } = useTargetUser();
+  const effectiveEmployeeId = isViewingOtherUser && targetEmployeeId ? targetEmployeeId : undefined;
   const { data: employeeDetails, isLoading: isEmployeeLoading } = useCurrentEmployeeDetails({
-    logged_in_employee_details: true,
+    employeeId: effectiveEmployeeId,
+    logged_in_employee_details: !isViewingOtherUser,
   });
-  const employeeId = employeeDetails?.employee || "";
-  const company = employeeDetails?.company_name || "";
-  const { targetEmployeeId, isViewingOtherUser } =
-    useTargetUser();
+  const employeeId = (isViewingOtherUser ? targetEmployeeId : employeeDetails?.employee) || employeeDetails?.employee || "";
+  const company = employeeDetails?.company_name || employeeDetails?.company || "";
+
   // Weekly Timesheet Data Hook
   const { data: weeklyData, isLoading: isWeeklyLoading } = useWeeklyTimesheetData({
-    employee_id: (isViewingOtherUser ? targetEmployeeId : employeeId) || "",
+    employee_id: employeeId,
     week_start_date: startOfWeekStr
   }, !!employeeId);
 
@@ -1287,6 +1289,7 @@ const TimesheetCreate: React.FC = () => {
           user={user}
           company={company}
           timesheetStatus={timesheetStatus}
+          isViewingOtherUser={isViewingOtherUser}
         />
 
         {!isDetailLoading && attachedFilesList.length > 0 && (
