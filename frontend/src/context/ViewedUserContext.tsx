@@ -24,8 +24,66 @@ const ViewedUserContext = createContext<ViewedUserContextType | undefined>(
   undefined,
 );
 
+// The viewed employee rides on the history entry (location.state) instead of the
+// URL, so it never shows in the address bar. `?target_user=` is still accepted on
+// the way in (digest emails, bookmarks, links in the app) and stripped on arrival.
 const TARGET_USER_PARAM = "target_user";
+const HISTORY_STATE_KEY = "target_user";
 const SESSION_STORAGE_KEY = "viewed_employee_id";
+// A new tab starts with empty history state, so the id is handed over in window.name.
+const WINDOW_NAME_PREFIX = "pw_target_user:";
+
+const getStateTarget = (state: unknown): string | null => {
+  const value =
+    state && typeof state === "object"
+      ? (state as Record<string, unknown>)[HISTORY_STATE_KEY]
+      : null;
+  return typeof value === "string" && value ? value : null;
+};
+
+const withStateTarget = (state: unknown, employeeId: string | null) => {
+  const next: Record<string, unknown> =
+    state && typeof state === "object" ? { ...state } : {};
+  if (employeeId) {
+    next[HISTORY_STATE_KEY] = employeeId;
+  } else {
+    delete next[HISTORY_STATE_KEY];
+  }
+  return next;
+};
+
+const withoutTargetParam = (search: string) => {
+  const params = new URLSearchParams(search);
+  params.delete(TARGET_USER_PARAM);
+  const query = params.toString();
+  return query ? `?${query}` : "";
+};
+
+// Read once per page load, at import: StrictMode runs state initializers twice
+// and the second run would find window.name already cleared.
+const handedOverEmployeeId = (() => {
+  if (typeof window === "undefined" || !window.name.startsWith(WINDOW_NAME_PREFIX)) {
+    return null;
+  }
+  const payload = window.name.slice(WINDOW_NAME_PREFIX.length);
+  window.name = "";
+  try {
+    return decodeURIComponent(payload.slice(payload.indexOf(":") + 1)) || null;
+  } catch {
+    return null;
+  }
+})();
+
+// Open an in-app path in a new tab, viewing it as `employeeId`, without putting
+// the id in the URL. The timestamp keeps each window name unique, so a second
+// click opens another tab instead of reusing the first one.
+// eslint-disable-next-line react-refresh/only-export-components
+export const openInNewTabAs = (path: string, employeeId: string) => {
+  window.open(
+    path,
+    `${WINDOW_NAME_PREFIX}${Date.now()}:${encodeURIComponent(employeeId)}`,
+  );
+};
 
 export const ViewedUserProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
@@ -34,55 +92,130 @@ export const ViewedUserProvider: React.FC<{ children: React.ReactNode }> = ({
   const location = useLocation();
   const navigate = useNavigate();
   const { data: currentEmployee } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
-  const isClearing = useRef(false);
+  // What our own pending navigate() will put on the history entry: an employee
+  // id, null while clearing, undefined when nothing is pending. Until it lands
+  // the entry still carries the old target, which must not be adopted back.
+  const awaitedTarget = useRef<string | null | undefined>(undefined);
   const navigateTimeoutRef = useRef<number | null>(null);
+  const navigateRef = useRef(navigate);
+  navigateRef.current = navigate;
   const queryClient = useQueryClient();
 
   const [targetEmployeeId, setTargetEmployeeIdState] = useState<string | null>(
     () => {
-      // Initialize from URL first, then session storage
-      const urlParam = searchParams.get(TARGET_USER_PARAM);
-      if (urlParam) {
-        sessionStorage.setItem(SESSION_STORAGE_KEY, urlParam);
-        return urlParam;
+      const initial =
+        searchParams.get(TARGET_USER_PARAM) ||
+        handedOverEmployeeId ||
+        getStateTarget(location.state) ||
+        sessionStorage.getItem(SESSION_STORAGE_KEY);
+      if (initial) {
+        sessionStorage.setItem(SESSION_STORAGE_KEY, initial);
       }
-      return sessionStorage.getItem(SESSION_STORAGE_KEY);
+      return initial;
     },
   );
 
-  // Sync URL -> State when URL changes manually (e.g., bookmark, back button)
+  // Keep the history entry and the state in step on every navigation.
   useEffect(() => {
-    // If we're in the process of clearing, don't do anything
-    // This prevents race conditions where the effect runs before state updates complete
-    if (isClearing.current) {
-      return;
+    const urlParam = searchParams.get(TARGET_USER_PARAM);
+    const stateTarget = getStateTarget(location.state);
+
+    if (awaitedTarget.current !== undefined) {
+      const landed =
+        awaitedTarget.current === null
+          ? !urlParam && !stateTarget
+          : stateTarget === awaitedTarget.current;
+      if (!landed) {
+        return;
+      }
+      awaitedTarget.current = undefined;
     }
 
-    const urlParam = searchParams.get(TARGET_USER_PARAM);
-
-    if (urlParam && urlParam !== targetEmployeeId) {
-      // URL has a different target user, update state
-      setTargetEmployeeIdState(urlParam);
-      sessionStorage.setItem(SESSION_STORAGE_KEY, urlParam);
-    } else if (!urlParam && targetEmployeeId) {
-      // URL is missing the param but we have a target user in state
-      // This is the "Sticky Session" logic - append the param to URL
-      const newParams = new URLSearchParams(searchParams);
-      newParams.set(TARGET_USER_PARAM, targetEmployeeId);
-
+    if (urlParam) {
+      // Arrived through a ?target_user= link: adopt it and drop it from the URL.
+      if (urlParam !== targetEmployeeId) {
+        setTargetEmployeeIdState(urlParam);
+        sessionStorage.setItem(SESSION_STORAGE_KEY, urlParam);
+      }
       navigate(
         {
           pathname: location.pathname,
-          search: newParams.toString(),
+          search: withoutTargetParam(location.search),
+          hash: location.hash,
         },
-        { replace: true },
+        { replace: true, state: withStateTarget(location.state, urlParam) },
       );
-    } else if (!urlParam && !targetEmployeeId) {
-      // Both are null, we're in a clean state
-      isClearing.current = false;
+    } else if (stateTarget) {
+      // Back/forward onto an entry recorded while viewing someone else.
+      if (stateTarget !== targetEmployeeId) {
+        setTargetEmployeeIdState(stateTarget);
+        sessionStorage.setItem(SESSION_STORAGE_KEY, stateTarget);
+      }
+    } else if (targetEmployeeId) {
+      // "Sticky Session": an entry reached without a target (sidebar link,
+      // setSearchParams, ...) keeps showing the employee being viewed.
+      navigate(
+        {
+          pathname: location.pathname,
+          search: location.search,
+          hash: location.hash,
+        },
+        { replace: true, state: withStateTarget(location.state, targetEmployeeId) },
+      );
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [location.pathname, searchParams.toString(), targetEmployeeId]);
+  }, [location.key, targetEmployeeId]);
+
+  // Links elsewhere in the app still hard-code ?target_user=. Catch clicks on
+  // them before the browser or the router follows the href, and hand the id
+  // over out of band instead, so it never reaches the address bar. Opening such
+  // a link some other way (context menu, copy link) still works: the id is
+  // taken from the URL on arrival and removed.
+  useEffect(() => {
+    const onLinkClick = (event: MouseEvent) => {
+      const isNewTabClick = event.type === "auxclick";
+      if (event.defaultPrevented || event.button !== (isNewTabClick ? 1 : 0)) {
+        return;
+      }
+      const anchor = event
+        .composedPath()
+        .find((node): node is HTMLAnchorElement => node instanceof HTMLAnchorElement);
+      if (!anchor?.href) {
+        return;
+      }
+      const url = new URL(anchor.href, window.location.href);
+      const employeeId = url.searchParams.get(TARGET_USER_PARAM);
+      if (
+        !employeeId ||
+        url.origin !== window.location.origin ||
+        !url.pathname.startsWith("/webapp")
+      ) {
+        return;
+      }
+
+      event.preventDefault();
+      url.searchParams.delete(TARGET_USER_PARAM);
+      const path = `${url.pathname}${url.search}${url.hash}`;
+      if (
+        isNewTabClick ||
+        anchor.target === "_blank" ||
+        event.ctrlKey ||
+        event.metaKey ||
+        event.shiftKey
+      ) {
+        openInNewTabAs(path, employeeId);
+      } else {
+        navigateRef.current(path, { state: { [HISTORY_STATE_KEY]: employeeId } });
+      }
+    };
+
+    document.addEventListener("click", onLinkClick, true);
+    document.addEventListener("auxclick", onLinkClick, true);
+    return () => {
+      document.removeEventListener("click", onLinkClick, true);
+      document.removeEventListener("auxclick", onLinkClick, true);
+    };
+  }, []);
 
   const hasReloadedRef = useRef(false);
 
@@ -94,22 +227,20 @@ export const ViewedUserProvider: React.FC<{ children: React.ReactNode }> = ({
     // If impersonation target is same as logged-in user
     if (currentEmployee.name === targetEmployeeId) {
       hasReloadedRef.current = true;
-      isClearing.current = true;
+      awaitedTarget.current = null;
 
       // Clear state + session
       setTargetEmployeeIdState(null);
       sessionStorage.removeItem(SESSION_STORAGE_KEY);
 
-      // Clean URL
-      const newParams = new URLSearchParams(searchParams);
-      newParams.delete(TARGET_USER_PARAM);
-
+      // Clean the history entry
       navigate(
         {
           pathname: location.pathname,
-          search: newParams.toString(),
+          search: withoutTargetParam(location.search),
+          hash: location.hash,
         },
-        { replace: true },
+        { replace: true, state: withStateTarget(location.state, null) },
       );
 
       // Force full reload (after URL cleanup)
@@ -118,12 +249,7 @@ export const ViewedUserProvider: React.FC<{ children: React.ReactNode }> = ({
       }, 0);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    currentEmployee?.name,
-    targetEmployeeId,
-    location.pathname,
-    searchParams.toString(),
-  ]);
+  }, [currentEmployee?.name, targetEmployeeId, location.key]);
 
   const setTargetEmployee = (
     employeeId: string | null,
@@ -141,28 +267,25 @@ export const ViewedUserProvider: React.FC<{ children: React.ReactNode }> = ({
         return;
       }
 
-      const newParams = new URLSearchParams(searchParams);
-      newParams.set(TARGET_USER_PARAM, employeeId);
-      const fullPath = `${targetPath || location.pathname
-        }?${newParams.toString()}`;
+      // A target page keeps its own query string; staying put keeps the current one.
+      const path =
+        targetPath ||
+        `${location.pathname}${withoutTargetParam(location.search)}${location.hash}`;
 
       if (openInNewTab) {
         // Only open in new tab - don't modify current tab's state or sessionStorage
-        window.open(fullPath, "_blank");
+        openInNewTabAs(path, employeeId);
       } else {
         // Navigate in current tab - update state and sessionStorage
-        isClearing.current = false;
+        awaitedTarget.current = employeeId;
         setTargetEmployeeIdState(employeeId);
         sessionStorage.setItem(SESSION_STORAGE_KEY, employeeId);
 
+        const state = targetPath
+          ? withStateTarget(null, employeeId)
+          : withStateTarget(location.state, employeeId);
         navigateTimeoutRef.current = window.setTimeout(() => {
-          navigate(
-            {
-              pathname: targetPath || location.pathname,
-              search: newParams.toString(),
-            },
-            { replace: true },
-          );
+          navigate(path, { replace: true, state });
         }, 100);
       }
     } else {
@@ -174,13 +297,14 @@ export const ViewedUserProvider: React.FC<{ children: React.ReactNode }> = ({
     // Only invalidate if we were actually viewing another user
     const wasImpersonating = targetEmployeeId !== null;
 
-    isClearing.current = true;
+    // A switch still waiting to navigate would put its target back
+    if (navigateTimeoutRef.current) {
+      clearTimeout(navigateTimeoutRef.current);
+      navigateTimeoutRef.current = null;
+    }
+    awaitedTarget.current = null;
     setTargetEmployeeIdState(null);
     sessionStorage.removeItem(SESSION_STORAGE_KEY);
-
-    // Remove param from URL
-    const newParams = new URLSearchParams(searchParams);
-    newParams.delete(TARGET_USER_PARAM);
 
     if (wasImpersonating) {
       queryClient.invalidateQueries({
@@ -202,9 +326,10 @@ export const ViewedUserProvider: React.FC<{ children: React.ReactNode }> = ({
     navigate(
       {
         pathname: location.pathname,
-        search: newParams.toString(),
+        search: withoutTargetParam(location.search),
+        hash: location.hash,
       },
-      { replace: true },
+      { replace: true, state: withStateTarget(location.state, null) },
     );
   };
 

@@ -265,10 +265,9 @@ const MyToDoItem: React.FC<{
     if (item.custom_dynamic_route?.startsWith("/helpdesk")) {
       window.open(appendTargetUser(item.custom_dynamic_route), "_blank");
     } else if (item.custom_dynamic_route) {
-      navigate(appendTargetUser(item.custom_dynamic_route));
+      navigate(item.custom_dynamic_route);
     } else {
-      const queryParam = targetEmployeeId ? `?target_user=${targetEmployeeId}` : "";
-      navigate(`/webapp/todo-app${queryParam}#/${item.name}`);
+      navigate(`/webapp/todo-app#/${item.name}`);
     }
   };
 
@@ -383,14 +382,12 @@ const TasksAwaiting: React.FC = () => {
 
   const navigate = useNavigate();
   const { isDesktop } = useScreenSize();
-  const targetEmployeeId = useOptionalTargetEmployeeId();
 
   const chipsRef = useRef<HTMLDivElement>(null);
   const [chipsOverflow, setChipsOverflow] = useState(false);
 
   const handleTodoClick = () => {
-    const queryParam = targetEmployeeId ? `?target_user=${targetEmployeeId}` : "";
-    navigate(`/webapp/todo-app${queryParam}`);
+    navigate("/webapp/todo-app");
   };
 
   const getCategoryColors = (index: number) =>

@@ -22,14 +22,14 @@ const ViewingAsBanner: React.FC = () => {
           <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse shrink-0" />
 
           <Link
-            to={`/webapp/employee-profile?target_user=${targetEmployeeId}`}
+            to="/webapp/employee-profile"
             className="text-sm font-semibold text-blue-900 truncate hover:underline"
           >
             {targetEmployee?.employee_name + ` (${targetEmployee?.name})` || targetEmployee?.name}
           </Link>
 
           <Link
-            to={`/webapp/employee-profile?target_user=${targetEmployeeId}`}
+            to="/webapp/employee-profile"
             className="shrink-0 inline-flex items-center justify-center text-blue-600 hover:text-blue-800"
           >
             <ExternalLink className="size-4" />
