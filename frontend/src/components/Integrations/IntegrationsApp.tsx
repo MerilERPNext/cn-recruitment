@@ -169,7 +169,7 @@ export const IntegrationsApp: React.FC = () => {
         window.location.pathname,
       );
       if (redirectUrl && typeof redirectUrl === "string") {
-        toast.loading("Redirecting to Google authorization...", {
+        toast.success("Redirecting to Google authorization...", {
           duration: 2000,
         });
         window.location.href = redirectUrl;
