@@ -146,5 +146,6 @@ export interface TimesheetSettings {
   hide_holiday_timesheet?: number | boolean;
   allow_weekoff_timesheet?: number | boolean;
   show_select_days_to_submit?: number | boolean;
+  disable_leave_days?: number | boolean;
   [key: string]: unknown;
 }

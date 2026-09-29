@@ -3721,7 +3721,7 @@
   "fetch_if_empty": 0,
   "fieldname": "custom_additional_roles__responsibilities",
   "fieldtype": "Small Text",
-  "hidden": 1,
+  "hidden": 0,
   "hide_border": 0,
   "hide_days": 0,
   "hide_seconds": 0,

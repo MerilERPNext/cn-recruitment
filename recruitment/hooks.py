@@ -41,6 +41,17 @@ app_include_js = [
 	# and a doctype's own JS is evaluated before any doctype_js hook. Bump ?v= when it
 	# changes.
 	"/assets/recruitment/js/campus_gd_board.js?v=1",
+	# Virtual fetched fields (a Custom Field that is `is_virtual` with a
+	# `fetch_from`, e.g. Interview.applicant_name) shown as native list columns.
+	# Frappe's list view never asks for such a field -- base_list.js#_add_field
+	# drops it, so the cell is always empty and picking it in "Add column" does
+	# nothing -- and the field has no column to sort or filter on either. This
+	# asks for the value with the same alias Frappe uses for Link columns, adds
+	# the column for fields the user picked in List View Settings, and leaves the
+	# header unsortable. Global for the same reason as the column engine: every
+	# native list view is built before any doctype_js hook. Bump ?v= when it
+	# changes.
+		"/assets/recruitment/js/virtual_field_list_columns.js?v=2",
 ]
 
 add_to_apps_screen = [

@@ -290,6 +290,7 @@ const EmployeeProfile: React.FC = () => {
 
   // When selectedProfileTab changes on mobile, initialize activeSubSection
   useEffect(() => {
+    if (isDesktop) return;
     const currentSubSections = subSectionsByTab[selectedProfileTab] || [];
     if (currentSubSections.length > 0) {
       if (!currentSubSections.some((s) => s.key === activeSubSection)) {
@@ -298,7 +299,7 @@ const EmployeeProfile: React.FC = () => {
     } else {
       setActiveSubSection("");
     }
-  }, [selectedProfileTab, subSectionsByTab, activeSubSection]);
+  }, [isDesktop, selectedProfileTab, subSectionsByTab, activeSubSection]);
 
   // Create refs for each section
   const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
@@ -338,8 +339,8 @@ const EmployeeProfile: React.FC = () => {
       overview: <Overview />,
       "personal-information": (
         <EmployeeProfileSections
-          activeSubTab={activeSubSection}
-          onActiveSubTabChange={setActiveSubSection}
+          activeSubTab={!isDesktop ? activeSubSection : undefined}
+          onActiveSubTabChange={!isDesktop ? setActiveSubSection : undefined}
           onSubTabsLoaded={handlePersonalInfoTabsLoaded}
         />
       ),
@@ -347,26 +348,26 @@ const EmployeeProfile: React.FC = () => {
         <EmploymentHistory
           employeeId={user?.employee}
           onActionSuccess={handleActionSuccess}
-          activeSubSection={activeSubSection}
-          onActiveSubSectionChange={setActiveSubSection}
+          activeSubSection={!isDesktop ? activeSubSection : undefined}
+          onActiveSubSectionChange={!isDesktop ? setActiveSubSection : undefined}
         />
       ),
       // "employee-holidays": <ShowHolidays />,
       "employee-documents": (
         <DocumentLibrary
-          activeSubTab={activeSubSection}
-          onActiveSubTabChange={setActiveSubSection}
+          activeSubTab={!isDesktop ? activeSubSection : undefined}
+          onActiveSubTabChange={!isDesktop ? setActiveSubSection : undefined}
         />
       ),
       "reporting-details": (
         <ReportingDetails
           onActionSuccess={handleActionSuccess}
-          activeCategory={activeSubSection}
-          onActiveCategoryChange={setActiveSubSection}
+          activeCategory={!isDesktop ? activeSubSection : undefined}
+          onActiveCategoryChange={!isDesktop ? setActiveSubSection : undefined}
         />
       ),
     }),
-    [user, handleActionSuccess, activeSubSection, handlePersonalInfoTabsLoaded],
+    [isDesktop, user, handleActionSuccess, activeSubSection, handlePersonalInfoTabsLoaded],
   );
 
   // //refetching of the ui permission
