@@ -117,6 +117,9 @@ doctype_js = {
         # "Employee Record" tab — is this candidate already/formerly an employee?
         "public/js/job_applicant_employee_record.js",
         "public/js/job_applicant_section_nav.js",
+        # Direct Applicant Onboarding: send form / resubmission / revoke buttons.
+        # No-op unless the applicant is direct and the feature is on.
+        "public/js/direct_applicant_form.js",
     ],
     "Job Opening": [
         "public/js/job_opening.js",
@@ -179,7 +182,12 @@ doctype_js = {
 }
 
 doctype_list_js = {
-    "Job Applicant": "public/js/job_applicant_list.js",
+    # direct_applicant_list.js wraps the onload job_applicant_list.js defines, so
+    # it must stay second.
+    "Job Applicant": [
+        "public/js/job_applicant_list.js",
+        "public/js/direct_applicant_list.js",
+    ],
     "Job Offer": "public/js/job_offer_list.js",
     "Task": "public/js/task_onboarding_listview.js",
     "Job Opening": "public/js/job_opening_list.js",
@@ -752,6 +760,9 @@ doc_events = {
             # Uppercase / de-space the PAN and check its shape. PAN is a match key
             # for the rehire check, and a mistyped one silently matches nothing.
             "recruitment.api.applicant_pan.normalize_pan",
+            # Direct Applicant Onboarding: a full Aadhaar number is checked and
+            # masked to its last 4 digits. No-op while the field is empty.
+            "recruitment.api.direct_applicant.normalize_aadhaar",
         ],
         # Place a new applicant on the linked opening's first hiring stage
         # (no-op unless the Hiring Workflow feature is enabled).
@@ -1028,4 +1039,8 @@ auth_hooks = [
 
 website_route_rules = [
     {"from_route": "/webapp/<path:app_path>", "to_route": "/webapp"},
+    # Direct Applicant Onboarding: the candidate's form link (www/direct_applicant_form).
+    {"from_route": "/direct-applicant-form", "to_route": "direct_applicant_form"},
+    # Direct Applicant Onboarding: the candidate's CTC proposal link (www/ctc_proposal).
+    {"from_route": "/ctc-proposal", "to_route": "ctc_proposal"},
 ]

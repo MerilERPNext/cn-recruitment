@@ -36,15 +36,22 @@ SAFE_SETTINGS_FIELDS = (
 )
 
 
-def candidate_required(fn):
+def candidate_required(fn=None, *, methods=None):
     """Whitelisted endpoint that requires a valid Candidate Portal Session cookie.
 
     Validates the `candidate_portal_session` cookie, refuses unauthenticated
     callers with 401, and stashes the resolved candidate on `frappe.local`
     so the endpoint body can read it via `get_current_candidate()`.
-    """
 
-    @frappe.whitelist(allow_guest=True)
+    Use as ``@candidate_required`` (any HTTP method, as before) or
+    ``@candidate_required(methods=["POST"])`` for an endpoint that changes data:
+    the session cookie also rides along on a cross-site GET navigation, so a
+    state-changing endpoint reachable by GET can be triggered by a link.
+    """
+    if fn is None:
+        return lambda f: candidate_required(f, methods=methods)
+
+    @frappe.whitelist(allow_guest=True, methods=methods)
     @wraps(fn)
     def wrapper(*args, **kwargs):
         token = _get_session_cookie()

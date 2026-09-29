@@ -12,7 +12,7 @@ so `requires_position` is False for them and their offers never claim a row.
 
 import frappe
 from frappe import _
-from frappe.utils import cint
+from frappe.utils import cint, today
 
 from recruitment.api.requisition_status import (
     APPROVED_ACTIVE_STATUS,
@@ -288,11 +288,56 @@ def _rollup_requisition(requisition, statuses=None, current=None):
     all_filled = all(s == POSITION_FILLED for s in live)
     if all_filled and current == APPROVED_ACTIVE_STATUS:
         frappe.db.set_value(JOB_REQUISITION, requisition, "status", AUTO_ARCHIVED_STATUS)
+        set_job_openings_status(requisition, JOB_OPENING_CLOSED)
         return AUTO_ARCHIVED_STATUS
     if not all_filled and current == AUTO_ARCHIVED_STATUS:
         frappe.db.set_value(JOB_REQUISITION, requisition, "status", APPROVED_ACTIVE_STATUS)
+        set_job_openings_status(requisition, JOB_OPENING_OPEN)
         return APPROVED_ACTIVE_STATUS
     return None
+
+
+JOB_OPENING = "Job Opening"
+JOB_OPENING_OPEN = "Open"
+JOB_OPENING_CLOSED = "Closed"
+
+
+def set_job_openings_status(requisition, status):
+    """Close (or reopen) the Job Openings raised against `requisition`.
+
+    Follows the requisition in and out of Auto Archived: a filled requisition
+    must stop taking applications, and one freed again by a withdrawn offer
+    needs its opening back to recruit against.
+
+    Written with db.set_value, not save: HRMS's JobOpening.on_update answers a
+    close by setting the requisition to "Filled" — a retired status that no
+    longer validates. The closed_on / closes_on handling HRMS does in
+    update_closing_date is mirrored here instead.
+    """
+    other = JOB_OPENING_OPEN if status == JOB_OPENING_CLOSED else JOB_OPENING_CLOSED
+    openings = frappe.get_all(
+        JOB_OPENING, filters={"job_requisition": requisition, "status": other}, pluck="name"
+    )
+    if not openings:
+        return []
+
+    values = {"status": status}
+    if status == JOB_OPENING_CLOSED:
+        values.update({"closed_on": today(), "closes_on": None})
+    else:
+        values["closed_on"] = None
+
+    for name in openings:
+        frappe.db.set_value(JOB_OPENING, name, values)
+        frappe.get_doc(JOB_OPENING, name).add_comment(
+            "Info",
+            (
+                _("Closed automatically: Job Requisition {0} is Auto Archived (all positions filled).")
+                if status == JOB_OPENING_CLOSED
+                else _("Reopened automatically: Job Requisition {0} has an open position again.")
+            ).format(requisition),
+        )
+    return openings
 
 
 def _release(offer_name, row_name, requisition, rows=None, req_status=None):

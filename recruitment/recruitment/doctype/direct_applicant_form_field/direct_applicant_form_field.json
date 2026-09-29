@@ -1,0 +1,90 @@
+{
+ "actions": [],
+ "creation": "2026-09-28 18:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "fieldname",
+  "label",
+  "fieldtype",
+  "section",
+  "mandatory",
+  "child_section",
+  "child_fields",
+  "mandatory_child_fields"
+ ],
+ "fields": [
+  {
+   "columns": 3,
+   "description": "A Job Applicant field (standard, custom or virtual) from Job Applicant Profile Settings.",
+   "fieldname": "fieldname",
+   "fieldtype": "Autocomplete",
+   "in_list_view": 1,
+   "label": "Field",
+   "reqd": 1
+  },
+  {
+   "columns": 2,
+   "fieldname": "label",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Label",
+   "read_only": 1
+  },
+  {
+   "columns": 1,
+   "fieldname": "fieldtype",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Type",
+   "read_only": 1
+  },
+  {
+   "columns": 2,
+   "description": "Heading the field is grouped under on the candidate's form. Defaults to its Profile Settings section.",
+   "fieldname": "section",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Section"
+  },
+  {
+   "columns": 1,
+   "default": "0",
+   "fieldname": "mandatory",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Mandatory"
+  },
+  {
+   "depends_on": "eval:['Table','Table MultiSelect'].includes(doc.fieldtype)",
+   "fieldname": "child_section",
+   "fieldtype": "Section Break",
+   "label": "Table Columns"
+  },
+  {
+   "description": "Comma-separated column fieldnames of the table. Blank = every column Profile Settings shows.",
+   "fieldname": "child_fields",
+   "fieldtype": "Small Text",
+   "label": "Columns to Show"
+  },
+  {
+   "description": "Comma-separated column fieldnames every row must fill.",
+   "fieldname": "mandatory_child_fields",
+   "fieldtype": "Small Text",
+   "label": "Mandatory Columns"
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-09-28 18:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Recruitment",
+ "name": "Direct Applicant Form Field",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

@@ -1,0 +1,185 @@
+{% extends "templates/web.html" %}
+
+{% block title %}{{ _("Your CTC Proposal") }}{% endblock %}
+
+{% block page_content %}
+<style>
+	.ctcp { max-width: 760px; margin: 24px auto 64px; padding: 0 16px; }
+	.ctcp h1 { font-size: 1.5rem; margin-bottom: 4px; }
+	.ctcp .muted { color: #6b7280; }
+	.ctcp .card-box { border: 1px solid #e5e7eb; border-radius: 10px; padding: 16px; margin-bottom: 18px; }
+	.ctcp .headline { font-size: 1.8rem; font-weight: 600; margin: 4px 0; }
+	.ctcp dl { display: grid; grid-template-columns: max-content 1fr; gap: 6px 16px; margin: 0; }
+	.ctcp dt { color: #6b7280; font-weight: 400; }
+	.ctcp table { width: 100%; font-size: 0.92rem; }
+	.ctcp th, .ctcp td { padding: 6px 4px; border-bottom: 1px solid #f3f4f6; }
+	.ctcp td.num, .ctcp th.num { text-align: right; white-space: nowrap; }
+	.ctcp tr.total td { font-weight: 600; border-bottom: none; }
+	.ctcp .note { background: #f3f4f6; border-radius: 8px; padding: 12px 14px; margin-bottom: 18px; white-space: pre-wrap; }
+	.ctcp .actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+	.ctcp .panel { display: none; margin-top: 12px; }
+	.ctcp .panel.open { display: block; }
+	.ctcp .error { background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; border-radius: 8px; padding: 12px 14px; margin-bottom: 16px; white-space: pre-wrap; }
+	.ctcp .done { text-align: center; padding: 48px 16px; }
+	.ctcp .table-wrap { overflow-x: auto; }
+</style>
+
+<div class="ctcp" id="ctcp"><p class="muted">{{ _("Loading...") }}</p></div>
+
+<script>
+(function () {
+	const API = "/api/method/recruitment.api.ctc_proposal_portal.";
+	const token = new URLSearchParams(window.location.search).get("t") || "";
+	const root = document.getElementById("ctcp");
+	let data = null;
+
+	function esc(s) {
+		return String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({
+			"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
+		}[c]));
+	}
+	function money(v) {
+		const n = Number(v || 0);
+		try {
+			return new Intl.NumberFormat("en-IN", { style: "currency", currency: data.currency || "INR", maximumFractionDigits: 0 }).format(n);
+		} catch (e) { return n.toFixed(0); }
+	}
+	function errorText(body) {
+		try {
+			if (body._server_messages) {
+				return JSON.parse(body._server_messages)
+					.map((m) => { try { return JSON.parse(m).message; } catch (e) { return m; } })
+					.map((m) => String(m).replace(/<[^>]*>/g, "")).join("\n");
+			}
+		} catch (e) { /* fall through */ }
+		return "{{ _('Something went wrong. Please try again.') }}";
+	}
+	async function call(method, params, post) {
+		let url = API + method;
+		const init = { method: post ? "POST" : "GET", headers: { Accept: "application/json" } };
+		if (post) init.body = new URLSearchParams(params); else url += "?" + new URLSearchParams(params);
+		const res = await fetch(url, init);
+		let body = {};
+		try { body = await res.json(); } catch (e) { /* non-JSON */ }
+		if (!res.ok) throw new Error(errorText(body));
+		return body.message;
+	}
+
+	const OUTCOME = {
+		"Accepted": "{{ _('You have accepted this proposal. HR will send your offer letter shortly.') }}",
+		"Offer Created": "{{ _('You have accepted this proposal. Your offer letter has been sent.') }}",
+		"Offer Failed": "{{ _('You have accepted this proposal. HR will send your offer letter shortly.') }}",
+		"Negotiation Requested": "{{ _('Your request has been sent to HR. You will receive a revised proposal.') }}",
+		"Rejected": "{{ _('You have declined this proposal. Thank you for letting us know.') }}",
+		"Withdrawn": "{{ _('This proposal has been withdrawn. Please contact HR.') }}",
+		"Superseded": "{{ _('This proposal has been replaced by a newer one. Please use the latest link.') }}",
+	};
+
+	function rows(list, title) {
+		if (!list.length) return "";
+		return `<tr><th>${esc(title)}</th><th class="num">{{ _("Monthly") }}</th><th class="num">{{ _("Annual") }}</th></tr>` +
+			list.map((r) => `<tr><td>${esc(r.component)}</td><td class="num">${money(r.monthly)}</td><td class="num">${money(r.annual)}</td></tr>`).join("");
+	}
+
+	function render() {
+		const d = data;
+		const status = d.can_respond ? "" :
+			`<div class="note">${esc(d.expired && d.status === "Sent" ? "{{ _('This proposal has expired. Please contact HR.') }}" : (OUTCOME[d.status] || d.status))}</div>`;
+		root.innerHTML = `
+			<h1>{{ _("Your CTC Proposal") }}</h1>
+			<p class="muted">${esc(d.applicant_name)} · ${esc(d.company)}${d.version > 1 ? " · {{ _('Revision') }} " + esc(d.version) : ""}</p>
+			<div class="error" hidden></div>
+			${status}
+			<div class="card-box">
+				<div class="muted">{{ _("Annual CTC") }}</div>
+				<div class="headline">${money(d.ctc)}</div>
+				${Number(d.annual_ctc) && Math.round(d.annual_ctc) !== Math.round(d.ctc)
+					? `<div class="muted">{{ _("Total cost to company incl. employer contributions") }}: ${money(d.annual_ctc)}</div>` : ""}
+				<hr>
+				<dl>
+					<dt>{{ _("Designation") }}</dt><dd>${esc(d.designation)}</dd>
+					${d.department ? `<dt>{{ _("Department") }}</dt><dd>${esc(d.department)}</dd>` : ""}
+					<dt>{{ _("Employment Type") }}</dt><dd>${esc(d.employment_type)}</dd>
+					<dt>{{ _("Expected Joining") }}</dt><dd>${esc(d.expected_doj)}</dd>
+				</dl>
+			</div>
+			<div class="card-box table-wrap">
+				<table>
+					${rows(d.earnings, "{{ _('Earnings') }}")}
+					<tr class="total"><td>{{ _("Gross") }}</td><td class="num">${money(d.monthly_gross)}</td><td class="num">${money(d.monthly_gross * 12)}</td></tr>
+					${rows(d.deductions, "{{ _('Deductions') }}")}
+					<tr class="total"><td>{{ _("Take-home before income tax") }}</td><td class="num">${money(d.monthly_net)}</td><td class="num">${money(d.monthly_net * 12)}</td></tr>
+				</table>
+			</div>
+			${d.hr_note ? `<div class="note"><b>{{ _("Note from HR") }}</b>\n${esc(d.hr_note)}</div>` : ""}
+			${d.can_respond ? actionsHtml(d) : ""}`;
+		if (d.can_respond) bind();
+	}
+
+	function actionsHtml(d) {
+		return `<div class="card-box">
+			<div class="actions">
+				<button class="btn btn-default" data-open="reject">{{ _("Reject") }}</button>
+				${d.can_negotiate ? `<button class="btn btn-default" data-open="negotiate">{{ _("Negotiate") }}</button>` : ""}
+				<button class="btn btn-primary" data-open="accept">{{ _("Accept") }}</button>
+			</div>
+			<div class="panel" data-panel="accept">
+				<p>{{ _("By accepting, you agree to this CTC. Your offer letter will follow.") }}</p>
+				<div class="actions"><button class="btn btn-primary" data-send="Accept">{{ _("Confirm Accept") }}</button></div>
+			</div>
+			<div class="panel" data-panel="negotiate">
+				<label>{{ _("Your expected Annual CTC") }}</label>
+				<input type="number" min="0" step="1000" class="form-control" data-expected>
+				<label style="margin-top:8px">{{ _("Comment") }}</label>
+				<textarea class="form-control" rows="3" data-comment="negotiate"></textarea>
+				<div class="actions" style="margin-top:8px"><button class="btn btn-primary" data-send="Negotiate">{{ _("Send to HR") }}</button></div>
+			</div>
+			<div class="panel" data-panel="reject">
+				<label>{{ _("Reason (optional)") }}</label>
+				<textarea class="form-control" rows="3" data-comment="reject"></textarea>
+				<div class="actions" style="margin-top:8px"><button class="btn btn-danger" data-send="Reject">{{ _("Confirm Reject") }}</button></div>
+			</div>
+		</div>`;
+	}
+
+	function bind() {
+		root.addEventListener("click", async (e) => {
+			const open = e.target.closest("[data-open]");
+			if (open) {
+				root.querySelectorAll(".panel").forEach((p) => p.classList.toggle("open", p.dataset.panel === open.dataset.open));
+				return;
+			}
+			const send = e.target.closest("[data-send]");
+			if (!send) return;
+			const response = send.dataset.send;
+			const params = { t: token, response };
+			if (response === "Negotiate") {
+				params.expected_ctc = root.querySelector("[data-expected]").value;
+				params.comment = root.querySelector('[data-comment="negotiate"]').value;
+			} else if (response === "Reject") {
+				params.comment = root.querySelector('[data-comment="reject"]').value;
+			}
+			send.disabled = true;
+			try {
+				await call("respond", params, true);
+				data = await call("get_proposal", { t: token });
+				render();
+				window.scrollTo(0, 0);
+			} catch (err) {
+				const box = root.querySelector(".error");
+				box.hidden = false;
+				box.textContent = err.message;
+				box.scrollIntoView({ behavior: "smooth", block: "center" });
+				send.disabled = false;
+			}
+		});
+	}
+
+	call("get_proposal", { t: token })
+		.then((d) => { data = d; render(); })
+		.catch((e) => {
+			root.innerHTML = `<div class="done"><h1>{{ _("Link unavailable") }}</h1><p>${esc(e.message)}</p></div>`;
+		});
+})();
+</script>
+{% endblock %}

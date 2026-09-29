@@ -257,6 +257,23 @@ def _throttle_session_starts(appl):
         )
 
 
+# What each rejection means, per the HPCP partner spec. Used when the portal answers
+# with a bare status and no message of its own.
+HTTP_REASONS = {
+    400: "the request was rejected as invalid (missing field, bad email/mobile format, or unpublished Configuration Code)",
+    401: "the Partner Username / Password in DPDP Act Settings were not accepted",
+    403: "the partner account is disabled or this server's IP address is not whitelisted — ask the HPCP administrator to whitelist it",
+    404: "the Org ID in DPDP Act Settings does not match any registered partner",
+}
+
+
+def _http_reason(response):
+    if response is None:
+        return None
+    reason = HTTP_REASONS.get(response.status_code)
+    return f"HTTP {response.status_code}: {reason}" if reason else None
+
+
 def _partner_message(body):
     """The human-readable reason out of a partner response body, if it carries one."""
     if not isinstance(body, dict):
@@ -348,6 +365,7 @@ def _create_session(appl):
     frappe.db.commit()
 
     body = None
+    response = None
     try:
         response = requests.post(
             endpoint,
@@ -367,7 +385,7 @@ def _create_session(appl):
         response.raise_for_status()
     except Exception as exc:
         frappe.log_error(frappe.get_traceback(), "DPDP: consent session start failed")
-        _fail_session(session, _partner_message(body) or cstr(exc))
+        _fail_session(session, _partner_message(body) or _http_reason(response) or cstr(exc))
 
     data = (body or {}).get("data") or {}
     session_id = cstr(data.get("sessionId")).strip()

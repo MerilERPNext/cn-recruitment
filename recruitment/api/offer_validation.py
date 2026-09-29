@@ -57,6 +57,20 @@ def _allow_multiple_offers() -> bool:
 	)
 
 
+def _accepted_direct_proposal(job_applicant: str) -> bool:
+	"""A direct applicant (feature on) whose CTC Proposal was accepted."""
+	from recruitment.api.direct_applicant import is_direct, is_enabled
+
+	if not is_enabled() or not is_direct(
+		frappe.db.get_value("Job Applicant", job_applicant, ["custom_da_is_direct"], as_dict=True)
+	):
+		return False
+	return bool(frappe.db.exists(
+		"CTC Proposal",
+		{"job_applicant": job_applicant, "status": ["in", ("Accepted", "Offer Created", "Offer Failed")]},
+	))
+
+
 def _deny(code: str, message: str) -> dict:
 	return {"allowed": False, "code": code, "message": message}
 
@@ -210,6 +224,12 @@ def check_offer_allowed(job_applicant: str, exclude_offer: str | None = None) ->
 	pending = _pre_offer_not_approved(job_applicant)
 	if pending:
 		return _deny("pre_offer_pending", pending)
+
+	# Direct Applicant Onboarding: no Job Opening or requisition by design — the
+	# CTC Proposal the candidate accepted stands in for the headcount. Only with
+	# the feature on and such a proposal; checks 1 and 1b still apply.
+	if not applicant.job_title and _accepted_direct_proposal(job_applicant):
+		return {"allowed": True, "code": "direct_applicant", "message": ""}
 
 	# 2 — the opening must sit under a requisition
 	if not applicant.job_title:

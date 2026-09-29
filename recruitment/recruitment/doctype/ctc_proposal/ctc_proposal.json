@@ -1,0 +1,478 @@
+{
+ "actions": [],
+ "autoname": "format:CTCP-{#####}",
+ "creation": "2026-09-28 20:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "candidate_section",
+  "job_applicant",
+  "applicant_name",
+  "email",
+  "column_break_status",
+  "status",
+  "version",
+  "previous_proposal",
+  "negotiation_round",
+  "position_section",
+  "company",
+  "designation",
+  "department",
+  "column_break_position",
+  "employment_type",
+  "expected_doj",
+  "offer_letter_template",
+  "compensation_section",
+  "ctc",
+  "salary_structure",
+  "column_break_compensation",
+  "income_tax_slab",
+  "epf",
+  "epf_type",
+  "breakup_section",
+  "earnings",
+  "column_break_breakup",
+  "deductions",
+  "totals_section",
+  "monthly_gross",
+  "monthly_deductions",
+  "column_break_totals",
+  "monthly_net",
+  "annual_ctc",
+  "message_section",
+  "hr_note",
+  "response_section",
+  "candidate_response",
+  "expected_ctc",
+  "column_break_response",
+  "candidate_comment",
+  "responded_on",
+  "system_section",
+  "sent_by",
+  "sent_on",
+  "expires_on",
+  "column_break_system",
+  "action_item",
+  "job_offer",
+  "offer_error",
+  "token_hash"
+ ],
+ "fields": [
+  {
+   "fieldname": "candidate_section",
+   "fieldtype": "Section Break",
+   "label": "Candidate"
+  },
+  {
+   "fieldname": "job_applicant",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Job Applicant",
+   "options": "Job Applicant",
+   "reqd": 1,
+   "search_index": 1,
+   "set_only_once": 1
+  },
+  {
+   "fetch_from": "job_applicant.custom_full_name",
+   "fieldname": "applicant_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Applicant Name",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "job_applicant.email_id",
+   "fieldname": "email",
+   "fieldtype": "Data",
+   "label": "Email",
+   "options": "Email",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_status",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Draft",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Status",
+   "no_copy": 1,
+   "options": "Draft\nSent\nNegotiation Requested\nAccepted\nRejected\nSuperseded\nWithdrawn\nOffer Created\nOffer Failed",
+   "read_only": 1
+  },
+  {
+   "default": "1",
+   "fieldname": "version",
+   "fieldtype": "Int",
+   "label": "Version",
+   "read_only": 1
+  },
+  {
+   "fieldname": "previous_proposal",
+   "fieldtype": "Link",
+   "label": "Previous Version",
+   "options": "CTC Proposal",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "description": "How many times the candidate negotiated before this version.",
+   "fieldname": "negotiation_round",
+   "fieldtype": "Int",
+   "label": "Negotiations So Far",
+   "read_only": 1
+  },
+  {
+   "fieldname": "position_section",
+   "fieldtype": "Section Break",
+   "label": "Position"
+  },
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "label": "Company",
+   "options": "Company",
+   "read_only_depends_on": "eval:doc.status!='Draft'",
+   "reqd": 1
+  },
+  {
+   "fieldname": "designation",
+   "fieldtype": "Link",
+   "label": "Designation",
+   "options": "Designation",
+   "read_only_depends_on": "eval:doc.status!='Draft'",
+   "reqd": 1
+  },
+  {
+   "fieldname": "department",
+   "fieldtype": "Link",
+   "label": "Department",
+   "options": "Department",
+   "read_only_depends_on": "eval:doc.status!='Draft'"
+  },
+  {
+   "fieldname": "column_break_position",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "employment_type",
+   "fieldtype": "Link",
+   "label": "Employment Type",
+   "options": "Employment Type",
+   "read_only_depends_on": "eval:doc.status!='Draft'",
+   "reqd": 1
+  },
+  {
+   "fieldname": "expected_doj",
+   "fieldtype": "Date",
+   "label": "Expected Date of Joining",
+   "read_only_depends_on": "eval:doc.status!='Draft'",
+   "reqd": 1
+  },
+  {
+   "description": "The letter the Job Offer is sent with once the candidate accepts. Needed when Recruitment Settings -> Send Offer via Document Template is on; only templates that apply to this offer are listed.",
+   "fieldname": "offer_letter_template",
+   "fieldtype": "Link",
+   "label": "Offer Letter Template",
+   "options": "Document Template",
+   "read_only_depends_on": "eval:doc.status!='Draft'"
+  },
+  {
+   "description": "Enter the annual CTC. Earnings and deductions are worked out from the salary structure of the dummy Salary Structure Assignment (Recruitment Settings) when you save.",
+   "fieldname": "compensation_section",
+   "fieldtype": "Section Break",
+   "label": "Compensation"
+  },
+  {
+   "description": "Taken as the Annual Fixed Gross the salary structure computes from.",
+   "fieldname": "ctc",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Annual CTC",
+   "non_negative": 1,
+   "read_only_depends_on": "eval:doc.status!='Draft'",
+   "reqd": 1
+  },
+  {
+   "fieldname": "salary_structure",
+   "fieldtype": "Link",
+   "label": "Salary Structure",
+   "options": "Salary Structure",
+   "read_only_depends_on": "eval:doc.status!='Draft'",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_compensation",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "income_tax_slab",
+   "fieldtype": "Link",
+   "label": "Income Tax Slab",
+   "options": "Income Tax Slab",
+   "read_only_depends_on": "eval:doc.status!='Draft'"
+  },
+  {
+   "default": "0",
+   "fieldname": "epf",
+   "fieldtype": "Check",
+   "label": "EPF",
+   "read_only_depends_on": "eval:doc.status!='Draft'"
+  },
+  {
+   "depends_on": "eval:doc.epf",
+   "fieldname": "epf_type",
+   "fieldtype": "Select",
+   "label": "EPF Type",
+   "options": "\nPF Actual\nPF Restricted",
+   "read_only_depends_on": "eval:doc.status!='Draft'"
+  },
+  {
+   "fieldname": "breakup_section",
+   "fieldtype": "Section Break",
+   "label": "Monthly Breakup"
+  },
+  {
+   "fieldname": "earnings",
+   "fieldtype": "Table",
+   "label": "Earnings",
+   "options": "Earnings",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_breakup",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "deductions",
+   "fieldtype": "Table",
+   "label": "Deductions",
+   "options": "Deductions",
+   "read_only": 1
+  },
+  {
+   "fieldname": "totals_section",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "monthly_gross",
+   "fieldtype": "Currency",
+   "label": "Monthly Gross",
+   "read_only": 1
+  },
+  {
+   "fieldname": "monthly_deductions",
+   "fieldtype": "Currency",
+   "label": "Monthly Deductions",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_totals",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "monthly_net",
+   "fieldtype": "Currency",
+   "label": "Monthly Take-home (before tax)",
+   "read_only": 1
+  },
+  {
+   "description": "Sum of the components marked Part of CTC, x 12. Can exceed the Annual CTC when the structure has employer contributions.",
+   "fieldname": "annual_ctc",
+   "fieldtype": "Currency",
+   "label": "Total Annual CTC (computed)",
+   "read_only": 1
+  },
+  {
+   "fieldname": "message_section",
+   "fieldtype": "Section Break",
+   "label": "Message"
+  },
+  {
+   "fieldname": "hr_note",
+   "fieldtype": "Small Text",
+   "label": "Note to Candidate",
+   "read_only_depends_on": "eval:doc.status!='Draft'"
+  },
+  {
+   "depends_on": "eval:doc.candidate_response",
+   "fieldname": "response_section",
+   "fieldtype": "Section Break",
+   "label": "Candidate Response"
+  },
+  {
+   "fieldname": "candidate_response",
+   "fieldtype": "Select",
+   "in_standard_filter": 1,
+   "label": "Response",
+   "no_copy": 1,
+   "options": "\nAccepted\nNegotiate\nRejected",
+   "read_only": 1
+  },
+  {
+   "fieldname": "expected_ctc",
+   "fieldtype": "Currency",
+   "label": "Candidate's Expected CTC",
+   "no_copy": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_response",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "candidate_comment",
+   "fieldtype": "Small Text",
+   "label": "Candidate's Comment",
+   "no_copy": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "responded_on",
+   "fieldtype": "Datetime",
+   "label": "Responded On",
+   "no_copy": 1,
+   "read_only": 1
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "system_section",
+   "fieldtype": "Section Break",
+   "label": "System"
+  },
+  {
+   "fieldname": "sent_by",
+   "fieldtype": "Link",
+   "label": "Sent By",
+   "no_copy": 1,
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "sent_on",
+   "fieldtype": "Datetime",
+   "label": "Sent On",
+   "no_copy": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "expires_on",
+   "fieldtype": "Datetime",
+   "label": "Link Valid Till",
+   "no_copy": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_system",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "action_item",
+   "fieldtype": "Data",
+   "label": "Action Center Item",
+   "no_copy": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "job_offer",
+   "fieldtype": "Link",
+   "label": "Job Offer",
+   "no_copy": 1,
+   "options": "Job Offer",
+   "read_only": 1
+  },
+  {
+   "depends_on": "eval:doc.offer_error",
+   "fieldname": "offer_error",
+   "fieldtype": "Small Text",
+   "label": "Offer Error",
+   "no_copy": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "token_hash",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Token Hash",
+   "no_copy": 1,
+   "permlevel": 1,
+   "read_only": 1,
+   "search_index": 1
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "links": [],
+ "modified": "2026-09-29 14:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Recruitment",
+ "name": "CTC Proposal",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "HR Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Recruiter Admin",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "HR User",
+   "share": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Job Recruiter",
+   "share": 1
+  }
+ ],
+ "show_title_field_in_link": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "applicant_name",
+ "track_changes": 1
+}
