@@ -8,10 +8,24 @@ export const getStageAssignedUsersCell = (
   stage: any,
   roleAssignedUsers: RoleAssignedUsersType[] = [],
   position: "left" | "right" | "top" | "bottom" = "left",
-  textWrapper?: (text: string) => ReactNode
+  textWrapper?: (text: string) => ReactNode,
+  children?: ReactNode
 ) => {
-  if (!stage) return textWrapper ? textWrapper("—") : <span>—</span>;
-  const totalUsers = stage?.assigned_users_count ?? stage?.todo?.assigned_users_count;;
+  if (!stage) {
+    if (children) {
+      return (
+        <AllocatedToTooltip
+          title="Assigned To"
+          users={[]}
+          position={position}
+        >
+          {children}
+        </AllocatedToTooltip>
+      );
+    }
+    return textWrapper ? textWrapper("—") : <span>—</span>;
+  }
+  const totalUsers = stage?.assigned_users_count ?? stage?.todo?.assigned_users_count;
 
   let stageOrDesignation = stage?.stage_name || stage?.designation_name || undefined;
   if (typeof stageOrDesignation === 'string') {
@@ -19,10 +33,10 @@ export const getStageAssignedUsersCell = (
   }
 
   if (roleAssignedUsers.length > 0) {
-
     const roles = stage.role ? stage.role.split(',').map((r: string) => r.trim()) : [];
-
     const text = totalUsers ? `Assign(${totalUsers})` : `Assign(${roleAssignedUsers.length})`;
+    const content = children ?? (textWrapper ? textWrapper(text) : <Typography color="primary" className="underline">{text}</Typography>);
+
     return (
       <AllocatedToTooltip
         title="Assigned To"
@@ -31,7 +45,7 @@ export const getStageAssignedUsersCell = (
         position={position}
         overrideDesignation={stageOrDesignation}
       >
-        {textWrapper ? textWrapper(text) : <Typography color="primary" className="underline">{text}</Typography>}
+        {content}
       </AllocatedToTooltip>
     );
   }
@@ -43,6 +57,7 @@ export const getStageAssignedUsersCell = (
       : [];
 
   const label = (stageOrDesignation || (totalUsers ? `Assign(${totalUsers})` : users.length ? `Assign(${users.length})` : "Not Assigned")) + " ";
+  const content = children ?? (textWrapper ? textWrapper(label) : <Typography color="primary" className="underline"><span>{label}</span></Typography>);
 
   return (
     <AllocatedToTooltip
@@ -51,15 +66,16 @@ export const getStageAssignedUsersCell = (
       position={position}
       overrideDesignation={stageOrDesignation}
     >
-      <Typography color="primary" className="underline">
-
-        {textWrapper ? textWrapper(label) : <span>{label}</span>}
-      </Typography>
+      {content}
     </AllocatedToTooltip>
   );
 };
 
-export const getAssignedUsersCell = (item: any) => {
+export const getAssignedUsersCell = (
+  item: any,
+  position: "left" | "right" | "top" | "bottom" = "left",
+  children?: ReactNode
+) => {
   const stages: any[] = item?.approval_stages_status ?? [];
   const fallback = stages[stages.length - 1];
 
@@ -70,6 +86,8 @@ export const getAssignedUsersCell = (item: any) => {
   return getStageAssignedUsersCell(
     activeStage,
     item?.role_assigned_users,
-    "left"
+    position,
+    undefined,
+    children
   );
 };
