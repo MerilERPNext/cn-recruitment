@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   useEmployeeDocument,
   useEmployeeDocumentCount,
@@ -21,6 +20,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { FilterCondition } from "../../types/frappe";
 import { MobileTabDropdown } from "../EmployeeProfile/MobileTabDropdown";
 import formatToIndianDate from "../../utils/formatToIndianDate";
+import { useScreenSize } from "../../hooks/useScreenSize";
 
 // eslint-disable-next-line react-refresh/only-export-components
 export const DOCUMENT_LIBRARY_SUBSECTIONS = [
@@ -38,6 +38,7 @@ const DocumentLibrary: React.FC<DocumentLibraryProps> = ({
   activeSubTab,
   onActiveSubTabChange,
 }) => {
+  const { isMobile } = useScreenSize();
   const [internalActiveTab, setInternalActiveTab] = useState("awaiting");
   const activeTab = (activeSubTab !== undefined && activeSubTab !== "") ? activeSubTab : internalActiveTab;
   const setActiveTab = onActiveSubTabChange || setInternalActiveTab;
@@ -47,7 +48,6 @@ const DocumentLibrary: React.FC<DocumentLibraryProps> = ({
     approved: 1,
   });
   const currentPage = pageMap[activeTab] ?? 1;
-  const [isMobile, setIsMobile] = useState(false);
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
   const [selectedDocId, setSelectedDocId] = useState<string | null>(null);
   const { targetEmployeeId } = useTargetUser();
@@ -114,13 +114,6 @@ const DocumentLibrary: React.FC<DocumentLibraryProps> = ({
   const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setAcknowledged(e.target.checked);
   };
-
-  useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth < 900);
-    handleResize();
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
 
   const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
   const hasPrevPage = currentPage > 1;
