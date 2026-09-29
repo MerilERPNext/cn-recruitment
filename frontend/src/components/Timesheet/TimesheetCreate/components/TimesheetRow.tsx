@@ -222,7 +222,9 @@ export const TimesheetRow: React.FC<TimesheetRowProps> = ({
                     {status && (
                       <span
                         className={`text-[7px] sm:text-[8px] font-semibold px-0.5 py-0.5 rounded-md mt-1 border leading-none text-center w-full min-w-0 truncate ${
-                          status === "Week Off"
+                          status === "On Leave"
+                            ? "bg-pink-50 text-pink-700 border border-pink-200/60"
+                            : status === "Week Off"
                             ? "bg-orange-50 text-orange-600 border border-orange-200/60"
                             : status === "Holiday"
                             ? "bg-violet-50 text-violet-600 border-violet-200/60"

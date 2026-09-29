@@ -25,6 +25,8 @@ import { Card } from "../shared/atoms/Card";
 import ProfileSkeleton from "../shared/molecules/Skeletons/ProfileSkeleton";
 import { useGetUiPermission } from "../../hooks/userUiPermission";
 import { isActionEnabled } from "../../utils/uiPermission";
+import { useScreenSize } from "../../hooks/useScreenSize";
+import { MobileTabDropdown } from "./MobileTabDropdown";
 import formatToIndianDate from "../../utils/formatToIndianDate";
 
 interface EditableField {
@@ -33,7 +35,19 @@ interface EditableField {
     fieldname?: string;
     rowIndex?: number;
 }
-export default function EmployeeProfileSections() {
+
+interface EmployeeProfileSectionsProps {
+    activeSubTab?: string;
+    onActiveSubTabChange?: (key: string) => void;
+    onSubTabsLoaded?: (tabs: { key: string; label: string }[]) => void;
+}
+
+export default function EmployeeProfileSections({
+    activeSubTab,
+    onActiveSubTabChange,
+    onSubTabsLoaded,
+}: EmployeeProfileSectionsProps = {}) {
+    const { isDesktop } = useScreenSize();
     const { targetEmployeeId } = useTargetUser();
 
     const { data: currentUser, isLoading } =
@@ -43,7 +57,6 @@ export default function EmployeeProfileSections() {
         targetEmployeeId || (isLoading ? null : currentUser?.employee) || "";
 
     const { data: employee, isLoading: employeeLoading, refetch: refetchEmployee } = useGetEmployeeDetailsByEmpIdForProfile(employeeId);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const formInstances = useRef<Record<string, any>>({});
 
     const { data: fieldPermissions, isLoading: fieldPermissionsLoading } = useGetEmployeeFieldPermissions({
@@ -54,7 +67,9 @@ export default function EmployeeProfileSections() {
         include_breaks: 1,
     });
     const [tabs, setTabs] = useState<SimpleTab[]>([]);
-    const [activeTab, setActiveTab] = useState<string>("");
+    const [internalActiveTab, setInternalActiveTab] = useState<string>("");
+    const activeTab = (activeSubTab !== undefined && activeSubTab !== "") ? activeSubTab : internalActiveTab;
+    const setActiveTab = onActiveSubTabChange || setInternalActiveTab;
     const [edit, setEdit] = useState<EditableField | null>(null);
 
     const [formioTabs, setformioTabs] = useState<TabWithSchema[]>([]);
@@ -74,7 +89,12 @@ export default function EmployeeProfileSections() {
                 employee.employee
             );
             setTabs(result.tabs);
-            setActiveTab(result.tabs[0]?.key || "");
+            if (!activeSubTab && result.tabs[0]?.key) {
+                setActiveTab(result.tabs[0].key);
+            }
+            if (onSubTabsLoaded) {
+                onSubTabsLoaded(result.tabs.map(t => ({ key: t.key, label: t.label })));
+            }
 
             const formioResult = await convertToFormioWithTabMetadata(
                 fieldPermissions,
@@ -83,7 +103,7 @@ export default function EmployeeProfileSections() {
             setformioTabs(formioResult.tabs);
         };
         fetchData();
-    }, [fieldPermissions, employee?.employee]);
+    }, [fieldPermissions, employee?.employee, onSubTabsLoaded, activeSubTab, setActiveTab]);
 
     useEffect(() => {
         if (!tabs.length) return;
@@ -104,7 +124,7 @@ export default function EmployeeProfileSections() {
         });
 
         return () => observer.disconnect();
-    }, [tabs]);
+    }, [tabs, setActiveTab]);
 
     const scrollToSection = (key: string) => {
         sectionRefs.current[key]?.scrollIntoView({
@@ -117,40 +137,57 @@ export default function EmployeeProfileSections() {
     }
     return (
         <div>
-            <div className="flex items-start justify-between">
-                <div className="px-0 md:px-6 py-6">
-                    <Typography variant="h4" className="font-bold text-gray-900 mb-1 text-xl sm:text-2xl">
-                        Personal Information
-                    </Typography>
-                    <Typography variant="bodyMedium" color="body2" className="max-sm:text-sm">
-                        Comprehensive details and records.
-                    </Typography>
-                </div>
-            </div>
-            {tabs.length > 1 && (
-                <div className="px-0 md:px-6 sticky top-[114px] md:top-14 bg-white z-10 flex-shrink-0 w-full max-w-full pb-2">
-                    <div className="flex bg-white overflow-x-scroll scrollbar-hide gap-1 w-full py-2">
-                        {tabs.map(tab => (
-                            <Button
-                                key={tab.key}
-                                onClick={() => scrollToSection(tab.key)}
-                                variant="subtle"
-                                size="sm"
-                                className={`rounded-full whitespace-nowrap px-4 py-1.5 text-xs font-semibold transition-all duration-200
-                  ${activeTab === tab.key
-                                        ? "bg-primary-50 text-header-active border-primary-100"
-                                        : "border-transparent text-header-inactive hover:text-header-active"
-                                    }`}
-                            >
-                                {tab.label}
-                            </Button>
-                        ))}
+            {isDesktop && (
+                <div className="flex items-start justify-between">
+                    <div className="px-0 md:px-6 py-6">
+                        <Typography variant="h4" className="font-bold text-gray-900 mb-1 text-xl sm:text-2xl">
+                            Personal Information
+                        </Typography>
+                        <Typography variant="bodyMedium" color="body2" className="max-sm:text-sm">
+                            Comprehensive details and records.
+                        </Typography>
                     </div>
                 </div>
             )}
+            {isDesktop ? (
+                tabs.length > 1 && (
+                    <div className="px-0 md:px-6 sticky top-[114px] md:top-14 bg-white z-10 flex-shrink-0 w-full max-w-full pb-2">
+                        <div className="flex bg-white overflow-x-scroll scrollbar-hide gap-1 w-full py-2">
+                            {tabs.map(tab => (
+                                <Button
+                                    key={tab.key}
+                                    onClick={() => scrollToSection(tab.key)}
+                                    variant="subtle"
+                                    size="sm"
+                                    className={`rounded-full whitespace-nowrap px-4 py-1.5 text-xs font-semibold transition-all duration-200
+                      ${activeTab === tab.key
+                                            ? "bg-primary-50 text-header-active border-primary-100"
+                                            : "border-transparent text-header-inactive hover:text-header-active"
+                                        }`}
+                                >
+                                    {tab.label}
+                                </Button>
+                            ))}
+                        </div>
+                    </div>
+                )
+            ) : (
+                !onActiveSubTabChange && (
+                    <MobileTabDropdown
+                        label="Sub-Section"
+                        options={tabs}
+                        value={activeTab}
+                        onChange={(key) => setActiveTab(key)}
+                        variant="neutral"
+                        stickyTopClass="top-[149px]"
+                        className="mb-3"
+                        zIndex={15}
+                    />
+                )
+            )}
             {/* Scrollable Sections */}
             <div className="space-y-2 md:space-y-6 pb-6">
-                {tabs.map(tab => {
+                {(isDesktop ? tabs : (tabs.filter(t => t.key === activeTab).length > 0 ? tabs.filter(t => t.key === activeTab) : [tabs[0]])).map(tab => {
                     const allFields = tab.sections.flatMap(s => s.columns.flatMap(c => c.fields));
                     const allEditable = allFields.filter(f => !f.hidden).every(f => f.readOnly);
                     return (
@@ -161,7 +198,7 @@ export default function EmployeeProfileSections() {
                             className="scroll-mt-[160px]"
                         >
                             {/* Tab Header */}
-                            <div className="flex items-center rounded-xl justify-between mb-3 md:mb-6 py-2 max-sm:px-4 px-4 bg-gray-50/50 mx-0 md:mx-6 border border-gray-100/50">
+                            <div className="flex items-center rounded-xl justify-between mb-3 md:mb-6 py-2 px-4 bg-gray-50/50 mx-4 md:mx-6 border border-gray-100/50">
                                 <Typography variant="h4" className="font-bold text-gray-800 max-sm:text-md">
                                     {tab.label}
                                 </Typography>
@@ -180,7 +217,7 @@ export default function EmployeeProfileSections() {
                             </div>
 
                             {/* Sections */}
-                            <div className="space-y-6 px-0 md:px-6">
+                            <div className="space-y-6 px-4 md:px-6">
                                 {tab.sections.map((section: SimpleSection) => {
                                     const allVisibleFields = section.columns.flatMap((col: SimpleColumn) => col.fields.filter(f => !f.hidden));
                                     if (!allVisibleFields.length) return null;
@@ -282,7 +319,6 @@ const FieldCell = ({ field, tabKey, tabLabel, canEdit, isTable, onEdit }: FieldC
     </div>
 );
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const CardsRenderer = ({ items, onEdit, canEdit }: { items: Record<string, any>[], onEdit?: (index: number) => void, canEdit: boolean }) => {
     const hasItems = Array.isArray(items) && items.length > 0;
 
@@ -352,7 +388,6 @@ const CardsRenderer = ({ items, onEdit, canEdit }: { items: Record<string, any>[
         </div>
     );
 };
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const GenericCard = ({ data, onEdit, canEdit }: { data: Record<string, any>, onEdit?: () => void, canEdit: boolean }) => {
     if (!data || typeof data !== "object") return null;
     // console.log(data, "data------------------------------------")
@@ -415,7 +450,6 @@ const formatKey = (key: string) =>
         .replace(/_/g, " ")
         .replace(/([a-z])([A-Z])/g, "$1 $2");
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const formatValue = (value: string | object | any[] | null | undefined, type?: string | null) => {
     if (value === null || value === undefined || value === "")
         return "—";

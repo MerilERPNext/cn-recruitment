@@ -11,7 +11,7 @@ import { useGetUserNotices } from "../../hooks/useNotices";
 
 
 import { endOfMonth, format, startOfMonth } from "date-fns";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import { useCurrentEmployeeDetails } from "../../hooks/useEmployee";
 import { useEmployeeWithFallback } from "../../hooks/useEmployeeWithFallback";
@@ -146,6 +146,15 @@ const MobileDashboard: React.FC = () => {
     currentEmployee?.user_id,
     employeeShift?.custom_standard_working_hrs,
   );
+
+  const targetWorkingHoursText = useMemo(() => {
+    if (!employeeShift?.custom_standard_working_hrs) return "8h 30m target";
+    const hrs = employeeShift.custom_standard_working_hrs;
+    const h = Math.floor(hrs);
+    const m = Math.round((hrs % 1) * 60);
+    return `${h}h ${m}m target`;
+  }, [employeeShift?.custom_standard_working_hrs]);
+
   const [isSearchDrawerOpen, setIsSearchDrawerOpen] = useState(false);
   type CustomError = Error & {
     response?: { data?: { message?: { error: string } } };
@@ -221,7 +230,7 @@ const MobileDashboard: React.FC = () => {
 
 
   const getTotalTime = () => {
-    return totalWorkingHours;
+    return totalWorkingHours === "--:--" ? "00:00" : totalWorkingHours;
   };
 
   const getWorkPercentage = () => {
@@ -373,7 +382,7 @@ const MobileDashboard: React.FC = () => {
                 color="primary"
                 className="font-semibold uppercase tracking-wider"
               >
-                8h 30m target
+                {targetWorkingHoursText}
               </Typography>
               <div className="flex items-center gap-3">
                 <Typography variant="bodyMedium" className="font-bold">
