@@ -144,3 +144,51 @@ frappe.ui.form.on('Employee Onboarding', {
     }
 });
 
+
+
+// Retrigger Onboarding: re-send the candidate's invite and re-open their Action
+// Center card, or — on a cancelled onboarding — initiate a fresh one.
+frappe.ui.form.on('Employee Onboarding', {
+    refresh: function (frm) {
+        if (frm.doc.__islocal || !frm.doc.job_applicant) return;
+        if ((frm.doc.boarding_status || '').toLowerCase() === 'completed' && frm.doc.docstatus !== 2) return;
+
+        const cancelled = frm.doc.docstatus === 2;
+        frm.add_custom_button(__('Retrigger Onboarding'), () => {
+            frappe.confirm(
+                cancelled
+                    ? __('This onboarding is cancelled. Initiate a new onboarding for this candidate and send them the portal invite?')
+                    : __('Re-send the onboarding invite to the candidate and re-open their Action Center task?'),
+                () => {
+                    frappe.call({
+                        method: 'recruitment.api.onboarding_retrigger.retrigger_onboarding',
+                        args: { employee_onboarding: frm.doc.name },
+                        freeze: true,
+                        freeze_message: __('Retriggering onboarding...'),
+                        callback(r) {
+                            const res = r.message || {};
+                            if (res.existing) {
+                                // An older cancelled onboarding: open the live one.
+                                frappe.msgprint(res.warning);
+                                frappe.set_route('Form', 'Employee Onboarding', res.employee_onboarding);
+                                return;
+                            }
+                            if (res.warning) frappe.msgprint(res.warning);
+                            frappe.show_alert({
+                                message: res.reinitiated
+                                    ? __('New onboarding {0} created.', [res.employee_onboarding])
+                                    : __('Onboarding retriggered.'),
+                                indicator: 'green',
+                            });
+                            if (res.reinitiated) {
+                                frappe.set_route('Form', 'Employee Onboarding', res.employee_onboarding);
+                            } else {
+                                frm.reload_doc();
+                            }
+                        },
+                    });
+                }
+            );
+        }, __('Actions'));
+    }
+});

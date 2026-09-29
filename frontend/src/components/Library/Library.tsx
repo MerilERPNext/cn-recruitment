@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   useEmployeeDocument,
   useEmployeeDocumentCount,
@@ -17,21 +16,38 @@ import { FilePreview } from "../shared/molecules/FilePreview";
 import toast from "react-hot-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { getFileNameFromUrl } from "../../utils/urlFormating";
-import formatToIndianDate from "../../utils/formatToIndianDate";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { FilterCondition } from "../../types/frappe";
+import { MobileTabDropdown } from "../EmployeeProfile/MobileTabDropdown";
+import formatToIndianDate from "../../utils/formatToIndianDate";
+import { useScreenSize } from "../../hooks/useScreenSize";
 
-const PAGE_SIZE = 10;
+// eslint-disable-next-line react-refresh/only-export-components
+export const DOCUMENT_LIBRARY_SUBSECTIONS = [
+  { key: "awaiting", label: "My Documents" },
+  { key: "mydocs", label: "Awaiting My Acknowledgment" },
+  { key: "approved", label: "Documents Approved" },
+];
 
-const DocumentLibrary = () => {
-  const [activeTab, setActiveTab] = useState("awaiting");
+interface DocumentLibraryProps {
+  activeSubTab?: string;
+  onActiveSubTabChange?: (key: string) => void;
+}
+
+const DocumentLibrary: React.FC<DocumentLibraryProps> = ({
+  activeSubTab,
+  onActiveSubTabChange,
+}) => {
+  const { isMobile } = useScreenSize();
+  const [internalActiveTab, setInternalActiveTab] = useState("awaiting");
+  const activeTab = (activeSubTab !== undefined && activeSubTab !== "") ? activeSubTab : internalActiveTab;
+  const setActiveTab = onActiveSubTabChange || setInternalActiveTab;
   const [pageMap, setPageMap] = useState<Record<string, number>>({
     awaiting: 1,
     mydocs: 1,
     approved: 1,
   });
   const currentPage = pageMap[activeTab] ?? 1;
-  const [isMobile, setIsMobile] = useState(false);
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
   const [selectedDocId, setSelectedDocId] = useState<string | null>(null);
   const { targetEmployeeId } = useTargetUser();
@@ -57,6 +73,7 @@ const DocumentLibrary = () => {
     }
   }, [activeTab]);
 
+  const PAGE_SIZE = 10;
   const { data: documents = [], isLoading } = useEmployeeDocument(employeeId, currentPage, PAGE_SIZE, tabFilters);
   const { data: totalCount = 0 } = useEmployeeDocumentCount(employeeId, tabFilters);
   const [acknowledged, setAcknowledged] = useState(false);
@@ -97,13 +114,6 @@ const DocumentLibrary = () => {
   const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setAcknowledged(e.target.checked);
   };
-
-  useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth < 900);
-    handleResize();
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
 
   const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
   const hasPrevPage = currentPage > 1;
@@ -173,21 +183,23 @@ const DocumentLibrary = () => {
         </div>
       </div>
 
-      {isMobile ? (
-        <div className="w-full mb-4">
-          <select
-            value={activeTab}
-            onChange={(e) => setActiveTab(e.target.value)}
-            className="w-full border border-gray-300 rounded-md p-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            {tabs.map((tab) => (
-              <option key={tab.key} value={tab.key}>
-                {tab.label}{activeTab === tab.key ? ` (${totalCount})` : ""}
-              </option>
-            ))}
-          </select>
-        </div>
-      ) : (
+      {isMobile && !onActiveSubTabChange && (
+        <MobileTabDropdown
+          label="Sub-Section"
+          options={tabs.map((tab) => ({
+            key: tab.key,
+            label: tab.label,
+            count: activeTab === tab.key ? totalCount : undefined,
+          }))}
+          value={activeTab}
+          onChange={(key) => setActiveTab(key)}
+          variant="neutral"
+          stickyTopClass="top-[149px]"
+          className="mb-3"
+          zIndex={15}
+        />
+      )}
+      {!isMobile && (
         <div className="flex overflow-x-auto gap-1 py-2 mb-4 scrollbar-hide">
           {tabs.map((tab) => (
             <Button
@@ -209,7 +221,7 @@ const DocumentLibrary = () => {
         </div>
       )}
 
-      <div className="bg-white border rounded-xl overflow-scroll shadow-sm min-h-[45vh]">
+      <div className={`bg-white border rounded-xl overflow-scroll shadow-sm min-h-[45vh] ${isMobile ? "mx-4" : ""}`}>
         <table className="w-full text-left">
           <thead className="bg-gray-100 text-gray-600 text-sm font-semibold">
             <tr>

@@ -59,6 +59,7 @@ import { TimesheetTopBar } from "./components/TimesheetTopBar";
 import { TimesheetMetrics } from "./components/TimesheetMetrics";
 import { TimesheetActionFooter } from "./components/TimesheetActionFooter";
 import { AddTimeEntryButton } from "./components/AddTimeEntryButton";
+import { useTargetUser } from "../../../context/ViewedUserContext";
 
 
 const TimesheetCreate: React.FC = () => {
@@ -80,15 +81,18 @@ const TimesheetCreate: React.FC = () => {
 
   // Employee details
   const { data: user } = useCurrentUser();
+  const { targetEmployeeId, isViewingOtherUser } = useTargetUser();
+  const effectiveEmployeeId = isViewingOtherUser && targetEmployeeId ? targetEmployeeId : undefined;
   const { data: employeeDetails, isLoading: isEmployeeLoading } = useCurrentEmployeeDetails({
-    logged_in_employee_details: true,
+    employeeId: effectiveEmployeeId,
+    logged_in_employee_details: !isViewingOtherUser,
   });
-  const employeeId = employeeDetails?.employee || "";
-  const company = employeeDetails?.company_name || "";
+  const employeeId = (isViewingOtherUser ? targetEmployeeId : employeeDetails?.employee) || employeeDetails?.employee || "";
+  const company = employeeDetails?.company_name || employeeDetails?.company || "";
 
   // Weekly Timesheet Data Hook
   const { data: weeklyData, isLoading: isWeeklyLoading } = useWeeklyTimesheetData({
-    employee_id: employeeId || "",
+    employee_id: employeeId,
     week_start_date: startOfWeekStr
   }, !!employeeId);
 
@@ -97,6 +101,7 @@ const TimesheetCreate: React.FC = () => {
   const hideHolidayTimesheet = timesheetSettingsData ? (Number(timesheetSettingsData.hide_holiday_timesheet) === 1 || timesheetSettingsData.hide_holiday_timesheet === true) : false;
   const allowWeekoffTimesheet = timesheetSettingsData ? (Number(timesheetSettingsData.allow_weekoff_timesheet) === 1 || timesheetSettingsData.allow_weekoff_timesheet === true) : false;
   const showSelectDaysToSubmit = timesheetSettingsData ? (Number(timesheetSettingsData.show_select_days_to_submit) === 1 || timesheetSettingsData.show_select_days_to_submit === true) : false;
+  const disableLeaveDays = timesheetSettingsData ? (Number(timesheetSettingsData.disable_leave_days) === 1 || timesheetSettingsData.disable_leave_days === true) : false;
 
   const isDetailLoading = isWeeklyLoading || isEmployeeLoading || isSettingsLoading;
 
@@ -189,6 +194,41 @@ const TimesheetCreate: React.FC = () => {
     return Array.from(dates);
   }, [attendanceEvents, weeklyData, weekOffDates]);
 
+  const leaveDates = useMemo(() => {
+    const dates = new Set<string>();
+    (attendanceEvents || []).forEach((event) => {
+      const isLeaveDoc =
+        event.doctype === "Leave Request" ||
+        event.doctype === "Leave Application" ||
+        (event as unknown as { request_type?: string }).request_type === "Leave Request";
+      const isApproved =
+        event.status === "Approved" ||
+        event.custom_status === "Approved" ||
+        (event as unknown as { docstatus?: number }).docstatus === 1 ||
+        event.status?.toLowerCase() === "approved";
+
+      if (isLeaveDoc && isApproved) {
+        const startDateStr = event.start?.split(" ")[0]?.split("T")[0];
+        const endDateStr = (event.end || event.start)?.split(" ")[0]?.split("T")[0];
+        if (startDateStr && endDateStr) {
+          try {
+            let curr = parseISO(startDateStr);
+            const end = parseISO(endDateStr);
+            while (curr <= end) {
+              dates.add(format(curr, "yyyy-MM-dd"));
+              curr = addDays(curr, 1);
+            }
+          } catch {
+            dates.add(startDateStr);
+          }
+        } else if (startDateStr) {
+          dates.add(startDateStr);
+        }
+      }
+    });
+    return Array.from(dates);
+  }, [attendanceEvents]);
+
   // Map date -> holiday title for tooltip display
   const holidayTitleMap = useMemo(() => {
     const map: Record<string, string> = {};
@@ -237,11 +277,12 @@ const TimesheetCreate: React.FC = () => {
   const allDisabledDays = useMemo(() => {
     const disabledWeekOffs = allowWeekoffTimesheet ? [] : weekOffDates;
     const disabledHolidays = hideHolidayTimesheet ? holidayDates : [];
-    return Array.from(new Set([...disabledWeekOffs, ...disabledHolidays, ...submittedDatesList, ...nonEditableDays]));
-  }, [allowWeekoffTimesheet, weekOffDates, hideHolidayTimesheet, holidayDates, submittedDatesList, nonEditableDays]);
+    const disabledLeaves = disableLeaveDays ? leaveDates : [];
+    return Array.from(new Set([...disabledWeekOffs, ...disabledHolidays, ...disabledLeaves, ...submittedDatesList, ...nonEditableDays]));
+  }, [allowWeekoffTimesheet, weekOffDates, hideHolidayTimesheet, holidayDates, disableLeaveDays, leaveDates, submittedDatesList, nonEditableDays]);
 
   const dayStatusMap = useMemo(() => {
-    const map: Record<string, "Week Off" | "Holiday" | "Draft" | "Submitted" | "Approved" | "Rejected"> = {};
+    const map: Record<string, "Week Off" | "Holiday" | "On Leave" | "Draft" | "Submitted" | "Approved" | "Rejected"> = {};
     daysOfWeek.forEach(day => {
       const dateKey = format(day, "yyyy-MM-dd");
       if (submittedDatesList.includes(dateKey)) {
@@ -277,6 +318,11 @@ const TimesheetCreate: React.FC = () => {
         }
       }
 
+      if (disableLeaveDays && leaveDates.includes(dateKey)) {
+        map[dateKey] = "On Leave";
+        return;
+      }
+
       if (weekOffDates.includes(dateKey)) {
         map[dateKey] = "Week Off";
         return;
@@ -288,7 +334,7 @@ const TimesheetCreate: React.FC = () => {
       }
     });
     return map;
-  }, [daysOfWeek, weekOffDates, holidayDates, weeklyData, submittedDatesList]);
+  }, [daysOfWeek, weekOffDates, holidayDates, disableLeaveDays, leaveDates, weeklyData, submittedDatesList]);
 
   const { uploadFiles } = useFileUploader();
 
@@ -460,7 +506,8 @@ const TimesheetCreate: React.FC = () => {
       .filter(dateKey => {
         const isWeekOffDisabled = !allowWeekoffTimesheet && weekOffDates.includes(dateKey);
         const isHolidayDisabled = hideHolidayTimesheet && holidayDates.includes(dateKey);
-        return !isWeekOffDisabled && !isHolidayDisabled;
+        const isLeaveDisabled = disableLeaveDays && leaveDates.includes(dateKey);
+        return !isWeekOffDisabled && !isHolidayDisabled && !isLeaveDisabled;
       });
 
     let derivedStatus = "Draft";
@@ -507,7 +554,7 @@ const TimesheetCreate: React.FC = () => {
     const parsedData = Object.values(rowsMap);
     setProjectsData(parsedData);
     setInitialProjectsData(parsedData);
-  }, [weeklyData, showSubtask, daysOfWeek, allowWeekoffTimesheet, weekOffDates, hideHolidayTimesheet, holidayDates]);
+  }, [weeklyData, showSubtask, daysOfWeek, allowWeekoffTimesheet, weekOffDates, hideHolidayTimesheet, holidayDates, disableLeaveDays, leaveDates]);
 
   // Add cell hour changes
   const handleHourChange = (rowId: string, dateKey: string, value: string) => {
@@ -976,8 +1023,8 @@ const TimesheetCreate: React.FC = () => {
     const targetDates = isSelective
       ? selectedDates.filter(d => !allDisabledDays.includes(d))
       : daysOfWeek
-          .map(d => format(d, "yyyy-MM-dd"))
-          .filter(d => !allDisabledDays.includes(d));
+        .map(d => format(d, "yyyy-MM-dd"))
+        .filter(d => !allDisabledDays.includes(d));
 
     if (targetDates.length === 0) {
       toast.error("No editable days available to " + (isSubmit ? "submit." : "save."));
@@ -1060,12 +1107,12 @@ const TimesheetCreate: React.FC = () => {
         if (cell && cell.hours > 0) {
           const taskPayload = showSubtask
             ? {
-                task: row.task || "",
-                custom_parent_task: row.parentTask || "",
-              }
+              task: row.task || "",
+              custom_parent_task: row.parentTask || "",
+            }
             : {
-                task: row.parentTask || "",
-              };
+              task: row.parentTask || "",
+            };
 
           rowsForDay.push({
             project: row.project || "",
@@ -1136,7 +1183,8 @@ const TimesheetCreate: React.FC = () => {
             .filter(dateKey => {
               const isWeekOffDisabled = !allowWeekoffTimesheet && weekOffDates.includes(dateKey);
               const isHolidayDisabled = hideHolidayTimesheet && holidayDates.includes(dateKey);
-              return !isWeekOffDisabled && !isHolidayDisabled;
+              const isLeaveDisabled = disableLeaveDays && leaveDates.includes(dateKey);
+              return !isWeekOffDisabled && !isHolidayDisabled && !isLeaveDisabled;
             });
 
           let derivedStatus = "Draft";
@@ -1285,6 +1333,7 @@ const TimesheetCreate: React.FC = () => {
           user={user}
           company={company}
           timesheetStatus={timesheetStatus}
+          isViewingOtherUser={isViewingOtherUser}
         />
 
         {!isDetailLoading && attachedFilesList.length > 0 && (
@@ -1325,11 +1374,10 @@ const TimesheetCreate: React.FC = () => {
                     className="flex items-center gap-1.5 cursor-pointer select-none group"
                     title="Select / Deselect all editable days"
                   >
-                    <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center transition-all duration-200 ${
-                      allSelected
+                    <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center transition-all duration-200 ${allSelected
                         ? "bg-primary border-primary text-white scale-110"
                         : "border-gray-300 text-transparent group-hover:border-primary/50"
-                    }`}>
+                      }`}>
                       {allSelected && (
                         <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
@@ -1359,23 +1407,20 @@ const TimesheetCreate: React.FC = () => {
                         handleToggleDateSelection(dateKey);
                       }
                     }}
-                    className={`relative min-w-0 flex flex-col items-center py-2 px-0.5 sm:py-2.5 sm:px-1 rounded-xl border transition-all duration-200 select-none ${
-                      !isDayDisabled ? "cursor-pointer hover:shadow-md active:scale-[0.97]" : "cursor-default"
-                    } ${
-                      isSelected
+                    className={`relative min-w-0 flex flex-col items-center py-2 px-0.5 sm:py-2.5 sm:px-1 rounded-xl border transition-all duration-200 select-none ${!isDayDisabled ? "cursor-pointer hover:shadow-md active:scale-[0.97]" : "cursor-default"
+                      } ${isSelected
                         ? "bg-primary-50/70 border-primary shadow-sm ring-1 ring-primary/20"
                         : isDayDisabled
                           ? "bg-gray-50/90 border-gray-200/80"
                           : "bg-white border-gray-200 hover:border-gray-300 shadow-xs"
-                    }`}
+                      }`}
                   >
                     <div className="flex items-center justify-center mb-1.5">
                       {!isDayDisabled ? (
-                        <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center transition-all duration-200 ${
-                          isSelected
+                        <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center transition-all duration-200 ${isSelected
                             ? "bg-primary border-primary text-white scale-110"
                             : "border-gray-300 text-transparent"
-                        }`}>
+                          }`}>
                           {isSelected && (
                             <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                               <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
@@ -1397,8 +1442,9 @@ const TimesheetCreate: React.FC = () => {
                     {status && (
                       <div className="mt-2 flex flex-col items-center gap-1 w-full">
                         {status !== "Holiday" && (
-                          <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded-md leading-none text-center w-full truncate ${
-                            status === "Week Off"
+                          <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded-md leading-none text-center w-full truncate ${status === "On Leave"
+                              ? "bg-pink-50 text-pink-700 border border-pink-200/70"
+                              : status === "Week Off"
                               ? "bg-orange-50 text-orange-600 border border-orange-200/70"
                               : status === "Approved"
                                 ? "bg-emerald-50 text-emerald-600 border border-emerald-200/70"
@@ -1407,7 +1453,7 @@ const TimesheetCreate: React.FC = () => {
                                   : status === "Rejected"
                                     ? "bg-red-50 text-red-600 border border-red-200/70"
                                     : "bg-sky-50 text-sky-700 border border-sky-200/80 font-semibold"
-                          }`}>
+                            }`}>
                             {status === "Week Off" ? "Off" : (status || "Draft")}
                           </span>
                         )}
@@ -1429,9 +1475,8 @@ const TimesheetCreate: React.FC = () => {
                               )}
                             </button>
                             {holidayTitle && (
-                              <span className={`pointer-events-none absolute top-full left-1/2 -translate-x-1/2 mt-1.5 px-2.5 py-1 rounded-lg bg-gray-900 text-white text-[10px] font-medium whitespace-nowrap text-center transition-all duration-200 shadow-2xl z-[100] ${
-                                activeHolidayTooltipDate === dateKey ? "opacity-100 visible" : "opacity-0 invisible group-hover:opacity-100 group-hover:visible"
-                              }`}>
+                              <span className={`pointer-events-none absolute top-full left-1/2 -translate-x-1/2 mt-1.5 px-2.5 py-1 rounded-lg bg-gray-900 text-white text-[10px] font-medium whitespace-nowrap text-center transition-all duration-200 shadow-2xl z-[100] ${activeHolidayTooltipDate === dateKey ? "opacity-100 visible" : "opacity-0 invisible group-hover:opacity-100 group-hover:visible"
+                                }`}>
                                 {holidayTitle}
                               </span>
                             )}
@@ -1471,11 +1516,10 @@ const TimesheetCreate: React.FC = () => {
                                 className="flex items-center gap-1.5 cursor-pointer select-none group"
                                 title="Select / Deselect all editable days"
                               >
-                                <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center transition-all duration-200 ${
-                                  allSelected
+                                <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center transition-all duration-200 ${allSelected
                                     ? "bg-primary border-primary text-white scale-110"
                                     : "border-gray-300 text-transparent group-hover:border-primary/50"
-                                }`}>
+                                  }`}>
                                   {allSelected && (
                                     <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                                       <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
@@ -1505,19 +1549,17 @@ const TimesheetCreate: React.FC = () => {
                                 handleToggleDateSelection(dateKey);
                               }
                             }}
-                            className={`px-3 py-3.5 text-center border-l border-gray-100/60 min-w-[100px] align-top transition-all duration-200 ${
-                              isSelected ? "bg-primary-50/40" : ""
-                            } ${showSelectDaysToSubmit && !isDayDisabled ? "cursor-pointer hover:bg-gray-100/50 select-none" : ""}`}
+                            className={`px-3 py-3.5 text-center border-l border-gray-100/60 min-w-[100px] align-top transition-all duration-200 ${isSelected ? "bg-primary-50/40" : ""
+                              } ${showSelectDaysToSubmit && !isDayDisabled ? "cursor-pointer hover:bg-gray-100/50 select-none" : ""}`}
                           >
                             <div className="flex flex-col items-center justify-start gap-1">
                               {showSelectDaysToSubmit && (
                                 <div className="h-5 flex items-center justify-center">
                                   {!isDayDisabled ? (
-                                    <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center transition-all duration-200 ${
-                                      isSelected
+                                    <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center transition-all duration-200 ${isSelected
                                         ? "bg-primary border-primary text-white scale-110"
                                         : "border-gray-300 text-transparent hover:border-primary/50"
-                                    }`}>
+                                      }`}>
                                       {isSelected && (
                                         <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                                           <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
@@ -1544,8 +1586,9 @@ const TimesheetCreate: React.FC = () => {
                                 <div className="mt-1 flex flex-col items-center justify-center gap-1">
                                   {status !== "Holiday" && (
                                     <span
-                                      className={`text-[10px] font-semibold px-2 py-[3px] rounded-xl ${
-                                        status === "Week Off"
+                                      className={`text-[10px] font-semibold px-2 py-[3px] rounded-xl ${status === "On Leave"
+                                          ? "bg-pink-50 text-pink-700 border border-pink-200/80"
+                                          : status === "Week Off"
                                           ? "bg-orange-50 text-orange-600 border border-orange-200/60"
                                           : status === "Approved"
                                             ? "bg-emerald-50 text-emerald-600 border border-emerald-200/60"
@@ -1554,7 +1597,7 @@ const TimesheetCreate: React.FC = () => {
                                               : status === "Rejected"
                                                 ? "bg-red-50 text-red-600 border border-red-200/60"
                                                 : "bg-sky-50 text-sky-700 border border-sky-200/80 font-semibold"
-                                      }`}
+                                        }`}
                                     >
                                       {status}
                                     </span>

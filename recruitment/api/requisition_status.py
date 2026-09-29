@@ -420,6 +420,9 @@ def _position_seeds(doc):
         {
             "location": d.get("location"),
             "functional_area": d.get("functional_area"),
+            # Per-position, not per-requisition: one lateral requisition can mix
+            # types, and the offer against this seat takes its type from here.
+            "employee_type": d.get("employee_type"),
             "position_type": position_type_of(d),
         }
         for d in (doc.get("custom_position_details") or [])

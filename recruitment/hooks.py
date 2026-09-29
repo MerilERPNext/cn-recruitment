@@ -60,7 +60,15 @@ add_to_apps_screen = [
 	}
 ]
 
-# Website user home page (by Role)
+# Home page by Role.
+#
+# Frappe reads this hook from frappe.website.utils.get_home_page_via_hooks, which
+# is reached for the *website root* only -- "/" resolves through resolve_path ->
+# get_home_page(). It does NOT drive the post-login redirect: auth.py consults
+# get_home_page() on the Website User branch alone and hardcodes the Desk for
+# everyone else. The login leg is handled by
+# recruitment/recruitment/login_redirect.py, which reads the entries below so the
+# two agree -- notably keeping External Recruiters out of the ESS portal.
 role_home_page = {
 	"System User": "/webapp",
 	# External recruiters land on their (scoped) Job Opening list in Desk.
@@ -102,7 +110,8 @@ fixtures = [
 
 # include js in doctype views
 doctype_js = {
-    "Job Offer": ["public/js/job_offer.js"],
+    # The wizard view reads the tabs job_offer.js renders into, so it loads after it.
+    "Job Offer": ["public/js/job_offer.js", "public/js/job_offer_wizard.js"],
     "Job Applicant": [
         "public/js/job_applicant.js",
         "public/js/hiring_workflow_flow.js",
@@ -119,6 +128,7 @@ doctype_js = {
     "Job Opening": [
         "public/js/job_opening.js",
         "public/js/interview_round_link.js",
+        "public/js/hiring_round_counts.js",
         "public/js/job_opening_hiring_workflow.js",
         "public/js/job_opening_attach_resumes.js",
         "public/js/applicant_field_picker.js",
@@ -126,7 +136,10 @@ doctype_js = {
     ],
     # Same eligibility builder as the Job Opening, editing the campus defaults.
     "Campus Eligibility Settings": ["public/js/job_opening_eligibility_ui.js"],
-    "TA Interview Strategy Template": ["public/js/interview_round_link.js"],
+    "TA Interview Strategy Template": [
+        "public/js/interview_round_link.js",
+        "public/js/hiring_round_counts.js",
+    ],
     "TA Duplicity Check Settings": ["public/js/applicant_field_picker.js"],
     "TA Rehire Check Settings": ["public/js/applicant_field_picker.js"],
     "Job Description": ["public/js/job_description.js"],
@@ -314,6 +327,14 @@ on_row_status_update = [
     "recruitment.api.requisition_pipeline.refresh_position_approvals",
 ]
 
+# Interview feedback via the approval matrix (recruitment.api.interview_feedback_approval).
+approval_form_schema = [
+    "recruitment.api.interview_feedback_approval.add_result_question",
+]
+on_approval_form_submit = [
+    "recruitment.api.interview_feedback_approval.create_feedback_from_approval",
+]
+
 # Document Events
 # ---------------
 # Hook on document methods and events
@@ -323,6 +344,10 @@ doc_events = {
     # Send Back from a ToDo saves the tracker, so this catches them all.
     "Approval Tracker": {
         "validate": "recruitment.api.requisition_status.block_approval_on_archived",
+        # nextai hands interviewers their feedback tasks after the Interview has
+        # committed; settle those tasks against what is already known when they
+        # land (per-interviewer forms, feedback already in, a cancelled interview).
+        "on_update": "recruitment.api.interview_feedback_approval.reconcile_interview_approval",
     },
     # Custom Doctype Fields (nextai) decides where a managed field sits on the
     # Job Applicant form. Job Applicant Profile Settings groups fields into its
@@ -372,6 +397,12 @@ doc_events = {
             # Roll "Interview Scheduled / Done" up to the requisition behind this
             # candidate's opening. Never raises — see requisition_pipeline.
             "recruitment.api.requisition_pipeline.refresh_from_interview",
+            # A decided or cancelled interview owes nobody feedback: close the
+            # panel's feedback tasks (recruitment.api.stage_interview).
+            "recruitment.api.stage_interview.close_tasks_when_decided",
+            # Feedback forms picked or changed after the interviewers' approval
+            # tasks went out reach those tasks (recruitment.api.interview_feedback_approval).
+            "recruitment.api.interview_feedback_approval.sync_forms_on_interview_update",
         ],
         "on_submit": "recruitment.api.requisition_pipeline.refresh_from_interview",
         "on_cancel": "recruitment.api.requisition_pipeline.refresh_from_interview",
@@ -387,9 +418,19 @@ doc_events = {
             # on_submit: the submit chain below already re-saves the Interview, and
             # a missing answer should be flagged while the panel is still writing.
             "recruitment.api.interview_feedback_form.validate_form_response",
+            # Each skill row carries its description — the round's Expected Skill
+            # Set text, else the Skill master's.
+            "recruitment.customizations.interview_feedback.interview_feedback.fill_skill_descriptions",
+            # Nothing is filed against an interview the hiring workflow cancelled.
+            "recruitment.api.stage_interview.block_feedback_on_cancelled",
         ],
         "on_submit": [
             "recruitment.customizations.interview_feedback.interview_feedback.on_submit_feedback",
+            # The interviewer's feedback task in their Tasks list is done.
+            "recruitment.api.stage_interview.close_task_on_feedback",
+            # Feedback given straight on the Interview settles that interviewer's
+            # approval task too, so it doesn't linger in their Tasks list.
+            "recruitment.api.interview_feedback_approval.close_approval_task_on_feedback",
             # The work location the panel chose becomes the candidate's final
             # location (Job Applicant.custom_location).
             "recruitment.api.interview_work_location.apply_work_location",
@@ -442,7 +483,8 @@ doc_events = {
             "recruitment.customizations.job_offer.set_offer_region",
             # The position this offer consumes must belong to the offer's
             # requisition and still be free. Runs before save so a stale pick is
-            # rejected rather than silently claiming the wrong row.
+            # rejected rather than silently claiming the wrong row. Also takes the
+            # offer's Employee Type from the position picked.
             "recruitment.api.offer_position.validate_position_choice",
             # Every salary figure's "(In Words)" field follows the figure.
             "recruitment.customizations.job_offer.set_salary_in_words",
@@ -456,8 +498,9 @@ doc_events = {
             # Again after CTC (Total) is computed above.
             "recruitment.customizations.job_offer.set_salary_in_words",
         ],
+        # The Action Center item is synced from on_update below, which Frappe also
+        # runs on insert and on submit — listing it here too ran it twice.
         "after_insert": [
-            "recruitment.api.action_center.sync_job_offer_action_item",
             "recruitment.api.requisition_pipeline.refresh_from_job_offer",
             # Claim the position (Filled + candidate) while the offer is live,
             # release it the moment it is withdrawn / rejected / cancelled, then
@@ -466,13 +509,15 @@ doc_events = {
             "recruitment.api.offer_position.sync_offer_position",
         ],
         "on_submit": [
-            "recruitment.api.action_center.sync_job_offer_action_item",
             "recruitment.api.offer_position.sync_offer_position",
             # "Offer Generated" on the requisition's TAT block.
             "recruitment.api.requisition_pipeline.refresh_from_job_offer",
         ],
         # Reflect Accepted/Rejected offer outcome on the candidate's hiring stage.
         "on_update": [
+            # A draft whose Status is set to Withdrawn / Expired by hand must drop
+            # its Action Center item too — before, only submitted offers did.
+            "recruitment.api.action_center.sync_job_offer_action_item",
             "recruitment.api.hiring_stage.advance_on_job_offer_outcome",
             "recruitment.api.offer_position.sync_offer_position",
             # Stamp the day the candidate accepted. Both update events, because
@@ -488,6 +533,8 @@ doc_events = {
         ],
         "on_cancel": [
             "recruitment.api.offer_position.sync_offer_position",
+            # Drop the cancelled offer's Action Center card; the amended offer raises its own.
+            "recruitment.api.action_center.sync_job_offer_action_item",
             # "Offer Cancelled" on the candidate's hiring workflow (newest version only).
             "recruitment.api.offer_lifecycle.on_offer_cancel",
             "recruitment.api.requisition_pipeline.refresh_from_job_offer",
@@ -584,6 +631,10 @@ doc_events = {
         "on_update": "recruitment.api.requisition_budget.on_budget_master_update",
     },
     "Job Opening": {
+        # Job Title from the requisition's Job Description (else the Designation's
+        # name, never its id) and Experience from the requisition's range. Before
+        # validate so HRMS builds the web route from the right title.
+        "before_validate": "recruitment.customizations.job_opening_from_requisition.set_fields_from_requisition",
         "validate": [
             # An opening raised from a requisition inherits its recruiter — without
             # one the opening belongs to nobody. Creation only, and on every path
@@ -596,6 +647,8 @@ doc_events = {
             "recruitment.customizations.hiring_lead_permissions.validate_job_opening_hiring_lead_edits",
             # Recruitment Settings can make Screening / Shortlist compulsory stages.
             "recruitment.api.hiring_stage.validate_job_opening_compulsory_stages",
+            # "No. of Shortlisting / Screening / Interview Rounds" mirror the stage rows.
+            "recruitment.api.hiring_stage.set_job_opening_round_counts",
             # Compute each External Recruiter row's read-only posting status from its
             # Display From/To window so the grid reflects live availability.
             "recruitment.permissions.doc_type_permissions.set_external_recruiter_posting_status",
@@ -901,6 +954,9 @@ override_doctype_class = {
     # See recruitment.customizations.job_requisition.CustomJobRequisition.
     "Job Requisition": "recruitment.customizations.job_requisition.CustomJobRequisition",
     "Employee Separation": "recruitment.customizations.employee_separation.override_class.CustomEmployeeSeparation",
+    # Offer letter placeholders: link titles, every Job Offer link as
+    # {{link.field}}, formatted currency. See the module docstring.
+    "Document Template": "recruitment.customizations.document_template.RecruitmentDocumentTemplate",
 }
 #
 # each overriding function accepts a `data` argument;
@@ -922,12 +978,13 @@ override_doctype_class = {
 # Request Events
 # ----------------
 before_request = [
-	# ERPNext's own Employee.status -> User.enabled sync is left in place; the
-	# app restates the Left/Inactive rule in employee_user_state (doc_events).
-	# Todo Type ESS Portal visibility is not patched in from here: the rule
-	# lives in cn_todo_manager's own todo_api (`ess_hidden_todo_types`),
-	# applied in the query builder every caller funnels through. This app
-	# only owns the two Custom Fields it reads -- see `install.py`.
+	# Land employees on /webapp instead of the Desk. init_request runs the whole
+	# login (HTTPRequest -> LoginManager) before it runs these hooks, so this
+	# rewrites the home_page the login already chose rather than patching it --
+	# the value is still server-side until the response is built. Also covers
+	# SSO and /login reached by an already-signed-in session.
+	# See recruitment/recruitment/login_redirect.py.
+	"recruitment.recruitment.login_redirect.on_before_request",
 ]
 # after_request = ["recruitment.utils.after_request"]
 

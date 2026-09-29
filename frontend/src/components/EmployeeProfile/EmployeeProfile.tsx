@@ -10,7 +10,7 @@ import {
 import { Employee } from "../../types/employee";
 import HeaderBar from "../HeaderBar";
 
-import { Building, History, IdCard, Mail, MapPin, Pencil, Search } from "lucide-react";
+import { Building, History, IdCard, Mail, MapPin, Network, Pencil, Search } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import DesktopLayoutWrapper from "../DesktopLayoutWrapper";
@@ -38,10 +38,13 @@ import ReportingDetails from "./ReportingDetails";
 
 import Appreciations from "./Appreciations";
 import { AwardsSection } from "./EmployeeAwards";
-
 import { useGetUiPermission } from "../../hooks/userUiPermission";
 import { isActionEnabled, isPageEnabled } from "../../utils/uiPermission";
 import Overview from "./Overview/Overview";
+import { MobileProfileBreadcrumbs, TabOption } from "./MobileTabDropdown";
+import { EMPLOYMENT_HISTORY_SUBSECTIONS } from "../MyProfile/EmploymentHistory";
+import { getReportingDetailsSubsections } from "./ReportingDetails";
+import { DOCUMENT_LIBRARY_SUBSECTIONS } from "../Library/Library";
 
 export interface PersonalInfoProps {
   user: Employee | null | undefined;
@@ -231,13 +234,72 @@ const EmployeeProfile: React.FC = () => {
     });
   }, [tabs, userUiPermission]);
 
+  const profileTabs = useMemo(
+    () => permittedTabs.filter((tab) => tab.key !== "overview"),
+    [permittedTabs],
+  );
+
   const [activeTab, setActiveTab] = useState<string>("");
+  const [mobileMainTab, setMobileMainTab] = useState<"overview" | "profile-details">("overview");
+  const [selectedProfileTab, setSelectedProfileTab] = useState<string>("");
+  const [activeSubSection, setActiveSubSection] = useState<string>("");
+  const [subSectionsByTab, setSubSectionsByTab] = useState<Record<string, TabOption[]>>({
+    "employment-history": EMPLOYMENT_HISTORY_SUBSECTIONS,
+    "reporting-details": getReportingDetailsSubsections(),
+    "employee-documents": DOCUMENT_LIBRARY_SUBSECTIONS,
+  });
+
+  const handleSubTabsLoaded = useCallback((tabKey: string, options: TabOption[]) => {
+    setSubSectionsByTab((prev) => {
+      const current = prev[tabKey];
+      if (
+        current &&
+        current.length === options.length &&
+        current.every((opt, idx) => opt.key === options[idx]?.key && opt.label === options[idx]?.label)
+      ) {
+        return prev;
+      }
+      return {
+        ...prev,
+        [tabKey]: options,
+      };
+    });
+  }, []);
+
+  const handlePersonalInfoTabsLoaded = useCallback(
+    (tabs: { key: string; label: string }[]) => {
+      handleSubTabsLoaded("personal-information", tabs);
+    },
+    [handleSubTabsLoaded],
+  );
 
   useEffect(() => {
     if (permittedTabs.length > 0 && !activeTab) {
       setActiveTab(permittedTabs[0].key);
     }
   }, [permittedTabs, activeTab]);
+
+  useEffect(() => {
+    if (
+      profileTabs.length > 0 &&
+      (!selectedProfileTab || !profileTabs.some((t) => t.key === selectedProfileTab))
+    ) {
+      setSelectedProfileTab(profileTabs[0].key);
+    }
+  }, [profileTabs, selectedProfileTab]);
+
+  // When selectedProfileTab changes on mobile, initialize activeSubSection
+  useEffect(() => {
+    if (isDesktop) return;
+    const currentSubSections = subSectionsByTab[selectedProfileTab] || [];
+    if (currentSubSections.length > 0) {
+      if (!currentSubSections.some((s) => s.key === activeSubSection)) {
+        setActiveSubSection(currentSubSections[0].key);
+      }
+    } else {
+      setActiveSubSection("");
+    }
+  }, [isDesktop, selectedProfileTab, subSectionsByTab, activeSubSection]);
 
   // Create refs for each section
   const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
@@ -275,13 +337,37 @@ const EmployeeProfile: React.FC = () => {
   const tabContent: Record<string, React.ReactNode> = useMemo(
     () => ({
       overview: <Overview />,
-      "personal-information": <EmployeeProfileSections />,
-      "employment-history": <EmploymentHistory employeeId={user?.employee} onActionSuccess={handleActionSuccess} />,
+      "personal-information": (
+        <EmployeeProfileSections
+          activeSubTab={!isDesktop ? activeSubSection : undefined}
+          onActiveSubTabChange={!isDesktop ? setActiveSubSection : undefined}
+          onSubTabsLoaded={handlePersonalInfoTabsLoaded}
+        />
+      ),
+      "employment-history": (
+        <EmploymentHistory
+          employeeId={user?.employee}
+          onActionSuccess={handleActionSuccess}
+          activeSubSection={!isDesktop ? activeSubSection : undefined}
+          onActiveSubSectionChange={!isDesktop ? setActiveSubSection : undefined}
+        />
+      ),
       // "employee-holidays": <ShowHolidays />,
-      "employee-documents": <DocumentLibrary />,
-      "reporting-details": <ReportingDetails onActionSuccess={handleActionSuccess} />,
+      "employee-documents": (
+        <DocumentLibrary
+          activeSubTab={!isDesktop ? activeSubSection : undefined}
+          onActiveSubTabChange={!isDesktop ? setActiveSubSection : undefined}
+        />
+      ),
+      "reporting-details": (
+        <ReportingDetails
+          onActionSuccess={handleActionSuccess}
+          activeCategory={!isDesktop ? activeSubSection : undefined}
+          onActiveCategoryChange={!isDesktop ? setActiveSubSection : undefined}
+        />
+      ),
     }),
-    [user, handleActionSuccess],
+    [isDesktop, user, handleActionSuccess, activeSubSection, handlePersonalInfoTabsLoaded],
   );
 
   // //refetching of the ui permission
@@ -426,17 +512,17 @@ const EmployeeProfile: React.FC = () => {
               className="hidden"
               onChange={handleFileChange}
             />
-            <div className="flex items-start gap-5 px-6 py-6 border-b border-gray-50 bg-white">
-              <div className="relative shrink-0">
+            <div className="flex flex-col items-center text-center px-6 py-6 border-b border-gray-50 bg-white">
+              <div className="relative shrink-0 mb-3">
                 <img
                   src={profileImageSrc}
                   alt="User avatar"
-                  className="w-24 h-24 rounded-2xl object-cover ring-4 ring-blue-50/10 shadow-sm"
+                  className="w-24 h-24 rounded-full object-cover ring-4 ring-blue-50/20 shadow-md"
                   onError={() => setImageLoadError(true)}
                 />
                 <button
                   onClick={handleImageClick}
-                  className="absolute -bottom-1.5 -right-1.5 h-8 w-8 bg-white flex justify-center items-center p-1.5 rounded-xl shadow-lg border border-gray-100 hover:bg-gray-50 transition-all active:scale-95 text-primary-600"
+                  className="absolute -bottom-1 -right-1 h-8 w-8 bg-white flex justify-center items-center p-1.5 rounded-full shadow-lg border border-gray-100 hover:bg-gray-50 transition-all active:scale-95 text-primary-600"
                   aria-label="Upload new avatar"
                 >
                   {updateDocMutation.isPending || uploadMutation.isPending ? (
@@ -446,46 +532,29 @@ const EmployeeProfile: React.FC = () => {
                   )}
                 </button>
               </div>
-              <div className="flex flex-col flex-1 min-w-0">
+              <div className="flex flex-col items-center w-full min-w-0">
                 <Typography
                   variant="h4"
-                  className="font-bold truncate tracking-tight text-lg sm:text-xl"
+                  className="font-bold truncate tracking-tight text-lg sm:text-xl text-center"
                 >
                   {user?.employee_name}
                 </Typography>
-                {user?.department_display && (
-                  <Tooltip content={user?.department_display}>
-                    <Typography
-                      variant="bodySmall"
-                      color="secondary"
-                      className="font-small truncate mt-1 flex gap-1.5 items-center"
-                    >
-                      <Building size={12} className="text-primary-500" />
-                      <span>{user?.department_display}</span>
-                    </Typography>
-                  </Tooltip>
-                )}
-                {user?.branch_display && (
+                {(user?.department_display || user?.branch_display) && (
                   <Typography
                     variant="bodySmall"
                     color="secondary"
-                    className="font-medium truncate mt-1 flex gap-1.5 items-center"
+                    className="font-medium text-center mt-1 text-xs text-gray-500 line-clamp-2 px-4"
                   >
-                    <MapPin size={14} className="text-primary-500" />
-                    <Tooltip content={user?.branch_display}>
-                      <span className="line-clamp-1">
-                        {user?.branch_display}
-                      </span>
-                    </Tooltip>
+                    {[user?.department_display, user?.branch_display].filter(Boolean).join(" - ")}
                   </Typography>
                 )}
                 {user?.employee && (
                   <Typography
                     variant="bodySmall"
                     color="disabled"
-                    className="font-medium mt-1.5 flex gap-1.5 items-center uppercase tracking-wider"
+                    className="font-medium mt-1.5 flex gap-1.5 items-center justify-center uppercase tracking-wider text-xs"
                   >
-                    <IdCard size={16} />
+                    <IdCard size={14} />
                     <span>{user?.employee}</span>
                   </Typography>
                 )}
@@ -493,13 +562,13 @@ const EmployeeProfile: React.FC = () => {
                   <Typography
                     variant="bodySmall"
                     color="primary"
-                    className="flex gap-1.5 items-center"
+                    className="flex gap-1.5 items-center justify-center mt-1 text-xs"
                   >
-                    <Mail size={14} className="text-primary-500" />
+                    <Mail size={12} className="text-primary-500" />
                     <span>{user?.company_email || user?.personal_email}</span>
                   </Typography>
                 )}
-                <div className="flex flex-wrap items-center gap-3 mt-4">
+                <div className="flex flex-wrap items-center justify-center gap-3 mt-3">
                   {user?.custom_employment_status && canShowEmployeeStatus && (
                     <Badge
                       label={
@@ -526,6 +595,36 @@ const EmployeeProfile: React.FC = () => {
                     />
                   )}
                 </div>
+                {/* Action Icons Row (Email & Org Chart) */}
+                <div className="flex items-center justify-center gap-6 mt-4 pt-1 text-gray-500">
+                  {(user?.company_email || user?.personal_email) && (
+                    <a
+                      href={`mailto:${user?.company_email || user?.personal_email}`}
+                      className="p-2 hover:text-primary-600 hover:bg-gray-50 rounded-full transition-colors"
+                      title="Send Email"
+                      aria-label="Send Email"
+                    >
+                      <Mail size={18} />
+                    </a>
+                  )}
+                  {(user?.company_email || user?.personal_email) && (
+                    <div className="h-4 w-px bg-gray-200" />
+                  )}
+                  <button
+                    onClick={() =>
+                      navigate(
+                        user?.employee
+                          ? `/webapp/organizational-chart?employee=${user?.employee}`
+                          : "/webapp/organizational-chart",
+                      )
+                    }
+                    className="p-2 hover:bg-gray-50 rounded-full transition-colors cursor-pointer text-gray-600 hover:text-primary-600"
+                    title="Organizational Chart"
+                    aria-label="Organizational Chart"
+                  >
+                    <Network size={18} />
+                  </button>
+                </div>
               </div>
             </div>
             <div className="flex gap-2 mt-4 mx-2">
@@ -542,42 +641,61 @@ const EmployeeProfile: React.FC = () => {
                 </Button>
               )}
             </div>
-            <AwardsSection isDesktop={false} />
           </div>
         )}
-        {/* Horizontal Tabs */}
-        <div className="bg-white border-b sticky top-[60px] z-20">
-          <div className="flex overflow-x-auto scrollbar-hide px-4 py-2">
-            {permittedTabs?.map((tab) => (
-              <Button
-                key={tab.key}
-                variant="subtle"
-                onClick={() => scrollToSection(tab.key)}
-                className={`whitespace-nowrap px-4 py-2 rounded-none text-sm font-medium transition-all duration-200 border-b-2 ${activeTab === tab.key
-                  ? "border-primary-600 text-primary-600"
-                  : "border-transparent text-gray-600 hover:text-primary-600"
-                  }`}
-              >
-                {tab.label}
-              </Button>
-            ))}
+
+        {/* Two Main Tabs: Overview vs Profile Details */}
+        <div className="bg-white border-b sticky top-[60px] z-30 h-[45px] flex">
+          <div className="flex w-full h-full">
+            <button
+              onClick={() => setMobileMainTab("overview")}
+              className={`flex-1 h-full text-center text-sm font-semibold transition-all duration-200 border-b-2 flex items-center justify-center ${
+                mobileMainTab === "overview"
+                  ? "border-primary-600 text-primary-600 font-bold"
+                  : "border-transparent text-gray-500 hover:text-gray-900"
+              }`}
+            >
+              Overview
+            </button>
+            <button
+              onClick={() => setMobileMainTab("profile-details")}
+              className={`flex-1 h-full text-center text-sm font-semibold transition-all duration-200 border-b-2 flex items-center justify-center ${
+                mobileMainTab === "profile-details"
+                  ? "border-primary-600 text-primary-600 font-bold"
+                  : "border-transparent text-gray-500 hover:text-gray-900"
+              }`}
+            >
+              Profile Details
+            </button>
           </div>
         </div>
-        {/* All Sections Rendered */}
-        <div className="bg-white-100">
-          {permittedTabs?.map((tab) => (
-            <div
-              key={tab.key}
-              ref={(el) => {
-                sectionRefs.current[tab.key] = el;
-              }}
-              data-section={tab.key}
-              className="px-4 py-3 md:py-6 scroll-mt-40 border-b border-gray-50 last:border-0"
-            >
-              {tabContent[tab.key]}
+
+        {/* Tab Content */}
+        {mobileMainTab === "overview" ? (
+          <div className="bg-white">
+            <AwardsSection isDesktop={false} />
+            <div className="border-b border-gray-50">
+              {tabContent["overview"]}
             </div>
-          ))}
-        </div>
+          </div>
+        ) : (
+          <div className="bg-white">
+            {/* Breadcrumbs: Section Dropdown > Sub-Section Dropdown */}
+            <MobileProfileBreadcrumbs
+              sectionOptions={profileTabs}
+              selectedSection={selectedProfileTab || profileTabs[0]?.key}
+              onSectionChange={(key) => setSelectedProfileTab(key)}
+              subSectionOptions={subSectionsByTab[selectedProfileTab || profileTabs[0]?.key] || []}
+              selectedSubSection={activeSubSection}
+              onSubSectionChange={(key) => setActiveSubSection(key)}
+              stickyTopClass="top-[105px]"
+              zIndex={25}
+            />
+            <div className="px-4 py-3">
+              {tabContent[selectedProfileTab || profileTabs[0]?.key]}
+            </div>
+          </div>
+        )}
       </div>
       {/* <AttendanceAssignments
         open={isAttendanceAssignmentsOpen}

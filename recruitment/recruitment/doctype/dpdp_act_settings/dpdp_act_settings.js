@@ -47,7 +47,7 @@ function generate_callback_secret(frm) {
 		title: __("Callback Secret Generated"),
 		indicator: "orange",
 		message:
-			__("Save this record, then share the secret below with the consent portal team. It is stored encrypted and cannot be read back afterwards.") +
+			__("Save this record, then share the secret below with the consent portal team. They can either set it as their webhook secret (callbacks are then verified by the X-HPCP-Signature header), or send it verbatim in the header below. It is stored encrypted and cannot be read back afterwards.") +
 			`<br><br><b>${__("Header")}:</b> <code>${frappe.utils.escape_html(
 				frm.doc.callback_header_name || "X-Consent-Token"
 			)}</code><br><b>${__("Secret")}:</b> <code>${secret}</code>`,

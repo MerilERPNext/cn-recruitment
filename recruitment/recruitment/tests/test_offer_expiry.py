@@ -149,9 +149,22 @@ class TestOfferExpiry(FrappeTestCase):
 			"applicant_email": EMAIL,
 			"status": status,
 			"offer_date": add_days(today(), -10),
+			# What a real offer carried when it was first sent — resending the
+			# letter submits a new version, which checks them again.
+			"custom_employment_type": frappe.get_all(
+				"Employment Type", filters={"name": ("not like", "%rainee%")}, pluck="name", limit=1
+			)[0],
+			"custom_expected_doj": add_days(today(), 30),
 		})
 		if expiry:
 			offer.set(EXPIRY_FIELD, expiry)
+		# The letter a real sent offer was built from, when the site sends offers
+		# as Document Templates.
+		from recruitment.recruitment.offer_document_template import resolve_offer_document_templates
+
+		templates = resolve_offer_document_templates(offer)
+		if templates:
+			offer.set("custom_offer_letter_template", templates[0]["name"])
 		offer.flags.ignore_mandatory = True
 		offer.flags.ignore_permissions = True
 		offer.flags.ignore_validate = True
@@ -261,21 +274,39 @@ class TestOfferExpiry(FrappeTestCase):
 		self.assertFalse(rule["allowed"])
 		self.assertIn("never emailed", rule["reason"])
 
-	def test_resend_letter_revives_the_offer(self):
+	def test_resend_letter_raises_and_sends_a_new_version(self):
 		offer = self._make_offer(expiry=add_days(today(), -1))
 		offer_expiry.expire_overdue_offers()
 
 		new_expiry = add_days(today(), 7)
 		result = offer_expiry.resend_offer_letter(offer.name, new_expiry)
 
-		self.assertEqual(result["status"], "Awaiting Response")
-		self.assertEqual(self._status(offer), "Awaiting Response")
-		self.assertEqual(
-			getdate(frappe.db.get_value("Job Offer", offer.name, EXPIRY_FIELD)), getdate(new_expiry)
-		)
-		# Same offer, same version — a new letter would be a new document.
-		self.assertEqual(result["job_offer"], offer.name)
-		self.assertTrue(self.sent, "the offer letter should have been emailed again")
+		new = frappe.get_doc("Job Offer", result["job_offer"])
+		self.assertNotEqual(new.name, offer.name)
+		self.assertEqual(result["version"], 2)
+		self.assertEqual(new.custom_offer_version, 2)
+		self.assertEqual(new.custom_previous_offer, offer.name)
+		self.assertEqual(new.docstatus, 1)
+		self.assertEqual(new.status, "Awaiting Response")
+		self.assertEqual(new.email_status, "Sent")
+		self.assertEqual(getdate(new.get(EXPIRY_FIELD)), getdate(new_expiry))
+		# The expired letter stays as history.
+		self.assertEqual(self._status(offer), "Expired")
+		self.assertTrue(self.sent, "the new version should have been emailed")
+
+		def activity(name):
+			return " ".join(frappe.get_all(
+				"Comment",
+				filters={"reference_doctype": "Job Offer", "reference_name": name, "comment_type": "Comment"},
+				pluck="content",
+			))
+
+		self.assertIn(f"resent from {offer.name}", activity(new.name))
+		self.assertIn(f"Superseded by version 2: {new.name}", activity(offer.name))
+
+		# Only one live version: the expired one cannot be resent again.
+		offer.reload()
+		self.assertFalse(offer_actions(offer)["resend_letter"]["allowed"])
 
 	def test_resend_letter_refuses_a_date_in_the_past(self):
 		offer = self._make_offer(expiry=add_days(today(), -5))

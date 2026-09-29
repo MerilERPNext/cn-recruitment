@@ -74,6 +74,43 @@ def _active_offer_for_applicant(job_applicant: str, exclude_offer: str | None = 
 	)
 
 
+def _pre_offer_not_approved(job_applicant: str) -> str | None:
+	"""Why a pre-offer that was sent still blocks the first offer, or None.
+
+	Only a candidate who was actually SENT the pre-offer form is held: a Pre Offer
+	stage skipped without sending has nothing to approve. A candidate who already
+	has an offer (a revision, a resend) is not re-checked — the gate is for the
+	first offer, and older offers predate it.
+	"""
+	if not frappe.db.exists(
+		"Job Applicant Pre Offer Form", {"parent": job_applicant, "parenttype": "Job Applicant"}
+	):
+		return None
+	# Any offer already on record — including the one a resend check excludes,
+	# which is exactly the offer being revised. A brand-new offer is not in the
+	# database yet while it validates, so it never counts itself.
+	if frappe.db.exists(JOB_OFFER, {"job_applicant": job_applicant}):
+		return None
+
+	rows = frappe.get_all(
+		"Job Applicant Pre Offer Field",
+		filters={"parent": job_applicant, "parenttype": "Job Applicant"},
+		fields=["label", "fieldname", "approval_status"],
+		order_by="idx asc",
+	)
+	if not rows:
+		return _(
+			"The Pre Offer form was sent to the candidate but has not been submitted yet. "
+			"The Job Offer can be created once the candidate submits it and every field is approved."
+		)
+	open_fields = [r.label or r.fieldname for r in rows if (r.approval_status or "") != "Approved"]
+	if open_fields:
+		return _(
+			"Every Pre Offer field must be approved before the Job Offer is created. Still open: {0}"
+		).format(", ".join(open_fields))
+	return None
+
+
 def _offers_against(requisition: str, region: str | None, exclude_offer: str | None = None) -> int:
 	"""Active offers drawing on this requisition's headcount, in one query.
 
@@ -168,6 +205,11 @@ def check_offer_allowed(job_applicant: str, exclude_offer: str | None = None) ->
 				+ " "
 				+ _("Enable 'Allow Multiple Active Job Offers per Candidate' in Recruitment Settings to override."),
 			)
+
+	# 1b — a pre-offer form that went out must be fully approved first
+	pending = _pre_offer_not_approved(job_applicant)
+	if pending:
+		return _deny("pre_offer_pending", pending)
 
 	# 2 — the opening must sit under a requisition
 	if not applicant.job_title:

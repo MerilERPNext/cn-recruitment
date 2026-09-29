@@ -40,6 +40,7 @@ export const getTimesheetSettings = async (): Promise<TimesheetSettings> => {
     "hide_holiday_timesheet",
     "allow_weekoff_timesheet",
     "show_select_days_to_submit",
+    "disable_leave_days",
   ]);
   return res as TimesheetSettings;
 };

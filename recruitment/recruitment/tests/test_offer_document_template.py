@@ -367,9 +367,11 @@ class TestNoTemplateAvailable(OfferTemplateTestBase):
 		self.assertIn("contact the HR department", str(caught.exception))
 
 	def test_validate_passes_once_a_template_admits_the_offer(self):
-		"""The counterpart: the same offer submits fine when a letter covers it."""
+		"""The counterpart: the same offer submits fine once HR has picked a letter
+		that covers it. The pick is required — a covering template is no longer
+		filled in automatically — so an unpicked offer is refused with that ask."""
 		dua = self._dua([("custom_employment_type", self.employment_types[0])])
-		self._template("User Assignment", assignments=[dua.name])
+		template = self._template("User Assignment", assignments=[dua.name])
 
 		doc = frappe._dict(
 			doctype=OFFER_DOCTYPE,
@@ -377,6 +379,11 @@ class TestNoTemplateAvailable(OfferTemplateTestBase):
 			custom_employment_type=self.employment_types[0],
 		)
 		with self._only_mine():
+			with self.assertRaises(frappe.ValidationError) as caught:
+				validate_offer_document_template(doc)
+			self.assertIn("Offer Letter Template", str(caught.exception))
+
+			doc.custom_offer_letter_template = template.name
 			validate_offer_document_template(doc)  # must not throw
 
 	def test_hand_picked_template_is_not_second_guessed(self):

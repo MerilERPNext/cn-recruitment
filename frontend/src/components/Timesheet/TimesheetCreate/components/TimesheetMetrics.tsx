@@ -16,6 +16,7 @@ interface TimesheetMetricsProps {
   user?: any;
   company: string;
   timesheetStatus: string;
+  isViewingOtherUser?: boolean;
 }
 
 export const TimesheetMetrics: React.FC<TimesheetMetricsProps> = ({
@@ -24,7 +25,8 @@ export const TimesheetMetrics: React.FC<TimesheetMetricsProps> = ({
   employeeDetails,
   user,
   company,
-  timesheetStatus
+  timesheetStatus,
+  isViewingOtherUser,
 }) => {
   const { isDesktop } = useScreenSize();
 
@@ -61,13 +63,13 @@ export const TimesheetMetrics: React.FC<TimesheetMetricsProps> = ({
       {/* Quick Metrics */}
       <div className="flex flex-col justify-center border-t md:border-t-0 md:border-l border-gray-100 md:pl-6 space-y-2">
         <Typography variant="bodySmall" color="body2" className="font-medium">
-          Employee: <strong className="text-gray-800">{employeeDetails?.employee_name || user?.full_name || "-"}</strong>
+          Employee: <strong className="text-gray-800">{employeeDetails?.employee_name || (!isViewingOtherUser ? user?.full_name : employeeDetails?.employee) || "-"}</strong>
         </Typography>
         <Typography variant="bodySmall" color="body2" className="font-medium">
-          Department: <strong className="text-gray-800">{employeeDetails?.department_name || "-"}</strong>
+          Department: <strong className="text-gray-800">{employeeDetails?.department_name || employeeDetails?.department || "-"}</strong>
         </Typography>
         <Typography variant="bodySmall" color="body2" className="font-medium">
-          Company: <strong className="text-gray-800">{company || "-"}</strong>
+          Company: <strong className="text-gray-800">{company || employeeDetails?.company_name || employeeDetails?.company || "-"}</strong>
         </Typography>
 
         {!isDesktop && (

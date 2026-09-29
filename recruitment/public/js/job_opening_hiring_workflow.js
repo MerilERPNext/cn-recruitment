@@ -30,6 +30,7 @@
 		(stages || []).forEach((s) => frm.add_child("custom_hiring_stages", s));
 		frm.refresh_field("custom_hiring_stages");
 		recruitment.interview_round_link.sync(frm, STAGE_LINK);
+		recruitment.hiring_round_counts.recount(frm);
 	}
 
 	function fetchAndFill(frm, opts) {
@@ -83,6 +84,7 @@
 			frm.set_query("interviewer_pool", "custom_hiring_stages", () => ({
 				query: "recruitment.recruitment.doctype.ta_interview_strategy_template.ta_interview_strategy_template.get_interviewer_user_assignments",
 			}));
+			frm.set_query("evaluation_form", "custom_hiring_stages", () => ({ filters: { doc_type: ["in", ["Interview Feedback", "Interview"]], is_archived: 0 } }));
 		},
 
 		refresh(frm) {

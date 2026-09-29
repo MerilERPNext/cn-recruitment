@@ -152,8 +152,9 @@ frappe.ui.form.on("Job Offer", {
 		recruitment_render_offer_letter_tab(frm);
 		recruitment_check_offer_template_availability(frm);
 
-		// Offer-letter buttons — each gated by a Recruitment Settings toggle
-		// (both default ON). Only for a saved Job Offer.
+		// Print-format preview button, gated by a Recruitment Settings toggle
+		// (default ON). Only for a saved Job Offer. The Template / Preview of the
+		// document-template letter lives in the form's Offer Letter tab.
 		if (!frm.is_new()) {
 			// Print-format preview (employment-type-specific format).
 			frappe.db.get_single_value("Recruitment Settings", "enable_preview_offer_letter_button").then(function(enabled) {
@@ -168,13 +169,6 @@ frappe.ui.form.on("Job Offer", {
 				});
 			});
 
-			// Template (raw placeholders) + Preview (rendered) dialog.
-			frappe.db.get_single_value("Recruitment Settings", "enable_offer_letter_button").then(function(enabled) {
-				if (!enabled) return;
-				frm.add_custom_button(__("Offer Letter"), function() {
-					recruitment_open_offer_letter_dialog(frm);
-				});
-			});
 		}
 	},
     filter_jo_expiry_date: function(frm) {
@@ -281,54 +275,6 @@ frappe.ui.form.on("Deductions", {
 });
 
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Offer Letter dialog — Template (raw placeholders) + Preview (rendered).
-// Template selection is the `custom_offer_letter_template` field on the form;
-// both tabs resolve the template from the Job Offer (form pick → settings default).
-// ─────────────────────────────────────────────────────────────────────────────
-function recruitment_open_offer_letter_dialog(frm) {
-	const d = new frappe.ui.Dialog({
-		title: __("Offer Letter"),
-		size: "extra-large",
-		fields: [{ fieldtype: "HTML", fieldname: "body" }],
-	});
-	const loaded = {};
-	const $body = () => d.fields_dict.body.$wrapper;
-
-	function tabBar(active) {
-		const btn = (id, label) =>
-			`<button class="offer-tab" data-tab="${id}" style="border:none;background:none;padding:9px 16px;cursor:pointer;` +
-			`border-bottom:2px solid ${active === id ? "#2490ef" : "transparent"};` +
-			`font-weight:${active === id ? "600" : "400"};color:${active === id ? "#2490ef" : "#666"};">${label}</button>`;
-		return `<div style="border-bottom:1px solid #e0e0e0;margin-bottom:14px;">${btn("template", __("Template"))}${btn("preview", __("Preview"))}</div>`;
-	}
-
-	function show(tab) {
-		$body().html(tabBar(tab) + `<div class="offer-tab-content" style="min-height:70vh;">` +
-			`<div style="padding:40px;text-align:center;color:#888;">${__("Loading…")}</div></div>`);
-		$body().find(".offer-tab").on("click", function () { show($(this).data("tab")); });
-
-		if (loaded[tab]) { $body().find(".offer-tab-content").html(loaded[tab]); return; }
-
-		const method = tab === "template"
-			? "recruitment.job_offer_utils.get_offer_template_raw_html"
-			: "recruitment.job_offer_utils.get_offer_letter_preview_html";
-		frappe.call({ method, args: { job_offer: frm.doc.name } }).then(function (r) {
-			const html = (r && r.message && r.message.html) ||
-				`<div style="padding:40px;text-align:center;color:#888;">${__("Nothing to show.")}</div>`;
-			loaded[tab] = html;
-			// Only paint if the user is still on this tab.
-			const $c = $body().find(".offer-tab-content");
-			if ($c.length) $c.html(html);
-		});
-	}
-
-	d.show();
-	// Full page: the letter is A4 and was unreadable in a 920px column.
-	d.$wrapper.find(".modal-dialog").css({ "max-width": "100%", margin: "10px" });
-	d.$wrapper.find(".modal-body").css({ "max-height": "calc(100vh - 120px)", "overflow-y": "auto" });
-	show("template");
-}
 // --- Dynamic Offer Compensation (grade-based auto breakup) ------------------
 // Level + Total Fixed Pay drive the whole fixed-pay breakup. The authoritative
 // computation is server-side (recruitment.recruitment.offer_compensation); this
@@ -616,7 +562,12 @@ function recruitment_render_offer_letter_tab(frm) {
 	const tab = ((frm.layout && frm.layout.tabs) || []).find(
 		(t) => t.df && t.df.fieldname === "custom_offer_letter_tab"
 	);
-	const isShowing = !tab || !tab.tab_link || tab.tab_link.find("a").hasClass("active");
+	// `.nav-link`, not `a`: v15 renders the tab link as a <button>, so an `a`
+	// lookup found nothing and the letter only painted when the tab happened to
+	// be open at refresh. The wizard view (job_offer_wizard.js) switches steps by
+	// clicking this same link, so it lands here too.
+	const $link = tab && tab.tab_link ? tab.tab_link.find(".nav-link") : $();
+	const isShowing = !tab || !tab.tab_link || $link.hasClass("active");
 	if (isShowing) {
 		paint(active);
 	} else {
@@ -624,7 +575,7 @@ function recruitment_render_offer_letter_tab(frm) {
 		// refresh, so binding without removing would leave one handler per refresh
 		// — and the first click would then fire them all at once, each issuing its
 		// own server call before any of them had populated the cache.
-		tab.tab_link.find("a").off("click.ol").on("click.ol", () => paint(active));
+		$link.off("click.ol").on("click.ol", () => paint(active));
 	}
 }
 
@@ -771,8 +722,8 @@ function recruitment_offer_letter_styles() {
             // call (send_bulk_job_offer with one name) so the template, PDF
             // attachment and status handling cannot drift between the two paths.
             //
-            // Gated on its own toggle, following enable_offer_letter_button and
-            // friends — NOT on allow_bulk_job_offer_email. Turning off mass emailing
+            // Gated on its own toggle (enable_send_job_offer_button), like the
+            // other offer buttons — NOT on allow_bulk_job_offer_email. Turning off mass emailing
             // should not also remove a recruiter's ability to send one offer.
             //
             // "Notify HR Ops" sits in front of it, but only on a site that has
@@ -962,6 +913,10 @@ function choose_offer_position(frm, opts) {
                     const chosen = positions.find((p) => p.name === values.position);
                     frm.set_value("custom_requisition_position", values.position);
                     frm.set_value("custom_position_label", chosen ? chosen.label : "");
+                    // The seat decides the Employee Type (the server does the same on save).
+                    if (chosen && chosen.employee_type) {
+                        frm.set_value("custom_employment_type", chosen.employee_type);
+                    }
                     dialog.hide();
                     frappe.show_alert({
                         message: __("Position set to {0}", [chosen ? chosen.label : values.position]),
@@ -1028,8 +983,8 @@ frappe.ui.form.on("Job Offer", {
 // submit and send.
 //
 // Resend Offer Letter — the lighter move for an EXPIRED offer, where only the
-// candidate's time ran out: pick a new expiry date and the same letter goes out
-// again on the same offer. No new version, nothing to re-submit.
+// candidate's time ran out: pick a new expiry date and the next version, with
+// the same terms, is submitted and emailed at once. Nothing to edit or re-submit.
 //
 // Both are decided server-side (offer_lifecycle.get_offer_actions), which also
 // reads the Recruitment Settings -> Job Offer Rules, so the form, the hiring
@@ -1081,7 +1036,7 @@ function add_resend_letter_button(frm) {
                     reqd: 1,
                     default: default_resend_expiry(frm.doc),
                     description: __(
-                        "The last day the candidate may accept. The same letter is emailed again and the offer goes back to Awaiting Response on its original position."
+                        "The last day the candidate may accept. A new version of this offer, with the same terms, is created and emailed to the candidate. This offer stays Expired."
                     ),
                 },
             ],
@@ -1095,12 +1050,14 @@ function add_resend_letter_button(frm) {
                         const m = (r && r.message) || {};
                         if (!m.job_offer) return;
                         frappe.show_alert({
-                            message: __("Offer letter resent — valid until {0}.", [
+                            message: __("Offer letter resent as version {0} ({1}) — valid until {2}.", [
+                                m.version,
+                                m.job_offer,
                                 frappe.datetime.str_to_user(m.expiry_date),
                             ]),
                             indicator: "green",
                         });
-                        frm.reload_doc();
+                        frappe.set_route("Form", "Job Offer", m.job_offer);
                     },
                 });
             },

@@ -83,13 +83,51 @@ NON_INPUT_TYPES = {
 # --------------------------------------------------------------------------- #
 # Schema access
 # --------------------------------------------------------------------------- #
+ROW_FORM_FIELD = "custom_evaluation_form"  # on Interview Detail: one panel member's form
+
+
+def interview_forms(interview):
+	"""Every form this interview uses: the interview's own and each panel row's."""
+	forms = {frappe.db.get_value("Interview", interview, "custom_evaluation_form")}
+	if frappe.get_meta("Interview Detail").has_field(ROW_FORM_FIELD):
+		forms.update(frappe.get_all(
+			"Interview Detail",
+			filters={"parent": interview, "parenttype": "Interview"},
+			pluck=ROW_FORM_FIELD,
+		))
+	return {f for f in forms if f}
+
+
+def form_for_interviewer(interview, interviewer):
+	"""The form ``interviewer`` fills in on ``interview``.
+
+	A panel may split its questions — a technical form for one interviewer, an HR
+	form for another — so the interviewer's own row wins; the interview's Evaluation
+	Form is the default for everyone else.
+	"""
+	if interviewer and frappe.get_meta("Interview Detail").has_field(ROW_FORM_FIELD):
+		own = frappe.db.get_value(
+			"Interview Detail",
+			{"parent": interview, "parenttype": "Interview", "interviewer": interviewer},
+			ROW_FORM_FIELD,
+		)
+		if own:
+			return own
+	return frappe.db.get_value("Interview", interview, "custom_evaluation_form")
+
+
 @frappe.whitelist()
-def get_interview_feedback_form(interview):
+def get_interview_feedback_form(interview, interviewer=None, form=None):
 	"""The form this interview's panel fills in: ``{widget, label, schema}``.
 
 	One call gives the client both the widget name and its schema, so opening a
 	feedback costs a single request. Returns ``{}`` when the interview has no form
 	configured — the caller then leaves the standard skill grid alone.
+
+	``interviewer`` (default: the caller) picks their own form when the panel was
+	given different ones. ``form`` is the form a saved feedback is already stamped
+	with, so a draft keeps rendering the form it was started on — honoured only when
+	it is one of this interview's forms.
 
 	Permission is checked against the INTERVIEW, not the widget: a panel member can
 	read the interview they are on, but has no reason to hold read on the form
@@ -101,7 +139,10 @@ def get_interview_feedback_form(interview):
 	if not frappe.has_permission("Interview", "read", doc=interview):
 		frappe.throw(_("Not permitted."), frappe.PermissionError)
 
-	widget = frappe.db.get_value("Interview", interview, "custom_evaluation_form")
+	if form and form in interview_forms(interview):
+		widget = form
+	else:
+		widget = form_for_interviewer(interview, interviewer or frappe.session.user)
 	if not widget:
 		return {}
 
@@ -230,9 +271,7 @@ def validate_form_response(doc, method=None):
 	# interactive change, which is why the feedback route has to set its fields
 	# explicitly too (see public/js/interview_feedback_route.js).
 	if doc.interview and not doc.get("custom_evaluation_form"):
-		doc.custom_evaluation_form = frappe.db.get_value(
-			"Interview", doc.interview, "custom_evaluation_form"
-		)
+		doc.custom_evaluation_form = form_for_interviewer(doc.interview, doc.get("interviewer"))
 
 	if not doc.get("custom_evaluation_form"):
 		# No dynamic form on this interview — nothing about this feedback changes.
@@ -245,6 +284,12 @@ def validate_form_response(doc, method=None):
 		# trap the panel on a form that cannot be rendered — fall back to the grid.
 		_require_skill_assessment(doc)
 		return
+
+	# The form replaces the skill grid, but HRMS still seeds it with one unrated row per
+	# expected skill, and `rating` is reqd on each row — so those rows would fail the
+	# mandatory check that runs after validate. The panel never saw them; drop them.
+	if doc.get("skill_assessment"):
+		doc.set("skill_assessment", [])
 
 	data = _parse(doc.get("custom_form_response")) or {}
 

@@ -1,10 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
-import { todoService, type TodoFilters, type ToDo, type TodoApprovalConfig } from "../services/todoService";
+import { todoService, type TodoFilters, type TodoListResult, type TodoApprovalConfig } from "../services/todoService";
 
 import type { TodoCategory } from "../types/todos";
 
 export function useTodoList(filters: TodoFilters = {}) {
-  return useQuery<ToDo[]>({
+  return useQuery<TodoListResult>({
     queryKey: ["todo-list", filters],
     queryFn: () => todoService.getTodoList(filters),
     staleTime: 2 * 60 * 1000, // 2 minutes

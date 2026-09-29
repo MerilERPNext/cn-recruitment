@@ -36,6 +36,8 @@ export interface ToDo {
   reference_name: string;
   /** `status` of the reference document, when that doctype has one. */
   reference_status?: string | null;
+  /** Values for the reference-doc columns the Todo Type marks `show_in_list_view`. */
+  reference_data?: Record<string, unknown>;
   custom_due_datetime: string | null;
   custom_doctype_actions: string;
   custom_funnel_task: string;
@@ -45,6 +47,23 @@ export interface ToDo {
   is_delegated: number;
   delegated_from: string | null;
   custom_reminders: unknown[];
+}
+
+/** Reference-doc column a Todo Type exposes in list views, as configured on the type. */
+export interface ListViewField {
+  fieldname: string;
+  label: string;
+  fieldtype: string;
+  options: string | null;
+  is_table_field?: number;
+  is_child_table_field?: number;
+  show_in_list_view?: number;
+}
+
+export interface TodoListResult {
+  todos: ToDo[];
+  /** Only populated when the request is scoped to a single category. */
+  listViewFields: ListViewField[];
 }
 
 export interface TodoApprovalConfig {
@@ -63,7 +82,7 @@ const TODO_APPROVAL_CONFIG_API_METHOD =
   "cn_todo_manager.chatnext_todo_manager.api.todo_api.get_todo_type_approval_config";
 
 export const todoService = {
-  getTodoList: async (filters: TodoFilters = {}): Promise<ToDo[]> => {
+  getTodoList: async (filters: TodoFilters = {}): Promise<TodoListResult> => {
     try {
       const params: TodoFilters = {
         status_filter: "Open",
@@ -84,12 +103,18 @@ export const todoService = {
       const result = await FrappeAPI.callMethod(TODO_API_METHOD, params);
 
       // Response is { message: [...] } after callMethod unwraps the outer message
-      const response = result as { message?: ToDo[] } | ToDo[];
-      const data: ToDo[] = Array.isArray(response)
-        ? response
-        : (response as { message?: ToDo[] })?.message || [];
+      const response = result as
+        | { message?: ToDo[]; list_view_fields?: ListViewField[] }
+        | ToDo[];
 
-      return data;
+      if (Array.isArray(response)) {
+        return { todos: response, listViewFields: [] };
+      }
+
+      return {
+        todos: response?.message || [],
+        listViewFields: response?.list_view_fields || [],
+      };
     } catch (error) {
       console.error("📡 Error fetching todo list:", error);
       throw error;

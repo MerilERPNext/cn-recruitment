@@ -24,6 +24,12 @@ frappe.listview_settings["Employee Onboarding"] = {
     add_fields: ["boarding_status"],
 
     onload(listview) {
+        // Accepted candidates / new hires who have no onboarding yet, with an
+        // Initiate button per row.
+        listview.page.add_inner_button(__("Pending Initiation"), () =>
+            frappe.set_route("query-report", "Onboarding Pending Initiation")
+        );
+
         frappe.db
             .get_single_value("Onboarding Settings", "enable_statutory_forms_button")
             .then((enabled) => {

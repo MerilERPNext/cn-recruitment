@@ -3,6 +3,7 @@ import { EditIcon, TrashIcon } from "lucide-react";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 import IconButton from "../../shared/atoms/IconButton";
 import Tooltip from "../../shared/Tooltip";
+import { historyFieldLabel } from "../../../utils/historyFieldLabel";
 
 interface LocationField {
   id: string;
@@ -72,9 +73,9 @@ const EmploymentWorkLocationCard: React.FC<
         <div className="space-y-4 pr-20">
           <div>
             <p className="text-xs text-gray-500">Work Location</p>
-            <Tooltip content={work_location?.name || "-"}>
+            <Tooltip content={historyFieldLabel(work_location)}>
               <p className="font-semibold text-gray-900 line-clamp-1">
-                {work_location?.name || "-"}
+                {historyFieldLabel(work_location)}
               </p>
             </Tooltip>
           </div>

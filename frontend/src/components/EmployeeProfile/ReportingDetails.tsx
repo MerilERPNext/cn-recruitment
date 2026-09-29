@@ -22,8 +22,9 @@ import NoDataFound from "../shared/atoms/NoDataFound";
 import { useLoadingOverlay } from "../../context/OverlayContext";
 import { computeAddSlideBounds, computeSlideDateBounds } from "../../utils/slideDateBounds";
 import { errorResponseFormater } from "../../utils/errorResponseFormater";
-import toast from "react-hot-toast";
 import { useScreenSize } from "../../hooks/useScreenSize";
+import { MobileTabDropdown } from "./MobileTabDropdown";
+import toast from "react-hot-toast";
 
 // Sort a reporting category's items current-first, then newest start_date first
 // (same order the cards render in and the order computeSlideDateBounds expects).
@@ -56,14 +57,34 @@ const CATEGORY_LABEL_MAP: Record<string, string> = {
   "HOD": "Founder - 2",
 };
 
-const getCategoryLabel = (category: string) => CATEGORY_LABEL_MAP[category] || category;
+// eslint-disable-next-line react-refresh/only-export-components
+export const getCategoryLabel = (category: string) =>
+  CATEGORY_LABEL_MAP[category] || category;
+
+// eslint-disable-next-line react-refresh/only-export-components
+export const getReportingDetailsSubsections = () =>
+  Object.keys(CATEGORY_FIELD_MAP).map((category) => ({
+    key: category,
+    label: getCategoryLabel(category),
+  }));
 
 interface ReportingDetailsProps {
   onActionSuccess?: (subSectionId?: string) => void;
+  activeCategory?: string;
+  onActiveCategoryChange?: (category: string) => void;
 }
 
-const ReportingDetails = ({ onActionSuccess }: ReportingDetailsProps) => {
+const ReportingDetails = ({
+  onActionSuccess,
+  activeCategory,
+  onActiveCategoryChange,
+}: ReportingDetailsProps) => {
   const { isDesktop } = useScreenSize();
+  const [internalMobileCategory, setInternalMobileCategory] = useState<string>("reports_to");
+  const mobileCategory = (activeCategory !== undefined && activeCategory !== "")
+    ? activeCategory
+    : internalMobileCategory;
+  const setMobileCategory = onActiveCategoryChange || setInternalMobileCategory;
   const { data: currentEmployee } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
 
   const { data: hierarchyData, isLoading: employeeHierarchyHistoryPending } =
@@ -197,10 +218,11 @@ const ReportingDetails = ({ onActionSuccess }: ReportingDetailsProps) => {
           <div className="flex flex-col gap-1 flex-1">
             <div className="flex justify-between items-center">
               {/* A period the field held no value: there is no employee to link
-                  to, so the tile just states the gap. */}
+                  to, so the tile just states the gap. Same "NA" wording the
+                  employment-history cards use for a gap row. */}
               {isUnassigned ? (
                 <Typography variant="bodyMedium" className="font-bold text-gray-400 italic truncate">
-                  Unassigned
+                  NA
                 </Typography>
               ) : (
                 <Link to={`/webapp/employee-profile?target_user=${id}`} target="_blank">
@@ -301,87 +323,103 @@ const ReportingDetails = ({ onActionSuccess }: ReportingDetailsProps) => {
   const hierarchySections = hierarchyData?.data || {};
   return (
     <div className="address-form-container bg-white rounded-lg gray-200">
-      <div className="px-0 py-3 md:p-6">
+      <div className="px-0 py-0 md:p-6">
         {/* Header */}
-        <div className="flex items-start justify-between border-b border-gray-200 pb-2 mb-4 md:pb-4 md:mb-8">
-          <div className="">
-            <Typography variant="h4" className="font-bold text-gray-900 mb-2 text-xl sm:text-2xl">
-              Reporting Details
-            </Typography>
-            <Typography variant="bodyMedium" color="body2" className="max-sm:text-sm">
-              Your reporting hierarchy information
-            </Typography>
+        {isDesktop && (
+          <div className="flex items-start justify-between border-b border-gray-200 pb-2 mb-4 md:pb-4 md:mb-8">
+            <div className="">
+              <Typography variant="h4" className="font-bold text-gray-900 mb-2 text-xl sm:text-2xl">
+                Reporting Details
+              </Typography>
+              <Typography variant="bodyMedium" color="body2" className="max-sm:text-sm">
+                Your reporting hierarchy information
+              </Typography>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Hierarchy History Cards */}
-        {Object.keys(CATEGORY_FIELD_MAP).map((category) => {
-          const items: any[] = hierarchySections[category] || [];
-          const sortedItems = sortReportingItems(items);
+        {!isDesktop && !onActiveCategoryChange && (
+          <MobileTabDropdown
+            label="Sub-Section"
+            options={getReportingDetailsSubsections()}
+            value={mobileCategory}
+            onChange={(key) => setMobileCategory(key)}
+            variant="neutral"
+            stickyTopClass="top-[149px]"
+            className="mb-3"
+            zIndex={15}
+          />
+        )}
 
-          return (
-            <div key={category} className="mb-5 md:mb-10" data-subsection={category}>
-              <div className="flex items-center justify-between mb-4">
-                <Typography variant="h4" className="font-bold text-gray-900 text-lg">
-                  {getCategoryLabel(category)}
-                </Typography>
-                {isDesktop && canAddReportingDetails && (
-                  <Button
-                    onClick={() => openAddModal(category)}
-                    icon={<PlusIcon className="h-4 w-4" />}
-                    variant="contain"
-                    size="md"
-                    className="!hidden md:!inline-flex"
-                  >
-                    Add
-                  </Button>
+        <div className={isDesktop ? "" : "px-4 pb-4"}>
+          {(isDesktop ? Object.keys(CATEGORY_FIELD_MAP) : [mobileCategory]).map((category) => {
+            const items: any[] = hierarchySections[category] || [];
+            const sortedItems = sortReportingItems(items);
+
+            return (
+              <div key={category} className="mb-5 md:mb-10" data-subsection={category}>
+                <div className="flex items-center justify-between mb-4">
+                  <Typography variant="h4" className="font-bold text-gray-900 text-lg">
+                    {getCategoryLabel(category)}
+                  </Typography>
+                  {canAddReportingDetails && isDesktop && (
+                    <Button
+                      onClick={() => openAddModal(category)}
+                      icon={<PlusIcon className="h-4 w-4" />}
+                      variant="contain"
+                      size="md"
+                    >
+                      Add
+                    </Button>
+                  )}
+                </div>
+
+                {sortedItems.length > 0 ? (
+                  <div className="flex gap-2 overflow-auto items-stretch">
+                    {sortedItems.map((item: any) => (
+                      <div
+                        // Keyed on the history row, not its value -- "Unassigned"
+                        // rows carry no value and would collide on a blank key.
+                        key={item.name}
+                        className={`min-h-[100%] ${sortedItems.length === 1 ? "max-w-md w-full" : ""}`}
+                      >
+                        <HierarchyCard
+                          name={item.reporting_employee_name}
+                          startDate={item.start_date}
+                          endDate={item.end_date}
+                          department={item.department_name}
+                          id={item.records}
+                          location={item.branch_name}
+                          itemName={item?.name}
+                          isUnassigned={!!item.is_unassigned}
+                          canDelete={!!item.can_delete}
+                          canEdit={item.can_edit !== false}
+                          onEdit={() => openEditModal(category, item)}
+                          onDelete={() => {
+                            setPendingDeleteId(item?.name);
+                            setPendingDeleteCategory(category);
+                          }}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <NoDataFound
+                    title={`No ${getCategoryLabel(category)} Records`}
+                    subtitle={`No ${getCategoryLabel(category).toLowerCase()} records have been added yet.`}
+                  />
                 )}
               </div>
-
-              {sortedItems.length > 0 ? (
-                <div className="flex gap-2 overflow-auto items-stretch">
-                  {sortedItems.map((item: any) => (
-                    <div
-                      // Keyed on the history row, not its value -- "Unassigned"
-                      // rows carry no value and would collide on a blank key.
-                      key={item.name}
-                      className={`min-h-[100%] ${sortedItems.length === 1 ? "max-w-md w-full" : ""}`}
-                    >
-                      <HierarchyCard
-                        name={item.reporting_employee_name}
-                        startDate={item.start_date}
-                        endDate={item.end_date}
-                        department={item.department_name}
-                        id={item.records}
-                        location={item.branch_name}
-                        itemName={item?.name}
-                        isUnassigned={!!item.is_unassigned}
-                        canDelete={!!item.can_delete}
-                        canEdit={item.can_edit !== false}
-                        onEdit={() => openEditModal(category, item)}
-                        onDelete={() => {
-                          setPendingDeleteId(item?.name);
-                          setPendingDeleteCategory(category);
-                        }}
-                      />
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <NoDataFound
-                  title={`No ${getCategoryLabel(category)} Records`}
-                  subtitle={`No ${getCategoryLabel(category).toLowerCase()} records have been added yet.`}
-                />
-              )}
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
 
       {isModalOpen && (
         <ReportingDetailsFormV2
           onCancel={closeModal}
-          onSuccess={() => { const category = selectedCategory; closeModal(); onActionSuccess?.(category); }}
+          onSuccess={() => { const category = selectedCategory; closeModal(); setMobileCategory(category); onActionSuccess?.(category); }}
           isEdit={isEditing}
           category={getCategoryLabel(selectedCategory)}
           categoryField={selectedCategoryField}
