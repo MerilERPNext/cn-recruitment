@@ -198,3 +198,72 @@ frappe.ui.form.on('Recruitment Tool', {
 });
 
 
+
+
+// Direct Applicant Onboarding — "Add Direct Applicant — Extra Fields" picker.
+// The Field cell offers only the Job Applicant fields the dialog can ask for;
+// the server decides which those are (recruitment.api.direct_applicant).
+frappe.ui.form.on('Recruitment Settings', {
+    refresh: function(frm) {
+        set_da_creation_field_options(frm);
+        render_da_standard_fields(frm);
+    },
+    enable_direct_applicant_onboarding: function(frm) {
+        set_da_creation_field_options(frm);
+    }
+});
+
+frappe.ui.form.on('Direct Applicant Creation Field', {
+    fieldname: function(frm, cdt, cdn) {
+        const row = locals[cdt][cdn];
+        const df = row.fieldname && frappe.meta.get_docfield('Job Applicant', row.fieldname);
+        frappe.model.set_value(cdt, cdn, 'label', df ? df.label : '');
+        frappe.model.set_value(cdt, cdn, 'fieldtype', df ? df.fieldtype : '');
+    }
+});
+
+function set_da_creation_field_options(frm) {
+    const grid = frm.fields_dict.da_creation_fields && frm.fields_dict.da_creation_fields.grid;
+    if (!grid || !frm.doc.enable_direct_applicant_onboarding) return;
+    frappe.model.with_doctype('Job Applicant', () => {
+        frappe.call({ method: 'recruitment.api.direct_applicant.get_creation_field_options' }).then((r) => {
+            grid.update_docfield_property('fieldname', 'options', r.message || []);
+        });
+    });
+}
+
+// "Add Direct Applicant — Standard Fields" as plain checkboxes that work on the
+// first click (a Frappe grid only turns a row editable once it is clicked, so
+// the ticks looked read-only). The hidden `da_standard_fields` table stays the
+// store; the server keeps one row per field and unticks Mandatory when hidden.
+function render_da_standard_fields(frm) {
+    const field = frm.get_field('da_standard_fields_ui');
+    if (!field || !field.$wrapper) return;
+    const rows = (frm.doc.da_standard_fields || []).slice().sort((a, b) => a.idx - b.idx);
+    const $w = field.$wrapper.empty();
+    if (!rows.length) {
+        $w.html(`<p class="text-muted">${__('Save once to list the fields.')}</p>`);
+        return;
+    }
+    const $t = $(`<table class="table table-bordered" style="max-width:640px;margin-bottom:4px">
+        <thead><tr><th>${__('Field')}</th><th class="text-center" style="width:110px">${__('Show')}</th>
+        <th class="text-center" style="width:110px">${__('Mandatory')}</th></tr></thead><tbody></tbody></table>`);
+    rows.forEach((row) => {
+        const $tr = $(`<tr><td>${frappe.utils.escape_html(row.label || row.field_key)}</td>
+            <td class="text-center"><input type="checkbox" data-col="show"></td>
+            <td class="text-center"><input type="checkbox" data-col="mandatory"></td></tr>`).appendTo($t.find('tbody'));
+        const $show = $tr.find('[data-col="show"]').prop('checked', !!row.show);
+        const $reqd = $tr.find('[data-col="mandatory"]').prop('checked', !!row.show && !!row.mandatory)
+            .prop('disabled', !row.show);
+        $show.on('change', () => {
+            frappe.model.set_value(row.doctype, row.name, 'show', $show.prop('checked') ? 1 : 0);
+            if (!$show.prop('checked')) {
+                frappe.model.set_value(row.doctype, row.name, 'mandatory', 0);
+                $reqd.prop('checked', false);
+            }
+            $reqd.prop('disabled', !$show.prop('checked'));
+        });
+        $reqd.on('change', () => frappe.model.set_value(row.doctype, row.name, 'mandatory', $reqd.prop('checked') ? 1 : 0));
+    });
+    $w.append($t).append(`<p class="text-muted small">${__('Untick Show to remove a field from the Add Direct Applicant dialog. First Name, Email, Company and Designation are always asked.')}</p>`);
+}

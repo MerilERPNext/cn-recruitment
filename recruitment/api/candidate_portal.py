@@ -501,6 +501,11 @@ _ONBOARDING_FIELD_ALIASES = {
     "custom_last_name":         [("offer", "applicant_last_name"), ("applicant", "custom_applicant_last_name")],
     "custom_mobile_number":     [("applicant", "phone_number"), ("offer", "custom_phone_number")],
     "custom_personal_email_id": [("applicant", "email_id"), ("offer", "applicant_email")],
+    # The fields the Employee Joining Form actually uses — the two above do not
+    # exist on every site, and a missing field is skipped silently.
+    "custom_primary_contact_number": [("applicant", "phone_number"), ("offer", "custom_phone_number")],
+    "custom_mobile_no":         [("applicant", "phone_number"), ("offer", "custom_phone_number")],
+    "custom_email":             [("applicant", "email_id"), ("offer", "applicant_email")],
     "department":               [("applicant", "custom_department"), ("applicant", "custom_division_finalized")],
     "custom_work_location":     [("applicant", "custom_location")],
     "custom_nationality":       [("applicant", "country")],

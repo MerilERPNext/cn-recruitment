@@ -89,7 +89,21 @@
   "restrict_act_as_admin_offer_approval",
   "allow_hiring_lead_change_designation_at_offer",
   "sla_tat_section",
-  "enable_sla_tat"
+  "enable_sla_tat",
+  "direct_applicant_section",
+  "enable_direct_applicant_onboarding",
+  "da_form_link_expiry_days",
+  "da_proposal_link_expiry_days",
+  "da_max_negotiation_rounds",
+  "direct_applicant_column_break",
+  "da_form_email_template",
+  "da_proposal_email_template",
+  "da_hr_alert_email_template",
+  "da_standard_fields_section",
+  "da_standard_fields_ui",
+  "da_standard_fields",
+  "da_creation_fields_section",
+  "da_creation_fields"
  ],
  "fields": [
   {
@@ -644,12 +658,112 @@
    "options": "Email Template",
    "depends_on": "send_external_recruiter_assignment_email",
    "description": "Defaults to \"External Recruiter Job Opening Assigned\" when blank."
+  },
+  {
+   "fieldname": "direct_applicant_section",
+   "fieldtype": "Section Break",
+   "label": "Direct Applicant Onboarding"
+  },
+  {
+   "default": "0",
+   "description": "Master switch. When ON, HR can add a candidate directly (without a Job Opening), send a configured form to fill by email link, propose a CTC and send the Job Offer once the candidate accepts it. When OFF, nothing of this runs and recruitment works exactly as before.",
+   "fieldname": "enable_direct_applicant_onboarding",
+   "fieldtype": "Check",
+   "label": "Enable Direct Applicant Onboarding"
+  },
+  {
+   "default": "7",
+   "depends_on": "eval:doc.enable_direct_applicant_onboarding",
+   "description": "Days a form link sent to a direct applicant stays valid.",
+   "fieldname": "da_form_link_expiry_days",
+   "fieldtype": "Int",
+   "label": "Form Link Validity (Days)",
+   "non_negative": 1
+  },
+  {
+   "default": "7",
+   "depends_on": "eval:doc.enable_direct_applicant_onboarding",
+   "description": "Days a CTC proposal link stays valid.",
+   "fieldname": "da_proposal_link_expiry_days",
+   "fieldtype": "Int",
+   "label": "CTC Proposal Link Validity (Days)",
+   "non_negative": 1
+  },
+  {
+   "default": "3",
+   "depends_on": "eval:doc.enable_direct_applicant_onboarding",
+   "description": "How many times the candidate may negotiate a CTC proposal. After that they can only accept or reject it. 0 = no negotiation.",
+   "fieldname": "da_max_negotiation_rounds",
+   "fieldtype": "Int",
+   "label": "Max Negotiation Rounds",
+   "non_negative": 1
+  },
+  {
+   "fieldname": "direct_applicant_column_break",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "eval:doc.enable_direct_applicant_onboarding",
+   "fieldname": "da_form_email_template",
+   "fieldtype": "Link",
+   "label": "Form Email Template",
+   "options": "Email Template",
+   "description": "Sent to the candidate with the form link. Use {{ form_link }} in the template."
+  },
+  {
+   "depends_on": "eval:doc.enable_direct_applicant_onboarding",
+   "fieldname": "da_proposal_email_template",
+   "fieldtype": "Link",
+   "label": "CTC Proposal Email Template",
+   "options": "Email Template",
+   "description": "Sent to the candidate with the CTC proposal link. Use {{ proposal_link }} in the template."
+  },
+  {
+   "depends_on": "eval:doc.enable_direct_applicant_onboarding",
+   "fieldname": "da_hr_alert_email_template",
+   "fieldtype": "Link",
+   "label": "HR Alert Email Template",
+   "options": "Email Template",
+   "description": "Sent to HR when the candidate submits the form or responds to a CTC proposal."
+  },
+  {
+   "depends_on": "eval:doc.enable_direct_applicant_onboarding",
+   "description": "First Name, Email, Company and Designation are always asked. Untick Show to remove any of these other fields from the dialog, or tick Mandatory to require it.",
+   "fieldname": "da_standard_fields_section",
+   "fieldtype": "Section Break",
+   "label": "Add Direct Applicant — Standard Fields"
+  },
+  {
+   "fieldname": "da_standard_fields_ui",
+   "fieldtype": "HTML",
+   "label": "Standard Fields"
+  },
+  {
+   "fieldname": "da_standard_fields",
+   "fieldtype": "Table",
+   "label": "Standard Fields",
+   "options": "Direct Applicant Standard Field",
+   "hidden": 1
+  },
+  {
+   "collapsible": 0,
+   "depends_on": "eval:doc.enable_direct_applicant_onboarding",
+   "description": "Name, email, phone, category, company, designation, department and employment type are always asked. Add any other Job Applicant field here (e.g. Resume Attachment) to ask for it too.",
+   "fieldname": "da_creation_fields_section",
+   "fieldtype": "Section Break",
+   "label": "Add Direct Applicant — Extra Fields"
+  },
+  {
+   "fieldname": "da_creation_fields",
+   "fieldtype": "Table",
+   "label": "Extra Fields",
+   "options": "Direct Applicant Creation Field"
   }
  ],
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2026-09-26 16:05:00.000000",
+ "modified": "2026-09-29 11:00:00.000000",
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "Recruitment Settings",
