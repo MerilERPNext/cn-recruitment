@@ -32,7 +32,8 @@ So no hook can move a desk user's landing page after login. Everything here
 hangs off one ``before_request`` entry point, :func:`on_before_request`, which
 covers the three ways a session is handed a destination:
 
-* **The credential and ``/api/method/login`` flow.** The login runs inside
+* **The login form (``cmd=login`` POSTed to ``/login``) and
+  ``/api/method/login``.** The login runs inside
   ``HTTPRequest()``, which ``frappe.app.init_request`` builds *before* it runs
   the ``before_request`` hooks -- so by the time this module gets control the
   login has already happened and written ``response["home_page"]``.
@@ -367,11 +368,21 @@ def _redirect_signed_in_login_page():
     separate from :func:`_override_login_response` because no login happens
     here: the session is resumed, and a resume writes no ``home_page``.
 
-    Only ``/login`` itself is matched. The credential POST goes to
-    ``/api/method/login`` and is untouched.
+    Only a *page view* of ``/login`` is matched. Frappe's own login form
+    (``templates/includes/login/login.js``) POSTs ``cmd=login`` to ``/login``
+    itself, and that request is already signed in by the time this runs --
+    ``HTTPRequest()`` performed the login. Redirecting it here is fatal:
+    ``frappe.app.application`` answers a raised ``HTTPException`` with the bare
+    exception, so ``process_response`` never flushes the new ``sid`` cookie and
+    the POST is rolled back. The browser follows the 302 to ``/webapp`` as Guest
+    and is bounced straight back to the login page. That POST is left to
+    :func:`_override_login_response` instead.
     """
     request = getattr(frappe.local, "request", None)
     if request is None:
+        return
+
+    if request.method not in ("GET", "HEAD") or frappe.form_dict.get("cmd"):
         return
 
     if (request.path or "").rstrip("/") != "/login":
