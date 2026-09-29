@@ -101,6 +101,7 @@ const TimesheetCreate: React.FC = () => {
   const hideHolidayTimesheet = timesheetSettingsData ? (Number(timesheetSettingsData.hide_holiday_timesheet) === 1 || timesheetSettingsData.hide_holiday_timesheet === true) : false;
   const allowWeekoffTimesheet = timesheetSettingsData ? (Number(timesheetSettingsData.allow_weekoff_timesheet) === 1 || timesheetSettingsData.allow_weekoff_timesheet === true) : false;
   const showSelectDaysToSubmit = timesheetSettingsData ? (Number(timesheetSettingsData.show_select_days_to_submit) === 1 || timesheetSettingsData.show_select_days_to_submit === true) : false;
+  const disableLeaveDays = timesheetSettingsData ? (Number(timesheetSettingsData.disable_leave_days) === 1 || timesheetSettingsData.disable_leave_days === true) : false;
 
   const isDetailLoading = isWeeklyLoading || isEmployeeLoading || isSettingsLoading;
 
@@ -193,6 +194,41 @@ const TimesheetCreate: React.FC = () => {
     return Array.from(dates);
   }, [attendanceEvents, weeklyData, weekOffDates]);
 
+  const leaveDates = useMemo(() => {
+    const dates = new Set<string>();
+    (attendanceEvents || []).forEach((event) => {
+      const isLeaveDoc =
+        event.doctype === "Leave Request" ||
+        event.doctype === "Leave Application" ||
+        (event as unknown as { request_type?: string }).request_type === "Leave Request";
+      const isApproved =
+        event.status === "Approved" ||
+        event.custom_status === "Approved" ||
+        (event as unknown as { docstatus?: number }).docstatus === 1 ||
+        event.status?.toLowerCase() === "approved";
+
+      if (isLeaveDoc && isApproved) {
+        const startDateStr = event.start?.split(" ")[0]?.split("T")[0];
+        const endDateStr = (event.end || event.start)?.split(" ")[0]?.split("T")[0];
+        if (startDateStr && endDateStr) {
+          try {
+            let curr = parseISO(startDateStr);
+            const end = parseISO(endDateStr);
+            while (curr <= end) {
+              dates.add(format(curr, "yyyy-MM-dd"));
+              curr = addDays(curr, 1);
+            }
+          } catch {
+            dates.add(startDateStr);
+          }
+        } else if (startDateStr) {
+          dates.add(startDateStr);
+        }
+      }
+    });
+    return Array.from(dates);
+  }, [attendanceEvents]);
+
   // Map date -> holiday title for tooltip display
   const holidayTitleMap = useMemo(() => {
     const map: Record<string, string> = {};
@@ -241,11 +277,12 @@ const TimesheetCreate: React.FC = () => {
   const allDisabledDays = useMemo(() => {
     const disabledWeekOffs = allowWeekoffTimesheet ? [] : weekOffDates;
     const disabledHolidays = hideHolidayTimesheet ? holidayDates : [];
-    return Array.from(new Set([...disabledWeekOffs, ...disabledHolidays, ...submittedDatesList, ...nonEditableDays]));
-  }, [allowWeekoffTimesheet, weekOffDates, hideHolidayTimesheet, holidayDates, submittedDatesList, nonEditableDays]);
+    const disabledLeaves = disableLeaveDays ? leaveDates : [];
+    return Array.from(new Set([...disabledWeekOffs, ...disabledHolidays, ...disabledLeaves, ...submittedDatesList, ...nonEditableDays]));
+  }, [allowWeekoffTimesheet, weekOffDates, hideHolidayTimesheet, holidayDates, disableLeaveDays, leaveDates, submittedDatesList, nonEditableDays]);
 
   const dayStatusMap = useMemo(() => {
-    const map: Record<string, "Week Off" | "Holiday" | "Draft" | "Submitted" | "Approved" | "Rejected"> = {};
+    const map: Record<string, "Week Off" | "Holiday" | "On Leave" | "Draft" | "Submitted" | "Approved" | "Rejected"> = {};
     daysOfWeek.forEach(day => {
       const dateKey = format(day, "yyyy-MM-dd");
       if (submittedDatesList.includes(dateKey)) {
@@ -281,6 +318,11 @@ const TimesheetCreate: React.FC = () => {
         }
       }
 
+      if (disableLeaveDays && leaveDates.includes(dateKey)) {
+        map[dateKey] = "On Leave";
+        return;
+      }
+
       if (weekOffDates.includes(dateKey)) {
         map[dateKey] = "Week Off";
         return;
@@ -292,7 +334,7 @@ const TimesheetCreate: React.FC = () => {
       }
     });
     return map;
-  }, [daysOfWeek, weekOffDates, holidayDates, weeklyData, submittedDatesList]);
+  }, [daysOfWeek, weekOffDates, holidayDates, disableLeaveDays, leaveDates, weeklyData, submittedDatesList]);
 
   const { uploadFiles } = useFileUploader();
 
@@ -464,7 +506,8 @@ const TimesheetCreate: React.FC = () => {
       .filter(dateKey => {
         const isWeekOffDisabled = !allowWeekoffTimesheet && weekOffDates.includes(dateKey);
         const isHolidayDisabled = hideHolidayTimesheet && holidayDates.includes(dateKey);
-        return !isWeekOffDisabled && !isHolidayDisabled;
+        const isLeaveDisabled = disableLeaveDays && leaveDates.includes(dateKey);
+        return !isWeekOffDisabled && !isHolidayDisabled && !isLeaveDisabled;
       });
 
     let derivedStatus = "Draft";
@@ -511,7 +554,7 @@ const TimesheetCreate: React.FC = () => {
     const parsedData = Object.values(rowsMap);
     setProjectsData(parsedData);
     setInitialProjectsData(parsedData);
-  }, [weeklyData, showSubtask, daysOfWeek, allowWeekoffTimesheet, weekOffDates, hideHolidayTimesheet, holidayDates]);
+  }, [weeklyData, showSubtask, daysOfWeek, allowWeekoffTimesheet, weekOffDates, hideHolidayTimesheet, holidayDates, disableLeaveDays, leaveDates]);
 
   // Add cell hour changes
   const handleHourChange = (rowId: string, dateKey: string, value: string) => {
@@ -1140,7 +1183,8 @@ const TimesheetCreate: React.FC = () => {
             .filter(dateKey => {
               const isWeekOffDisabled = !allowWeekoffTimesheet && weekOffDates.includes(dateKey);
               const isHolidayDisabled = hideHolidayTimesheet && holidayDates.includes(dateKey);
-              return !isWeekOffDisabled && !isHolidayDisabled;
+              const isLeaveDisabled = disableLeaveDays && leaveDates.includes(dateKey);
+              return !isWeekOffDisabled && !isHolidayDisabled && !isLeaveDisabled;
             });
 
           let derivedStatus = "Draft";
@@ -1398,7 +1442,9 @@ const TimesheetCreate: React.FC = () => {
                     {status && (
                       <div className="mt-2 flex flex-col items-center gap-1 w-full">
                         {status !== "Holiday" && (
-                          <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded-md leading-none text-center w-full truncate ${status === "Week Off"
+                          <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded-md leading-none text-center w-full truncate ${status === "On Leave"
+                              ? "bg-pink-50 text-pink-700 border border-pink-200/70"
+                              : status === "Week Off"
                               ? "bg-orange-50 text-orange-600 border border-orange-200/70"
                               : status === "Approved"
                                 ? "bg-emerald-50 text-emerald-600 border border-emerald-200/70"
@@ -1540,7 +1586,9 @@ const TimesheetCreate: React.FC = () => {
                                 <div className="mt-1 flex flex-col items-center justify-center gap-1">
                                   {status !== "Holiday" && (
                                     <span
-                                      className={`text-[10px] font-semibold px-2 py-[3px] rounded-xl ${status === "Week Off"
+                                      className={`text-[10px] font-semibold px-2 py-[3px] rounded-xl ${status === "On Leave"
+                                          ? "bg-pink-50 text-pink-700 border border-pink-200/80"
+                                          : status === "Week Off"
                                           ? "bg-orange-50 text-orange-600 border border-orange-200/60"
                                           : status === "Approved"
                                             ? "bg-emerald-50 text-emerald-600 border border-emerald-200/60"
