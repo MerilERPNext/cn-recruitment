@@ -13,8 +13,6 @@ import MyApprovalActionPill from "../../shared/atoms/MyApprovalActionPill";
 import StatusBadge from "../../shared/atoms/statusBadge";
 import { Typography } from "../../shared/atoms/Typography";
 import MobileAllocatedTo from "../../shared/MobileAllocatedTo";
-import AllocatedToTooltip from "../../shared/AllocatedToTooltip";
-
 import Tooltip from "../../shared/Tooltip";
 import AttendanceRequestFormV2 from "../AttendanceRequest/AttendanceRequestFormV2";
 import { getAssignedUsersCell } from "../../../utils/getAssignedUsersCell";
@@ -145,16 +143,7 @@ const EmpAttendanceRequestCard = ({
 
           {/* Status */}
           <div className="flex items-center justify-center">
-            <AllocatedToTooltip
-              users={data?.allocated_to}
-              roles={data?.allocated_roles}
-              allocated_to_user={data?.username}
-              RoleAssignedUsers={data?.role_assigned_users || []}
-              position="left"
-            >
-              <StatusBadge status={status} />
-
-            </AllocatedToTooltip>
+            {getAssignedUsersCell(data, "left", <StatusBadge status={status} />)}
           </div>
           <Tooltip
             content={data?.send_back_comment || "--"}
