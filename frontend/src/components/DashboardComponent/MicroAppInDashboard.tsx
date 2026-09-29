@@ -31,7 +31,7 @@ const MicroAppInDashboard: React.FC = () => {
   };
 
   return (
-    <Card shadow="sm" className="h-full ">
+    <Card shadow="sm" className="h-full flex-1 min-h-[220px] flex flex-col">
       <div className="flex items-center justify-between mb-4">
         <Typography variant="subheading" color="title">
           Apps
@@ -42,10 +42,12 @@ const MicroAppInDashboard: React.FC = () => {
           <AdminAppsSkeleton />
         ) : (
           microappsList?.apps && (
-            <AppGrid
-              apps={microappsList?.apps}
-              onOrderChange={handleOrderChange}
-            />
+            <div className="flex-1">
+              <AppGrid
+                apps={microappsList?.apps}
+                onOrderChange={handleOrderChange}
+              />
+            </div>
           )
         )}
       </DndProvider>

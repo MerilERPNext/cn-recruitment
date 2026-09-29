@@ -1,8 +1,8 @@
-import { useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Form } from "@tsed/react-formio";
 import toast from "react-hot-toast";
 import { createPortal } from "react-dom";
-import { X } from "lucide-react";
+import { X, Eye, EyeOff } from "lucide-react";
 import { useResetPasswordMutation } from "../../../../hooks/useEmployee";
 import schema from "./ResetPasswordForm.json";
 import Button from "../../../shared/atoms/Button";
@@ -20,9 +20,45 @@ interface ResetPasswordProps {
 const ResetPassword: React.FC<ResetPasswordProps> = ({ isOpen, onClose, employeeId }) => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const formInstance = useRef<any>(null);
+    const formContainerRef = useRef<HTMLDivElement>(null);
+
+    const [showNewPassword, setShowNewPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+    const [newPassContainer, setNewPassContainer] = useState<Element | null>(null);
+    const [confirmPassContainer, setConfirmPassContainer] = useState<Element | null>(null);
 
     const { mutate: resetPasswordMutation, isPending: isResetPasswordPending } = useResetPasswordMutation();
     const loading = useLoadingOverlay();
+
+    useEffect(() => {
+        if (!isOpen) {
+            setShowNewPassword(false);
+            setShowConfirmPassword(false);
+            setNewPassContainer(null);
+            setConfirmPassContainer(null);
+        }
+    }, [isOpen]);
+
+    useEffect(() => {
+        const input = formContainerRef.current?.querySelector<HTMLInputElement>(".formio-component-new_password input");
+        if (input) input.type = showNewPassword ? "text" : "password";
+    }, [showNewPassword]);
+
+    useEffect(() => {
+        const input = formContainerRef.current?.querySelector<HTMLInputElement>(".formio-component-confirm_password input");
+        if (input) input.type = showConfirmPassword ? "text" : "password";
+    }, [showConfirmPassword]);
+
+    const syncContainers = () => {
+        const newParent = formContainerRef.current?.querySelector(".formio-component-new_password input")?.parentElement;
+        const confirmParent = formContainerRef.current?.querySelector(".formio-component-confirm_password input")?.parentElement;
+
+        newParent?.classList.add("relative");
+        confirmParent?.classList.add("relative");
+
+        setNewPassContainer(newParent || null);
+        setConfirmPassContainer(confirmParent || null);
+    };
 
     const handleSubmit = async () => {
         await loading?.wrap(async () => {
@@ -63,10 +99,9 @@ const ResetPassword: React.FC<ResetPasswordProps> = ({ isOpen, onClose, employee
     if (!isOpen) return null;
 
     return createPortal(
-        <div
-            className="fixed inset-0 z-[9999] flex items-center justify-center md:p-4 ">
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center md:p-4">
             {/* Backdrop */}
-            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => { onClose() }} />
+            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
 
             {/* Modal Container */}
             <div className="relative w-full max-w-md bg-white md:rounded-xl shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200 h-full">
@@ -85,7 +120,7 @@ const ResetPassword: React.FC<ResetPasswordProps> = ({ isOpen, onClose, employee
                 </div>
 
                 {/* Form Content */}
-                <div className="flex-1 min-h-0 overflow-y-auto px-6 py-5">
+                <div ref={formContainerRef} className="flex-1 min-h-0 overflow-y-auto px-6 py-5">
                     <Form
                         key={"ResetPassword"}
                         className="profile-form w-full"
@@ -93,6 +128,8 @@ const ResetPassword: React.FC<ResetPasswordProps> = ({ isOpen, onClose, employee
                         // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         onFormReady={(instance: any) => {
                             formInstance.current = instance;
+                            syncContainers();
+                            instance.on("render", syncContainers);
                         }}
                         options={{
                             builder: { styles: false },
@@ -101,12 +138,38 @@ const ResetPassword: React.FC<ResetPasswordProps> = ({ isOpen, onClose, employee
                             disableOnSubmit: true,
                             rowClass: "flex flex-col space-y-4",
                             labelClass: "mb-1.5 text-sm font-semibold text-gray-700",
-                            inputClass: "w-full border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all px-3 py-2 text-sm",
+                            inputClass: "w-full border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all px-3 py-2 pr-10 text-sm",
                             validateOnInit: true,
                             validateOnBlur: true,
                             validateOnChange: false,
                         }}
                     />
+
+                    {newPassContainer && createPortal(
+                        <button
+                            type="button"
+                            tabIndex={-1}
+                            onClick={() => setShowNewPassword((prev) => !prev)}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none transition-colors"
+                            aria-label={showNewPassword ? "Hide password" : "Show password"}
+                        >
+                            {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </button>,
+                        newPassContainer
+                    )}
+
+                    {confirmPassContainer && createPortal(
+                        <button
+                            type="button"
+                            tabIndex={-1}
+                            onClick={() => setShowConfirmPassword((prev) => !prev)}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none transition-colors"
+                            aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+                        >
+                            {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </button>,
+                        confirmPassContainer
+                    )}
                 </div>
 
                 {/* Footer */}

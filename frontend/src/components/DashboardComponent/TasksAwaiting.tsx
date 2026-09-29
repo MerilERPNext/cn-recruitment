@@ -453,7 +453,7 @@ const TasksAwaiting: React.FC = () => {
   ).icon;
 
   return (
-    <Card shadow="sm" className="h-fit md:h-full flex flex-col">
+    <Card shadow="sm" className="h-fit min-h-[500px] flex flex-col">
       <div className="flex justify-between items-start gap-3 mb-4">
         <div className="min-w-0">
           <Typography variant="subheading" color="title">
@@ -551,10 +551,12 @@ const TasksAwaiting: React.FC = () => {
             />
           ))
         ) : (
-          <NoDataFound
-            title="You're all caught up 🎉"
-            subtitle="No pending tasks right now."
-          />
+          <div className="flex-1 flex items-center justify-center py-6">
+            <NoDataFound
+              title="You're all caught up 🎉"
+              subtitle="No pending tasks right now."
+            />
+          </div>
         )}
       </div>
     </Card>
