@@ -7,6 +7,10 @@ frappe.ui.form.on("Job Requisition", {
             frm.set_df_property('custom_assign_to_recruiter', 'hidden', 1);
 			frm.set_df_property('status', 'hidden', 1); 
         }
+        // If user is Hiring Manager, do not auto-set requested_by
+        if (frappe.user.has_role('Hiring Manager')) {
+            return;
+        }
 		if (frm.is_new()){
 			frappe.db.get_value('Employee', {user_id: frappe.session.user}, 'name')
 		.then(r => {
