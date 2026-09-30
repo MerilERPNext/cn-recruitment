@@ -767,16 +767,15 @@ export default function DesktopDashboard() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
-            {/* Left Column (8 cols): Tasks Awaiting + MicroApps + Recommendations */}
-            <div className="lg:col-span-8 flex flex-col gap-4">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
+            {/* Left Column (8 cols): Tasks Awaiting + MicroApps */}
+            <div className="lg:col-span-8 flex flex-col gap-4 h-full">
               <TasksAwaiting />
               <MicroAppInDashboard />
-              <RecommendationsForYou />
             </div>
 
             {/* Right Column (4 cols): Daily Timings/Attendance + Events + Requests */}
-            <div className="lg:col-span-4 flex flex-col gap-4">
+            <div className="lg:col-span-4 flex flex-col gap-4 h-full">
               <Card shadow="sm" className="flex flex-col gap-4">
                 <div>
                   <Typography
@@ -970,7 +969,7 @@ export default function DesktopDashboard() {
 
               <Events />
 
-              <Card shadow="sm">
+              <Card shadow="sm" className="flex-1 min-h-[200px] flex flex-col">
                 <div className="flex justify-between items-center mb-4">
                   <Typography variant="subheading" color="title">
                     Requests
@@ -983,7 +982,7 @@ export default function DesktopDashboard() {
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-4 flex-1 items-center">
                   {actions
                     .filter((action) => action.permission)
                     .slice(0, 4)
@@ -1015,6 +1014,11 @@ export default function DesktopDashboard() {
                 </div>
               </Card>
             </div>
+          </div>
+
+          {/* Full-width Recommendations Section */}
+          <div className="w-full mt-4">
+            <RecommendationsForYou />
           </div>
         </div>
       </div>

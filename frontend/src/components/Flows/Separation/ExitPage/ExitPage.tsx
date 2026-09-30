@@ -170,52 +170,26 @@ const ExitPage: React.FC = () => {
 
   const handleCategoryClick = (categoryName: string) => {
     const params = new URLSearchParams();
-    if (targetEmployeeId) {
-      params.set("target_user", targetEmployeeId);
-    }
     params.set("category", categoryName);
     navigate(`/webapp/todo-app?${params.toString()}`);
   };
 
   const handleNavigateToTodo = () => {
-    const params = new URLSearchParams();
-    if (targetEmployeeId) {
-      params.set("target_user", targetEmployeeId);
-    }
-    navigate(
-      `/webapp/todo-app${params.toString() ? `?${params.toString()}` : ""}`,
-    );
+    navigate("/webapp/todo-app");
   };
 
   const handleNavigateToAttendance = () => {
-    const params = new URLSearchParams();
-    if (targetEmployeeId) {
-      params.set("target_user", targetEmployeeId);
-    }
-    navigate(
-      `/webapp/attendance/attendance-request${params.toString() ? `?${params.toString()}` : ""}`,
-    );
+    navigate("/webapp/attendance/attendance-request");
   };
 
   const handleNavigateToLeave = () => {
-    const params = new URLSearchParams();
-    if (targetEmployeeId) {
-      params.set("target_user", targetEmployeeId);
-    }
-    navigate(
-      `/webapp/leave-app/leaves/leave-requests/my${params.toString() ? `?${params.toString()}` : ""}`,
-    );
+    navigate("/webapp/leave-app/leaves/leave-requests/my");
   };
 
   const handleNavigateToExpenses = () => {
-    const params = new URLSearchParams();
-    if (targetEmployeeId) {
-      params.set("target_user", targetEmployeeId);
-    }
-    navigate(
-      `/webapp/expenses-app/expenses-list${params.toString() ? `?${params.toString()}` : ""}`,
-      { state: { initialFilter: "Pending" } },
-    );
+    navigate("/webapp/expenses-app/expenses-list", {
+      state: { initialFilter: "Pending" },
+    });
   };
   const { data: currentEmployee } = useCurrentEmployeeDetails({
     logged_in_employee_details: true,
@@ -656,13 +630,7 @@ const ExitPage: React.FC = () => {
 
   // 10. Leave Encashment & Lapse Summary (for Exit Page)
   const handleNavigateToLeaveBalance = () => {
-    const params = new URLSearchParams();
-    if (targetEmployeeId) {
-      params.set("target_user", targetEmployeeId);
-    }
-    navigate(
-      `/webapp/leave-app/leaves/leave-balance${params.toString() ? `?${params.toString()}` : ""}`,
-    );
+    navigate("/webapp/leave-app/leaves/leave-balance");
   };
 
   const leaveBalanceDate =
@@ -1113,11 +1081,7 @@ const ExitPage: React.FC = () => {
                   <button
                     type="button"
                     onClick={() =>
-                      navigate(
-                        isViewingOtherUser && effectiveEmployeeId
-                          ? `/webapp/recognition/vibe/earned-points?target_user=${effectiveEmployeeId}`
-                          : "/webapp/recognition/vibe/earned-points",
-                      )
+                      navigate("/webapp/recognition/vibe/earned-points")
                     }
                     className="text-xs font-semibold text-primary-700 hover:text-primary-800 hover:underline flex items-center gap-1 transition-colors shrink-0 ml-2"
                   >

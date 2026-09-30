@@ -33,7 +33,11 @@ def _guard_meta_doctype(doctype_name):
 
 class RecruitmentSettings(Document):
     def validate(self):
+        from recruitment.api.direct_applicant import validate_creation_fields, validate_standard_fields
+
         self.validate_salary_range_limits()
+        validate_standard_fields(self)
+        validate_creation_fields(self)
 
     def validate_salary_range_limits(self):
         """Salary Range Limits are digit counts; a Maximum Digits (when set)

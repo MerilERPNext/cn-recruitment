@@ -330,6 +330,13 @@ def validate_match_keys_present(applicant, settings):
 	if not missing:
 		return
 
+	# Direct Applicant Onboarding: the candidate supplies the rest (e.g. PAN) on
+	# the form, and the full check runs again then. Only direct applicants.
+	from recruitment.api.direct_applicant import defers_missing_match_keys
+
+	if defers_missing_match_keys(applicant):
+		return
+
 	labels = [(meta.get_field(f).label or f) for f in missing]
 	frappe.throw(
 		_("{0} {1} required — {2} uses {3} to detect duplicate applications.").format(

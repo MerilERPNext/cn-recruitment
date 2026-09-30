@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 
 import { useGetFlowRequestById } from "../../../../../hooks/useFlows";
+import { openInNewTabAs } from "../../../../../context/ViewedUserContext";
 import { Typography } from "../../../../shared/atoms/Typography";
 import Button from "../../../../shared/atoms/Button";
 import NoDataFound from "../../../../shared/atoms/NoDataFound";
@@ -68,9 +69,12 @@ export const PIPCardDetailDrawer: React.FC<PIPCardDetailDrawerProps> = ({
 
   const handleOpenFullPage = () => {
     if (!requestId) return;
-    const query = targetEmployeeId ? `?target_user=${encodeURIComponent(targetEmployeeId)}` : "";
-    const url = `/webapp/flow-app/flow-request/${encodeURIComponent(requestId)}${query}`;
-    window.open(url, "_blank");
+    const url = `/webapp/flow-app/flow-request/${encodeURIComponent(requestId)}`;
+    if (targetEmployeeId) {
+      openInNewTabAs(url, targetEmployeeId);
+    } else {
+      window.open(url, "_blank");
+    }
   };
 
   return (

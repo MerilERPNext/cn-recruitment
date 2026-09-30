@@ -1,0 +1,219 @@
+{
+ "actions": [],
+ "autoname": "format:DAFR-{#####}",
+ "creation": "2026-09-28 18:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "job_applicant",
+  "applicant_name",
+  "email",
+  "form",
+  "column_break_status",
+  "status",
+  "sent_by",
+  "sent_on",
+  "expires_on",
+  "submitted_on",
+  "resubmission_section",
+  "resubmit_fields",
+  "resubmit_note",
+  "resubmission_count",
+  "system_section",
+  "duplicity_cleared",
+  "action_item",
+  "token_hash",
+  "field_snapshot"
+ ],
+ "fields": [
+  {
+   "fieldname": "job_applicant",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Job Applicant",
+   "options": "Job Applicant",
+   "read_only": 1,
+   "reqd": 1,
+   "search_index": 1
+  },
+  {
+   "fetch_from": "job_applicant.custom_full_name",
+   "fieldname": "applicant_name",
+   "fieldtype": "Data",
+   "label": "Applicant Name",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "job_applicant.email_id",
+   "fieldname": "email",
+   "fieldtype": "Data",
+   "label": "Email",
+   "options": "Email",
+   "read_only": 1
+  },
+  {
+   "fieldname": "form",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Form",
+   "options": "Direct Applicant Form",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_status",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Sent",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Status",
+   "options": "Sent\nSubmitted\nResubmission Requested\nRevoked",
+   "read_only": 1
+  },
+  {
+   "fieldname": "sent_by",
+   "fieldtype": "Link",
+   "label": "Sent By",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "sent_on",
+   "fieldtype": "Datetime",
+   "label": "Sent On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "expires_on",
+   "fieldtype": "Datetime",
+   "in_list_view": 1,
+   "label": "Link Valid Till",
+   "read_only": 1
+  },
+  {
+   "fieldname": "submitted_on",
+   "fieldtype": "Datetime",
+   "label": "Submitted On",
+   "read_only": 1
+  },
+  {
+   "depends_on": "eval:doc.resubmission_count",
+   "fieldname": "resubmission_section",
+   "fieldtype": "Section Break",
+   "label": "Resubmission"
+  },
+  {
+   "description": "Fields the candidate was asked to correct (JSON list of fieldnames).",
+   "fieldname": "resubmit_fields",
+   "fieldtype": "Small Text",
+   "label": "Fields to Resubmit",
+   "read_only": 1
+  },
+  {
+   "fieldname": "resubmit_note",
+   "fieldtype": "Small Text",
+   "label": "Note to Candidate",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "resubmission_count",
+   "fieldtype": "Int",
+   "label": "Resubmissions Requested",
+   "read_only": 1
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "system_section",
+   "fieldtype": "Section Break",
+   "label": "System"
+  },
+  {
+   "default": "0",
+   "description": "HR reviewed the duplicity match and let the candidate proceed; resubmissions on this request are not flagged again.",
+   "fieldname": "duplicity_cleared",
+   "fieldtype": "Check",
+   "label": "Duplicity Match Cleared by HR",
+   "read_only": 1
+  },
+  {
+   "fieldname": "action_item",
+   "fieldtype": "Data",
+   "label": "Action Center Item",
+   "read_only": 1
+  },
+  {
+   "fieldname": "token_hash",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Token Hash",
+   "permlevel": 1,
+   "read_only": 1,
+   "search_index": 1
+  },
+  {
+   "description": "The form's fields as they were when sent, so editing the form later never changes an open link.",
+   "fieldname": "field_snapshot",
+   "fieldtype": "Long Text",
+   "hidden": 1,
+   "label": "Field Snapshot",
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "links": [],
+ "modified": "2026-09-28 18:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Recruitment",
+ "name": "Direct Applicant Form Request",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager"
+  },
+  {
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "HR Manager"
+  },
+  {
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Recruiter Admin"
+  },
+  {
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "HR User"
+  },
+  {
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Job Recruiter"
+  }
+ ],
+ "show_title_field_in_link": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "applicant_name",
+ "track_changes": 1
+}

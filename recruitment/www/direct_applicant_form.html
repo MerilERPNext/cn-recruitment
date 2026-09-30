@@ -1,0 +1,296 @@
+{% extends "templates/web.html" %}
+
+{% block title %}{{ _("Complete Your Details") }}{% endblock %}
+
+{% block page_content %}
+<style>
+	.daf { max-width: 760px; margin: 24px auto 64px; padding: 0 16px; }
+	.daf h1 { font-size: 1.5rem; margin-bottom: 4px; }
+	.daf .daf-sub { color: var(--text-muted, #6b7280); margin-bottom: 20px; }
+	.daf .daf-note { background: #fff7ed; border: 1px solid #fed7aa; border-radius: 8px; padding: 12px 14px; margin-bottom: 20px; }
+	.daf .daf-info { background: #f3f4f6; border-radius: 8px; padding: 12px 14px; margin-bottom: 20px; white-space: pre-wrap; }
+	.daf .daf-section { border: 1px solid #e5e7eb; border-radius: 10px; padding: 16px; margin-bottom: 18px; }
+	.daf .daf-section h2 { font-size: 1.05rem; margin: 0 0 12px; }
+	.daf .daf-field { margin-bottom: 14px; }
+	.daf label { font-weight: 500; display: block; margin-bottom: 4px; }
+	.daf .reqd::after { content: " *"; color: #dc2626; }
+	.daf .daf-hint { font-size: 0.85rem; color: #6b7280; margin-top: 2px; }
+	.daf table { width: 100%; margin-bottom: 8px; }
+	.daf td, .daf th { padding: 4px; vertical-align: top; font-size: 0.9rem; }
+	.daf .daf-table-wrap { overflow-x: auto; }
+	.daf .daf-error { background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; border-radius: 8px; padding: 12px 14px; margin-bottom: 16px; }
+	.daf .daf-done { text-align: center; padding: 48px 16px; }
+	.daf .daf-actions { display: flex; justify-content: flex-end; }
+</style>
+
+<div class="daf" id="daf">
+	<p class="daf-sub">{{ _("Loading...") }}</p>
+</div>
+
+<script>
+(function () {
+	const API = "/api/method/recruitment.api.direct_applicant_portal.";
+	const token = new URLSearchParams(window.location.search).get("t") || "";
+	const root = document.getElementById("daf");
+	const state = { fields: [], values: {} };
+
+	function esc(s) {
+		return String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({
+			"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
+		}[c]));
+	}
+
+	// Frappe error bodies carry the message in _server_messages (JSON of JSON) or exception.
+	function errorText(body) {
+		try {
+			if (body._server_messages) {
+				return JSON.parse(body._server_messages)
+					.map((m) => { try { return JSON.parse(m).message; } catch (e) { return m; } })
+					.map((m) => String(m).replace(/<[^>]*>/g, ""))
+					.join("\n");
+			}
+		} catch (e) { /* fall through */ }
+		if (body.exception) return String(body.exception).split(":").slice(1).join(":").trim();
+		return "{{ _('Something went wrong. Please try again.') }}";
+	}
+
+	async function call(method, params, opts) {
+		opts = opts || {};
+		let url = API + method, init = { method: opts.method || "GET", headers: { Accept: "application/json" } };
+		if (init.method === "GET") {
+			url += "?" + new URLSearchParams(params).toString();
+		} else if (opts.form) {
+			init.body = opts.form;
+		} else {
+			init.body = new URLSearchParams(params);
+		}
+		const res = await fetch(url, init);
+		let body = {};
+		try { body = await res.json(); } catch (e) { /* non-JSON */ }
+		if (!res.ok) throw new Error(errorText(body));
+		return body.message;
+	}
+
+	function showError(msg, fatal) {
+		if (fatal) {
+			root.innerHTML = `<div class="daf-done"><h1>{{ _("Link unavailable") }}</h1><p>${esc(msg)}</p></div>`;
+			return;
+		}
+		let box = root.querySelector(".daf-error");
+		if (!box) {
+			box = document.createElement("div");
+			box.className = "daf-error";
+			root.insertBefore(box, root.querySelector("form"));
+		}
+		box.textContent = msg;
+		box.scrollIntoView({ behavior: "smooth", block: "center" });
+	}
+
+	// ------------------------------------------------------------- inputs --
+	function inputHtml(f, value, id, attrs) {
+		const v = value == null ? "" : value;
+		const common = `id="${id}" class="form-control" ${attrs || ""}`;
+		switch (f.fieldtype) {
+			case "Select": {
+				const opts = [""].concat(String(f.options || "").split("\n").filter(Boolean));
+				return `<select ${common}>${opts.map((o) =>
+					`<option value="${esc(o)}" ${o === v ? "selected" : ""}>${esc(o)}</option>`).join("")}</select>`;
+			}
+			case "Check":
+				return `<input type="checkbox" id="${id}" ${attrs || ""} ${Number(v) ? "checked" : ""}>`;
+			case "Date":
+				return `<input type="date" ${common} value="${esc(v)}">`;
+			case "Int": case "Float": case "Currency": case "Percent":
+				return `<input type="number" step="any" ${common} value="${esc(v)}">`;
+			case "Small Text": case "Text": case "Long Text":
+				return `<textarea rows="3" ${common}>${esc(v)}</textarea>`;
+			case "Attach": case "Attach Image":
+				return `<input type="file" id="${id}" class="form-control" ${attrs || ""} data-current="${esc(v)}"
+					accept=".pdf,.png,.jpg,.jpeg,.doc,.docx">
+					<div class="daf-hint" data-file-for="${id}">${v ? esc("{{ _('Uploaded') }}: " + String(v).split("/").pop()) : ""}</div>`;
+			case "Link":
+				return `<input type="text" ${common} list="${id}-list" value="${esc(v)}" autocomplete="off"
+					data-link="1"><datalist id="${id}-list"></datalist>`;
+			case "Phone":
+				return `<input type="tel" ${common} value="${esc(v)}">`;
+			default:
+				return `<input type="text" ${common} value="${esc(v)}">`;
+		}
+	}
+
+	function aadhaarHint(f) {
+		return f.fieldname === "custom_da_aadhaar_masked"
+			? `<div class="daf-hint">{{ _("Enter your 12-digit Aadhaar number. Only the last 4 digits are stored.") }}</div>` : "";
+	}
+
+	function fieldHtml(f) {
+		const id = "f-" + f.fieldname;
+		if (f.fieldtype === "Table") return tableHtml(f);
+		const label = `<label for="${id}" class="${f.reqd ? "reqd" : ""}">${esc(f.label)}</label>`;
+		const attrs = `data-field="${esc(f.fieldname)}" data-type="${esc(f.fieldtype)}"`;
+		return `<div class="daf-field">${label}${inputHtml(f, f.value, id, attrs)}${aadhaarHint(f)}</div>`;
+	}
+
+	function tableHtml(f) {
+		const rows = (f.value && f.value.length ? f.value : [{}]);
+		return `<div class="daf-field" data-table="${esc(f.fieldname)}">
+			<label class="${f.reqd ? "reqd" : ""}">${esc(f.label)}</label>
+			<div class="daf-table-wrap"><table><thead><tr>
+				${f.child.map((c) => `<th class="${c.reqd ? "reqd" : ""}">${esc(c.label)}</th>`).join("")}<th></th>
+			</tr></thead><tbody>${rows.map((r, i) => rowHtml(f, r, i)).join("")}</tbody></table></div>
+			<button type="button" class="btn btn-default btn-sm" data-add-row="${esc(f.fieldname)}">{{ _("Add Row") }}</button>
+		</div>`;
+	}
+
+	let rowSeq = 0;
+	function rowHtml(f, row) {
+		const n = rowSeq++;
+		return `<tr data-row>${f.child.map((c) => {
+			const id = `t-${f.fieldname}-${c.fieldname}-${n}`;
+			const attrs = `data-col="${esc(c.fieldname)}" data-type="${esc(c.fieldtype)}" data-parent="${esc(f.fieldname)}"`;
+			return `<td>${inputHtml(c, row[c.fieldname], id, attrs)}</td>`;
+		}).join("")}<td><button type="button" class="btn btn-default btn-xs" data-remove-row>&times;</button></td></tr>`;
+	}
+
+	// ------------------------------------------------------------- render --
+	function render(data) {
+		if (data.status === "Submitted") {
+			root.innerHTML = `<div class="daf-done"><h1>{{ _("Thank you") }}</h1>
+				<p>{{ _("Your details have been submitted. HR will get in touch with you.") }}</p></div>`;
+			return;
+		}
+		// On a resubmission only the fields HR asked for are shown.
+		state.fields = data.fields.filter((f) => f.editable);
+		const sections = [];
+		state.fields.forEach((f) => {
+			let s = sections.find((x) => x.name === f.section);
+			if (!s) sections.push((s = { name: f.section, fields: [] }));
+			s.fields.push(f);
+		});
+		root.innerHTML = `
+			<h1>${esc(data.form_title)}</h1>
+			<p class="daf-sub">${esc(data.applicant_name)}${data.company ? " · " + esc(data.company) : ""}</p>
+			${data.resubmit_note || data.status === "Resubmission Requested" ? `<div class="daf-note"><b>{{ _("Please correct the details below.") }}</b>
+				${data.resubmit_note ? "<br>" + esc(data.resubmit_note) : ""}</div>` : ""}
+			${data.instructions ? `<div class="daf-info">${esc(data.instructions)}</div>` : ""}
+			<form novalidate>
+				${sections.map((s) => `<div class="daf-section"><h2>${esc(s.name)}</h2>
+					${s.fields.map(fieldHtml).join("")}</div>`).join("")}
+				<div class="daf-actions"><button type="submit" class="btn btn-primary">{{ _("Submit") }}</button></div>
+			</form>`;
+		bind();
+	}
+
+	function fieldDef(fieldname, child) {
+		const f = state.fields.find((x) => x.fieldname === fieldname);
+		return child ? (f.child || []).find((c) => c.fieldname === child) : f;
+	}
+
+	function bind() {
+		const form = root.querySelector("form");
+		form.addEventListener("submit", (e) => { e.preventDefault(); submit(form); });
+		form.addEventListener("click", (e) => {
+			const add = e.target.closest("[data-add-row]");
+			if (add) {
+				const f = fieldDef(add.dataset.addRow);
+				add.parentElement.querySelector("tbody").insertAdjacentHTML("beforeend", rowHtml(f, {}));
+			}
+			const remove = e.target.closest("[data-remove-row]");
+			if (remove) remove.closest("tr").remove();
+		});
+		form.addEventListener("change", (e) => {
+			if (e.target.type === "file") upload(e.target);
+		});
+		let timer;
+		form.addEventListener("input", (e) => {
+			if (!e.target.dataset.link) return;
+			clearTimeout(timer);
+			timer = setTimeout(() => searchLink(e.target), 250);
+		});
+		form.addEventListener("focusin", (e) => { if (e.target.dataset.link) searchLink(e.target); });
+	}
+
+	async function searchLink(input) {
+		const parent = input.dataset.parent;
+		try {
+			const rows = await call("search_link", {
+				t: token,
+				fieldname: parent || input.dataset.field,
+				child_fieldname: parent ? input.dataset.col : "",
+				txt: input.value,
+			});
+			const list = document.getElementById(input.getAttribute("list"));
+			list.innerHTML = (rows || []).map((r) =>
+				`<option value="${esc(r.value)}">${r.label !== r.value ? esc(r.label) : ""}</option>`).join("");
+		} catch (e) { /* no suggestions */ }
+	}
+
+	async function upload(input) {
+		const file = input.files[0];
+		const hint = root.querySelector(`[data-file-for="${input.id}"]`);
+		if (!file) return;
+		const parent = input.dataset.parent;
+		const body = new FormData();
+		body.append("t", token);
+		body.append("fieldname", parent || input.dataset.field);
+		if (parent) body.append("child_fieldname", input.dataset.col);
+		body.append("file", file);
+		hint.textContent = "{{ _('Uploading...') }}";
+		try {
+			const r = await call("upload_file", null, { method: "POST", form: body });
+			input.dataset.fileUrl = r.file_url;
+			hint.textContent = "{{ _('Uploaded') }}: " + r.file_name;
+		} catch (e) {
+			input.value = "";
+			delete input.dataset.fileUrl;
+			hint.textContent = "";
+			showError(e.message);
+		}
+	}
+
+	function readInput(el) {
+		if (el.type === "checkbox") return el.checked ? 1 : 0;
+		if (el.type === "file") return el.dataset.fileUrl || el.dataset.current || "";
+		return el.value;
+	}
+
+	function collect(form) {
+		const data = {};
+		state.fields.forEach((f) => {
+			if (f.fieldtype === "Table") {
+				const wrap = form.querySelector(`[data-table="${f.fieldname}"]`);
+				data[f.fieldname] = Array.from(wrap.querySelectorAll("tr[data-row]")).map((tr) => {
+					const row = {};
+					tr.querySelectorAll("[data-col]").forEach((el) => {
+						row[el.dataset.col] = readInput(el);
+					});
+					return row;
+				});
+			} else {
+				const el = form.querySelector(`[data-field="${f.fieldname}"]`);
+				data[f.fieldname] = readInput(el);
+			}
+		});
+		return data;
+	}
+
+	async function submit(form) {
+		const button = form.querySelector("button[type=submit]");
+		button.disabled = true;
+		try {
+			await call("submit_form", { t: token, data: JSON.stringify(collect(form)) }, { method: "POST" });
+			render({ status: "Submitted" });
+			window.scrollTo(0, 0);
+		} catch (e) {
+			showError(e.message);
+		} finally {
+			button.disabled = false;
+		}
+	}
+
+	call("get_form", { t: token })
+		.then(render)
+		.catch((e) => showError(e.message, true));
+})();
+</script>
+{% endblock %}

@@ -112,6 +112,9 @@ def calculate_salary_structure(self, method=None):
             doc = frappe.get_doc("Salary Structure Assignment", ssa)
             doc.salary_structure = self.custom_employee_salary_structure
             doc.custom_fixed_ctc_annual = self.custom_base_salary
+            # The structure's formulas read Annual Fixed Gross, not the CTC field;
+            # without this every offer got the dummy assignment's stale split.
+            doc.custom_fixed_gross_annual = self.custom_base_salary
             doc.income_tax_slab = self.custom_income_tax_slab
             doc.custom_is_epf=self.custom_epf
             doc.custom_epf_type=self.custom_epf_type
