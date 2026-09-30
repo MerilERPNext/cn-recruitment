@@ -265,7 +265,7 @@ override_whitelisted_methods = {
 override_doctype_class = {
     "Employee Onboarding": "recruitment.customizations.employee_onboarding.overide_class.CustomEmployeeOnboarding",
     "Job Opening": "recruitment.customizations.job_opening.class_override.CustomJobOpening",
-    "Appraisal": "recruitment.server_script.appraisal.appraisal.Appraisal"
+    # "Appraisal": "recruitment.server_script.appraisal.appraisal.Appraisal"
 }
 
 #
