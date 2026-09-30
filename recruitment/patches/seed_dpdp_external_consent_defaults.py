@@ -24,7 +24,7 @@ DOCTYPE = "DPDP Act Settings"
 
 DEFAULTS = {
     "consent_mode": "Internal Form",
-    "consent_start_url": "https://uat-hpcp.homefirstindia.com/hpcp/partner/consent/start",
+    "consent_start_url": "https://uat-hpcp.homefirstindia.com:8443/hpcp/partner/consent/start",
     "org_id": "HRMS",
     "configuration_code": "EMPLOYEE_ONBOARDING",
     "consent_channel": "EMAIL",

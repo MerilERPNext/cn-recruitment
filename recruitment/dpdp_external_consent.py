@@ -262,7 +262,7 @@ def _throttle_session_starts(appl):
 HTTP_REASONS = {
     400: "the request was rejected as invalid (missing field, bad email/mobile format, or unpublished Configuration Code)",
     401: "the Partner Username / Password in DPDP Act Settings were not accepted",
-    403: "the partner account is disabled or this server's IP address is not whitelisted — ask the HPCP administrator to whitelist it",
+    403: "the Consent Start URL is wrong (the HPCP UAT API is on port 8443 — without it the call hits their web server), the partner account is disabled, or this server's IP address is not whitelisted",
     404: "the Org ID in DPDP Act Settings does not match any registered partner",
 }
 
@@ -586,8 +586,9 @@ def _callback_body():
 def _valid_signature(secret, signature):
     """True when ``signature`` is the HMAC-SHA256 of the raw webhook body.
 
-    The spec names the header but not its encoding, so hex and base64 digests are
-    both accepted, with or without a ``sha256=`` prefix."""
+    HPCP sends ``sha256=<lowercase hex>`` computed over the raw UTF-8 JSON body. A
+    bare hex or base64 digest is accepted too, so a change of encoding on their side
+    does not silently drop every callback."""
     import hashlib
     import hmac
 
