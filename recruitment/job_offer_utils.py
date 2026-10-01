@@ -10,9 +10,10 @@ from frappe.utils import cint
 def get_job_offer_status(appl):
     jo_id = frappe.db.get_value("Job Offer", {"job_applicant": appl})
     if not jo_id:
-        return {"status": None}
+        return {"status": None, "discussion_disabled":False}
     status = frappe.db.get_value("Job Offer", jo_id, "status")
-    return {"status": status}
+    discussion_disabled=frappe.db.get_value("Job Offer",jo_id,"custom_discussion_requested")
+    return {"status": status, "discussion_disabled":discussion_disabled}
 @frappe.whitelist(allow_guest=True)
 def job_offer_update(status, appl):
     frappe.set_user('Administrator')
@@ -25,17 +26,38 @@ def job_offer_update(status, appl):
         appl_doc=frappe.get_doc("Job Applicant",appl)
         appl_doc.status="Offer Accepted"
         appl_doc.save()
-        # frappe.db.set_value("Job Offer",jo_id,"status","Accepted")
-        # frappe.db.set_value("Job Applicant",appl,"status","Offer Accepted")
-        
-        # trigger_event(doc=jo_doc, event_name="accept_jo")
     if status == "Rejected":
         frappe.db.set_value("Job Offer",jo_id,"status","Rejected")
         frappe.db.set_value("Job Applicant",appl,"status","Offer Rejected")
-    frappe.db.set_value("Job Offer",jo_id,"docstatus",1)
-        # trigger_event(doc=jo_doc, event_name="reject_jo")
-    
+    frappe.db.set_value("Job Offer",jo_id,"docstatus",1)    
     return {"jo_id": jo_id, "webform": settings.employee_onboarding_webform}
+
+@frappe.whitelist(allow_guest=True, methods=["POST"])
+def request_discussion(appl=None, origin=None):
+    if not appl:
+        frappe.throw("Missing applicant id")
+
+    frappe.set_user("Administrator")
+
+    jo_id = frappe.db.get_value("Job Offer", {"job_applicant": appl}, "name", order_by="modified desc")
+    current_status = frappe.db.get_value("Job Offer", jo_id, "status") if jo_id else None
+    if current_status in ["Accepted", "Rejected", "Discussion Requested"]:
+        return {"status": current_status, "jo_id": jo_id, "already_processed": True}
+
+    if jo_id:
+        offer_doc=frappe.get_doc("Job Offer",jo_id)
+        offer_doc.status="Discussion Requested"
+        offer_doc.custom_discussion_requested=1
+        offer_doc.save()
+        frappe.db.set_value("Job Applicant", appl, "status", "Hold", update_modified=True)
+
+    frappe.db.commit()
+
+    return {
+        "status": "Discussion Requested",
+        "jo_id": jo_id
+    }
+
 
 @frappe.whitelist()
 def request_for_offer(jo_id):

@@ -48,6 +48,7 @@ frappe.ui.form.on("Employee Separation", {
                         frm.set_value("custom_number_days_served", r.message.days_served);
                         frm.set_value("custom_exceeding_noof_days", r.message.days_exceeded === 0 ? "" : r.message.days_exceeded);
                         frm.set_value("custom_notice_period_served_", r.message.custom_notice_period_served);
+                        frm.set_value("custom_number_of_days_remaining", r.message.days_remaining === 0 ? "" : r.message.days_remaining);
                     }
                 }
             })
@@ -56,6 +57,7 @@ frappe.ui.form.on("Employee Separation", {
             frm.set_value("custom_number_days_served", "");
             frm.set_value("custom_exceeding_noof_days", "");
             frm.set_value("custom_notice_period_served_","");
+            frm.set_value("custom_number_of_days_remaining", "");
         }
     }
 });
@@ -90,20 +92,17 @@ async function set_actual_last_working_date(frm) {
     if (!frm.doc.employee) return;
 
     let resignation_date = frm.doc.custom_resignation_date || frappe.datetime.get_today();
-    console.log("Resignation Date:", resignation_date);
 
     let emp = await frappe.db.get_value("Employee", frm.doc.employee, "employment_type");
     if (emp && emp.message && emp.message.employment_type) {
         let type = await frappe.db.get_value("Employment Type", emp.message.employment_type, "custom_notice_period_days");
         if (type && type.message) {
             let notice_period_days = type.message.custom_notice_period_days || 0;
-            console.log("Notice Period:", notice_period_days);
 
             let last_working_date = frappe.datetime.add_days(resignation_date, notice_period_days);
-            console.log("Final LWD:", last_working_date);
 
             await frm.set_value("custom_actual_last_working_date", last_working_date);
-            console.log("Value Set");
+            await frm.set_value("custom_last_working_date", last_working_date);
         }
     }
 }

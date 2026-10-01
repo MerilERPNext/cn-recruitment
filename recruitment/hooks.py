@@ -11,7 +11,9 @@ app_license = "mit"
 
 # include js, css files in header of desk.html
 app_include_css = "/assets/recruitment/css/job_applicant.css"
-# app_include_js = "/assets/recruitment/js/recruitment.js"
+app_include_js = [
+    "/assets/recruitment/js/teams_utils.js"
+]
 
 # include js, css files in header of web template
 # web_include_css = "/assets/recruitment/css/recruitment.css"
@@ -61,6 +63,14 @@ fixtures = [
         "dt":"Custom Field",
         "filters":[["module","=","Recruitment"]]
     }
+    # {
+    #     "dt":"Funnel Node",
+    #     "filters":[["name","=","Send Teams Chat Message"]]
+    # }
+    #  {
+    #     "dt":"Client Script",
+    #     "filters":[["name","=","Authorize Teams"]]
+    # }
     ]
 # include js in page
 # page_js = {"page" : "public/js/file.js"}
@@ -209,9 +219,9 @@ doc_events = {
         
     },
     "Employee":{
-        "validate":["recruitment.customizations.job_applicant.validate_blacklist_employee","recruitment.customizations.employee.duplicate_check.validate_duplicate_employee"],
-        "after_insert":"recruitment.auto_fetch_fields.link_employee_to_onboarding"
-
+        "before_insert": "recruitment.customizations.job_applicant.validate_blacklist_employee",
+        "validate": "recruitment.customizations.employee.duplicate_check.validate_duplicate_employee",
+        "after_insert": "recruitment.auto_fetch_fields.link_employee_to_onboarding"
     },
      "Job Applicant": {
         "before_save": "recruitment.customizations.job_applicant.validate_blacklist"
@@ -272,9 +282,9 @@ override_doctype_class = {
 # each overriding function accepts a `data` argument;
 # generated from the base implementation of the doctype dashboard,
 # along with any modifications made in other Frappe apps
-# override_doctype_dashboards = {
-# 	"Task": "recruitment.task.get_dashboard_data"
-# }
+override_doctype_dashboards = {
+	"Job Applicant": "recruitment.funnel_apis.get_dashboard_for_job_applicant"
+}
 
 # exempt linked doctypes from being automatically cancelled
 #

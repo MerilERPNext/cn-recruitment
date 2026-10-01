@@ -1,0 +1,13 @@
+[
+ {
+  "docstatus": 0,
+  "doctype": "Client Script",
+  "dt": "User",
+  "enabled": 0,
+  "modified": "2025-06-12 14:48:05.417919",
+  "module": "Recruitment",
+  "name": "Authorize Teams",
+  "script": "frappe.ui.form.on(\"User\", {\n    refresh: async function (frm) {\n        if (frm.doc.__islocal) return;\n\n        const user_id = frm.doc.name;\n\n        const settings_enabled = await frappe.call({\n            method: \"recruitment.recruitment.doctype.microsoft_teams_app_settings.microsoft_teams_app_settings.is_teams_enabled\"\n        }).then(r => r.message);\n\n        if (!settings_enabled) return;\n\n        const settings = await frappe.db.get_doc(\"Microsoft Teams App Settings\");\n        const required_filled = settings.client_id && settings.client_secret && settings.tenant_id && settings.redirect_uri && settings.tenant_domain;\n\n        if (!required_filled) return;\n\n        frappe.call({\n            method: \"frappe.client.get_value\",\n            args: {\n                doctype: \"Microsoft Teams User Token\",\n                filters: { user: user_id },\n                fieldname: \"name\"\n            },\n            callback(res) {\n                if (!res.message || Object.keys(res.message).length === 0) {\n                    frm.add_custom_button(\"Authorize Teams\", () => {\n                        frappe.call({\n                            method: \"recruitment.customizations.interview.interview.get_teams_auth_url\",\n                            args: { user_id: user_id },\n                            callback(r) {\n                                if (r.message) {\n                                    window.open(r.message, \"_blank\");\n                                }\n                            }\n                        });\n                    });\n                }\n            }\n        });\n    }\n});\n",
+  "view": "Form"
+ }
+]

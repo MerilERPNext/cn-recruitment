@@ -26,6 +26,7 @@ def get_context(context):
             context.doc = job_offers[0]["name"]
             context.print = frappe.get_print('Job Offer', context.doc)
             context.expiry_date = frappe.db.get_value('Job Offer', context.doc, 'custom_jo_expiry_date')
+            context.custom_discussion_requested = frappe.db.get_value('Job Offer', context.doc, 'custom_discussion_requested')
         
         context.no_cache = 1 # don't allow any caching of data based on parameters.
     except frappe.DoesNotExistError:
@@ -57,9 +58,11 @@ def custom_manual_relieving_date(doc):
     notice_period_days = frappe.db.get_value("Employment Type", {"name": doc.get("custom_employment_type")}, "custom_notice_period_days") or 0
 
     relieving_date = getdate(doc.get("custom_manual_relieving_date"))
+    last_working_day_as_per_policy =getdate(doc.get("custom_last_working_date"))
     resignation_date = getdate(doc.get("custom_resignation_date"))
 
     days_served = date_diff(relieving_date, resignation_date)
+    days_remaining = date_diff(last_working_day_as_per_policy,relieving_date)
     if relieving_date == resignation_date:
         days_served = 1
 
@@ -70,5 +73,6 @@ def custom_manual_relieving_date(doc):
         "relieving_date": str(relieving_date),
         "days_served": days_served,
         "days_exceeded": days_exceeded,
-        "custom_notice_period_served": custom_notice_period_served
+        "custom_notice_period_served": custom_notice_period_served,
+        "days_remaining": days_remaining
     }
