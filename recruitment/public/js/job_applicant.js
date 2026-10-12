@@ -1532,7 +1532,10 @@ frappe.ui.form.on('Job Applicant', {
                 `;
 
                 // Insert the HTML into the custom field
-                frm.fields_dict.custom_table.$wrapper.html(interview_html);
+                let target_field = frm.fields_dict.custom_custom_table || frm.fields_dict.custom_table;
+                if (target_field && target_field.$wrapper) {
+                    target_field.$wrapper.html(interview_html);
+                }
             }
         });
     }
